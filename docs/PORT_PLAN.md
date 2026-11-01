@@ -83,12 +83,13 @@ ISO directory scan, startup image read, MDEC decode and fade, then the main loop
 - `src/port/globals.c` (generated, `tools/port/gen_globals.py`): the 438 globals the PS1 link placed by address.
 - 732 overlay functions are still weak placeholders that abort with their name on first call.
 
-## Opening movie (current blocker for the title screen)
+## Opening movie (plays)
 
-With the title package linked (`PE_PACKAGES`), boot shows the startup image, then the title task starts the opening
-FMV and the window goes black. The movie head request (`CD_COMMAND_PLAY_STREAM`) sits in its PLAY step with no CD read
-active: PsyZ's `CdlReadN/ReadS` with `CdlModeRT` takes the XA-audio path instead of delivering video sectors
-(`Psyz_CdSetDiskPath` image, mode 0x..|Stream2|RT), so `streamPollMoviePlayback` never receives frames.
-Needs stream-mode data delivery (video sectors to the ready callback, XA audio on the side) in the PsyZ fork,
-then the MDEC strip path already used by the startup image.
+PsyZ fork: movie reads (`ReadS` with ADPCM on and a 2340-byte size flag; the stream bit 0x100 does not survive
+the 8-bit mode byte) now start both the XA audio path and a data read; ADPCM sectors are skipped on the data side.
+`StCdInterrupt` is implemented (it was a stub): it fills the St ring (32-byte header entries followed by 2016-byte
+payload slots), marks a frame ready through `data_ready_callback`, and leaves the sector unread when the ring is
+full, which holds the drive until `StFreeRing`. The opening FMV plays with correct colours.
+Open: bright highlights show streak artifacts (MDEC dequantisation/IDCT clamping in PsyZ or the VLC port);
+the XA soundtrack and the end of the movie have not been checked.
 Tools: `tools/port/probe.sh` (run + window-only capture), `tools/port/crash.sh`, crash handler in `src/port/main.c`.
