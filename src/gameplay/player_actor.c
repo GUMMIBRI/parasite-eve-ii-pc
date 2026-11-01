@@ -4685,7 +4685,7 @@ void effectHitSparkBurstTask(Task* task)
     EffectWork*  work;
     GfxCoord*    coord;
     s16          effectControl;
-    register s32 previousRandomState asm("v1");
+    s32          previousRandomState;
     s32          requestedWidth;
     s32          durationUnits;
     s32          particleIndex;

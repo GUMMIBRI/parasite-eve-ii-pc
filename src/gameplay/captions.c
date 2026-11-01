@@ -686,7 +686,6 @@ static u16 _capDrawTextStream(const u16* textStream, s32 unusedDrawArg, u8 revea
     s32                  glyphPalette;
     s32                  titleRightXOffset;
     const u16*           nextLine;
-    s32                  lineBreakDependency;
     s16                  nextLineIndex;
     s16                  boxTopY;
     s32                  boxBottomY;
@@ -786,8 +785,6 @@ static u16 _capDrawTextStream(const u16* textStream, s32 unusedDrawArg, u8 revea
             gCapContinueCaretX = penX + CAP_TEXT_CARET_X_OFFSET;
             nextLineIndex      = lineIndex + 1;
             nextLine           = &codes[codeIndex + 1];
-            // Retained scheduling dependencies preserve the spilled line-index update.
-            asm("" : "=r"(lineBreakDependency), "+m"(*nextLine) : "r"(lineIndex));
             lineIndex = nextLineIndex;
             if (layout->vertical == 0) {
                 penY += _capGetTextLineAdvance(nextLine);
@@ -797,7 +794,6 @@ static u16 _capDrawTextStream(const u16* textStream, s32 unusedDrawArg, u8 revea
                     penX = (u16)gCapTextBlockLeftX - CAP_TEXT_SCREEN_CENTER_X;
                 }
             } else {
-                asm("" : "+r"(codeIndex) : "r"(lineBreakDependency));
                 penY  = CAP_TEXT_COLUMN_TOP_Y;
                 penX -= _capGetTextLineAdvance(nextLine);
             }

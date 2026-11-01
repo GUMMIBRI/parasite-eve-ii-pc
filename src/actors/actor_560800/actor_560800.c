@@ -5849,7 +5849,6 @@ static void _actor560800HandleKyleCue(Task* task)
             switch (work->kyleCue.step) {
                 case 0:
                     returnClipWork = work->kyle->work;
-                    SOFT_TOUCH_REG(returnClipWork);
                     returnClipWork->animId   = 3;
                     returnClipWork->animRate = ANIMATION_RATE_ONE;
                     returnClipWork->animHold = 0;

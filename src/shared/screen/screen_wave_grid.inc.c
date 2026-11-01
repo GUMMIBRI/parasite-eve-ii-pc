@@ -232,7 +232,6 @@ static void _screenWaveGridTask(Task* task)
                     }
                     addPrim(&gGpuCurrentOt[SCREEN_WAVE_QUAD_OT_INDEX], quad);
                 }
-                SOFT_USE_REG(quad);
             }
             break;
     }

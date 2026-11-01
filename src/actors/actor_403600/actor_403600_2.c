@@ -3527,7 +3527,7 @@ static void _actor403600ChooseAttack(Task* task)
     s32 lowCornerARange;
     // Matching constraint: the load must not be a single-set pseudo, or sched1
     // promotes it as a register birth and moves it down beside the compare.
-    register s32     hp asm("a0");
+    s32              hp;
     s32              highCornerBRange;
     s32              playerY;
     s32              cornerDelta;

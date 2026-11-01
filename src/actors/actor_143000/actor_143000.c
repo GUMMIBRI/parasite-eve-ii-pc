@@ -1113,8 +1113,6 @@ void actor143000CaptureStripTask(Task* task)
             stripBottom     = capture->band.y + capture->band.h * capture->stripsCaptured / capture->stripCount;
             imageByteOffset = strip.y * FILE_SYSTEM_IMAGE_ROW_BYTES;
             strip.h         = stripBottom - strip.y;
-            // Retained compiler dependency between the row offset and rectangle copy.
-            __asm__("" : "+m"(strip) : "r"(imageByteOffset));
             _actor143000StoreStrip(&strip, imageByteOffset);
             if (capture->stripsCaptured >= capture->stripCount) {
                 taskKill(task);

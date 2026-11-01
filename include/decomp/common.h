@@ -73,29 +73,6 @@
     typedef char static_assertion_sizeof_##type[(sizeof(type) == (size)) ? 1 : -1]
 #endif
 
-/*
- * Matching helpers: empty GNU C statement-asm that emit no MIPS. Each use is a
- * matching carrier, not reconstructed source.
- *
- * Only the two forms that still have a user are defined. The rest of the
- * family (TOUCH_REG*, USE_REG*, DEF_REG, the barriers, MOVE_ZERO, COPY_REG,
- * ...) was deleted as its last users were rewritten. Do not add a steering
- * macro, here or in a source file, to keep a change matching (NAMING.md,
- * "Never add a matching hack to keep a cleanup"); tools/check/check_hack_sites.py
- * still counts the deleted names.
- *
- * SOFT_TOUCH_REG reads and writes `x`; SOFT_USE_REG only reads it. GCC 2.8.1
- * makes an asm with no output implicitly volatile, so SOFT_USE_REG is a
- * scheduling fence despite its spelling. The read/write form avoids that rule
- * but still changes dependencies and may move. Inspect the RTL
- * (CODEGEN_MODEL.md section 11).
- *
- * Expansions are plain statement-asm. Do not wrap them in do/while or
- * extra braces: that changes stack and scheduling.
- */
-#define SOFT_TOUCH_REG(x) __asm__("" : "+r"(x))
-#define SOFT_USE_REG(x)   __asm__("" :: "r"(x))
-
 /// Exports `orig`, defined in this file, under a second name `alias`: one more
 /// global symbol at the same address, adding no bytes. The compiler has no
 /// alias attribute for this target, so the assembler makes it, and it has to be
