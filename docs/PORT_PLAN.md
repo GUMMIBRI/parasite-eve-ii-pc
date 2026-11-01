@@ -38,3 +38,7 @@ Blocking design point: a TMD stream is a sequence of `{kind, handler, dimensions
 Decision (ordering tables): on the host an ordering table is an array of PsyZ `OT_TYPE` entries (pointer-width tag and length), and packets are PsyZ `POLY_*` structs, so packet sizes come from `sizeof`, not the console's 28/36 bytes. `workspace->ot` stays `u_long*` and is indexed in `OT_TYPE` units. Every other place that indexes `gGpuCurrentOt` as `u_long` needs the same treatment in the 64-bit audit. `Prim32`/`Prim3A` (4 entries) are ported in `src/port/tmd_prim.c` with `tests/tmd_prim_test.c`.
 
 Host syntax survey of every `.c` outside `*.inc.c` (clang, `-D__psyz -DSKIP_ASM`): 523 of 566 pass. The rest are shared-source templates that need per-package build parameters (`WEAPON_INDEX`, `DRYFIELD_TIME`, ...), a few missing animation clip symbols, and four `SECTOR_SIZE` uses — all part of the overlay build design (phase 2). `SECTION(...)` is a no-op on the host and `<rand.h>` includes were replaced by `<stdlib.h>`.
+
+## Handwritten assembly: done
+
+All of `src/main/hasm` is now C (`src/port/lzss.c`, `tmd_dispatch.c`, `tmd_prim.c`, `tmd_ops.c`), with native tests (`lzss_test`, `tmd_model_test`, `tmd_prim_test`, `tmd_ops_test`). The `.s` files were removed; they remain in git history (`bd42083` and earlier) as the reference. The tests use hand-built streams, so each handler still needs a comparison against real model data and emulator frame captures. The link now reports no undefined TMD symbols; the remaining ~1,200 are overlay tasks and handlers (phase 2).
