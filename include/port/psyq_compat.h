@@ -84,4 +84,14 @@ extern unsigned char gHostRam[0x200000];
 void Psyz_CdPump(void);
 void Psyz_PollInterrupts(void);
 
+/* Disc data stores PS1 addresses in 32-bit fields; this maps one to the host RAM array (0 stays NULL). */
+static inline void* Ps1AddrToHost(unsigned int addr)
+{
+    unsigned int off = addr & 0x1FFFFFu;
+    if (addr == 0) {
+        return 0;
+    }
+    return (void*)(gHostRam + off);
+}
+
 #endif

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "task.h"
 
 #include "types.h"
@@ -172,6 +173,11 @@ static Task* (_taskSpawnFromDesc)(TaskDesc* desc, TaskSpawnArg spawnArg1, TaskSp
 
     // A descriptor that asks for a body gets no task when the body cannot be attached.
     if ((desc->header.fields.flags & TASK_DESC_BODY_KIND_MASK) == TASK_BODY_NONE || body.allocation != NULL) {
+#ifdef __psyz
+        if (desc->callback == NULL) {
+            fprintf(stderr, "task descriptor %p has no handler (flags=0x%x)\n", (void*)desc, (unsigned)desc->header.fields.flags);
+        }
+#endif
         task->callback     = desc->callback;
         priority           = desc->header.fields.priority;
         task->exitCallback = taskKill;
@@ -383,6 +389,11 @@ void taskKill(Task* task)
 
 Task* (taskSpawnFromTable)(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
 {
+#ifdef __psyz
+    if (table[index].callback == NULL) {
+        fprintf(stderr, "task table %p index %d has no handler\n", (void*)table, (int)index);
+    }
+#endif
     return _taskSpawnFromDesc(&table[index], spawnArg1, spawnArg2, _gTaskActiveList);
 }
 
@@ -396,6 +407,11 @@ Task* (taskSpawn)(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskS
     } else {
         desc = selector.pointer;
     }
+#ifdef __psyz
+    if (desc->callback == NULL) {
+        fprintf(stderr, "task spawn with no handler: bank=%d selector=%d desc=%p\n", (int)bank, (int)selector.value, (void*)desc);
+    }
+#endif
     return _taskSpawnFromDesc(desc, spawnArg1, spawnArg2, _gTaskActiveList);
 }
 

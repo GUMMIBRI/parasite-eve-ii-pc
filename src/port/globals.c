@@ -190,7 +190,6 @@
 #include "rooms/shelter_r47.h"
 #include "rooms/shelter_r48.h"
 #include "rooms/shelter_r49.h"
-#include "title/title.h"
 #include "weapons/tonfa_baton.h"
 #include "weapons/unused_85.h"
 #include "weapons/unused_86.h"
@@ -625,7 +624,6 @@ TaskDesc gShelterR48WaterRefractionTaskDesc;
 AreaVariant gShelterR49AreaVariants[SHELTER_R49_AREA_VARIANT_COUNT];
 TmdSource gSp12Model;
 AnimationSet* gSp12PlayerAnimationBank[ANIMATION_BANK_SET_CAPACITY];
-TaskDesc gTitleStartupTaskDescriptors[2];
 AnimationSet* gTonfaBatonPlayerAnimationBank[ANIMATION_BANK_SET_CAPACITY];
 TmdSource gTonfaBatonShaftModel;
 TmdSource gTonfaBatonWeaponModel;

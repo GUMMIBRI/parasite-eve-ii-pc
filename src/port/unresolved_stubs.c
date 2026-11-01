@@ -7,11 +7,6 @@ __attribute__((weak)) unsigned char D_80725F44[0x10000];
 __attribute__((weak)) unsigned char D_8072C8F0[0x10000];
 __attribute__((weak)) unsigned char D_8075BED4[0x10000];
 __attribute__((weak)) unsigned char D_80760618[0x10000];
-__attribute__((weak)) void IsIdleGPU(void) { fprintf(stderr, "unresolved call: IsIdleGPU\n"); abort(); }
-__attribute__((weak)) void LoadImage2(void) { fprintf(stderr, "unresolved call: LoadImage2\n"); abort(); }
-__attribute__((weak)) void MemCardGetDirentry(void) { fprintf(stderr, "unresolved call: MemCardGetDirentry\n"); abort(); }
-__attribute__((weak)) void MemCardWriteFile(void) { fprintf(stderr, "unresolved call: MemCardWriteFile\n"); abort(); }
-__attribute__((weak)) void MoveImage2(void) { fprintf(stderr, "unresolved call: MoveImage2\n"); abort(); }
 __attribute__((weak)) void actor403600DrawStreamGt3BottomFade(void) { fprintf(stderr, "unresolved call: actor403600DrawStreamGt3BottomFade\n"); abort(); }
 __attribute__((weak)) void actor403600DrawStreamGt3PlaneClamp(void) { fprintf(stderr, "unresolved call: actor403600DrawStreamGt3PlaneClamp\n"); abort(); }
 __attribute__((weak)) void actor403600DrawStreamGt3PreXformBottomFade(void) { fprintf(stderr, "unresolved call: actor403600DrawStreamGt3PreXformBottomFade\n"); abort(); }
@@ -290,6 +285,7 @@ __attribute__((weak)) void func_80724324(void) { fprintf(stderr, "unresolved cal
 __attribute__((weak)) void func_807244CC(void) { fprintf(stderr, "unresolved call: func_807244CC\n"); abort(); }
 __attribute__((weak)) void func_8072455C(void) { fprintf(stderr, "unresolved call: func_8072455C\n"); abort(); }
 __attribute__((weak)) void func_807245B8(void) { fprintf(stderr, "unresolved call: func_807245B8\n"); abort(); }
+__attribute__((weak)) void func_807246B4(void) { fprintf(stderr, "unresolved call: func_807246B4\n"); abort(); }
 __attribute__((weak)) void func_80724714(void) { fprintf(stderr, "unresolved call: func_80724714\n"); abort(); }
 __attribute__((weak)) void func_80724748(void) { fprintf(stderr, "unresolved call: func_80724748\n"); abort(); }
 __attribute__((weak)) void func_80724E2C(void) { fprintf(stderr, "unresolved call: func_80724E2C\n"); abort(); }
@@ -727,10 +723,6 @@ __attribute__((weak)) void shelterR48SpriteDriftTask(void) { fprintf(stderr, "un
 __attribute__((weak)) void shelterR48WaterDriftTaskU16(void) { fprintf(stderr, "unresolved call: shelterR48WaterDriftTaskU16\n"); abort(); }
 __attribute__((weak)) void shelterR48YellowRingFlashTask(void) { fprintf(stderr, "unresolved call: shelterR48YellowRingFlashTask\n"); abort(); }
 __attribute__((weak)) void shelterR49EffectNoopTask(void) { fprintf(stderr, "unresolved call: shelterR49EffectNoopTask\n"); abort(); }
-__attribute__((weak)) void titleEnqueueAttractDemoFile(void) { fprintf(stderr, "unresolved call: titleEnqueueAttractDemoFile\n"); abort(); }
-__attribute__((weak)) void titleExitTask(void) { fprintf(stderr, "unresolved call: titleExitTask\n"); abort(); }
-__attribute__((weak)) void titleRestoreAttractDemoState(void) { fprintf(stderr, "unresolved call: titleRestoreAttractDemoState\n"); abort(); }
-__attribute__((weak)) void titleScreenTask(void) { fprintf(stderr, "unresolved call: titleScreenTask\n"); abort(); }
 __attribute__((weak)) void tonfaBatonAttackState(void) { fprintf(stderr, "unresolved call: tonfaBatonAttackState\n"); abort(); }
 __attribute__((weak)) void tonfaBatonModelTask(void) { fprintf(stderr, "unresolved call: tonfaBatonModelTask\n"); abort(); }
 __attribute__((weak)) void tonfaBatonSwingTrailTask(void) { fprintf(stderr, "unresolved call: tonfaBatonSwingTrailTask\n"); abort(); }

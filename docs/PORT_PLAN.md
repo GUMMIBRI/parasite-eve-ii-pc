@@ -82,3 +82,13 @@ ISO directory scan, startup image read, MDEC decode and fade, then the main loop
 - `src/port/mdec_vlc.c`: STR v2 VLC decoder reused from the sibling PE1 port.
 - `src/port/globals.c` (generated, `tools/port/gen_globals.py`): the 438 globals the PS1 link placed by address.
 - 732 overlay functions are still weak placeholders that abort with their name on first call.
+
+## Opening movie (current blocker for the title screen)
+
+With the title package linked (`PE_PACKAGES`), boot shows the startup image, then the title task starts the opening
+FMV and the window goes black. The movie head request (`CD_COMMAND_PLAY_STREAM`) sits in its PLAY step with no CD read
+active: PsyZ's `CdlReadN/ReadS` with `CdlModeRT` takes the XA-audio path instead of delivering video sectors
+(`Psyz_CdSetDiskPath` image, mode 0x..|Stream2|RT), so `streamPollMoviePlayback` never receives frames.
+Needs stream-mode data delivery (video sectors to the ready callback, XA audio on the side) in the PsyZ fork,
+then the MDEC strip path already used by the startup image.
+Tools: `tools/port/probe.sh` (run + window-only capture), `tools/port/crash.sh`, crash handler in `src/port/main.c`.

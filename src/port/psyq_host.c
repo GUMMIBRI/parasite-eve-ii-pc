@@ -225,3 +225,22 @@ unsigned char gHostScratchpad[0x400] __attribute__((aligned(0x400)));
 unsigned char gHostRam[0x200000] __attribute__((aligned(0x1000)));
 unsigned int gHostGpuStatus[2] = { 0x1C000000u, 0 }; /* ready bits set */
 void* _freep; /* libapi heap3 search cursor; unused with the host allocator */
+
+/* libgpu non-blocking transfers: the host GPU queue is drained by DrawSync, so the blocking forms
+ * followed by an idle report are equivalent. */
+int LoadImage2(RECT* rect, u_long* p) { return LoadImage(rect, p); }
+int MoveImage2(RECT* rect, int x, int y) { return MoveImage(rect, x, y); }
+int IsIdleGPU(int max_count) { (void)max_count; return 0; }
+
+/* Memory card: no card is present until the save layer exists (phase 7). */
+long MemCardGetDirentry(long chan, char* name, struct DIRENTRY* dir, long* files, long ofs, long max)
+{
+    (void)chan; (void)name; (void)dir; (void)ofs; (void)max;
+    if (files) { *files = 0; }
+    return 0;
+}
+long MemCardWriteFile(long chan, char* file, unsigned long* adrs, long offset, long bytes)
+{
+    (void)chan; (void)file; (void)adrs; (void)offset; (void)bytes;
+    return 0;
+}

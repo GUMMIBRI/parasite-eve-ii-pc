@@ -112,7 +112,11 @@ typedef struct {
     u8  endFlag;     // 0x01 another chunk follows, 0xFF last chunk in the file
     u16 sectorLen;   // Exclusive end of valid bytes in the sector buffer, in (0x10, 0x800]
     u32 sectorCount; // Length of the chunk in CD sectors, including the header sector
+#ifdef __psyz
+    u32 loadAddr; // PS1 address (32-bit in the disc data); map with Ps1AddrToHost
+#else
     u8* loadAddr;    // Fixed RAM destination for a room package or resource bundle; NULL otherwise
+#endif
     u32 unused;      // Unread by the loader. Extracted retail headers store zero
 } FsCdfChunkHeader;
 STATIC_ASSERT_SIZEOF(FsCdfChunkHeader, 0x10);

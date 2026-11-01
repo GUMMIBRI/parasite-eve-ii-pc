@@ -34,19 +34,31 @@ target_compile_definitions(game_main PUBLIC __psyz SKIP_ASM)
 target_compile_options(game_main PRIVATE -w -Wno-incompatible-function-pointer-types -g -fno-omit-frame-pointer)
 target_link_libraries(game_main PUBLIC psyz)
 
-option(PE_ALL_OVERLAYS "Compile every overlay package that builds on the host (experimental)" OFF)
+# Overlay packages linked into the executable. The PS1 game swaps overlay code in and out of one address range;
+# on the host a package is compiled in and its names resolve at link time. Packages share global names
+# (docs/PORT_PLAN.md), so only the packages listed here are linked; add one when the game first needs it.
+set(PE_PACKAGES
+    src/title/title.c
+    CACHE STRING "Overlay sources linked into the executable")
+option(PE_ALL_OVERLAYS "Compile every overlay package that builds on the host (experimental; does not link)" OFF)
 if(PE_ALL_OVERLAYS)
     include(cmake/overlay_sources.cmake)
-    add_library(game_overlays OBJECT ${PE_OVERLAY_SOURCES})
-    target_include_directories(game_overlays PUBLIC include include/decomp
-        ${CMAKE_CURRENT_SOURCE_DIR}/build/include)
-    target_compile_definitions(game_overlays PUBLIC __psyz SKIP_ASM)
-    target_compile_options(game_overlays PRIVATE -w -Wno-incompatible-function-pointer-types)
-    target_link_libraries(game_overlays PUBLIC psyz)
+    set(PE_OVERLAY_LIST ${PE_OVERLAY_SOURCES})
+else()
+    set(PE_OVERLAY_LIST)
+    foreach(src ${PE_PACKAGES})
+        list(APPEND PE_OVERLAY_LIST ${CMAKE_CURRENT_SOURCE_DIR}/${src})
+    endforeach()
 endif()
+add_library(game_overlays OBJECT ${PE_OVERLAY_LIST})
+target_include_directories(game_overlays PUBLIC include include/decomp
+    ${CMAKE_CURRENT_SOURCE_DIR}/build/include)
+target_compile_definitions(game_overlays PUBLIC __psyz SKIP_ASM)
+target_compile_options(game_overlays PRIVATE -w -Wno-incompatible-function-pointer-types -g -fno-omit-frame-pointer)
+target_link_libraries(game_overlays PUBLIC psyz)
 
 add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c src/port/mdec_vlc.c src/port/globals.c src/port/unresolved_stubs.c $<TARGET_OBJECTS:game_main>
-    $<$<BOOL:${PE_ALL_OVERLAYS}>:$<TARGET_OBJECTS:game_overlays>>)
+    $<TARGET_OBJECTS:game_overlays>)
 target_include_directories(parasite-eve-ii-pc PRIVATE include include/decomp src/main)
 target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz SKIP_ASM)
 target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)

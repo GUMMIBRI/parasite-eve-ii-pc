@@ -779,7 +779,11 @@ static u8 _fsReadChunkHeaderSector(void)
     CdGetSector(&gFsSectorBuffers.sector, FILE_SYSTEM_SECTOR_WORDS);
     gFsLzssInputEnd       = gFsSectorBuffers.sector.bytes;
     chunkHeader           = &gFsSectorBuffers.sector.chunk.header;
+    #ifdef __psyz
+    gFsPayloadWriteCursor = Ps1AddrToHost(chunkHeader->loadAddr);
+#else
     gFsPayloadWriteCursor = chunkHeader->loadAddr;
+#endif
     _gFsPayloadEndSector  = gFsNextReadSector - 1 + chunkHeader->sectorCount;
     _gFsChunkEndMarker    = chunkHeader->endFlag;
     gFsLzssInputEnd      += chunkHeader->sectorLen;
