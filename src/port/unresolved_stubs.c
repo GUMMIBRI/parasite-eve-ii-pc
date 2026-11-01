@@ -7,6 +7,1923 @@ __attribute__((weak)) unsigned char D_80725F44[0x10000];
 __attribute__((weak)) unsigned char D_8072C8F0[0x10000];
 __attribute__((weak)) unsigned char D_8075BED4[0x10000];
 __attribute__((weak)) unsigned char D_80760618[0x10000];
+__attribute__((weak)) unsigned char D_as12_8011DECC[0x10000];
+__attribute__((weak)) unsigned char D_as12_8011DF5C[0x10000];
+__attribute__((weak)) unsigned char D_as12_8011EE48[0x10000];
+__attribute__((weak)) unsigned char D_as12_8011EF2C[0x10000];
+__attribute__((weak)) unsigned char D_as12_8011F6A8[0x10000];
+__attribute__((weak)) unsigned char D_as12_8011F78C[0x10000];
+__attribute__((weak)) unsigned char D_as12_8011FF0C[0x10000];
+__attribute__((weak)) unsigned char D_as12_8011FF30[0x10000];
+__attribute__((weak)) unsigned char D_as12_80120220[0x10000];
+__attribute__((weak)) unsigned char D_as12_801202C8[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012097C[0x10000];
+__attribute__((weak)) unsigned char D_as12_80120A3C[0x10000];
+__attribute__((weak)) unsigned char D_as12_80121104[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012114C[0x10000];
+__attribute__((weak)) unsigned char D_as12_801213D8[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012142C[0x10000];
+__attribute__((weak)) unsigned char D_as12_80121768[0x10000];
+__attribute__((weak)) unsigned char D_as12_801217D4[0x10000];
+__attribute__((weak)) unsigned char D_as12_80121BF0[0x10000];
+__attribute__((weak)) unsigned char D_as12_80121C14[0x10000];
+__attribute__((weak)) unsigned char D_as12_80121DEC[0x10000];
+__attribute__((weak)) unsigned char D_as12_80121E34[0x10000];
+__attribute__((weak)) unsigned char D_as12_801220C4[0x10000];
+__attribute__((weak)) unsigned char D_as12_801220F4[0x10000];
+__attribute__((weak)) unsigned char D_as12_80122368[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012238C[0x10000];
+__attribute__((weak)) unsigned char D_as12_80122568[0x10000];
+__attribute__((weak)) unsigned char D_as12_801225C8[0x10000];
+__attribute__((weak)) unsigned char D_as12_801228BC[0x10000];
+__attribute__((weak)) unsigned char D_as12_801228F8[0x10000];
+__attribute__((weak)) unsigned char D_as12_80122B70[0x10000];
+__attribute__((weak)) unsigned char D_as12_80122BB8[0x10000];
+__attribute__((weak)) unsigned char D_as12_80122E90[0x10000];
+__attribute__((weak)) unsigned char D_as12_80122F68[0x10000];
+__attribute__((weak)) unsigned char D_as12_80123654[0x10000];
+__attribute__((weak)) unsigned char D_as12_801237B0[0x10000];
+__attribute__((weak)) unsigned char D_as12_801248EC[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012497C[0x10000];
+__attribute__((weak)) unsigned char D_as12_80125464[0x10000];
+__attribute__((weak)) unsigned char D_as12_801254D0[0x10000];
+__attribute__((weak)) unsigned char D_as12_80125B80[0x10000];
+__attribute__((weak)) unsigned char D_as12_80125BC8[0x10000];
+__attribute__((weak)) unsigned char D_as12_80126000[0x10000];
+__attribute__((weak)) unsigned char D_as12_80126024[0x10000];
+__attribute__((weak)) unsigned char D_as12_801261D8[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012625C[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012673C[0x10000];
+__attribute__((weak)) unsigned char D_as12_80126760[0x10000];
+__attribute__((weak)) unsigned char D_as12_80126930[0x10000];
+__attribute__((weak)) unsigned char D_as12_80126990[0x10000];
+__attribute__((weak)) unsigned char D_as12_80126DB0[0x10000];
+__attribute__((weak)) unsigned char D_as12_80126DC8[0x10000];
+__attribute__((weak)) unsigned char D_as12_80126F88[0x10000];
+__attribute__((weak)) unsigned char D_as12_80127030[0x10000];
+__attribute__((weak)) unsigned char D_as12_801277C8[0x10000];
+__attribute__((weak)) unsigned char D_as12_801278AC[0x10000];
+__attribute__((weak)) unsigned char D_as12_80128270[0x10000];
+__attribute__((weak)) unsigned char D_as12_801283FC[0x10000];
+__attribute__((weak)) unsigned char D_as12_80129650[0x10000];
+__attribute__((weak)) unsigned char D_as12_801296D4[0x10000];
+__attribute__((weak)) unsigned char D_as12_80129CD8[0x10000];
+__attribute__((weak)) unsigned char D_as12_80129D68[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012A35C[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012A3D4[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012A8D4[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012A9AC[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012B18C[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012B24C[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012B92C[0x10000];
+__attribute__((weak)) unsigned char D_as12_8012BA58[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8011E468[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8011E4F8[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8011EB0C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8011EBF0[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8011F36C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8011F450[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8011FBD0[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8011FBF4[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8011FEE4[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8011FF8C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80120640[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80120700[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80120DC8[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80120E10[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012109C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_801210F0[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012142C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80121498[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_801218B4[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_801218D8[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80121AB0[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80121AF8[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80121D88[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80121DB8[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012202C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80122050[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012222C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012228C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80122580[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_801225BC[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80122834[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012287C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80122B54[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80122C2C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80123318[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80123474[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_801245B0[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80124640[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80125128[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80125194[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80125844[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012588C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80125CC4[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80125CE8[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80125E9C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80125F20[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80126400[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80126424[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_801265F4[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80126654[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80126A74[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80126B4C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_801275D8[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80127650[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80127B5C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80127C40[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80128604[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012861C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_801287DC[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012886C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80128F10[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80128F7C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80129400[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80129478[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012998C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_80129A4C[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012A2D8[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012A3BC[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012ABB0[0x10000];
+__attribute__((weak)) unsigned char D_grenade_pistol_8012AC4C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8011F08C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8011F11C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8011F730[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8011F814[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8011FF90[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80120074[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801207F4[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80120818[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80120B08[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80120BB0[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80121264[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80121324[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801219EC[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80121A34[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80121CC0[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80121D14[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80122050[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801220BC[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801224D8[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801224FC[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801226D4[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012271C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801229AC[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801229DC[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80122C50[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80122C74[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80122E50[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80122EB0[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801231A4[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801231E0[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80123458[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801234A0[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80123778[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80123850[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80123F3C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80124098[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801251D4[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80125264[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80125D4C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80125DB8[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80126468[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801264B0[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801268E8[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012690C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80126AC0[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80126B44[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80127024[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80127048[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80127218[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80127278[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80127698[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_801276B0[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80127874[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80127970[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80128398[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80128494[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80128E9C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80128FBC[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80129BA8[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_80129E3C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012B9AC[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012BA0C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012BF8C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012C040[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012C8D8[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012C98C[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012D234[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012D2F4[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012D9D4[0x10000];
+__attribute__((weak)) unsigned char D_gunblade_8012DA70[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80120A3C[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80120ACC[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801219B8[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80121A9C[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80122218[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801222FC[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80122A7C[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80122AA0[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80122D90[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80122E38[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801234EC[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801235AC[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80123C74[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80123CBC[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80123F48[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80123F9C[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801242D8[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80124344[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80124760[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80124784[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012495C[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801249A4[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80124C34[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80124C64[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80124ED8[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80124EFC[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801250D8[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80125138[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012542C[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80125468[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801256E0[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80125728[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80125A00[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80125AD8[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801261C4[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80126320[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012745C[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801274EC[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80127FD4[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80128040[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801286F0[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80128738[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80128B70[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80128B94[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80128D48[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80128DCC[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801292AC[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801292D0[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_801294A0[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80129500[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80129920[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80129938[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80129AFC[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80129B80[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_80129F9C[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012A050[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012A7B0[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012A834[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012ACF8[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012ADC4[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012B4D8[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012B568[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012BA20[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012BAB0[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012BF64[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012C078[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012CB4C[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012CBE8[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012D380[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012D458[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012DC38[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012DCF8[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012E3D8[0x10000];
+__attribute__((weak)) unsigned char D_hypervelocity_8012E4BC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016DC84[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016DC9C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016DEB4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016DF68[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016E720[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016E7E0[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016EFF4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016F048[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016F4B4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016F52C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016FA58[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016FADC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_8016FFC8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80170040[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_801707D4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80170840[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80170CA4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80170D04[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_801711FC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80171214[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_801715E0[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80171670[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80171D5C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80171E34[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80172714[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_801727EC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80173188[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_801731A0[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80173400[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80173478[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80173808[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80173868[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80173CE4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80173D68[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80174564[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80174630[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80174F68[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800101_80174FF8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_8016E960[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_8016E978[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_8016EB90[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_8016EC14[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_8016F410[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_8016F4C4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_8016FC7C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_8016FD3C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80170550[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_801705A4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80170A10[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80170A88[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80170FB4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80171038[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80171524[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_8017159C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80171D30[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80171D9C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80172200[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80172260[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80172758[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80172770[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80172948[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_801729E4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_801730B8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80173178[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80173AC8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80173BDC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80174770[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_801747AC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80174B1C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80174B94[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_801750E0[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80175170[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80175754[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_801757D8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80175FE8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80176078[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_8017673C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800102_80176808[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016DE60[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016DE78[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016E090[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016E114[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016E910[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016E9C4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016F17C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016F23C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016FA50[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016FAA4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016FF10[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8016FF88[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_801704B4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80170538[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80170A24[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80170A9C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80171230[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8017129C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80171700[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80171760[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80171C58[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80171C70[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80171E48[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80171ED8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_801725E4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_801726A4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80172FF4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80173084[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_801738E4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_801738FC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80173B6C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80173BCC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80174004[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_8017407C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80174510[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_801745DC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80174F14[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800103_80174FA4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8016E58C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8016E5A4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8016E7BC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8016E840[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8016F03C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8016F0F0[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8016F8A8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8016F968[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8017017C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_801701D0[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8017063C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_801706B4[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80170BE0[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80170C64[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80171150[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_801711C8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8017195C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_801719C8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80171E2C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80171E8C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80172384[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8017239C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80172574[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80172610[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80172CAC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80172D6C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_801736BC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8017377C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80174004[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80174034[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_801742F8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80174328[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_801745F8[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80174658[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80174B14[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80174B98[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80175088[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8017510C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8017591C[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_801759AC[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_80176070[0x10000];
+__attribute__((weak)) unsigned char D_kyle_800104_8017613C[0x10000];
+__attribute__((weak)) unsigned char D_m249_8011E050[0x10000];
+__attribute__((weak)) unsigned char D_m249_8011E0E0[0x10000];
+__attribute__((weak)) unsigned char D_m249_8011E6F4[0x10000];
+__attribute__((weak)) unsigned char D_m249_8011E7D8[0x10000];
+__attribute__((weak)) unsigned char D_m249_8011EF54[0x10000];
+__attribute__((weak)) unsigned char D_m249_8011F038[0x10000];
+__attribute__((weak)) unsigned char D_m249_8011F7B8[0x10000];
+__attribute__((weak)) unsigned char D_m249_8011F7DC[0x10000];
+__attribute__((weak)) unsigned char D_m249_8011FACC[0x10000];
+__attribute__((weak)) unsigned char D_m249_8011FB74[0x10000];
+__attribute__((weak)) unsigned char D_m249_80120228[0x10000];
+__attribute__((weak)) unsigned char D_m249_801202E8[0x10000];
+__attribute__((weak)) unsigned char D_m249_801209B0[0x10000];
+__attribute__((weak)) unsigned char D_m249_801209F8[0x10000];
+__attribute__((weak)) unsigned char D_m249_80120C84[0x10000];
+__attribute__((weak)) unsigned char D_m249_80120CD8[0x10000];
+__attribute__((weak)) unsigned char D_m249_80121014[0x10000];
+__attribute__((weak)) unsigned char D_m249_80121080[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012149C[0x10000];
+__attribute__((weak)) unsigned char D_m249_801214C0[0x10000];
+__attribute__((weak)) unsigned char D_m249_80121698[0x10000];
+__attribute__((weak)) unsigned char D_m249_801216E0[0x10000];
+__attribute__((weak)) unsigned char D_m249_80121970[0x10000];
+__attribute__((weak)) unsigned char D_m249_801219A0[0x10000];
+__attribute__((weak)) unsigned char D_m249_80121C14[0x10000];
+__attribute__((weak)) unsigned char D_m249_80121C38[0x10000];
+__attribute__((weak)) unsigned char D_m249_80121E14[0x10000];
+__attribute__((weak)) unsigned char D_m249_80121E74[0x10000];
+__attribute__((weak)) unsigned char D_m249_80122168[0x10000];
+__attribute__((weak)) unsigned char D_m249_801221A4[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012241C[0x10000];
+__attribute__((weak)) unsigned char D_m249_80122464[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012273C[0x10000];
+__attribute__((weak)) unsigned char D_m249_80122814[0x10000];
+__attribute__((weak)) unsigned char D_m249_80122F00[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012305C[0x10000];
+__attribute__((weak)) unsigned char D_m249_80124198[0x10000];
+__attribute__((weak)) unsigned char D_m249_80124228[0x10000];
+__attribute__((weak)) unsigned char D_m249_80124D10[0x10000];
+__attribute__((weak)) unsigned char D_m249_80124D7C[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012542C[0x10000];
+__attribute__((weak)) unsigned char D_m249_80125474[0x10000];
+__attribute__((weak)) unsigned char D_m249_801258AC[0x10000];
+__attribute__((weak)) unsigned char D_m249_801258D0[0x10000];
+__attribute__((weak)) unsigned char D_m249_80125A84[0x10000];
+__attribute__((weak)) unsigned char D_m249_80125B08[0x10000];
+__attribute__((weak)) unsigned char D_m249_80125FE8[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012600C[0x10000];
+__attribute__((weak)) unsigned char D_m249_801261DC[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012623C[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012665C[0x10000];
+__attribute__((weak)) unsigned char D_m249_80126674[0x10000];
+__attribute__((weak)) unsigned char D_m249_80126834[0x10000];
+__attribute__((weak)) unsigned char D_m249_801268C4[0x10000];
+__attribute__((weak)) unsigned char D_m249_80126F68[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012704C[0x10000];
+__attribute__((weak)) unsigned char D_m249_80127A10[0x10000];
+__attribute__((weak)) unsigned char D_m249_80127D04[0x10000];
+__attribute__((weak)) unsigned char D_m249_80129E08[0x10000];
+__attribute__((weak)) unsigned char D_m249_80129E8C[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012A4A4[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012A570[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012AE18[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012AEB4[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012B52C[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012B604[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012BDE4[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012BEA4[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012C584[0x10000];
+__attribute__((weak)) unsigned char D_m249_8012C6B0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8011EBD8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8011EC68[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8011F27C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8011F360[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8011FADC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8011FBC0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80120340[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80120364[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80120654[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_801206FC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80120DB0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80120E70[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80121538[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80121580[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012180C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80121860[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80121B9C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80121C08[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80122024[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80122048[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80122220[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80122268[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_801224F8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80122528[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012279C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_801227C0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012299C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_801229FC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80122CF0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80122D2C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80122FA4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80122FEC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_801232C4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012339C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80123A88[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80123BE4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80124D20[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80124DB0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80125898[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80125904[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80125FB4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80125FFC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80126434[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80126458[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012660C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80126690[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80126B70[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80126B94[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80126D64[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80126DC4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_801271E4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_801271FC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_801273C0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80127468[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80127BA8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80127C8C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80128650[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80128788[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_801295B4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_801295FC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80129980[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_80129A94[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012A6C0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012A75C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012AE00[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012AED8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012B830[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012B908[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012C0E8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012C1A8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012C888[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_bayonet_8012C9B4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8011EC08[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8011EC98[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8011F2AC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8011F390[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8011FB0C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8011FBF0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80120370[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80120394[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80120684[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012072C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80120DE0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80120EA0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80121568[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801215B0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012183C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80121890[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80121BCC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80121C38[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80122054[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80122078[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80122250[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80122298[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80122528[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80122558[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801227CC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801227F0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801229CC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80122A2C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80122D20[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80122D5C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80122FD4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012301C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801232F4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801233CC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80123AB8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80123C14[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80124D50[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80124DE0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801258C8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80125934[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80125FE4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012602C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80126464[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80126488[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012663C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801266C0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80126BA0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80126BC4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80126D94[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80126DF4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80127214[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012722C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801273EC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80127494[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80127C2C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80127D10[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801286D4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801287F4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80129570[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_801295D0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80129A14[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_80129AB0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012A150[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012A324[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012B8A0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012B93C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012BFAC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012C024[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012C524[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012C5FC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012CDDC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012CE9C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012D57C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_grenade_8012D6A8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8011F954[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8011F9E4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8011FFF8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801200DC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80120858[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012093C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801210BC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801210E0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801213D0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80121478[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80121B2C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80121BEC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801222B4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801222FC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80122588[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801225DC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80122918[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80122984[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80122DA0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80122DC4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80122F9C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80122FE4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80123274[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801232A4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80123518[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012353C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80123718[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80123778[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80123A6C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80123AA8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80123D20[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80123D68[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80124040[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80124118[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80124804[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80124960[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80125A9C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80125B2C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80126614[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80126680[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80126D30[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80126D78[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801271B0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801271D4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80127388[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012740C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801278EC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80127910[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80127AE0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80127B40[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80127F60[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80127F78[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80128138[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_801281E0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80128978[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80128A5C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80129420[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_80129540[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012A2BC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012A31C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012A760[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012A7FC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012AE44[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012AEE0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012B550[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012B5C8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012BAC8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012BBA0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012C380[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012C440[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012CB20[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_hammer_8012CC4C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801208F8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80120988[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80120F9C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80121080[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801217FC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801218E0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80122060[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80122084[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80122374[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012241C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80122AD0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80122B90[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80123258[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801232A0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012352C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80123580[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801238BC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80123928[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80123D44[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80123D68[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80123F40[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80123F88[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80124218[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80124248[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801244BC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801244E0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801246BC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012471C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80124A10[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80124A4C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80124CC4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80124D0C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80124FE4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801250BC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801257A8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80125904[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80126A40[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80126AD0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801275B8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80127624[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80127CD4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80127D1C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80128154[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80128178[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012832C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801283B0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80128890[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801288B4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80128A84[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80128AE4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80128F04[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80128F1C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_801290E0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012917C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80129884[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_80129968[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012A32C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012A4D0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012B7DC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012B83C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012BCC4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012BD0C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012C024[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012C0B4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012C6E4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012C7A4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012CFF4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012D0CC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012D8AC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012D96C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012E04C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_javelin_8012E178[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8011F748[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8011F7D8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8011FDEC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8011FED0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012064C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80120730[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80120EB0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80120ED4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_801211C4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012126C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80121920[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_801219E0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_801220A8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_801220F0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012237C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_801223D0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012270C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80122778[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80122B94[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80122BB8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80122D90[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80122DD8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80123068[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80123098[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012330C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80123330[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012350C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012356C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80123860[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012389C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80123B14[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80123B5C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80123E34[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80123F0C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_801245F8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80124754[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80125890[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80125920[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80126408[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80126474[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80126B24[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80126B6C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80126FA4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80126FC8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012717C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80127200[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_801276E0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80127704[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_801278D4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80127934[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80127D54[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80127D6C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80127F2C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80127FD4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012876C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80128850[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80129214[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_80129334[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012A0B0[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012A110[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012A554[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012A5A8[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012A9DC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012AA3C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012AE50[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012AEEC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012B55C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012B5D4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012BAD4[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012BBAC[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012C38C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012C44C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012CB2C[0x10000];
+__attribute__((weak)) unsigned char D_m4a1_pyke_8012CC58[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011DC50[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011DCE0[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011E2F4[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011E3D8[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011EB54[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011EC38[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011F3B8[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011F3DC[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011F6CC[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011F774[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011FE28[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8011FEE8[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801205B0[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801205F8[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80120884[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801208D8[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80120C14[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80120C80[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8012109C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801210C0[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80121298[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801212E0[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80121570[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801215A0[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80121814[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80121838[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80121A14[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80121A74[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80121D68[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80121DA4[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8012201C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80122064[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8012233C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80122414[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80122B00[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80122C5C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80123D98[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80123E28[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80124910[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8012497C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8012502C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80125074[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801254AC[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801254D0[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80125684[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80125708[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80125BE8[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80125C0C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80125DDC[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80125E3C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8012625C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80126274[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80126438[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801264BC[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80126AE8[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80126BCC[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801276D4[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801277AC[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8012816C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801281CC[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801286BC[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8012874C[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80128DD0[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80128E60[0x10000];
+__attribute__((weak)) unsigned char D_m93r_801294A0[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80129560[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80129DEC[0x10000];
+__attribute__((weak)) unsigned char D_m93r_80129ED0[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8012A6C4[0x10000];
+__attribute__((weak)) unsigned char D_m93r_8012A760[0x10000];
+__attribute__((weak)) unsigned char D_m950_8011DC78[0x10000];
+__attribute__((weak)) unsigned char D_m950_8011DD08[0x10000];
+__attribute__((weak)) unsigned char D_m950_8011E31C[0x10000];
+__attribute__((weak)) unsigned char D_m950_8011E3DC[0x10000];
+__attribute__((weak)) unsigned char D_m950_8011EC68[0x10000];
+__attribute__((weak)) unsigned char D_m950_8011ED4C[0x10000];
+__attribute__((weak)) unsigned char D_m950_8011F540[0x10000];
+__attribute__((weak)) unsigned char D_m950_8011F5DC[0x10000];
+__attribute__((weak)) unsigned char D_m950_8011FC74[0x10000];
+__attribute__((weak)) unsigned char D_m950_8011FD58[0x10000];
+__attribute__((weak)) unsigned char D_m950_801204D4[0x10000];
+__attribute__((weak)) unsigned char D_m950_801205B8[0x10000];
+__attribute__((weak)) unsigned char D_m950_80120D38[0x10000];
+__attribute__((weak)) unsigned char D_m950_80120D5C[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012104C[0x10000];
+__attribute__((weak)) unsigned char D_m950_801210F4[0x10000];
+__attribute__((weak)) unsigned char D_m950_801217A8[0x10000];
+__attribute__((weak)) unsigned char D_m950_80121868[0x10000];
+__attribute__((weak)) unsigned char D_m950_80121F30[0x10000];
+__attribute__((weak)) unsigned char D_m950_80121F78[0x10000];
+__attribute__((weak)) unsigned char D_m950_80122204[0x10000];
+__attribute__((weak)) unsigned char D_m950_80122258[0x10000];
+__attribute__((weak)) unsigned char D_m950_80122594[0x10000];
+__attribute__((weak)) unsigned char D_m950_80122600[0x10000];
+__attribute__((weak)) unsigned char D_m950_80122A1C[0x10000];
+__attribute__((weak)) unsigned char D_m950_80122A40[0x10000];
+__attribute__((weak)) unsigned char D_m950_80122C18[0x10000];
+__attribute__((weak)) unsigned char D_m950_80122C60[0x10000];
+__attribute__((weak)) unsigned char D_m950_80122EF0[0x10000];
+__attribute__((weak)) unsigned char D_m950_80122F20[0x10000];
+__attribute__((weak)) unsigned char D_m950_80123194[0x10000];
+__attribute__((weak)) unsigned char D_m950_801231B8[0x10000];
+__attribute__((weak)) unsigned char D_m950_80123394[0x10000];
+__attribute__((weak)) unsigned char D_m950_801233F4[0x10000];
+__attribute__((weak)) unsigned char D_m950_801236E8[0x10000];
+__attribute__((weak)) unsigned char D_m950_80123724[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012399C[0x10000];
+__attribute__((weak)) unsigned char D_m950_801239E4[0x10000];
+__attribute__((weak)) unsigned char D_m950_80123CBC[0x10000];
+__attribute__((weak)) unsigned char D_m950_80123D94[0x10000];
+__attribute__((weak)) unsigned char D_m950_80124480[0x10000];
+__attribute__((weak)) unsigned char D_m950_801245DC[0x10000];
+__attribute__((weak)) unsigned char D_m950_80125718[0x10000];
+__attribute__((weak)) unsigned char D_m950_801257A8[0x10000];
+__attribute__((weak)) unsigned char D_m950_80126290[0x10000];
+__attribute__((weak)) unsigned char D_m950_801262FC[0x10000];
+__attribute__((weak)) unsigned char D_m950_801269AC[0x10000];
+__attribute__((weak)) unsigned char D_m950_801269F4[0x10000];
+__attribute__((weak)) unsigned char D_m950_80126E2C[0x10000];
+__attribute__((weak)) unsigned char D_m950_80126E50[0x10000];
+__attribute__((weak)) unsigned char D_m950_80127004[0x10000];
+__attribute__((weak)) unsigned char D_m950_80127088[0x10000];
+__attribute__((weak)) unsigned char D_m950_80127568[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012758C[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012775C[0x10000];
+__attribute__((weak)) unsigned char D_m950_801277BC[0x10000];
+__attribute__((weak)) unsigned char D_m950_80127BDC[0x10000];
+__attribute__((weak)) unsigned char D_m950_80127CC0[0x10000];
+__attribute__((weak)) unsigned char D_m950_80128684[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012869C[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012885C[0x10000];
+__attribute__((weak)) unsigned char D_m950_801288EC[0x10000];
+__attribute__((weak)) unsigned char D_m950_80128F90[0x10000];
+__attribute__((weak)) unsigned char D_m950_801291E8[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012AAFC[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012AB68[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012AFFC[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012B068[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012B4EC[0x10000];
+__attribute__((weak)) unsigned char D_m950_8012B564[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8011E670[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8011E700[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8011F5EC[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8011F6D0[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8011FE4C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8011FF30[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801206B0[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801206D4[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801209C4[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80120A6C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80121120[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801211E0[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801218A8[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801218F0[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80121B7C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80121BD0[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80121F0C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80121F78[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80122394[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801223B8[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80122590[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801225D8[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80122868[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80122898[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80122B0C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80122B30[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80122D0C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80122D6C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80123060[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012309C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80123314[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012335C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80123634[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012370C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80123DF8[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80123F54[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80125090[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80125120[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80125C08[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80125C74[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80126324[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012636C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801267A4[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801267C8[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012697C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80126A00[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80126EE0[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80126F04[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801270D4[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80127134[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80127554[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012756C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012772C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_801277C8[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80127EE4[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80127FC8[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012898C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_80128AF4[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012A008[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012A08C[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012A6A4[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012A788[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012B144[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012B1C8[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012B758[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012B830[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012C010[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012C0D0[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012C7B0[0x10000];
+__attribute__((weak)) unsigned char D_mm1_8012C8DC[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8011DB10[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8011DBA0[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8011E1B4[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8011E274[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8011EB00[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8011EBE4[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8011F3D8[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8011F474[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8011FB0C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8011FBF0[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8012036C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80120450[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80120BD0[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80120BF4[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80120EE4[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80120F8C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80121640[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80121700[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80121DC8[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80121E10[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8012209C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_801220F0[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8012242C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80122498[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_801228B4[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_801228D8[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80122AB0[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80122AF8[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80122D88[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80122DB8[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8012302C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80123050[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8012322C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8012328C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80123580[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_801235BC[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80123834[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8012387C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80123B54[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80123C2C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80124318[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80124474[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_801255B0[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80125640[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80126128[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80126194[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80126844[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8012688C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80126CC4[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80126CE8[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80126E9C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80126F20[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80127400[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80127424[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_801275F4[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80127654[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80127A74[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80127A8C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80127C50[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80127CE0[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80128340[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80128424[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80128F2C[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80128FE0[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80129784[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_801297FC[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80129D78[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_80129DFC[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8012A3F4[0x10000];
+__attribute__((weak)) unsigned char D_mongoose_8012A46C[0x10000];
+__attribute__((weak)) unsigned char D_p229_8011E7C0[0x10000];
+__attribute__((weak)) unsigned char D_p229_8011E850[0x10000];
+__attribute__((weak)) unsigned char D_p229_8011EE64[0x10000];
+__attribute__((weak)) unsigned char D_p229_8011EF24[0x10000];
+__attribute__((weak)) unsigned char D_p229_8011F7B0[0x10000];
+__attribute__((weak)) unsigned char D_p229_8011F894[0x10000];
+__attribute__((weak)) unsigned char D_p229_80120088[0x10000];
+__attribute__((weak)) unsigned char D_p229_80120124[0x10000];
+__attribute__((weak)) unsigned char D_p229_801207BC[0x10000];
+__attribute__((weak)) unsigned char D_p229_801208A0[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012101C[0x10000];
+__attribute__((weak)) unsigned char D_p229_80121100[0x10000];
+__attribute__((weak)) unsigned char D_p229_80121880[0x10000];
+__attribute__((weak)) unsigned char D_p229_801218A4[0x10000];
+__attribute__((weak)) unsigned char D_p229_80121B94[0x10000];
+__attribute__((weak)) unsigned char D_p229_80121C3C[0x10000];
+__attribute__((weak)) unsigned char D_p229_801222F0[0x10000];
+__attribute__((weak)) unsigned char D_p229_801223B0[0x10000];
+__attribute__((weak)) unsigned char D_p229_80122A78[0x10000];
+__attribute__((weak)) unsigned char D_p229_80122AC0[0x10000];
+__attribute__((weak)) unsigned char D_p229_80122D4C[0x10000];
+__attribute__((weak)) unsigned char D_p229_80122DA0[0x10000];
+__attribute__((weak)) unsigned char D_p229_801230DC[0x10000];
+__attribute__((weak)) unsigned char D_p229_80123148[0x10000];
+__attribute__((weak)) unsigned char D_p229_80123564[0x10000];
+__attribute__((weak)) unsigned char D_p229_80123588[0x10000];
+__attribute__((weak)) unsigned char D_p229_80123760[0x10000];
+__attribute__((weak)) unsigned char D_p229_801237A8[0x10000];
+__attribute__((weak)) unsigned char D_p229_80123A38[0x10000];
+__attribute__((weak)) unsigned char D_p229_80123A68[0x10000];
+__attribute__((weak)) unsigned char D_p229_80123CDC[0x10000];
+__attribute__((weak)) unsigned char D_p229_80123D00[0x10000];
+__attribute__((weak)) unsigned char D_p229_80123EDC[0x10000];
+__attribute__((weak)) unsigned char D_p229_80123F3C[0x10000];
+__attribute__((weak)) unsigned char D_p229_80124230[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012426C[0x10000];
+__attribute__((weak)) unsigned char D_p229_801244E4[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012452C[0x10000];
+__attribute__((weak)) unsigned char D_p229_80124804[0x10000];
+__attribute__((weak)) unsigned char D_p229_801248DC[0x10000];
+__attribute__((weak)) unsigned char D_p229_80124FC8[0x10000];
+__attribute__((weak)) unsigned char D_p229_80125124[0x10000];
+__attribute__((weak)) unsigned char D_p229_80126260[0x10000];
+__attribute__((weak)) unsigned char D_p229_801262F0[0x10000];
+__attribute__((weak)) unsigned char D_p229_80126DD8[0x10000];
+__attribute__((weak)) unsigned char D_p229_80126E44[0x10000];
+__attribute__((weak)) unsigned char D_p229_801274F4[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012753C[0x10000];
+__attribute__((weak)) unsigned char D_p229_80127974[0x10000];
+__attribute__((weak)) unsigned char D_p229_80127998[0x10000];
+__attribute__((weak)) unsigned char D_p229_80127B4C[0x10000];
+__attribute__((weak)) unsigned char D_p229_80127BD0[0x10000];
+__attribute__((weak)) unsigned char D_p229_801280B0[0x10000];
+__attribute__((weak)) unsigned char D_p229_801280D4[0x10000];
+__attribute__((weak)) unsigned char D_p229_801282A4[0x10000];
+__attribute__((weak)) unsigned char D_p229_80128304[0x10000];
+__attribute__((weak)) unsigned char D_p229_80128724[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012873C[0x10000];
+__attribute__((weak)) unsigned char D_p229_80128900[0x10000];
+__attribute__((weak)) unsigned char D_p229_80128990[0x10000];
+__attribute__((weak)) unsigned char D_p229_80128FF0[0x10000];
+__attribute__((weak)) unsigned char D_p229_801290D4[0x10000];
+__attribute__((weak)) unsigned char D_p229_80129BDC[0x10000];
+__attribute__((weak)) unsigned char D_p229_80129C90[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012A504[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012A54C[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012A8D4[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012A958[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012AF50[0x10000];
+__attribute__((weak)) unsigned char D_p229_8012AFC8[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011DBE0[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011DC70[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011E284[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011E368[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011EAE4[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011EBC8[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011F348[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011F36C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011F65C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011F704[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011FDB8[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8011FE78[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80120540[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80120588[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80120814[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80120868[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80120BA4[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80120C10[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012102C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80121050[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80121228[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80121270[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80121500[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80121530[0x10000];
+__attribute__((weak)) unsigned char D_pa3_801217A4[0x10000];
+__attribute__((weak)) unsigned char D_pa3_801217C8[0x10000];
+__attribute__((weak)) unsigned char D_pa3_801219A4[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80121A04[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80121CF8[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80121D34[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80121FAC[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80121FF4[0x10000];
+__attribute__((weak)) unsigned char D_pa3_801222CC[0x10000];
+__attribute__((weak)) unsigned char D_pa3_801223A4[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80122A90[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80122BEC[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80123D28[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80123DB8[0x10000];
+__attribute__((weak)) unsigned char D_pa3_801248A0[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012490C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80124FBC[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80125004[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012543C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80125460[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80125614[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80125698[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80125B78[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80125B9C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80125D6C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80125DCC[0x10000];
+__attribute__((weak)) unsigned char D_pa3_801261EC[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80126204[0x10000];
+__attribute__((weak)) unsigned char D_pa3_801263C8[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80126464[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80126B6C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80126C50[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80127614[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012777C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80128778[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012888C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80129530[0x10000];
+__attribute__((weak)) unsigned char D_pa3_801295CC[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80129C88[0x10000];
+__attribute__((weak)) unsigned char D_pa3_80129D6C[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012A760[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012A838[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012B018[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012B0D8[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012B7B8[0x10000];
+__attribute__((weak)) unsigned char D_pa3_8012B8E4[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011DD20[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011DDB0[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011E3C4[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011E4A8[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011EC24[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011ED08[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011F488[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011F4AC[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011F79C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011F844[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011FEF8[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8011FFB8[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80120680[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801206C8[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80120954[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801209A8[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80120CE4[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80120D50[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8012116C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80121190[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80121368[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801213B0[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80121640[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80121670[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801218E4[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80121908[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80121AE4[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80121B44[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80121E38[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80121E74[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801220EC[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80122134[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8012240C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801224E4[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80122BD0[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80122D2C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80123E68[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80123EF8[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801249E0[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80124A4C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801250FC[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80125144[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8012557C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801255A0[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80125754[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801257D8[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80125CB8[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80125CDC[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80125EAC[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80125F0C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8012632C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80126344[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80126504[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801265AC[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80126D44[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80126E28[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801277EC[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80127984[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80128C2C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80128D04[0x10000];
+__attribute__((weak)) unsigned char D_sp12_801296A0[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80129730[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80129D24[0x10000];
+__attribute__((weak)) unsigned char D_sp12_80129D9C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8012A29C[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8012A374[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8012AB54[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8012AC14[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8012B2F4[0x10000];
+__attribute__((weak)) unsigned char D_sp12_8012B420[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8011E7C8[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8011E858[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8011EE6C[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8011EF50[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8011F6CC[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8011F7B0[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8011FF30[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8011FF54[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80120244[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801202EC[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801209A0[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80120A60[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80121128[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80121170[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801213FC[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80121450[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012178C[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801217F8[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80121C14[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80121C38[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80121E10[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80121E58[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801220E8[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80122118[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012238C[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801223B0[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012258C[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801225EC[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801228E0[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012291C[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80122B94[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80122BDC[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80122EB4[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80122F8C[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80123678[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801237D4[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80124910[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801249A0[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80125488[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801254F4[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80125BA4[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80125BEC[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80126024[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80126048[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801261FC[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80126280[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80126760[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80126784[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80126954[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801269B4[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80126DD4[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80126DEC[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80126F60[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80127014[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012777C[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80127830[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80128038[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801280F8[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_801287B0[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80128834[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80128DF0[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80128EA4[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012960C[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_80129774[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012A614[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012A650[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012A8DC[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012A900[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012AAA4[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012AB88[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012B37C[0x10000];
+__attribute__((weak)) unsigned char D_tonfa_baton_8012B418[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011D718[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011D7A8[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011DDBC[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011DE7C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011E708[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011E7EC[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011EFE0[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011F07C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011F714[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011F7F8[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8011FF74[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80120058[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801207D8[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801207FC[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80120AEC[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80120B94[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80121248[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80121308[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801219D0[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80121A18[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80121CA4[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80121CF8[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80122034[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801220A0[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801224BC[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801224E0[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801226B8[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80122700[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80122990[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801229C0[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80122C34[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80122C58[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80122E34[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80122E94[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80123188[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801231C4[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8012343C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80123484[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8012375C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80123834[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80123F20[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8012407C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801251B8[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80125248[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80125D30[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80125D9C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8012644C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80126494[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801268CC[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801268F0[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80126AA4[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80126B28[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80127008[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8012702C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801271FC[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8012725C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8012767C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80127694[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80127858[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801278E8[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80127F48[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8012802C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80128B34[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80128BE8[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8012945C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801294A4[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_8012982C[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_801298B0[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80129EA8[0x10000];
+__attribute__((weak)) unsigned char D_unused_85_80129F20[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011D37C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011D40C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011DA20[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011DAE0[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011E36C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011E450[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011EC44[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011ECE0[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011F378[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011F45C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011FBD8[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8011FCBC[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8012043C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80120460[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80120750[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801207F8[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80120EAC[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80120F6C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80121634[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8012167C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80121908[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8012195C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80121C98[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80121D04[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80122120[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80122144[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8012231C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80122364[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801225F4[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80122624[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80122898[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801228BC[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80122A98[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80122AF8[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80122DEC[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80122E28[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801230A0[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801230E8[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801233C0[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80123498[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80123B84[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80123CE0[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80124E1C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80124EAC[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80125994[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80125A00[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801260B0[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801260F8[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80126530[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80126554[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80126708[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8012678C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80126C6C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80126C90[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80126E60[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80126EC0[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801272E0[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801272F8[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801274BC[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8012754C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80127BAC[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80127C90[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80128798[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_8012884C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_801290C0[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80129108[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80129490[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80129514[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80129B0C[0x10000];
+__attribute__((weak)) unsigned char D_unused_97_80129B84[0x10000];
+__attribute__((weak)) void _actor01500Task(void) { fprintf(stderr, "unresolved call: _actor01500Task\n"); abort(); }
+__attribute__((weak)) void _actor05700GrenadeLauncherTask(void) { fprintf(stderr, "unresolved call: _actor05700GrenadeLauncherTask\n"); abort(); }
+__attribute__((weak)) void _actor05700GrenadeTask(void) { fprintf(stderr, "unresolved call: _actor05700GrenadeTask\n"); abort(); }
+__attribute__((weak)) void _actor05700RookGolemTask(void) { fprintf(stderr, "unresolved call: _actor05700RookGolemTask\n"); abort(); }
+__attribute__((weak)) void _actor05700ShieldTask(void) { fprintf(stderr, "unresolved call: _actor05700ShieldTask\n"); abort(); }
+__attribute__((weak)) void _actor105100BeamTask(void) { fprintf(stderr, "unresolved call: _actor105100BeamTask\n"); abort(); }
+__attribute__((weak)) void _actor105100FireballTask(void) { fprintf(stderr, "unresolved call: _actor105100FireballTask\n"); abort(); }
+__attribute__((weak)) void _actor105100Task(void) { fprintf(stderr, "unresolved call: _actor105100Task\n"); abort(); }
+__attribute__((weak)) void _actor120300BodyTask(void) { fprintf(stderr, "unresolved call: _actor120300BodyTask\n"); abort(); }
+__attribute__((weak)) void _actor120300HeadTask(void) { fprintf(stderr, "unresolved call: _actor120300HeadTask\n"); abort(); }
+__attribute__((weak)) void _actor120300JunkYardRefusalTask(void) { fprintf(stderr, "unresolved call: _actor120300JunkYardRefusalTask\n"); abort(); }
+__attribute__((weak)) void _actor120300RifleTask(void) { fprintf(stderr, "unresolved call: _actor120300RifleTask\n"); abort(); }
+__attribute__((weak)) void _actor120400KyleMadiganHandTask(void) { fprintf(stderr, "unresolved call: _actor120400KyleMadiganHandTask\n"); abort(); }
+__attribute__((weak)) void _actor120400KyleMadiganWalkerTask(void) { fprintf(stderr, "unresolved call: _actor120400KyleMadiganWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor120500SceneTask(void) { fprintf(stderr, "unresolved call: _actor120500SceneTask\n"); abort(); }
+__attribute__((weak)) void _actor121300BlackoutTask(void) { fprintf(stderr, "unresolved call: _actor121300BlackoutTask\n"); abort(); }
+__attribute__((weak)) void _actor121300EveSceneTask(void) { fprintf(stderr, "unresolved call: _actor121300EveSceneTask\n"); abort(); }
+__attribute__((weak)) void _actor121300FadeInTask(void) { fprintf(stderr, "unresolved call: _actor121300FadeInTask\n"); abort(); }
+__attribute__((weak)) void _actor121300FadeOutTask(void) { fprintf(stderr, "unresolved call: _actor121300FadeOutTask\n"); abort(); }
+__attribute__((weak)) void _actor121300LampDebrisTask(void) { fprintf(stderr, "unresolved call: _actor121300LampDebrisTask\n"); abort(); }
+__attribute__((weak)) void _actor121300SpawnLampDebrisTask(void) { fprintf(stderr, "unresolved call: _actor121300SpawnLampDebrisTask\n"); abort(); }
+__attribute__((weak)) void _actor121300UploadTexturesTask(void) { fprintf(stderr, "unresolved call: _actor121300UploadTexturesTask\n"); abort(); }
+__attribute__((weak)) void _actor123200Task(void) { fprintf(stderr, "unresolved call: _actor123200Task\n"); abort(); }
+__attribute__((weak)) void _actor135400FlintTask(void) { fprintf(stderr, "unresolved call: _actor135400FlintTask\n"); abort(); }
+__attribute__((weak)) void _actor135400GaryDouglasCarriedTask(void) { fprintf(stderr, "unresolved call: _actor135400GaryDouglasCarriedTask\n"); abort(); }
+__attribute__((weak)) void _actor135400GaryDouglasHeadTask(void) { fprintf(stderr, "unresolved call: _actor135400GaryDouglasHeadTask\n"); abort(); }
+__attribute__((weak)) void _actor135400GaryDouglasTask(void) { fprintf(stderr, "unresolved call: _actor135400GaryDouglasTask\n"); abort(); }
+__attribute__((weak)) void _actor135600KyleMadiganHandTask(void) { fprintf(stderr, "unresolved call: _actor135600KyleMadiganHandTask\n"); abort(); }
+__attribute__((weak)) void _actor135600KyleMadiganHeldItemTask(void) { fprintf(stderr, "unresolved call: _actor135600KyleMadiganHeldItemTask\n"); abort(); }
+__attribute__((weak)) void _actor135600KyleMadiganWalkerTask(void) { fprintf(stderr, "unresolved call: _actor135600KyleMadiganWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor136100FadeOutTask(void) { fprintf(stderr, "unresolved call: _actor136100FadeOutTask\n"); abort(); }
+__attribute__((weak)) void _actor136100HeadTask(void) { fprintf(stderr, "unresolved call: _actor136100HeadTask\n"); abort(); }
+__attribute__((weak)) void _actor136100RifleTask(void) { fprintf(stderr, "unresolved call: _actor136100RifleTask\n"); abort(); }
+__attribute__((weak)) void _actor136100SceneTask(void) { fprintf(stderr, "unresolved call: _actor136100SceneTask\n"); abort(); }
+__attribute__((weak)) void _actor136300GarageDepartureTask(void) { fprintf(stderr, "unresolved call: _actor136300GarageDepartureTask\n"); abort(); }
+__attribute__((weak)) void _actor136300StageExitCountdownTask(void) { fprintf(stderr, "unresolved call: _actor136300StageExitCountdownTask\n"); abort(); }
+__attribute__((weak)) void _actor141000EveWalkerTask(void) { fprintf(stderr, "unresolved call: _actor141000EveWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor142900ScreenShakeTask(void) { fprintf(stderr, "unresolved call: _actor142900ScreenShakeTask\n"); abort(); }
+__attribute__((weak)) void _actor143000TerminalSessionTask(void) { fprintf(stderr, "unresolved call: _actor143000TerminalSessionTask\n"); abort(); }
+__attribute__((weak)) void _actor143900ScriptedWalkerAttachmentTask(void) { fprintf(stderr, "unresolved call: _actor143900ScriptedWalkerAttachmentTask\n"); abort(); }
+__attribute__((weak)) void _actor143900ScriptedWalkerTask(void) { fprintf(stderr, "unresolved call: _actor143900ScriptedWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor143900SecondScriptedWalkerTask(void) { fprintf(stderr, "unresolved call: _actor143900SecondScriptedWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor146000WaterHoleSceneTask(void) { fprintf(stderr, "unresolved call: _actor146000WaterHoleSceneTask\n"); abort(); }
+__attribute__((weak)) void _actor146300AttachmentTask(void) { fprintf(stderr, "unresolved call: _actor146300AttachmentTask\n"); abort(); }
+__attribute__((weak)) void _actor146300ScriptedFigureTask(void) { fprintf(stderr, "unresolved call: _actor146300ScriptedFigureTask\n"); abort(); }
+__attribute__((weak)) void _actor150400PairWalkerTask(void) { fprintf(stderr, "unresolved call: _actor150400PairWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor151000WalkerTask(void) { fprintf(stderr, "unresolved call: _actor151000WalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor160700PacedWalkerTask(void) { fprintf(stderr, "unresolved call: _actor160700PacedWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor161500StrideWalkerTask(void) { fprintf(stderr, "unresolved call: _actor161500StrideWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor202900BodyTask(void) { fprintf(stderr, "unresolved call: _actor202900BodyTask\n"); abort(); }
+__attribute__((weak)) void _actor202900CarriedModelTask(void) { fprintf(stderr, "unresolved call: _actor202900CarriedModelTask\n"); abort(); }
+__attribute__((weak)) void _actor205200BodyTask(void) { fprintf(stderr, "unresolved call: _actor205200BodyTask\n"); abort(); }
+__attribute__((weak)) void _actor205200ControllerTask(void) { fprintf(stderr, "unresolved call: _actor205200ControllerTask\n"); abort(); }
+__attribute__((weak)) void _actor205200PartTask(void) { fprintf(stderr, "unresolved call: _actor205200PartTask\n"); abort(); }
+__attribute__((weak)) void _actor206100ShotTask(void) { fprintf(stderr, "unresolved call: _actor206100ShotTask\n"); abort(); }
+__attribute__((weak)) void _actor206100Task(void) { fprintf(stderr, "unresolved call: _actor206100Task\n"); abort(); }
+__attribute__((weak)) void _actor207200CreepingStrangerTask(void) { fprintf(stderr, "unresolved call: _actor207200CreepingStrangerTask\n"); abort(); }
+__attribute__((weak)) void _actor210600Task(void) { fprintf(stderr, "unresolved call: _actor210600Task\n"); abort(); }
+__attribute__((weak)) void _actor210700Task(void) { fprintf(stderr, "unresolved call: _actor210700Task\n"); abort(); }
+__attribute__((weak)) void _actor213000BodyTask(void) { fprintf(stderr, "unresolved call: _actor213000BodyTask\n"); abort(); }
+__attribute__((weak)) void _actor213000HeldModelTask(void) { fprintf(stderr, "unresolved call: _actor213000HeldModelTask\n"); abort(); }
+__attribute__((weak)) void _actor213000RightHandTask(void) { fprintf(stderr, "unresolved call: _actor213000RightHandTask\n"); abort(); }
+__attribute__((weak)) void _actor213000ThreeRootModelTask(void) { fprintf(stderr, "unresolved call: _actor213000ThreeRootModelTask\n"); abort(); }
+__attribute__((weak)) void _actor213100BodyTask(void) { fprintf(stderr, "unresolved call: _actor213100BodyTask\n"); abort(); }
+__attribute__((weak)) void _actor213100HeldModelTask(void) { fprintf(stderr, "unresolved call: _actor213100HeldModelTask\n"); abort(); }
+__attribute__((weak)) void _actor223600Task(void) { fprintf(stderr, "unresolved call: _actor223600Task\n"); abort(); }
+__attribute__((weak)) void _actor260400MongooseTask(void) { fprintf(stderr, "unresolved call: _actor260400MongooseTask\n"); abort(); }
+__attribute__((weak)) void _actor260400ScriptedWalkerTask(void) { fprintf(stderr, "unresolved call: _actor260400ScriptedWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor260500Task(void) { fprintf(stderr, "unresolved call: _actor260500Task\n"); abort(); }
+__attribute__((weak)) void _actor310600BodyTask(void) { fprintf(stderr, "unresolved call: _actor310600BodyTask\n"); abort(); }
+__attribute__((weak)) void _actor310600MongooseTask(void) { fprintf(stderr, "unresolved call: _actor310600MongooseTask\n"); abort(); }
+__attribute__((weak)) void _actor323300StrangerTask(void) { fprintf(stderr, "unresolved call: _actor323300StrangerTask\n"); abort(); }
+__attribute__((weak)) void _actor323300WomanTask(void) { fprintf(stderr, "unresolved call: _actor323300WomanTask\n"); abort(); }
+__attribute__((weak)) void _actor335800FlintTask(void) { fprintf(stderr, "unresolved call: _actor335800FlintTask\n"); abort(); }
+__attribute__((weak)) void _actor335800GaryDouglasPartTask(void) { fprintf(stderr, "unresolved call: _actor335800GaryDouglasPartTask\n"); abort(); }
+__attribute__((weak)) void _actor335800GaryDouglasTask(void) { fprintf(stderr, "unresolved call: _actor335800GaryDouglasTask\n"); abort(); }
+__attribute__((weak)) void _actor341300TexturedQuadsTask(void) { fprintf(stderr, "unresolved call: _actor341300TexturedQuadsTask\n"); abort(); }
+__attribute__((weak)) void _actor341300TurnPlayerTowardScenePlacementTask(void) { fprintf(stderr, "unresolved call: _actor341300TurnPlayerTowardScenePlacementTask\n"); abort(); }
+__attribute__((weak)) void _actor341700PropTask(void) { fprintf(stderr, "unresolved call: _actor341700PropTask\n"); abort(); }
+__attribute__((weak)) void _actor342100BlazeFireEmitterTask(void) { fprintf(stderr, "unresolved call: _actor342100BlazeFireEmitterTask\n"); abort(); }
+__attribute__((weak)) void _actor342100EncounterBlazeControllerTask(void) { fprintf(stderr, "unresolved call: _actor342100EncounterBlazeControllerTask\n"); abort(); }
+__attribute__((weak)) void _actor350500ReverseWalkTask(void) { fprintf(stderr, "unresolved call: _actor350500ReverseWalkTask\n"); abort(); }
+__attribute__((weak)) void _actor350700KyleMadiganAttachmentTask(void) { fprintf(stderr, "unresolved call: _actor350700KyleMadiganAttachmentTask\n"); abort(); }
+__attribute__((weak)) void _actor350700KyleMadiganWalkerTask(void) { fprintf(stderr, "unresolved call: _actor350700KyleMadiganWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor350700ReverseWalkTask(void) { fprintf(stderr, "unresolved call: _actor350700ReverseWalkTask\n"); abort(); }
+__attribute__((weak)) void _actor356100Task(void) { fprintf(stderr, "unresolved call: _actor356100Task\n"); abort(); }
+__attribute__((weak)) void _actor361100StreamWaterTask(void) { fprintf(stderr, "unresolved call: _actor361100StreamWaterTask\n"); abort(); }
+__attribute__((weak)) void _actor400500Task(void) { fprintf(stderr, "unresolved call: _actor400500Task\n"); abort(); }
+__attribute__((weak)) void _actor400600Task(void) { fprintf(stderr, "unresolved call: _actor400600Task\n"); abort(); }
+__attribute__((weak)) void _actor401000StrangerTask(void) { fprintf(stderr, "unresolved call: _actor401000StrangerTask\n"); abort(); }
+__attribute__((weak)) void _actor401300Task(void) { fprintf(stderr, "unresolved call: _actor401300Task\n"); abort(); }
+__attribute__((weak)) void _actor401800Task(void) { fprintf(stderr, "unresolved call: _actor401800Task\n"); abort(); }
+__attribute__((weak)) void _actor402200GolemTask(void) { fprintf(stderr, "unresolved call: _actor402200GolemTask\n"); abort(); }
+__attribute__((weak)) void _actor403000Task(void) { fprintf(stderr, "unresolved call: _actor403000Task\n"); abort(); }
+__attribute__((weak)) void _actor403100FloorPuffEmitterTask(void) { fprintf(stderr, "unresolved call: _actor403100FloorPuffEmitterTask\n"); abort(); }
+__attribute__((weak)) void _actor403100Task(void) { fprintf(stderr, "unresolved call: _actor403100Task\n"); abort(); }
+__attribute__((weak)) void _actor403200HostTask(void) { fprintf(stderr, "unresolved call: _actor403200HostTask\n"); abort(); }
+__attribute__((weak)) void _actor403600BossTask(void) { fprintf(stderr, "unresolved call: _actor403600BossTask\n"); abort(); }
+__attribute__((weak)) void _actor403600DoubleTask(void) { fprintf(stderr, "unresolved call: _actor403600DoubleTask\n"); abort(); }
+__attribute__((weak)) void _actor403600SceneFigureTask(void) { fprintf(stderr, "unresolved call: _actor403600SceneFigureTask\n"); abort(); }
+__attribute__((weak)) void _actor403900GolemTask(void) { fprintf(stderr, "unresolved call: _actor403900GolemTask\n"); abort(); }
+__attribute__((weak)) void _actor405800Task(void) { fprintf(stderr, "unresolved call: _actor405800Task\n"); abort(); }
+__attribute__((weak)) void _actor420700GaryDouglasTask(void) { fprintf(stderr, "unresolved call: _actor420700GaryDouglasTask\n"); abort(); }
+__attribute__((weak)) void _actor420700HeadHatTask(void) { fprintf(stderr, "unresolved call: _actor420700HeadHatTask\n"); abort(); }
+__attribute__((weak)) void _actor420700ShotgunTask(void) { fprintf(stderr, "unresolved call: _actor420700ShotgunTask\n"); abort(); }
+__attribute__((weak)) void _actor443500ChildModelTask(void) { fprintf(stderr, "unresolved call: _actor443500ChildModelTask\n"); abort(); }
+__attribute__((weak)) void _actor443500PierceTask(void) { fprintf(stderr, "unresolved call: _actor443500PierceTask\n"); abort(); }
+__attribute__((weak)) void _actor444000GluttonTask(void) { fprintf(stderr, "unresolved call: _actor444000GluttonTask\n"); abort(); }
+__attribute__((weak)) void _actor450200CompanionPuffTask(void) { fprintf(stderr, "unresolved call: _actor450200CompanionPuffTask\n"); abort(); }
+__attribute__((weak)) void _actor450200HeadAimTask(void) { fprintf(stderr, "unresolved call: _actor450200HeadAimTask\n"); abort(); }
+__attribute__((weak)) void _actor450800KyleMadiganAttachmentTask(void) { fprintf(stderr, "unresolved call: _actor450800KyleMadiganAttachmentTask\n"); abort(); }
+__attribute__((weak)) void _actor450800KyleMadiganTask(void) { fprintf(stderr, "unresolved call: _actor450800KyleMadiganTask\n"); abort(); }
+__attribute__((weak)) void _actor450800PawnGolemWalkerTask(void) { fprintf(stderr, "unresolved call: _actor450800PawnGolemWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor450900CompanionDistressTask(void) { fprintf(stderr, "unresolved call: _actor450900CompanionDistressTask\n"); abort(); }
+__attribute__((weak)) void _actor450900DepartureTask(void) { fprintf(stderr, "unresolved call: _actor450900DepartureTask\n"); abort(); }
+__attribute__((weak)) void _actor450900GrowthRoomActionTask(void) { fprintf(stderr, "unresolved call: _actor450900GrowthRoomActionTask\n"); abort(); }
+__attribute__((weak)) void _actor450900HeadAimTask(void) { fprintf(stderr, "unresolved call: _actor450900HeadAimTask\n"); abort(); }
+__attribute__((weak)) void _actor450900PlayerReactionTask(void) { fprintf(stderr, "unresolved call: _actor450900PlayerReactionTask\n"); abort(); }
+__attribute__((weak)) void _actor451100CarriedModelTask(void) { fprintf(stderr, "unresolved call: _actor451100CarriedModelTask\n"); abort(); }
+__attribute__((weak)) void _actor451100PairWalkTask(void) { fprintf(stderr, "unresolved call: _actor451100PairWalkTask\n"); abort(); }
+__attribute__((weak)) void _actor451100QuietWalkTask(void) { fprintf(stderr, "unresolved call: _actor451100QuietWalkTask\n"); abort(); }
+__attribute__((weak)) void _actor460200SoldierATask(void) { fprintf(stderr, "unresolved call: _actor460200SoldierATask\n"); abort(); }
+__attribute__((weak)) void _actor460200SoldierBTask(void) { fprintf(stderr, "unresolved call: _actor460200SoldierBTask\n"); abort(); }
+__attribute__((weak)) void _actor460200SoldierCTask(void) { fprintf(stderr, "unresolved call: _actor460200SoldierCTask\n"); abort(); }
+__attribute__((weak)) void _actor461800FootstepWalkerTask(void) { fprintf(stderr, "unresolved call: _actor461800FootstepWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor461800ScriptedWalkerAttachmentTask(void) { fprintf(stderr, "unresolved call: _actor461800ScriptedWalkerAttachmentTask\n"); abort(); }
+__attribute__((weak)) void _actor461800ScriptedWalkerTask(void) { fprintf(stderr, "unresolved call: _actor461800ScriptedWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor521100AnmcWomanEffectTask(void) { fprintf(stderr, "unresolved call: _actor521100AnmcWomanEffectTask\n"); abort(); }
+__attribute__((weak)) void _actor521100AnmcWomanTask(void) { fprintf(stderr, "unresolved call: _actor521100AnmcWomanTask\n"); abort(); }
+__attribute__((weak)) void _actor521100BodyTask(void) { fprintf(stderr, "unresolved call: _actor521100BodyTask\n"); abort(); }
+__attribute__((weak)) void _actor521100GunbladeTask(void) { fprintf(stderr, "unresolved call: _actor521100GunbladeTask\n"); abort(); }
+__attribute__((weak)) void _actor535700FootstepWalkerTask(void) { fprintf(stderr, "unresolved call: _actor535700FootstepWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor535700PairWalkerTask(void) { fprintf(stderr, "unresolved call: _actor535700PairWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor548100PanelTask(void) { fprintf(stderr, "unresolved call: _actor548100PanelTask\n"); abort(); }
+__attribute__((weak)) void _actor560800AwaitScenePlaybackTask(void) { fprintf(stderr, "unresolved call: _actor560800AwaitScenePlaybackTask\n"); abort(); }
+__attribute__((weak)) void _actor560800CastAttachmentTask(void) { fprintf(stderr, "unresolved call: _actor560800CastAttachmentTask\n"); abort(); }
+__attribute__((weak)) void _actor560800CutsceneTask(void) { fprintf(stderr, "unresolved call: _actor560800CutsceneTask\n"); abort(); }
+__attribute__((weak)) void _actor560800DiscardTask(void) { fprintf(stderr, "unresolved call: _actor560800DiscardTask\n"); abort(); }
+__attribute__((weak)) void _actor560800EveBodyTask(void) { fprintf(stderr, "unresolved call: _actor560800EveBodyTask\n"); abort(); }
+__attribute__((weak)) void _actor560800FadeInTask(void) { fprintf(stderr, "unresolved call: _actor560800FadeInTask\n"); abort(); }
+__attribute__((weak)) void _actor560800FadeOutTask(void) { fprintf(stderr, "unresolved call: _actor560800FadeOutTask\n"); abort(); }
+__attribute__((weak)) void _actor560800KyleBodyTask(void) { fprintf(stderr, "unresolved call: _actor560800KyleBodyTask\n"); abort(); }
+__attribute__((weak)) void _actor560800No9BodyTask(void) { fprintf(stderr, "unresolved call: _actor560800No9BodyTask\n"); abort(); }
+__attribute__((weak)) void _actor560800ReplaceEveBodyTask(void) { fprintf(stderr, "unresolved call: _actor560800ReplaceEveBodyTask\n"); abort(); }
+__attribute__((weak)) void _akropolisBridgeEnemyTask(void) { fprintf(stderr, "unresolved call: _akropolisBridgeEnemyTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaCaptionEventTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaCaptionEventTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaEntranceSceneTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaEntranceSceneTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaFadeOutTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaFadeOutTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaHelicopterWreckSceneTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaHelicopterWreckSceneTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaLetterboxTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaLetterboxTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaOpeningMovieTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaOpeningMovieTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaSequenceTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaSequenceTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaSergeantAgainSceneTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaSergeantAgainSceneTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaSergeantSceneTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaSergeantSceneTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaStartOpeningMovieTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaStartOpeningMovieTask\n"); abort(); }
+__attribute__((weak)) void _akropolisPlazaTraversalTask(void) { fprintf(stderr, "unresolved call: _akropolisPlazaTraversalTask\n"); abort(); }
+__attribute__((weak)) void _blazeBodyFireTask(void) { fprintf(stderr, "unresolved call: _blazeBodyFireTask\n"); abort(); }
+__attribute__((weak)) void _blazeFadeTask(void) { fprintf(stderr, "unresolved call: _blazeFadeTask\n"); abort(); }
+__attribute__((weak)) void _cafeteriaBossStrangerTask(void) { fprintf(stderr, "unresolved call: _cafeteriaBossStrangerTask\n"); abort(); }
+__attribute__((weak)) void _desertChaserTask(void) { fprintf(stderr, "unresolved call: _desertChaserTask\n"); abort(); }
+__attribute__((weak)) void _eastElevatorHallSwatMemberAttachGunTask(void) { fprintf(stderr, "unresolved call: _eastElevatorHallSwatMemberAttachGunTask\n"); abort(); }
+__attribute__((weak)) void _eastElevatorHallSwatMemberViewFigureTask(void) { fprintf(stderr, "unresolved call: _eastElevatorHallSwatMemberViewFigureTask\n"); abort(); }
+__attribute__((weak)) void _endingAwardScreenTask(void) { fprintf(stderr, "unresolved call: _endingAwardScreenTask\n"); abort(); }
+__attribute__((weak)) void _endingCreditsTask(void) { fprintf(stderr, "unresolved call: _endingCreditsTask\n"); abort(); }
+__attribute__((weak)) void _endingFadeCreditsInTask(void) { fprintf(stderr, "unresolved call: _endingFadeCreditsInTask\n"); abort(); }
+__attribute__((weak)) void _endingFadeCreditsOutTask(void) { fprintf(stderr, "unresolved call: _endingFadeCreditsOutTask\n"); abort(); }
+__attribute__((weak)) void _endingStartCreditsPictureTask(void) { fprintf(stderr, "unresolved call: _endingStartCreditsPictureTask\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation08CC0Bank1(void) { fprintf(stderr, "unresolved call: _gActor800200Animation08CC0Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation08CC0Bank4(void) { fprintf(stderr, "unresolved call: _gActor800200Animation08CC0Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation09504Bank1(void) { fprintf(stderr, "unresolved call: _gActor800200Animation09504Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation09504Bank4(void) { fprintf(stderr, "unresolved call: _gActor800200Animation09504Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0A354Bank1(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0A354Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0A354Bank4(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0A354Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0A734Bank1(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0A734Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0A734Bank4(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0A734Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0AC24Bank1(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0AC24Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0AC24Bank4(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0AC24Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0B080Bank1(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0B080Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0B080Bank4(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0B080Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0B328Bank1(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0B328Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0B328Bank4(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0B328Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0BF24Bank1(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0BF24Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0BF24Bank4(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0BF24Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0C530Bank1(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0C530Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800200Animation0C530Bank4(void) { fprintf(stderr, "unresolved call: _gActor800200Animation0C530Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation08218Bank1(void) { fprintf(stderr, "unresolved call: _gActor800300Animation08218Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation08218Bank4(void) { fprintf(stderr, "unresolved call: _gActor800300Animation08218Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation08618Bank1(void) { fprintf(stderr, "unresolved call: _gActor800300Animation08618Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation08618Bank4(void) { fprintf(stderr, "unresolved call: _gActor800300Animation08618Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation09194Bank1(void) { fprintf(stderr, "unresolved call: _gActor800300Animation09194Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation09194Bank4(void) { fprintf(stderr, "unresolved call: _gActor800300Animation09194Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation09478Bank1(void) { fprintf(stderr, "unresolved call: _gActor800300Animation09478Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation09478Bank4(void) { fprintf(stderr, "unresolved call: _gActor800300Animation09478Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation0981CBank1(void) { fprintf(stderr, "unresolved call: _gActor800300Animation0981CBank1\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation0981CBank4(void) { fprintf(stderr, "unresolved call: _gActor800300Animation0981CBank4\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation09D10Bank1(void) { fprintf(stderr, "unresolved call: _gActor800300Animation09D10Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation09D10Bank4(void) { fprintf(stderr, "unresolved call: _gActor800300Animation09D10Bank4\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation0A4D4Bank1(void) { fprintf(stderr, "unresolved call: _gActor800300Animation0A4D4Bank1\n"); abort(); }
+__attribute__((weak)) void _gActor800300Animation0A4D4Bank4(void) { fprintf(stderr, "unresolved call: _gActor800300Animation0A4D4Bank4\n"); abort(); }
+__attribute__((weak)) void _gAkropolisCafeteriaBossStrangerBody(void) { fprintf(stderr, "unresolved call: _gAkropolisCafeteriaBossStrangerBody\n"); abort(); }
+__attribute__((weak)) void _gAkropolisForkedRoadSkullStalkerBody(void) { fprintf(stderr, "unresolved call: _gAkropolisForkedRoadSkullStalkerBody\n"); abort(); }
+__attribute__((weak)) void _gAkropolisWestElevatorHallView3SpriteSources(void) { fprintf(stderr, "unresolved call: _gAkropolisWestElevatorHallView3SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gChaserDesertBody(void) { fprintf(stderr, "unresolved call: _gChaserDesertBody\n"); abort(); }
+__attribute__((weak)) void _gCrawlerBody(void) { fprintf(stderr, "unresolved call: _gCrawlerBody\n"); abort(); }
+__attribute__((weak)) void _gDiverBody(void) { fprintf(stderr, "unresolved call: _gDiverBody\n"); abort(); }
+__attribute__((weak)) void _gDryfieldGeneralStoreView10SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldGeneralStoreView10SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldGeneralStoreView9SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldGeneralStoreView9SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldJunkYardView3SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldJunkYardView3SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldMotelRoom1MappedView9SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldMotelRoom1MappedView9SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldMotelRoom2View3SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldMotelRoom2View3SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightBreezewayView2SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightBreezewayView2SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightDilapidatedHouseView2SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightDilapidatedHouseView2SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightDilapidatedHouseView3SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightDilapidatedHouseView3SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightGeneralStoreView10SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightGeneralStoreView10SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightGeneralStoreView6SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightGeneralStoreView6SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightGeneralStoreView8SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightGeneralStoreView8SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightJunkYardView10SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightJunkYardView10SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightMainStreetCompanionAnim05Clip(void) { fprintf(stderr, "unresolved call: _gDryfieldNightMainStreetCompanionAnim05Clip\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightMotelRoom2View2SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightMotelRoom2View2SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightMotelRoom3SpotLightStorage(void) { fprintf(stderr, "unresolved call: _gDryfieldNightMotelRoom3SpotLightStorage\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightSaloonGRView10SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightSaloonGRView10SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightSaloonGRView11SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightSaloonGRView11SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightSaloonGRView5SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightSaloonGRView5SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldNightWaterTankView2SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldNightWaterTankView2SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gDryfieldSaloonGRView4SpriteSources(void) { fprintf(stderr, "unresolved call: _gDryfieldSaloonGRView4SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gEveBody(void) { fprintf(stderr, "unresolved call: _gEveBody\n"); abort(); }
+__attribute__((weak)) void _gEveIdleClip(void) { fprintf(stderr, "unresolved call: _gEveIdleClip\n"); abort(); }
+__attribute__((weak)) void _gFlintBarkAtTargetClip(void) { fprintf(stderr, "unresolved call: _gFlintBarkAtTargetClip\n"); abort(); }
+__attribute__((weak)) void _gFlintBarkClip(void) { fprintf(stderr, "unresolved call: _gFlintBarkClip\n"); abort(); }
+__attribute__((weak)) void _gFlintGetUpClip(void) { fprintf(stderr, "unresolved call: _gFlintGetUpClip\n"); abort(); }
+__attribute__((weak)) void _gFlintLieDownClip(void) { fprintf(stderr, "unresolved call: _gFlintLieDownClip\n"); abort(); }
+__attribute__((weak)) void _gFlintLieRestingClip(void) { fprintf(stderr, "unresolved call: _gFlintLieRestingClip\n"); abort(); }
+__attribute__((weak)) void _gFlintReactKeyHandoverClip(void) { fprintf(stderr, "unresolved call: _gFlintReactKeyHandoverClip\n"); abort(); }
+__attribute__((weak)) void _gFlintReactTruckFixedClip(void) { fprintf(stderr, "unresolved call: _gFlintReactTruckFixedClip\n"); abort(); }
+__attribute__((weak)) void _gFlintRouteActionClip(void) { fprintf(stderr, "unresolved call: _gFlintRouteActionClip\n"); abort(); }
+__attribute__((weak)) void _gFlintStandClip(void) { fprintf(stderr, "unresolved call: _gFlintStandClip\n"); abort(); }
+__attribute__((weak)) void _gGaryBody(void) { fprintf(stderr, "unresolved call: _gGaryBody\n"); abort(); }
+__attribute__((weak)) void _gGaryHeadHat(void) { fprintf(stderr, "unresolved call: _gGaryHeadHat\n"); abort(); }
+__attribute__((weak)) void _gGaryShotgun(void) { fprintf(stderr, "unresolved call: _gGaryShotgun\n"); abort(); }
+__attribute__((weak)) void _gGolemBeamSword(void) { fprintf(stderr, "unresolved call: _gGolemBeamSword\n"); abort(); }
+__attribute__((weak)) void _gGolemBody(void) { fprintf(stderr, "unresolved call: _gGolemBody\n"); abort(); }
+__attribute__((weak)) void _gGolemGrenadeLauncher(void) { fprintf(stderr, "unresolved call: _gGolemGrenadeLauncher\n"); abort(); }
+__attribute__((weak)) void _gGolemNo9BodyDryfield(void) { fprintf(stderr, "unresolved call: _gGolemNo9BodyDryfield\n"); abort(); }
+__attribute__((weak)) void _gGolemNo9Gunblade(void) { fprintf(stderr, "unresolved call: _gGolemNo9Gunblade\n"); abort(); }
+__attribute__((weak)) void _gGolemPawnBody(void) { fprintf(stderr, "unresolved call: _gGolemPawnBody\n"); abort(); }
+__attribute__((weak)) void _gGolemRookBody(void) { fprintf(stderr, "unresolved call: _gGolemRookBody\n"); abort(); }
+__attribute__((weak)) void _gGolemRookShield(void) { fprintf(stderr, "unresolved call: _gGolemRookShield\n"); abort(); }
+__attribute__((weak)) void _gMineGorgeView7SpriteSources(void) { fprintf(stderr, "unresolved call: _gMineGorgeView7SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gMistR18BriefingFile(void) { fprintf(stderr, "unresolved call: _gMistR18BriefingFile\n"); abort(); }
+__attribute__((weak)) void _gMistR18Laptop(void) { fprintf(stderr, "unresolved call: _gMistR18Laptop\n"); abort(); }
+__attribute__((weak)) void _gNeoArkEveAccessTunnelView2SpriteSources(void) { fprintf(stderr, "unresolved call: _gNeoArkEveAccessTunnelView2SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gNeoArkEveAccessTunnelView3SpriteSources(void) { fprintf(stderr, "unresolved call: _gNeoArkEveAccessTunnelView3SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gNeoArkSubstationView3SpriteSources(void) { fprintf(stderr, "unresolved call: _gNeoArkSubstationView3SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gPierceBody(void) { fprintf(stderr, "unresolved call: _gPierceBody\n"); abort(); }
+__attribute__((weak)) void _gPierceGlasses(void) { fprintf(stderr, "unresolved call: _gPierceGlasses\n"); abort(); }
+__attribute__((weak)) void _gRatAndMothMothBody(void) { fprintf(stderr, "unresolved call: _gRatAndMothMothBody\n"); abort(); }
+__attribute__((weak)) void _gRupertBody(void) { fprintf(stderr, "unresolved call: _gRupertBody\n"); abort(); }
+__attribute__((weak)) void _gRupertHurtBody(void) { fprintf(stderr, "unresolved call: _gRupertHurtBody\n"); abort(); }
+__attribute__((weak)) void _gRupertMongoose(void) { fprintf(stderr, "unresolved call: _gRupertMongoose\n"); abort(); }
+__attribute__((weak)) void _gShelterB1SleepingQuartersView5SpriteSources(void) { fprintf(stderr, "unresolved call: _gShelterB1SleepingQuartersView5SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gShelterB6NurseryCompanionConversationReactionClip(void) { fprintf(stderr, "unresolved call: _gShelterB6NurseryCompanionConversationReactionClip\n"); abort(); }
+__attribute__((weak)) void _gShelterB6NurseryCompanionDistressClip(void) { fprintf(stderr, "unresolved call: _gShelterB6NurseryCompanionDistressClip\n"); abort(); }
+__attribute__((weak)) void _gSoldierABody(void) { fprintf(stderr, "unresolved call: _gSoldierABody\n"); abort(); }
+__attribute__((weak)) void _gSoldierBBody(void) { fprintf(stderr, "unresolved call: _gSoldierBBody\n"); abort(); }
+__attribute__((weak)) void _gSoldierBRifle(void) { fprintf(stderr, "unresolved call: _gSoldierBRifle\n"); abort(); }
+__attribute__((weak)) void _gStingerBody(void) { fprintf(stderr, "unresolved call: _gStingerBody\n"); abort(); }
+__attribute__((weak)) void _gStrangerGrinningBody(void) { fprintf(stderr, "unresolved call: _gStrangerGrinningBody\n"); abort(); }
+__attribute__((weak)) void _gStrangerHornedBody(void) { fprintf(stderr, "unresolved call: _gStrangerHornedBody\n"); abort(); }
+__attribute__((weak)) void _gSucklerBloodBody(void) { fprintf(stderr, "unresolved call: _gSucklerBloodBody\n"); abort(); }
+__attribute__((weak)) void _gSucklerBoneBody(void) { fprintf(stderr, "unresolved call: _gSucklerBoneBody\n"); abort(); }
+__attribute__((weak)) void _gSwatMember2Body(void) { fprintf(stderr, "unresolved call: _gSwatMember2Body\n"); abort(); }
+__attribute__((weak)) void _gameOverRedFlashTask(void) { fprintf(stderr, "unresolved call: _gameOverRedFlashTask\n"); abort(); }
+__attribute__((weak)) void _gameOverTask(void) { fprintf(stderr, "unresolved call: _gameOverTask\n"); abort(); }
+__attribute__((weak)) void _generatorLifeSupportTask(void) { fprintf(stderr, "unresolved call: _generatorLifeSupportTask\n"); abort(); }
+__attribute__((weak)) void _generatorTask(void) { fprintf(stderr, "unresolved call: _generatorTask\n"); abort(); }
+__attribute__((weak)) void _helicopterDepartureHelicopterRotorTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureHelicopterRotorTask\n"); abort(); }
+__attribute__((weak)) void _helicopterDepartureHelicopterSearchlightTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureHelicopterSearchlightTask\n"); abort(); }
+__attribute__((weak)) void _helicopterDepartureHelicopterTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureHelicopterTask\n"); abort(); }
+__attribute__((weak)) void _helicopterDepartureNo9ChestPieceTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureNo9ChestPieceTask\n"); abort(); }
+__attribute__((weak)) void _helicopterDepartureNo9GolemTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureNo9GolemTask\n"); abort(); }
+__attribute__((weak)) void _helicopterDepartureNo9PropTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureNo9PropTask\n"); abort(); }
+__attribute__((weak)) void _helicopterDepartureNo9SwordTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureNo9SwordTask\n"); abort(); }
+__attribute__((weak)) void _helicopterDepartureRupertBodyTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureRupertBodyTask\n"); abort(); }
+__attribute__((weak)) void _helicopterDepartureRupertRadioTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureRupertRadioTask\n"); abort(); }
+__attribute__((weak)) void _helicopterDepartureRupertRevolverTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureRupertRevolverTask\n"); abort(); }
+__attribute__((weak)) void _helicopterLandingPadNo9BlastSourceTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9BlastSourceTask\n"); abort(); }
+__attribute__((weak)) void _helicopterLandingPadNo9BodyTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9BodyTask\n"); abort(); }
+__attribute__((weak)) void _helicopterLandingPadNo9ChestModelTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9ChestModelTask\n"); abort(); }
+__attribute__((weak)) void _helicopterLandingPadNo9GrenadeTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9GrenadeTask\n"); abort(); }
+__attribute__((weak)) void _helicopterLandingPadNo9PropTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9PropTask\n"); abort(); }
+__attribute__((weak)) void _helicopterLandingPadNo9TransformerTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9TransformerTask\n"); abort(); }
+__attribute__((weak)) void _helicopterLandingPadNo9WeaponTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9WeaponTask\n"); abort(); }
+__attribute__((weak)) void _lesserStrangerTask(void) { fprintf(stderr, "unresolved call: _lesserStrangerTask\n"); abort(); }
+__attribute__((weak)) void _madChaserHiddenTask(void) { fprintf(stderr, "unresolved call: _madChaserHiddenTask\n"); abort(); }
+__attribute__((weak)) void _madChaserTask(void) { fprintf(stderr, "unresolved call: _madChaserTask\n"); abort(); }
+__attribute__((weak)) void _maggotCaterpillarTask(void) { fprintf(stderr, "unresolved call: _maggotCaterpillarTask\n"); abort(); }
+__attribute__((weak)) void _mistRupertTask(void) { fprintf(stderr, "unresolved call: _mistRupertTask\n"); abort(); }
+__attribute__((weak)) void _mistShootingGalleryResultPanelTask(void) { fprintf(stderr, "unresolved call: _mistShootingGalleryResultPanelTask\n"); abort(); }
+__attribute__((weak)) void _mistShootingGalleryWeaponSelectPanelTask(void) { fprintf(stderr, "unresolved call: _mistShootingGalleryWeaponSelectPanelTask\n"); abort(); }
+__attribute__((weak)) void _mothTask(void) { fprintf(stderr, "unresolved call: _mothTask\n"); abort(); }
+__attribute__((weak)) void _neoArkObservatoryPlayerReflectionTask(void) { fprintf(stderr, "unresolved call: _neoArkObservatoryPlayerReflectionTask\n"); abort(); }
+__attribute__((weak)) void _neoArkR31FramebufferShiftTask(void) { fprintf(stderr, "unresolved call: _neoArkR31FramebufferShiftTask\n"); abort(); }
+__attribute__((weak)) void _pacedWalkSubModelTask(void) { fprintf(stderr, "unresolved call: _pacedWalkSubModelTask\n"); abort(); }
+__attribute__((weak)) void _pacedWalkTask(void) { fprintf(stderr, "unresolved call: _pacedWalkTask\n"); abort(); }
+__attribute__((weak)) void _pairWalkSubModelTask(void) { fprintf(stderr, "unresolved call: _pairWalkSubModelTask\n"); abort(); }
+__attribute__((weak)) void _parkingPierceAttachedModelTask(void) { fprintf(stderr, "unresolved call: _parkingPierceAttachedModelTask\n"); abort(); }
+__attribute__((weak)) void _parkingPierceBillboardTask(void) { fprintf(stderr, "unresolved call: _parkingPierceBillboardTask\n"); abort(); }
+__attribute__((weak)) void _parkingPierceTask(void) { fprintf(stderr, "unresolved call: _parkingPierceTask\n"); abort(); }
+__attribute__((weak)) void _patioLeapingStrangersTask(void) { fprintf(stderr, "unresolved call: _patioLeapingStrangersTask\n"); abort(); }
+__attribute__((weak)) void _patioSwatMemberTask(void) { fprintf(stderr, "unresolved call: _patioSwatMemberTask\n"); abort(); }
+__attribute__((weak)) void _planarReflectionAttachmentTask(void) { fprintf(stderr, "unresolved call: _planarReflectionAttachmentTask\n"); abort(); }
+__attribute__((weak)) void _policeOfficersRookieBodyTask(void) { fprintf(stderr, "unresolved call: _policeOfficersRookieBodyTask\n"); abort(); }
+__attribute__((weak)) void _policeOfficersRookieControllerTask(void) { fprintf(stderr, "unresolved call: _policeOfficersRookieControllerTask\n"); abort(); }
+__attribute__((weak)) void _policeOfficersRookieCulledBodyTask(void) { fprintf(stderr, "unresolved call: _policeOfficersRookieCulledBodyTask\n"); abort(); }
+__attribute__((weak)) void _policeOfficersSergeantBodyTask(void) { fprintf(stderr, "unresolved call: _policeOfficersSergeantBodyTask\n"); abort(); }
+__attribute__((weak)) void _policeOfficersSergeantControllerTask(void) { fprintf(stderr, "unresolved call: _policeOfficersSergeantControllerTask\n"); abort(); }
+__attribute__((weak)) void _policeOfficersSergeantCulledBodyTask(void) { fprintf(stderr, "unresolved call: _policeOfficersSergeantCulledBodyTask\n"); abort(); }
+__attribute__((weak)) void _ratTask(void) { fprintf(stderr, "unresolved call: _ratTask\n"); abort(); }
+__attribute__((weak)) void _roofGardenSwatMemberAttachRadioTask(void) { fprintf(stderr, "unresolved call: _roofGardenSwatMemberAttachRadioTask\n"); abort(); }
+__attribute__((weak)) void _roofGardenSwatMemberViewFigureTask(void) { fprintf(stderr, "unresolved call: _roofGardenSwatMemberViewFigureTask\n"); abort(); }
+__attribute__((weak)) void _sanctuaryNo9Task(void) { fprintf(stderr, "unresolved call: _sanctuaryNo9Task\n"); abort(); }
+__attribute__((weak)) void _screenFadeInTask(void) { fprintf(stderr, "unresolved call: _screenFadeInTask\n"); abort(); }
+__attribute__((weak)) void _screenFadeOutTask(void) { fprintf(stderr, "unresolved call: _screenFadeOutTask\n"); abort(); }
+__attribute__((weak)) void _securityMonitorsRupertTask(void) { fprintf(stderr, "unresolved call: _securityMonitorsRupertTask\n"); abort(); }
+__attribute__((weak)) void _securityMonitorsSwatTask(void) { fprintf(stderr, "unresolved call: _securityMonitorsSwatTask\n"); abort(); }
+__attribute__((weak)) void _shelterB1ControlRoomMirrorTask(void) { fprintf(stderr, "unresolved call: _shelterB1ControlRoomMirrorTask\n"); abort(); }
+__attribute__((weak)) void _shelterB3DumpingHoleDebrisEventTask(void) { fprintf(stderr, "unresolved call: _shelterB3DumpingHoleDebrisEventTask\n"); abort(); }
+__attribute__((weak)) void _shelterB3DumpingHoleDebrisModelTask(void) { fprintf(stderr, "unresolved call: _shelterB3DumpingHoleDebrisModelTask\n"); abort(); }
+__attribute__((weak)) void _shelterB3DumpingHoleFadeFromBlackTask(void) { fprintf(stderr, "unresolved call: _shelterB3DumpingHoleFadeFromBlackTask\n"); abort(); }
+__attribute__((weak)) void _shelterB3GarbageIncineratorGluttonEntranceTask(void) { fprintf(stderr, "unresolved call: _shelterB3GarbageIncineratorGluttonEntranceTask\n"); abort(); }
+__attribute__((weak)) void _shelterB3GarbageIncineratorKillTask(void) { fprintf(stderr, "unresolved call: _shelterB3GarbageIncineratorKillTask\n"); abort(); }
+__attribute__((weak)) void _shelterR48WaterRefractionTask(void) { fprintf(stderr, "unresolved call: _shelterR48WaterRefractionTask\n"); abort(); }
+__attribute__((weak)) void _shootingGalleryPiercePierceTask(void) { fprintf(stderr, "unresolved call: _shootingGalleryPiercePierceTask\n"); abort(); }
+__attribute__((weak)) void _shootingGalleryTargetsMountTask(void) { fprintf(stderr, "unresolved call: _shootingGalleryTargetsMountTask\n"); abort(); }
+__attribute__((weak)) void _shootingGalleryTargetsTargetTask(void) { fprintf(stderr, "unresolved call: _shootingGalleryTargetsTargetTask\n"); abort(); }
+__attribute__((weak)) void _shopSessionTask(void) { fprintf(stderr, "unresolved call: _shopSessionTask\n"); abort(); }
+__attribute__((weak)) void _skullStalkerTask(void) { fprintf(stderr, "unresolved call: _skullStalkerTask\n"); abort(); }
+__attribute__((weak)) void _squareGrinningStrangerTask(void) { fprintf(stderr, "unresolved call: _squareGrinningStrangerTask\n"); abort(); }
+__attribute__((weak)) void _strideWalkSubModelTask(void) { fprintf(stderr, "unresolved call: _strideWalkSubModelTask\n"); abort(); }
 __attribute__((weak)) void actor403600DrawStreamGt3BottomFade(void) { fprintf(stderr, "unresolved call: actor403600DrawStreamGt3BottomFade\n"); abort(); }
 __attribute__((weak)) void actor403600DrawStreamGt3PlaneClamp(void) { fprintf(stderr, "unresolved call: actor403600DrawStreamGt3PlaneClamp\n"); abort(); }
 __attribute__((weak)) void actor403600DrawStreamGt3PreXformBottomFade(void) { fprintf(stderr, "unresolved call: actor403600DrawStreamGt3PreXformBottomFade\n"); abort(); }
@@ -35,46 +1952,61 @@ __attribute__((weak)) void akropolisBridgeKeypadTask(void) { fprintf(stderr, "un
 __attribute__((weak)) void akropolisBridgeLowDustStreakTask(void) { fprintf(stderr, "unresolved call: akropolisBridgeLowDustStreakTask\n"); abort(); }
 __attribute__((weak)) void akropolisBridgeMidDustStreakTask(void) { fprintf(stderr, "unresolved call: akropolisBridgeMidDustStreakTask\n"); abort(); }
 __attribute__((weak)) void akropolisBridgeParticleStreakTask(void) { fprintf(stderr, "unresolved call: akropolisBridgeParticleStreakTask\n"); abort(); }
+__attribute__((weak)) void akropolisBridgeRoomTask(void) { fprintf(stderr, "unresolved call: akropolisBridgeRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisBridgeTallDustStreakTask(void) { fprintf(stderr, "unresolved call: akropolisBridgeTallDustStreakTask\n"); abort(); }
 __attribute__((weak)) void akropolisBridgeWaterRippleTask(void) { fprintf(stderr, "unresolved call: akropolisBridgeWaterRippleTask\n"); abort(); }
 __attribute__((weak)) void akropolisCafeteriaInitRoomEffectsTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaInitRoomEffectsTask\n"); abort(); }
 __attribute__((weak)) void akropolisCafeteriaLoosePropTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaLoosePropTask\n"); abort(); }
+__attribute__((weak)) void akropolisCafeteriaMendelPickupTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaMendelPickupTask\n"); abort(); }
 __attribute__((weak)) void akropolisCafeteriaModelWanderTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaModelWanderTask\n"); abort(); }
 __attribute__((weak)) void akropolisCafeteriaPuffEmitterTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaPuffEmitterTask\n"); abort(); }
 __attribute__((weak)) void akropolisCafeteriaPuffTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaPuffTask\n"); abort(); }
+__attribute__((weak)) void akropolisCafeteriaRoomTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisCafeteriaRoomVisualEffectsFlashTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaRoomVisualEffectsFlashTask\n"); abort(); }
 __attribute__((weak)) void akropolisCafeteriaRoomVisualEffectsSparkBurstTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaRoomVisualEffectsSparkBurstTask\n"); abort(); }
 __attribute__((weak)) void akropolisCafeteriaRoomVisualEffectsTwinTrailTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaRoomVisualEffectsTwinTrailTask\n"); abort(); }
+__attribute__((weak)) void akropolisCafeteriaStimPickupTask(void) { fprintf(stderr, "unresolved call: akropolisCafeteriaStimPickupTask\n"); abort(); }
 __attribute__((weak)) void akropolisEastElevatorHallPlayerReflectionTask(void) { fprintf(stderr, "unresolved call: akropolisEastElevatorHallPlayerReflectionTask\n"); abort(); }
 __attribute__((weak)) void akropolisEastElevatorHallPointTileTask(void) { fprintf(stderr, "unresolved call: akropolisEastElevatorHallPointTileTask\n"); abort(); }
 __attribute__((weak)) void akropolisEastElevatorHallRedBeaconTask(void) { fprintf(stderr, "unresolved call: akropolisEastElevatorHallRedBeaconTask\n"); abort(); }
 __attribute__((weak)) void akropolisEastElevatorHallReflectionsAndBeaconsTask(void) { fprintf(stderr, "unresolved call: akropolisEastElevatorHallReflectionsAndBeaconsTask\n"); abort(); }
+__attribute__((weak)) void akropolisEastElevatorHallRoomTask(void) { fprintf(stderr, "unresolved call: akropolisEastElevatorHallRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisFireEscapeFlareTask(void) { fprintf(stderr, "unresolved call: akropolisFireEscapeFlareTask\n"); abort(); }
 __attribute__((weak)) void akropolisFireEscapeFlickerLightTask(void) { fprintf(stderr, "unresolved call: akropolisFireEscapeFlickerLightTask\n"); abort(); }
 __attribute__((weak)) void akropolisFireEscapeLightEmitterTask(void) { fprintf(stderr, "unresolved call: akropolisFireEscapeLightEmitterTask\n"); abort(); }
+__attribute__((weak)) void akropolisFireEscapeRoomTask(void) { fprintf(stderr, "unresolved call: akropolisFireEscapeRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisFireEscapeTelephoneMenuTask(void) { fprintf(stderr, "unresolved call: akropolisFireEscapeTelephoneMenuTask\n"); abort(); }
 __attribute__((weak)) void akropolisForkedRoadInitializeRoomEffectsTask(void) { fprintf(stderr, "unresolved call: akropolisForkedRoadInitializeRoomEffectsTask\n"); abort(); }
 __attribute__((weak)) void akropolisForkedRoadLeafFallTask(void) { fprintf(stderr, "unresolved call: akropolisForkedRoadLeafFallTask\n"); abort(); }
+__attribute__((weak)) void akropolisForkedRoadRoomTask(void) { fprintf(stderr, "unresolved call: akropolisForkedRoadRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisForkedRoadRoomVisualEffectsFlashTask(void) { fprintf(stderr, "unresolved call: akropolisForkedRoadRoomVisualEffectsFlashTask\n"); abort(); }
 __attribute__((weak)) void akropolisForkedRoadRoomVisualEffectsSparkBurstTask(void) { fprintf(stderr, "unresolved call: akropolisForkedRoadRoomVisualEffectsSparkBurstTask\n"); abort(); }
 __attribute__((weak)) void akropolisForkedRoadRoomVisualEffectsTwinTrailTask(void) { fprintf(stderr, "unresolved call: akropolisForkedRoadRoomVisualEffectsTwinTrailTask\n"); abort(); }
 __attribute__((weak)) void akropolisForkedRoadWallLampTask(void) { fprintf(stderr, "unresolved call: akropolisForkedRoadWallLampTask\n"); abort(); }
 __attribute__((weak)) void akropolisFountainClimbTask(void) { fprintf(stderr, "unresolved call: akropolisFountainClimbTask\n"); abort(); }
+__attribute__((weak)) void akropolisFountainRoomTask(void) { fprintf(stderr, "unresolved call: akropolisFountainRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisFountainSprayTask(void) { fprintf(stderr, "unresolved call: akropolisFountainSprayTask\n"); abort(); }
 __attribute__((weak)) void akropolisFountainStartClimb(void) { fprintf(stderr, "unresolved call: akropolisFountainStartClimb\n"); abort(); }
 __attribute__((weak)) void akropolisFountainViewEffectsTask(void) { fprintf(stderr, "unresolved call: akropolisFountainViewEffectsTask\n"); abort(); }
+__attribute__((weak)) void akropolisHallwayBlueKeyPickupTask(void) { fprintf(stderr, "unresolved call: akropolisHallwayBlueKeyPickupTask\n"); abort(); }
 __attribute__((weak)) void akropolisHallwayRoomEffectTask(void) { fprintf(stderr, "unresolved call: akropolisHallwayRoomEffectTask\n"); abort(); }
+__attribute__((weak)) void akropolisHallwayRoomTask(void) { fprintf(stderr, "unresolved call: akropolisHallwayRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisHelicopterLandingPadDamagedLightSparksTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadDamagedLightSparksTask\n"); abort(); }
 __attribute__((weak)) void akropolisHelicopterLandingPadEmberTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadEmberTask\n"); abort(); }
 __attribute__((weak)) void akropolisHelicopterLandingPadExitTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadExitTask\n"); abort(); }
 __attribute__((weak)) void akropolisHelicopterLandingPadFlareEmitterTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadFlareEmitterTask\n"); abort(); }
 __attribute__((weak)) void akropolisHelicopterLandingPadLensFlareTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadLensFlareTask\n"); abort(); }
+__attribute__((weak)) void akropolisHelicopterLandingPadLiftTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadLiftTask\n"); abort(); }
 __attribute__((weak)) void akropolisHelicopterLandingPadPerimeterLightsTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadPerimeterLightsTask\n"); abort(); }
+__attribute__((weak)) void akropolisHelicopterLandingPadPickupModelTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadPickupModelTask\n"); abort(); }
+__attribute__((weak)) void akropolisHelicopterLandingPadRoomTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisHelicopterLandingPadStartExit(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadStartExit\n"); abort(); }
 __attribute__((weak)) void akropolisObservatoryAmbientGlowTask(void) { fprintf(stderr, "unresolved call: akropolisObservatoryAmbientGlowTask\n"); abort(); }
 __attribute__((weak)) void akropolisObservatoryLensFlareEmitterTask(void) { fprintf(stderr, "unresolved call: akropolisObservatoryLensFlareEmitterTask\n"); abort(); }
+__attribute__((weak)) void akropolisObservatoryRoomTask(void) { fprintf(stderr, "unresolved call: akropolisObservatoryRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisPatioLightGlowTask(void) { fprintf(stderr, "unresolved call: akropolisPatioLightGlowTask\n"); abort(); }
 __attribute__((weak)) void akropolisPatioLightMoteTask(void) { fprintf(stderr, "unresolved call: akropolisPatioLightMoteTask\n"); abort(); }
+__attribute__((weak)) void akropolisPatioRoomTask(void) { fprintf(stderr, "unresolved call: akropolisPatioRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisPatioSpawnLightEffectsTask(void) { fprintf(stderr, "unresolved call: akropolisPatioSpawnLightEffectsTask\n"); abort(); }
 __attribute__((weak)) void akropolisPlazaLightFlareTask(void) { fprintf(stderr, "unresolved call: akropolisPlazaLightFlareTask\n"); abort(); }
 __attribute__((weak)) void akropolisPlazaLightGlowTask(void) { fprintf(stderr, "unresolved call: akropolisPlazaLightGlowTask\n"); abort(); }
@@ -85,24 +2017,31 @@ __attribute__((weak)) void akropolisPromenadeGlowLampTask(void) { fprintf(stderr
 __attribute__((weak)) void akropolisPromenadeGlowStarTask(void) { fprintf(stderr, "unresolved call: akropolisPromenadeGlowStarTask\n"); abort(); }
 __attribute__((weak)) void akropolisPromenadeGroundGlowTask(void) { fprintf(stderr, "unresolved call: akropolisPromenadeGroundGlowTask\n"); abort(); }
 __attribute__((weak)) void akropolisPromenadeRoomEffectTask(void) { fprintf(stderr, "unresolved call: akropolisPromenadeRoomEffectTask\n"); abort(); }
+__attribute__((weak)) void akropolisPromenadeRoomTask(void) { fprintf(stderr, "unresolved call: akropolisPromenadeRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisPromenadeScreenDripTask(void) { fprintf(stderr, "unresolved call: akropolisPromenadeScreenDripTask\n"); abort(); }
 __attribute__((weak)) void akropolisRoofGardenAmbientEffectsTask(void) { fprintf(stderr, "unresolved call: akropolisRoofGardenAmbientEffectsTask\n"); abort(); }
 __attribute__((weak)) void akropolisRoofGardenFlareTask(void) { fprintf(stderr, "unresolved call: akropolisRoofGardenFlareTask\n"); abort(); }
 __attribute__((weak)) void akropolisRoofGardenLeafFallTask(void) { fprintf(stderr, "unresolved call: akropolisRoofGardenLeafFallTask\n"); abort(); }
 __attribute__((weak)) void akropolisRoofGardenLightGlowTask(void) { fprintf(stderr, "unresolved call: akropolisRoofGardenLightGlowTask\n"); abort(); }
+__attribute__((weak)) void akropolisRoofGardenPickupModelTask(void) { fprintf(stderr, "unresolved call: akropolisRoofGardenPickupModelTask\n"); abort(); }
+__attribute__((weak)) void akropolisRoofGardenRoomTask(void) { fprintf(stderr, "unresolved call: akropolisRoofGardenRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisSanctuaryFlameTask(void) { fprintf(stderr, "unresolved call: akropolisSanctuaryFlameTask\n"); abort(); }
+__attribute__((weak)) void akropolisSanctuaryItemVisibilityTask(void) { fprintf(stderr, "unresolved call: akropolisSanctuaryItemVisibilityTask\n"); abort(); }
 __attribute__((weak)) void akropolisSanctuaryMosaicShardTask(void) { fprintf(stderr, "unresolved call: akropolisSanctuaryMosaicShardTask\n"); abort(); }
 __attribute__((weak)) void akropolisSanctuaryMosaicTask(void) { fprintf(stderr, "unresolved call: akropolisSanctuaryMosaicTask\n"); abort(); }
 __attribute__((weak)) void akropolisSanctuaryMosaicTileTask(void) { fprintf(stderr, "unresolved call: akropolisSanctuaryMosaicTileTask\n"); abort(); }
 __attribute__((weak)) void akropolisSanctuaryRoomEffectTask(void) { fprintf(stderr, "unresolved call: akropolisSanctuaryRoomEffectTask\n"); abort(); }
+__attribute__((weak)) void akropolisSanctuaryRoomTask(void) { fprintf(stderr, "unresolved call: akropolisSanctuaryRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisSecurityRoomFallingQuadTask(void) { fprintf(stderr, "unresolved call: akropolisSecurityRoomFallingQuadTask\n"); abort(); }
 __attribute__((weak)) void akropolisSecurityRoomLockLampGlowTask(void) { fprintf(stderr, "unresolved call: akropolisSecurityRoomLockLampGlowTask\n"); abort(); }
 __attribute__((weak)) void akropolisSecurityRoomLockLampTask(void) { fprintf(stderr, "unresolved call: akropolisSecurityRoomLockLampTask\n"); abort(); }
 __attribute__((weak)) void akropolisSecurityRoomLockLampsTask(void) { fprintf(stderr, "unresolved call: akropolisSecurityRoomLockLampsTask\n"); abort(); }
+__attribute__((weak)) void akropolisSecurityRoomMessageTask(void) { fprintf(stderr, "unresolved call: akropolisSecurityRoomMessageTask\n"); abort(); }
 __attribute__((weak)) void akropolisSecurityRoomMonitorTask(void) { fprintf(stderr, "unresolved call: akropolisSecurityRoomMonitorTask\n"); abort(); }
 __attribute__((weak)) void akropolisSecurityRoomPowerSupplyTask(void) { fprintf(stderr, "unresolved call: akropolisSecurityRoomPowerSupplyTask\n"); abort(); }
 __attribute__((weak)) void akropolisSquarePlayerReflectionTask(void) { fprintf(stderr, "unresolved call: akropolisSquarePlayerReflectionTask\n"); abort(); }
 __attribute__((weak)) void akropolisSquareRoomEffectTask(void) { fprintf(stderr, "unresolved call: akropolisSquareRoomEffectTask\n"); abort(); }
+__attribute__((weak)) void akropolisSquareRoomTask(void) { fprintf(stderr, "unresolved call: akropolisSquareRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisSquareTelephoneLightTask(void) { fprintf(stderr, "unresolved call: akropolisSquareTelephoneLightTask\n"); abort(); }
 __attribute__((weak)) void akropolisSquareTelephoneMenuTask(void) { fprintf(stderr, "unresolved call: akropolisSquareTelephoneMenuTask\n"); abort(); }
 __attribute__((weak)) void akropolisStageSetupMovieBuffers(void) { fprintf(stderr, "unresolved call: akropolisStageSetupMovieBuffers\n"); abort(); }
@@ -110,6 +2049,7 @@ __attribute__((weak)) void akropolisWestElevatorHallBayLightingTask(void) { fpri
 __attribute__((weak)) void akropolisWestElevatorHallLightGlowTask(void) { fprintf(stderr, "unresolved call: akropolisWestElevatorHallLightGlowTask\n"); abort(); }
 __attribute__((weak)) void akropolisWestElevatorHallPlayerReflectionTask(void) { fprintf(stderr, "unresolved call: akropolisWestElevatorHallPlayerReflectionTask\n"); abort(); }
 __attribute__((weak)) void akropolisWestElevatorHallRedBeaconTask(void) { fprintf(stderr, "unresolved call: akropolisWestElevatorHallRedBeaconTask\n"); abort(); }
+__attribute__((weak)) void akropolisWestElevatorHallRoomTask(void) { fprintf(stderr, "unresolved call: akropolisWestElevatorHallRoomTask\n"); abort(); }
 __attribute__((weak)) void akropolisWestElevatorHallScanlineDistortionTask(void) { fprintf(stderr, "unresolved call: akropolisWestElevatorHallScanlineDistortionTask\n"); abort(); }
 __attribute__((weak)) void akropolisWestElevatorHallViewEffectsTask(void) { fprintf(stderr, "unresolved call: akropolisWestElevatorHallViewEffectsTask\n"); abort(); }
 __attribute__((weak)) void antibodyCastTask(void) { fprintf(stderr, "unresolved call: antibodyCastTask\n"); abort(); }
@@ -361,6 +2301,328 @@ __attribute__((weak)) void func_mp5a5_p1_8011DDA4(void) { fprintf(stderr, "unres
 __attribute__((weak)) void func_mp5a5_p2_8011DDA4(void) { fprintf(stderr, "unresolved call: func_mp5a5_p2_8011DDA4\n"); abort(); }
 __attribute__((weak)) void func_p08_snail_8011D1D8(void) { fprintf(stderr, "unresolved call: func_p08_snail_8011D1D8\n"); abort(); }
 __attribute__((weak)) void func_sp12_8011D1DC(void) { fprintf(stderr, "unresolved call: func_sp12_8011D1DC\n"); abort(); }
+__attribute__((weak)) unsigned char gActor00700MothTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor00700RatTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor01100Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor01600ScavengerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor02500Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor04000BloodSucklerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor100300Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor100400Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor101100Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor101200BoneSucklerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor101600ScavengerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor101900GrinningStrangerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor102000PawnGolemTasks[0x10000];
+__attribute__((weak)) unsigned char gActor102100WatcherTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor102300RookGolemTasks[0x10000];
+__attribute__((weak)) unsigned char gActor102400Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor102500Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor103700BatTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor103800BlackBeetleTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor104600SkullStalkerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor104600SucklercephTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor105500MaggotCaterpillarTasks[0x10000];
+__attribute__((weak)) unsigned char gActor105600PawnGolemTasks[0x10000];
+__attribute__((weak)) unsigned char gActor107000SlouchTaskDescs[0x10000];
+__attribute__((weak)) unsigned char gActor107000SucklercephTaskDescs[0x10000];
+__attribute__((weak)) unsigned char gActor200300Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor200400Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor200700RatTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor201100Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor201200BoneSucklerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor202000PawnGolemTasks[0x10000];
+__attribute__((weak)) unsigned char gActor202100WatcherTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor202300RookGolemTasks[0x10000];
+__attribute__((weak)) unsigned char gActor202400Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor202600MaggotCaterpillarBodyTask[0x10000];
+__attribute__((weak)) unsigned char gActor203700BatTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor203800BlackBeetleTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor204000BloodSucklerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor204600SkullStalkerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor204600SucklercephTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor205500MaggotCaterpillarTasks[0x10000];
+__attribute__((weak)) unsigned char gActor205600PawnGolemTasks[0x10000];
+__attribute__((weak)) unsigned char gActor207000SlouchTaskDescs[0x10000];
+__attribute__((weak)) unsigned char gActor207000SucklercephTaskDescs[0x10000];
+__attribute__((weak)) unsigned char gActor301100Tasks[0x10000];
+__attribute__((weak)) unsigned char gActor301200BoneSucklerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor301600ScavengerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor301900GrinningStrangerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor302000PawnGolemTasks[0x10000];
+__attribute__((weak)) unsigned char gActor304000BloodSucklerTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor361100EveTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor361100TentacleTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gActor503500EnemyTaskDescs[0x10000];
+__attribute__((weak)) unsigned char gActor503500TentacleTaskDesc[0x10000];
+__attribute__((weak)) unsigned char gAkropolisBridgeRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisBridgeRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisBridgeSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisBridgeSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisBridgeViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisBridgeViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisBridgeViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisBridgeWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisCafeteriaCollisionRooms[0x10000];
+__attribute__((weak)) unsigned char gAkropolisCafeteriaMendelJournalModel[0x10000];
+__attribute__((weak)) unsigned char gAkropolisCafeteriaRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisCafeteriaSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisCafeteriaStimPickupModel[0x10000];
+__attribute__((weak)) unsigned char gAkropolisCafeteriaSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisCafeteriaViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisCafeteriaViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisCafeteriaViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisCafeteriaWarps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisEastElevatorHallRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisEastElevatorHallRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisEastElevatorHallSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisEastElevatorHallViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisEastElevatorHallViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisEastElevatorHallViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisEastElevatorHallWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFireEscapeCollisionRoomResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFireEscapeRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFireEscapeSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFireEscapeSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFireEscapeViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFireEscapeViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFireEscapeViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFireEscapeWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisForkedRoadRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisForkedRoadRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisForkedRoadSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisForkedRoadSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisForkedRoadViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisForkedRoadViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisForkedRoadViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisForkedRoadWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFountainRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFountainRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFountainSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFountainSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFountainViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFountainViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFountainViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisFountainWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHallwayBlueKeyPickupModel[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHallwayRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHallwayRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHallwaySpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHallwaySurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHallwayViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHallwayViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHallwayViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHallwayWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadAmmunitionPickupModel[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadCollisionRoomResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadLiftModel[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadWarps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisObservatoryRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisObservatoryRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisObservatorySpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisObservatorySurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisObservatoryViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisObservatoryViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisObservatoryViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisObservatoryWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPatioRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPatioRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPatioSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPatioSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPatioViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPatioViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPatioViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPatioWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPlazaRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPlazaRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPlazaSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPlazaSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPlazaViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPlazaViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPlazaViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPlazaWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPromenadeRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPromenadeRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPromenadeSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPromenadeSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPromenadeViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPromenadeViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPromenadeViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisPromenadeWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisRoofGardenArmoryCardkeyPickupModel[0x10000];
+__attribute__((weak)) unsigned char gAkropolisRoofGardenCollisionRoomResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisRoofGardenRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisRoofGardenSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisRoofGardenSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisRoofGardenViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisRoofGardenViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisRoofGardenViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisRoofGardenWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSanctuaryItemBoxModel[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSanctuaryRedKeyPickupModel[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSanctuaryRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSanctuaryRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSanctuarySpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSanctuarySurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSanctuaryViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSanctuaryViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSanctuaryViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSanctuaryWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSecurityRoomItemBoxModel[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSecurityRoomRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSecurityRoomRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSecurityRoomSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSecurityRoomSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSecurityRoomViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSecurityRoomViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSecurityRoomViewMaps[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSecurityRoomWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSquareRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSquareRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSquareSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSquareSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSquareViewCameras[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSquareViewCounts[0x10000];
+__attribute__((weak)) unsigned char gAkropolisSquareWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageBridgeDefaultPlacements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageBridgeVariant2Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageBridgeVariant3Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant2Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant3Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant4Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant5Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant7Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageEastElevatorHallVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageFireEscapePlacements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant10Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant11Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant12Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant13Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant14Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant15Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant16Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant20Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant21Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant22Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant2Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant3Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant4Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant7Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant8Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant9Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageFountainVariant2Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageFountainVariant7Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageHallwayVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageHallwayVariant2Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageHallwayVariant3Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageHallwayVariant4Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageHelicopterLandingPadVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageHelicopterLandingPadVariant2Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageMistParkingPlacements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageMistR18Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageMistShootingGalleryPlacements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageObservatoryVariant10Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageObservatoryVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageObservatoryVariant2Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageObservatoryVariant3Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageObservatoryVariant7Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePatioVariant10Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePatioVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePatioVariant2Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePatioVariant3Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePatioVariant4Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePatioVariant5Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePlazaVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePromenadeVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePromenadeVariant2Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePromenadeVariant3Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePromenadeVariant7Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStagePromenadeVariant8Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageRoofGardenVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageRoofGardenVariant2Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageRoofGardenVariant7Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageRoofGardenVariant8Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageSanctuaryNo9AndRupertPlacements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageSanctuaryRupertPlacements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageSecurityRoomVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAkropolisStageSquareVariant1Placements[0x10000];
+__attribute__((weak)) unsigned char gAyaIdleClip[0x10000];
+__attribute__((weak)) unsigned char gChaserMadBody[0x10000];
+__attribute__((weak)) unsigned char gDryfieldFactoryCollisionGrid[0x10000];
+__attribute__((weak)) unsigned char gDryfieldGarageCollisionGridFaces[0x10000];
+__attribute__((weak)) unsigned char gDryfieldGarageCollisionGridNormals[0x10000];
+__attribute__((weak)) unsigned char gDryfieldGarageCollisionGridVerts[0x10000];
+__attribute__((weak)) unsigned char gDryfieldNightFactoryCollisionGrid[0x10000];
+__attribute__((weak)) unsigned char gDryfieldNightMainStreetRooms2And3ActionTriggers[0x10000];
+__attribute__((weak)) unsigned char gDryfieldNightMainStreetRooms2And3CollisionGridFaces[0x10000];
+__attribute__((weak)) unsigned char gDryfieldNightMainStreetRooms2And3CollisionGridNormals[0x10000];
+__attribute__((weak)) unsigned char gDryfieldNightMainStreetRooms2And3CollisionGridVerts[0x10000];
+__attribute__((weak)) unsigned char gEveMaskedBody[0x10000];
+__attribute__((weak)) unsigned char gGluttonBody[0x10000];
+__attribute__((weak)) unsigned char gGolemGrenade[0x10000];
+__attribute__((weak)) unsigned char gGolemNo9AkropolisChestPiece[0x10000];
+__attribute__((weak)) unsigned char gGolemNo9AkropolisProp[0x10000];
+__attribute__((weak)) unsigned char gGolemNo9AkropolisSword[0x10000];
+__attribute__((weak)) unsigned char gGolemNo9BodyAkropolis[0x10000];
+__attribute__((weak)) unsigned char gKyleBody[0x10000];
+__attribute__((weak)) unsigned char gKyleHandLeft[0x10000];
+__attribute__((weak)) unsigned char gKyleHandLeft2[0x10000];
+__attribute__((weak)) unsigned char gKyleHandRight[0x10000];
+__attribute__((weak)) unsigned char gMistParkingRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gMistParkingRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gMistParkingSpriteViews[0x10000];
+__attribute__((weak)) unsigned char gMistParkingSurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gMistParkingViewCameras[0x10000];
+__attribute__((weak)) unsigned char gMistParkingViewCounts[0x10000];
+__attribute__((weak)) unsigned char gMistParkingViewMaps[0x10000];
+__attribute__((weak)) unsigned char gMistParkingWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gMistR18CollisionRoomResources[0x10000];
+__attribute__((weak)) unsigned char gMistR18RoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gMistR18SpriteViews[0x10000];
+__attribute__((weak)) unsigned char gMistR18ViewCameras[0x10000];
+__attribute__((weak)) unsigned char gMistR18ViewCounts[0x10000];
+__attribute__((weak)) unsigned char gMistR18ViewMaps[0x10000];
+__attribute__((weak)) unsigned char gMistR18WarpEntries[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryBullseye1Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryBullseye2Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryBullseye3Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget10Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget1Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget2Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget3Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget4Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget5Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget6Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget7Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget8Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget9Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryDemonstrationTargetModel[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryHalfTarget1Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryHalfTarget2Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryHalfTarget3Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryHalfTarget4Model[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryMountModel[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryRoomCollisionResources[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryRoomLightingTable[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGallerySpriteViews[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGallerySurfacePropertiesByClass[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryViewCameras[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryViewCounts[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryViewMaps[0x10000];
+__attribute__((weak)) unsigned char gMistShootingGalleryWarpEntries[0x10000];
+__attribute__((weak)) unsigned char gRatAndMothRatBody[0x10000];
+__attribute__((weak)) unsigned char gShelterB3GarbageIncineratorRoom1And3ViewMap[0x10000];
+__attribute__((weak)) unsigned char gShelterR47CollisionGridFaces[0x10000];
+__attribute__((weak)) unsigned char gShelterR47CollisionGridNormals[0x10000];
+__attribute__((weak)) unsigned char gShelterR47CollisionGridVerts[0x10000];
+__attribute__((weak)) unsigned char gShelterR48CollisionGrid[0x10000];
 __attribute__((weak)) void grenadePistolAttackState(void) { fprintf(stderr, "unresolved call: grenadePistolAttackState\n"); abort(); }
 __attribute__((weak)) void grenadePistolShellTask(void) { fprintf(stderr, "unresolved call: grenadePistolShellTask\n"); abort(); }
 __attribute__((weak)) void gunbladeAttackState(void) { fprintf(stderr, "unresolved call: gunbladeAttackState\n"); abort(); }
@@ -443,9 +2705,14 @@ __attribute__((weak)) void mineTunnelEntranceRoomTask(void) { fprintf(stderr, "u
 __attribute__((weak)) void mineTunnelRoomTask(void) { fprintf(stderr, "unresolved call: mineTunnelRoomTask\n"); abort(); }
 __attribute__((weak)) void mistParkingContinueDepartureChoiceTask(void) { fprintf(stderr, "unresolved call: mistParkingContinueDepartureChoiceTask\n"); abort(); }
 __attribute__((weak)) void mistParkingDrawGlowsTask(void) { fprintf(stderr, "unresolved call: mistParkingDrawGlowsTask\n"); abort(); }
+__attribute__((weak)) void mistParkingRoomTask(void) { fprintf(stderr, "unresolved call: mistParkingRoomTask\n"); abort(); }
+__attribute__((weak)) void mistParkingSetPierceCollisionPatchLowered(void) { fprintf(stderr, "unresolved call: mistParkingSetPierceCollisionPatchLowered\n"); abort(); }
 __attribute__((weak)) void mistParkingTelephoneMenuTask(void) { fprintf(stderr, "unresolved call: mistParkingTelephoneMenuTask\n"); abort(); }
+__attribute__((weak)) void mistR18BriefingTask(void) { fprintf(stderr, "unresolved call: mistR18BriefingTask\n"); abort(); }
+__attribute__((weak)) void mistR21RoomTask(void) { fprintf(stderr, "unresolved call: mistR21RoomTask\n"); abort(); }
 __attribute__((weak)) void mistShootingGalleryDrawLightGlowsTask(void) { fprintf(stderr, "unresolved call: mistShootingGalleryDrawLightGlowsTask\n"); abort(); }
 __attribute__((weak)) void mistShootingGalleryOpenCarryoverModeMenu(void) { fprintf(stderr, "unresolved call: mistShootingGalleryOpenCarryoverModeMenu\n"); abort(); }
+__attribute__((weak)) void mistShootingGalleryRoomTask(void) { fprintf(stderr, "unresolved call: mistShootingGalleryRoomTask\n"); abort(); }
 __attribute__((weak)) void mistShootingGalleryTracerTask(void) { fprintf(stderr, "unresolved call: mistShootingGalleryTracerTask\n"); abort(); }
 __attribute__((weak)) void mm1AttackState(void) { fprintf(stderr, "unresolved call: mm1AttackState\n"); abort(); }
 __attribute__((weak)) void mm1ShellTask(void) { fprintf(stderr, "unresolved call: mm1ShellTask\n"); abort(); }
@@ -565,6 +2832,7 @@ __attribute__((weak)) void pyrokinesisFlamePuffTask(void) { fprintf(stderr, "unr
 __attribute__((weak)) void pyrokinesisFlameRingTask(void) { fprintf(stderr, "unresolved call: pyrokinesisFlameRingTask\n"); abort(); }
 __attribute__((weak)) void pyrokinesisLaunchConeTask(void) { fprintf(stderr, "unresolved call: pyrokinesisLaunchConeTask\n"); abort(); }
 __attribute__((weak)) void pyrokinesisVolleyTask(void) { fprintf(stderr, "unresolved call: pyrokinesisVolleyTask\n"); abort(); }
+__attribute__((weak)) void screenFadeInTileTask(void) { fprintf(stderr, "unresolved call: screenFadeInTileTask\n"); abort(); }
 __attribute__((weak)) void shelter1fAirlockDrawViewGlowsTask(void) { fprintf(stderr, "unresolved call: shelter1fAirlockDrawViewGlowsTask\n"); abort(); }
 __attribute__((weak)) void shelter1fAirlockRoomTask(void) { fprintf(stderr, "unresolved call: shelter1fAirlockRoomTask\n"); abort(); }
 __attribute__((weak)) void shelter1fBulwarkDrawGlowsTask(void) { fprintf(stderr, "unresolved call: shelter1fBulwarkDrawGlowsTask\n"); abort(); }
@@ -874,3 +3142,5 @@ __attribute__((weak)) void shelterR49RoomTask(void) { fprintf(stderr, "unresolve
 __attribute__((weak)) void tonfaBatonAttackState(void) { fprintf(stderr, "unresolved call: tonfaBatonAttackState\n"); abort(); }
 __attribute__((weak)) void tonfaBatonModelTask(void) { fprintf(stderr, "unresolved call: tonfaBatonModelTask\n"); abort(); }
 __attribute__((weak)) void tonfaBatonSwingTrailTask(void) { fprintf(stderr, "unresolved call: tonfaBatonSwingTrailTask\n"); abort(); }
+__attribute__((weak)) void waterDistortBandTask(void) { fprintf(stderr, "unresolved call: waterDistortBandTask\n"); abort(); }
+__attribute__((weak)) void waterRefractionTask(void) { fprintf(stderr, "unresolved call: waterRefractionTask\n"); abort(); }
