@@ -419,3 +419,207 @@ u32* tmdDrawStreamGt4(TmdStreamWorkspace* ws, s32 flags, u32* el)
     u32 colour = (flags & TMD_OBJECT_SEMI_TRANS) ? 0x3E808080u : 0x3C808080u;
     return gt4(ws, el, colour, (flags & TMD_OBJECT_REVERSE_CULLING) != 0);
 }
+
+/* Textured triangle, one face normal and a fixed material: one lit colour on all corners. */
+static u32* gt3OneNormal(TmdStreamWorkspace* ws, u32* el, u32 colour)
+{
+    u8* slot = ws->primWrite;
+
+    for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_GT3), el += ws->elemStride) {
+        POLY_GT3* p = (POLY_GT3*)slot;
+        u32 w0 = el[0], w1 = el[1];
+
+        loadV(0, vertexAt(ws, w0 & 0xFFFF));
+        loadV(1, vertexAt(ws, w0 >> 16));
+        loadV(2, vertexAt(ws, w1 & 0xFFFF));
+        Psyz_GteDataWrite(6, colour);
+        Psyz_GteRtpt();
+        if (Psyz_GteReadflg() < 0) {
+            continue;
+        }
+        Psyz_GteNclip();
+        if ((s32)Psyz_GteDataRead(24) <= 0) {
+            continue;
+        }
+        storeXy(&p->x0, 12);
+        storeXy(&p->x1, 13);
+        storeXy(&p->x2, 14);
+        Psyz_GteAvsz3();
+        loadV(0, normalAt(ws, w1 >> 16));
+        Psyz_GteCommand(GTE_NCCS);
+        storeRgb(&p->r0, 22);
+        storeRgb(&p->r1, 22);
+        storeRgb(&p->r2, 22);
+        linkPacket(ws, p, 9);
+    }
+    ws->primWrite = slot;
+    return el;
+}
+
+u32* tmdDrawStreamPrimGt3OneNormal(TmdStreamWorkspace* ws, s32 flags, u32* el)
+{
+    (void)flags;
+    return gt3OneNormal(ws, el, 0x34808080u);
+}
+
+u32* tmdDrawStreamPrimGt3OneNormalSemiTrans(TmdStreamWorkspace* ws, s32 flags, u32* el)
+{
+    (void)flags;
+    return gt3OneNormal(ws, el, 0x36808080u);
+}
+
+static u32* gt4OneNormal(TmdStreamWorkspace* ws, u32* el, u32 colour)
+{
+    u8* slot = ws->primWrite;
+
+    for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_GT4), el += ws->elemStride) {
+        POLY_GT4* p = (POLY_GT4*)slot;
+        u32 w0 = el[0], w1 = el[1], w2 = el[2];
+
+        Psyz_GteDataWrite(6, colour);
+        loadV(0, vertexAt(ws, w1 >> 16));
+        Psyz_GteRtps();
+        if (Psyz_GteReadflg() < 0) {
+            continue;
+        }
+        storeXy(&p->x3, 14);
+
+        loadV(0, vertexAt(ws, w1 & 0xFFFF));
+        loadV(1, vertexAt(ws, w0 >> 16));
+        loadV(2, vertexAt(ws, w0 & 0xFFFF));
+        Psyz_GteRtpt();
+        if (Psyz_GteReadflg() < 0) {
+            continue;
+        }
+        storeXy(&p->x2, 12);
+        storeXy(&p->x1, 13);
+        storeXy(&p->x0, 14);
+        Psyz_GteNclip();
+        if ((s32)Psyz_GteDataRead(24) >= 0) {
+            Psyz_GteDataWrite(14, (u32)(u16)p->x3 | ((u32)(u16)p->y3 << 16));
+            Psyz_GteNclip();
+            if ((s32)Psyz_GteDataRead(24) <= 0) {
+                continue;
+            }
+        }
+        Psyz_GteAvsz4();
+        loadV(0, normalAt(ws, w2)); /* the whole word is the byte offset */
+        Psyz_GteCommand(GTE_NCCS);
+        storeRgb(&p->r0, 22);
+        storeRgb(&p->r1, 22);
+        storeRgb(&p->r2, 22);
+        storeRgb(&p->r3, 22);
+        linkPacket(ws, p, 12);
+    }
+    ws->primWrite = slot;
+    return el;
+}
+
+u32* tmdDrawStreamPrimGt4OneNormal(TmdStreamWorkspace* ws, s32 flags, u32* el)
+{
+    (void)flags;
+    return gt4OneNormal(ws, el, 0x3C808080u);
+}
+
+u32* tmdDrawStreamPrimGt4OneNormalSemiTrans(TmdStreamWorkspace* ws, s32 flags, u32* el)
+{
+    (void)flags;
+    return gt4OneNormal(ws, el, 0x3E808080u);
+}
+
+/* Light one corner: material colour `colour` with normal `n`, result left in RGB2. */
+static void lightCorner(const SVECTOR* n, u32 colour)
+{
+    Psyz_GteDataWrite(6, colour);
+    loadV(0, n);
+    Psyz_GteCommand(GTE_NCCS);
+}
+
+/* Textured triangle, a normal and a material colour per corner. Ignores reverse culling. */
+u32* tmdDrawStreamPrimGt3CornerColors(TmdStreamWorkspace* ws, s32 flags, u32* el)
+{
+    u8* slot = ws->primWrite;
+    u8  code = (flags & TMD_OBJECT_SEMI_TRANS) ? 0x36 : 0x34;
+
+    for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_GT3), el += ws->elemStride) {
+        POLY_GT3* p = (POLY_GT3*)slot;
+        u32 w0 = el[0], w1 = el[1], w2 = el[2];
+
+        loadV(0, vertexAt(ws, w0 & 0xFFFF));
+        loadV(1, vertexAt(ws, w0 >> 16));
+        loadV(2, vertexAt(ws, w1 & 0xFFFF));
+        Psyz_GteRtpt();
+        if (Psyz_GteReadflg() < 0) {
+            continue;
+        }
+        Psyz_GteNclip();
+        if ((s32)Psyz_GteDataRead(24) <= 0) {
+            continue;
+        }
+        storeXy(&p->x0, 12);
+        storeXy(&p->x1, 13);
+        storeXy(&p->x2, 14);
+        Psyz_GteAvsz3();
+        lightCorner(normalAt(ws, w1 >> 16), el[3]);
+        storeRgb(&p->r0, 22);
+        lightCorner(normalAt(ws, w2 & 0xFFFF), el[4]);
+        storeRgb(&p->r1, 22);
+        lightCorner(normalAt(ws, w2 >> 16), el[5]);
+        storeRgb(&p->r2, 22);
+        p->code = code;
+        linkPacket(ws, p, 9);
+    }
+    ws->primWrite = slot;
+    return el;
+}
+
+/* Textured quad, a normal and a material colour per corner. */
+u32* tmdDrawStreamPrimGt4CornerColors(TmdStreamWorkspace* ws, s32 flags, u32* el)
+{
+    u8* slot = ws->primWrite;
+    u8  code = (flags & TMD_OBJECT_SEMI_TRANS) ? 0x3E : 0x3C;
+
+    for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_GT4), el += ws->elemStride) {
+        POLY_GT4* p = (POLY_GT4*)slot;
+        u32 w0 = el[0], w1 = el[1], w2 = el[2], w3 = el[3];
+
+        loadV(0, vertexAt(ws, w1 >> 16));
+        Psyz_GteRtps();
+        if (Psyz_GteReadflg() < 0) {
+            continue;
+        }
+        storeXy(&p->x3, 14);
+
+        loadV(0, vertexAt(ws, w1 & 0xFFFF));
+        loadV(1, vertexAt(ws, w0 >> 16));
+        loadV(2, vertexAt(ws, w0 & 0xFFFF));
+        Psyz_GteRtpt();
+        if (Psyz_GteReadflg() < 0) {
+            continue;
+        }
+        storeXy(&p->x2, 12);
+        storeXy(&p->x1, 13);
+        storeXy(&p->x0, 14);
+        Psyz_GteNclip();
+        if ((s32)Psyz_GteDataRead(24) >= 0) {
+            Psyz_GteDataWrite(14, (u32)(u16)p->x3 | ((u32)(u16)p->y3 << 16));
+            Psyz_GteNclip();
+            if ((s32)Psyz_GteDataRead(24) <= 0) {
+                continue;
+            }
+        }
+        Psyz_GteAvsz4();
+        lightCorner(normalAt(ws, w2 & 0xFFFF), el[4]);
+        storeRgb(&p->r0, 22);
+        lightCorner(normalAt(ws, w2 >> 16), el[5]);
+        storeRgb(&p->r1, 22);
+        lightCorner(normalAt(ws, w3 & 0xFFFF), el[6]);
+        storeRgb(&p->r2, 22);
+        lightCorner(normalAt(ws, w3 >> 16), el[7]);
+        storeRgb(&p->r3, 22);
+        p->code = code;
+        linkPacket(ws, p, 12);
+    }
+    ws->primWrite = slot;
+    return el;
+}

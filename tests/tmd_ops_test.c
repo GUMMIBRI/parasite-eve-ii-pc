@@ -11,6 +11,10 @@
 u32* tmdXformStreamVerts(TmdStreamWorkspace*, s32, u32*);
 u32* tmdDrawStreamGt3(TmdStreamWorkspace*, s32, u32*);
 u32* tmdDrawStreamGt4(TmdStreamWorkspace*, s32, u32*);
+u32* tmdDrawStreamPrimGt3OneNormal(TmdStreamWorkspace*, s32, u32*);
+u32* tmdDrawStreamPrimGt4OneNormal(TmdStreamWorkspace*, s32, u32*);
+u32* tmdDrawStreamPrimGt3CornerColors(TmdStreamWorkspace*, s32, u32*);
+u32* tmdDrawStreamPrimGt4CornerColors(TmdStreamWorkspace*, s32, u32*);
 
 #define FAIL(m) do { puts("FAIL: " m); return 1; } while (0)
 
@@ -109,6 +113,28 @@ int main(void)
         el[0] = 0 | (8u << 16); el[1] = 16 | (24u << 16); el[2] = 0; el[3] = 0;
         end = tmdDrawStreamGt4(&ws, 0, el);
         if (end != el + 4 || g4[0].x3 != 210 || g4[0].code != 0x3C || ((P_TAG*)&g4[0])->len != 12) FAIL("gt4");
+    }
+    /* One-normal and corner-colour textured variants */
+    {
+        POLY_GT3 g3[1]; POLY_GT4 g4[1];
+        memset(ot, 0, sizeof ot); memset(g3, 0, sizeof g3); memset(g4, 0, sizeof g4);
+        ws.primWrite = (u8*)g3; ws.elemCount = 1; ws.elemStride = 2;
+        el[0] = 0 | (8u << 16); el[1] = 16;
+        end = tmdDrawStreamPrimGt3OneNormal(&ws, 0, el);
+        if (end != el + 2 || g3[0].x2 != 110 || g3[0].code != 0x34 || g3[0].r0 != g3[0].r2) FAIL("gt3 one-normal");
+        ws.primWrite = (u8*)g4; ws.elemStride = 3;
+        el[0] = 0 | (8u << 16); el[1] = 16 | (24u << 16); el[2] = 0;
+        end = tmdDrawStreamPrimGt4OneNormal(&ws, 0, el);
+        if (end != el + 3 || g4[0].x3 != 210 || g4[0].code != 0x3C || g4[0].r0 != g4[0].r3) FAIL("gt4 one-normal");
+        memset(g3, 0, sizeof g3); ws.primWrite = (u8*)g3; ws.elemStride = 6;
+        el[0] = 0 | (8u << 16); el[1] = 16; el[2] = 0; el[3] = 0x00404040; el[4] = 0x00808080; el[5] = 0x00FFFFFF;
+        end = tmdDrawStreamPrimGt3CornerColors(&ws, 0x02, el);
+        if (end != el + 6 || g3[0].code != 0x36 || ((P_TAG*)&g3[0])->len != 9) FAIL("gt3 corner colours");
+        memset(g4, 0, sizeof g4); ws.primWrite = (u8*)g4; ws.elemStride = 8;
+        el[0] = 0 | (8u << 16); el[1] = 16 | (24u << 16); el[2] = 0; el[3] = 0;
+        el[4] = el[5] = el[6] = el[7] = 0x00808080;
+        end = tmdDrawStreamPrimGt4CornerColors(&ws, 0, el);
+        if (end != el + 8 || g4[0].code != 0x3C || g4[0].x3 != 210) FAIL("gt4 corner colours");
     }
     puts("tmd ops OK");
     return 0;
