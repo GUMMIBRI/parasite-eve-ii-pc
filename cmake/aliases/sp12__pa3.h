@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(pa3AttackState,func_sp12_8011D1DC);

@@ -74,3 +74,23 @@ add_executable(tmd_ops_test EXCLUDE_FROM_ALL tests/tmd_ops_test.c src/port/tmd_o
 target_include_directories(tmd_ops_test PRIVATE include include/decomp src/main)
 target_compile_definitions(tmd_ops_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(tmd_ops_test PRIVATE psyz)
+
+# Variant units: a package compiled from another package's shared source with its own -D parameters.
+# Each is a separate object library so the parameters stay per package (see docs/PORT_PLAN.md).
+function(pe_overlay_variant pkg unit src defs hdr)
+    string(REPLACE "/" "__" tgt "pe_var_${unit}")
+    if(NOT TARGET ${tgt})
+        add_library(${tgt} OBJECT EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/${src})
+        target_include_directories(${tgt} PRIVATE include include/decomp build/include)
+        target_compile_definitions(${tgt} PRIVATE __psyz SKIP_ASM ${defs})
+        target_compile_options(${tgt} PRIVATE -w -Wno-incompatible-function-pointer-types -Wno-return-mismatch)
+        target_link_libraries(${tgt} PRIVATE psyz)
+        if(hdr)
+            target_compile_options(${tgt} PRIVATE -include ${CMAKE_CURRENT_SOURCE_DIR}/${hdr})
+        endif()
+        set_property(GLOBAL APPEND PROPERTY PE_VARIANT_TARGETS ${tgt})
+    endif()
+endfunction()
+include(cmake/overlay_variants.cmake)
+get_property(_pe_vars GLOBAL PROPERTY PE_VARIANT_TARGETS)
+add_custom_target(overlay_variants DEPENDS ${_pe_vars})

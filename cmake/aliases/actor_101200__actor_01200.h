@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(gActor01200BoneSucklerTaskDesc,gActor101200BoneSucklerTaskDesc);

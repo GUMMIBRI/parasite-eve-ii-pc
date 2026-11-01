@@ -72,4 +72,7 @@ VECTOR* ApplyMatrixLV(MATRIX* m, VECTOR* v0, VECTOR* v1);
 VECTOR* ApplyTransposeMatrixLV(MATRIX* m, VECTOR* v0, VECTOR* v1);
 SVECTOR* ApplyMatrixSV(MATRIX* m, SVECTOR* v0, SVECTOR* v1);
 
+/* GTE LCOL colour blend: out = (c0 * w0 + c1 * w1) >> 12 per channel (r, g, b). */
+void LoadAverageCol(unsigned char* c0, unsigned char* c1, int w0, int w1, unsigned char* out);
+
 #endif

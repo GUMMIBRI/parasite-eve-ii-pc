@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(gActor03700BatTaskDesc,gActor203700BatTaskDesc);

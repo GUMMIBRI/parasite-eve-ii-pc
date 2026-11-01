@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(grenadePistolAttackState,mm1AttackState);DEFINE_ALIAS(grenadePistolShellTask,mm1ShellTask);

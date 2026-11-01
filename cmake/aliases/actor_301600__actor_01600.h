@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(gActor01600ScavengerTaskDesc,gActor301600ScavengerTaskDesc);

@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(mp5a5AttackState,func_mp5a5_p2_8011DDA4);

@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(gActor05600PawnGolemTasks,gActor205600PawnGolemTasks);

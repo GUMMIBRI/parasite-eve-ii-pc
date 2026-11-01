@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(gActor04600SucklercephTaskDesc,gActor204600SucklercephTaskDesc);DEFINE_ALIAS(gActor04600SkullStalkerTaskDesc,gActor204600SkullStalkerTaskDesc);

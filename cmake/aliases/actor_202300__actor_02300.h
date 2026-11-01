@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(gActor02300RookGolemTasks,gActor202300RookGolemTasks);

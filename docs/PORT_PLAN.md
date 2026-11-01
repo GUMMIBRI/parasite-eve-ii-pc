@@ -48,3 +48,12 @@ All of `src/main/hasm` is now C (`src/port/lzss.c`, `tmd_dispatch.c`, `tmd_prim.
 `cmake -DPE_ALL_OVERLAYS=ON` additionally compiles the 422 non-gameplay source files that build on the host (list in `cmake/overlay_sources.cmake`, the other 40 are in `PE_OVERLAY_SOURCES_PENDING`). With that the link reports 689 undefined symbols and no duplicate definitions yet (the linker reports undefined symbols first). The remainder are the 40 pending room/shared-source templates, a few PSY-Q libraries PsyZ lacks (memory card, `PadInitDirect`, SPU reverb, `MulMatrix0`, `StCdInterrupt`-style CD calls) and data defined only in the splat `asm/` data files.
 
 Link survey after the PSY-Q placeholders (`PE_ALL_OVERLAYS=ON`): 660 undefined symbols — 54 are `func_8070xxxx` / `D_8072xxxx` names that `main` calls by overlay address (listed in `configs/USA/sym.main.imports.txt`), about 450 are `g*` data tables (task tables, room descriptors) whose definitions sit in files not yet compiled, and about 110 are overlay tasks (`akropolis*`, `dryfield*`, `actor*`). All three groups are the overlay module registry's job (phase 2): give each package a name space, resolve cross-package references by name instead of address, and pull in the 40 template files with their per-package parameters.
+
+## Variant units (done)
+
+`tools/port/gen_overlay_variants.py` reads `configs/USA/overlays.toml` and `configs/USA/generated/*.yaml` and writes
+`cmake/overlay_variants.cmake`: 119 variant units (a package compiled from another package's shared source), each its
+own object library with the slot's `-D` parameters (`WEAPON_INDEX`, `GRENADE_PISTOL_VARIANT`, ...) and, for
+`aliases`, a force-included `cmake/aliases/<unit>.h` defining `PACKAGE_ALIASES`. `cmake --build build-port --target
+overlay_variants` compiles all 119 on the host. They are not linked yet: the same global names recur across packages,
+so linking needs per-package isolation (one module per package) rather than one flat executable.

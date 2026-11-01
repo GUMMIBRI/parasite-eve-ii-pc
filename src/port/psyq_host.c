@@ -214,3 +214,12 @@ void RotTransSV(SVECTOR* v0, SVECTOR* v1, int* flag)
 int DecDCTvlc2(u_long* bs, u_long* buf, u_short* table) { (void)bs; (void)buf; (void)table; return -1; }
 void DecDCTvlcBuild(u_short* table) { (void)table; }
 int DecDCTvlcSize2(int size) { return size; }
+
+void LoadAverageCol(unsigned char* c0, unsigned char* c1, int w0, int w1, unsigned char* out)
+{
+    int i;
+    for (i = 0; i < 3; i++) {
+        int v = (c0[i] * w0 + c1[i] * w1) >> 12;
+        out[i] = v < 0 ? 0 : v > 255 ? 255 : (unsigned char)v;
+    }
+}

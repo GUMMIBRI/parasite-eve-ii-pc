@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(gActor07000SucklercephTaskDescs,gActor207000SucklercephTaskDescs);DEFINE_ALIAS(gActor07000SlouchTaskDescs,gActor207000SlouchTaskDescs);

@@ -1,0 +1,1 @@
+#define PACKAGE_ALIASES DEFINE_ALIAS(gActor03800BlackBeetleTaskDesc,gActor103800BlackBeetleTaskDesc);
