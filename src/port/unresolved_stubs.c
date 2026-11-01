@@ -1671,7 +1671,9 @@ __attribute__((weak)) void _actor350700KyleMadiganAttachmentTask(void) { fprintf
 __attribute__((weak)) void _actor350700KyleMadiganWalkerTask(void) { fprintf(stderr, "unresolved call: _actor350700KyleMadiganWalkerTask\n"); abort(); }
 __attribute__((weak)) void _actor350700ReverseWalkTask(void) { fprintf(stderr, "unresolved call: _actor350700ReverseWalkTask\n"); abort(); }
 __attribute__((weak)) void _actor356100Task(void) { fprintf(stderr, "unresolved call: _actor356100Task\n"); abort(); }
+__attribute__((weak)) void _actor361100EveTask(void) { fprintf(stderr, "unresolved call: _actor361100EveTask\n"); abort(); }
 __attribute__((weak)) void _actor361100StreamWaterTask(void) { fprintf(stderr, "unresolved call: _actor361100StreamWaterTask\n"); abort(); }
+__attribute__((weak)) void _actor361100TentacleTask(void) { fprintf(stderr, "unresolved call: _actor361100TentacleTask\n"); abort(); }
 __attribute__((weak)) void _actor400500Task(void) { fprintf(stderr, "unresolved call: _actor400500Task\n"); abort(); }
 __attribute__((weak)) void _actor400600Task(void) { fprintf(stderr, "unresolved call: _actor400600Task\n"); abort(); }
 __attribute__((weak)) void _actor401000StrangerTask(void) { fprintf(stderr, "unresolved call: _actor401000StrangerTask\n"); abort(); }
@@ -1712,6 +1714,7 @@ __attribute__((weak)) void _actor460200SoldierCTask(void) { fprintf(stderr, "unr
 __attribute__((weak)) void _actor461800FootstepWalkerTask(void) { fprintf(stderr, "unresolved call: _actor461800FootstepWalkerTask\n"); abort(); }
 __attribute__((weak)) void _actor461800ScriptedWalkerAttachmentTask(void) { fprintf(stderr, "unresolved call: _actor461800ScriptedWalkerAttachmentTask\n"); abort(); }
 __attribute__((weak)) void _actor461800ScriptedWalkerTask(void) { fprintf(stderr, "unresolved call: _actor461800ScriptedWalkerTask\n"); abort(); }
+__attribute__((weak)) void _actor503500TentacleTask(void) { fprintf(stderr, "unresolved call: _actor503500TentacleTask\n"); abort(); }
 __attribute__((weak)) void _actor521100AnmcWomanEffectTask(void) { fprintf(stderr, "unresolved call: _actor521100AnmcWomanEffectTask\n"); abort(); }
 __attribute__((weak)) void _actor521100AnmcWomanTask(void) { fprintf(stderr, "unresolved call: _actor521100AnmcWomanTask\n"); abort(); }
 __attribute__((weak)) void _actor521100BodyTask(void) { fprintf(stderr, "unresolved call: _actor521100BodyTask\n"); abort(); }
@@ -1786,7 +1789,11 @@ __attribute__((weak)) void _gActor800300Animation0A4D4Bank1(void) { fprintf(stde
 __attribute__((weak)) void _gActor800300Animation0A4D4Bank4(void) { fprintf(stderr, "unresolved call: _gActor800300Animation0A4D4Bank4\n"); abort(); }
 __attribute__((weak)) void _gAkropolisCafeteriaBossStrangerBody(void) { fprintf(stderr, "unresolved call: _gAkropolisCafeteriaBossStrangerBody\n"); abort(); }
 __attribute__((weak)) void _gAkropolisForkedRoadSkullStalkerBody(void) { fprintf(stderr, "unresolved call: _gAkropolisForkedRoadSkullStalkerBody\n"); abort(); }
+__attribute__((weak)) void _gAkropolisFountainView3SpriteSources(void) { fprintf(stderr, "unresolved call: _gAkropolisFountainView3SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gAkropolisObservatoryView7SpriteSources(void) { fprintf(stderr, "unresolved call: _gAkropolisObservatoryView7SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gAkropolisPromenadeView6SpriteSources(void) { fprintf(stderr, "unresolved call: _gAkropolisPromenadeView6SpriteSources\n"); abort(); }
 __attribute__((weak)) void _gAkropolisWestElevatorHallView3SpriteSources(void) { fprintf(stderr, "unresolved call: _gAkropolisWestElevatorHallView3SpriteSources\n"); abort(); }
+__attribute__((weak)) void _gBrahmanTentacle(void) { fprintf(stderr, "unresolved call: _gBrahmanTentacle\n"); abort(); }
 __attribute__((weak)) void _gChaserDesertBody(void) { fprintf(stderr, "unresolved call: _gChaserDesertBody\n"); abort(); }
 __attribute__((weak)) void _gCrawlerBody(void) { fprintf(stderr, "unresolved call: _gCrawlerBody\n"); abort(); }
 __attribute__((weak)) void _gDiverBody(void) { fprintf(stderr, "unresolved call: _gDiverBody\n"); abort(); }
@@ -1934,7 +1941,17 @@ __attribute__((weak)) void actor403600DrawStreamGt4PlaneClamp(void) { fprintf(st
 __attribute__((weak)) void actor403600DrawStreamGt4PreXformBottomFade(void) { fprintf(stderr, "unresolved call: actor403600DrawStreamGt4PreXformBottomFade\n"); abort(); }
 __attribute__((weak)) void actor403600DrawStreamGt4TopDisplace(void) { fprintf(stderr, "unresolved call: actor403600DrawStreamGt4TopDisplace\n"); abort(); }
 __attribute__((weak)) void actor403600XformStreamVertsPlaneClamp(void) { fprintf(stderr, "unresolved call: actor403600XformStreamVertsPlaneClamp\n"); abort(); }
+__attribute__((weak)) void actor503500ArmTask(void) { fprintf(stderr, "unresolved call: actor503500ArmTask\n"); abort(); }
+__attribute__((weak)) void actor503500BossTask(void) { fprintf(stderr, "unresolved call: actor503500BossTask\n"); abort(); }
+__attribute__((weak)) void actor503500ChainBaseTask(void) { fprintf(stderr, "unresolved call: actor503500ChainBaseTask\n"); abort(); }
+__attribute__((weak)) void actor503500LargeChainTask(void) { fprintf(stderr, "unresolved call: actor503500LargeChainTask\n"); abort(); }
+__attribute__((weak)) void actor503500LargeOrbEmitterTask(void) { fprintf(stderr, "unresolved call: actor503500LargeOrbEmitterTask\n"); abort(); }
+__attribute__((weak)) void actor503500LungingChainTask(void) { fprintf(stderr, "unresolved call: actor503500LungingChainTask\n"); abort(); }
+__attribute__((weak)) void actor503500PinkFlashEmitterTask(void) { fprintf(stderr, "unresolved call: actor503500PinkFlashEmitterTask\n"); abort(); }
+__attribute__((weak)) void actor503500RearPartTask(void) { fprintf(stderr, "unresolved call: actor503500RearPartTask\n"); abort(); }
 __attribute__((weak)) void actor503500SliderTask(void) { fprintf(stderr, "unresolved call: actor503500SliderTask\n"); abort(); }
+__attribute__((weak)) void actor503500SmallOrbEmitterTask(void) { fprintf(stderr, "unresolved call: actor503500SmallOrbEmitterTask\n"); abort(); }
+__attribute__((weak)) void actor503500YellowFlashEmitterTask(void) { fprintf(stderr, "unresolved call: actor503500YellowFlashEmitterTask\n"); abort(); }
 __attribute__((weak)) void actor800100EnterReload(void) { fprintf(stderr, "unresolved call: actor800100EnterReload\n"); abort(); }
 __attribute__((weak)) void actor800100PykeEmitterTask(void) { fprintf(stderr, "unresolved call: actor800100PykeEmitterTask\n"); abort(); }
 __attribute__((weak)) void actor800100PykeFlameTask(void) { fprintf(stderr, "unresolved call: actor800100PykeFlameTask\n"); abort(); }
@@ -2301,271 +2318,8 @@ __attribute__((weak)) void func_mp5a5_p1_8011DDA4(void) { fprintf(stderr, "unres
 __attribute__((weak)) void func_mp5a5_p2_8011DDA4(void) { fprintf(stderr, "unresolved call: func_mp5a5_p2_8011DDA4\n"); abort(); }
 __attribute__((weak)) void func_p08_snail_8011D1D8(void) { fprintf(stderr, "unresolved call: func_p08_snail_8011D1D8\n"); abort(); }
 __attribute__((weak)) void func_sp12_8011D1DC(void) { fprintf(stderr, "unresolved call: func_sp12_8011D1DC\n"); abort(); }
-__attribute__((weak)) unsigned char gActor00700MothTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor00700RatTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor01100Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor01600ScavengerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor02500Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor04000BloodSucklerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor100300Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor100400Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor101100Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor101200BoneSucklerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor101600ScavengerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor101900GrinningStrangerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor102000PawnGolemTasks[0x10000];
-__attribute__((weak)) unsigned char gActor102100WatcherTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor102300RookGolemTasks[0x10000];
-__attribute__((weak)) unsigned char gActor102400Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor102500Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor103700BatTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor103800BlackBeetleTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor104600SkullStalkerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor104600SucklercephTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor105500MaggotCaterpillarTasks[0x10000];
-__attribute__((weak)) unsigned char gActor105600PawnGolemTasks[0x10000];
-__attribute__((weak)) unsigned char gActor107000SlouchTaskDescs[0x10000];
-__attribute__((weak)) unsigned char gActor107000SucklercephTaskDescs[0x10000];
-__attribute__((weak)) unsigned char gActor200300Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor200400Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor200700RatTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor201100Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor201200BoneSucklerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor202000PawnGolemTasks[0x10000];
-__attribute__((weak)) unsigned char gActor202100WatcherTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor202300RookGolemTasks[0x10000];
-__attribute__((weak)) unsigned char gActor202400Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor202600MaggotCaterpillarBodyTask[0x10000];
-__attribute__((weak)) unsigned char gActor203700BatTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor203800BlackBeetleTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor204000BloodSucklerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor204600SkullStalkerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor204600SucklercephTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor205500MaggotCaterpillarTasks[0x10000];
-__attribute__((weak)) unsigned char gActor205600PawnGolemTasks[0x10000];
-__attribute__((weak)) unsigned char gActor207000SlouchTaskDescs[0x10000];
-__attribute__((weak)) unsigned char gActor207000SucklercephTaskDescs[0x10000];
-__attribute__((weak)) unsigned char gActor301100Tasks[0x10000];
-__attribute__((weak)) unsigned char gActor301200BoneSucklerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor301600ScavengerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor301900GrinningStrangerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor302000PawnGolemTasks[0x10000];
-__attribute__((weak)) unsigned char gActor304000BloodSucklerTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor361100EveTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor361100TentacleTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gActor503500EnemyTaskDescs[0x10000];
-__attribute__((weak)) unsigned char gActor503500TentacleTaskDesc[0x10000];
-__attribute__((weak)) unsigned char gAkropolisBridgeRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisBridgeRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisBridgeSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisBridgeSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisBridgeViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisBridgeViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisBridgeViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisBridgeWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisCafeteriaCollisionRooms[0x10000];
-__attribute__((weak)) unsigned char gAkropolisCafeteriaMendelJournalModel[0x10000];
-__attribute__((weak)) unsigned char gAkropolisCafeteriaRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisCafeteriaSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisCafeteriaStimPickupModel[0x10000];
-__attribute__((weak)) unsigned char gAkropolisCafeteriaSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisCafeteriaViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisCafeteriaViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisCafeteriaViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisCafeteriaWarps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisEastElevatorHallRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisEastElevatorHallRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisEastElevatorHallSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisEastElevatorHallViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisEastElevatorHallViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisEastElevatorHallViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisEastElevatorHallWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFireEscapeCollisionRoomResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFireEscapeRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFireEscapeSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFireEscapeSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFireEscapeViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFireEscapeViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFireEscapeViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFireEscapeWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisForkedRoadRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisForkedRoadRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisForkedRoadSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisForkedRoadSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisForkedRoadViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisForkedRoadViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisForkedRoadViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisForkedRoadWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFountainRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFountainRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFountainSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFountainSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFountainViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFountainViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFountainViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisFountainWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHallwayBlueKeyPickupModel[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHallwayRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHallwayRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHallwaySpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHallwaySurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHallwayViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHallwayViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHallwayViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHallwayWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadAmmunitionPickupModel[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadCollisionRoomResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadLiftModel[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadWarps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisObservatoryRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisObservatoryRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisObservatorySpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisObservatorySurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisObservatoryViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisObservatoryViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisObservatoryViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisObservatoryWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPatioRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPatioRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPatioSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPatioSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPatioViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPatioViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPatioViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPatioWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPlazaRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPlazaRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPlazaSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPlazaSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPlazaViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPlazaViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPlazaViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPlazaWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPromenadeRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPromenadeRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPromenadeSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPromenadeSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPromenadeViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPromenadeViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPromenadeViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisPromenadeWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisRoofGardenArmoryCardkeyPickupModel[0x10000];
-__attribute__((weak)) unsigned char gAkropolisRoofGardenCollisionRoomResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisRoofGardenRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisRoofGardenSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisRoofGardenSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisRoofGardenViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisRoofGardenViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisRoofGardenViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisRoofGardenWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSanctuaryItemBoxModel[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSanctuaryRedKeyPickupModel[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSanctuaryRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSanctuaryRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSanctuarySpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSanctuarySurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSanctuaryViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSanctuaryViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSanctuaryViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSanctuaryWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSecurityRoomItemBoxModel[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSecurityRoomRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSecurityRoomRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSecurityRoomSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSecurityRoomSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSecurityRoomViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSecurityRoomViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSecurityRoomViewMaps[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSecurityRoomWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSquareRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSquareRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSquareSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSquareSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSquareViewCameras[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSquareViewCounts[0x10000];
-__attribute__((weak)) unsigned char gAkropolisSquareWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageBridgeDefaultPlacements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageBridgeVariant2Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageBridgeVariant3Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant2Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant3Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant4Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant5Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageCafeteriaVariant7Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageEastElevatorHallVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageFireEscapePlacements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant10Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant11Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant12Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant13Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant14Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant15Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant16Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant20Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant21Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant22Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant2Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant3Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant4Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant7Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant8Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageForkedRoadVariant9Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageFountainVariant2Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageFountainVariant7Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageHallwayVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageHallwayVariant2Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageHallwayVariant3Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageHallwayVariant4Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageHelicopterLandingPadVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageHelicopterLandingPadVariant2Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageMistParkingPlacements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageMistR18Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageMistShootingGalleryPlacements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageObservatoryVariant10Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageObservatoryVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageObservatoryVariant2Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageObservatoryVariant3Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageObservatoryVariant7Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePatioVariant10Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePatioVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePatioVariant2Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePatioVariant3Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePatioVariant4Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePatioVariant5Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePlazaVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePromenadeVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePromenadeVariant2Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePromenadeVariant3Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePromenadeVariant7Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStagePromenadeVariant8Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageRoofGardenVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageRoofGardenVariant2Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageRoofGardenVariant7Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageRoofGardenVariant8Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageSanctuaryNo9AndRupertPlacements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageSanctuaryRupertPlacements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageSecurityRoomVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAkropolisStageSquareVariant1Placements[0x10000];
-__attribute__((weak)) unsigned char gAyaIdleClip[0x10000];
 __attribute__((weak)) unsigned char gChaserMadBody[0x10000];
-__attribute__((weak)) unsigned char gDryfieldFactoryCollisionGrid[0x10000];
-__attribute__((weak)) unsigned char gDryfieldGarageCollisionGridFaces[0x10000];
-__attribute__((weak)) unsigned char gDryfieldGarageCollisionGridNormals[0x10000];
-__attribute__((weak)) unsigned char gDryfieldGarageCollisionGridVerts[0x10000];
-__attribute__((weak)) unsigned char gDryfieldNightFactoryCollisionGrid[0x10000];
-__attribute__((weak)) unsigned char gDryfieldNightMainStreetRooms2And3ActionTriggers[0x10000];
-__attribute__((weak)) unsigned char gDryfieldNightMainStreetRooms2And3CollisionGridFaces[0x10000];
-__attribute__((weak)) unsigned char gDryfieldNightMainStreetRooms2And3CollisionGridNormals[0x10000];
-__attribute__((weak)) unsigned char gDryfieldNightMainStreetRooms2And3CollisionGridVerts[0x10000];
 __attribute__((weak)) unsigned char gEveMaskedBody[0x10000];
-__attribute__((weak)) unsigned char gGluttonBody[0x10000];
 __attribute__((weak)) unsigned char gGolemGrenade[0x10000];
 __attribute__((weak)) unsigned char gGolemNo9AkropolisChestPiece[0x10000];
 __attribute__((weak)) unsigned char gGolemNo9AkropolisProp[0x10000];
@@ -2575,54 +2329,7 @@ __attribute__((weak)) unsigned char gKyleBody[0x10000];
 __attribute__((weak)) unsigned char gKyleHandLeft[0x10000];
 __attribute__((weak)) unsigned char gKyleHandLeft2[0x10000];
 __attribute__((weak)) unsigned char gKyleHandRight[0x10000];
-__attribute__((weak)) unsigned char gMistParkingRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gMistParkingRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gMistParkingSpriteViews[0x10000];
-__attribute__((weak)) unsigned char gMistParkingSurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gMistParkingViewCameras[0x10000];
-__attribute__((weak)) unsigned char gMistParkingViewCounts[0x10000];
-__attribute__((weak)) unsigned char gMistParkingViewMaps[0x10000];
-__attribute__((weak)) unsigned char gMistParkingWarpEntries[0x10000];
-__attribute__((weak)) unsigned char gMistR18CollisionRoomResources[0x10000];
-__attribute__((weak)) unsigned char gMistR18RoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gMistR18SpriteViews[0x10000];
-__attribute__((weak)) unsigned char gMistR18ViewCameras[0x10000];
-__attribute__((weak)) unsigned char gMistR18ViewCounts[0x10000];
-__attribute__((weak)) unsigned char gMistR18ViewMaps[0x10000];
-__attribute__((weak)) unsigned char gMistR18WarpEntries[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryBullseye1Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryBullseye2Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryBullseye3Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget10Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget1Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget2Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget3Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget4Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget5Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget6Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget7Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget8Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryCreatureTarget9Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryDemonstrationTargetModel[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryHalfTarget1Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryHalfTarget2Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryHalfTarget3Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryHalfTarget4Model[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryMountModel[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryRoomCollisionResources[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryRoomLightingTable[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGallerySpriteViews[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGallerySurfacePropertiesByClass[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryViewCameras[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryViewCounts[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryViewMaps[0x10000];
-__attribute__((weak)) unsigned char gMistShootingGalleryWarpEntries[0x10000];
 __attribute__((weak)) unsigned char gRatAndMothRatBody[0x10000];
-__attribute__((weak)) unsigned char gShelterB3GarbageIncineratorRoom1And3ViewMap[0x10000];
-__attribute__((weak)) unsigned char gShelterR47CollisionGridFaces[0x10000];
-__attribute__((weak)) unsigned char gShelterR47CollisionGridNormals[0x10000];
-__attribute__((weak)) unsigned char gShelterR47CollisionGridVerts[0x10000];
-__attribute__((weak)) unsigned char gShelterR48CollisionGrid[0x10000];
 __attribute__((weak)) void grenadePistolAttackState(void) { fprintf(stderr, "unresolved call: grenadePistolAttackState\n"); abort(); }
 __attribute__((weak)) void grenadePistolShellTask(void) { fprintf(stderr, "unresolved call: grenadePistolShellTask\n"); abort(); }
 __attribute__((weak)) void gunbladeAttackState(void) { fprintf(stderr, "unresolved call: gunbladeAttackState\n"); abort(); }

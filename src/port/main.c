@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <psyz.h>
 #include <psyz/cd.h>
+#include <psyz/video.h>
 #include <libgpu.h>
 #include <libetc.h>
 #include "gamemain.h"
@@ -46,7 +47,12 @@ int main(int argc, char** argv) {
         fprintf(stderr, "cannot open disc image: %s\n", disc);
         return 2;
     }
+    Psyz_SetTitle("Parasite Eve II");
+    // PE2_FAST=1 runs without the frame limiter (fast-forwards the intro while developing).
     ResetGraph(0);
+    if (getenv("PE2_FAST")) {
+        Psyz_VideoSetVsyncMode(PSYZ_VSYNC_LIMITLESS);
+    }
     gameMainRun();
     return 0;
 }
