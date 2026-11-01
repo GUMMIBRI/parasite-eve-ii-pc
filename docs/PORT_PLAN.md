@@ -28,3 +28,9 @@ Throughout: native tests per module and headless frame captures.
 ## Status
 
 Phase 0 is closed with the toolchain removal gated: `ninja_config.py`, `configs/`, `linkers/` go with the runtime loader (phase 2). Phase 1 is under way: `src/port/psyq_host.c` supplies host versions of the libcd/heap calls and an approximate `MatrixNormal`. Linking `game_main` into the executable currently reports 343 undefined symbols, nearly all overlay tasks and handlers (`src/` outside `main`), the `hasm` routines (`fsDecompress*`, `tmd*`), and a few PsyZ gaps (`DecDCTvlc*`, `BreakDraw`, `ContinueDraw`, `freep`).
+
+## TMD stream renderer (hasm) — scoping notes
+
+Remaining handwritten assembly: `tmdSkipStreamRecord` (28 lines), `Tmd_DispatchStream` (57), `tmdDrawModelStream` (163), the `Prim32`/`Prim3A` pre-transformed handlers (~280) and `Tmd_StreamHandlers_Ops` (2,400, 20 handlers). LZSS is already ported (`src/port/lzss.c`, `tests/lzss_test.c`).
+
+Blocking design point: a TMD stream is a sequence of `{kind, handler, dimensions}` 12-byte records and the dispatcher `jalr`s the 32-bit code address stored in word 1 (`tmd.c` writes `tmdSkipStreamRecord` etc. into the stream). On a 64-bit host that word cannot hold a function pointer, so the stream needs a handler id (index into a table) instead; `tmd.c` writes the id, `Tmd_DispatchStream` indexes the table. Packet links also assume 24-bit OT addresses in `addPrim`; use PsyZ's pointer-width primitives. Decide this before porting the 20 handlers, and port them against `tests/gte_compat_test.c`-style reference arithmetic, then compare against emulator frame captures (`tools/gametrace`).
