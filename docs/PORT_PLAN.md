@@ -24,3 +24,7 @@ first game). Matching the PS1 binaries is not a goal.
 5. **Product.** Saves, settings, crash reports, HD/widescreen/60 Hz (from the first port), packaging.
 
 Throughout: native tests per module and headless frame captures.
+
+## Status
+
+Phase 0 is closed with the toolchain removal gated: `ninja_config.py`, `configs/`, `linkers/` go with the runtime loader (phase 2). Phase 1 is under way: `src/port/psyq_host.c` supplies host versions of the libcd/heap calls and an approximate `MatrixNormal`. Linking `game_main` into the executable currently reports 343 undefined symbols, nearly all overlay tasks and handlers (`src/` outside `main`), the `hasm` routines (`fsDecompress*`, `tmd*`), and a few PsyZ gaps (`DecDCTvlc*`, `BreakDraw`, `ContinueDraw`, `freep`).

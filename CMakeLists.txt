@@ -30,7 +30,7 @@ target_compile_definitions(game_main PUBLIC __psyz SKIP_ASM)
 target_compile_options(game_main PRIVATE -w)
 target_link_libraries(game_main PUBLIC psyz)
 
-add_executable(parasite-eve-ii-pc src/port/main.c $<TARGET_OBJECTS:game_main>)
+add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c $<TARGET_OBJECTS:game_main>)
 target_include_directories(parasite-eve-ii-pc PRIVATE include)
 target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz)
 target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)
