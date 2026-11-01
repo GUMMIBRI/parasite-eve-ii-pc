@@ -93,3 +93,7 @@ full, which holds the drive until `StFreeRing`. The opening FMV plays with corre
 Open: bright highlights show streak artifacts (MDEC dequantisation/IDCT clamping in PsyZ or the VLC port);
 the XA soundtrack and the end of the movie have not been checked.
 Tools: `tools/port/probe.sh` (run + window-only capture), `tools/port/crash.sh`, crash handler in `src/port/main.c`.
+
+## 32 vs 64 bit audit
+
+`tools/port/size_audit.sh` rebuilds every `STATIC_ASSERT_SIZEOF` as a real assertion (`-DPE_SIZE_AUDIT`) and lists the structs whose host size differs from the PS1 size. At the time of writing it lists 130 of them (e.g. `GfxCoord`, `FsImgBuffers`, `GameActor`, `GameSession`, `CdCmdQueue`, `AreaVariant`). A struct on this list is only a problem when something treats it as PS1 bytes: disc/asm data (handled by `tools/port/gen_asm_data.py`), scratchpad or save overlays, `sizeof` arithmetic, GPU packet strides, `u_long` members. The list is the work queue for the clean-up.

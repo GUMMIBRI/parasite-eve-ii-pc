@@ -72,7 +72,11 @@ extern u8 gHostScratchpad[0x400];
  * port. Disc records get their own, host-independent assertions as the data loader lands. */
 #ifdef __psyz
 #define STATIC_ASSERT(cond, msg) typedef char static_assertion_##msg[1]
+#ifdef PE_SIZE_AUDIT
+#define STATIC_ASSERT_SIZEOF(type, size) typedef char static_assertion_sizeof_##type[(sizeof(type) == (size)) ? 1 : -1]
+#else
 #define STATIC_ASSERT_SIZEOF(type, size) typedef char static_assertion_sizeof_##type[1]
+#endif
 #else
 #define STATIC_ASSERT(cond, msg) \
     typedef char static_assertion_##msg[(cond) ? 1 : -1]
