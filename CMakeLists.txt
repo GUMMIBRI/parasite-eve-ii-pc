@@ -22,7 +22,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 # The game proper (the former decompilation sources), compiled for the host.
-file(GLOB GAME_MAIN_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/main/*.c)
+file(GLOB GAME_MAIN_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/main/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/*.c)
 add_library(game_main OBJECT ${GAME_MAIN_SOURCES})
 target_include_directories(game_main PUBLIC include include/decomp
     ${CMAKE_CURRENT_SOURCE_DIR}/build/include)

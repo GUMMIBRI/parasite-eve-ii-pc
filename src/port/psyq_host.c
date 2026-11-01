@@ -96,3 +96,10 @@ SVECTOR* ApplyMatrixSV(MATRIX* m, SVECTOR* v0, SVECTOR* v1)
     v1->vx = out[0]; v1->vy = out[1]; v1->vz = out[2];
     return v1;
 }
+
+/* Natural log of a positive integer, scaled by 4096. Rounded to nearest so exact
+ * powers of two divide cleanly by ln(2) * 4096 = 2839. */
+long cln(long x)
+{
+    return x > 0 ? lround(log((double)x) * 4096.0) : 0;
+}

@@ -44,6 +44,25 @@ void InitHeap3(unsigned long* head, unsigned long size);
 void* malloc3(unsigned long size);
 void free3(void* ptr);
 
+/* The SDK's VectorNormal returns the length of v0; PsyZ's is void. */
+#include <math.h>
+static inline long PortVectorNormal(VECTOR* v0, VECTOR* v1)
+{
+    double x = v0->vx, y = v0->vy, z = v0->vz;
+    long   length = (long)sqrt(x * x + y * y + z * z);
+    (VectorNormal)(v0, v1);
+    return length;
+}
+#define VectorNormal(v0, v1) PortVectorNormal((v0), (v1))
+
+/* CD sector size in 32-bit words, as libcd documents it. */
+#ifndef SECTOR_SIZE
+#define SECTOR_SIZE 512
+#endif
+
+/* libgte/libmath: natural logarithm of an integer in Q12 (cln(2) == 2839). */
+long cln(long x);
+
 /* libgs world-screen matrices (defined in main/gfxlight.c). */
 extern MATRIX GsWSMATRIX;
 extern MATRIX GsLIGHTWSMATRIX;
