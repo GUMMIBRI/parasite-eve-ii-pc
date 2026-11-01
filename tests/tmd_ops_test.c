@@ -9,6 +9,8 @@
 #include "main/tmd_types.h"
 
 u32* tmdXformStreamVerts(TmdStreamWorkspace*, s32, u32*);
+u32* tmdDrawStreamGt3(TmdStreamWorkspace*, s32, u32*);
+u32* tmdDrawStreamGt4(TmdStreamWorkspace*, s32, u32*);
 
 #define FAIL(m) do { puts("FAIL: " m); return 1; } while (0)
 
@@ -88,6 +90,25 @@ int main(void)
         if ((short)(xy & 0xFFFF) != 210 || (short)(xy >> 16) != 70) FAIL("xform xy");
         if (depth[1] != 1000) { printf("depth=%d\n", depth[1]); FAIL("xform depth cache"); }
         if ((rgb & 0xFFFFFF) == 0) FAIL("xform lit colour");
+    }
+    /* Textured: Gt3/Gt4 use the object flags to choose colour code and facing. */
+    {
+        POLY_GT3 g3[1]; POLY_GT4 g4[1];
+        memset(ot, 0, sizeof ot); memset(g3, 0, sizeof g3); memset(g4, 0, sizeof g4);
+        ws.primWrite = (u8*)g3; ws.elemCount = 1; ws.elemStride = 3;
+        el[0] = 0 | (8u << 16); el[1] = 16; el[2] = 0;
+        end = tmdDrawStreamGt3(&ws, 0, el);
+        if (end != el + 3 || g3[0].x1 != 210 || g3[0].code != 0x34 || ((P_TAG*)&g3[0])->len != 9) FAIL("gt3");
+        memset(g3, 0, sizeof g3); ws.primWrite = (u8*)g3;
+        end = tmdDrawStreamGt3(&ws, 0x02, el);
+        if (g3[0].code != 0x36) FAIL("gt3 semi-trans code");
+        memset(g3, 0, sizeof g3); ws.primWrite = (u8*)g3;
+        end = tmdDrawStreamGt3(&ws, 0x10, el);
+        if (g3[0].code != 0) FAIL("gt3 reverse culling must reject a front face");
+        ws.primWrite = (u8*)g4; ws.elemStride = 4;
+        el[0] = 0 | (8u << 16); el[1] = 16 | (24u << 16); el[2] = 0; el[3] = 0;
+        end = tmdDrawStreamGt4(&ws, 0, el);
+        if (end != el + 4 || g4[0].x3 != 210 || g4[0].code != 0x3C || ((P_TAG*)&g4[0])->len != 12) FAIL("gt4");
     }
     puts("tmd ops OK");
     return 0;
