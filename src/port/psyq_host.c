@@ -103,3 +103,114 @@ long cln(long x)
 {
     return x > 0 ? lround(log((double)x) * 4096.0) : 0;
 }
+
+/* ---- PSY-Q calls PsyZ declares but does not implement ----------------------
+ * Memory card, controller extras and SPU reverb are placeholders until their
+ * subsystems are ported (phases 4-5): they report "nothing present". */
+
+#include <libgpu.h>
+#include <libmcrd.h>
+#include <libspu.h>
+#include <libetc.h>
+#include <psyz/gte.h>
+
+void MemCardInit(long val) { (void)val; }
+void MemCardStart(void) {}
+void MemCardClose(void) {}
+long MemCardExist(long chan) { (void)chan; return 0; }
+long MemCardAccept(long chan) { (void)chan; return 0; }
+long MemCardOpen(long chan, char* file, long flag) { (void)chan; (void)file; (void)flag; return 0; }
+long MemCardCreateFile(long chan, char* file, long blocks) { (void)chan; (void)file; (void)blocks; return 0; }
+long MemCardFormat(long chan) { (void)chan; return 0; }
+long MemCardReadData(unsigned long* adrs, long offset, long bytes) { (void)adrs; (void)offset; (void)bytes; return 0; }
+long MemCardWriteData(unsigned long* adrs, long offset, long bytes) { (void)adrs; (void)offset; (void)bytes; return 0; }
+long MemCardSync(long mode, long* cmds, long* result)
+{
+    (void)mode;
+    if (cmds) *cmds = 0;
+    if (result) *result = 0;
+    return 1; /* nothing pending */
+}
+
+void PadInitDirect(unsigned char* pad1, unsigned char* pad2)
+{
+    if (pad1) memset(pad1, 0xFF, 34);
+    if (pad2) memset(pad2, 0xFF, 34);
+}
+int PadInfoMode(int port, int term, int offs) { (void)port; (void)term; (void)offs; return 0; }
+int PadSetMainMode(int port, int offs, int lock) { (void)port; (void)offs; (void)lock; return 1; }
+
+long SpuReserveReverbWorkArea(long on_off) { return on_off; }
+void SpuLSetVoiceAttr(int num, SpuLVoiceAttr* argList) { (void)num; (void)argList; }
+
+unsigned long SetSp(unsigned long new_sp) { (void)new_sp; return 0; }
+void SetMem(unsigned long n) { (void)n; }
+
+/* Drawing is synchronous on the host, so a draw never needs to be suspended. */
+u_long* BreakDraw(void) { return (u_long*)0; }
+void ContinueDraw(u_long* inst_ot, u_long* cont_ot) { (void)inst_ot; (void)cont_ot; }
+
+int StoreImage2(RECT* rect, u_long* p) { return StoreImage(rect, p); }
+
+/* DR_STP: GPU "set mask bit" command (E6h); bit 0 sets the mask on draw, bit 1 checks it. */
+void SetDrawStp(DR_STP* p, int stp)
+{
+    setlen(p, 2);
+    p->code[0] = 0xE6000000u | (stp ? 1u : 0u);
+    p->code[1] = 0;
+}
+
+/* GTE rotation matrix times m, result in m (SDK MulRotMatrix). */
+MATRIX* MulRotMatrix(MATRIX* m)
+{
+    short r[3][3];
+    u32   c[5];
+    for (int i = 0; i < 5; i++) c[i] = Psyz_GteCtrlRead(i);
+    r[0][0] = (short)(c[0] & 0xFFFF); r[0][1] = (short)(c[0] >> 16);
+    r[0][2] = (short)(c[1] & 0xFFFF); r[1][0] = (short)(c[1] >> 16);
+    r[1][1] = (short)(c[2] & 0xFFFF); r[1][2] = (short)(c[2] >> 16);
+    r[2][0] = (short)(c[3] & 0xFFFF); r[2][1] = (short)(c[3] >> 16);
+    r[2][2] = (short)c[4];
+    short out[3][3];
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++) {
+            long long sum = 0;
+            for (int k = 0; k < 3; k++) sum += (long long)r[i][k] * m->m[k][j];
+            out[i][j] = (short)(sum >> 12);
+        }
+    memcpy(m->m, out, sizeof out);
+    return m;
+}
+
+/* m2 = m0 * m1 (3x3 only; translation untouched). */
+MATRIX* MulMatrix0(MATRIX* m0, MATRIX* m1, MATRIX* m2)
+{
+    short out[3][3];
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++) {
+            long long sum = 0;
+            for (int k = 0; k < 3; k++) sum += (long long)m0->m[i][k] * m1->m[k][j];
+            out[i][j] = (short)(sum >> 12);
+        }
+    memcpy(m2->m, out, sizeof out);
+    return m2;
+}
+
+MATRIX* RotMatrix_gte(SVECTOR* r, MATRIX* m) { return RotMatrix(r, m); }
+
+/* v1 = RT * v0 + TR (SVECTOR in and out); *flag receives the GTE FLAG word. */
+void RotTransSV(SVECTOR* v0, SVECTOR* v1, int* flag)
+{
+    Psyz_GteDataWrite(0, (u32)(u16)v0->vx | ((u32)(u16)v0->vy << 16));
+    Psyz_GteDataWrite(1, (u32)(u16)v0->vz);
+    Psyz_GteCommand(0x4A480012);
+    v1->vx = (short)Psyz_GteDataRead(9);
+    v1->vy = (short)Psyz_GteDataRead(10);
+    v1->vz = (short)Psyz_GteDataRead(11);
+    if (flag) *flag = Psyz_GteReadflg();
+}
+
+/* libpress / MDEC bitstream decoding is part of the movie phase. */
+int DecDCTvlc2(u_long* bs, u_long* buf, u_short* table) { (void)bs; (void)buf; (void)table; return -1; }
+void DecDCTvlcBuild(u_short* table) { (void)table; }
+int DecDCTvlcSize2(int size) { return size; }
