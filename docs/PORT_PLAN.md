@@ -42,3 +42,7 @@ Host syntax survey of every `.c` outside `*.inc.c` (clang, `-D__psyz -DSKIP_ASM`
 ## Handwritten assembly: done
 
 All of `src/main/hasm` is now C (`src/port/lzss.c`, `tmd_dispatch.c`, `tmd_prim.c`, `tmd_ops.c`), with native tests (`lzss_test`, `tmd_model_test`, `tmd_prim_test`, `tmd_ops_test`). The `.s` files were removed; they remain in git history (`bd42083` and earlier) as the reference. The tests use hand-built streams, so each handler still needs a comparison against real model data and emulator frame captures. The link now reports no undefined TMD symbols; the remaining ~1,200 are overlay tasks and handlers (phase 2).
+
+## Overlay build (experiment)
+
+`cmake -DPE_ALL_OVERLAYS=ON` additionally compiles the 422 non-gameplay source files that build on the host (list in `cmake/overlay_sources.cmake`, the other 40 are in `PE_OVERLAY_SOURCES_PENDING`). With that the link reports 689 undefined symbols and no duplicate definitions yet (the linker reports undefined symbols first). The remainder are the 40 pending room/shared-source templates, a few PSY-Q libraries PsyZ lacks (memory card, `PadInitDirect`, SPU reverb, `MulMatrix0`, `StCdInterrupt`-style CD calls) and data defined only in the splat `asm/` data files.

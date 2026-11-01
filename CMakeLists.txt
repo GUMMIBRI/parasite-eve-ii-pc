@@ -32,7 +32,19 @@ target_compile_definitions(game_main PUBLIC __psyz SKIP_ASM)
 target_compile_options(game_main PRIVATE -w -Wno-incompatible-function-pointer-types)
 target_link_libraries(game_main PUBLIC psyz)
 
-add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c $<TARGET_OBJECTS:game_main>)
+option(PE_ALL_OVERLAYS "Compile every overlay package that builds on the host (experimental)" OFF)
+if(PE_ALL_OVERLAYS)
+    include(cmake/overlay_sources.cmake)
+    add_library(game_overlays OBJECT ${PE_OVERLAY_SOURCES})
+    target_include_directories(game_overlays PUBLIC include include/decomp
+        ${CMAKE_CURRENT_SOURCE_DIR}/build/include)
+    target_compile_definitions(game_overlays PUBLIC __psyz SKIP_ASM)
+    target_compile_options(game_overlays PRIVATE -w -Wno-incompatible-function-pointer-types)
+    target_link_libraries(game_overlays PUBLIC psyz)
+endif()
+
+add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c $<TARGET_OBJECTS:game_main>
+    $<$<BOOL:${PE_ALL_OVERLAYS}>:$<TARGET_OBJECTS:game_overlays>>)
 target_include_directories(parasite-eve-ii-pc PRIVATE include include/decomp src/main)
 target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz SKIP_ASM)
 target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)
