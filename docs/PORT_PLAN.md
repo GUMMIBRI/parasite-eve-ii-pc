@@ -57,3 +57,16 @@ own object library with the slot's `-D` parameters (`WEAPON_INDEX`, `GRENADE_PIS
 `aliases`, a force-included `cmake/aliases/<unit>.h` defining `PACKAGE_ALIASES`. `cmake --build build-port --target
 overlay_variants` compiles all 119 on the host. They are not linked yet: the same global names recur across packages,
 so linking needs per-package isolation (one module per package) rather than one flat executable.
+
+## First link and boot (done)
+
+The executable links and `gameMainRun` runs on the host. Mechanics:
+- `src/main/main.c` (the PS1 stack switch) is excluded; `src/port/main.c` calls `gameMainRun` directly.
+- Unported overlay symbols are weak placeholders in `src/port/unresolved_stubs.c`
+  (`tools/port/regen_stubs.sh` regenerates it from the linker's undefined list). A function placeholder logs
+  `unresolved call: <name>` and aborts, so the first missing piece names itself. Real definitions win over them.
+  This list shrinks as overlay modules are wired; it is scaffolding, not part of the end state.
+- PS1 RAM is the host array `gHostRam`; fixed game addresses go through `PS1_RAM_PTR`. The 1 KiB scratchpad is
+  `gHostScratchpad` (cursor slot is pointer-sized). macOS arm64 refuses a small `__PAGEZERO`, so mapping RAM at
+  0x80000000 is not an option.
+- Current state: the boot loop reaches `fsScanIsoDirectory` and waits for the CD. Next: the runtime disc loader.

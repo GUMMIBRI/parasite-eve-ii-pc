@@ -15,7 +15,7 @@
 /// at this word-aligned address and keep them intact until playback ends.
 /// The macro neither loads nor reserves storage; retail RAM does not reach
 /// this address. Evaluating it performs no access and captures no identifiers.
-#define GAME_DEBUG_FIXED_REPLAY_BASE ((const u8*)0x80600100)
+#define GAME_DEBUG_FIXED_REPLAY_BASE ((const u8*)gHostRam) /* development RAM replay buffer: unmapped on host */
 
 /// Shared resident diagnostic controls, input overrides and session-loading status.
 ///

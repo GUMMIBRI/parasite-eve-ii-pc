@@ -25,6 +25,8 @@ endif()
 file(GLOB GAME_MAIN_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/*.c)
+# main.c only switches to the PS1 boot stack; the port entry (src/port/main.c) replaces it.
+list(FILTER GAME_MAIN_SOURCES EXCLUDE REGEX "/src/main/main\\.c$")
 add_library(game_main OBJECT ${GAME_MAIN_SOURCES})
 target_include_directories(game_main PUBLIC include include/decomp
     ${CMAKE_CURRENT_SOURCE_DIR}/build/include)
@@ -43,7 +45,7 @@ if(PE_ALL_OVERLAYS)
     target_link_libraries(game_overlays PUBLIC psyz)
 endif()
 
-add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c $<TARGET_OBJECTS:game_main>
+add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c src/port/unresolved_stubs.c $<TARGET_OBJECTS:game_main>
     $<$<BOOL:${PE_ALL_OVERLAYS}>:$<TARGET_OBJECTS:game_overlays>>)
 target_include_directories(parasite-eve-ii-pc PRIVATE include include/decomp src/main)
 target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz SKIP_ASM)

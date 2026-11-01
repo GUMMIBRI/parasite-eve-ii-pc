@@ -31,7 +31,7 @@ static inline void _memClearByteSpan(void* destination, u32 byteCount)
 ///
 /// Initializes the published heap base; it neither reserves nor initializes RAM.
 /// Heap3 setup supplies the separate 0xFF80-byte extent and allocator metadata.
-#define MEMORY_PRIMARY_HEAP_BASE ((void*)0x80083800)
+#define MEMORY_PRIMARY_HEAP_BASE PS1_RAM_PTR(0x80083800)
 
 /// Base of the fixed primary heap used by the resident allocation wrappers.
 ///

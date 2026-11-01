@@ -20,7 +20,6 @@ int CdGetDiskType(void)
 }
 
 /* The host CD layer needs no interrupt pump. */
-void StCdInterrupt(void) {}
 
 /* libapi heap 3: the host allocator replaces the PlayStation arena. The arena
  * arguments are accepted and ignored. */
@@ -223,3 +222,9 @@ void LoadAverageCol(unsigned char* c0, unsigned char* c1, int w0, int w1, unsign
         out[i] = v < 0 ? 0 : v > 255 ? 255 : (unsigned char)v;
     }
 }
+
+unsigned char gHostScratchpad[0x400] __attribute__((aligned(0x400)));
+
+unsigned char gHostRam[0x200000] __attribute__((aligned(0x1000)));
+unsigned int gHostGpuStatus[2] = { 0x1C000000u, 0 }; /* ready bits set */
+void* _freep; /* libapi heap3 search cursor; unused with the host allocator */

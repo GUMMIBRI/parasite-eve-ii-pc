@@ -72,7 +72,7 @@ size_t gMemSavedImageRegionBytes;
 /// Initializes only `_gMemUnusedImageRegionEnd`, which has no reader; memory
 /// configuration computes its extents separately. The typed byte pointer
 /// denotes a boundary and neither reserves storage nor permits a byte read.
-#define MEMORY_IMAGE_REGION_END ((u8*)0x801FD000)
+#define MEMORY_IMAGE_REGION_END ((u8*)PS1_RAM_PTR(0x801FD000))
 
 extern u8 D_80400000[];
 
@@ -81,21 +81,21 @@ extern u8 D_80400000[];
 /// Initializes `gFsActorBuffer0Base`. Actor packages, scene/movie workspaces
 /// and GPU packets share this RAM; previous users must finish before reuse.
 /// The address specifies no object layout, capacity or reservation.
-#define FILE_SYSTEM_ACTOR_BUFFER_0_BASE ((u8*)0x80131E20)
+#define FILE_SYSTEM_ACTOR_BUFFER_0_BASE ((u8*)PS1_RAM_PTR(0x80131E20))
 
 /// Fixed byte address of actor work buffer 1 (actor-overlay slot 2).
 ///
 /// Initializes `gFsActorBuffer1Base`. Loaded packages, scene/movie workspaces
 /// and GPU packets reuse this RAM; previous users must finish before reuse.
 /// This address specifies no capacity or reservation.
-#define FILE_SYSTEM_ACTOR_BUFFER_1_BASE ((u8*)0x80149E20)
+#define FILE_SYSTEM_ACTOR_BUFFER_1_BASE ((u8*)PS1_RAM_PTR(0x80149E20))
 
 /// Fixed byte address of actor work buffer 2 (actor-overlay slot 3).
 ///
 /// Initializes `gFsActorBuffer2Base`. Actor loads, scene/movie workspaces,
 /// serialized demo state and GPU packets share this RAM; prior users must finish
 /// before reuse. The address specifies no object layout, capacity or reservation.
-#define FILE_SYSTEM_ACTOR_BUFFER_2_BASE ((u8*)0x80161E20)
+#define FILE_SYSTEM_ACTOR_BUFFER_2_BASE ((u8*)PS1_RAM_PTR(0x80161E20))
 
 static const char _gBootBuildStamp[sizeof("2000/05/01 19:24 ver2.49")];
 
@@ -131,7 +131,7 @@ static u8* _gMemUnusedDevKitAddress = D_80400000;
 /// later. This address is also the map-overlay load base: occupants and pending
 /// CPU/GPU/decoder users must finish before the region is reclaimed. The macro
 /// specifies an address only, with neither an object layout nor an allocation.
-#define MEMORY_DEFAULT_IMAGE_REGION_BASE ((u8*)0x80179950)
+#define MEMORY_DEFAULT_IMAGE_REGION_BASE ((u8*)PS1_RAM_PTR(0x80179950))
 
 /// Map-owned image-memory rows indexed directly by stage ID 0..5.
 ///

@@ -9,7 +9,13 @@
 ///
 /// Storage is shared; callers manage the lifetime and alignment of their data.
 /// This address does not reserve a block or read the scratch-stack cursor.
+#ifdef __psyz
+/* Host: the 1 KiB scratchpad is ordinary memory (defined in src/port/psyq_host.c). */
+extern u8 gHostScratchpad[0x400];
+#define PLAYSTATION_SCRATCHPAD_BASE (gHostScratchpad)
+#else
 #define PLAYSTATION_SCRATCHPAD_BASE ((u8*)0x1F800000)
+#endif
 
 /// Returns a `void*` at a byte offset into PlayStation scratchpad RAM.
 ///

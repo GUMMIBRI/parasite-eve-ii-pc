@@ -46,7 +46,8 @@ typedef u32 _GpuStatusRegister;
 ///
 /// Expanding the macro computes an address without accessing hardware. The
 /// reader dereferences one 32-bit word; no object storage is declared here.
-#define GPU_STATUS_REGISTER_ADDRESS ((_GpuStatusRegister*)0x1F801814)
+extern unsigned int gHostGpuStatus[2];
+#define GPU_STATUS_REGISTER_ADDRESS ((_GpuStatusRegister*)gHostGpuStatus)
 
 /// Samples the GPU status word from the memory-mapped GP1 read port.
 static inline _GpuStatusRegister _gpuExtReadStatus(void)

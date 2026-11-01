@@ -11,7 +11,11 @@
 /// clear of other live scratchpad storage. On the little-endian target, the
 /// pointer's low halfword is its byte offset from the scratchpad base, which
 /// other scratchpad users read to check the space below the active stack.
+#ifdef __psyz
+enum { SCRATCH_STACK_HEAD_BYTE_OFFSET = 0x400 - sizeof(void*) }; /* host pointers are 8 bytes */
+#else
 enum { SCRATCH_STACK_HEAD_BYTE_OFFSET = 0x3FC };
+#endif
 
 /// Address of the writable cursor slot for the downward-growing scratch stack.
 ///

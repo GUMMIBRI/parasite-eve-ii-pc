@@ -1,10 +1,13 @@
+#include <stdio.h>
 #include <psyz.h>
 #include <libgpu.h>
 #include <libetc.h>
+#include "gamemain.h"
 
-/* Placeholder entry point: proves the PsyZ toolchain links. Replaced by the
- * port's boot code (mounting the disc images, then the original startup). */
+/* Port entry. Disc mounting goes here once the runtime loader exists; then the
+ * original start-up path runs on the host stack (no SetSp). */
 int main(void) {
     ResetGraph(0);
+    gameMainRun();
     return 0;
 }
