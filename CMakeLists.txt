@@ -30,9 +30,9 @@ target_compile_definitions(game_main PUBLIC __psyz SKIP_ASM)
 target_compile_options(game_main PRIVATE -w)
 target_link_libraries(game_main PUBLIC psyz)
 
-add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c $<TARGET_OBJECTS:game_main>)
-target_include_directories(parasite-eve-ii-pc PRIVATE include)
-target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz)
+add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/lzss.c $<TARGET_OBJECTS:game_main>)
+target_include_directories(parasite-eve-ii-pc PRIVATE include include/decomp src/main)
+target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz SKIP_ASM)
 target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)
 
 # Host test for the GTE compatibility macros: cmake --build build-port --target gte_compat_test
@@ -40,3 +40,8 @@ add_executable(gte_compat_test EXCLUDE_FROM_ALL tests/gte_compat_test.c)
 target_include_directories(gte_compat_test PRIVATE include)
 target_compile_definitions(gte_compat_test PRIVATE __psyz)
 target_link_libraries(gte_compat_test PRIVATE psyz)
+
+add_executable(lzss_test EXCLUDE_FROM_ALL tests/lzss_test.c src/port/lzss.c)
+target_include_directories(lzss_test PRIVATE include include/decomp src/main)
+target_compile_definitions(lzss_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(lzss_test PRIVATE psyz)
