@@ -245,3 +245,55 @@ u32* tmdDrawStreamPrimG4(TmdStreamWorkspace* ws, s32 flags, u32* el)
     ws->primWrite = slot;
     return el;
 }
+
+/*
+ * Vertex pre-pass: project each element's vertex, cache its depth, light its
+ * normal and scatter the screen XY and lit colour to packet words at byte offsets
+ * from `ws->preXformWrite`. Elements: { vertex | normal << 16, [colour,] dest },
+ * dest = XY offset | colour offset << 16.
+ */
+static u32* xformStreamVerts(TmdStreamWorkspace* ws, u32* el, int elementColour)
+{
+    u8* base = ws->preXformWrite;
+
+    if (!elementColour) {
+        Psyz_GteDataWrite(6, 0x00808080u); /* TMD_XFORM_STREAM_VERTS_COLOR */
+    }
+    for (s32 count = ws->elemCount; count != 0; count--, el += ws->elemStride) {
+        u32 w0   = el[0];
+        u32 vOff = w0 & 0xFFFF;
+        u32 dest = elementColour ? el[2] : el[1];
+
+        loadV(0, vertexAt(ws, vOff));
+        Psyz_GteRtps();
+        {
+            u32 depth = Psyz_GteDataRead(19);
+            if (Psyz_GteReadflg() < 0) {
+                depth |= 0x80000000u; /* TMD_VERTEX_DEPTH_INVALID */
+            }
+            *(u32*)((u8*)ws->szTable + (vOff >> 1)) = depth;
+        }
+        u32 xy = Psyz_GteDataRead(14);
+        if (elementColour) {
+            Psyz_GteDataWrite(6, el[1]);
+        }
+        loadV(0, normalAt(ws, w0 >> 16));
+        Psyz_GteCommand(GTE_NCCS);
+        u32 rgb = Psyz_GteDataRead(22);
+        memcpy(base + (dest & 0xFFFF), &xy, 4);
+        memcpy(base + (dest >> 16), &rgb, 4);
+    }
+    return el;
+}
+
+u32* tmdXformStreamVertsElemColor(TmdStreamWorkspace* ws, s32 flags, u32* el)
+{
+    (void)flags;
+    return xformStreamVerts(ws, el, 1);
+}
+
+u32* tmdXformStreamVerts(TmdStreamWorkspace* ws, s32 flags, u32* el)
+{
+    (void)flags;
+    return xformStreamVerts(ws, el, 0);
+}

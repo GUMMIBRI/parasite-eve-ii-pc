@@ -8,6 +8,8 @@
 #include "tmd.h"
 #include "main/tmd_types.h"
 
+u32* tmdXformStreamVerts(TmdStreamWorkspace*, s32, u32*);
+
 #define FAIL(m) do { puts("FAIL: " m); return 1; } while (0)
 
 int main(void)
@@ -74,6 +76,19 @@ int main(void)
     end = tmdDrawStreamPrimG3(&ws, 0, el);
     if (end != el + 3 || tri[0].x2 != 110 || tri[0].y2 != 170 || tri[0].code != 0x34) FAIL("g3 one-normal");
     if (tri[0].r0 != tri[0].r2) FAIL("g3 one-normal colour repeated");
+    /* Vertex pre-pass: element = { vertex 8 | normal 0 << 16, dest xy@0 colour@4 } */
+    {
+        static s32 depth[16]; u8 pkt[16]; u32 xy, rgb;
+        memset(depth, 0, sizeof depth); memset(pkt, 0, sizeof pkt);
+        ws.preXformWrite = pkt; ws.szTable = depth; ws.elemCount = 1; ws.elemStride = 2;
+        el[0] = 8 | (0u << 16); el[1] = 0 | (4u << 16);
+        end = tmdXformStreamVerts(&ws, 0, el);
+        if (end != el + 2) FAIL("xform cursor");
+        memcpy(&xy, pkt, 4); memcpy(&rgb, pkt + 4, 4);
+        if ((short)(xy & 0xFFFF) != 210 || (short)(xy >> 16) != 70) FAIL("xform xy");
+        if (depth[1] != 1000) { printf("depth=%d\n", depth[1]); FAIL("xform depth cache"); }
+        if ((rgb & 0xFFFFFF) == 0) FAIL("xform lit colour");
+    }
     puts("tmd ops OK");
     return 0;
 }
