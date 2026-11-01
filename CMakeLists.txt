@@ -30,7 +30,7 @@ target_compile_definitions(game_main PUBLIC __psyz SKIP_ASM)
 target_compile_options(game_main PRIVATE -w)
 target_link_libraries(game_main PUBLIC psyz)
 
-add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/lzss.c src/port/tmd_dispatch.c $<TARGET_OBJECTS:game_main>)
+add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c $<TARGET_OBJECTS:game_main>)
 target_include_directories(parasite-eve-ii-pc PRIVATE include include/decomp src/main)
 target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz SKIP_ASM)
 target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)
@@ -50,3 +50,8 @@ add_executable(tmd_model_test EXCLUDE_FROM_ALL tests/tmd_model_test.c src/port/t
 target_include_directories(tmd_model_test PRIVATE include include/decomp src/main)
 target_compile_definitions(tmd_model_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(tmd_model_test PRIVATE psyz)
+
+add_executable(tmd_prim_test EXCLUDE_FROM_ALL tests/tmd_prim_test.c src/port/tmd_prim.c src/port/tmd_dispatch.c)
+target_include_directories(tmd_prim_test PRIVATE include include/decomp src/main)
+target_compile_definitions(tmd_prim_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(tmd_prim_test PRIVATE psyz)

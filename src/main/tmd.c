@@ -786,7 +786,12 @@ static void _tmdDrawModel(TmdObject* model)
     scratch->workspace.normals       = normals;
     otEntryOffset                    = model->otOffset;
     scratch->workspace.szTable       = vertexDepths;
+#ifdef __psyz
+    // Host ordering tables hold PsyZ OT_TYPE entries (tag and length words), not one word each.
+    scratch->workspace.ot = (u_long*)((OT_TYPE*)currentOt + otEntryOffset);
+#else
     scratch->workspace.ot            = currentOt + otEntryOffset;
+#endif
 
     gte_SetColorMatrix(model->colorMtx);
     gte_ldbkdir(model->colorMtx->t[0], model->colorMtx->t[1], model->colorMtx->t[2]);
