@@ -45,6 +45,19 @@ int main(void)
     /* depths 100+200+300+(sz[1]=200) = 800 -> *256>>12 = 50 -> bucket 3 */
     if (ot[3].tag != (u_long)&quad[0]) { printf("otz=%u code=%x\n", Psyz_GteDataRead(7), quad[0].code); for (int i=0;i<64;i++) if (ot[i].tag) printf("bucket %d\n", i); FAIL("g4 not linked in bucket 3"); }
     if (quad[0].code != 0x38 || ((P_TAG*)&quad[0])->len != 8) FAIL("g4 code/len");
+    /* Textured pre-transformed triangle: front-facing accepted, opcode by flags */
+    {
+        POLY_GT3 t[1]; memset(t, 0, sizeof t); memset(ot, 0, sizeof ot);
+        t[0].x0 = 0; t[0].y0 = 0; t[0].x1 = 10; t[0].y1 = 0; t[0].x2 = 0; t[0].y2 = 10;
+        ws.preXformWrite = (u8*)t; ws.elemCount = 1; ws.elemStride = 2;
+        el[0] = 0 | (4u << 16); el[1] = 8;
+        end = tmdDrawStreamPrimGt3PreXform(&ws, 0x02, el);
+        if (end != el + 2 || t[0].code != 0x36 || ((P_TAG*)&t[0])->len != 9) FAIL("gt3 prexform");
+        if (ot[3].tag != (u_long)&t[0]) FAIL("gt3 prexform link");
+        memset(t, 0, sizeof t); t[0].x1 = 10; t[0].y2 = 10; ws.preXformWrite = (u8*)t; memset(ot, 0, sizeof ot);
+        tmdDrawStreamPrimGt3PreXform(&ws, 0x10, el);
+        if (t[0].code != 0) FAIL("gt3 prexform reverse must cull front face");
+    }
     puts("tmd prim OK");
     return 0;
 }
