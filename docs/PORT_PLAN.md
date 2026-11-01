@@ -16,7 +16,7 @@ first game). Matching the PS1 binaries is not a goal.
 
 ## Phases
 
-0. **Foundation.** CMake and PsyZ submodule; compile `src/main` on the host; drop the matching toolchain once nothing depends on it.
+0. **Foundation.** CMake and PsyZ submodule; compile `src/main` on the host; drop the matching toolchain once nothing depends on it. *Done:* CMake/PsyZ, `src/main` builds as `game_main`, matching hacks and GTE MIPS asm removed. *Left, gated:* `ninja_config.py`, `configs/` and `linkers/` still generate the asset includes `game_main` reads, so they go with the runtime loader (phase 2); `src/main/hasm/*.s` stays as the reference for the C rewrite (phase 1); `DEFINE_ALIAS` goes with the overlay registry (phase 2). Sources outside `src/main` are not yet compiled.
 1. **Boot to title.** Memory, task system, disc image mount (both discs), `fs`/`cdcmd` on PsyZ, LZSS and TMD in C, pad, fonts, `title` overlay.
 2. **Overlays.** Module registry, naming, runtime data loader; first room with Aya and collision.
 3. **Gameplay.** Actors, combat, items, menus, by family; verify against emulator traces (`tools/gametrace`).
