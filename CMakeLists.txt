@@ -45,3 +45,8 @@ add_executable(lzss_test EXCLUDE_FROM_ALL tests/lzss_test.c src/port/lzss.c)
 target_include_directories(lzss_test PRIVATE include include/decomp src/main)
 target_compile_definitions(lzss_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(lzss_test PRIVATE psyz)
+
+add_executable(tmd_model_test EXCLUDE_FROM_ALL tests/tmd_model_test.c src/port/tmd_dispatch.c)
+target_include_directories(tmd_model_test PRIVATE include include/decomp src/main)
+target_compile_definitions(tmd_model_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(tmd_model_test PRIVATE psyz)
