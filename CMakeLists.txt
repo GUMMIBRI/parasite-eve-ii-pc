@@ -31,7 +31,7 @@ add_library(game_main OBJECT ${GAME_MAIN_SOURCES})
 target_include_directories(game_main PUBLIC include include/decomp
     ${CMAKE_CURRENT_SOURCE_DIR}/build/include)
 target_compile_definitions(game_main PUBLIC __psyz SKIP_ASM)
-target_compile_options(game_main PRIVATE -w -Wno-incompatible-function-pointer-types -g -fno-omit-frame-pointer)
+target_compile_options(game_main PRIVATE -w -Wno-incompatible-function-pointer-types -g -fno-omit-frame-pointer -include port/gpu_len.h)
 target_link_libraries(game_main PUBLIC psyz)
 
 # Overlay packages linked into the executable. The PS1 game swaps overlay code in and out of one address range;
@@ -54,7 +54,7 @@ add_library(game_overlays OBJECT ${PE_OVERLAY_LIST})
 target_include_directories(game_overlays PUBLIC include include/decomp
     ${CMAKE_CURRENT_SOURCE_DIR}/build/include)
 target_compile_definitions(game_overlays PUBLIC __psyz SKIP_ASM)
-target_compile_options(game_overlays PRIVATE -w -Wno-incompatible-function-pointer-types -g -fno-omit-frame-pointer)
+target_compile_options(game_overlays PRIVATE -w -Wno-incompatible-function-pointer-types -g -fno-omit-frame-pointer -include port/gpu_len.h)
 target_link_libraries(game_overlays PUBLIC psyz)
 
 add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c src/port/mdec_vlc.c src/port/asm_data.c src/port/globals.c src/port/unresolved_stubs.c $<TARGET_OBJECTS:game_main>

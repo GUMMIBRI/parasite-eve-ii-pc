@@ -1,6 +1,10 @@
 /* Host implementations of the PSY-Q calls PsyZ does not provide. */
 #include <math.h>
 #include <stdlib.h>
+#include <psyz/video.h>
+#include "main/fs.h"
+#include "main/display.h"
+#include <stdio.h>
 
 #include <psyz.h>
 #include <libcd.h>
@@ -131,12 +135,12 @@ long MemCardSync(long mode, long* cmds, long* result)
     return 1; /* nothing pending */
 }
 
-void PadInitDirect(unsigned char* pad1, unsigned char* pad2)
+/* The emulated controller is a digital pad (ID 4): InfoModeCurID = 1 reports its type; no extended ID. */
+int PadInfoMode(int port, int term, int offs)
 {
-    if (pad1) memset(pad1, 0xFF, 34);
-    if (pad2) memset(pad2, 0xFF, 34);
+    (void)port; (void)offs;
+    return term == 1 ? 4 : 0;
 }
-int PadInfoMode(int port, int term, int offs) { (void)port; (void)term; (void)offs; return 0; }
 int PadSetMainMode(int port, int offs, int lock) { (void)port; (void)offs; (void)lock; return 1; }
 
 long SpuReserveReverbWorkArea(long on_off) { return on_off; }
@@ -243,4 +247,35 @@ long MemCardWriteFile(long chan, char* file, unsigned long* adrs, long offset, l
 {
     (void)chan; (void)file; (void)adrs; (void)offset; (void)bytes;
     return 0;
+}
+
+/* Scripted input for automated runs: PE2_AUTOPRESS=<first tick> taps Start, then Cross, in turn (active-low bits
+ * of the digital pad frame: byte 2 bit 3 = Start, byte 3 bit 6 = Cross). */
+void Psyz_PadsOverride(int port, char* frame, int len)
+{
+    /* PE2_FAST=1 lifts the frame limiter while an FMV plays, so development runs skip the intro. */
+    static int fastEnabled = -1, fastNow;
+    if (fastEnabled < 0) fastEnabled = getenv("PE2_FAST") != NULL;
+    if (fastEnabled && port == 0) {
+        int movie = gCdCmdQueue.movieStep >= 1 && gCdCmdQueue.movieStep <= 5;
+        if (movie != fastNow) {
+            fastNow = movie;
+            Psyz_VideoSetVsyncMode(movie ? PSYZ_VSYNC_LIMITLESS : PSYZ_VSYNC_AUTO);
+        }
+    }
+    static int tick;
+    static int enabled = -1;
+    static int startTick;
+    if (enabled < 0) {
+        enabled = getenv("PE2_AUTOPRESS") != NULL;
+        startTick = enabled ? atoi(getenv("PE2_AUTOPRESS")) : 0;
+    }
+    if (port == 0 && getenv("PE2_TRACE") && (tick % 60) == 0) {
+        fprintf(stderr, "[trace] tick=%d movieStep=%d demo=%d\n", tick, gCdCmdQueue.movieStep, gDisplayState.demoScene);
+    }
+    if (!enabled || port != 0 || len < 4) { tick++; return; }
+    if (tick++ < startTick) return;
+    int phase = ((tick - startTick) / 20) % 6;
+    if (phase == 0) frame[2] &= ~(1 << 3);
+    if (phase == 3) frame[3] &= ~(1 << 6);
 }

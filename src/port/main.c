@@ -48,11 +48,7 @@ int main(int argc, char** argv) {
         return 2;
     }
     Psyz_SetTitle("Parasite Eve II");
-    // PE2_FAST=1 runs without the frame limiter (fast-forwards the intro while developing).
     ResetGraph(0);
-    if (getenv("PE2_FAST")) {
-        Psyz_VideoSetVsyncMode(PSYZ_VSYNC_LIMITLESS);
-    }
     gameMainRun();
     return 0;
 }
