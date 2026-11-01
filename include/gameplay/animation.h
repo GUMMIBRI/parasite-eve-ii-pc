@@ -1,8 +1,8 @@
 #ifndef GAMEPLAY_ANIMATION_H
 #define GAMEPLAY_ANIMATION_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

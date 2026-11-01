@@ -1,6 +1,6 @@
 #include "captions.h"
 
-#include <psyq/strings.h>
+#include <strings.h>
 
 #include "types.h"
 

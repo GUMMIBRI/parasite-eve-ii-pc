@@ -1,8 +1,8 @@
 #ifndef GAMEPLAY_PRIVATE_MODEL_OBJECTS_H
 #define GAMEPLAY_PRIVATE_MODEL_OBJECTS_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 /// Bit 31 of `GfxCoord::composeStamp` records the last visiting pass's parity.
 ///

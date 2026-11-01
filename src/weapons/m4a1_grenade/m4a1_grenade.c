@@ -2,9 +2,9 @@
 
 #include "config.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/inline_c.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgte.h>
 
 #include "common.h"
 #include "gte.h"

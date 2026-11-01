@@ -1,9 +1,9 @@
 #include "rooms/dryfield_night_water_tower.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/inline_c.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgte.h>
 
 #include "gte.h"
 #include "common.h"

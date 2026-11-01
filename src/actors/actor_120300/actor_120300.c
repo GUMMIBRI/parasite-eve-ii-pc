@@ -1,8 +1,8 @@
 #include "actors/actor_120300.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/abs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <abs.h>
 
 #include "common.h"
 

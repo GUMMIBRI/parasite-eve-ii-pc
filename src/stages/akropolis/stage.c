@@ -1,6 +1,6 @@
 #include "stages/akropolis/stage.h"
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "types.h"
 

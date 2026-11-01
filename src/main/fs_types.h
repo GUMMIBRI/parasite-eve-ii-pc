@@ -1,8 +1,8 @@
 #ifndef MAIN_PRIVATE_FS_TYPES_H
 #define MAIN_PRIVATE_FS_TYPES_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libcd.h>
+#include <psyz.h>
+#include <libcd.h>
 
 #include "common.h"
 

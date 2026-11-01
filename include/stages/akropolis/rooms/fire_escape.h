@@ -1,8 +1,8 @@
 #ifndef INCLUDE_STAGES_AKROPOLIS_ROOMS_FIRE_ESCAPE_H
 #define INCLUDE_STAGES_AKROPOLIS_ROOMS_FIRE_ESCAPE_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "types.h"
 

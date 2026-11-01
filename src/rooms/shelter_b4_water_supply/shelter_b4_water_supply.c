@@ -1,11 +1,11 @@
 #include "rooms/shelter_b4_water_supply.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/abs.h>
-#include <psyq/inline_c.h>
-#include <psyq/libgs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <abs.h>
+#include <libgte.h>
+#include <libgs.h>
 
 #include "gte.h"
 #include "common.h"

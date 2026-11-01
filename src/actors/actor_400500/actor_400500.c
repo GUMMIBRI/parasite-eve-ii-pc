@@ -1,10 +1,10 @@
 #include "actors/actor_400500.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/inline_c.h>
-#include <psyq/memory.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgte.h>
+#include <memory.h>
 
 #include "common.h"
 #include "gte.h"

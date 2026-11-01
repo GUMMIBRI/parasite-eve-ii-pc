@@ -1,11 +1,11 @@
 #include "rooms/shelter_b3_garbage_incinerator.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/abs.h>
-#include <psyq/rand.h>
-#include <psyq/strings.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <abs.h>
+#include <rand.h>
+#include <strings.h>
 
 #include "common.h"
 

@@ -1,8 +1,8 @@
 #ifndef INCLUDE_ROOMS_DRYFIELD_TOILET_H
 #define INCLUDE_ROOMS_DRYFIELD_TOILET_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 #include "overlay.h"

@@ -1,8 +1,8 @@
 #ifndef INCLUDE_WEAPONS_WEAPON_H
 #define INCLUDE_WEAPONS_WEAPON_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

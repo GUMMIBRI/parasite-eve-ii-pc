@@ -1,9 +1,9 @@
 #include "actors/actor_303600.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/libgs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgs.h>
 
 #include "common.h"
 
@@ -433,7 +433,7 @@ static TaskMessageEntry _gActor303600ShaftMessageTable[2] = {
 /// Directions are +Y, +X and +Z, with RGB intensity 128 on each light.
 /// Each segment copies their normalized directions and colours into its own
 /// matrices; the shared light records remain live for the overlay's lifetime.
-static GsF_LIGHT _gActor303600ShaftSegmentLights[3] = {
+static GfxFlatLight _gActor303600ShaftSegmentLights[3] = {
     { 0, ONE, 0, 128, 128, 128 },
     { ONE, 0, 0, 128, 128, 128 },
     { 0, 0, ONE, 128, 128, 128 },
@@ -1043,7 +1043,7 @@ static void _actor303600InitShaftSegmentLighting(Task* task)
 {
     _Actor303600ShaftSegmentWork* lightingWork = task->work;
     TmdObject*                    segmentModel = task->extra.tmd;
-    GsF_LIGHT*                    light;
+    GfxFlatLight*                    light;
     s32                           lightIndex;
 
     segmentModel->lightMtx = &lightingWork->lightMtx;

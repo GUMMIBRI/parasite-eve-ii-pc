@@ -324,8 +324,16 @@ typedef union {
     void*         pointer;        // Object pointer, interpreted by the receiving callback
     TaskArgHalves halves;         // Unsigned low half and signed high half
     s8            signedBytes[4]; // Signed byte view of the complete argument word
+#ifdef __psyz
+} TaskSpawnArg;
+#else
 } TaskSpawnArg __attribute__((transparent_union));
+#endif
 STATIC_ASSERT_SIZEOF(TaskSpawnArg, 4);
+
+#ifdef __psyz
+#include "port/task_args.h"
+#endif
 
 /// A task's message table entry; defined with the dispatcher in `gameplay/message.h`.
 struct TaskMessageEntry;

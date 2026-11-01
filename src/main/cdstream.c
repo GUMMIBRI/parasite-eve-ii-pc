@@ -1,11 +1,11 @@
 #include "cdstream.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/kernel.h>
-#include <psyq/libapi.h>
-#include <psyq/libcd.h>
-#include <psyq/libspu.h>
-#include <psyq/libetc.h>
+#include <psyz.h>
+#include <kernel.h>
+#include <libapi.h>
+#include <libcd.h>
+#include <libspu.h>
+#include <libetc.h>
 
 #include "common.h"
 

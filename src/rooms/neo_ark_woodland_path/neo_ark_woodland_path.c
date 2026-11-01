@@ -1,10 +1,10 @@
 #include "rooms/neo_ark_woodland_path.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/inline_c.h>
-#include <psyq/rand.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgte.h>
+#include <rand.h>
 
 #include "gte.h"
 #include "common.h"

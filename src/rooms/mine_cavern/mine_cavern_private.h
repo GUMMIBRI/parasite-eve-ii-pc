@@ -1,8 +1,8 @@
 #ifndef SRC_ROOMS_MINE_CAVERN_MINE_CAVERN_PRIVATE_H
 #define SRC_ROOMS_MINE_CAVERN_MINE_CAVERN_PRIVATE_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

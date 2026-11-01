@@ -1,8 +1,8 @@
 #include "actors/actor_503500.h"
 #include "actor_503500_private.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

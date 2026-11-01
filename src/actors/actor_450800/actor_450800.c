@@ -1,7 +1,7 @@
 #include "actors/actor_450800.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

@@ -1,7 +1,10 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include "psyq/sys/types.h"
+#include <psyz.h>
+#include <libgte.h>
+#include "port/gte_compat.h"
+#include "port/psyq_compat.h"
 
 #ifndef NULL
 #define NULL 0

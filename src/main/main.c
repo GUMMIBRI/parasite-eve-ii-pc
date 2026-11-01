@@ -1,7 +1,7 @@
 #include "mem.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libapi.h>
+#include <psyz.h>
+#include <libapi.h>
 
 #include "types.h"
 

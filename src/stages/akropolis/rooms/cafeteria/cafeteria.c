@@ -5,9 +5,9 @@
 #include "../../room_states.h"
 #include "cafeteria_private.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
 
 #include "types.h"
 

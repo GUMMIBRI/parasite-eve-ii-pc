@@ -1,8 +1,8 @@
 #include "rooms/dryfield_night_water_tank.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/rand.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <rand.h>
 
 #include "common.h"
 

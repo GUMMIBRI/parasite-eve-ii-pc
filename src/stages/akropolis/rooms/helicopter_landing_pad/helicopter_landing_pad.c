@@ -1,9 +1,9 @@
 #include "stages/akropolis/rooms/helicopter_landing_pad.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/libgs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgs.h>
 
 #include "common.h"
 
@@ -64,7 +64,7 @@ static TaskMessageEntry _gAkropolisHelicopterLandingPadLiftMessages[3] = {
 };
 
 /// Three directional lights used to initialize the lift's task-owned matrices.
-static GsF_LIGHT _gAkropolisHelicopterLandingPadLiftFlatLights[3] = {
+static GfxFlatLight _gAkropolisHelicopterLandingPadLiftFlatLights[3] = {
     { 0, ONE, 0, 128, 128, 128 },
     { ONE, 0, 0, 128, 128, 128 },
     { 0, 0, ONE, 128, 128, 128 },
@@ -168,7 +168,7 @@ static void _akropolisHelicopterLandingPadLiftInitLighting(Task* task)
 {
     _LiftWork*       work      = task->work;
     TmdObject*       liftModel = task->extra.tmd;
-    const GsF_LIGHT* flatLight;
+    const GfxFlatLight* flatLight;
     s32              lightIndex;
 
     liftModel->lightMtx = &work->lightMtx;

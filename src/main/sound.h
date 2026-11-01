@@ -1,7 +1,7 @@
 #ifndef MAIN_PRIVATE_SOUND_H
 #define MAIN_PRIVATE_SOUND_H
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "types.h"
 

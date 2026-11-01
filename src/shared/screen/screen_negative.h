@@ -18,7 +18,7 @@
 #ifndef SRC_SHARED_SCREEN_NEGATIVE_H
 #define SRC_SHARED_SCREEN_NEGATIVE_H
 
-#include <psyq/libgpu.h>
+#include <libgpu.h>
 
 #include "common.h"
 

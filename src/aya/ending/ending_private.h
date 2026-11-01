@@ -1,7 +1,7 @@
 #ifndef SRC_AYA_ENDING_ENDING_PRIVATE_H
 #define SRC_AYA_ENDING_ENDING_PRIVATE_H
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "common.h"
 

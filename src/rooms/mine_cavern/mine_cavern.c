@@ -16,8 +16,8 @@ static s32 _gMineCavernFirstSceneRequestState;
 
 #include "rooms/mine_cavern.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "mine_cavern_private.h"
 

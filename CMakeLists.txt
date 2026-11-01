@@ -21,7 +21,16 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
         "$<$<COMPILE_LANGUAGE:C>:-fdata-sections>")
 endif()
 
-add_executable(parasite-eve-ii-pc src/port/main.c)
+# The game proper (the former decompilation sources), compiled for the host.
+file(GLOB GAME_MAIN_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/main/*.c)
+add_library(game_main OBJECT ${GAME_MAIN_SOURCES})
+target_include_directories(game_main PUBLIC include include/decomp
+    ${CMAKE_CURRENT_SOURCE_DIR}/build/include)
+target_compile_definitions(game_main PUBLIC __psyz SKIP_ASM)
+target_compile_options(game_main PRIVATE -w)
+target_link_libraries(game_main PUBLIC psyz)
+
+add_executable(parasite-eve-ii-pc src/port/main.c $<TARGET_OBJECTS:game_main>)
 target_include_directories(parasite-eve-ii-pc PRIVATE include)
 target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz)
 target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)

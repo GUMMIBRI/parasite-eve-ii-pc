@@ -66,7 +66,7 @@ enum { TASK_PRIORITY_MASK = 0xFF };
 /// Exact stop request consumed by a walker before collection or advancement.
 enum { TASK_WALK_STOP_REQUESTED = 1 };
 
-static Task* _taskSpawnFromDesc(TaskDesc* desc, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2, TaskNode* listHead);
+static Task* (_taskSpawnFromDesc)(TaskDesc* desc, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2, TaskNode* listHead);
 
 static void _taskUnlinkFromSelectedList(Task* task);
 
@@ -123,7 +123,7 @@ static inline void _taskInsert(TaskNode* listHead, Task* task, u32 priority)
 /// their use. No descriptor pointer is retained and no task callback runs here.
 /// Equal priorities retain spawn order, so a spawn after a walk's cursor can
 /// run in that same walk. Pointer payload ownership belongs to the callback.
-static Task* _taskSpawnFromDesc(TaskDesc* desc, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2, TaskNode* listHead)
+static Task* (_taskSpawnFromDesc)(TaskDesc* desc, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2, TaskNode* listHead)
 {
     /// Spawn-time creation flag that defers a TMD body's initial primitive buffer.
     ///
@@ -381,12 +381,12 @@ void taskKill(Task* task)
     _taskCollectImmediately(task);
 }
 
-Task* taskSpawnFromTable(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
+Task* (taskSpawnFromTable)(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
 {
     return _taskSpawnFromDesc(&table[index], spawnArg1, spawnArg2, _gTaskActiveList);
 }
 
-Task* taskSpawn(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
+Task* (taskSpawn)(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
 {
     TaskDesc* desc;
 

@@ -1,11 +1,11 @@
 #include "gameplay/model_lighting.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/inline_c.h>
-#include <psyq/memory.h>
-#include <psyq/rand.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgte.h>
+#include <memory.h>
+#include <rand.h>
 
 #include "common.h"
 #include "gte.h"
@@ -60,8 +60,8 @@
 #include "main/task.h"
 #include "main/text.h"
 #include "main/wipsys.h"
-#include <psyq/memory.h>
-#include <psyq/rand.h>
+#include <memory.h>
+#include <rand.h>
 
 /// Geometry references are byte offsets into eight-byte SVECTOR entries.
 /// Low reference bits are discarded; their meaning is unproven for these records.

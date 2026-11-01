@@ -1,8 +1,8 @@
 #ifndef SRC_ACTORS_ACTOR_521100_ACTOR_521100_PRIVATE_H
 #define SRC_ACTORS_ACTOR_521100_ACTOR_521100_PRIVATE_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

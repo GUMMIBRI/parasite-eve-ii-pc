@@ -1,8 +1,8 @@
 #ifndef GAMEPLAY_VIEW_H
 #define GAMEPLAY_VIEW_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

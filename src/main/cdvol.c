@@ -1,9 +1,9 @@
 #include "main/fs.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libcd.h>
-#include <psyq/libetc.h>
-#include <psyq/libspu.h>
+#include <psyz.h>
+#include <libcd.h>
+#include <libetc.h>
+#include <libspu.h>
 
 #include "common.h"
 

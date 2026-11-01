@@ -1,6 +1,6 @@
 #include "item_placement.h"
 
-#include <psyq/libgte.h>
+#include <libgte.h>
 
 #include "types.h"
 

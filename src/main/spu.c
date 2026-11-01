@@ -1,8 +1,8 @@
 #include "sound.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libspu.h>
-#include <psyq/limits.h>
+#include <psyz.h>
+#include <libspu.h>
+#include <limits.h>
 
 #include "common.h"
 

@@ -12,8 +12,8 @@
 #ifndef SRC_SHARED_FOLLOW_COLLISION_H
 #define SRC_SHARED_FOLLOW_COLLISION_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "main/coord.h"
 

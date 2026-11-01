@@ -2,8 +2,8 @@
 
 #include "../../room_ids.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "types.h"
 

@@ -1,6 +1,6 @@
 #include "gameplay/items.h"
 
-#include <psyq/memory.h>
+#include <memory.h>
 
 #include "common.h"
 

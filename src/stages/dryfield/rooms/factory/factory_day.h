@@ -1,7 +1,7 @@
 #ifndef STAGES_DRYFIELD_ROOMS_FACTORY_FACTORY_DAY_H
 #define STAGES_DRYFIELD_ROOMS_FACTORY_FACTORY_DAY_H
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "gameplay/collision.h"
 #include "gameplay/message.h"

@@ -1,11 +1,11 @@
 #include "gameplay/hud_sprites.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/gtemac.h>
-#include <psyq/inline_c.h>
-#include <psyq/rand.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgte.h>
+#include <libgte.h>
+#include <rand.h>
 
 #include "common.h"
 #include "gte.h"
@@ -53,7 +53,7 @@
 #include "main/text.h"
 #include "main/ui.h"
 #include "main/wipsys.h"
-#include <psyq/rand.h>
+#include <rand.h>
 
 /// Radar projection uses Q12 zoom and eight fractional bits per screen pixel.
 /// Palette constants describe the sixteen-entry RGB555 ability footprint.

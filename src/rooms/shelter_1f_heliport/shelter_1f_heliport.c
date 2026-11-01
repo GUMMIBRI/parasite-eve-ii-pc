@@ -1,8 +1,8 @@
 #include "rooms/shelter_1f_heliport.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/inline_c.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgte.h>
 
 #include "gte.h"
 #include "common.h"

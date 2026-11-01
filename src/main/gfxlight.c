@@ -1,13 +1,16 @@
 #include "main/gfx.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgs.h>
 
 #include "types.h"
 
 #include "gfx.h"
 #include "main/scratch.h"
+
+MATRIX GsWSMATRIX;
+MATRIX GsLIGHTWSMATRIX;
 
 /// Scratch reservation for one flat light's normalized direction.
 ///
@@ -37,7 +40,7 @@ enum { GRAPHICS_FLAT_LIGHT_COLOR_SHIFT = 4 };
 /// Evaluates the index six times and every other argument three times.
 /// Arguments must be stable expressions without side effects; inputs must
 /// remain readable through the stores. Captures no caller identifiers.
-/// Requires `MATRIX`, `GsF_LIGHT` and `SVECTOR` fields and the colour-shift constant.
+/// Requires `MATRIX`, `GfxFlatLight` and `SVECTOR` fields and the colour-shift constant.
 /// Owns no storage, uses no GTE state and retains no pointer. Both matrices
 /// must remain live, and inputs must not overlap the six written halfwords.
 /// Expands to a compound statement; invoke standalone in a braced body.
@@ -54,7 +57,7 @@ enum { GRAPHICS_FLAT_LIGHT_COLOR_SHIFT = 4 };
 /// Installs one flat directional light in a matrix pair for the default lights.
 ///
 /// Uses the index, input and scratch-stack contract of `gfxSetFlatLight`.
-static inline void _gfxWriteFlatLightMatrices(s32 lightIndex, const GsF_LIGHT* light, MATRIX* directionMatrix, MATRIX* colorMatrix)
+static inline void _gfxWriteFlatLightMatrices(s32 lightIndex, const GfxFlatLight* light, MATRIX* directionMatrix, MATRIX* colorMatrix)
 {
     _GfxFlatLightScratch* scratch;
 
@@ -76,7 +79,7 @@ void gfxResetDefaultLights(void)
         GRAPHICS_DEFAULT_LIGHT_2_COLOR = 0x60,
         GRAPHICS_DEFAULT_AMBIENT_COLOR = 0x40,
     };
-    GsF_LIGHT lights[3];
+    GfxFlatLight lights[3];
 
     lights[0].vx = 100;
     lights[0].vy = 100;
@@ -107,7 +110,7 @@ void gfxResetDefaultLights(void)
     gGfxDefaultColorMatrix.t[2] = GRAPHICS_DEFAULT_AMBIENT_COLOR;
 }
 
-void gfxSetFlatLight(s32 lightIndex, const GsF_LIGHT* light, MATRIX* directionMatrix, MATRIX* colorMatrix)
+void gfxSetFlatLight(s32 lightIndex, const GfxFlatLight* light, MATRIX* directionMatrix, MATRIX* colorMatrix)
 {
     _GfxFlatLightScratch* scratch;
 
@@ -124,7 +127,7 @@ void gfxSetFlatLight(s32 lightIndex, const GsF_LIGHT* light, MATRIX* directionMa
 /// `lightIndex` is 0..2; input direction, colour and scratch requirements are
 /// those of `gfxSetFlatLight`. Writes `GsLIGHTWSMATRIX`'s selected direction
 /// row and `gGfxDefaultColorMatrix`'s RGB column; ambient colour is retained.
-static void _gfxSetDefaultFlatLight(s32 lightIndex, const GsF_LIGHT* light)
+static void _gfxSetDefaultFlatLight(s32 lightIndex, const GfxFlatLight* light)
 {
     _gfxWriteFlatLightMatrices(lightIndex, light, &GsLIGHTWSMATRIX, &gGfxDefaultColorMatrix);
 }

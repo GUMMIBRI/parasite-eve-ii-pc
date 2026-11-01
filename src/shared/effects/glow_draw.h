@@ -18,7 +18,7 @@
 #ifndef SRC_SHARED_GLOW_DRAW_H
 #define SRC_SHARED_GLOW_DRAW_H
 
-#include <psyq/libgte.h>
+#include <libgte.h>
 
 #include "overlay.h"
 

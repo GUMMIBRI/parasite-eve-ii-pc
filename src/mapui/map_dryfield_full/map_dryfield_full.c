@@ -1,6 +1,6 @@
 #include "mapui/map_dryfield_full.h"
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "types.h"
 

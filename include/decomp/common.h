@@ -59,11 +59,19 @@
 
 #define SECTION(x) __attribute__((section(x)))
 
+/* Layout assertions describe the PlayStation's 32-bit structures. The host has 64-bit
+ * pointers, so they cannot hold for structures that contain one; they are disabled in the
+ * port. Disc records get their own, host-independent assertions as the data loader lands. */
+#ifdef __psyz
+#define STATIC_ASSERT(cond, msg) typedef char static_assertion_##msg[1]
+#define STATIC_ASSERT_SIZEOF(type, size) typedef char static_assertion_sizeof_##type[1]
+#else
 #define STATIC_ASSERT(cond, msg) \
     typedef char static_assertion_##msg[(cond) ? 1 : -1]
 
 #define STATIC_ASSERT_SIZEOF(type, size) \
     typedef char static_assertion_sizeof_##type[(sizeof(type) == (size)) ? 1 : -1]
+#endif
 
 /*
  * Matching helpers: empty GNU C statement-asm that emit no MIPS. Each use is a

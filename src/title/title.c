@@ -1,11 +1,11 @@
 #include "title/title.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/memory.h>
-#include <psyq/rand.h>
-#include <psyq/stdio.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <memory.h>
+#include <rand.h>
+#include <stdio.h>
 
 #include "common.h"
 

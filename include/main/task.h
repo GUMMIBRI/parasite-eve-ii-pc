@@ -97,7 +97,7 @@ extern TaskDesc gTaskBank1Descs[TASK_BANK1_DESCRIPTOR_COUNT];
 /// its initial exit callback is `taskKill`. Returns NULL if task allocation or
 /// required body attachment fails, including an unrecognized nonzero body kind.
 /// A missing primitive buffer alone does not fail model spawning.
-Task* taskSpawnFromTable(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
+Task* (taskSpawnFromTable)(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
 
 /// Spawns a bank entry or a directly supplied descriptor onto the selected execution list.
 ///
@@ -115,7 +115,7 @@ Task* taskSpawnFromTable(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, Tas
 /// dispatch the task in that same walk. Returns NULL on task allocation or
 /// required body-attachment failure; a missing model primitive buffer alone
 /// does not fail spawning.
-Task* taskSpawn(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
+Task* (taskSpawn)(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
 
 /// Spawns an indexed descriptor onto the default execution list, restoring the selected list.
 ///
@@ -125,7 +125,7 @@ Task* taskSpawn(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpa
 /// callback. Returns the new task or NULL on allocation or body-attachment
 /// failure, restoring the previous list selection in either case. The callback
 /// can run in a later default-list walk, or this walk if insertion follows its cursor.
-Task* taskSpawnFromTableOnDefaultList(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
+Task* (taskSpawnFromTableOnDefaultList)(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
 
 /// Spawns a bank entry or direct descriptor onto the default execution list.
 ///
@@ -138,7 +138,7 @@ Task* taskSpawnFromTableOnDefaultList(TaskDesc* table, s32 index, TaskSpawnArg s
 /// the previous list selection in either case. A missing model primitive buffer
 /// alone does not fail spawning. Insertion after the current default-list walk's
 /// cursor can dispatch the new task in that same walk.
-Task* taskSpawnOnDefaultList(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
+Task* (taskSpawnOnDefaultList)(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
 
 /// Performs default task teardown, releasing its resources and arranging collection.
 ///

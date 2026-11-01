@@ -1,8 +1,7 @@
 #ifndef MAIN_PRIVATE_MC_H
 #define MAIN_PRIVATE_MC_H
 
-#include <psyq/sys/types.h>
-#include <psyq/kernel.h>
+#include <psyz.h>
 
 #include "types.h"
 
@@ -97,6 +96,17 @@ enum {
 /// slot-list UI they spawn. It holds the card channel, the prompt and its
 /// timers, the `MemCardSync` result, the transfer buffer, the directory and
 /// each file's preview, and the map from card blocks to those files.
+/// A memory card directory entry in the layout the game reads. PsyZ's `DIRENTRY` has no `head`
+/// field (a card's entry carries the file's first sector there), so the game keeps its own.
+typedef struct {
+    char name[20];
+    s32  attr;
+    s32  size;
+    u32  next; // Unused on the host; the PlayStation stored a pointer here
+    s32  head; // First data sector of the file
+    char system[4];
+} McDirectoryEntry;
+
 typedef struct {
     s32             promptTimer;                               // Lead-in, then dismiss count. Opens at 16 and steps toward 0 by 2; a closing prompt counts down by 1 and ends below -16
     s32             cardTimer;                                 // Frames until the next card call, or frames the current call has been refused. A wait fires at 0; either dispatcher aborts at 181
@@ -110,7 +120,7 @@ typedef struct {
     s32             slotsRemaining;                            // `_gMcSaveSections` not yet visited, counting down from 9. The slot in hand is index `9 - slotsRemaining`; 0 means the walk is finished
     s32             slotWriteMask;                             // Bit n transfers buffer slot n. Shifted right unsigned as the walk advances, so bit 0 is the slot in hand. All bits set also makes the directory listing start at slot 0
     s32             confirmOverwrite;                          // 0 keep the name and start saving, 1 ask with the overwrite prompt first
-    struct DIRENTRY directory[MEMORY_CARD_DIRECTORY_CAPACITY]; // Entries from the latest `MemCardGetDirentry`
+    McDirectoryEntry directory[MEMORY_CARD_DIRECTORY_CAPACITY]; // Entries from the latest `MemCardGetDirentry`
     long            entryCount;                                // Entries written into `directory`
     s32             foreignBlockCount;                         // After the wildcard scan, blocks spanned by every file. The product listing subtracts this game's file count, leaving blocks held by other products; 15 means none remain
     s32             selectedSlot;                              // Directory index highlighted in the load list

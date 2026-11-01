@@ -1,13 +1,13 @@
 #include "actors/actor_00300.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/abs.h>
-#include <psyq/gtemac.h>
-#include <psyq/inline_c.h>
-#include <psyq/libgs.h>
-#include <psyq/memory.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <abs.h>
+#include <libgte.h>
+#include <libgte.h>
+#include <libgs.h>
+#include <memory.h>
 
 #include "common.h"
 #include "gte.h"

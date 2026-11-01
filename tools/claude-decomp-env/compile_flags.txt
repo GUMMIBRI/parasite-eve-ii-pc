@@ -1,6 +1,0 @@
--D_LANGUAGE_C
--I../../include
--I../../include/psyq
--I../../include/decomp
--I../../src/
--funsigned-char

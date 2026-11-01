@@ -1,10 +1,10 @@
 #ifndef MAIN_DISPLAY_H
 #define MAIN_DISPLAY_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/libgs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgs.h>
 
 #include "types.h"
 
@@ -249,7 +249,7 @@ void displaySetShakeY(s8 offsetY);
 /// leaves presentation ownership and the pending mode unchanged. Restores the
 /// previously selected execution list on either spawn result. No arena is
 /// allocated or freed; pointer payload ownership belongs to the callback.
-Task* displaySpawnTask(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
+Task* (displaySpawnTask)(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
 
 /// Spawns an indexed descriptor to take over frame presentation.
 ///
@@ -258,7 +258,7 @@ Task* displaySpawnTask(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, 
 /// lifetime contract. The descriptor is read synchronously and not retained.
 /// Uses the same ownership gate, buffer preparation, deferred callback dispatch,
 /// success handoff, failure side effects and list restoration as `displaySpawnTask`.
-Task* displaySpawnTaskFromTable(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
+Task* (displaySpawnTaskFromTable)(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2);
 
 /// Drawing policy selected while a display-mode task presents the frame.
 enum {
@@ -300,7 +300,7 @@ enum {
 ///
 /// Always returns `NULL`, including after accepting the request. This is not
 /// the spawned task pointer and does not report whether the request was accepted.
-Task* displayQueueModeTask(TaskDesc* descriptor, s32 spawnArg1, TaskSpawnArg spawnArg2, s32 entryMode);
+Task* (displayQueueModeTask)(TaskDesc* descriptor, s32 spawnArg1, TaskSpawnArg spawnArg2, s32 entryMode);
 
 /// Resets queued GPU work and forgets attached-model buffers before image-memory reuse.
 ///

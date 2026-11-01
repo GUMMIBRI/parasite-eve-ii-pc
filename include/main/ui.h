@@ -1,9 +1,9 @@
 #ifndef MAIN_UI_H
 #define MAIN_UI_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
 
 #include "types.h"
 
@@ -67,7 +67,7 @@ UiObject* uiSpawnOptionDialog(UiOptionDialogRequest* request, s32 unused2, s32 u
 /// to release it; `uiStartTreeClosing` requests animated teardown.
 /// Returns NULL if task/body or object allocation fails, tearing down any task
 /// already created. No descriptor or payload storage is released on failure.
-UiObject* uiSpawnObject(const UiObjectDesc* descriptor, TaskSpawnArg contentArg, s32 controlMode, s32 openingDelayTicks, UiObject* parent);
+UiObject* (uiSpawnObject)(const UiObjectDesc* descriptor, TaskSpawnArg contentArg, s32 controlMode, s32 openingDelayTicks, UiObject* parent);
 
 /// Sizes a panel from encoded text and centers it twenty pixels above the screen center.
 ///

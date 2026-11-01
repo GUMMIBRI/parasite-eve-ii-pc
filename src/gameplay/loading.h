@@ -1,9 +1,9 @@
 #ifndef GAMEPLAY_PRIVATE_LOADING_H
 #define GAMEPLAY_PRIVATE_LOADING_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
 
 #include "types.h"
 

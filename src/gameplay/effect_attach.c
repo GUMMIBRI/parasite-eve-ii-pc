@@ -1,8 +1,8 @@
 #include "gameplay/effect_tasks.h"
 
-#include <psyq/libgte.h>
-#include <psyq/inline_c.h>
-#include <psyq/memory.h>
+#include <libgte.h>
+#include <libgte.h>
+#include <memory.h>
 
 #include "gte.h"
 #include "types.h"

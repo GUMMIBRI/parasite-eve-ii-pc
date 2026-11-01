@@ -1,7 +1,7 @@
 #include "rooms/dryfield_night_motel_balcony.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

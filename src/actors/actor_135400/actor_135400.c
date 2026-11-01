@@ -1,10 +1,10 @@
 #include "actors/actor_135400.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/libgs.h>
-#include <psyq/memory.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgs.h>
+#include <memory.h>
 
 #include "common.h"
 
@@ -312,7 +312,7 @@ static const TaskMessageEntry _gActor135400FlintMessages[4] __attribute__((secti
 ///
 /// Direction components use 4096 per unit; each RGB intensity is 96.
 /// Lighting initialization reads all three into the work-owned model matrices.
-static GsF_LIGHT _gActor135400FlintLights[3] = {
+static GfxFlatLight _gActor135400FlintLights[3] = {
     { 0, ONE, 0, 96, 96, 96 },
     { ONE, 0, 0, 96, 96, 96 },
     { 0, 0, ONE, 96, 96, 96 },
@@ -843,7 +843,7 @@ static void _actor135400FlintInitLighting(Task* task)
 {
     _Actor135400FlintWork* work  = task->work;
     TmdObject*             model = task->extra.tmd;
-    const GsF_LIGHT*       light;
+    const GfxFlatLight*       light;
     s32                    lightIndex;
 
     model->lightMtx = &work->model.light;

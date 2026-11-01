@@ -1,7 +1,7 @@
 #ifndef GAMEPLAY_WORLD_TARGETS_TYPES_H
 #define GAMEPLAY_WORLD_TARGETS_TYPES_H
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "common.h"
 

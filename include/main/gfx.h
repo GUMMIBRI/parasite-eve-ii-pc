@@ -1,15 +1,28 @@
 #ifndef MAIN_GFX_H
 #define MAIN_GFX_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/libgs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgs.h>
 
 #include "types.h"
 
 #include "main/coord.h"
 #include "main/gfx_types.h"
+
+/// Flat light source in the layout the game's own light code uses: a direction vector
+/// and an RGB colour. PsyZ's libgs declares a different type of this name, so the game
+/// keeps its own. Fields are 32-bit as on the PlayStation, where `long` is 32 bits.
+typedef struct {
+    s32 vx, vy, vz;
+    u8  r, g, b;
+} GfxFlatLight;
+
+/// The world-to-screen and light matrices that PSY-Q's libgs kept as globals. The game
+/// sets them itself, so the port defines them (in `gfxlight.c`) instead of linking libgs.
+extern MATRIX GsWSMATRIX;
+extern MATRIX GsLIGHTWSMATRIX;
 
 /// Borrows a matrix's three translation words as an unpadded XYZ vector.
 ///
@@ -67,12 +80,12 @@ extern GfxCoord gGfxViewCoord;
 /// giving Q12 coefficients in 0..4080. Other entries, translations (including
 /// ambient RGB in `colorMatrix->t`) and alignment bytes are retained.
 ///
-/// Requires a readable, word-aligned, complete `GsF_LIGHT`, writable matrices,
+/// Requires a readable, word-aligned, complete `GfxFlatLight`, writable matrices,
 /// and an initialized, word-aligned scratch stack with 48 free bytes: 24 for
 /// the direction and 24 more during normalization. Caller objects must be
 /// disjoint from that reservation, released before return. Changes GTE
 /// arithmetic and leading-sign-bit-count state; retains no caller pointer.
-void gfxSetFlatLight(s32 lightIndex, const GsF_LIGHT* light, MATRIX* directionMatrix, MATRIX* colorMatrix);
+void gfxSetFlatLight(s32 lightIndex, const GfxFlatLight* light, MATRIX* directionMatrix, MATRIX* colorMatrix);
 
 /// Builds Rx(x) * Ry(y) * Rz(z) and replaces or composes `matrix`'s rotation.
 ///
@@ -206,7 +219,7 @@ void gfxReadMatrixZAxis(const MATRIX* matrix, SVECTOR* zAxis);
 /// `direction` is a word-aligned, readable 16-byte span whose first three
 /// signed 32-bit words are xyz in any common scale and coordinate frame. The
 /// fourth word is copied but has no effect on the result. This accepts a
-/// `VECTOR`, a `GsF_LIGHT`, or a matrix translation with a readable following
+/// `VECTOR`, a `GfxFlatLight`, or a matrix translation with a readable following
 /// word; a standalone three-word translation is insufficient.
 ///
 /// Large components are uniformly right-shifted before normalization, rounding

@@ -1,9 +1,9 @@
 #include "main/stage.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/libpress.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libpress.h>
 
 #include "common.h"
 
@@ -979,7 +979,7 @@ static s32 _stageRequestCurrentViewTransition(void)
     return 0;
 }
 
-Task* displayQueueModeTask(TaskDesc* descriptor, s32 spawnArg1, TaskSpawnArg spawnArg2, s32 entryMode)
+Task* (displayQueueModeTask)(TaskDesc* descriptor, s32 spawnArg1, TaskSpawnArg spawnArg2, s32 entryMode)
 {
     StageCtx* stage;
 

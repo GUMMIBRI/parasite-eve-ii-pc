@@ -1,8 +1,8 @@
 #ifndef INCLUDE_ROOMS_SHELTER_B3_DUMPING_HOLE_H
 #define INCLUDE_ROOMS_SHELTER_B3_DUMPING_HOLE_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 #include "overlay.h"

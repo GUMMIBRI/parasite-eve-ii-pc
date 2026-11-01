@@ -1,8 +1,8 @@
 #include "gameplay/scene_combat.h"
 #include "gameplay/world_collision.h"
 
-#include <psyq/libgte.h>
-#include <psyq/inline_c.h>
+#include <libgte.h>
+#include <libgte.h>
 
 #include "common.h"
 #include "gte.h"

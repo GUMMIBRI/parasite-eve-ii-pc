@@ -1,8 +1,8 @@
 #ifndef GAMEPLAY_PRIVATE_ITEM_USE_H
 #define GAMEPLAY_PRIVATE_ITEM_USE_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "types.h"
 

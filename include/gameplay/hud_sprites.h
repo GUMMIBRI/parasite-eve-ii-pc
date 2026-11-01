@@ -1,8 +1,8 @@
 #ifndef GAMEPLAY_HUD_SPRITES_H
 #define GAMEPLAY_HUD_SPRITES_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "types.h"
 

@@ -1,6 +1,6 @@
 #include "shop.h"
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "common.h"
 #include "types.h"

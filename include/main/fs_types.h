@@ -1,7 +1,7 @@
 #ifndef MAIN_FS_TYPES_H
 #define MAIN_FS_TYPES_H
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "common.h"
 

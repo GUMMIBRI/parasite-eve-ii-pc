@@ -1,10 +1,10 @@
 #include "rooms/dryfield_water_tank.h"
 #include "../../shared/water_tank.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/rand.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <rand.h>
 
 #include "common.h"
 

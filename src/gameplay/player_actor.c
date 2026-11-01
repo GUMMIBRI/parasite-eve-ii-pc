@@ -1,12 +1,12 @@
 #include "gameplay/player_actor.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/abs.h>
-#include <psyq/inline_c.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/libgs.h>
-#include <psyq/rand.h>
+#include <psyz.h>
+#include <abs.h>
+#include <libgte.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgs.h>
+#include <rand.h>
 
 #include "common.h"
 #include "gte.h"
@@ -185,8 +185,8 @@ STATIC_ASSERT_SIZEOF(_PlayerActorWeaponAttacks, sizeof(TaskFunc) * PLAYER_ACTOR_
 #include "main/task.h"
 #include "main/tmd.h"
 #include "main/wipsys.h"
-#include <psyq/abs.h>
-#include <psyq/rand.h>
+#include <abs.h>
+#include <rand.h>
 
 #include "assets/engine/animation/player_schema.h"
 

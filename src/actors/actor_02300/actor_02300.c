@@ -1,7 +1,7 @@
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/abs.h>
-#include <psyq/gtemac.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <abs.h>
+#include <libgte.h>
 
 #include "common.h"
 

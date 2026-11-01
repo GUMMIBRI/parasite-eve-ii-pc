@@ -1,6 +1,6 @@
 #include "attachments.h"
 
-#include <psyq/rand.h>
+#include <rand.h>
 
 #include "types.h"
 

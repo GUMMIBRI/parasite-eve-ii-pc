@@ -1,9 +1,10 @@
+#include <abs.h>
 #include "main/sound.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/abs.h>
-#include <psyq/libspu.h>
-#include <psyq/libetc.h>
+#include <psyz.h>
+#include <abs.h>
+#include <libspu.h>
+#include <libetc.h>
 
 #include "common.h"
 

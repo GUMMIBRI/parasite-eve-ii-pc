@@ -1,7 +1,7 @@
 #include "stages/akropolis/actors/roof_garden_swat_member.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

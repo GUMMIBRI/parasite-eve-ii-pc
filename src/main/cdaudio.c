@@ -1,8 +1,8 @@
 #include "cdaudio.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libcd.h>
-#include <psyq/libspu.h>
+#include <psyz.h>
+#include <libcd.h>
+#include <libspu.h>
 
 #include "common.h"
 

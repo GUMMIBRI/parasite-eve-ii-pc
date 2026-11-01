@@ -1,9 +1,9 @@
 #include "rooms/neo_ark_shrine.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/abs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <abs.h>
 
 #include "common.h"
 

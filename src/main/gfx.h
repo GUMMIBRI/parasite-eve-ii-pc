@@ -1,8 +1,8 @@
 #ifndef MAIN_PRIVATE_GFX_H
 #define MAIN_PRIVATE_GFX_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "types.h"
 

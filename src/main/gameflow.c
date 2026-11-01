@@ -1,9 +1,10 @@
+#include <libetc.h>
 #include "main/gameflow.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/libpad.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libapi.h>
 
 #include "common.h"
 

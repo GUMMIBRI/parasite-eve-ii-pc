@@ -1,11 +1,11 @@
 #include "gameplay/model_objects.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/gtemac.h>
-#include <psyq/inline_c.h>
-#include <psyq/stdio.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgte.h>
+#include <libgte.h>
+#include <stdio.h>
 
 #include "common.h"
 #include "gte.h"

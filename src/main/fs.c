@@ -1,11 +1,12 @@
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/kernel.h>
-#include <psyq/libapi.h>
-#include <psyq/libcd.h>
-#include <psyq/libetc.h>
-#include <psyq/strings.h>
+#include <libcd.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <kernel.h>
+#include <libapi.h>
+#include <libcd.h>
+#include <libetc.h>
+#include <strings.h>
 
 #include "common.h"
 

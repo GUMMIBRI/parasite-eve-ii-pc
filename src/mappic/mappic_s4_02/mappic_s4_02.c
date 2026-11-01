@@ -1,6 +1,6 @@
 #include "mappic/mappic.h"
 
-#include <psyq/libgpu.h>
+#include <libgpu.h>
 
 #include "common.h"
 

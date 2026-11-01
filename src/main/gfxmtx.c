@@ -1,10 +1,10 @@
 #include "main/gfx.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/gtemac.h>
-#include <psyq/inline_c.h>
-#include <psyq/memory.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgte.h>
+#include <libgte.h>
+#include <memory.h>
 
 #include "gte.h"
 #include "types.h"

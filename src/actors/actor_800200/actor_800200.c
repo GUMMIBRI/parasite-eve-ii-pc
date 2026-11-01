@@ -1,9 +1,9 @@
 #include "actors/actor_800200.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/abs.h>
-#include <psyq/rand.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <abs.h>
+#include <rand.h>
 
 #include "common.h"
 

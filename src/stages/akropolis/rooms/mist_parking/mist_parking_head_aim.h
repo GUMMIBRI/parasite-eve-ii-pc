@@ -1,8 +1,8 @@
 #ifndef STAGES_AKROPOLIS_ROOMS_MIST_PARKING_MIST_PARKING_HEAD_AIM_H
 #define STAGES_AKROPOLIS_ROOMS_MIST_PARKING_MIST_PARKING_HEAD_AIM_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "main/task_types.h"
 

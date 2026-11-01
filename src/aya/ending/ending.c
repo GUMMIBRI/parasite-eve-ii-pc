@@ -1,9 +1,9 @@
 #include "ending_private.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/libpress.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libpress.h>
 
 #include "types.h"
 

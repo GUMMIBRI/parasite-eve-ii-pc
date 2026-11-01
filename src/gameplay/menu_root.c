@@ -1,8 +1,8 @@
 #include "gameplay/item_menu.h"
 #include "stages/akropolis/rooms/mist_shooting_gallery.h"
 
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
+#include <libgte.h>
+#include <libgpu.h>
 
 #include "common.h"
 #include "types.h"

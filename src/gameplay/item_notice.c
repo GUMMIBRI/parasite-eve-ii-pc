@@ -1,6 +1,6 @@
 #include "gameplay/item_menu.h"
 
-#include <psyq/libgte.h>
+#include <libgte.h>
 
 #include "common.h"
 

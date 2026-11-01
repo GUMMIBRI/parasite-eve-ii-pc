@@ -1,12 +1,12 @@
 #include "gamemain.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/inline_c.h>
-#include <psyq/libapi.h>
-#include <psyq/libetc.h>
-#include <psyq/libgs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgte.h>
+#include <libapi.h>
+#include <libetc.h>
+#include <libgs.h>
 
 #include "common.h"
 

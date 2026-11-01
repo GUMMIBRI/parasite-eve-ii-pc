@@ -1,5 +1,5 @@
-#include <psyq/sys/types.h>
-#include <psyq/libpad.h>
+#include <psyz.h>
+#include <libapi.h>
 
 #include "types.h"
 

@@ -1,7 +1,7 @@
 #ifndef MAIN_MC_TYPES_H
 #define MAIN_MC_TYPES_H
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "common.h"
 

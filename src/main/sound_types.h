@@ -1,8 +1,8 @@
 #ifndef MAIN_PRIVATE_SOUND_TYPES_H
 #define MAIN_PRIVATE_SOUND_TYPES_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libspu.h>
+#include <psyz.h>
+#include <libspu.h>
 
 #include "common.h"
 

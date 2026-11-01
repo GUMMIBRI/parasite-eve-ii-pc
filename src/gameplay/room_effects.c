@@ -1,11 +1,11 @@
 #include "room_effects.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/inline_c.h>
-#include <psyq/libgs.h>
-#include <psyq/memory.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgte.h>
+#include <libgs.h>
+#include <memory.h>
 
 #include "common.h"
 #include "gte.h"
@@ -1704,7 +1704,7 @@ static void _roomEffectControllerTask(Task* task)
     states.funcs[task->state](task);
 }
 
-EffectWork* effectSpawn(s32 effectId, GfxCoord* parentCoord, TaskSpawnArg spawnArg, const SVECTOR* offset)
+EffectWork* (effectSpawn)(s32 effectId, GfxCoord* parentCoord, TaskSpawnArg spawnArg, const SVECTOR* offset)
 {
     enum {
         EFFECT_SPAWN_BANK_SHIFT = 16,

@@ -21,8 +21,8 @@ static Task* _gShelterB6TrainingRoomPlayerHeadAimTask;
 
 #include "rooms/shelter_b6_training_room.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "shelter_b6_training_room_private.h"
 

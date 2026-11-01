@@ -1,10 +1,10 @@
 #include "rooms/shelter_b2_pod_bottom.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/inline_c.h>
-#include <psyq/libgs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libgte.h>
+#include <libgs.h>
 
 #include "common.h"
 #include "gte.h"

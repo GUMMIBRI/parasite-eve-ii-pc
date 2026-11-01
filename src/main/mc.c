@@ -1,12 +1,11 @@
 #include "mc.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/sys/file.h>
-#include <psyq/kernel.h>
-#include <psyq/libmcrd.h>
-#include <psyq/memory.h>
-#include <psyq/rand.h>
-#include <psyq/strings.h>
+#include <psyz.h>
+#include <romio.h>
+#include <libmcrd.h>
+#include <memory.h>
+#include <stdlib.h>
+#include <strings.h>
 
 #include "common.h"
 

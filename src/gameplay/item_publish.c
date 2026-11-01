@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "common.h"
 

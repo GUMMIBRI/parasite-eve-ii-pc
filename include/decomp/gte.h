@@ -35,7 +35,15 @@
 /// still compiles and assembles but is not a GTE instruction. A function that
 /// needs one must add it here first, with the word from `gte_macros.inc`.
 
-#include <psyq/inline_c.h>
+#ifdef __psyz
+/// Host build: there is no COP2 and no DMPSX. PsyZ's libgte.h maps the SDK
+/// macros it knows onto its GTE emulation, and port/gte_compat.h supplies the
+/// rest (gpf12, ldsv/stsv, MulMatrix0, TransposeMatrix, RotTransLV, ...) in
+/// portable C. The MIPS definitions below are kept for reference only.
+#include <libgte.h>
+#include "port/gte_compat.h"
+#else
+#include <libgte.h>
 
 /// Perspective transformation. `gte_rtps` rotates and translates V0
 /// (IR1..3 = TR + RT·V0), pushes its projected screen point into SXY and its
@@ -323,5 +331,7 @@ enum {
         "i"(GTE_ROT_TRANS_LV_MIDDLE_ROTATE), \
         "i"(GTE_ROT_TRANS_LV_HIGH_ROTATE) \
         : "$12", "$13", "$14", "$15", "$16", "memory")
+
+#endif /* __psyz */
 
 #endif

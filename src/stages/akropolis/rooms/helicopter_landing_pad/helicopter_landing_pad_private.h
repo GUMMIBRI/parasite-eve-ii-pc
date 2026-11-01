@@ -1,8 +1,8 @@
 #ifndef STAGES_AKROPOLIS_ROOMS_HELICOPTER_LANDING_PAD_HELICOPTER_LANDING_PAD_PRIVATE_H
 #define STAGES_AKROPOLIS_ROOMS_HELICOPTER_LANDING_PAD_HELICOPTER_LANDING_PAD_PRIVATE_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "types.h"
 

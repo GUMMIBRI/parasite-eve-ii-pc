@@ -1,9 +1,9 @@
 #ifndef GAMEPLAY_ROOM_EFFECTS_H
 #define GAMEPLAY_ROOM_EFFECTS_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
 
 #include "types.h"
 
@@ -147,7 +147,7 @@ void roomEffectRecordAnimationSoundCue(s32 cueIndex);
 /// allocation failure. A failed work allocation tears down the new task. The
 /// installed exit callback frees the work and decrements the count before task
 /// teardown; callbacks with additional resources must release those themselves.
-EffectWork* effectSpawn(s32 effectId, GfxCoord* parentCoord, TaskSpawnArg spawnArg, const SVECTOR* offset);
+EffectWork* (effectSpawn)(s32 effectId, GfxCoord* parentCoord, TaskSpawnArg spawnArg, const SVECTOR* offset);
 
 /// Hit-effect recipes selected by attack-property tables, separate from packed effect-task ids.
 ///

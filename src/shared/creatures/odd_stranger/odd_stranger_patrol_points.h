@@ -1,9 +1,9 @@
 #ifndef SRC_SHARED_ODD_STRANGER_PATROL_POINTS_H
 #define SRC_SHARED_ODD_STRANGER_PATROL_POINTS_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/inline_c.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgte.h>
 
 #include "main/gfx.h"
 

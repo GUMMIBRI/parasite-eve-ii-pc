@@ -1,7 +1,7 @@
 #ifndef GAMEPLAY_BATTLE_REWARD_H
 #define GAMEPLAY_BATTLE_REWARD_H
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "common.h"
 

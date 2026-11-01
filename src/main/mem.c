@@ -1,8 +1,9 @@
+#include <malloc.h>
 #include "main/mem.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/malloc.h>
-#include <psyq/stdio.h>
+#include <psyz.h>
+#include <malloc.h>
+#include <stdio.h>
 
 #include "types.h"
 

@@ -1,7 +1,7 @@
 #include "rooms/shelter_b1_north_maintenance_walkway.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "types.h"
 

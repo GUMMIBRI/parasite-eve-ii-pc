@@ -1,8 +1,8 @@
 #include "gameplay/items.h"
 
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/memory.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <memory.h>
 
 #include "types.h"
 

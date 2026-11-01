@@ -1,8 +1,8 @@
 #include "main/ui.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
 
 #include "common.h"
 
@@ -309,7 +309,7 @@ static void _uiDrawUnderlinedLabel(const UiPanel* panel, s32 x, s32 y, const cha
 #define USER_INTERFACE_SPAWN_OBJECT(descriptorValue, payloadValue, panelModeValue, animationTicksValue, parentValue)                \
     ({                                                                                                                              \
         const UiObjectDesc* _uiSpawnDescriptor     = (descriptorValue);                                                             \
-        TaskSpawnArg        _uiSpawnPayload        = (payloadValue);                                                                \
+        TaskSpawnArg        _uiSpawnPayload        = TASK_ARG(payloadValue);                                                             \
         s32                 _uiSpawnPanelMode      = (panelModeValue);                                                              \
         s32                 _uiSpawnAnimationTicks = (animationTicksValue);                                                         \
         UiObject*           _uiSpawnParent         = (parentValue);                                                                 \
@@ -2482,7 +2482,7 @@ void uiSizePanelForText(UiPanel* panel, const u8* text, s32 extraWidthPixels, s3
     panel->bounds.rect.y = -(panel->bounds.rect.h / 2) + USER_INTERFACE_TEXT_PANEL_CENTER_Y_PIXELS;
 }
 
-UiObject* uiSpawnObject(const UiObjectDesc* descriptor, TaskSpawnArg contentArg, s32 controlMode, s32 openingDelayTicks, UiObject* parent)
+UiObject* (uiSpawnObject)(const UiObjectDesc* descriptor, TaskSpawnArg contentArg, s32 controlMode, s32 openingDelayTicks, UiObject* parent)
 {
     return USER_INTERFACE_SPAWN_OBJECT(descriptor, contentArg, controlMode, openingDelayTicks, parent);
 }

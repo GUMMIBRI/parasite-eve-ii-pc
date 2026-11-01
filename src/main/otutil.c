@@ -1,11 +1,11 @@
 #include "display_types.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/libapi.h>
-#include <psyq/libetc.h>
-#include <psyq/libgs.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <libapi.h>
+#include <libetc.h>
+#include <libgs.h>
 
 #include "common.h"
 
@@ -184,7 +184,7 @@ s32 displayRunTaskFrame(GsOT* unusedOrderingTables, s32 frameStartLines, s32 unu
 #undef DISPLAY_BEGIN_TASK_FRAME
 }
 
-Task* displaySpawnTask(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
+Task* (displaySpawnTask)(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
 {
     DisplayState* display;
     TaskNode*     previousList;
@@ -210,7 +210,7 @@ Task* displaySpawnTask(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, 
     return spawnedTask;
 }
 
-Task* displaySpawnTaskFromTable(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
+Task* (displaySpawnTaskFromTable)(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
 {
     DisplayState* display;
     TaskNode*     previousList;
@@ -236,7 +236,7 @@ Task* displaySpawnTaskFromTable(TaskDesc* table, s32 index, TaskSpawnArg spawnAr
     return spawnedTask;
 }
 
-Task* taskSpawnOnDefaultList(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
+Task* (taskSpawnOnDefaultList)(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
 {
     TaskNode* previousList;
     Task*     spawnedTask;
@@ -248,7 +248,7 @@ Task* taskSpawnOnDefaultList(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawn
     return spawnedTask;
 }
 
-Task* taskSpawnFromTableOnDefaultList(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
+Task* (taskSpawnFromTableOnDefaultList)(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, TaskSpawnArg spawnArg2)
 {
     TaskNode* previousList;
     Task*     spawnedTask;

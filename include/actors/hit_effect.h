@@ -1,8 +1,8 @@
 #ifndef ACTORS_HIT_EFFECT_H
 #define ACTORS_HIT_EFFECT_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

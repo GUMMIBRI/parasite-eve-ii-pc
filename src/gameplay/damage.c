@@ -1,8 +1,8 @@
 #include "gameplay/damage.h"
 
-#include <psyq/libgte.h>
-#include <psyq/inline_c.h>
-#include <psyq/gtemac.h>
+#include <libgte.h>
+#include <libgte.h>
+#include <libgte.h>
 
 #include "common.h"
 #include "gte.h"

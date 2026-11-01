@@ -1,9 +1,9 @@
 #ifndef SRC_ACTORS_ACTOR_503500_ACTOR_503500_PRIVATE_H
 #define SRC_ACTORS_ACTOR_503500_ACTOR_503500_PRIVATE_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
 
 #include "common.h"
 

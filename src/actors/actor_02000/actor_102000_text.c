@@ -1,8 +1,8 @@
 #include "actors/actor_02000.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/gtemac.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgte.h>
 
 #include "common.h"
 

@@ -1,7 +1,7 @@
 #include "aya/aya.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgpu.h>
+#include <psyz.h>
+#include <libgpu.h>
 
 #include "common.h"
 

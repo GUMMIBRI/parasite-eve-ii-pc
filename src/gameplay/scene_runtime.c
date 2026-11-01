@@ -1,15 +1,15 @@
 #include "gameplay/scene_runtime.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/libgpu.h>
-#include <psyq/abs.h>
-#include <psyq/gtemac.h>
-#include <psyq/inline_c.h>
-#include <psyq/libcd.h>
-#include <psyq/libgs.h>
-#include <psyq/rand.h>
-#include <psyq/stdio.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <libgpu.h>
+#include <abs.h>
+#include <libgte.h>
+#include <libgte.h>
+#include <libcd.h>
+#include <libgs.h>
+#include <rand.h>
+#include <stdio.h>
 
 #include "common.h"
 #include "gte.h"
@@ -1161,7 +1161,7 @@ void streamSetExternalScenePayloadBuffer(u8* payloadBuffer)
 /// `spawnArg` becomes the callback-defined first task payload. Requires an
 /// initialized selected task list and a live parent or registered scene task.
 /// Work ownership and allocation failure follow `_enemyAllocateWork`.
-static Enemy* _enemySpawn(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg, Enemy* parent)
+static Enemy* (_enemySpawn)(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg, Enemy* parent)
 {
     Task*  task;
     Enemy* enemy;

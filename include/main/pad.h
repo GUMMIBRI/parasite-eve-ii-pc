@@ -1,8 +1,8 @@
 #ifndef MAIN_PAD_H
 #define MAIN_PAD_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libetc.h>
+#include <psyz.h>
+#include <libetc.h>
 
 #include "types.h"
 

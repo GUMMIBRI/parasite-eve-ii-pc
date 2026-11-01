@@ -1,8 +1,8 @@
 #ifndef MAIN_COORD_H
 #define MAIN_COORD_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

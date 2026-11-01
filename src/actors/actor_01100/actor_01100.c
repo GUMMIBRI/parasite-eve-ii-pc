@@ -1,9 +1,9 @@
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
-#include <psyq/abs.h>
-#include <psyq/inline_c.h>
-#include <psyq/rand.h>
-#include <psyq/limits.h>
+#include <psyz.h>
+#include <libgte.h>
+#include <abs.h>
+#include <libgte.h>
+#include <rand.h>
+#include <limits.h>
 
 #include "common.h"
 #include "gte.h"

@@ -1,8 +1,8 @@
 #include "main/fs.h"
 
-#include <psyq/sys/types.h>
-#include <psyq/libcd.h>
-#include <psyq/libpress.h>
+#include <psyz.h>
+#include <libcd.h>
+#include <libpress.h>
 
 #include "types.h"
 

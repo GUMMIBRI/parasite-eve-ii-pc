@@ -1,6 +1,6 @@
 #include "mapui/map_neo_ark.h"
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "types.h"
 

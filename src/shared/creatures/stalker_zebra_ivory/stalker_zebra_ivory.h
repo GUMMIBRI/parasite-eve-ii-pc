@@ -144,8 +144,8 @@ enum { STALKER_ZEBRA_IVORY_SOUND_BANK = 0x40050000 };
 #error "STALKER_ZEBRA_IVORY_KIND must be STALKER_ZEBRA_IVORY_KIND_ZEBRA or STALKER_ZEBRA_IVORY_KIND_IVORY"
 #endif
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "common.h"
 

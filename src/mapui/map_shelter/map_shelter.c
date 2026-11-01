@@ -1,6 +1,6 @@
 #include "mapui/map_shelter.h"
 
-#include <psyq/sys/types.h>
+#include <psyz.h>
 
 #include "types.h"
 

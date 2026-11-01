@@ -1,8 +1,8 @@
 #ifndef INCLUDE_ROOMS_DRYFIELD_NIGHT_MAIN_STREET_H
 #define INCLUDE_ROOMS_DRYFIELD_NIGHT_MAIN_STREET_H
 
-#include <psyq/sys/types.h>
-#include <psyq/libgte.h>
+#include <psyz.h>
+#include <libgte.h>
 
 #include "types.h"
 
