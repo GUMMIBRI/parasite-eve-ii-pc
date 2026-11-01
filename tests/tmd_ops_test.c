@@ -62,6 +62,18 @@ int main(void)
     if (quad[0].code != 0x3C || ((P_TAG*)&quad[0])->len != 8) FAIL("g4 code/len");
     linked = 0; for (int i = 0; i < 1024; i++) if (ot[i].tag == (u_long)&quad[0]) linked = 1;
     if (!linked) FAIL("g4 not linked");
+    /* One-normal quad and triangle */
+    memset(ot, 0, sizeof ot); memset(quad, 0, sizeof quad); memset(tri, 0, sizeof tri);
+    ws.primWrite = (u8*)quad; ws.elemCount = 1; ws.elemStride = 4;
+    el[0] = 0 | (8u << 16); el[1] = 16 | (24u << 16); el[2] = 0; el[3] = 0x3C808080;
+    end = tmdDrawStreamPrimG4(&ws, 0, el);
+    if (end != el + 4 || quad[0].x3 != 210 || quad[0].y3 != 170 || quad[0].code != 0x3C) FAIL("g4 one-normal");
+    if (quad[0].r0 != quad[0].r3 || quad[0].g1 != quad[0].g2) FAIL("g4 one-normal colour repeated");
+    ws.primWrite = (u8*)tri; ws.elemCount = 1; ws.elemStride = 3;
+    el[0] = 0 | (8u << 16); el[1] = 16; el[2] = 0x34808080;
+    end = tmdDrawStreamPrimG3(&ws, 0, el);
+    if (end != el + 3 || tri[0].x2 != 110 || tri[0].y2 != 170 || tri[0].code != 0x34) FAIL("g3 one-normal");
+    if (tri[0].r0 != tri[0].r2) FAIL("g3 one-normal colour repeated");
     puts("tmd ops OK");
     return 0;
 }

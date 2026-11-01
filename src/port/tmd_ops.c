@@ -159,3 +159,89 @@ u32* tmdDrawStreamPrimG4CornerNormals(TmdStreamWorkspace* ws, s32 flags, u32* el
     ws->primWrite = slot;
     return el;
 }
+
+/* Untextured Gouraud triangle with one face normal: one lit colour on all corners. */
+u32* tmdDrawStreamPrimG3(TmdStreamWorkspace* ws, s32 flags, u32* el)
+{
+    u8* slot = ws->primWrite;
+    (void)flags;
+
+    for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_G3), el += ws->elemStride) {
+        POLY_G3* p = (POLY_G3*)slot;
+        u32 w0 = el[0], w1 = el[1], w2 = el[2];
+
+        loadV(0, vertexAt(ws, w0 & 0xFFFF));
+        loadV(1, vertexAt(ws, w0 >> 16));
+        loadV(2, vertexAt(ws, w1 & 0xFFFF));
+        Psyz_GteRtpt();
+        if (Psyz_GteReadflg() < 0) {
+            continue;
+        }
+        Psyz_GteNclip();
+        if ((s32)Psyz_GteDataRead(24) <= 0) {
+            continue;
+        }
+        storeXy(&p->x0, 12);
+        storeXy(&p->x1, 13);
+        storeXy(&p->x2, 14);
+        Psyz_GteAvsz3();
+        Psyz_GteDataWrite(6, w2);
+        loadV(0, normalAt(ws, w1 >> 16));
+        Psyz_GteCommand(GTE_NCCS);
+        storeRgb(&p->r0, 22);
+        storeRgb(&p->r1, 22);
+        storeRgb(&p->r2, 22);
+        linkPacket(ws, p, 6);
+    }
+    ws->primWrite = slot;
+    return el;
+}
+
+/* Untextured Gouraud quad with one face normal. */
+u32* tmdDrawStreamPrimG4(TmdStreamWorkspace* ws, s32 flags, u32* el)
+{
+    u8* slot = ws->primWrite;
+    (void)flags;
+
+    for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_G4), el += ws->elemStride) {
+        POLY_G4* p = (POLY_G4*)slot;
+        u32 w0 = el[0], w1 = el[1], w2 = el[2], w3 = el[3];
+
+        loadV(0, vertexAt(ws, w1 >> 16));
+        Psyz_GteRtps();
+        if (Psyz_GteReadflg() < 0) {
+            continue;
+        }
+        storeXy(&p->x3, 14);
+
+        loadV(0, vertexAt(ws, w1 & 0xFFFF));
+        loadV(1, vertexAt(ws, w0 >> 16));
+        loadV(2, vertexAt(ws, w0 & 0xFFFF));
+        Psyz_GteRtpt();
+        if (Psyz_GteReadflg() < 0) {
+            continue;
+        }
+        storeXy(&p->x2, 12);
+        storeXy(&p->x1, 13);
+        storeXy(&p->x0, 14);
+        Psyz_GteNclip();
+        if ((s32)Psyz_GteDataRead(24) >= 0) {
+            Psyz_GteDataWrite(14, (u32)(u16)p->x3 | ((u32)(u16)p->y3 << 16));
+            Psyz_GteNclip();
+            if ((s32)Psyz_GteDataRead(24) <= 0) {
+                continue;
+            }
+        }
+        Psyz_GteAvsz4();
+        Psyz_GteDataWrite(6, w3);
+        loadV(0, normalAt(ws, w2)); /* the whole word is the normal's byte offset */
+        Psyz_GteCommand(GTE_NCCS);
+        storeRgb(&p->r0, 22);
+        storeRgb(&p->r1, 22);
+        storeRgb(&p->r2, 22);
+        storeRgb(&p->r3, 22);
+        linkPacket(ws, p, 8);
+    }
+    ws->primWrite = slot;
+    return el;
+}
