@@ -23,7 +23,18 @@
 /// Drawing tasks borrow this base during dispatch. A nested display pass saves
 /// and restores it; consumers must not retain it across frame/table changes or
 /// free it. The display code owns and clears the backing storage before drawing.
-extern u_long* gGpuCurrentOt;
+extern OT_TYPE* gGpuCurrentOt;
+
+/* Bytes one ordering-table tag spans in the PS1 layout. Depth masks are byte offsets in that layout, so
+ * index arithmetic divides by this, not by the host entry size. */
+#define GPU_OT_TAG_BYTES 4
+
+/* Terminates an OT chain at `tag`. Host OT entries are two u_long words (address, length). */
+#ifdef __psyz
+#define GPU_OT_SET_END(entry) ((entry)->tag = GPU_DMA_CHAIN_END, (entry)->len = 0)
+#else
+#define GPU_OT_SET_END(entry) (*(entry) = GPU_DMA_CHAIN_END)
+#endif
 
 /// The game's display, in pixels: the size of a full-screen tile, fade, capture or view, and the rows from one of the
 /// two display buffers' tops to the other's (the second buffer starts at this row of video memory).
@@ -64,7 +75,7 @@ enum { GPU_DMA_LINK_ADDRESS_MASK  = 0xFFFFFF,
 /// without changing it and evaluates `byteOffset` once per expansion. `addPrim`
 /// and `addPrims` expand their OT argument twice; their offsets must have no side
 /// effects and their table base must remain stable while linking the packet.
-#define GPU_ORDERING_TABLE_ENTRY_AT_BYTE_OFFSET(byteOffset) (&gGpuCurrentOt[(byteOffset) / sizeof(*gGpuCurrentOt)])
+#define GPU_ORDERING_TABLE_ENTRY_AT_BYTE_OFFSET(byteOffset) (&gGpuCurrentOt[(byteOffset) / GPU_OT_TAG_BYTES])
 
 /// The ordering-table tag for a sorting depth: the depth scaled by `otDepthShift`, as one of the 1024
 /// depth-sorted tags (deeper values wrap into them). `depth` is evaluated once per expansion, and converted to

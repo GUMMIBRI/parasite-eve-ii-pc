@@ -642,7 +642,7 @@ u32* tmdDrawStreamPrimF4PreXform(TmdStreamWorkspace* workspace, s32 objectFlags,
                                 gte_stotz(gteResultDestination);
                                 addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >>
                                                            TMD_F4_PRE_XFORM_OT_INDEX_SHIFT &
-                                                       (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))],
+                                                       (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
                                         packet);
                             }
                         }
@@ -717,7 +717,7 @@ u32* tmdDrawStreamPrimF3PreXform(TmdStreamWorkspace* workspace, s32 objectFlags,
                             gte_stotz(gteResultDestination);
                             addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >>
                                                        TMD_F3_PRE_XFORM_OT_INDEX_SHIFT &
-                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))],
+                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
                                     packet);
                         }
                     }
@@ -818,7 +818,7 @@ u32* tmdDrawStreamPrimGt3PreXformEnvLayer(TmdStreamWorkspace* workspace, s32 obj
         /// sixteen scaled OTZ units select one four-byte tag. This combines
         /// the depth-to-byte-offset right shift by two with bytes-to-tags
         /// conversion. The following mask, `GPU_ORDERING_TABLE_DEPTH_BYTE_MASK`
-        /// divided by sizeof(*workspace->ot), keeps scaled-depth bits 4..13
+        /// divided by GPU_OT_TAG_BYTES, keeps scaled-depth bits 4..13
         /// and wraps indices to 0..1023; it does not clamp depth. Both packets
         /// use the same index relative to `workspace->ot`, already displaced
         /// by the model's signed tag offset. The selected OT must contain it.
@@ -911,11 +911,11 @@ u32* tmdDrawStreamPrimGt3PreXformEnvLayer(TmdStreamWorkspace* workspace, s32 obj
                             gte_stotz(gteResultDestination);
                             addPrim(&workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >>
                                                     TMD_GT3_ENV_OT_INDEX_SHIFT) &
-                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))],
+                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
                                     &(*packetPair)[0]);
                             addPrim(&workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >>
                                                     TMD_GT3_ENV_OT_INDEX_SHIFT) &
-                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))],
+                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
                                     &(*packetPair)[1]);
                         }
                     }
@@ -1051,10 +1051,10 @@ u32* tmdDrawStreamPrimGt4PreXformEnvLayer(TmdStreamWorkspace* workspace, s32 obj
                             setcode(&(*packetPair)[1], baseCommand);
                             // Head insertion draws the opaque base before its additive environment layer.
                             addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_GT4_ENV_OT_INDEX_SHIFT &
-                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))],
+                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
                                     &(*packetPair)[0]);
                             addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_GT4_ENV_OT_INDEX_SHIFT &
-                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))],
+                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
                                     &(*packetPair)[1]);
                         }
                     }
@@ -1110,7 +1110,7 @@ u32* tmdDrawStreamPrimGt3PreXformOffsetLayer(TmdStreamWorkspace* workspace, s32 
         /// (0..3): sixteen scaled depth units select one four-byte tag.
         /// Combines the depth-to-byte-offset right shift by two with the
         /// bytes-to-tags conversion. The following mask is
-        /// `GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot)`;
+        /// `GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES`;
         /// it keeps scaled-depth bits 4..13, wrapping to indices 0..1023.
         /// The unsigned cast preserves unsigned shift arithmetic; the result
         /// counts tags, not bytes, and does not clamp depth. Both packets use
@@ -1168,10 +1168,10 @@ u32* tmdDrawStreamPrimGt3PreXformOffsetLayer(TmdStreamWorkspace* workspace, s32 
                             gte_stotz(gteResultDestination);
                             // Head insertion makes the opaque base draw before the blended layer.
                             addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_GT3_OFFSET_LAYER_OT_INDEX_SHIFT &
-                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))],
+                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
                                     &(*packetPair)[0]);
                             addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_GT3_OFFSET_LAYER_OT_INDEX_SHIFT &
-                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))],
+                                                   (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
                                     &(*packetPair)[1]);
                         }
                     }
@@ -1228,7 +1228,7 @@ u32* tmdDrawStreamPrimGt4PreXformOffsetLayer(TmdStreamWorkspace* workspace, s32 
         /// (0..3): sixteen scaled depth units select one four-byte tag.
         /// Combines the depth-to-byte-offset right shift by two with the
         /// bytes-to-tags conversion. The following mask is
-        /// `GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot)`;
+        /// `GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES`;
         /// it keeps scaled-depth bits 4..13, wrapping to indices 0..1023.
         /// The unsigned cast preserves unsigned shift arithmetic; the result
         /// counts tags, not bytes, and does not clamp depth. Both packets use
@@ -1292,11 +1292,11 @@ u32* tmdDrawStreamPrimGt4PreXformOffsetLayer(TmdStreamWorkspace* workspace, s32 
                                 // Head insertion makes the opaque base draw before the blended layer.
                                 addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >>
                                                            TMD_GT4_OFFSET_LAYER_OT_INDEX_SHIFT &
-                                                       (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))],
+                                                       (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
                                         &(*packetPair)[0]);
                                 addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >>
                                                            TMD_GT4_OFFSET_LAYER_OT_INDEX_SHIFT &
-                                                       (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))],
+                                                       (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
                                         &(*packetPair)[1]);
                             }
                         }

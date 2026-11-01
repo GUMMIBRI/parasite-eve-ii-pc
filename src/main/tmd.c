@@ -754,7 +754,7 @@ static void _tmdDrawModel(TmdObject* model)
     u32              objectFlags;
     u8*              buffer;
     s32              otDepthShift;
-    u_long*          currentOt;
+    OT_TYPE*          currentOt;
     TmdSource*       source;
     s32              otEntryOffset;
     SVECTOR*         normals;

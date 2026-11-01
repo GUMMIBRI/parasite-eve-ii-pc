@@ -18,6 +18,7 @@
 /// Bits 0..23 terminate the link; the zero high byte transfers no command words.
 #define GPU_DMA_CHAIN_END 0xFFFFFF
 
+
 /// Two resident frame ordering tables of packed four-byte DMA tag words.
 ///
 /// Index 0 or 1 selects 1088 tags: 32 foreground tags, 1024 depth-sorting tags
@@ -25,7 +26,7 @@
 /// descriptors submit from tag 1087. Task presentation can borrow the first
 /// 1024 tags without that bias. Clear or reuse only after GPU drawing finishes.
 /// SDK `GsOT_TAG*` views describe these same words without owning the storage.
-extern u_long gGpuFrameOtTags[2][GPU_ORDERING_TABLE_BUFFER_ENTRIES];
+extern OT_TYPE gGpuFrameOtTags[2][GPU_ORDERING_TABLE_BUFFER_ENTRIES];
 
 /// Next free mixed-packet slot in the current system drawing arena half.
 ///
@@ -205,14 +206,14 @@ void displayUseStaticTaskPrimitiveBuffer(void);
 static inline void _gpuBeginOt(s32 bufferIndex)
 {
     // Declare the OT pointer here so this header can precede display BSS definitions.
-    extern u_long* gGpuCurrentOt;
-    u_long*        firstTag;
+    extern OT_TYPE* gGpuCurrentOt;
+    OT_TYPE*        firstTag;
 
     // Clear the reverse DMA chain before drawing tasks borrow its depth base.
     gGpuCurrentOt = gGpuFrameOtTags[bufferIndex];
     ClearOTagR(gGpuCurrentOt, GPU_ORDERING_TABLE_BUFFER_ENTRIES);
     firstTag      = gGpuCurrentOt;
-    *firstTag     = GPU_DMA_CHAIN_END;
+    GPU_OT_SET_END(firstTag);
     gGpuCurrentOt = firstTag + GPU_ORDERING_TABLE_RESERVED_ENTRIES;
 }
 

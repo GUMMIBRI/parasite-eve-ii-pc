@@ -237,9 +237,13 @@ static void _spriteEmitBatch(const SpriteSource* sourceElements, const SpriteBat
             spriteIndex++;
             spritePacket->packed.size = source->size.packed;
             texturePageSource++;
+#ifdef __psyz
+            addPrim(GPU_ORDERING_TABLE_ENTRY_AT_DEPTH_SCALED(source->depth, display->otDepthShift), drawPacket);
+#else
             drawPacket->drawMode.tag = (drawPacket->drawMode.tag & packetLengthMask) | (*GPU_ORDERING_TABLE_ENTRY_AT_DEPTH_SCALED(source->depth, display->otDepthShift) & linkAddressMask);
             *GPU_ORDERING_TABLE_ENTRY_AT_DEPTH_SCALED(source->depth, display->otDepthShift) =
                 (*GPU_ORDERING_TABLE_ENTRY_AT_DEPTH_SCALED(source->depth, display->otDepthShift) & packetLengthMask) | ((u32)drawPacket & linkAddressMask);
+#endif
             drawPacket++;
             source++;
         } while (spriteIndex < batch->spriteCount);
@@ -524,7 +528,7 @@ static void _spriteQueueViewDrawAreas(void)
                 rect.y += DISPLAY_BUFFER_STRIDE_ROWS;
             }
             drawAreaPacket = _spriteCreateDrawAreaPacket(&rect);
-            addPrim(&gGpuCurrentOt[GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*gGpuCurrentOt)], drawAreaPacket);
+            addPrim(&gGpuCurrentOt[GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES], drawAreaPacket);
             // Restore the full draw buffer at this record's sorting boundary.
             if (gDisplayState.drawBuffer != 0) {
                 rect.y = DISPLAY_BUFFER_STRIDE_ROWS;

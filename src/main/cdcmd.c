@@ -982,6 +982,16 @@ static inline void _cdCmdStoreRequest(CdCmdEntry* entry, s32 command, const void
     const u8* fileKeyBytes;
     const u8* argumentBytes;
 
+#ifdef __psyz
+    /* PS1 callers pass NULL meaning "low RAM at address 0", which the original reads; use zeroes. */
+    static const u8 zeroBytes[4] = { 0, 0, 0, 0 };
+    if (fileKey == NULL) {
+        fileKey = zeroBytes;
+    }
+    if (commandArgs == NULL) {
+        commandArgs = zeroBytes;
+    }
+#endif
     fileKeyBytes         = fileKey;
     argumentBytes        = commandArgs;
     entry->cmd           = command;

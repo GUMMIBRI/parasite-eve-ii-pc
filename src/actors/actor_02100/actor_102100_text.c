@@ -1880,7 +1880,7 @@ static void _actor02100DrawBeam(Task* task, s32 beamStyle)
                 quad->y3 = (u16)scratch->y[corners->index[3]];
                 _actor02100ShadeBeamQuad(quad, work, beamStyle);
                 edge += 1;
-                addPrim(&gGpuCurrentOt[((u32)(scratch->depth << gDisplayState.otDepthShift) >> 4) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*gGpuCurrentOt))], quad);
+                addPrim(&gGpuCurrentOt[((u32)(scratch->depth << gDisplayState.otDepthShift) >> 4) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
             } while (edge < ARRAY_SIZE(_gActor02100BeamQuadCorners));
 
             line           = gGpuPrimCursor;
@@ -1900,14 +1900,14 @@ static void _actor02100DrawBeam(Task* task, s32 beamStyle)
                 line->g0 = (u8)_gActor02100WeaponParams[work->weapon].values[(beamStyle * ACTOR_02100_COLOR_COMPONENT_COUNT) + ACTOR_02100_WEAPON_PARAM_GREEN];
                 line->b0 = (u8)_gActor02100WeaponParams[work->weapon].values[(beamStyle * ACTOR_02100_COLOR_COMPONENT_COUNT) + ACTOR_02100_WEAPON_PARAM_BLUE];
             }
-            setaddr(line, getaddr(&gGpuCurrentOt[((u32)(scratch->depth << gDisplayState.otDepthShift) >> 4) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*gGpuCurrentOt))]));
+            setaddr(line, getaddr(&gGpuCurrentOt[((u32)(scratch->depth << gDisplayState.otDepthShift) >> 4) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)]));
             drawMode       = gGpuPrimCursor;
             gGpuPrimCursor = drawMode + 1;
-            setaddr(&gGpuCurrentOt[((u32)(scratch->depth << gDisplayState.otDepthShift) >> 4) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*gGpuCurrentOt))], line);
+            setaddr(&gGpuCurrentOt[((u32)(scratch->depth << gDisplayState.otDepthShift) >> 4) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], line);
             // Additive blending, with dithering and drawing into the display area.
             setlen(drawMode, 1);
             drawMode->code[0] = _get_mode(1, 1, getTPage(0, GPU_BLEND_ADD, 0, 0));
-            addPrim(&gGpuCurrentOt[((u32)(scratch->depth << gDisplayState.otDepthShift) >> 4) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*gGpuCurrentOt))], drawMode);
+            addPrim(&gGpuCurrentOt[((u32)(scratch->depth << gDisplayState.otDepthShift) >> 4) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], drawMode);
         }
         segment += 1;
     } while (segment < ACTOR_02100_BEAM_SEGMENT_COUNT);

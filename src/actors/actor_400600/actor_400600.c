@@ -826,7 +826,7 @@ static inline void _actor400600QueueWallShadowQuad(const ActorLimbShadowScratch*
     quad->tpage = ACTOR_400600_SHADOW_TPAGE;
     quad->clut  = ACTOR_400600_SHADOW_CLUT;
     setRGB0(quad, shade, shade, shade);
-    addPrim((&gGpuCurrentOt[((((u32)(scratch->depth << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*gGpuCurrentOt)]), quad);
+    addPrim((&gGpuCurrentOt[((((u32)(scratch->depth << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / GPU_OT_TAG_BYTES]), quad);
 }
 
 /// Draws a subtractive limb-shadow segment on the wall at world Z `wallZ`.
@@ -3614,7 +3614,7 @@ static void _actor400600DrawFloorLimbShadow(const SVECTOR* firstPoint, const SVE
         quad->tpage = ACTOR_400600_SHADOW_TPAGE;
         quad->clut  = ACTOR_400600_SHADOW_CLUT;
         setRGB0(quad, shade, shade, shade);
-        addPrim((&gGpuCurrentOt[((((u32)(scratch->depth << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*gGpuCurrentOt)]), quad);
+        addPrim((&gGpuCurrentOt[((((u32)(scratch->depth << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / GPU_OT_TAG_BYTES]), quad);
     }
     SCRATCH_STACK_RELEASE_BLOCK(_Actor400600LimbShadowQuadScratch);
 }

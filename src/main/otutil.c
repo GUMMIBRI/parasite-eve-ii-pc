@@ -114,7 +114,7 @@ s32 displayRunTaskFrame(GsOT* unusedOrderingTables, s32 frameStartLines, s32 unu
 #define DISPLAY_BEGIN_TASK_FRAME(displayState, previousOt)                                          \
     {                                                                                               \
         GsOT*   orderingTables;                                                                     \
-        u_long* firstTag;                                                                           \
+        OT_TYPE* firstTag;                                                                           \
         s32     halfBytes;                                                                          \
         if ((displayState)->mdecActive == 0) {                                                      \
             (displayState)->frameBuffer ^= 1;                                                       \
@@ -124,12 +124,12 @@ s32 displayRunTaskFrame(GsOT* unusedOrderingTables, s32 frameStartLines, s32 unu
         }                                                                                           \
         orderingTables = gGpuTaskOrderingTables;                                                    \
         GsClearOt(0, 0, &orderingTables[(displayState)->frameBuffer]);                              \
-        firstTag       = (u_long*)orderingTables[(displayState)->frameBuffer].org;                  \
+        firstTag       = (OT_TYPE*)orderingTables[(displayState)->frameBuffer].org;                  \
         halfBytes      = _gDisplayTaskPrimitiveArenaBytes;                                          \
-        *firstTag      = GPU_DMA_CHAIN_END;                                                         \
+        GPU_OT_SET_END(firstTag);                                                         \
         halfBytes     /= 2;                                                                         \
         (previousOt)   = gGpuCurrentOt;                                                             \
-        gGpuCurrentOt  = (u_long*)orderingTables[(displayState)->frameBuffer].org;                  \
+        gGpuCurrentOt  = (OT_TYPE*)orderingTables[(displayState)->frameBuffer].org;                  \
         gGpuPrimCursor = _gDisplayTaskPrimitiveArenaBase + (displayState)->frameBuffer * halfBytes; \
     }
 
@@ -139,7 +139,7 @@ s32 displayRunTaskFrame(GsOT* unusedOrderingTables, s32 frameStartLines, s32 unu
         DISPLAY_TASK_FLIP_IMMEDIATE      = -2,
     };
     DisplayState* display;
-    u_long*       savedOt;
+    OT_TYPE*       savedOt;
 
     // Borrow the task OT and its primitive half until this frame is submitted.
     display = &gDisplayState;
@@ -275,7 +275,7 @@ void displayResumeGameLoop(void)
 static void _displayFlipOtAndDrawViewActors(void)
 {
     DisplayState* display;
-    u_long*       savedOt;
+    OT_TYPE*       savedOt;
     s32           otBuffer;
 
     display           = &gDisplayState;
@@ -397,7 +397,7 @@ static void _displayResumeGameLoop(void)
 static void _displayFlipOtAndDrawFlaggedModels(void)
 {
     DisplayState* display;
-    u_long*       savedOt;
+    OT_TYPE*       savedOt;
     s32           otBuffer;
 
     display           = &gDisplayState;
@@ -418,7 +418,7 @@ void gpuInitTaskOrderingTables(void)
 {
     GsOT*         orderingTables;
     DisplayState* display;
-    u_long*       firstTag;
+    OT_TYPE*       firstTag;
 
     orderingTables           = gGpuTaskOrderingTables;
     orderingTables->length   = GPU_ORDERING_TABLE_DEPTH_BITS;
@@ -428,8 +428,8 @@ void gpuInitTaskOrderingTables(void)
     display                  = &gDisplayState;
     // Select tag zero as the task depth base, without the game loop's foreground bias.
     GsClearOt(0, 0, &orderingTables[display->frameBuffer]);
-    firstTag      = (u_long*)orderingTables[display->frameBuffer].org;
-    *firstTag     = GPU_DMA_CHAIN_END;
+    firstTag      = (OT_TYPE*)orderingTables[display->frameBuffer].org;
+    GPU_OT_SET_END(firstTag);
     gGpuCurrentOt = firstTag;
 }
 

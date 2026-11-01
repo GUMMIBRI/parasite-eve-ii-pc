@@ -671,7 +671,7 @@ static void _shelter1fVehicularAirlockDrawPulsingLight(const SVECTOR* worldPoint
     enum { LIGHT_PULSE_DIVISOR      = 68,
            LIGHT_PULSE_BASE         = 60,
            LIGHT_DEPTH_TO_TAG_SHIFT = 4,
-           LIGHT_DEPTH_TAG_MASK     = GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*gGpuCurrentOt) };
+           LIGHT_DEPTH_TAG_MASK     = GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES };
     RoomGlowSpriteScratch* projection;
     POLY_G4*               diamond;
     LINE_G3*               diagonal;

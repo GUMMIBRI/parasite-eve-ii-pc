@@ -210,9 +210,6 @@ void RotTransSV(SVECTOR* v0, SVECTOR* v1, int* flag)
 }
 
 /* libpress / MDEC bitstream decoding is part of the movie phase. */
-int DecDCTvlc2(u_long* bs, u_long* buf, u_short* table) { (void)bs; (void)buf; (void)table; return -1; }
-void DecDCTvlcBuild(u_short* table) { (void)table; }
-int DecDCTvlcSize2(int size) { return size; }
 
 void LoadAverageCol(unsigned char* c0, unsigned char* c1, int w0, int w1, unsigned char* out)
 {

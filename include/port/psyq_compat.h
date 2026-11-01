@@ -80,4 +80,8 @@ void LoadAverageCol(unsigned char* c0, unsigned char* c1, int w0, int w1, unsign
 extern unsigned char gHostRam[0x200000];
 #define PS1_RAM_PTR(addr) ((void*)(gHostRam + ((addr) - PS1_RAM_BASE_ADDRESS)))
 
+/* PsyZ libcd: deliver the pending CdSync/CdReady callbacks (VSync does this implicitly). */
+void Psyz_CdPump(void);
+void Psyz_PollInterrupts(void);
+
 #endif

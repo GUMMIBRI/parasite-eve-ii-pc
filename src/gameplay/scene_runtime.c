@@ -2086,17 +2086,17 @@ static inline void _fadeLinkScreenPackets(const s32* otTagOffset, TILE* tile, DR
     };
 
     if (*otTagOffset != FADE_SCREEN_AUTO_OT_OFFSET) {
-        u_long* orderingTable;
+        OT_TYPE* orderingTable;
 
         orderingTable = gGpuCurrentOt;
         addPrim(&orderingTable[*otTagOffset], tile);
         addPrim(&orderingTable[*otTagOffset], blendCommand);
     } else {
-        u_long* orderingTable;
+        OT_TYPE* orderingTable;
 
         orderingTable = gGpuCurrentOt;
         // Presentation starts at tag zero; the frame depth base follows its foreground tags.
-        if ((orderingTable == (u_long*)gGpuTaskOrderingTables[0].org) || (orderingTable == (u_long*)gGpuTaskOrderingTables[1].org)) {
+        if ((orderingTable == (OT_TYPE*)gGpuTaskOrderingTables[0].org) || (orderingTable == (OT_TYPE*)gGpuTaskOrderingTables[1].org)) {
             addPrim(orderingTable, tile);
             addPrim(orderingTable, blendCommand);
         } else {

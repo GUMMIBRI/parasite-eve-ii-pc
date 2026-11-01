@@ -60,7 +60,7 @@ void PULSING_FLARE_TASK(Task* task)
         PULSING_FLARE_DIAMOND_RADIUS_SHIFT = 9,
         PULSING_FLARE_CIRCLE_STEPS         = 16,
         PULSING_FLARE_DEPTH_TO_TAG_SHIFT   = 4,
-        PULSING_FLARE_DEPTH_TAG_MASK       = GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*gGpuCurrentOt),
+        PULSING_FLARE_DEPTH_TAG_MASK       = GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES,
     };
     GfxCoord*             coord;
     EffectWork*           work;

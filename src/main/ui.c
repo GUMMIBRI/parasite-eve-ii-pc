@@ -3182,7 +3182,7 @@ void uiDrawFlatCaret(const UiPanel* panel, s32 tipX, s32 tipY, u32 colorRgb, s32
     POLY_F3* caret;
     u16      screenX;
     u16      screenY;
-    u_long*  orderingTable;
+    OT_TYPE*  orderingTable;
 
     caret     = gGpuPrimCursor;
     screenX   = panel->contentOriginX.unsignedValue + tipX;

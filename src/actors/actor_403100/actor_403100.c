@@ -6154,7 +6154,7 @@ static void _actor403100DrawHoldForeground(s16 offsetX, s16 offsetY)
         quad           = gGpuPrimCursor;
         gGpuPrimCursor = quad + 1;
         _actor403100WriteHoldForegroundQuad(quad, spriteSource, offsetX, offsetY);
-        addPrim((&gGpuCurrentOt[((((u32)(spriteSource->depth << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*gGpuCurrentOt)]), quad);
+        addPrim((&gGpuCurrentOt[((((u32)(spriteSource->depth << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / GPU_OT_TAG_BYTES]), quad);
     }
 }
 /// Eases the five squeeze angular offsets toward one stroke pose.

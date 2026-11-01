@@ -48,7 +48,7 @@ static DR_TPAGE _gGameMainPauseDrawMode;
 
 volatile u8 gDisplayTaskImageSourceSnapshot;
 
-u_long gGpuFrameOtTags[2][GPU_ORDERING_TABLE_BUFFER_ENTRIES];
+OT_TYPE gGpuFrameOtTags[2][GPU_ORDERING_TABLE_BUFFER_ENTRIES];
 
 volatile u8 gDisplayTaskFlipControlSnapshot;
 
@@ -69,7 +69,7 @@ volatile s32 D_80070F64;
 
 DisplayState gDisplayState;
 
-u_long* gGpuCurrentOt;
+OT_TYPE* gGpuCurrentOt;
 
 GameMainPersistentState gGameMainPersistentState;
 
@@ -221,7 +221,7 @@ void displayPresentTaskFrame(s32 bufferIndex)
                 streamPresentMovieFrame();
                 gDisplayState.drawBuffer = savedDrawBuffer;
             }
-            DrawOTag((u_long*)gGpuFrameOrderingTables[gDisplayState.otBuffer].tag);
+            DrawOTag((OT_TYPE*)gGpuFrameOrderingTables[gDisplayState.otBuffer].tag);
         } else if (gDisplayTaskImageSourceSnapshot == DISPLAY_IMAGE_TRANSITION_STRIPS) {
             displayUploadBackgroundImage(bufferIndex);
         } else if (gDisplayTaskImageSourceSnapshot == DISPLAY_IMAGE_ROOM_SLOT) {
@@ -229,7 +229,7 @@ void displayPresentTaskFrame(s32 bufferIndex)
         }
         // The snapshot is read as a signed byte; keep its high-bit behavior.
         if ((s8)gDisplayTaskFlipControlSnapshot < DISPLAY_FLIP_SKIP_TASK_OT) {
-            DrawOTag((u_long*)gGpuTaskOrderingTables[bufferIndex].tag);
+            DrawOTag((OT_TYPE*)gGpuTaskOrderingTables[bufferIndex].tag);
         }
     }
 }
@@ -249,7 +249,7 @@ static inline void _displayPresentFrame(s32 bufferIndex)
     }
     streamPresentMovieFrame();
     if (gDisplayState.skipDraw == 0) {
-        DrawOTag((u_long*)gGpuFrameOrderingTables[bufferIndex].tag);
+        DrawOTag((OT_TYPE*)gGpuFrameOrderingTables[bufferIndex].tag);
     }
 }
 
@@ -737,10 +737,10 @@ void displaySetFrameTiming(s32 timingMode)
 
 void gpuClearFrameOrderingTable(s16 bufferIndex)
 {
-    u_long* tableStart = gGpuFrameOtTags[bufferIndex];
+    OT_TYPE* tableStart = gGpuFrameOtTags[bufferIndex];
     ClearOTagR(tableStart, GPU_ORDERING_TABLE_BUFFER_ENTRIES);
     // End at the first frame tag instead of following the SDK's trailing packets.
-    *tableStart = GPU_DMA_CHAIN_END;
+    GPU_OT_SET_END(tableStart);
 }
 
 /// Binds both game ordering-table descriptors to their resident DMA tag buffers.
@@ -753,7 +753,7 @@ void gpuClearFrameOrderingTable(s16 bufferIndex)
 static inline void _gpuInitGameOrderingTableDescriptors(void)
 {
     GsOT*   orderingTables;
-    u_long* tags;
+    OT_TYPE* tags;
     s32     depthBits;
 
     orderingTables           = gGpuFrameOrderingTables;

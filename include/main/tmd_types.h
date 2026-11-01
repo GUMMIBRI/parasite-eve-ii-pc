@@ -241,7 +241,7 @@ typedef struct {
     SVECTOR*   verts;                   // Borrowed integer part-local vertices; stream references must fit the source array
     SVECTOR*   normals;                 // Borrowed part-local normals; indexed independently of vertices
     s32*       szTable;                 // Draw-only vertex depths: low 16 bits screen Z, bit 31 marks a rejected projection
-    u_long*    ot;                      // Draw-only OT base, already displaced by the object's signed entry offset
+    OT_TYPE*    ot;                      // Draw-only OT base, already displaced by the object's signed entry offset
     s32        elemStride;              // Element stride in u32 words, decoded from the unsigned low half of the record dimensions
     s32        elemCount;               // Initially 0..65535 elements; C handlers may decrement it through -1
     u32        opcode;                  // Complete stream-record opcode, including its handler-selection flags

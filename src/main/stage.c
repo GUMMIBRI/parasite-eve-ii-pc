@@ -686,7 +686,7 @@ static void _stageProcessTransitionRequests(Task* task)
 static void _stageFlipOtAndRedraw(s32 unused)
 {
     DisplayState* display;
-    u_long*       savedOt;
+    OT_TYPE*       savedOt;
     s32           otBuffer;
     u32           transitionKind;
 
@@ -1407,6 +1407,10 @@ void mdecStepImageDecode(void)
 {
     CdCmdQueue* queue;
 
+#ifdef __psyz
+    /* The caller spins on this step; on hardware CD interrupts arrive meanwhile. */
+    Psyz_PollInterrupts();
+#endif
     queue = &gCdCmdQueue;
     if (queue->scenePayloadAvailable == 0) {
         if (queue->rebuildImageVlcTable != 0) {

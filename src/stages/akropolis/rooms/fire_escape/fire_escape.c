@@ -452,7 +452,7 @@ static inline void _akropolisFireEscapeQueueGlow(POLY_G4* quad, const s32* sorti
 {
     enum { GLOW_DEPTH_TO_TAG_INDEX_SHIFT = 4 };
 
-    addPrim(&gGpuCurrentOt[((u32)*sortingDepth << gDisplayState.otDepthShift) >> GLOW_DEPTH_TO_TAG_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*gGpuCurrentOt))],
+    addPrim(&gGpuCurrentOt[((u32)*sortingDepth << gDisplayState.otDepthShift) >> GLOW_DEPTH_TO_TAG_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],
             quad);
     // Prepending the draw mode after the quad makes the GPU apply it first.
     gpuSetPrimitiveBlendMode(quad, GPU_BLEND_ADD, *sortingDepth);

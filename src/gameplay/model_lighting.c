@@ -254,12 +254,17 @@ static inline void _modelLightingLinkOffsetLayerQuadPair(POLY_GT4 packetPair[2],
            MODEL_LIGHTING_OFFSET_BASE_PACKET  = 1 };
 
     // Prepend the layer first so GPU traversal reaches the base before the layer.
-    packetPair[MODEL_LIGHTING_OFFSET_LAYER_PACKET].tag = (packetPair[MODEL_LIGHTING_OFFSET_LAYER_PACKET].tag & dmaLengthMask) | (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] & dmaAddressMask);
-    workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] =
-        (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] & dmaLengthMask) | ((u32)&packetPair[MODEL_LIGHTING_OFFSET_LAYER_PACKET] & dmaAddressMask);
-    packetPair[MODEL_LIGHTING_OFFSET_BASE_PACKET].tag = (packetPair[MODEL_LIGHTING_OFFSET_BASE_PACKET].tag & dmaLengthMask) | (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] & dmaAddressMask);
-    workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] =
-        (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] & dmaLengthMask) | ((u32)&packetPair[MODEL_LIGHTING_OFFSET_BASE_PACKET] & dmaAddressMask);
+#ifdef __psyz
+    addPrim(&workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], &packetPair[MODEL_LIGHTING_OFFSET_LAYER_PACKET]);
+    addPrim(&workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], &packetPair[MODEL_LIGHTING_OFFSET_BASE_PACKET]);
+#else
+    packetPair[MODEL_LIGHTING_OFFSET_LAYER_PACKET].tag = (packetPair[MODEL_LIGHTING_OFFSET_LAYER_PACKET].tag & dmaLengthMask) | (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] & dmaAddressMask);
+    workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] =
+        (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] & dmaLengthMask) | ((u32)&packetPair[MODEL_LIGHTING_OFFSET_LAYER_PACKET] & dmaAddressMask);
+    packetPair[MODEL_LIGHTING_OFFSET_BASE_PACKET].tag = (packetPair[MODEL_LIGHTING_OFFSET_BASE_PACKET].tag & dmaLengthMask) | (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] & dmaAddressMask);
+    workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] =
+        (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] & dmaLengthMask) | ((u32)&packetPair[MODEL_LIGHTING_OFFSET_BASE_PACKET] & dmaAddressMask);
+#endif
 }
 
 /// Initializes one flat textured triangle's persistent texture coordinates and GPU addresses.
@@ -856,13 +861,19 @@ static inline void _modelLightingInitGt3PreXformOffsetLayerTexture(POLY_GT3* tri
 /// leave the base first in GPU traversal. The u32 pointer conversions encode
 /// 24-bit DMA addresses; both OT stores preserve the existing high length byte.
 /// Depth selection and tag loads repeat for each insertion, after AVSZ3 is saved.
+#ifdef __psyz
+#define MODEL_LIGHTING_LINK_OFFSET_LAYER_TRIANGLE_PAIR(packetPair, workspace, displayState, addressMask, lengthMask) \
+    addPrim(&(workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], &(packetPair)[0]); \
+    addPrim(&(workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], &(packetPair)[1]);
+#else
 #define MODEL_LIGHTING_LINK_OFFSET_LAYER_TRIANGLE_PAIR(packetPair, workspace, displayState, addressMask, lengthMask)                                                                                                                                            \
-    (packetPair)[0].tag = ((packetPair)[0].tag & (lengthMask)) | ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] & (addressMask)); \
-    (workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] =                                                                               \
-        ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] & (lengthMask)) | ((u32) & (packetPair)[0] & (addressMask));               \
-    (packetPair)[1].tag = ((packetPair)[1].tag & (lengthMask)) | ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] & (addressMask)); \
-    (workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] =                                                                               \
-        ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] & (lengthMask)) | ((u32) & (packetPair)[1] & (addressMask));
+    (packetPair)[0].tag = ((packetPair)[0].tag & (lengthMask)) | ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] & (addressMask)); \
+    (workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] =                                                                               \
+        ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] & (lengthMask)) | ((u32) & (packetPair)[0] & (addressMask));               \
+    (packetPair)[1].tag = ((packetPair)[1].tag & (lengthMask)) | ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] & (addressMask)); \
+    (workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] =                                                                               \
+        ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)] & (lengthMask)) | ((u32) & (packetPair)[1] & (addressMask));
+#endif
 
 /// Maps a corner's screen pixels and rotated normal to environment texels.
 ///
@@ -929,7 +940,7 @@ static inline void _modelLightingInitGt3PreXformOffsetLayerTexture(POLY_GT3* tri
         setcode((triangle), (rawTextureCommand));                                                                           \
         gte_stotz((gteResultDestination));                                                                                  \
         addPrim(&(workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & \
-                                 (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))],                          \
+                                 (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],                          \
                 (triangle));                                                                                                \
     } while (0)
 
@@ -952,7 +963,7 @@ static inline void _modelLightingInitGt3PreXformOffsetLayerTexture(POLY_GT3* tri
         setcode((quad), (rawTextureCommand));                                                                               \
         gte_stotz((gteResultDestination));                                                                                  \
         addPrim(&(workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & \
-                                 (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))],                          \
+                                 (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)],                          \
                 (quad));                                                                                                    \
     } while (0)
 
@@ -1192,8 +1203,8 @@ u32* tmdDrawStreamPrimGt3EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags
                     setlen(&packetPair[1], payloadWordCount);
                     setcode(&packetPair[1], TMD_GT3_OPAQUE_COMMAND);
                     gte_stotz(&workspace->gteResult);
-                    addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*workspace->ot)]), &packetPair[0]);
-                    addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*workspace->ot)]), &packetPair[1]);
+                    addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / GPU_OT_TAG_BYTES]), &packetPair[0]);
+                    addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / GPU_OT_TAG_BYTES]), &packetPair[1]);
                 }
             }
             packetPair += 2;
@@ -1530,8 +1541,8 @@ u32* tmdDrawStreamPrimGt4EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags
                 setlen(&packetPair[1], payloadWordCount);
                 setcode(&packetPair[1], TMD_GT4_OPAQUE_COMMAND);
                 gte_stotz(gteResultDestination);
-                addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*workspace->ot)]), &packetPair[0]);
-                addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*workspace->ot)]), &packetPair[1]);
+                addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / GPU_OT_TAG_BYTES]), &packetPair[0]);
+                addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / GPU_OT_TAG_BYTES]), &packetPair[1]);
             }
         }
     }
@@ -1579,7 +1590,7 @@ u32* tmdDrawStreamPrimGt3ElemColor(TmdStreamWorkspace* workspace, s32 objectFlag
                         setcode(triangle, TMD_GT3_SEMI_TRANS_COMMAND);
                     }
                     gte_stotz(gteResultDestination);
-                    addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], triangle);
+                    addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], triangle);
                 }
             }
             triangle++;
@@ -1636,7 +1647,7 @@ u32* tmdDrawStreamPrimGt4ElemColor(TmdStreamWorkspace* workspace, s32 objectFlag
                             setcode(quad, TMD_GT4_SEMI_TRANS_COMMAND);
                         }
                         gte_stotz(gteResultDestination);
-                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], quad);
+                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
                     }
                 }
             }
@@ -1770,7 +1781,7 @@ u32* tmdDrawStreamPrimGt4Unlit(TmdStreamWorkspace* workspace, s32 objectFlags, u
                         gte_stsxy2(&quad->x3);
                         gte_avsz4();
                         gte_stotz(gteResultDestination);
-                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], quad);
+                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
                     }
                 }
             }
@@ -1820,7 +1831,7 @@ u32* tmdDrawStreamPrimF4(TmdStreamWorkspace* workspace, s32 objectFlags, u32* el
                         setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
                         setcode(quad, TMD_F4_OPAQUE_COMMAND);
                         gte_stotz(gteResultDestination);
-                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], quad);
+                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
                     }
                 }
             }
@@ -1867,7 +1878,7 @@ u32* tmdDrawStreamPrimF3(TmdStreamWorkspace* workspace, s32 objectFlags, u32* el
                         setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
                         setcode(triangle, TMD_F3_OPAQUE_COMMAND);
                         gte_stotz(gteResultDestination);
-                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], triangle);
+                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], triangle);
                     }
                 }
             }
@@ -1992,7 +2003,7 @@ u32* tmdDrawStreamPrimG3CornerColors(TmdStreamWorkspace* workspace, s32 objectFl
                     setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
                     setcode(triangle, TMD_G3_OPAQUE_COMMAND);
                     gte_stotz(gteResultDestination);
-                    addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], triangle);
+                    addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], triangle);
                 }
             }
             triangle++;
@@ -2036,7 +2047,7 @@ u32* tmdDrawStreamPrimG3CornerColorsSemiTrans(TmdStreamWorkspace* workspace, s32
                     setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
                     setcode(triangle, TMD_G3_SEMI_TRANS_COMMAND);
                     gte_stotz(gteResultDestination);
-                    addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], triangle);
+                    addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], triangle);
                 }
             }
             triangle++;
@@ -2090,7 +2101,7 @@ u32* tmdDrawStreamPrimG4CornerColors(TmdStreamWorkspace* workspace, s32 objectFl
                         setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
                         setcode(quad, TMD_G4_OPAQUE_COMMAND);
                         gte_stotz(gteResultDestination);
-                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], quad);
+                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
                     }
                 }
             }
@@ -2146,7 +2157,7 @@ u32* tmdDrawStreamPrimG4CornerColorsSemiTrans(TmdStreamWorkspace* workspace, s32
                             setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
                             setcode(quad, TMD_G4_SEMI_TRANS_COMMAND);
                             gte_stotz(gteResultDestination);
-                            addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], quad);
+                            addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
                         }
                     }
                 }

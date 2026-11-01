@@ -735,6 +735,6 @@ static void _mothDrawBurst(Task* task)
     quad->y2    = scratch->corners[2].vy;
     quad->x3    = scratch->corners[3].vx;
     quad->y3    = scratch->corners[3].vy;
-    addPrim((&gGpuCurrentOt[(((((u32)scratch->otz << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*gGpuCurrentOt)]), quad);
+    addPrim((&gGpuCurrentOt[(((((u32)scratch->otz << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / GPU_OT_TAG_BYTES]), quad);
     SCRATCH_STACK_RELEASE_BLOCK(ActorScreenQuadScratch);
 }

@@ -70,3 +70,15 @@ The executable links and `gameMainRun` runs on the host. Mechanics:
   `gHostScratchpad` (cursor slot is pointer-sized). macOS arm64 refuses a small `__PAGEZERO`, so mapping RAM at
   0x80000000 is not an option.
 - Current state: the boot loop reaches `fsScanIsoDirectory` and waits for the CD. Next: the runtime disc loader.
+
+## Boots from a disc image (done)
+
+`parasite-eve-ii-pc <disc.cue>` (or `PE2_DISC`) mounts the image through PsyZ and runs the cold-start path:
+ISO directory scan, startup image read, MDEC decode and fade, then the main loop (idling at `VSync`).
+- PsyZ fork additions: `Psyz_PollInterrupts` / `Psyz_CdPump` deliver CdSync/CdReady callbacks and VBlank callbacks
+  (the game relies on interrupts); busy-wait loops poll it (`mdecStepImageDecode`).
+- OT tags are `OT_TYPE` on the host; manual tag splicing was replaced by `addPrim` in `model_lighting.c`,
+  `sprite_link.c`. Depth math divides by `GPU_OT_TAG_BYTES` (4), not the host entry size.
+- `src/port/mdec_vlc.c`: STR v2 VLC decoder reused from the sibling PE1 port.
+- `src/port/globals.c` (generated, `tools/port/gen_globals.py`): the 438 globals the PS1 link placed by address.
+- 732 overlay functions are still weak placeholders that abort with their name on first call.

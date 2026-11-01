@@ -242,7 +242,7 @@ static inline void _neoArkR31QueueFramebufferMaskModes(s32 drawDepth)
     maskMode       = gGpuPrimCursor;
     gGpuPrimCursor = maskMode + 1;
     SetDrawStp(maskMode, NEO_ARK_R31_MASK_WRITE_ENABLE);
-    addPrim(gGpuCurrentOt + GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*gGpuCurrentOt), maskMode);
+    addPrim(gGpuCurrentOt + GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES, maskMode);
 }
 
 /// Overlays the current draw framebuffer shifted left by the scene's pixel displacement.
