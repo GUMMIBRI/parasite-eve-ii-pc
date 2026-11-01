@@ -58,7 +58,7 @@ TaskDesc gSanctuaryNo9TaskDesc = {
 };
 
 /// Message map for the script-posed No. 9 golem.
-static const TaskMessageEntry _gSanctuaryNo9Messages[4] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gSanctuaryNo9Messages[4] SECTION(".data") = {
     { ACTOR_MESSAGE_PLAY_ANIMATION, _sanctuaryNo9PlayAnimation },
     { ACTOR_MESSAGE_PLACE, actorMsgPlaceRotMatrix },
     { ACTOR_MESSAGE_SET_MODEL_DRAW, _sanctuaryNo9SetModelDraw },

@@ -1021,7 +1021,7 @@ enum {
 /// Cue 1 adds one to the selected base; companion playback adds 100. The
 /// class-5 policy borrows this record, although the room's floor uses class 1.
 /// The read-only record retains its serialized position in .data.
-static const WorldCollisionFootstepSounds _gShelterR36Class5FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gShelterR36Class5FootstepSounds SECTION(".data") = {
     .walk         = SHELTER_R36_CLASS_5_FOOTSTEP_WALK_BASE,
     .run          = SHELTER_R36_CLASS_5_FOOTSTEP_RUN_BASE,
     .scriptedJump = SHELTER_R36_CLASS_5_FOOTSTEP_WALK_BASE,
@@ -1032,7 +1032,7 @@ static const WorldCollisionFootstepSounds _gShelterR36Class5FootstepSounds __att
 /// Cue 1 adds one to the selected base; companion playback adds 100. The
 /// class-2 policy borrows this record, although the room's floor uses class 1.
 /// The read-only record retains its serialized position in .data.
-static const WorldCollisionFootstepSounds _gShelterR36Class2FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gShelterR36Class2FootstepSounds SECTION(".data") = {
     .walk         = SHELTER_R36_CLASS_2_FOOTSTEP_WALK_BASE,
     .run          = SHELTER_R36_CLASS_2_FOOTSTEP_RUN_BASE,
     .scriptedJump = SHELTER_R36_CLASS_2_FOOTSTEP_WALK_BASE,
@@ -1043,7 +1043,7 @@ static const WorldCollisionFootstepSounds _gShelterR36Class2FootstepSounds __att
 /// Cue 1 adds one to the selected base; companion playback adds 100. The
 /// class-3 policy borrows this record, although the room's floor uses class 1.
 /// The read-only record retains its serialized position in .data.
-static const WorldCollisionFootstepSounds _gShelterR36Class3FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gShelterR36Class3FootstepSounds SECTION(".data") = {
     .walk         = SHELTER_R36_CLASS_3_FOOTSTEP_WALK_BASE,
     .run          = SHELTER_R36_CLASS_3_FOOTSTEP_RUN_BASE,
     .scriptedJump = SHELTER_R36_CLASS_3_FOOTSTEP_WALK_BASE,

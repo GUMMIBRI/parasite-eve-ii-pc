@@ -53,7 +53,7 @@ static WorldCoordRoomLights _gDryfieldMotelRoom2RoomLights;
 /// The room task borrows the table and its callbacks while the overlay is loaded.
 /// The final marker makes unsupported IDs return zero. Read-only authored storage
 /// stays in the overlay's data section.
-static const TaskMessageEntry _gDryfieldMotelRoom2RoomMessages[] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gDryfieldMotelRoom2RoomMessages[] SECTION(".data") = {
     { ROOM_EVENT_MESSAGE_RESOLVE, _dryfieldMotelRoom2ResolveRoomEvent },
     { ROOM_MESSAGE_USE_KEY_ITEM, _dryfieldMotelRoom2RejectKeyItemUse },
     { DIRECTION_MESSAGE_ROOM_ACTION, _dryfieldMotelRoom2IgnoreRoomAction },

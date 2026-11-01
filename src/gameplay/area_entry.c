@@ -41,7 +41,7 @@ static u16 D_8010CA30[] = { 0x3A, 0x2E, 0x3B, 0x31, 0x41, 0x34, 0, 0 };
 /// The result task spawns only index 0, passing victory/escape as its content
 /// argument. Index 1 has no observed spawner; both callbacks use live gameplay
 /// UI resources. Bounds are screen-center-relative pixels.
-static const UiObjectDesc _gSceneBattleResultPanels[2] __attribute__((section(".data"))) = {
+static const UiObjectDesc _gSceneBattleResultPanels[2] SECTION(".data") = {
     { USER_INTERFACE_PANEL_TITLE_STYLE, { -80, -48, 160, 64 }, 32, 0, TASK_BODY_NONE, 0xC0, itemMenuBattleResultTask, 0 },
     { USER_INTERFACE_PANEL_TITLE_STYLE, { -80, -96, 256, 192 }, 36, 0, TASK_BODY_NONE, 0xC0, itemPickupTitleTask, 0 },
 };
@@ -52,7 +52,7 @@ enum { SCENE_BATTLE_REWARD_NOTICE_PANEL_STYLE = 3 };
 /// Content arguments 1 and 2 select the corresponding encoded notice heading.
 /// They open after the result panel with inactive input; bonus appears only
 /// after a Medicine Wheel bonus grant. Bounds are screen-center-relative pixels.
-static const UiObjectDesc _gSceneBattleRewardNoticePanels[2] __attribute__((section(".data"))) = {
+static const UiObjectDesc _gSceneBattleRewardNoticePanels[2] SECTION(".data") = {
     { SCENE_BATTLE_REWARD_NOTICE_PANEL_STYLE, { -80, 16, 160, 20 }, 28, 0, TASK_BODY_NONE, 0xC0, itemPickupNoticeTask, 0 },
     { SCENE_BATTLE_REWARD_NOTICE_PANEL_STYLE, { 16, 24, 160, 20 }, 24, 0, TASK_BODY_NONE, 0xC0, itemPickupNoticeTask, 0 },
 };

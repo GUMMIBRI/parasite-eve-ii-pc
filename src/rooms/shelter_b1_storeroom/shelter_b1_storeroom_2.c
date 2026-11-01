@@ -75,7 +75,7 @@ static WorldCoordRoomLights             _gShelterB1StoreroomRoomLights;
 /// Fixed world-space glow placements: twenty tube pairs followed by nine door bulbs.
 ///
 /// Read-only placements retain their authored position in the data section.
-static const _ShelterB1StoreroomLampGlowPoints _gShelterB1StoreroomLampGlowPoints __attribute__((section(".data"))) = {
+static const _ShelterB1StoreroomLampGlowPoints _gShelterB1StoreroomLampGlowPoints SECTION(".data") = {
     .tubeEnds = {
         { { -1130, -2290, 1920, 0 }, { -400, -2290, 1920, 0 } },
         { { 370, -2290, 1920, 0 }, { 1110, -2290, 1920, 0 } },
@@ -798,7 +798,7 @@ AreaVariant gShelterB1StoreroomAreaVariants[22] = {
 ///
 /// Each RGB component uses sixteen units per 8-bit colour level.
 /// Read-only levels retain their authored position in the data section.
-static const WorldCoordRoomAmbientEntry _gShelterB1StoreroomRoomAmbient[9] __attribute__((section(".data"))) = {
+static const WorldCoordRoomAmbientEntry _gShelterB1StoreroomRoomAmbient[9] SECTION(".data") = {
     { .viewCount = ARRAY_SIZE(_gShelterB1StoreroomRoomAmbient) - 1 },
     { .color = { 16, 16, 16, 16 } },
     { .color = { 470, 470, 470, 470 } },
@@ -830,7 +830,7 @@ enum {
 ///
 /// Walking and jumps share entries 0x41/0x42; running uses 0x43/0x44.
 /// Read-only cue bases retain their authored position in the data section.
-static const WorldCollisionFootstepSounds _gShelterB1StoreroomFloorFootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gShelterB1StoreroomFloorFootstepSounds SECTION(".data") = {
     .walk         = SHELTER_B1_STOREROOM_WALK_FOOTSTEP_BASE,
     .run          = SHELTER_B1_STOREROOM_RUN_FOOTSTEP_BASE,
     .scriptedJump = SHELTER_B1_STOREROOM_WALK_FOOTSTEP_BASE,

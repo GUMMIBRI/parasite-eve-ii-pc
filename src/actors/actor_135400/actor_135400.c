@@ -271,7 +271,7 @@ static const TaskMessageEntry _gActor135400GaryDouglasMessages[5] SECTION(".data
 /// Only cursors 1..6 are used; the stored zeros at 0 and 7 are unused slots.
 /// A transition occurs when the signed timer exceeds the selected duration.
 /// The initial cursor 2 times displayed clip 1 before advancing to clip 3.
-static const s16 _gActor135400FlintCycleHoldFrames[8] __attribute__((section(".data"))) = {
+static const s16 _gActor135400FlintCycleHoldFrames[8] SECTION(".data") = {
     0,
     700,
     28,
@@ -301,7 +301,7 @@ TaskDesc gActor135400FlintTaskDesc = {
 /// Playback borrows an `AnimationPlayRequest` selecting bank 0 and clip 1..6;
 /// placement borrows an `ActorTransform`, and drawing takes a scalar mode.
 /// The task borrows this terminated map and its callbacks until teardown.
-static const TaskMessageEntry _gActor135400FlintMessages[4] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gActor135400FlintMessages[4] SECTION(".data") = {
     { ACTOR_MESSAGE_PLAY_ANIMATION, _actor135400FlintPlayAnimation },
     { ACTOR_MESSAGE_PLACE, _actorMsgPlaceEuler },
     { ACTOR_MESSAGE_SET_MODEL_DRAW, _actor135400FlintSetDrawMode },

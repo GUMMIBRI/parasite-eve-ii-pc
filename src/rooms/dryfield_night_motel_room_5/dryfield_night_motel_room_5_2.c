@@ -40,7 +40,7 @@ static WorldCoordRoomLights   _gDryfieldNightMotelRoom5Lights;
 /// Fixed flare centre for logical views 3 and 8, in signed world-coordinate units.
 ///
 /// The drawer borrows this point during projection through the current view.
-static const SVECTOR _gDryfieldNightMotelRoom5Views3And8FlareWorldPoint __attribute__((section(".data"))) = {
+static const SVECTOR _gDryfieldNightMotelRoom5Views3And8FlareWorldPoint SECTION(".data") = {
     400,
     -970,
     1590,
@@ -50,7 +50,7 @@ static const SVECTOR _gDryfieldNightMotelRoom5Views3And8FlareWorldPoint __attrib
 /// Fixed flare centre for logical views 2 and 7, in signed world-coordinate units.
 ///
 /// The drawer borrows this point with the room's larger perspective radius scale.
-static const SVECTOR _gDryfieldNightMotelRoom5Views2And7FlareWorldPoint __attribute__((section(".data"))) = {
+static const SVECTOR _gDryfieldNightMotelRoom5Views2And7FlareWorldPoint SECTION(".data") = {
     3360,
     -2340,
     2250,
@@ -60,7 +60,7 @@ static const SVECTOR _gDryfieldNightMotelRoom5Views2And7FlareWorldPoint __attrib
 /// Fixed flare centre for logical views 4 and 9, in signed world-coordinate units.
 ///
 /// The drawer borrows this point during projection through the current view.
-static const SVECTOR _gDryfieldNightMotelRoom5Views4And9FlareWorldPoint __attribute__((section(".data"))) = {
+static const SVECTOR _gDryfieldNightMotelRoom5Views4And9FlareWorldPoint SECTION(".data") = {
     4550,
     -1140,
     5590,
@@ -1099,7 +1099,7 @@ enum {
 ///
 /// Walking and scripted jumps use type-1 bank entries 0x35/0x36; running uses
 /// 0x37/0x38. Animation cue 1 adds one to the base, and companions add 100.
-static const WorldCollisionFootstepSounds _gDryfieldNightMotelRoom5Class1FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldNightMotelRoom5Class1FootstepSounds SECTION(".data") = {
     .walk         = DRYFIELD_NIGHT_MOTEL_ROOM_5_CLASS_1_WALK_CUE_BASE,
     .run          = DRYFIELD_NIGHT_MOTEL_ROOM_5_CLASS_1_RUN_CUE_BASE,
     .scriptedJump = DRYFIELD_NIGHT_MOTEL_ROOM_5_CLASS_1_WALK_CUE_BASE,
@@ -1109,7 +1109,7 @@ static const WorldCollisionFootstepSounds _gDryfieldNightMotelRoom5Class1Footste
 ///
 /// Walking and scripted jumps use type-1 bank entries 1/2; running uses 3/4.
 /// Animation cue 1 adds one to the base, and companions add 100.
-static const WorldCollisionFootstepSounds _gDryfieldNightMotelRoom5Class2FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldNightMotelRoom5Class2FootstepSounds SECTION(".data") = {
     .walk         = DRYFIELD_NIGHT_MOTEL_ROOM_5_CLASS_2_WALK_CUE_BASE,
     .run          = DRYFIELD_NIGHT_MOTEL_ROOM_5_CLASS_2_RUN_CUE_BASE,
     .scriptedJump = DRYFIELD_NIGHT_MOTEL_ROOM_5_CLASS_2_WALK_CUE_BASE,

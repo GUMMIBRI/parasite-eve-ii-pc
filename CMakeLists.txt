@@ -27,7 +27,7 @@ add_library(game_main OBJECT ${GAME_MAIN_SOURCES})
 target_include_directories(game_main PUBLIC include include/decomp
     ${CMAKE_CURRENT_SOURCE_DIR}/build/include)
 target_compile_definitions(game_main PUBLIC __psyz SKIP_ASM)
-target_compile_options(game_main PRIVATE -w)
+target_compile_options(game_main PRIVATE -w -Wno-incompatible-function-pointer-types)
 target_link_libraries(game_main PUBLIC psyz)
 
 add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c $<TARGET_OBJECTS:game_main>)

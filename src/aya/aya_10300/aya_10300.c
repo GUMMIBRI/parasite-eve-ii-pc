@@ -18,12 +18,12 @@ enum {
 /// Nineteen initial part transforms and parent indices copied into each player body.
 ///
 /// Read-only pose and count tables retain their serialized positions in .data.
-static const TmdBone _gAya10300BodyModelSkeleton[19] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10300BodyModelSkeleton[19] SECTION(".data") = {
 #include "assets/aya_10300_model_019A8_skeleton.inc"
 };
 
 /// Vertex counts for consecutive part-local groups in skeleton order, totaling 352.
-static const u32 _gAya10300BodyModelPartVerts[ARRAY_SIZE(_gAya10300BodyModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10300BodyModelPartVerts[ARRAY_SIZE(_gAya10300BodyModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10300_model_019A8_partVerts.inc"
 };
 
@@ -58,12 +58,12 @@ TmdSource gAya10300BodyModel = {
 };
 
 /// Initial local transform and self-parented root for first-pair hand slot 0.
-static const TmdBone _gAya10300FirstPairHand0ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10300FirstPairHand0ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10300_model_05734_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 23.
-static const u32 _gAya10300FirstPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10300FirstPairHand0ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10300FirstPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10300FirstPairHand0ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10300_model_05734_partVerts.inc"
 };
 
@@ -97,12 +97,12 @@ TmdSource gAya10300FirstPairHand0Model = {
 /// Initial local transform and self-parented root for second-pair hand slot 0.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-static const TmdBone _gAya10300SecondPairHand0ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10300SecondPairHand0ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10200_model_0019C_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 23.
-static const u32 _gAya10300SecondPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10300SecondPairHand0ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10300SecondPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10300SecondPairHand0ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10200_model_0019C_partVerts.inc"
 };
 
@@ -136,12 +136,12 @@ TmdSource gAya10300SecondPairHand0Model = {
 };
 
 /// Initial local transform and self-parented root for first-pair hand slot 1.
-static const TmdBone _gAya10300FirstPairHand1ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10300FirstPairHand1ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10300_model_05FF4_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 27.
-static const u32 _gAya10300FirstPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10300FirstPairHand1ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10300FirstPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10300FirstPairHand1ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10300_model_05FF4_partVerts.inc"
 };
 
@@ -173,12 +173,12 @@ TmdSource gAya10300FirstPairHand1Model = {
 };
 
 /// Initial local transform and self-parented root for second-pair hand slot 1.
-static const TmdBone _gAya10300SecondPairHand1ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10300SecondPairHand1ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10300_model_064A4_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 23.
-static const u32 _gAya10300SecondPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10300SecondPairHand1ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10300SecondPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10300SecondPairHand1ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10300_model_064A4_partVerts.inc"
 };
 
@@ -254,10 +254,10 @@ static GpuImageUpload _gAya10300MouthOpenUploads[2] = {
     { GPU_IMAGE_UPLOAD_END },
 };
 
-GpuImageUpload* const gAya10300EyesRestSequence[2] __attribute__((section(".data")))    = { _gAya10300EyesOpenUploads, NULL };
-GpuImageUpload* const gAya10300EyesClosingSequence[4] __attribute__((section(".data"))) = { _gAya10300EyesOpenUploads, _gAya10300EyesHalfClosedUploads, _gAya10300EyesClosedUploads, NULL };
-GpuImageUpload* const gAya10300EyesOpeningSequence[4] __attribute__((section(".data"))) = { _gAya10300EyesClosedUploads, _gAya10300EyesHalfClosedUploads, _gAya10300EyesOpenUploads, NULL };
-GpuImageUpload* const gAya10300EyesBlinkSequence[6] __attribute__((section(".data")))   = {
+GpuImageUpload* const gAya10300EyesRestSequence[2] SECTION(".data")    = { _gAya10300EyesOpenUploads, NULL };
+GpuImageUpload* const gAya10300EyesClosingSequence[4] SECTION(".data") = { _gAya10300EyesOpenUploads, _gAya10300EyesHalfClosedUploads, _gAya10300EyesClosedUploads, NULL };
+GpuImageUpload* const gAya10300EyesOpeningSequence[4] SECTION(".data") = { _gAya10300EyesClosedUploads, _gAya10300EyesHalfClosedUploads, _gAya10300EyesOpenUploads, NULL };
+GpuImageUpload* const gAya10300EyesBlinkSequence[6] SECTION(".data")   = {
     _gAya10300EyesOpenUploads,
     _gAya10300EyesHalfClosedUploads,
     _gAya10300EyesClosedUploads,
@@ -265,5 +265,5 @@ GpuImageUpload* const gAya10300EyesBlinkSequence[6] __attribute__((section(".dat
     _gAya10300EyesOpenUploads,
     NULL,
 };
-GpuImageUpload* const gAya10300MouthRestSequence[2] __attribute__((section(".data"))) = { _gAya10300MouthRestUploads, NULL };
-GpuImageUpload* const gAya10300MouthOpenSequence[2] __attribute__((section(".data"))) = { _gAya10300MouthOpenUploads, NULL };
+GpuImageUpload* const gAya10300MouthRestSequence[2] SECTION(".data") = { _gAya10300MouthRestUploads, NULL };
+GpuImageUpload* const gAya10300MouthOpenSequence[2] SECTION(".data") = { _gAya10300MouthOpenUploads, NULL };

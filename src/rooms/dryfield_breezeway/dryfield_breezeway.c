@@ -71,12 +71,12 @@ static u_long _gDryfieldBreezewayKeyItemLineClut[128] = {
 #include "assets/dryfield_breezeway_clut_05984.inc"
 };
 
-const GpuImageUpload gDryfieldBreezewayKeyItemLineClutUploads[2] __attribute__((section(".data"))) = {
+const GpuImageUpload gDryfieldBreezewayKeyItemLineClutUploads[2] SECTION(".data") = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 256, ARRAY_SIZE(_gDryfieldBreezewayKeyItemLineClut) * 2, 1 }, _gDryfieldBreezewayKeyItemLineClut },
     { GPU_IMAGE_UPLOAD_END, 0, { 0, 0, 0, 0 }, NULL },
 };
 
-const SVECTOR gDryfieldBreezewayGlowLocalPoint __attribute__((section(".data"))) = { 17990, -1365, 2825, 0 };
+const SVECTOR gDryfieldBreezewayGlowLocalPoint SECTION(".data") = { 17990, -1365, 2825, 0 };
 
 WorldCollisionRoomResources gDryfieldBreezewayRoomCollisionResources[1] = {
     { &_gDryfieldBreezewayCollisionGrid, _gDryfieldBreezewayViewBoundaryTriggers, _gDryfieldBreezewayActionTriggers, NULL },
@@ -423,7 +423,7 @@ enum {
 /// Class-1 footstep cue bases; scripted jumps use the walking pair.
 ///
 /// Read-only cues retain their authored position in the room data section.
-static const WorldCollisionFootstepSounds _gDryfieldBreezewayFootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldBreezewayFootstepSounds SECTION(".data") = {
     DRYFIELD_BREEZEWAY_FOOTSTEP_WALK,
     DRYFIELD_BREEZEWAY_FOOTSTEP_RUN,
     DRYFIELD_BREEZEWAY_FOOTSTEP_WALK,

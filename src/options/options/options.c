@@ -19,121 +19,121 @@
 /// Options-list label for restoring the live saved configuration defaults.
 ///
 /// NUL-terminated UI text; word alignment and .data placement retain the overlay layout.
-static const u8 _gOptionsRestoreDefaultsLabel[] __attribute__((section(".data"), aligned(4))) = "Restore default configuration";
+static const u8 _gOptionsRestoreDefaultsLabel[] SECTION(".data") __attribute__((aligned(4))) = "Restore default configuration";
 /// Options-list label for the vibration setting.
-static const u8 _gOptionsVibrationLabel[] __attribute__((section(".data"), aligned(4))) = "Vibration";
+static const u8 _gOptionsVibrationLabel[] SECTION(".data") __attribute__((aligned(4))) = "Vibration";
 /// Vibration choice label for saved value 0 (enabled).
-static const u8 _gOptionsVibrationOnLabel[] __attribute__((section(".data"), aligned(4))) = "On";
+static const u8 _gOptionsVibrationOnLabel[] SECTION(".data") __attribute__((aligned(4))) = "On";
 /// Vibration choice label for saved value 1 (disabled).
-static const u8 _gOptionsVibrationOffLabel[] __attribute__((section(".data"), aligned(4))) = "Off";
+static const u8 _gOptionsVibrationOffLabel[] SECTION(".data") __attribute__((aligned(4))) = "Off";
 /// Options-list label for the sound-output setting.
-static const u8 _gOptionsSoundLabel[] __attribute__((section(".data"), aligned(4))) = "Sound";
+static const u8 _gOptionsSoundLabel[] SECTION(".data") __attribute__((aligned(4))) = "Sound";
 /// Sound-output choice label for saved value 0 (stereo).
-static const u8 _gOptionsSoundStereoLabel[] __attribute__((section(".data"), aligned(4))) = "Stereo";
+static const u8 _gOptionsSoundStereoLabel[] SECTION(".data") __attribute__((aligned(4))) = "Stereo";
 /// Sound-output choice label for saved value 1 (mono).
-static const u8 _gOptionsSoundMonoLabel[] __attribute__((section(".data"), aligned(4))) = "Mono";
+static const u8 _gOptionsSoundMonoLabel[] SECTION(".data") __attribute__((aligned(4))) = "Mono";
 /// Options-list label for the music-volume setting.
-static const u8 _gOptionsMusicLabel[] __attribute__((section(".data"), aligned(4))) = "Music";
+static const u8 _gOptionsMusicLabel[] SECTION(".data") __attribute__((aligned(4))) = "Music";
 /// Music-volume choice label for saved value 0 (level 3, gain 100).
-static const u8 _gOptionsMusicVolume3Label[] __attribute__((section(".data"), aligned(4))) = "3";
+static const u8 _gOptionsMusicVolume3Label[] SECTION(".data") __attribute__((aligned(4))) = "3";
 /// Music-volume choice label for saved value 1 (level 2, gain 64).
-static const u8 _gOptionsMusicVolume2Label[] __attribute__((section(".data"), aligned(4))) = "2";
+static const u8 _gOptionsMusicVolume2Label[] SECTION(".data") __attribute__((aligned(4))) = "2";
 /// Music-volume choice label for saved value 2 (level 1, gain 32).
-static const u8 _gOptionsMusicVolume1Label[] __attribute__((section(".data"), aligned(4))) = "1";
+static const u8 _gOptionsMusicVolume1Label[] SECTION(".data") __attribute__((aligned(4))) = "1";
 /// Music-volume choice label for saved value 3 (muted).
-static const u8 _gOptionsMusicVolumeOffLabel[] __attribute__((section(".data"), aligned(4))) = "Off";
+static const u8 _gOptionsMusicVolumeOffLabel[] SECTION(".data") __attribute__((aligned(4))) = "Off";
 /// Options-list label for the menu-cursor preference.
-static const u8 _gOptionsCursorLabel[] __attribute__((section(".data"), aligned(4))) = "Cursor";
+static const u8 _gOptionsCursorLabel[] SECTION(".data") __attribute__((aligned(4))) = "Cursor";
 /// Cursor choice label for saved value 1 (reset selection when opening a list).
-static const u8 _gOptionsCursorStandardLabel[] __attribute__((section(".data"), aligned(4))) = "Standard";
+static const u8 _gOptionsCursorStandardLabel[] SECTION(".data") __attribute__((aligned(4))) = "Standard";
 /// Cursor choice label for saved value 0 (remember the previous selection).
-static const u8 _gOptionsCursorMemoryLabel[] __attribute__((section(".data"), aligned(4))) = "Memory";
+static const u8 _gOptionsCursorMemoryLabel[] SECTION(".data") __attribute__((aligned(4))) = "Memory";
 /// Options-list label for opening the controller-layout editor.
-static const u8 _gOptionsKeyConfigurationLabel[] __attribute__((section(".data"), aligned(4))) = "Key Config";
+static const u8 _gOptionsKeyConfigurationLabel[] SECTION(".data") __attribute__((aligned(4))) = "Key Config";
 /// Options-list label for Aya's default movement setting.
-static const u8 _gOptionsMovementLabel[] __attribute__((section(".data"), aligned(4))) = "Movement";
+static const u8 _gOptionsMovementLabel[] SECTION(".data") __attribute__((aligned(4))) = "Movement";
 /// Default-movement choice label for saved value 0 (walk).
-static const u8 _gOptionsMovementWalkLabel[] __attribute__((section(".data"), aligned(4))) = "Walk";
+static const u8 _gOptionsMovementWalkLabel[] SECTION(".data") __attribute__((aligned(4))) = "Walk";
 /// Default-movement choice label for saved value 1 (run).
-static const u8 _gOptionsMovementRunLabel[] __attribute__((section(".data"), aligned(4))) = "Run";
+static const u8 _gOptionsMovementRunLabel[] SECTION(".data") __attribute__((aligned(4))) = "Run";
 /// Menu-column label for the confirm action in the button-assignment chart.
-static const u8 _gOptionsKeyConfirmLabel[] __attribute__((section(".data"), aligned(4))) = "OK";
+static const u8 _gOptionsKeyConfirmLabel[] SECTION(".data") __attribute__((aligned(4))) = "OK";
 /// Cancel-action label shared by the menu and battle assignment columns.
-static const u8 _gOptionsKeyCancelLabel[] __attribute__((section(".data"), aligned(4))) = "Cancel";
+static const u8 _gOptionsKeyCancelLabel[] SECTION(".data") __attribute__((aligned(4))) = "Cancel";
 /// Menu-column label for the help action.
-static const u8 _gOptionsKeyHelpLabel[] __attribute__((section(".data"), aligned(4))) = "Help";
+static const u8 _gOptionsKeyHelpLabel[] SECTION(".data") __attribute__((aligned(4))) = "Help";
 /// Menu-column label for paging a list downward.
-static const u8 _gOptionsKeyScrollDownLabel[] __attribute__((section(".data"), aligned(4))) = "Scroll Down";
+static const u8 _gOptionsKeyScrollDownLabel[] SECTION(".data") __attribute__((aligned(4))) = "Scroll Down";
 /// Menu-column label for paging a list upward.
-static const u8 _gOptionsKeyScrollUpLabel[] __attribute__((section(".data"), aligned(4))) = "Scroll Up";
+static const u8 _gOptionsKeyScrollUpLabel[] SECTION(".data") __attribute__((aligned(4))) = "Scroll Up";
 /// Normal-play assignment label for drawing a weapon.
-static const u8 _gOptionsKeyDrawWeaponLabel[] __attribute__((section(".data"), aligned(4))) = "Draw Weapon";
+static const u8 _gOptionsKeyDrawWeaponLabel[] SECTION(".data") __attribute__((aligned(4))) = "Draw Weapon";
 /// Normal-play assignment label for examining an object.
-static const u8 _gOptionsKeyExamineLabel[] __attribute__((section(".data"), aligned(4))) = "Examine";
+static const u8 _gOptionsKeyExamineLabel[] SECTION(".data") __attribute__((aligned(4))) = "Examine";
 /// Alternate-movement label when the saved default movement is walking.
-static const u8 _gOptionsKeyRunLabel[] __attribute__((section(".data"), aligned(4))) = "Run";
+static const u8 _gOptionsKeyRunLabel[] SECTION(".data") __attribute__((aligned(4))) = "Run";
 /// Alternate-movement label when the saved default movement is running.
-static const u8 _gOptionsKeyWalkLabel[] __attribute__((section(".data"), aligned(4))) = "Walk";
+static const u8 _gOptionsKeyWalkLabel[] SECTION(".data") __attribute__((aligned(4))) = "Walk";
 /// Battle assignment label for switching the selected target.
-static const u8 _gOptionsKeySwitchTargetsLabel[] __attribute__((section(".data"), aligned(4))) = "Switch Targets";
+static const u8 _gOptionsKeySwitchTargetsLabel[] SECTION(".data") __attribute__((aligned(4))) = "Switch Targets";
 /// Battle assignment label for opening the Parasite Energy menu.
-static const u8 _gOptionsKeyPeMenuLabel[] __attribute__((section(".data"), aligned(4))) = "PE Menu";
+static const u8 _gOptionsKeyPeMenuLabel[] SECTION(".data") __attribute__((aligned(4))) = "PE Menu";
 /// Battle assignment label for the main-weapon action.
-static const u8 _gOptionsKeyMainWeaponLabel[] __attribute__((section(".data"), aligned(4))) = "Main Weapon";
+static const u8 _gOptionsKeyMainWeaponLabel[] SECTION(".data") __attribute__((aligned(4))) = "Main Weapon";
 /// Battle assignment label for the sub-weapon action.
-static const u8 _gOptionsKeySubWeaponLabel[] __attribute__((section(".data"), aligned(4))) = "Sub Weapon";
+static const u8 _gOptionsKeySubWeaponLabel[] SECTION(".data") __attribute__((aligned(4))) = "Sub Weapon";
 /// Heading for the menu assignments in the key configuration chart.
-static const u8 _gOptionsKeyMenuHeading[] __attribute__((section(".data"), aligned(4))) = "MENU";
+static const u8 _gOptionsKeyMenuHeading[] SECTION(".data") __attribute__((aligned(4))) = "MENU";
 /// Heading for the normal-play assignments in the key configuration chart.
-static const u8 _gOptionsKeyNormalHeading[] __attribute__((section(".data"), aligned(4))) = "NORMAL";
+static const u8 _gOptionsKeyNormalHeading[] SECTION(".data") __attribute__((aligned(4))) = "NORMAL";
 /// Heading for the battle assignments in the key configuration chart.
-static const u8 _gOptionsKeyBattleHeading[] __attribute__((section(".data"), aligned(4))) = "BATTLE";
+static const u8 _gOptionsKeyBattleHeading[] SECTION(".data") __attribute__((aligned(4))) = "BATTLE";
 /// Controller-layout selector label for saved layout 0 (A).
-static const u8 _gOptionsKeyLayoutALabel[] __attribute__((section(".data"), aligned(4))) = "Type A";
+static const u8 _gOptionsKeyLayoutALabel[] SECTION(".data") __attribute__((aligned(4))) = "Type A";
 /// Controller-layout selector label for saved layout 1 (B).
-static const u8 _gOptionsKeyLayoutBLabel[] __attribute__((section(".data"), aligned(4))) = "Type B";
+static const u8 _gOptionsKeyLayoutBLabel[] SECTION(".data") __attribute__((aligned(4))) = "Type B";
 /// Controller-layout selector label for saved layout 2 (C).
-static const u8 _gOptionsKeyLayoutCLabel[] __attribute__((section(".data"), aligned(4))) = "Type C";
+static const u8 _gOptionsKeyLayoutCLabel[] SECTION(".data") __attribute__((aligned(4))) = "Type C";
 /// Help text for the selected sound-output row.
 ///
 /// NUL-terminated UI text borrowed by the prompt panel while this overlay is loaded.
-static const u8 _gOptionsSoundPrompt[] __attribute__((section(".data"), aligned(4))) = "Set sound output to match\nyour television.";
+static const u8 _gOptionsSoundPrompt[] SECTION(".data") __attribute__((aligned(4))) = "Set sound output to match\nyour television.";
 /// Help text for the selected music-volume row.
 ///
 /// NUL-terminated UI text borrowed by the prompt panel while this overlay is loaded.
-static const u8 _gOptionsMusicVolumePrompt[] __attribute__((section(".data"), aligned(4))) = "Set music volume level.\nSet low for clearer sound effects.";
+static const u8 _gOptionsMusicVolumePrompt[] SECTION(".data") __attribute__((aligned(4))) = "Set music volume level.\nSet low for clearer sound effects.";
 /// Help text for the selected menu-cursor row.
 ///
 /// NUL-terminated UI text borrowed by the prompt panel while this overlay is loaded.
-static const u8 _gOptionsCursorPrompt[] __attribute__((section(".data"), aligned(4))) = "Set menu cursor. You can have it\nremember the last position used.";
+static const u8 _gOptionsCursorPrompt[] SECTION(".data") __attribute__((aligned(4))) = "Set menu cursor. You can have it\nremember the last position used.";
 /// Help text for the selected vibration-setting row.
 ///
 /// NUL-terminated UI text borrowed by the prompt panel while this overlay is loaded.
-static const u8 _gOptionsVibrationPrompt[] __attribute__((section(".data"), aligned(4))) = "Set vibration mode ON/OFF.\nSelect ON for more realistic play.";
+static const u8 _gOptionsVibrationPrompt[] SECTION(".data") __attribute__((aligned(4))) = "Set vibration mode ON/OFF.\nSelect ON for more realistic play.";
 /// Help text for the selected default-movement row.
 ///
 /// NUL-terminated UI text borrowed by the prompt panel while this overlay is loaded.
-static const u8 _gOptionsMovementPrompt[] __attribute__((section(".data"), aligned(4))) = "Set Aya's default movement.\nBeginners should use \"Walk.\"";
+static const u8 _gOptionsMovementPrompt[] SECTION(".data") __attribute__((aligned(4))) = "Set Aya's default movement.\nBeginners should use \"Walk.\"";
 /// Help text for opening the controller-layout editor from the selected row.
 ///
 /// NUL-terminated UI text borrowed by the prompt panel while this overlay is loaded.
-static const u8 _gOptionsKeyConfigurationPrompt[] __attribute__((section(".data"), aligned(4))) = "Open key settings menu.\nPress the } button to proceed.";
+static const u8 _gOptionsKeyConfigurationPrompt[] SECTION(".data") __attribute__((aligned(4))) = "Open key settings menu.\nPress the } button to proceed.";
 /// Help text for restoring live option defaults from the selected row.
 ///
 /// NUL-terminated UI text borrowed by the prompt panel while this overlay is loaded.
-static const u8 _gOptionsRestoreDefaultsPrompt[] __attribute__((section(".data"), aligned(4))) = "Restore default settings.\nPress the } button.";
+static const u8 _gOptionsRestoreDefaultsPrompt[] SECTION(".data") __attribute__((aligned(4))) = "Restore default settings.\nPress the } button.";
 /// Help text for controller layout A, the default assignment.
 ///
 /// NUL-terminated UI text borrowed by the prompt panel while this overlay is loaded.
-static const u8 _gOptionsKeyLayoutAPrompt[] __attribute__((section(".data"), aligned(4))) = "Default setting.";
+static const u8 _gOptionsKeyLayoutAPrompt[] SECTION(".data") __attribute__((aligned(4))) = "Default setting.";
 /// Help text for controller layout B, which exchanges the first two button assignments.
 ///
 /// NUL-terminated UI text borrowed by the prompt panel while this overlay is loaded.
-static const u8 _gOptionsKeyLayoutBPrompt[] __attribute__((section(".data"), aligned(4))) = "The function of the { button\nand ~ button is switched.";
+static const u8 _gOptionsKeyLayoutBPrompt[] SECTION(".data") __attribute__((aligned(4))) = "The function of the { button\nand ~ button is switched.";
 /// Help text for controller layout C, which changes the combat assignments.
 ///
 /// NUL-terminated UI text borrowed by the prompt panel while this overlay is loaded.
-static const u8 _gOptionsKeyLayoutCPrompt[] __attribute__((section(".data"), aligned(4))) = "This mode uses the ~ button and\n | button for combat.";
+static const u8 _gOptionsKeyLayoutCPrompt[] SECTION(".data") __attribute__((aligned(4))) = "This mode uses the ~ button and\n | button for combat.";
 
 /// Suspended-control encoding.
 enum {
@@ -150,7 +150,7 @@ static void _optionsUpdateRestoreDefaultsRow(UiList* list, UiObject* object);
 static void _optionsUpdateKeyConfigurationTask(Task* owningTask);
 
 /// Empty NUL-terminated prompt for the key-layout fallback.
-static const u8 _gOptionsKeyEmptyPrompt[] __attribute__((section(".data"), aligned(4))) = "";
+static const u8 _gOptionsKeyEmptyPrompt[] SECTION(".data") __attribute__((aligned(4))) = "";
 
 /// Row callbacks for the full options list, indexed by absolute row 0..6.
 ///
@@ -214,7 +214,7 @@ static UiList _gOptionsVibrationList = {
 /// fits its content height on its first update. Uses OT tag base 52 and a
 /// bodyless task at priority 192. `uiSpawnObject` copies the recipe; the
 /// callback code must remain loaded until the parent closes the child.
-static const UiObjectDesc _gOptionsKeyConfigurationDesc __attribute__((section(".data"), aligned(4))) = {
+static const UiObjectDesc _gOptionsKeyConfigurationDesc SECTION(".data") __attribute__((aligned(4))) = {
     USER_INTERFACE_PANEL_TITLE_STYLE,
     { -140,
       -96,

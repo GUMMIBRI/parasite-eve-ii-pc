@@ -479,7 +479,7 @@ static inline void _effectInitializeHandgunLight(const GfxCoord* spawnCoord, Wor
     }
 
 // Preserve the initialized-data placement of the read-only metadata tables.
-const EffectUnitQuadCorner gEffectUnitQuadCorners[4] __attribute__((section(".data"))) = {
+const EffectUnitQuadCorner gEffectUnitQuadCorners[4] SECTION(".data") = {
     { -1, 1 },
     { 1, 1 },
     { -1, -1 },
@@ -488,7 +488,7 @@ const EffectUnitQuadCorner gEffectUnitQuadCorners[4] __attribute__((section(".da
 /// The twelve explosion frames of the resident effect atlas (rooms/akropolis/west_elevator_hall/effect_atlas, cells
 /// `explosion_*`), each with its own palette on row 265 (its `explosion_*` variants).
 // Preserve the initialized-data placement of this shared read-only table.
-const EffectSpriteTextureFrame gEffectSpriteAtlasFrames[12] __attribute__((section(".data"))) = {
+const EffectSpriteTextureFrame gEffectSpriteAtlasFrames[12] SECTION(".data") = {
     { 0, 0, 0, 0, 112, 265 },
     { EFFECT_SPRITE_ATLAS_CELL_SIZE, 0, 0, 0, 128, 265 },
     { 2 * EFFECT_SPRITE_ATLAS_CELL_SIZE, 0, 0, 0, 144, 265 },
@@ -502,7 +502,7 @@ const EffectSpriteTextureFrame gEffectSpriteAtlasFrames[12] __attribute__((secti
     { 4 * EFFECT_SPRITE_ATLAS_CELL_SIZE, 0, EFFECT_SPRITE_ATLAS_CELL_SIZE, 0, 272, 265 },
     { 5 * EFFECT_SPRITE_ATLAS_CELL_SIZE, 0, EFFECT_SPRITE_ATLAS_CELL_SIZE, 0, 288, 265 },
 };
-const u16 gEffectBillboardClutX[6] __attribute__((section(".data"))) = {
+const u16 gEffectBillboardClutX[6] SECTION(".data") = {
     32,
     48,
     192,
@@ -510,7 +510,7 @@ const u16 gEffectBillboardClutX[6] __attribute__((section(".data"))) = {
     224,
     240,
 };
-const u16 gEffectModulatedBillboardClutX[6] __attribute__((section(".data"))) = {
+const u16 gEffectModulatedBillboardClutX[6] SECTION(".data") = {
     80,
     176,
     256,
@@ -519,7 +519,7 @@ const u16 gEffectModulatedBillboardClutX[6] __attribute__((section(".data"))) = 
     304,
 };
 enum { EFFECT_STATUS_SCREEN_TINT_BLEND_SHIFT = 12 };
-const u16 gEffectStatusScreenTints[8] __attribute__((section(".data"))) = {
+const u16 gEffectStatusScreenTints[8] SECTION(".data") = {
     (GPU_BLEND_SUBTRACT << EFFECT_STATUS_SCREEN_TINT_BLEND_SHIFT) | 0xCCC, // Darkness
     (GPU_BLEND_ADD << EFFECT_STATUS_SCREEN_TINT_BLEND_SHIFT) | 0x33C,      // Paralysis
     (GPU_BLEND_SUBTRACT << EFFECT_STATUS_SCREEN_TINT_BLEND_SHIFT) | 0x3C3, // Poison
@@ -3490,11 +3490,11 @@ enum { EFFECT_MODEL_HANDLERS_UNRESOLVED = 0,
        EFFECT_MODEL_PRETRANSFORM_BYTES  = 0 };
 
 /// Initial one-part identity transform for the bullet casing model.
-static const TmdBone _gEffectBulletCasingModelRestPose[1] __attribute__((section(".data"))) = {
+static const TmdBone _gEffectBulletCasingModelRestPose[1] SECTION(".data") = {
 #include "assets/bullet_casing_skeleton.inc"
 };
 /// Vertex count of the bullet casing model's sole part.
-static const u32 _gEffectBulletCasingModelPartVertexCounts[1] __attribute__((section(".data"))) = {
+static const u32 _gEffectBulletCasingModelPartVertexCounts[1] SECTION(".data") = {
 #include "assets/bullet_casing_partVerts.inc"
 };
 /// Part-local signed integer vertices of the bullet casing model.
@@ -3511,11 +3511,11 @@ static u32 _gEffectBulletCasingModelPackets[32] = {
 };
 TmdSource gEffectBulletCasingModel = { 0, sizeof(POLY_GT3) + 3 * sizeof(POLY_GT4), 0, ARRAY_SIZE(_gEffectBulletCasingModelRestPose), _gEffectBulletCasingModelPartVertexCounts, _gEffectBulletCasingModelVertices, _gEffectBulletCasingModelNormals, _gEffectBulletCasingModelRestPose, _gEffectBulletCasingModelPackets };
 /// Initial one-part identity transform for the rifle casing model.
-static const TmdBone _gEffectRifleCasingModelRestPose[1] __attribute__((section(".data"))) = {
+static const TmdBone _gEffectRifleCasingModelRestPose[1] SECTION(".data") = {
 #include "assets/rifle_casing_skeleton.inc"
 };
 /// Vertex count of the rifle casing model's sole part.
-static const u32 _gEffectRifleCasingModelPartVertexCounts[1] __attribute__((section(".data"))) = {
+static const u32 _gEffectRifleCasingModelPartVertexCounts[1] SECTION(".data") = {
 #include "assets/rifle_casing_partVerts.inc"
 };
 /// Part-local signed integer vertices of the rifle casing model.
@@ -3542,11 +3542,11 @@ TmdSource gEffectRifleCasingModel = {
     .stream              = _gEffectRifleCasingModelPackets,
 };
 /// Initial one-part identity transform for the P229 casing model.
-static const TmdBone _gEffectP229CasingModelRestPose[1] __attribute__((section(".data"))) = {
+static const TmdBone _gEffectP229CasingModelRestPose[1] SECTION(".data") = {
 #include "assets/p229_casing_skeleton.inc"
 };
 /// Vertex count of the P229 casing model's sole part.
-static const u32 _gEffectP229CasingModelPartVertexCounts[1] __attribute__((section(".data"))) = {
+static const u32 _gEffectP229CasingModelPartVertexCounts[1] SECTION(".data") = {
 #include "assets/p229_casing_partVerts.inc"
 };
 /// Part-local signed integer vertices of the P229 casing model.
@@ -3573,11 +3573,11 @@ TmdSource gEffectP229CasingModel = {
     .stream              = _gEffectP229CasingModelPackets,
 };
 /// Initial one-part identity transform for the shotgun shell casing model.
-static const TmdBone _gEffectShotgunShellCasingModelRestPose[1] __attribute__((section(".data"))) = {
+static const TmdBone _gEffectShotgunShellCasingModelRestPose[1] SECTION(".data") = {
 #include "assets/shotgun_shell_casing_skeleton.inc"
 };
 /// Vertex count of the shotgun shell casing model's sole part.
-static const u32 _gEffectShotgunShellCasingModelPartVertexCounts[1] __attribute__((section(".data"))) = {
+static const u32 _gEffectShotgunShellCasingModelPartVertexCounts[1] SECTION(".data") = {
 #include "assets/shotgun_shell_casing_partVerts.inc"
 };
 /// Part-local signed integer vertices of the shotgun shell casing model.
@@ -3604,11 +3604,11 @@ TmdSource gEffectShotgunShellCasingModel = {
     .stream              = _gEffectShotgunShellCasingModelPackets,
 };
 /// Initial one-part identity transform for the slot-0x91 thrown model.
-static const TmdBone _gEffectThrownModel91RestPose[1] __attribute__((section(".data"))) = {
+static const TmdBone _gEffectThrownModel91RestPose[1] SECTION(".data") = {
 #include "assets/thrown_model_91_skeleton.inc"
 };
 /// Vertex count of the slot-0x91 thrown model's sole part.
-static const u32 _gEffectThrownModel91PartVertexCounts[1] __attribute__((section(".data"))) = {
+static const u32 _gEffectThrownModel91PartVertexCounts[1] SECTION(".data") = {
 #include "assets/thrown_model_91_partVerts.inc"
 };
 /// Part-local integer vertices of the slot-0x91 box; physical identity unproven.
@@ -3683,7 +3683,7 @@ static SVECTOR _gEffectWeaponMuzzleOffsets[34] = {
 /// a borrowed pointer. Reload emitters instead add them to copied spawn XYZ in
 /// the weapon parent's axes. The fourth halfword is zero and unused. Storage
 /// remains valid with gameplay for all spawned tasks.
-static const SVECTOR _gEffectWeaponEmissionOffsets[34] __attribute__((section(".data"))) = {
+static const SVECTOR _gEffectWeaponEmissionOffsets[34] SECTION(".data") = {
     { 0, 0, 0, 0 },
     { 0, 0, 256, 0 },
     { 0, 0, 320, 0 },
@@ -3725,7 +3725,7 @@ static const SVECTOR _gEffectWeaponEmissionOffsets[34] __attribute__((section(".
 /// the controller reparents its coordinate before applying these translations.
 /// The fourth halfword is zero and unused. These are distinct from the ordinary
 /// weapon muzzle placements, including the MM1 and M4A1 grenade profiles.
-static const SVECTOR _gEffectGrenadeMuzzleOffsets[34] __attribute__((section(".data"))) = {
+static const SVECTOR _gEffectGrenadeMuzzleOffsets[34] SECTION(".data") = {
     { 0, 0, 0, 0 },
     { 0, 384, 96, 0 },
     { 0, 448, 96, 0 },
@@ -3807,7 +3807,7 @@ static SVECTOR _gEffectGrenadeEmissionOffsets[34] = {
 ///
 /// The selector is unchecked. Radius growth is per tick, with the outer screen
 /// radius given by radius * 256 / depth pixels.
-static const _EffectCriticalHitStyle _gEffectCriticalHitStyles[6] __attribute__((section(".data"))) = {
+static const _EffectCriticalHitStyle _gEffectCriticalHitStyles[6] SECTION(".data") = {
     { EFFECT_CRITICAL_HIT_STYLE_SPIKES | EFFECT_CRITICAL_HIT_STYLE_COLOR(15, 15, 7), 24 }, // 0 yellow, spiked
     { EFFECT_CRITICAL_HIT_STYLE_COLOR(15, 7, 7), 32 },                                     // 1 light red, plain, faster growth
     { EFFECT_CRITICAL_HIT_STYLE_SPIKES | EFFECT_CRITICAL_HIT_STYLE_COLOR(7, 15, 15), 24 }, // 2 cyan, spiked
@@ -3819,7 +3819,7 @@ static const _EffectCriticalHitStyle _gEffectCriticalHitStyles[6] __attribute__(
 ///
 /// One entry is drawn per age 0..3. Spans 55/31 cover inclusive 56/32-texel
 /// square cells and also scale the billboard.
-static const _EffectImpactFlashFrame _gEffectImpactFlashFrames[4] __attribute__((section(".data"))) = {
+static const _EffectImpactFlashFrame _gEffectImpactFlashFrames[4] SECTION(".data") = {
     { 55, 112, 200, 176, 266, 576 },
     { 31, 192, 56, 192, 266, 512 },
     { 55, 168, 200, 192, 266, 576 },

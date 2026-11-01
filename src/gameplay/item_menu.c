@@ -347,7 +347,7 @@ UiObjectDesc gItemMenuTransferPanelDescriptors[ITEM_MENU_TRANSFER_PANEL_COUNT] =
 /// The first payload borrows a writable `CapActionRequest` until closing finishes;
 /// an already-collected object completes it during dispatch. The second payload
 /// is ignored. Unsupported IDs return zero at `TASK_MESSAGE_TABLE_END`.
-static const TaskMessageEntry _gItemPickupLidMessages[2] __attribute__((section(".data"))) = { { CAP_ACTION_MESSAGE_REQUEST, _itemPickupHandleLidActionRequest }, { TASK_MESSAGE_TABLE_END, NULL } };
+static const TaskMessageEntry _gItemPickupLidMessages[2] SECTION(".data") = { { CAP_ACTION_MESSAGE_REQUEST, _itemPickupHandleLidActionRequest }, { TASK_MESSAGE_TABLE_END, NULL } };
 
 /// Returns whether the transfer context forbids moving or swapping this item.
 ///

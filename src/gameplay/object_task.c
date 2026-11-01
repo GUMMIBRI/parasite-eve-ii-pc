@@ -32,7 +32,7 @@ u8 gCapRoomCompletionSoundsEnabled;
 /// The room selector takes the first descriptor matching the exact room key
 /// or area-default key in list order. Lists end at `TASK_DESC_END` and belong to
 /// the loaded map overlay; selected room callback code must also remain loaded.
-static TaskDesc* const _gObjectTaskStageRoomTables[6] __attribute__((section(".data"))) = {
+static TaskDesc* const _gObjectTaskStageRoomTables[6] SECTION(".data") = {
     NULL,
     gAkropolisStageRoomTaskDescriptors,
     gMapDryfieldRoomTaskDescriptors,
@@ -47,7 +47,7 @@ static TaskDesc* const _gObjectTaskStageRoomTables[6] __attribute__((section(".d
 /// writable reply unchanged; refuses every collected-key-item request with 0.
 /// Other IDs return zero at `TASK_MESSAGE_TABLE_END`. Installed on the selector
 /// itself in the room task slot, with no retained message payloads.
-static const TaskMessageEntry _gObjectTaskDefaultRoomMessages[3] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gObjectTaskDefaultRoomMessages[3] SECTION(".data") = {
     { ROOM_EVENT_MESSAGE_RESOLVE, objectTaskResolveDefaultRoomTransition },
     { ROOM_MESSAGE_USE_KEY_ITEM, objectTaskRefuseDefaultRoomKeyItemUse },
     { TASK_MESSAGE_TABLE_END, NULL },

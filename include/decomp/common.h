@@ -57,7 +57,9 @@
 /// for intrusive-list termination; NULL at a nonzero offset is invalid.
 #define PARENT_OF(ptr, type, member) ((type*)((u8*)(ptr) - OFFSET_OF(type, member)))
 
+#ifndef SECTION
 #define SECTION(x) __attribute__((section(x)))
+#endif
 
 /* Layout assertions describe the PlayStation's 32-bit structures. The host has 64-bit
  * pointers, so they cannot hold for structures that contain one; they are disabled in the

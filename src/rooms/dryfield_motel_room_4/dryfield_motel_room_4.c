@@ -44,7 +44,7 @@ enum {
 /// Four handlers followed by an end marker; unsupported IDs return zero.
 /// The live room task borrows this immutable table until it is released, so
 /// the overlay must stay loaded. The section preserves its stored data placement.
-static const TaskMessageEntry _gDryfieldMotelRoom4Messages[5] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gDryfieldMotelRoom4Messages[5] SECTION(".data") = {
     { ROOM_EVENT_MESSAGE_RESOLVE, _dryfieldMotelRoom4ResolveRoomEvent },
     { ROOM_MESSAGE_USE_KEY_ITEM, _dryfieldMotelRoom4RejectKeyItemUse },
     { DIRECTION_MESSAGE_ROOM_ACTION, _dryfieldMotelRoom4IgnoreRoomAction },
@@ -341,7 +341,7 @@ enum {
 /// Cue 1 adds one and companion playback adds 100 in the loaded type-1 bank.
 /// The surface borrows this immutable record while the room overlay is loaded;
 /// its data section preserves the stored placement.
-static const WorldCollisionFootstepSounds _gDryfieldMotelRoom4Surface1Footsteps __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldMotelRoom4Surface1Footsteps SECTION(".data") = {
     .walk         = DRYFIELD_MOTEL_ROOM_4_SURFACE_1_WALK_SOUND,
     .run          = DRYFIELD_MOTEL_ROOM_4_SURFACE_1_RUN_SOUND,
     .scriptedJump = DRYFIELD_MOTEL_ROOM_4_SURFACE_1_WALK_SOUND,
@@ -352,7 +352,7 @@ static const WorldCollisionFootstepSounds _gDryfieldMotelRoom4Surface1Footsteps 
 /// Cue 1 adds one and companion playback adds 100 in the loaded type-1 bank.
 /// The surface borrows this immutable record while the room overlay is loaded;
 /// its data section preserves the stored placement.
-static const WorldCollisionFootstepSounds _gDryfieldMotelRoom4Surface2Footsteps __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldMotelRoom4Surface2Footsteps SECTION(".data") = {
     .walk         = DRYFIELD_MOTEL_ROOM_4_SURFACE_2_WALK_SOUND,
     .run          = DRYFIELD_MOTEL_ROOM_4_SURFACE_2_RUN_SOUND,
     .scriptedJump = DRYFIELD_MOTEL_ROOM_4_SURFACE_2_WALK_SOUND,

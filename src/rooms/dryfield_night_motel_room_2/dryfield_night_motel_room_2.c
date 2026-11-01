@@ -79,7 +79,7 @@ static WorldCoordRoomLights   _gDryfieldNightMotelRoom2RoomLights;
 /// The room task borrows this read-only table while the overlay is loaded.
 /// The terminal record makes unsupported message IDs return zero. Authored
 /// storage remains in the overlay's data section.
-static const TaskMessageEntry _gDryfieldNightMotelRoom2RoomMessages[5] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gDryfieldNightMotelRoom2RoomMessages[5] SECTION(".data") = {
     { ROOM_EVENT_MESSAGE_RESOLVE, _roomVariantMainStreetMsg },
     { ROOM_MESSAGE_USE_KEY_ITEM, _dryfieldNightMotelRoom2RejectKeyItem },
     { DIRECTION_MESSAGE_ROOM_ACTION, _dryfieldNightMotelRoom2IgnoreRoomAction },
@@ -91,7 +91,7 @@ static const TaskMessageEntry _gDryfieldNightMotelRoom2RoomMessages[5] __attribu
 ///
 /// Signed halfword XYZ values use world-coordinate units; the fourth component
 /// is unused. Drawing only reads these overlay-owned points while the room is loaded.
-static const SVECTOR _gDryfieldNightMotelRoom2PairedFlarePoints[2] __attribute__((section(".data"))) = {
+static const SVECTOR _gDryfieldNightMotelRoom2PairedFlarePoints[2] SECTION(".data") = {
     { 1660, -970, 470, 0 },
     { 2480, -2160, 2030, 0 },
 };
@@ -100,7 +100,7 @@ static const SVECTOR _gDryfieldNightMotelRoom2PairedFlarePoints[2] __attribute__
 ///
 /// Signed halfword XYZ values use world-coordinate units; the fourth component
 /// is unused. Drawing only reads this overlay-owned point while the room is loaded.
-static const SVECTOR _gDryfieldNightMotelRoom2SingleFlarePoint __attribute__((section(".data"))) = { 3270, -1840, 4060, 0 };
+static const SVECTOR _gDryfieldNightMotelRoom2SingleFlarePoint SECTION(".data") = { 3270, -1840, 4060, 0 };
 
 WorldCoordRoomLighting gDryfieldNightMotelRoom2RoomLighting[1] = {
     { .lights = &_gDryfieldNightMotelRoom2RoomLights, .ambientTable = NULL },
@@ -1255,7 +1255,7 @@ enum {
 ///
 /// Walking and scripted jumps share entries 0x35/0x36; running uses 0x37/0x38
 /// in the loaded type-1 bank. Paired animation cues select base/base + 1.
-static const WorldCollisionFootstepSounds _gDryfieldNightMotelRoom2Class1FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldNightMotelRoom2Class1FootstepSounds SECTION(".data") = {
     .walk         = DRYFIELD_NIGHT_MOTEL_ROOM_2_CLASS_1_WALK_CUE_BASE,
     .run          = DRYFIELD_NIGHT_MOTEL_ROOM_2_CLASS_1_RUN_CUE_BASE,
     .scriptedJump = DRYFIELD_NIGHT_MOTEL_ROOM_2_CLASS_1_WALK_CUE_BASE,
@@ -1265,7 +1265,7 @@ static const WorldCollisionFootstepSounds _gDryfieldNightMotelRoom2Class1Footste
 ///
 /// Walking and scripted jumps share entries 1/2; running uses 3/4 in the loaded
 /// type-1 bank. Both classes occur in this room's collision grid.
-static const WorldCollisionFootstepSounds _gDryfieldNightMotelRoom2Classes2And4FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldNightMotelRoom2Classes2And4FootstepSounds SECTION(".data") = {
     .walk         = DRYFIELD_NIGHT_MOTEL_ROOM_2_CLASS_2_WALK_CUE_BASE,
     .run          = DRYFIELD_NIGHT_MOTEL_ROOM_2_CLASS_2_RUN_CUE_BASE,
     .scriptedJump = DRYFIELD_NIGHT_MOTEL_ROOM_2_CLASS_2_WALK_CUE_BASE,

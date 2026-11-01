@@ -1457,7 +1457,7 @@ enum {
 ///
 /// Walking and scripted jumps share a pair; running selects the next pair.
 /// The player adds one for cue 1 and 100 for companion cues. Keep the room loaded.
-static const WorldCollisionFootstepSounds _gNeoArkSubmarineTunnelSurface4FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gNeoArkSubmarineTunnelSurface4FootstepSounds SECTION(".data") = {
     .walk         = NEO_ARK_SUBMARINE_TUNNEL_SURFACE_4_WALK_SOUND,
     .run          = NEO_ARK_SUBMARINE_TUNNEL_SURFACE_4_RUN_SOUND,
     .scriptedJump = NEO_ARK_SUBMARINE_TUNNEL_SURFACE_4_WALK_SOUND,

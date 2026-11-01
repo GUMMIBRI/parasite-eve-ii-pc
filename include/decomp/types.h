@@ -6,6 +6,11 @@
 #include "port/gte_compat.h"
 #include "port/psyq_compat.h"
 
+/* Overlay data placement is a linker concern on the console; the host ignores it. */
+#ifdef __psyz
+#define SECTION(x)
+#endif
+
 #ifndef NULL
 #define NULL 0
 #endif

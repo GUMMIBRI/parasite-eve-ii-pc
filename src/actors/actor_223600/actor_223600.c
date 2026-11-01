@@ -522,7 +522,7 @@ u8 D_actor_223600_80150A28[256] = {
 /// Drawing takes a scalar mode; commands borrow an `ActorCommand`, and placement
 /// borrows an `ActorTransform`. The second payload is unused by all three.
 /// The task borrows this terminated map and its callbacks until teardown.
-static const TaskMessageEntry _gActor223600Messages[4] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gActor223600Messages[4] SECTION(".data") = {
     { ACTOR_MESSAGE_SET_MODEL_DRAW, _actor223600SetModelDraw },
     { ACTOR_COMMAND_MESSAGE_APPLY, _actor223600ApplyCommand },
     { ACTOR_MESSAGE_PLACE, actorMsgPlace },

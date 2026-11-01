@@ -279,7 +279,7 @@ enum {
 /// Content is unused; handlers borrow the published pickup id. Bounds use
 /// screen-centered pixels and ordering-table seeds count tags. The obtained
 /// notice is a separate recipe immediately following this table in the image.
-static const UiObjectDesc _gItemPickupChildPanelDescs[ITEM_PICKUP_CHILD_PANEL_COUNT] __attribute__((section(".data"))) = {
+static const UiObjectDesc _gItemPickupChildPanelDescs[ITEM_PICKUP_CHILD_PANEL_COUNT] SECTION(".data") = {
     { .style = USER_INTERFACE_PANEL_TITLE_STYLE, .bounds = { -144, -104, 144, 136 }, .otIndexSeed = 56, .taskFlags = TASK_BODY_NONE, .taskPriority = 192, .contentCallback = _itemPickupTitleTask },
     { .style = USER_INTERFACE_PANEL_TITLE_STYLE, .bounds = { -144, 32, 288, 48 }, .otIndexSeed = 44, .taskFlags = TASK_BODY_NONE, .taskPriority = 192, .contentCallback = _itemPickupAskTask },
     { .style = USER_INTERFACE_PANEL_TITLE_STYLE, .bounds = { -144, 32, 288, 48 }, .otIndexSeed = 44, .taskFlags = TASK_BODY_NONE, .taskPriority = 192, .contentCallback = _itemPickupInventoryFullTask },
@@ -294,7 +294,7 @@ enum {
 ///
 /// Bounds are screen-centered pixels; the handler fits them to two text rows.
 /// Content holds the catalog id in its low 16 bits; bit 16 allows timeout only.
-static const UiObjectDesc _gItemPickupObtainedNoticeDesc __attribute__((section(".data"))) = {
+static const UiObjectDesc _gItemPickupObtainedNoticeDesc SECTION(".data") = {
     .style           = USER_INTERFACE_PANEL_TITLE_STYLE,
     .bounds          = { -80, -40, 160, 80 },
     .otIndexSeed     = 8,
@@ -308,7 +308,7 @@ static const UiObjectDesc _gItemPickupObtainedNoticeDesc __attribute__((section(
 /// Content is unused; the handler reads the published pickup id and waits for
 /// menu-preview resources. The title parent places it below its own bounds.
 /// Bounds are screen-centered pixels and the ordering-table seed counts tags.
-static const UiObjectDesc _gItemPickupPreviewDesc __attribute__((section(".data"))) = {
+static const UiObjectDesc _gItemPickupPreviewDesc SECTION(".data") = {
     .style           = ITEM_PICKUP_PREVIEW_PANEL_STYLE,
     .bounds          = { -144, 0, 90, 70 },
     .otIndexSeed     = 52,
@@ -317,7 +317,7 @@ static const UiObjectDesc _gItemPickupPreviewDesc __attribute__((section(".data"
     .contentCallback = _itemPickupPreviewTask,
 };
 
-const MenuMapAreaName* const gMenuMapAreaNameTables[MENU_MAP_STAGE_COUNT] __attribute__((section(".data"))) = {
+const MenuMapAreaName* const gMenuMapAreaNameTables[MENU_MAP_STAGE_COUNT] SECTION(".data") = {
     gAkropolisStageAreaNames,
     gMapDryfieldAreaNames,
     gMapDryfieldFullAreaNames,
@@ -325,7 +325,7 @@ const MenuMapAreaName* const gMenuMapAreaNameTables[MENU_MAP_STAGE_COUNT] __attr
     gMapNeoArkAreaNames,
 };
 
-const MenuMapIcon* const gMenuMapIconTables[MENU_MAP_STAGE_COUNT] __attribute__((section(".data"))) = {
+const MenuMapIcon* const gMenuMapIconTables[MENU_MAP_STAGE_COUNT] SECTION(".data") = {
     gAkropolisStageIcons,
     gMapDryfieldIcons,
     gMapDryfieldFullIcons,
@@ -333,7 +333,7 @@ const MenuMapIcon* const gMenuMapIconTables[MENU_MAP_STAGE_COUNT] __attribute__(
     gMapNeoArkIcons,
 };
 
-const MenuMapMarker* gMenuMapMarkerTables[MENU_MAP_STAGE_COUNT] __attribute__((section(".data"))) = {
+const MenuMapMarker* gMenuMapMarkerTables[MENU_MAP_STAGE_COUNT] SECTION(".data") = {
     gAkropolisStageMarkers,
     gMapDryfieldMarkers,
     gMapDryfieldFullMarkers,
@@ -341,7 +341,7 @@ const MenuMapMarker* gMenuMapMarkerTables[MENU_MAP_STAGE_COUNT] __attribute__((s
     gMapNeoArkMarkers,
 };
 
-const MenuMapArea* gMenuMapAreaTables[MENU_MAP_STAGE_COUNT] __attribute__((section(".data"))) = {
+const MenuMapArea* gMenuMapAreaTables[MENU_MAP_STAGE_COUNT] SECTION(".data") = {
     gAkropolisStageAreas,
     gMapDryfieldAreas,
     gMapDryfieldFullAreas,
@@ -349,7 +349,7 @@ const MenuMapArea* gMenuMapAreaTables[MENU_MAP_STAGE_COUNT] __attribute__((secti
     gMapNeoArkAreas,
 };
 
-const u8* const gMenuMapPageFlagTables[MENU_MAP_STAGE_COUNT] __attribute__((section(".data"))) = {
+const u8* const gMenuMapPageFlagTables[MENU_MAP_STAGE_COUNT] SECTION(".data") = {
     gAkropolisStagePageFlagIds,
     gMapDryfieldPageFlagIds,
     gMapDryfieldFullPageFlagIds,
@@ -357,7 +357,7 @@ const u8* const gMenuMapPageFlagTables[MENU_MAP_STAGE_COUNT] __attribute__((sect
     gMapNeoArkPageFlagIds,
 };
 
-const MenuMapAreaShape* const gMenuMapAreaShapeTables[MENU_MAP_STAGE_COUNT] __attribute__((section(".data"))) = {
+const MenuMapAreaShape* const gMenuMapAreaShapeTables[MENU_MAP_STAGE_COUNT] SECTION(".data") = {
     gAkropolisStageAreaShapes,
     gMapDryfieldAreaShapes,
     gMapDryfieldFullAreaShapes,
@@ -372,7 +372,7 @@ enum {
     MENU_MAP_HELP_INITIAL_FILE_INDEX        = 1
 };
 
-const u8 gMenuMapNavigationLastPages[MENU_MAP_STAGE_COUNT] __attribute__((section(".data"))) = {
+const u8 gMenuMapNavigationLastPages[MENU_MAP_STAGE_COUNT] SECTION(".data") = {
     MENU_MAP_AKROPOLIS_NAVIGATION_LAST_PAGE,
     MAP_DRYFIELD_PAGE_COUNT,
     MAP_DRYFIELD_FULL_PAGE_COUNT,
@@ -380,7 +380,7 @@ const u8 gMenuMapNavigationLastPages[MENU_MAP_STAGE_COUNT] __attribute__((sectio
     MAP_NEO_ARK_PAGE_SHELTER_1F,
 };
 
-const u8 gMenuMapAreaShapeCounts[MENU_MAP_STAGE_COUNT] __attribute__((section(".data"))) = {
+const u8 gMenuMapAreaShapeCounts[MENU_MAP_STAGE_COUNT] SECTION(".data") = {
     ARRAY_SIZE(gAkropolisStageAreaShapes),
     ARRAY_SIZE(gMapDryfieldAreaShapes),
     ARRAY_SIZE(gMapDryfieldFullAreaShapes),
@@ -390,7 +390,7 @@ const u8 gMenuMapAreaShapeCounts[MENU_MAP_STAGE_COUNT] __attribute__((section(".
 
 u8 gMenuMapHelpFileIndex = MENU_MAP_HELP_INITIAL_FILE_INDEX;
 
-const UiObjectDesc gMenuMapPanelDesc __attribute__((section(".data"))) = {
+const UiObjectDesc gMenuMapPanelDesc SECTION(".data") = {
     .style           = (s32)USER_INTERFACE_PANEL_NO_FRAME,
     .bounds          = { -145, -107, 290, 215 },
     .otIndexSeed     = 56,
@@ -399,7 +399,7 @@ const UiObjectDesc gMenuMapPanelDesc __attribute__((section(".data"))) = {
     .contentCallback = menuMapTask,
 };
 
-const UiObjectDesc gMenuMapHelpPanelDesc __attribute__((section(".data"))) = {
+const UiObjectDesc gMenuMapHelpPanelDesc SECTION(".data") = {
     .style           = USER_INTERFACE_PANEL_TITLE_STYLE,
     .bounds          = { -140, 50, 280, 50 },
     .otIndexSeed     = 20,
@@ -408,7 +408,7 @@ const UiObjectDesc gMenuMapHelpPanelDesc __attribute__((section(".data"))) = {
     .contentCallback = menuMapHelpTask,
 };
 
-const UiObjectDesc gMenuMapAreaNamePanelDesc __attribute__((section(".data"))) = {
+const UiObjectDesc gMenuMapAreaNamePanelDesc SECTION(".data") = {
     .style           = MENU_MAP_AREA_NAME_PANEL_UNTITLED_STYLE,
     .bounds          = { -140, -107, 170, 15 },
     .otIndexSeed     = 24,
@@ -420,84 +420,84 @@ const UiObjectDesc gMenuMapAreaNamePanelDesc __attribute__((section(".data"))) =
 /// Retained Shift-JIS command text "捨てる" (Discard), with no current reader.
 ///
 /// Includes one zero byte after the NUL terminator.
-static const u8 _gItemMenuJapaneseDiscardText[8] __attribute__((section(".data"))) = "\x8E\xCC\x82\xC4\x82\xE9";
+static const u8 _gItemMenuJapaneseDiscardText[8] SECTION(".data") = "\x8E\xCC\x82\xC4\x82\xE9";
 
-const u8 gItemMenuDiscardText[] __attribute__((section(".data")))        = "Discard";
-const u8 gItemMenuHotspotItemText[5] __attribute__((section(".data")))   = "Item";
-const u8 gItemMenuHotspotExamineText[] __attribute__((section(".data"))) = "Examine";
-const u8 gItemMenuHotspotPushText[] __attribute__((section(".data")))    = "Push";
-const u8 gItemMenuPeReviveText[] __attribute__((section(".data")))       = "Revive";
-const u8 gItemMenuPeStrengthenText[] __attribute__((section(".data")))   = "Strengthen";
-const u8 gItemMenuPeCancelText[12] __attribute__((section(".data")))     = "Cancel\000\000Use";
+const u8 gItemMenuDiscardText[] SECTION(".data")        = "Discard";
+const u8 gItemMenuHotspotItemText[5] SECTION(".data")   = "Item";
+const u8 gItemMenuHotspotExamineText[] SECTION(".data") = "Examine";
+const u8 gItemMenuHotspotPushText[] SECTION(".data")    = "Push";
+const u8 gItemMenuPeReviveText[] SECTION(".data")       = "Revive";
+const u8 gItemMenuPeStrengthenText[] SECTION(".data")   = "Strengthen";
+const u8 gItemMenuPeCancelText[12] SECTION(".data")     = "Cancel\000\000Use";
 /// Notice text reporting that the required ammunition is unavailable.
-static const u8 _gItemMenuWrongAmmoText[] __attribute__((section(".data"))) = "You do not habe the correct ammo.";
+static const u8 _gItemMenuWrongAmmoText[] SECTION(".data") = "You do not habe the correct ammo.";
 /// Notice text for an item whose discard restriction prevents removal.
-static const u8 _gItemMenuCannotDiscardText[] __attribute__((section(".data"))) = "You cannot discard this item.";
+static const u8 _gItemMenuCannotDiscardText[] SECTION(".data") = "You cannot discard this item.";
 /// Notice text for an equipped item that cannot be discarded.
-static const u8 _gItemMenuCannotDiscardEquippedText[] __attribute__((section(".data"))) = "You cannot discard equipped items.";
+static const u8 _gItemMenuCannotDiscardEquippedText[] SECTION(".data") = "You cannot discard equipped items.";
 /// Notice text for ammunition that cannot be discarded while loaded.
-static const u8 _gItemMenuCannotDiscardLoadedAmmoText[] __attribute__((section(".data"))) = "You cannot discard loaded ammo.";
-const u8        gItemMenuNoApplicableWeaponText[] __attribute__((section(".data")))       = "No applicable weapon equipped.";
+static const u8 _gItemMenuCannotDiscardLoadedAmmoText[] SECTION(".data") = "You cannot discard loaded ammo.";
+const u8        gItemMenuNoApplicableWeaponText[] SECTION(".data")       = "No applicable weapon equipped.";
 /// Notice text reporting that an item cannot move to the chosen destination.
-static const u8 _gItemMenuCannotMoveHereText[] __attribute__((section(".data"))) = "Cannot move this item here.";
+static const u8 _gItemMenuCannotMoveHereText[] SECTION(".data") = "Cannot move this item here.";
 /// Notice text for a transfer destination with no available capacity.
-static const u8 _gItemMenuDestinationFullText[] __attribute__((section(".data"))) = "Destination full.";
+static const u8 _gItemMenuDestinationFullText[] SECTION(".data") = "Destination full.";
 /// Notice text reporting that an equipped item cannot be moved.
-static const u8 _gItemMenuCannotMoveEquippedText[] __attribute__((section(".data"))) = "Cannot move equipped items.";
+static const u8 _gItemMenuCannotMoveEquippedText[] SECTION(".data") = "Cannot move equipped items.";
 /// Notice text reporting that ammunition cannot be a swap partner.
-static const u8 _gItemMenuCannotSwitchWithAmmoText[] __attribute__((section(".data"))) = "Cannot switch with ammunition.";
+static const u8 _gItemMenuCannotSwitchWithAmmoText[] SECTION(".data") = "Cannot switch with ammunition.";
 /// Notice text reporting that an equipped item cannot be swapped.
-static const u8 _gItemMenuCannotSwitchEquippedText[] __attribute__((section(".data"))) = "Cannot switch equiped items.";
+static const u8 _gItemMenuCannotSwitchEquippedText[] SECTION(".data") = "Cannot switch equiped items.";
 /// Notice text reporting that an equipped item cannot be a swap partner.
-static const u8 _gItemMenuCannotSwitchWithEquippedText[] __attribute__((section(".data"))) = "Cannot switch with equipped items.";
+static const u8 _gItemMenuCannotSwitchWithEquippedText[] SECTION(".data") = "Cannot switch with equipped items.";
 /// Notice text reporting that loaded ammunition cannot be moved.
-static const u8 _gItemMenuCannotMoveLoadedAmmoText[] __attribute__((section(".data"))) = "Cannot move loaded ammunition.";
+static const u8 _gItemMenuCannotMoveLoadedAmmoText[] SECTION(".data") = "Cannot move loaded ammunition.";
 /// Notice text for a P.E. level purchase with insufficient experience.
-static const u8 _gItemMenuInsufficientExpText[] __attribute__((section(".data"))) = "Insufficient EXP.";
+static const u8 _gItemMenuInsufficientExpText[] SECTION(".data") = "Insufficient EXP.";
 /// Notice text for a P.E. ability that is already at its maximum level.
-static const u8 _gItemMenuMaxPeLevelText[] __attribute__((section(".data"))) = "Max level.";
+static const u8 _gItemMenuMaxPeLevelText[] SECTION(".data") = "Max level.";
 /// Notice text reporting insufficient MP.
-static const u8 _gItemMenuInsufficientMpText[] __attribute__((section(".data"))) = "Insufficient MP.";
+static const u8 _gItemMenuInsufficientMpText[] SECTION(".data") = "Insufficient MP.";
 /// Notice text for a cancelled save operation.
-static const u8 _gItemMenuSaveCancelledText[] __attribute__((section(".data"))) = "Save cancelled.";
+static const u8 _gItemMenuSaveCancelledText[] SECTION(".data") = "Save cancelled.";
 /// Confirmation prompt before discarding the selected inventory row.
-static const u8 _gItemMenuConfirmDiscardText[] __attribute__((section(".data"))) = "Really discard?";
+static const u8 _gItemMenuConfirmDiscardText[] SECTION(".data") = "Really discard?";
 /// Notice text reporting a completed save.
-static const u8 _gItemMenuSaveCompleteText[] __attribute__((section(".data"))) = "Save complete.";
+static const u8 _gItemMenuSaveCompleteText[] SECTION(".data") = "Save complete.";
 /// Notice text for an item that cannot currently be used.
-static const u8 _gItemMenuNoUseNowText[] __attribute__((section(".data"))) = "No use for this now.";
+static const u8 _gItemMenuNoUseNowText[] SECTION(".data") = "No use for this now.";
 /// Stored notice text saying the item's use is unknown; no producer is known.
-static const u8 _gItemMenuUnknownUseText[] __attribute__((section(".data"))) = "I don't no how to use this.";
+static const u8 _gItemMenuUnknownUseText[] SECTION(".data") = "I don't no how to use this.";
 /// Notice text when no other carried weapon is available for exchange.
-static const u8 _gItemMenuNoOtherWeaponText[] __attribute__((section(".data"))) = "I have no other weapons.";
+static const u8 _gItemMenuNoOtherWeaponText[] SECTION(".data") = "I have no other weapons.";
 /// Notice text when no other carried armor is available for exchange.
-static const u8 _gItemMenuNoOtherArmorText[] __attribute__((section(".data"))) = "I have no other armor.";
+static const u8 _gItemMenuNoOtherArmorText[] SECTION(".data") = "I have no other armor.";
 /// Notice text for an add-on use requiring a carried MP5A5 variant.
-static const u8 _gItemMenuMp5a5RequiredText[] __attribute__((section(".data"))) = "MP5A5 required.";
+static const u8 _gItemMenuMp5a5RequiredText[] SECTION(".data") = "MP5A5 required.";
 /// Notice text for an add-on use requiring a carried M4A1 variant.
-static const u8 _gItemMenuM4a1RequiredText[] __attribute__((section(".data"))) = "M4A1 required.";
+static const u8 _gItemMenuM4a1RequiredText[] SECTION(".data") = "M4A1 required.";
 /// Stored notice text requiring an AS12; no producer is known.
-static const u8 _gItemMenuAs12RequiredText[] __attribute__((section(".data"))) = "AS12 required.";
+static const u8 _gItemMenuAs12RequiredText[] SECTION(".data") = "AS12 required.";
 /// Notice text for a Snail Magazine use requiring a carried P08.
-static const u8 _gItemMenuP08RequiredText[] __attribute__((section(".data"))) = "P08 required.";
+static const u8 _gItemMenuP08RequiredText[] SECTION(".data") = "P08 required.";
 /// Notice text when the carried weapon already has the requested modification.
-static const u8 _gItemMenuNoFurtherModificationsText[] __attribute__((section(".data"))) = "No further modifications.";
+static const u8 _gItemMenuNoFurtherModificationsText[] SECTION(".data") = "No further modifications.";
 /// Notice text when replacing a weapon add-on needs a free inventory slot.
-static const u8 _gItemMenuEmptySlotRequiredText[] __attribute__((section(".data"))) = "Empty slot required.";
+static const u8 _gItemMenuEmptySlotRequiredText[] SECTION(".data") = "Empty slot required.";
 /// Notice text after consuming a permanent maximum-HP boost.
-static const u8 _gItemMenuMaxHpIncreasedText[] __attribute__((section(".data"))) = "Maximum HP increased.";
+static const u8 _gItemMenuMaxHpIncreasedText[] SECTION(".data") = "Maximum HP increased.";
 /// Notice text after consuming a permanent maximum-MP boost.
-static const u8 _gItemMenuMaxMpIncreasedText[] __attribute__((section(".data"))) = "Maximum MP increased.";
+static const u8 _gItemMenuMaxMpIncreasedText[] SECTION(".data") = "Maximum MP increased.";
 /// Notice text when a transfer restriction blocks moving or swapping an item.
-static const u8 _gItemMenuCannotMoveItemText[] __attribute__((section(".data"))) = "Cannot move this item.";
+static const u8 _gItemMenuCannotMoveItemText[] SECTION(".data") = "Cannot move this item.";
 /// Stored notice text refusing to swap the source item; no producer is known.
-static const u8 _gItemMenuCannotSwitchItemText[] __attribute__((section(".data"))) = "Cannot switch this item.";
+static const u8 _gItemMenuCannotSwitchItemText[] SECTION(".data") = "Cannot switch this item.";
 /// Notice text when a transfer restriction blocks the selected swap partner.
-static const u8 _gItemMenuCannotSwitchWithItemText[] __attribute__((section(".data")))              = "Cannot switch with this item.";
-const u8        gItemMenuPeAreaEffectLabel[] __attribute__((section(".data")))                      = "Area of Effect";
-const u8        gItemMenuPeCastingCostLabel[] __attribute__((section(".data")))                     = "Casting Cost";
-const u8        gItemMenuPeAtpLossLabel[] __attribute__((section(".data")))                         = "ATP Loss";
-const u8* const gItemMenuNoticeTexts[ITEM_MENU_NOTICE_TEXT_COUNT] __attribute__((section(".data"))) = {
+static const u8 _gItemMenuCannotSwitchWithItemText[] SECTION(".data")              = "Cannot switch with this item.";
+const u8        gItemMenuPeAreaEffectLabel[] SECTION(".data")                      = "Area of Effect";
+const u8        gItemMenuPeCastingCostLabel[] SECTION(".data")                     = "Casting Cost";
+const u8        gItemMenuPeAtpLossLabel[] SECTION(".data")                         = "ATP Loss";
+const u8* const gItemMenuNoticeTexts[ITEM_MENU_NOTICE_TEXT_COUNT] SECTION(".data") = {
     _gItemMenuWrongAmmoText,
     _gItemMenuCannotDiscardText,
     _gItemMenuCannotDiscardEquippedText,
@@ -564,18 +564,18 @@ UiListRowCallback gItemMenuPeAbilityRowCallbacks[1] = {
 };
 
 /// Title of the Fire P.E. ability list.
-static const char _gItemMenuPeFireTitle[] __attribute__((section(".data"))) = "Fire";
+static const char _gItemMenuPeFireTitle[] SECTION(".data") = "Fire";
 
 /// Title of the Wind P.E. ability list.
-static const char _gItemMenuPeWindTitle[] __attribute__((section(".data"))) = "Wind";
+static const char _gItemMenuPeWindTitle[] SECTION(".data") = "Wind";
 
 /// Title of the Water P.E. ability list.
-static const char _gItemMenuPeWaterTitle[] __attribute__((section(".data"))) = "Water";
+static const char _gItemMenuPeWaterTitle[] SECTION(".data") = "Water";
 
 /// Title of the Earth P.E. ability list.
-static const char _gItemMenuPeEarthTitle[] __attribute__((section(".data"))) = "Earth";
+static const char _gItemMenuPeEarthTitle[] SECTION(".data") = "Earth";
 
-const char* const gItemMenuPeElementTitles[4] __attribute__((section(".data"))) = {
+const char* const gItemMenuPeElementTitles[4] SECTION(".data") = {
     _gItemMenuPeFireTitle,
     _gItemMenuPeWindTitle,
     _gItemMenuPeWaterTitle,
@@ -604,7 +604,7 @@ enum {
     ITEM_MENU_PE_COMMAND_PANEL_UNTITLED_STYLE = 3,
 };
 
-const UiObjectDesc gItemMenuPeCommandPanelDesc __attribute__((section(".data"))) = {
+const UiObjectDesc gItemMenuPeCommandPanelDesc SECTION(".data") = {
     .style           = ITEM_MENU_PE_COMMAND_PANEL_UNTITLED_STYLE,
     .bounds          = { -136, -50, 70, 80 },
     .otIndexSeed     = 20,

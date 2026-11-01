@@ -111,7 +111,7 @@ static AnimationSet** const _gActorMotionAnimBanks19[1] SECTION(".data") = {
 TaskDesc gPatioLeapingStrangersTaskDesc = { { { (TASK_BODY_TMD | TASK_DESC_SKIP_AUTO_MODEL_BUFFER), TASK_PRIORITY_CONTROL } }, _patioLeapingStrangersTask, { .model = &_gStrangerGrinningBody } };
 
 /// Message map for the script-controlled Grinning Stranger and its leap sequence.
-static const TaskMessageEntry _gPatioLeapingStrangersMessages[6] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gPatioLeapingStrangersMessages[6] SECTION(".data") = {
     { ACTOR_MESSAGE_PLAY_ANIMATION, _actorMotionPlayAnim19 },
     { ACTOR_MESSAGE_PLACE, actorMsgPlaceEuler },
     { ACTOR_MESSAGE_SET_MODEL_DRAW, _patioLeapingStrangersSetDrawMode },

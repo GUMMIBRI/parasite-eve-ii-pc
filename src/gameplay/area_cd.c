@@ -58,7 +58,7 @@ u32 D_8010CAC8[2] = { 0, 0xE1EFCD00 };
 ///
 /// Adding fileNumber / 100 produces the request's group byte. Entries retain
 /// their two-byte stride; the group byte consumes the low byte of the sum.
-static const u16 _gLoadingAreaFileGroupBases[AREA_RESOURCE_FILE_GROUP_BASE_2 + 1] __attribute__((section(".data"))) = { 10, 20, 30, 40, 50, 60, 0, 1, 2 };
+static const u16 _gLoadingAreaFileGroupBases[AREA_RESOURCE_FILE_GROUP_BASE_2 + 1] SECTION(".data") = { 10, 20, 30, 40, 50, 60, 0, 1, 2 };
 
 /// Queues the current placement's global-library file and signed texture relocation.
 ///

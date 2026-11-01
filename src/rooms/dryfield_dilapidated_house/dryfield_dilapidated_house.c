@@ -7,7 +7,7 @@
 #include <libgte.h>
 #include <libgte.h>
 #include <libgs.h>
-#include <rand.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "gte.h"

@@ -5,7 +5,7 @@
 #include <libgpu.h>
 #include <libgte.h>
 #include <memory.h>
-#include <rand.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "gte.h"
@@ -61,7 +61,7 @@
 #include "main/text.h"
 #include "main/wipsys.h"
 #include <memory.h>
-#include <rand.h>
+#include <stdlib.h>
 
 /// Geometry references are byte offsets into eight-byte SVECTOR entries.
 /// Low reference bits are discarded; their meaning is unproven for these records.

@@ -130,7 +130,7 @@ static s8 _gPatioSwatMemberAnimationBlendFrames[5][5] = { 0 };
 #include "assets/rooms/akropolis/patio/swat_bank.inc"
 
 /// Message map for the scripted SWAT member's drawing, commands and placement.
-static const TaskMessageEntry _gPatioSwatMemberMessages[4] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gPatioSwatMemberMessages[4] SECTION(".data") = {
     { ACTOR_MESSAGE_SET_MODEL_DRAW, _patioSwatMemberSetModelDraw },
     { ACTOR_COMMAND_MESSAGE_APPLY, _patioSwatMemberApplyCommand },
     { ACTOR_MESSAGE_PLACE, _patioSwatMemberPlace },

@@ -86,7 +86,7 @@ static WorldCoordRoomLights   _gNeoArkPyramidRoomLights;
 /// Payloads are respectively two RoomEventMsg pointers, an item ID, a borrowed
 /// DirectionActionRequest and a command ID. TASK_MESSAGE_TABLE_END closes the
 /// read-only table; its storage and callbacks must outlive the room receiver.
-static const TaskMessageEntry _gNeoArkPyramidRoomMessages[5] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gNeoArkPyramidRoomMessages[5] SECTION(".data") = {
     { ROOM_EVENT_MESSAGE_RESOLVE, _neoArkPyramidResolveRoomVariant },
     { ROOM_MESSAGE_USE_KEY_ITEM, _neoArkPyramidRejectKeyItemUse },
     { DIRECTION_MESSAGE_ROOM_ACTION, _neoArkPyramidHandleRoomAction },

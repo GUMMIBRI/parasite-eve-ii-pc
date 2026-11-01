@@ -4,7 +4,7 @@
 #include <libgte.h>
 #include <libgpu.h>
 #include <memory.h>
-#include <rand.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "common.h"
@@ -128,24 +128,24 @@ static void _titleUpdateScreenTask(Task* task);
 /// Retained NUL-terminated text for New Game; the retail menu uses atlas text.
 ///
 /// The label block's word alignment and .data placement retain the loaded image layout.
-static const char _gTitleMenuNewGameLabel[] __attribute__((section(".data"), aligned(4))) = "New Game";
+static const char _gTitleMenuNewGameLabel[] SECTION(".data") __attribute__((aligned(4))) = "New Game";
 /// Retained NUL-terminated text for Load Game; the retail menu uses atlas text.
-static const char _gTitleMenuLoadGameLabel[] __attribute__((section(".data"), aligned(4))) = "Load Game";
+static const char _gTitleMenuLoadGameLabel[] SECTION(".data") __attribute__((aligned(4))) = "Load Game";
 /// Retained NUL-terminated text for Configuration; the retail menu uses atlas text.
-static const char _gTitleMenuConfigurationLabel[] __attribute__((section(".data"), aligned(4))) = "Configuration";
+static const char _gTitleMenuConfigurationLabel[] SECTION(".data") __attribute__((aligned(4))) = "Configuration";
 /// Retained NUL-terminated text for the unreachable Debug Option menu entry.
-static const char _gTitleMenuDebugOptionLabel[] __attribute__((section(".data"), aligned(4))) = "Debug Option";
+static const char _gTitleMenuDebugOptionLabel[] SECTION(".data") __attribute__((aligned(4))) = "Debug Option";
 /// Retained NUL-terminated text for the skipped Extra Game menu entry.
-static const char _gTitleMenuExtraGameLabel[] __attribute__((section(".data"), aligned(4))) = "Extra Game";
+static const char _gTitleMenuExtraGameLabel[] SECTION(".data") __attribute__((aligned(4))) = "Extra Game";
 /// Retained NUL-terminated text for the skipped Survival menu entry.
-static const char _gTitleMenuSurvivalLabel[] __attribute__((section(".data"), aligned(4))) = "Survival";
+static const char _gTitleMenuSurvivalLabel[] SECTION(".data") __attribute__((aligned(4))) = "Survival";
 
 /// Retained text-label pointers indexed by TITLE_MENU_ entry; there is no terminator.
 ///
 /// All six labels remain in the loaded image, but the retail menu draws its
 /// three reachable entries from the texture atlas and never reads this table.
 /// Explicit .data placement retains the table beside its labels.
-static const char* const _gTitleMenuTextLabels[TITLE_MENU_DEBUG_OPTION + 1] __attribute__((section(".data"))) = {
+static const char* const _gTitleMenuTextLabels[TITLE_MENU_DEBUG_OPTION + 1] SECTION(".data") = {
     [TITLE_MENU_SURVIVAL]      = _gTitleMenuSurvivalLabel,
     [TITLE_MENU_EXTRA_GAME]    = _gTitleMenuExtraGameLabel,
     [TITLE_MENU_NEW_GAME]      = _gTitleMenuNewGameLabel,
@@ -165,7 +165,7 @@ enum {
 /// Confirmation passes zero for both spawn payloads. Only New Game, Load Game
 /// and Configuration are reachable; the other entries dispatch the exit task.
 /// Explicit .data placement retains its position in the loaded image.
-static const s32 _gTitleMenuTaskSlots[TITLE_MENU_DEBUG_OPTION + 1] __attribute__((section(".data"))) = {
+static const s32 _gTitleMenuTaskSlots[TITLE_MENU_DEBUG_OPTION + 1] SECTION(".data") = {
     [TITLE_MENU_SURVIVAL]      = TITLE_MENU_EXIT_TASK_SLOT,
     [TITLE_MENU_EXTRA_GAME]    = TITLE_MENU_EXIT_TASK_SLOT,
     [TITLE_MENU_NEW_GAME]      = TITLE_START_SESSION_TASK_SLOT,

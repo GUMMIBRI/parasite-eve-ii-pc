@@ -8,7 +8,7 @@
 #include <libgte.h>
 #include <libcd.h>
 #include <libgs.h>
-#include <rand.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "common.h"

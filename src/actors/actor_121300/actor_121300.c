@@ -4,7 +4,7 @@
 #include <libgte.h>
 #include <libgpu.h>
 #include <abs.h>
-#include <rand.h>
+#include <stdlib.h>
 
 #include "common.h"
 

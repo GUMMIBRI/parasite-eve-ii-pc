@@ -579,7 +579,7 @@ enum {
 /// Walking and scripted jumps use entries 0x3D/0x3E, running 0x3F/0x40;
 /// companion playback adds 100 to those entry numbers.
 /// Playback only reads this record; its storage belongs to the overlay's data image.
-static const WorldCollisionFootstepSounds _gNeoArkAltarFootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gNeoArkAltarFootstepSounds SECTION(".data") = {
     .walk         = NEO_ARK_ALTAR_WALK_FOOTSTEP_BASE,
     .run          = NEO_ARK_ALTAR_RUN_FOOTSTEP_BASE,
     .scriptedJump = NEO_ARK_ALTAR_WALK_FOOTSTEP_BASE,

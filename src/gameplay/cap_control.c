@@ -80,7 +80,7 @@ enum { CAP_CONTROL_MESSAGE_LEGACY_END = -1 };
 /// is not TASK_MESSAGE_TABLE_END: any other ID would search past this array,
 /// and -1 would select a NULL handler. Payloads and replies follow the public
 /// CAP control contract; the table stays live with gameplay while installed.
-static const TaskMessageEntry _gCapControlMessages[10] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gCapControlMessages[10] SECTION(".data") = {
     { CAP_CONTROL_MESSAGE_START, _capStartControlledSequence },
     { CAP_CONTROL_MESSAGE_RESUME_TIMED_RECORD, _capResumeTimedRecord },
     { CAP_CONTROL_MESSAGE_ABORT, _capAbortControlledPlayback },

@@ -19,7 +19,7 @@
 #include "main/ui.h"
 #include "main/wipsys.h"
 
-const UiObjectDesc gTelephoneMenuDescriptor __attribute__((section(".data"))) = { USER_INTERFACE_PANEL_TITLE_STYLE, { -64, -32, 128, 64 }, 60, 0, TASK_BODY_NONE, 192, telephoneDispatchMenuTask, 0 };
+const UiObjectDesc gTelephoneMenuDescriptor SECTION(".data") = { USER_INTERFACE_PANEL_TITLE_STYLE, { -64, -32, 128, 64 }, 60, 0, TASK_BODY_NONE, 192, telephoneDispatchMenuTask, 0 };
 
 /// Captures the player model root's local XYZ and signed-turn yaw for saving.
 ///

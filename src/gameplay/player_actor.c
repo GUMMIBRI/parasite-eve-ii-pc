@@ -6,7 +6,7 @@
 #include <libgte.h>
 #include <libgpu.h>
 #include <libgs.h>
-#include <rand.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "gte.h"
@@ -186,7 +186,7 @@ STATIC_ASSERT_SIZEOF(_PlayerActorWeaponAttacks, sizeof(TaskFunc) * PLAYER_ACTOR_
 #include "main/tmd.h"
 #include "main/wipsys.h"
 #include <abs.h>
-#include <rand.h>
+#include <stdlib.h>
 
 #include "assets/engine/animation/player_schema.h"
 
@@ -996,7 +996,7 @@ static _PlayerActorVibrationPreset _gPlayerActorVibrationPresets[1] = {
 /// Rows select saved characterId minus one (characterId 1..2). Character 1
 /// chooses model parts 18/15, character 2 root 0 for either selector. The
 /// selectors' anatomical or action roles are unproven; neither is a weapon id.
-static const u8 _gPlayerActorCharacterPartIndices[2][2] __attribute__((section(".data"))) = {
+static const u8 _gPlayerActorCharacterPartIndices[2][2] SECTION(".data") = {
     { 18, 15 },
     { 0, 0 },
 };

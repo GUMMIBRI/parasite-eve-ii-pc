@@ -5,7 +5,7 @@
 #include <libgpu.h>
 #include <libgte.h>
 #include <libgte.h>
-#include <rand.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "gte.h"
@@ -53,7 +53,7 @@
 #include "main/text.h"
 #include "main/ui.h"
 #include "main/wipsys.h"
-#include <rand.h>
+#include <stdlib.h>
 
 /// Radar projection uses Q12 zoom and eight fractional bits per screen pixel.
 /// Palette constants describe the sixteen-entry RGB555 ability footprint.

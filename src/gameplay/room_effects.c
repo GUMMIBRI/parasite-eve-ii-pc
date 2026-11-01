@@ -1206,7 +1206,7 @@ TaskDesc gEffectTaskDescriptors[667] = {
 /// Areas 1..20 are supported. Zero suppresses the ambient task; nonzero entries
 /// select bank-6 descriptors and require the area's effect resources and callback
 /// code to remain loaded. Values are task types, not packed effect IDs.
-static const s32 _gRoomEffectAcropolisTaskTypes[20] __attribute__((section(".data"))) = {
+static const s32 _gRoomEffectAcropolisTaskTypes[20] SECTION(".data") = {
     [GAME_AREA_AKROPOLIS_SQUARE - 1]                 = 0x02D,
     [GAME_AREA_AKROPOLIS_EAST_ELEVATOR_HALL - 1]     = 0x021,
     [GAME_AREA_AKROPOLIS_PATIO - 1]                  = 0x083,
@@ -1233,7 +1233,7 @@ static const s32 _gRoomEffectAcropolisTaskTypes[20] __attribute__((section(".dat
 /// Areas 1..38 are supported. Zero suppresses the ambient task; nonzero entries
 /// select bank-6 descriptors and require the area's effect resources and callback
 /// code to remain loaded. Values are task types, not packed effect IDs.
-static const s32 _gRoomEffectDryfieldTaskTypes[38] __attribute__((section(".data"))) = {
+static const s32 _gRoomEffectDryfieldTaskTypes[38] SECTION(".data") = {
     [GAME_AREA_DRYFIELD_GAS_STATION - 1]       = 0x0C2,
     [GAME_AREA_DRYFIELD_MAIN_STREET - 1]       = 0x0C3,
     [GAME_AREA_DRYFIELD_GENERAL_STORE - 1]     = 0x0C4,
@@ -1278,7 +1278,7 @@ static const s32 _gRoomEffectDryfieldTaskTypes[38] __attribute__((section(".data
 /// Areas 1..38 are supported. Zero suppresses the ambient task; nonzero entries
 /// select bank-6 descriptors and require the area's effect resources and callback
 /// code to remain loaded. Values are task types, not packed effect IDs.
-static const s32 _gRoomEffectDryfieldNightTaskTypes[38] __attribute__((section(".data"))) = {
+static const s32 _gRoomEffectDryfieldNightTaskTypes[38] SECTION(".data") = {
     [GAME_AREA_DRYFIELD_NIGHT_GAS_STATION - 1]       = 0x100,
     [GAME_AREA_DRYFIELD_NIGHT_MAIN_STREET - 1]       = 0x101,
     [GAME_AREA_DRYFIELD_NIGHT_GENERAL_STORE - 1]     = 0x102,
@@ -1323,7 +1323,7 @@ static const s32 _gRoomEffectDryfieldNightTaskTypes[38] __attribute__((section("
 /// Areas 1..49 are supported. Zero suppresses the ambient task; nonzero entries
 /// select bank-6 descriptors and require the area's effect resources and callback
 /// code to remain loaded. Values are task types, not packed effect IDs.
-static const s32 _gRoomEffectMineShelterTaskTypes[49] __attribute__((section(".data"))) = {
+static const s32 _gRoomEffectMineShelterTaskTypes[49] SECTION(".data") = {
     [GAME_AREA_MINE_MESA - 1]                             = 0x120,
     [GAME_AREA_MINE_CAVERN - 1]                           = 0x121,
     [GAME_AREA_MINE_TUNNEL_ENTRANCE - 1]                  = 0x122,
@@ -1379,7 +1379,7 @@ static const s32 _gRoomEffectMineShelterTaskTypes[49] __attribute__((section(".d
 /// Areas 1..33 are supported. A zero entry suppresses the area's ambient task;
 /// nonzero entries select bank-6 descriptors and require that area's effect
 /// resources and callbacks to be loaded. These are task types, not packed IDs.
-static const s32 _gRoomEffectShelterNeoArkTaskTypes[33] __attribute__((section(".data"))) = {
+static const s32 _gRoomEffectShelterNeoArkTaskTypes[33] SECTION(".data") = {
     [GAME_AREA_SHELTER_1F_PARKING_GARAGE - 1]    = 0x163,
     [GAME_AREA_SHELTER_1F_VEHICULAR_AIRLOCK - 1] = 0x164,
     [GAME_AREA_SHELTER_1F_BULWARK - 1]           = 0x165,

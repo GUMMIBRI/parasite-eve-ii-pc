@@ -58,25 +58,25 @@ static void _itemMenuUpdatePromptTask(UiObject* object, Task* task);
 
 u8       gItemMenuAddonUsedText[6]                                            = "used.";
 u8       gItemMenuAddonCreatedText[9]                                         = "created.";
-const u8 gItemMenuKeyItemRefusedText[21] __attribute__((section(".data")))    = "No use for this now.";
-const u8 gItemMenuKeyItemUsedText[5] __attribute__((section(".data")))        = "Used";
-const u8 gItemMenuSelectDestinationText[20] __attribute__((section(".data"))) = "Select destination.";
+const u8 gItemMenuKeyItemRefusedText[21] SECTION(".data")    = "No use for this now.";
+const u8 gItemMenuKeyItemUsedText[5] SECTION(".data")        = "Used";
+const u8 gItemMenuSelectDestinationText[20] SECTION(".data") = "Select destination.";
 u8       gItemMenuEquippedText[9]                                             = "Equipped";
 u8       gItemPickupObtainedText[9]                                           = "Obtained";
 u8       gItemMenuLoadedText[7]                                               = "Loaded";
 u8       gItemMenuRemovedText[8]                                              = "Removed";
 u8       gItemMenuRemovedAmmunitionText[20]                                   = "Removed ammunition.";
 u8       gItemMenuInvokedText[8]                                              = "Invoked";
-const u8 gItemMenuNoAmmunitionText[17] __attribute__((section(".data")))      = "Ammunition: None";
-const u8 gItemMenuNoAttachmentsText[18] __attribute__((section(".data")))     = "Attachments: None";
-const u8 gItemMenuUseText[4] __attribute__((section(".data")))                = "Use";
-const u8 gItemMenuMoveText[5] __attribute__((section(".data")))               = "Move";
-const u8 gItemMenuRemoveAmmunitionText[18] __attribute__((section(".data")))  = "Remove ammunition";
-const u8 gItemMenuLoadText[5] __attribute__((section(".data")))               = "Load";
-const u8 gItemMenuExchangeText[9] __attribute__((section(".data")))           = "Exchange";
-const u8 gItemMenuDetachArmorText[18] __attribute__((section(".data")))       = "Remove from armor";
+const u8 gItemMenuNoAmmunitionText[17] SECTION(".data")      = "Ammunition: None";
+const u8 gItemMenuNoAttachmentsText[18] SECTION(".data")     = "Attachments: None";
+const u8 gItemMenuUseText[4] SECTION(".data")                = "Use";
+const u8 gItemMenuMoveText[5] SECTION(".data")               = "Move";
+const u8 gItemMenuRemoveAmmunitionText[18] SECTION(".data")  = "Remove ammunition";
+const u8 gItemMenuLoadText[5] SECTION(".data")               = "Load";
+const u8 gItemMenuExchangeText[9] SECTION(".data")           = "Exchange";
+const u8 gItemMenuDetachArmorText[18] SECTION(".data")       = "Remove from armor";
 /// Retained NUL-terminated Equip command text with no current reader.
-static const u8 _gItemMenuEquipText[6] __attribute__((section(".data"))) = "Equip";
+static const u8 _gItemMenuEquipText[6] SECTION(".data") = "Equip";
 u8              gItemMenuYesText[4]                                      = "Yes";
 u8              gItemMenuNoText[3]                                       = "No";
 u8              gItemMenuOkText[3]                                       = "OK";
@@ -84,7 +84,7 @@ u8              gItemMenuCancelText[7]                                   = "Canc
 u8              gItemPickupQuestionText[19]                              = "Pick up this item?";
 u8              gItemPickupInventoryFullText[16]                         = "Inventory full.";
 u8              gItemPickupInventoryFullSecondLineText[1]                = "";
-const u8        gItemMenuSortText[5] __attribute__((section(".data")))   = "Sort";
+const u8        gItemMenuSortText[5] SECTION(".data")   = "Sort";
 u8              gItemMenuAmmoLabelText[5]                                = "AMMO";
 u8              gItemMenuPeriodText[2]                                   = ".";
 /// NUL-only text for properties with no displayed label in the specifications panel.
@@ -336,17 +336,17 @@ UiList gItemMenuCollectedList = {
     .rowHeight       = 15,
 };
 
-const u8* const gItemMenuWeaponStatLabels[3] __attribute__((section(".data"))) = {
+const u8* const gItemMenuWeaponStatLabels[3] SECTION(".data") = {
     gItemMenuWeaponRangeLabel,
     gItemMenuWeaponRateLabel,
     gItemMenuWeaponWeightLabel,
 };
 
-const u8* const gItemMenuConsumableStatLabels[1] __attribute__((section(".data"))) = {
+const u8* const gItemMenuConsumableStatLabels[1] SECTION(".data") = {
     gItemMenuAmmoPowerLabel,
 };
 
-const u8* const gItemMenuArmorStatLabels[3] __attribute__((section(".data"))) = {
+const u8* const gItemMenuArmorStatLabels[3] SECTION(".data") = {
     gItemMenuArmorHpBonusLabel,
     gItemMenuArmorMpBonusLabel,
     gItemMenuArmorAttachmentCountLabel,

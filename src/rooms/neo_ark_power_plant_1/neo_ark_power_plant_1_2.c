@@ -275,7 +275,7 @@ s32 gNeoArkPowerPlant1ViewSoundDelayFrames = 0;
 ///
 /// The drawer selects only indices 0..51. Coordinates are signed whole game
 /// units; these points are separate from the room's model-shading point lights.
-static const SVECTOR _gNeoArkPowerPlant1LightGlowPositions[52] __attribute__((section(".data"))) = {
+static const SVECTOR _gNeoArkPowerPlant1LightGlowPositions[52] SECTION(".data") = {
     { 200, -15, -3375, 0 },
     { 1300, -15, -3375, 0 },
     { 200, -15, -4125, 0 },
@@ -920,13 +920,13 @@ enum {
 };
 
 // Keep these read-only cue tables in the original room-data section.
-const WorldCollisionFootstepSounds gNeoArkPowerPlant1Surface4FootstepSounds __attribute__((section(".data"))) = {
+const WorldCollisionFootstepSounds gNeoArkPowerPlant1Surface4FootstepSounds SECTION(".data") = {
     .walk         = NEO_ARK_POWER_PLANT_1_SURFACE_4_WALK_SOUND,
     .run          = NEO_ARK_POWER_PLANT_1_SURFACE_4_RUN_SOUND,
     .scriptedJump = NEO_ARK_POWER_PLANT_1_SURFACE_4_WALK_SOUND,
 };
 
-const WorldCollisionFootstepSounds gNeoArkPowerPlant1Surface5FootstepSounds __attribute__((section(".data"))) = {
+const WorldCollisionFootstepSounds gNeoArkPowerPlant1Surface5FootstepSounds SECTION(".data") = {
     .walk         = NEO_ARK_POWER_PLANT_1_SURFACE_5_WALK_SOUND,
     .run          = NEO_ARK_POWER_PLANT_1_SURFACE_5_RUN_SOUND,
     .scriptedJump = NEO_ARK_POWER_PLANT_1_SURFACE_5_WALK_SOUND,

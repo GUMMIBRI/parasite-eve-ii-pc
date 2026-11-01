@@ -54,3 +54,45 @@ void MatrixNormal(MATRIX* m, MATRIX* n)
         }
     }
 }
+
+/* v1 = (m * v0) >> 12, exact in 64 bits (the SDK splits the vector to stay in
+ * 32 bits; results agree unless the SDK's own intermediate overflows). */
+VECTOR* ApplyMatrixLV(MATRIX* m, VECTOR* v0, VECTOR* v1)
+{
+    long long in[3] = { v0->vx, v0->vy, v0->vz };
+    int out[3];
+    for (int i = 0; i < 3; i++) {
+        long long sum = 0;
+        for (int j = 0; j < 3; j++) sum += (long long)m->m[i][j] * in[j];
+        out[i] = (int)(sum >> 12);
+    }
+    v1->vx = out[0]; v1->vy = out[1]; v1->vz = out[2];
+    return v1;
+}
+
+/* v1 = (transpose(m) * v0) >> 12 */
+VECTOR* ApplyTransposeMatrixLV(MATRIX* m, VECTOR* v0, VECTOR* v1)
+{
+    long long in[3] = { v0->vx, v0->vy, v0->vz };
+    int out[3];
+    for (int i = 0; i < 3; i++) {
+        long long sum = 0;
+        for (int j = 0; j < 3; j++) sum += (long long)m->m[j][i] * in[j];
+        out[i] = (int)(sum >> 12);
+    }
+    v1->vx = out[0]; v1->vy = out[1]; v1->vz = out[2];
+    return v1;
+}
+
+SVECTOR* ApplyMatrixSV(MATRIX* m, SVECTOR* v0, SVECTOR* v1)
+{
+    long long in[3] = { v0->vx, v0->vy, v0->vz };
+    short out[3];
+    for (int i = 0; i < 3; i++) {
+        long long sum = 0;
+        for (int j = 0; j < 3; j++) sum += (long long)m->m[i][j] * in[j];
+        out[i] = (short)(sum >> 12);
+    }
+    v1->vx = out[0]; v1->vy = out[1]; v1->vz = out[2];
+    return v1;
+}

@@ -109,7 +109,7 @@ static inline void _itemMenuDrawUnmarkedItemRowAt(UiObject* object, s32 x, s32 y
 /// drawn as raw integers; their physical units and scales are unproven. Higher
 /// range/rate and lower weight compare favorably. The fourth halfword is zero
 /// in every row, has no reader and has no established role.
-static const u16 _gItemMenuWeaponComparisonValues[ITEM_MENU_EQUIPMENT_ITEM_COUNT + 1][ITEM_MENU_WEAPON_COMPARISON_ROW_HALFWORDS] __attribute__((section(".data"))) = {
+static const u16 _gItemMenuWeaponComparisonValues[ITEM_MENU_EQUIPMENT_ITEM_COUNT + 1][ITEM_MENU_WEAPON_COMPARISON_ROW_HALFWORDS] SECTION(".data") = {
     { 0, 0, 0, 0 },
     { 70, 80, 100, 0 },
     { 50, 110, 117, 0 },

@@ -56,7 +56,7 @@ static WorldCoordRoomLights       _gDryfieldNightGeneralStoreRoomLights;
 /// Pair 0 is visible in views 2, 4 and 8; pair 1 in views 3, 4 and 8.
 /// Each row supplies the two consecutive points projected by the shaft drawer.
 /// Immutable shaft tables retain initialized-data placement in the room image.
-static const SVECTOR _gDryfieldNightGeneralStoreLightShaftPoints[2][2] __attribute__((section(".data"))) = {
+static const SVECTOR _gDryfieldNightGeneralStoreLightShaftPoints[2][2] SECTION(".data") = {
     { { 3240, -2820, 1750, 0 }, { 2260, -2820, 1750, 0 } },
     { { 3240, -2820, 4250, 0 }, { 2260, -2820, 4250, 0 } },
 };
@@ -64,7 +64,7 @@ static const SVECTOR _gDryfieldNightGeneralStoreLightShaftPoints[2][2] __attribu
 /// View 12's two light-shaft points in world game coordinates.
 ///
 /// Immutable coordinates retain initialized-data placement in the room image.
-static const SVECTOR _gDryfieldNightGeneralStoreView12LightShaftPoints[2] __attribute__((section(".data"))) = {
+static const SVECTOR _gDryfieldNightGeneralStoreView12LightShaftPoints[2] SECTION(".data") = {
     { 3240, -2820, 7000, 0 },
     { 2260, -2820, 7000, 0 },
 };
@@ -72,7 +72,7 @@ static const SVECTOR _gDryfieldNightGeneralStoreView12LightShaftPoints[2] __attr
 /// View 13's two light-shaft points in world game coordinates.
 ///
 /// Immutable coordinates retain initialized-data placement in the room image.
-static const SVECTOR _gDryfieldNightGeneralStoreView13LightShaftPoints[2] __attribute__((section(".data"))) = {
+static const SVECTOR _gDryfieldNightGeneralStoreView13LightShaftPoints[2] SECTION(".data") = {
     { 7750, -2820, 7000, 0 },
     { 6800, -2820, 7000, 0 },
 };

@@ -5,6 +5,7 @@
 
 #include <psyz.h>
 #include <libgpu.h>
+#include <libgte.h>
 
 /* libgte: the GTE treats 4096 as 1.0. */
 #ifndef ONE
@@ -42,5 +43,14 @@ void StCdInterrupt(void);
 void InitHeap3(unsigned long* head, unsigned long size);
 void* malloc3(unsigned long size);
 void free3(void* ptr);
+
+/* libgs world-screen matrices (defined in main/gfxlight.c). */
+extern MATRIX GsWSMATRIX;
+extern MATRIX GsLIGHTWSMATRIX;
+
+/* libgte matrix-vector products PsyZ does not declare; see psyq_host.c. */
+VECTOR* ApplyMatrixLV(MATRIX* m, VECTOR* v0, VECTOR* v1);
+VECTOR* ApplyTransposeMatrixLV(MATRIX* m, VECTOR* v0, VECTOR* v1);
+SVECTOR* ApplyMatrixSV(MATRIX* m, SVECTOR* v0, SVECTOR* v1);
 
 #endif

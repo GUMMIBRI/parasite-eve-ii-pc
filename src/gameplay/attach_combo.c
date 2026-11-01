@@ -1,6 +1,6 @@
 #include "attachments.h"
 
-#include <rand.h>
+#include <stdlib.h>
 
 #include "types.h"
 

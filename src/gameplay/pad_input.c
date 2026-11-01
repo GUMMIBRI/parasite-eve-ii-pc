@@ -75,7 +75,7 @@ static u16 _padInputRemapButtons(const GameActor* player, u16 buttons);
 ///
 /// Input indices and stored output indices are 0..15, covering a complete
 /// active-high pad mask. Multiple inputs may map to one logical button.
-static const u8 _gPadInputLayoutAMap[16] __attribute__((section(".data"))) = {
+static const u8 _gPadInputLayoutAMap[16] SECTION(".data") = {
     0,
     1,
     2,
@@ -98,7 +98,7 @@ static const u8 _gPadInputLayoutAMap[16] __attribute__((section(".data"))) = {
 ///
 /// Input indices and stored output indices are 0..15, covering a complete
 /// active-high pad mask. Multiple inputs may map to one logical button.
-static const u8 _gPadInputLayoutBMap[16] __attribute__((section(".data"))) = {
+static const u8 _gPadInputLayoutBMap[16] SECTION(".data") = {
     0,
     1,
     2,
@@ -121,7 +121,7 @@ static const u8 _gPadInputLayoutBMap[16] __attribute__((section(".data"))) = {
 ///
 /// Input indices and stored output indices are 0..15, covering a complete
 /// active-high pad mask. Multiple inputs may map to one logical button.
-static const u8 _gPadInputLayoutCMap[16] __attribute__((section(".data"))) = {
+static const u8 _gPadInputLayoutCMap[16] SECTION(".data") = {
     0,
     4,
     2,
@@ -144,7 +144,7 @@ static const u8 _gPadInputLayoutCMap[16] __attribute__((section(".data"))) = {
 ///
 /// Input indices and stored output indices are 0..15, covering a complete
 /// active-high pad mask. Multiple inputs may map to one logical button.
-static const u8 _gPadInputLayoutCAlternateMap[16] __attribute__((section(".data"))) = {
+static const u8 _gPadInputLayoutCAlternateMap[16] SECTION(".data") = {
     0,
     4,
     2,

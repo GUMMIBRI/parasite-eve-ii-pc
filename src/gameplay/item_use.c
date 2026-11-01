@@ -107,7 +107,7 @@ enum { WORLD_TARGET_CURSOR_INITIAL_Y_FIXED8 = -0x10000 }; // -256 screen pixels.
 
 s32 gWorldTargetCursorYFixed8 = WORLD_TARGET_CURSOR_INITIAL_Y_FIXED8;
 
-const InventoryBattleReward* const gInventoryBattleRewardLists[6] __attribute__((section(".data"))) = {
+const InventoryBattleReward* const gInventoryBattleRewardLists[6] SECTION(".data") = {
     NULL,
     gAkropolisStageBattleRewards,
     gMapDryfieldBattleRewards,
@@ -116,7 +116,7 @@ const InventoryBattleReward* const gInventoryBattleRewardLists[6] __attribute__(
     gMapNeoArkBattleRewards,
 };
 
-const InventoryBattleReward* const gInventoryHardBattleRewardLists[6] __attribute__((section(".data"))) = {
+const InventoryBattleReward* const gInventoryHardBattleRewardLists[6] SECTION(".data") = {
     NULL,
     gAkropolisStageHardBattleRewards,
     gMapDryfieldHardBattleRewards,

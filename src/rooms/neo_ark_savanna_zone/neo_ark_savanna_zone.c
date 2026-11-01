@@ -461,7 +461,7 @@ static WorldCollisionOccluder _gNeoArkSavannaZoneSightOccluders[1] = {
 ///
 /// RGB minima use 16 units per 8-bit colour level. The luma component is retained
 /// but not read by lighting. Keep the authored table in the overlay's data segment.
-static const WorldCoordRoomAmbientEntry _gNeoArkSavannaZoneAmbientTable[NEO_ARK_SAVANNA_ZONE_VIEW_COUNT + 1] __attribute__((section(".data"))) = {
+static const WorldCoordRoomAmbientEntry _gNeoArkSavannaZoneAmbientTable[NEO_ARK_SAVANNA_ZONE_VIEW_COUNT + 1] SECTION(".data") = {
     { .viewCount = ARRAY_SIZE(_gNeoArkSavannaZoneAmbientTable) - 1 },
     { .color = { 16, 16, 16, 16 } },
     { .color = { 422, 394, 324, 395 } },
@@ -480,7 +480,7 @@ enum {
 ///
 /// Cue 1 adds one; companion cues add 100. Playback borrows the loaded type-1
 /// sound bank, and scripted jumps share walking's pair. Retain the data placement.
-static const WorldCollisionFootstepSounds _gNeoArkSavannaZoneSurface2FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gNeoArkSavannaZoneSurface2FootstepSounds SECTION(".data") = {
     .walk         = NEO_ARK_SAVANNA_ZONE_SURFACE_2_FOOTSTEP_WALK,
     .run          = NEO_ARK_SAVANNA_ZONE_SURFACE_2_FOOTSTEP_RUN,
     .scriptedJump = NEO_ARK_SAVANNA_ZONE_SURFACE_2_FOOTSTEP_WALK,
@@ -490,7 +490,7 @@ static const WorldCollisionFootstepSounds _gNeoArkSavannaZoneSurface2FootstepSou
 ///
 /// Cue 1 adds one; companion cues add 100. Playback borrows the loaded type-1
 /// sound bank, and scripted jumps share walking's pair. Retain the data placement.
-static const WorldCollisionFootstepSounds _gNeoArkSavannaZoneSurface3FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gNeoArkSavannaZoneSurface3FootstepSounds SECTION(".data") = {
     .walk         = NEO_ARK_SAVANNA_ZONE_SURFACE_3_FOOTSTEP_WALK,
     .run          = NEO_ARK_SAVANNA_ZONE_SURFACE_3_FOOTSTEP_RUN,
     .scriptedJump = NEO_ARK_SAVANNA_ZONE_SURFACE_3_FOOTSTEP_WALK,

@@ -5,7 +5,7 @@
 #include <libgpu.h>
 #include <abs.h>
 #include <libgte.h>
-#include <rand.h>
+#include <stdlib.h>
 
 #include "gte.h"
 #include "types.h"

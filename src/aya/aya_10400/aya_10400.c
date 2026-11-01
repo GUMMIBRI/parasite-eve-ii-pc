@@ -18,12 +18,12 @@ enum {
 /// Nineteen initial local transforms and parent indices copied into each player body.
 ///
 /// Read-only pose and count tables retain their serialized positions in .data.
-static const TmdBone _gAya10400BodyModelSkeleton[19] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10400BodyModelSkeleton[19] SECTION(".data") = {
 #include "assets/aya_10400_model_01A48_skeleton.inc"
 };
 
 /// Vertex counts for consecutive part-local groups in skeleton order, totaling 362.
-static const u32 _gAya10400BodyModelPartVerts[ARRAY_SIZE(_gAya10400BodyModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10400BodyModelPartVerts[ARRAY_SIZE(_gAya10400BodyModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10400_model_01A48_partVerts.inc"
 };
 
@@ -58,12 +58,12 @@ TmdSource gAya10400BodyModel = {
 };
 
 /// Initial local transform and self-parented root for hand slot 0 in either pair.
-static const TmdBone _gAya10400Hand0ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10400Hand0ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10400_model_05AC4_skeleton.inc"
 };
 
 /// Vertex count of the shared hand's sole part: 23.
-static const u32 _gAya10400Hand0ModelPartVerts[ARRAY_SIZE(_gAya10400Hand0ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10400Hand0ModelPartVerts[ARRAY_SIZE(_gAya10400Hand0ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10400_model_05AC4_partVerts.inc"
 };
 
@@ -95,12 +95,12 @@ TmdSource gAya10400Hand0Model = {
 };
 
 /// Initial local transform and self-parented root for first-pair hand slot 1.
-static const TmdBone _gAya10400FirstPairHand1ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10400FirstPairHand1ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10400_model_05F58_skeleton.inc"
 };
 
 /// Vertex count of the first-pair hand's sole part: 27.
-static const u32 _gAya10400FirstPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10400FirstPairHand1ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10400FirstPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10400FirstPairHand1ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10400_model_05F58_partVerts.inc"
 };
 
@@ -132,12 +132,12 @@ TmdSource gAya10400FirstPairHand1Model = {
 };
 
 /// Initial local transform and self-parented root for second-pair hand slot 1.
-static const TmdBone _gAya10400SecondPairHand1ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10400SecondPairHand1ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10400_model_06408_skeleton.inc"
 };
 
 /// Vertex count of the second-pair hand's sole part: 23.
-static const u32 _gAya10400SecondPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10400SecondPairHand1ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10400SecondPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10400SecondPairHand1ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10400_model_06408_partVerts.inc"
 };
 
@@ -225,10 +225,10 @@ static GpuImageUpload _gAya10400MouthOpenUploads[2] = {
     { GPU_IMAGE_UPLOAD_END },
 };
 
-GpuImageUpload* const gAya10400EyesRestSequence[2] __attribute__((section(".data")))    = { _gAya10400EyesOpenUploads, NULL };
-GpuImageUpload* const gAya10400EyesClosingSequence[4] __attribute__((section(".data"))) = { _gAya10400EyesOpenUploads, _gAya10400EyesHalfClosedUploads, _gAya10400EyesClosedUploads, NULL };
-GpuImageUpload* const gAya10400EyesOpeningSequence[4] __attribute__((section(".data"))) = { _gAya10400EyesClosedUploads, _gAya10400EyesHalfClosedUploads, _gAya10400EyesOpenUploads, NULL };
-GpuImageUpload* const gAya10400EyesBlinkSequence[6] __attribute__((section(".data")))   = {
+GpuImageUpload* const gAya10400EyesRestSequence[2] SECTION(".data")    = { _gAya10400EyesOpenUploads, NULL };
+GpuImageUpload* const gAya10400EyesClosingSequence[4] SECTION(".data") = { _gAya10400EyesOpenUploads, _gAya10400EyesHalfClosedUploads, _gAya10400EyesClosedUploads, NULL };
+GpuImageUpload* const gAya10400EyesOpeningSequence[4] SECTION(".data") = { _gAya10400EyesClosedUploads, _gAya10400EyesHalfClosedUploads, _gAya10400EyesOpenUploads, NULL };
+GpuImageUpload* const gAya10400EyesBlinkSequence[6] SECTION(".data")   = {
     _gAya10400EyesOpenUploads,
     _gAya10400EyesHalfClosedUploads,
     _gAya10400EyesClosedUploads,
@@ -236,5 +236,5 @@ GpuImageUpload* const gAya10400EyesBlinkSequence[6] __attribute__((section(".dat
     _gAya10400EyesOpenUploads,
     NULL,
 };
-GpuImageUpload* const gAya10400MouthRestSequence[2] __attribute__((section(".data"))) = { _gAya10400MouthClosedUploads, NULL };
-GpuImageUpload* const gAya10400MouthOpenSequence[2] __attribute__((section(".data"))) = { _gAya10400MouthOpenUploads, NULL };
+GpuImageUpload* const gAya10400MouthRestSequence[2] SECTION(".data") = { _gAya10400MouthClosedUploads, NULL };
+GpuImageUpload* const gAya10400MouthOpenSequence[2] SECTION(".data") = { _gAya10400MouthOpenUploads, NULL };

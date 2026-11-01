@@ -118,11 +118,11 @@ const u8 gItemMenuReloadTitle[] = "Reload";
 
 const u8 gItemMenuAttachTitle[] = "Attach";
 
-const u8 gItemMenuOptionsHelpText[] __attribute__((section(".data")))    = "Customize game settings.";
-const u8 gItemMenuRemoveAmmoHelpText[] __attribute__((section(".data"))) = "Remove loaded ammunition.";
+const u8 gItemMenuOptionsHelpText[] SECTION(".data")    = "Customize game settings.";
+const u8 gItemMenuRemoveAmmoHelpText[] SECTION(".data") = "Remove loaded ammunition.";
 /// Encoded prompt for detaching the item in the selected armor slot.
-static const u8 _gItemMenuDetachArmorHelpText[] __attribute__((section(".data"))) = "Detach items from armor.";
-const u8        gItemMenuSortHelpText[36] __attribute__((section(".data")))       = "Change the order of items carried.\000\335";
+static const u8 _gItemMenuDetachArmorHelpText[] SECTION(".data") = "Detach items from armor.";
+const u8        gItemMenuSortHelpText[36] SECTION(".data")       = "Change the order of items carried.\000\335";
 
 /// Draws `item`'s name, its equipment status marker in `mode`, the variant
 /// marker for items 0x0F-0x32 and its icon at (`x`, `y`) in `obj`. Nothing is

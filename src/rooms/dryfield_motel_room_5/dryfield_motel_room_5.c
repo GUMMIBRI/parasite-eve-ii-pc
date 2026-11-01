@@ -48,7 +48,7 @@ static WorldCoordRoomLights  _gDryfieldMotelRoom5RoomLights;
 /// and commands. The final marker makes unsupported IDs return zero. The live
 /// room task borrows this read-only table and its callbacks while the overlay
 /// is loaded. Its authored storage remains in the overlay's data section.
-static const TaskMessageEntry _gDryfieldMotelRoom5RoomMessages[] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gDryfieldMotelRoom5RoomMessages[] SECTION(".data") = {
     { ROOM_EVENT_MESSAGE_RESOLVE, _dryfieldMotelRoom5ResolveRoomEvent },
     { ROOM_MESSAGE_USE_KEY_ITEM, _dryfieldMotelRoom5RejectKeyItemUse },
     { DIRECTION_MESSAGE_ROOM_ACTION, _dryfieldMotelRoom5IgnoreRoomAction },
@@ -440,7 +440,7 @@ static WorldCoordRoomLights _gDryfieldMotelRoom5RoomLights = {
 ///
 /// Requests the loaded type-1 bank: walking/jumping use entries 0x35/0x36,
 /// running 0x37/0x38. Read-only authored storage remains in the data section.
-static const WorldCollisionFootstepSounds _gDryfieldMotelRoom5Class1FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldMotelRoom5Class1FootstepSounds SECTION(".data") = {
     .walk         = DRYFIELD_MOTEL_ROOM_5_CLASS_1_WALK_CUE_BASE,
     .run          = DRYFIELD_MOTEL_ROOM_5_CLASS_1_RUN_CUE_BASE,
     .scriptedJump = DRYFIELD_MOTEL_ROOM_5_CLASS_1_WALK_CUE_BASE,
@@ -451,7 +451,7 @@ static const WorldCollisionFootstepSounds _gDryfieldMotelRoom5Class1FootstepSoun
 /// Requests the loaded type-1 bank: walking/jumping use entries 1/2, running
 /// 3/4. These entries are absent from this daytime room's bank, so the sound
 /// driver rejects the requests. Read-only authored storage stays in the data section.
-static const WorldCollisionFootstepSounds _gDryfieldMotelRoom5Class2FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldMotelRoom5Class2FootstepSounds SECTION(".data") = {
     .walk         = DRYFIELD_MOTEL_ROOM_5_CLASS_2_WALK_CUE_BASE,
     .run          = DRYFIELD_MOTEL_ROOM_5_CLASS_2_RUN_CUE_BASE,
     .scriptedJump = DRYFIELD_MOTEL_ROOM_5_CLASS_2_WALK_CUE_BASE,

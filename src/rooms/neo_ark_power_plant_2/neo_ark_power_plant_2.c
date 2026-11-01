@@ -160,7 +160,7 @@ enum {
 ///
 /// Clip 1 blends over 20 frames with world collision enabled. The interpreter
 /// resolves the equipped bank in a copy, so the stored bank selector is unused.
-static const AnimationPlayRequest _gNeoArkPowerPlant2GeneratorClearWeaponIdle __attribute__((section(".data"))) = {
+static const AnimationPlayRequest _gNeoArkPowerPlant2GeneratorClearWeaponIdle SECTION(".data") = {
     .source               = { .index = 1 },
     .animationId          = 1,
     .blend                = ANIMATION_BLEND_INTERPOLATE,
@@ -919,7 +919,7 @@ static WorldCollisionOccluder _gNeoArkPowerPlant2Occluders[1] = {
 ///
 /// RGB uses 16 units per colour level; view 8 has higher minima than the other
 /// views. The fourth colour halfword retains authored luma and is not queried.
-static const WorldCoordRoomAmbientEntry _gNeoArkPowerPlant2AmbientTable[10] __attribute__((section(".data"))) = {
+static const WorldCoordRoomAmbientEntry _gNeoArkPowerPlant2AmbientTable[10] SECTION(".data") = {
     { .viewCount = ARRAY_SIZE(_gNeoArkPowerPlant2AmbientTable) - 1 },
     { .color = { 16, 16, 16, 16 } },
     { .color = { 16, 16, 16, 16 } },
@@ -948,7 +948,7 @@ enum {
 ///
 /// Uses scripts 0x59/0x5A for walking and jumping, 0x5B/0x5C for running,
 /// in the currently loaded type-1 sound bank. Surface records borrow this data.
-static const WorldCollisionFootstepSounds _gNeoArkPowerPlant2Surface4FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gNeoArkPowerPlant2Surface4FootstepSounds SECTION(".data") = {
     .walk         = NEO_ARK_POWER_PLANT_2_SURFACE_4_WALK_SOUND,
     .run          = NEO_ARK_POWER_PLANT_2_SURFACE_4_RUN_SOUND,
     .scriptedJump = NEO_ARK_POWER_PLANT_2_SURFACE_4_WALK_SOUND,
@@ -959,7 +959,7 @@ static const WorldCollisionFootstepSounds _gNeoArkPowerPlant2Surface4FootstepSou
 /// Uses scripts 0x15/0x16, 0x17/0x18 and 0x19/0x1A respectively in the
 /// currently loaded type-1 bank. The descent selects this class independently
 /// of the grid faces; surface records borrow the room-owned data.
-static const WorldCollisionFootstepSounds _gNeoArkPowerPlant2Surface2FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gNeoArkPowerPlant2Surface2FootstepSounds SECTION(".data") = {
     .walk         = NEO_ARK_POWER_PLANT_2_SURFACE_2_WALK_SOUND,
     .run          = NEO_ARK_POWER_PLANT_2_SURFACE_2_RUN_SOUND,
     .scriptedJump = NEO_ARK_POWER_PLANT_2_SURFACE_2_JUMP_SOUND,
@@ -969,7 +969,7 @@ static const WorldCollisionFootstepSounds _gNeoArkPowerPlant2Surface2FootstepSou
 ///
 /// Uses scripts 0x5D/0x5E for walking and jumping, 0x5F/0x60 for running,
 /// in the currently loaded type-1 sound bank. Surface records borrow this data.
-static const WorldCollisionFootstepSounds _gNeoArkPowerPlant2Surface5FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gNeoArkPowerPlant2Surface5FootstepSounds SECTION(".data") = {
     .walk         = NEO_ARK_POWER_PLANT_2_SURFACE_5_WALK_SOUND,
     .run          = NEO_ARK_POWER_PLANT_2_SURFACE_5_RUN_SOUND,
     .scriptedJump = NEO_ARK_POWER_PLANT_2_SURFACE_5_WALK_SOUND,
@@ -1051,7 +1051,7 @@ enum { NEO_ARK_POWER_PLANT_2_AREA_UPDATE_MARK = 1 };
 /// Scavenger and Bounty/Nightmare modes; the B1 control-room update clears its
 /// map mark. Applying the list also removes saved enemy poses in accepted areas.
 /// The synchronous updater borrows these records only for the call.
-static const AreaApplyRec _gNeoArkPowerPlant2GeneratorClearAreaUpdates[] __attribute__((section(".data"))) = {
+static const AreaApplyRec _gNeoArkPowerPlant2GeneratorClearAreaUpdates[] SECTION(".data") = {
     { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_EVE_ACCESS_TUNNEL, 11, AREA_APPLY_MODE_ALWAYS | NEO_ARK_POWER_PLANT_2_AREA_UPDATE_MARK },
     { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_FOREST_ZONE, 4, AREA_APPLY_MODE_ALWAYS | NEO_ARK_POWER_PLANT_2_AREA_UPDATE_MARK },
     { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_PAVILION, 4, AREA_APPLY_MODE_ALWAYS | NEO_ARK_POWER_PLANT_2_AREA_UPDATE_MARK },
@@ -1068,7 +1068,7 @@ static const AreaApplyRec _gNeoArkPowerPlant2GeneratorClearAreaUpdates[] __attri
 /// Applied only when GAME_FLAG_0F3 is nonzero; that flag's story meaning is
 /// unproven. All three updates set layout 2 and a map mark in every save mode,
 /// remove saved enemy poses, then end at AREA_APPLY_END. Borrowed synchronously.
-static const AreaApplyRec _gNeoArkPowerPlant2GeneratorClearExtraAreaUpdates[] __attribute__((section(".data"))) = {
+static const AreaApplyRec _gNeoArkPowerPlant2GeneratorClearExtraAreaUpdates[] SECTION(".data") = {
     { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_SUBMARINE_TUNNEL, 2, AREA_APPLY_MODE_ALWAYS | NEO_ARK_POWER_PLANT_2_AREA_UPDATE_MARK },
     { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_ISLAND, 2, AREA_APPLY_MODE_ALWAYS | NEO_ARK_POWER_PLANT_2_AREA_UPDATE_MARK },
     { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_SUBMARINE_GALLERY, 2, AREA_APPLY_MODE_ALWAYS | NEO_ARK_POWER_PLANT_2_AREA_UPDATE_MARK },

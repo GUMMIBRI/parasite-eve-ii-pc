@@ -18,12 +18,12 @@ enum {
 /// Initial local transform and self-parented root for first-pair hand slot 0.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-static const TmdBone _gAya10200FirstPairHand0ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10200FirstPairHand0ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10200_model_0019C_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 23.
-static const u32 _gAya10200FirstPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10200FirstPairHand0ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10200FirstPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10200FirstPairHand0ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10200_model_0019C_partVerts.inc"
 };
 
@@ -59,12 +59,12 @@ TmdSource gAya10200FirstPairHand0Model = {
 /// Initial local transform and self-parented root for second-pair hand slot 0.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-static const TmdBone _gAya10200SecondPairHand0ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10200SecondPairHand0ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10200_model_0019C_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 23.
-static const u32 _gAya10200SecondPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10200SecondPairHand0ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10200SecondPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10200SecondPairHand0ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10200_model_0019C_partVerts.inc"
 };
 
@@ -100,12 +100,12 @@ TmdSource gAya10200SecondPairHand0Model = {
 /// Initial local transform and self-parented root for first-pair hand slot 1.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-static const TmdBone _gAya10200FirstPairHand1ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10200FirstPairHand1ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10200_model_00A5C_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 27.
-static const u32 _gAya10200FirstPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10200FirstPairHand1ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10200FirstPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10200FirstPairHand1ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10200_model_00A5C_partVerts.inc"
 };
 
@@ -141,12 +141,12 @@ TmdSource gAya10200FirstPairHand1Model = {
 /// Initial local transform and self-parented root for second-pair hand slot 1.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-static const TmdBone _gAya10200SecondPairHand1ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10200SecondPairHand1ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10200_model_00F0C_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 23.
-static const u32 _gAya10200SecondPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10200SecondPairHand1ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10200SecondPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10200SecondPairHand1ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10200_model_00F0C_partVerts.inc"
 };
 

@@ -18,12 +18,12 @@ enum {
 /// Initial local transform and self-parented root for first-pair hand slot 0.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-static const TmdBone _gAya10500FirstPairHand0ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10500FirstPairHand0ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10200_model_0019C_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 23.
-static const u32 _gAya10500FirstPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10500FirstPairHand0ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10500FirstPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10500FirstPairHand0ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10200_model_0019C_partVerts.inc"
 };
 
@@ -59,12 +59,12 @@ TmdSource gAya10500FirstPairHand0Model = {
 /// Initial local transform and self-parented root for second-pair hand slot 0.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-static const TmdBone _gAya10500SecondPairHand0ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10500SecondPairHand0ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10200_model_0019C_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 23.
-static const u32 _gAya10500SecondPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10500SecondPairHand0ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10500SecondPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10500SecondPairHand0ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10200_model_0019C_partVerts.inc"
 };
 
@@ -100,12 +100,12 @@ TmdSource gAya10500SecondPairHand0Model = {
 /// Initial local transform and self-parented root for first-pair hand slot 1.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-static const TmdBone _gAya10500FirstPairHand1ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10500FirstPairHand1ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10200_model_00A5C_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 27.
-static const u32 _gAya10500FirstPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10500FirstPairHand1ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10500FirstPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10500FirstPairHand1ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10200_model_00A5C_partVerts.inc"
 };
 
@@ -141,12 +141,12 @@ TmdSource gAya10500FirstPairHand1Model = {
 /// Initial local transform and self-parented root for second-pair hand slot 1.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-static const TmdBone _gAya10500SecondPairHand1ModelSkeleton[1] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10500SecondPairHand1ModelSkeleton[1] SECTION(".data") = {
 #include "assets/aya_10200_model_00F0C_skeleton.inc"
 };
 
 /// Vertex count of the hand's sole part: 23.
-static const u32 _gAya10500SecondPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10500SecondPairHand1ModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10500SecondPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10500SecondPairHand1ModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10200_model_00F0C_partVerts.inc"
 };
 
@@ -182,12 +182,12 @@ TmdSource gAya10500SecondPairHand1Model = {
 /// Initial body-part transforms and hierarchy, with part 0 as the self-parented root.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-static const TmdBone _gAya10500BodyModelSkeleton[19] __attribute__((section(".data"))) = {
+static const TmdBone _gAya10500BodyModelSkeleton[19] SECTION(".data") = {
 #include "assets/aya_10500_model_02BB8_skeleton.inc"
 };
 
 /// Part-local vertex counts in skeleton order, totaling 358 vertices.
-static const u32 _gAya10500BodyModelPartVerts[ARRAY_SIZE(_gAya10500BodyModelSkeleton)] __attribute__((section(".data"))) = {
+static const u32 _gAya10500BodyModelPartVerts[ARRAY_SIZE(_gAya10500BodyModelSkeleton)] SECTION(".data") = {
 #include "assets/aya_10500_model_02BB8_partVerts.inc"
 };
 
@@ -271,10 +271,10 @@ static GpuImageUpload _gAya10500MouthAlternateUploads[2] = {
     { GPU_IMAGE_UPLOAD_END },
 };
 
-GpuImageUpload* const gAya10500EyesRestSequence[2] __attribute__((section(".data")))    = { _gAya10500EyesOpenUploads, NULL };
-GpuImageUpload* const gAya10500EyesClosingSequence[4] __attribute__((section(".data"))) = { _gAya10500EyesOpenUploads, _gAya10500EyesHalfClosedUploads, _gAya10500EyesClosedUploads, NULL };
-GpuImageUpload* const gAya10500EyesOpeningSequence[4] __attribute__((section(".data"))) = { _gAya10500EyesClosedUploads, _gAya10500EyesHalfClosedUploads, _gAya10500EyesOpenUploads, NULL };
-GpuImageUpload* const gAya10500EyesBlinkSequence[6] __attribute__((section(".data")))   = {
+GpuImageUpload* const gAya10500EyesRestSequence[2] SECTION(".data")    = { _gAya10500EyesOpenUploads, NULL };
+GpuImageUpload* const gAya10500EyesClosingSequence[4] SECTION(".data") = { _gAya10500EyesOpenUploads, _gAya10500EyesHalfClosedUploads, _gAya10500EyesClosedUploads, NULL };
+GpuImageUpload* const gAya10500EyesOpeningSequence[4] SECTION(".data") = { _gAya10500EyesClosedUploads, _gAya10500EyesHalfClosedUploads, _gAya10500EyesOpenUploads, NULL };
+GpuImageUpload* const gAya10500EyesBlinkSequence[6] SECTION(".data")   = {
     _gAya10500EyesOpenUploads,
     _gAya10500EyesHalfClosedUploads,
     _gAya10500EyesClosedUploads,
@@ -282,5 +282,5 @@ GpuImageUpload* const gAya10500EyesBlinkSequence[6] __attribute__((section(".dat
     _gAya10500EyesOpenUploads,
     NULL,
 };
-GpuImageUpload* const gAya10500MouthRestSequence[2] __attribute__((section(".data")))      = { _gAya10500MouthRestUploads, NULL };
-GpuImageUpload* const gAya10500MouthAlternateSequence[2] __attribute__((section(".data"))) = { _gAya10500MouthAlternateUploads, NULL };
+GpuImageUpload* const gAya10500MouthRestSequence[2] SECTION(".data")      = { _gAya10500MouthRestUploads, NULL };
+GpuImageUpload* const gAya10500MouthAlternateSequence[2] SECTION(".data") = { _gAya10500MouthAlternateUploads, NULL };

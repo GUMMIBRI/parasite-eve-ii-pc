@@ -93,7 +93,7 @@ static TaskDesc _gRoomEventTaskDesc = { { { TASK_BODY_NONE, TASK_PRIORITY_SCENE 
 /// Resolves exits, rejects key-item use, ignores room actions and handles CAP
 /// commands. The room task borrows this table and its callbacks for its entire
 /// registered lifetime. Payload types belong to each message's handler.
-static const TaskMessageEntry _gDryfieldSaloonGRRoomMessages[5] __attribute__((section(".data"))) = {
+static const TaskMessageEntry _gDryfieldSaloonGRRoomMessages[5] SECTION(".data") = {
     { ROOM_EVENT_MESSAGE_RESOLVE, _roomVariantSaloonMsg },
     { ROOM_MESSAGE_USE_KEY_ITEM, _dryfieldSaloonGRRejectKeyItemMessage },
     { DIRECTION_MESSAGE_ROOM_ACTION, _dryfieldSaloonGRIgnoreRoomActionMessage },
@@ -833,7 +833,7 @@ enum {
 ///
 /// Walking and stair climbing share entries 0x35/0x36; running uses 0x37/0x38.
 /// Requests select the currently loaded type-1 bank.
-static const WorldCollisionFootstepSounds _gDryfieldSaloonGRClass1FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldSaloonGRClass1FootstepSounds SECTION(".data") = {
     DRYFIELD_SALOON_G_R_CLASS1_WALK_SOUND,
     DRYFIELD_SALOON_G_R_CLASS1_RUN_SOUND,
     DRYFIELD_SALOON_G_R_CLASS1_WALK_SOUND,
@@ -843,7 +843,7 @@ static const WorldCollisionFootstepSounds _gDryfieldSaloonGRClass1FootstepSounds
 ///
 /// Walking and stair climbing share entries 1/2; running uses 3/4 in the loaded
 /// type-1 bank. A surface class may come from wall contacts as well as floors.
-static const WorldCollisionFootstepSounds _gDryfieldSaloonGRClasses2And3FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gDryfieldSaloonGRClasses2And3FootstepSounds SECTION(".data") = {
     DRYFIELD_SALOON_G_R_CLASSES2_AND3_WALK_SOUND,
     DRYFIELD_SALOON_G_R_CLASSES2_AND3_RUN_SOUND,
     DRYFIELD_SALOON_G_R_CLASSES2_AND3_WALK_SOUND,

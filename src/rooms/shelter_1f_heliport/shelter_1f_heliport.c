@@ -92,7 +92,7 @@ static void _shelter1fHeliportUpdatePlacedActorVisibility(void);
 
 static WorldCollisionTrigger            _gShelter1fHeliportViewBoundaryTriggers[12];
 static WorldCollisionTrigger            _gShelter1fHeliportActionTriggers[21];
-static const WorldCoordRoomAmbientEntry _gShelter1fHeliportAmbientByView[SHELTER_1F_HELIPORT_VIEW_COUNT + 1] __attribute__((section(".data")));
+static const WorldCoordRoomAmbientEntry _gShelter1fHeliportAmbientByView[SHELTER_1F_HELIPORT_VIEW_COUNT + 1] SECTION(".data");
 static WorldCoordRoomLights             _gShelter1fHeliportRoomLights;
 static s32                              _shelter1fHeliportResolveDepartureMessage(Task* unusedTask, s32 unusedMessageId, RoomEventMsg* request, RoomEventMsg* reply);
 static s32                              _shelter1fHeliportUseKeyItem(Task* unusedTask, s32 unusedMessageId, s32 itemId, s32 unusedSecondArg);
@@ -567,7 +567,7 @@ static WorldCollisionTrigger _gShelter1fHeliportActionTriggers[21] = {
 /// RGB uses 16 units per 8-bit level. Stored luma is (3R + 4G + B)/8;
 /// lighting reads RGB only. Views 3/4 are brighter; the others use level 1.
 /// Retains its authored data-section position beside the room resources.
-static const WorldCoordRoomAmbientEntry _gShelter1fHeliportAmbientByView[SHELTER_1F_HELIPORT_VIEW_COUNT + 1] __attribute__((section(".data"))) = {
+static const WorldCoordRoomAmbientEntry _gShelter1fHeliportAmbientByView[SHELTER_1F_HELIPORT_VIEW_COUNT + 1] SECTION(".data") = {
     { .viewCount = ARRAY_SIZE(_gShelter1fHeliportAmbientByView) - 1 },
     { .color = { 16, 16, 16, 16 } },
     { .color = { 16, 16, 16, 16 } },
@@ -620,7 +620,7 @@ enum {
 /// the heliport follower instead maps the walk base to its actor-bank pair.
 /// Borrows the current type-1 bank while this overlay's surface table is active.
 /// Retains its authored data-section position beside the surface properties.
-static const WorldCollisionFootstepSounds _gShelter1fHeliportSurface1FootstepSounds __attribute__((section(".data"))) = {
+static const WorldCollisionFootstepSounds _gShelter1fHeliportSurface1FootstepSounds SECTION(".data") = {
     .walk         = SHELTER_1F_HELIPORT_SURFACE_1_WALK_CUE_BASE,
     .run          = SHELTER_1F_HELIPORT_SURFACE_1_RUN_CUE_BASE,
     .scriptedJump = SHELTER_1F_HELIPORT_SURFACE_1_WALK_CUE_BASE,

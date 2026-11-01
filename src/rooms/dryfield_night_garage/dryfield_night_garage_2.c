@@ -113,7 +113,7 @@ TaskDesc gDryfieldNightGarageDialogueTasks[2] = {
 ///
 /// Entry 0 clears clip 47; entries 1..4 provide clips 48..51. The pointer table
 /// is read-only, and the borrowed sets must stay loaded through their playback.
-static AnimationSet* const _gDryfieldNightGarageRefuelingAnimationSets[] __attribute__((section(".data"))) = {
+static AnimationSet* const _gDryfieldNightGarageRefuelingAnimationSets[] SECTION(".data") = {
     NULL,
     &gDryfieldNightGarageAnimation04B80,
     &gDryfieldNightGarageAnimation04F54,
@@ -125,7 +125,7 @@ static AnimationSet* const _gDryfieldNightGarageRefuelingAnimationSets[] __attri
 ///
 /// Borrowed synchronously by the scene script; the copied sets remain borrowed
 /// until playback finishes. The count includes the null entry for clip 47.
-static const AnimationBankCopyRequest _gDryfieldNightGarageRefuelingAnimationBankCopy __attribute__((section(".data"))) = {
+static const AnimationBankCopyRequest _gDryfieldNightGarageRefuelingAnimationBankCopy SECTION(".data") = {
     .sets  = _gDryfieldNightGarageRefuelingAnimationSets,
     .count = ARRAY_SIZE(_gDryfieldNightGarageRefuelingAnimationSets),
 };
