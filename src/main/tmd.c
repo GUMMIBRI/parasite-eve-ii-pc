@@ -58,10 +58,18 @@ typedef u32* (*_TmdModelStreamHandler)(TmdStreamWorkspace* scratch, s32 objectFl
 /// This is the resolver's view of the borrowed `TmdSource.stream` word storage.
 /// The stream must be word-aligned, writable and contain complete records through
 /// `TMD_STREAM_END`; its descriptor supplies no length for bounds checking.
+#ifdef __psyz
+// On the host a code pointer does not fit the stream's 32-bit word, so the
+// callback slot holds a handler id (see `tmdHandlerToId`).
+typedef struct {
+    u32 dataWord;
+} _TmdStreamWord;
+#else
 typedef union {
     u32                    dataWord;    // Opcode, marker, packed count/word stride or payload word
     _TmdModelStreamHandler drawHandler; // Resolved callback in a command's second word; ignored during packet construction
 } _TmdStreamWord;
+#endif
 STATIC_ASSERT_SIZEOF(_TmdStreamWord, 4);
 
 /// Scratch-stack block reserved while one model's stream is drawn.
@@ -428,7 +436,11 @@ static void _tmdResolveSourceDrawHandlers(TmdSource* source)
 
             // Resolve the draw slot, then skip the count * stride payload words.
             stream++;
+#ifdef __psyz
+            stream->dataWord = tmdHandlerToId((void*)handler);
+#else
             stream->drawHandler = handler;
+#endif
             stream++;
             TMD_RESOLVE_SKIP_PAYLOAD(stream);
             opcode = stream->dataWord;

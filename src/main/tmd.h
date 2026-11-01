@@ -96,6 +96,15 @@ void tmdRestoreAttachedBuffersTask(struct Task* task);
 /// during construction it is zero. This handler selects nothing from them.
 u32* tmdSkipStreamRecord(TmdStreamWorkspace* ws, s32 flags, u32* stream);
 
+#ifdef __psyz
+/// Host only: a stream record's callback slot is 32 bits, too small for a code
+/// pointer. `tmdHandlerToId` returns a stable nonzero id for a handler,
+/// registering it on first use; `tmdHandlerFromId` is the inverse (NULL for 0
+/// or an unknown id). The registry holds at most 256 distinct handlers.
+u32   tmdHandlerToId(void* handler);
+void* tmdHandlerFromId(u32 id);
+#endif
+
 u32* Tmd_StreamHandler_Prim32(TmdStreamWorkspace* ws, s32 flags, u32* stream);
 
 /// Culls and links pre-transformed untextured Gouraud triangles as opaque `POLY_G3` packets.
