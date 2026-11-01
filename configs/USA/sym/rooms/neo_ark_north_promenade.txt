@@ -1,0 +1,80 @@
+// Overlay-local symbols for neo_ark_north_promenade.
+gNeoArkNorthPromenadeRoomCollisionResources = 0x80181DB4; // size:0x10 defined:True
+gNeoArkNorthPromenadeRoomLighting = 0x80181DC4; // size:0x8 defined:True
+gNeoArkNorthPromenadeViewMaps = 0x80181DCC; // size:0x4 defined:True
+gNeoArkNorthPromenadeViewCounts = 0x80181DD0; // size:0x2 defined:True
+gNeoArkNorthPromenadeWarpEntries = 0x80181DD4; // size:0x70 defined:True
+_gNeoArkNorthPromenadeCollisionGridNormals = 0x80181E44; // size:0x60 defined:True
+_gNeoArkNorthPromenadeCollisionGridVerts = 0x80181EA4; // size:0x278 defined:True
+_gNeoArkNorthPromenadeCollisionGridFaces = 0x8018211C; // size:0x174 defined:True
+_gNeoArkNorthPromenadeCollisionGridCells = 0x80182290; // size:0x11C defined:True
+_gNeoArkNorthPromenadeCollisionGridTable = 0x801823AC; // size:0x40 defined:True
+_gNeoArkNorthPromenadeCollisionGrid = 0x801823EC; // size:0x24 defined:True
+gNeoArkNorthPromenadeViewCameras = 0x80182410; // size:0xD8 defined:True
+_gNeoArkNorthPromenadeView1SpriteBatches = 0x801824E8; // size:0x10 defined:True
+_gNeoArkNorthPromenadeView2SpriteBatches = 0x801824F8; // size:0x10 defined:True
+_gNeoArkNorthPromenadeView3SpriteBatches = 0x80182508; // size:0x10 defined:True
+_gNeoArkNorthPromenadeView4SpriteSources = 0x80182518; // size:0x2D0 defined:True
+_gNeoArkNorthPromenadeView4SpriteBatches = 0x801827E8; // size:0x28 defined:True
+_gNeoArkNorthPromenadeView5SpriteSources = 0x80182810; // size:0x1CC defined:True
+_gNeoArkNorthPromenadeView5SpriteBatches = 0x801829DC; // size:0x28 defined:True
+_gNeoArkNorthPromenadeView6SpriteSources = 0x80182A04; // size:0x280 defined:True
+_gNeoArkNorthPromenadeView6SpriteBatches = 0x80182C84; // size:0x20 defined:True
+gNeoArkNorthPromenadeSpriteViews = 0x80182CA4; // size:0x48 defined:True
+_gNeoArkNorthPromenadeDirectionalLights = 0x80182CEC; // size:0xB0 defined:True
+_gNeoArkNorthPromenadeRoomLights = 0x80182D9C; // size:0x18 defined:True
+_gNeoArkNorthPromenadeViewBoundaryTriggers = 0x80182DB4; // size:0x260 defined:True
+_gNeoArkNorthPromenadeVariant2Resources = 0x80183014; // size:0x18 defined:True
+_gNeoArkNorthPromenadeVariant3Resources = 0x8018302C; // size:0x18 defined:True
+_gNeoArkNorthPromenadeVariant11Resources = 0x80183044; // size:0x18 defined:True
+gNeoArkNorthPromenadeAreaVariants = 0x8018305C; // size:0x68 defined:True
+_gNeoArkNorthPromenadeActionTriggers = 0x801830C4; // size:0x1C8 defined:True
+_gNeoArkNorthPromenadeSightOccluder = 0x8018328C; // size:0x3C defined:True
+_gNeoArkNorthPromenadeFootstepSounds = 0x801832C8; // size:0xC defined:True
+_gNeoArkNorthPromenadeSolidSurface = 0x801832D4; // size:0x8 defined:True
+_gNeoArkNorthPromenadeSolidFootstepSurface = 0x801832DC; // size:0x8 defined:True
+_gNeoArkNorthPromenadeProbePassSurface = 0x801832E4; // size:0x8 defined:True
+gNeoArkNorthPromenadeSurfaceProperties = 0x801832EC; // size:0x20 defined:True
+gActor102000PawnGolemTasks = 0x80147DF0; // absolute:True owner=actor_102000
+gActor100300Tasks = 0x80148110; // absolute:True owner=actor_100300
+gActor105600PawnGolemTasks = 0x801482C0; // absolute:True owner=actor_105600
+gMapNeoArkNorthPromenadeVariant2Placements = 0x8017B0F0; // absolute:True owner=map_neo_ark
+gMapNeoArkNorthPromenadeVariant3Placements = 0x8017B120; // absolute:True owner=map_neo_ark
+gMapNeoArkNorthPromenadeVariant11Placements = 0x8017B160; // absolute:True owner=map_neo_ark
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x80181DA4; // size:0x10 defined:True
+_gNeoArkNorthPromenadeRoomMessages = 0x80181D68; // size:0x28 defined:True
+_gRoomVisualEffectsHaloShades = 0x80181D90; // size:0x14 defined:True
+
+neoArkNorthPromenadeRoomVisualEffectsFlashTask = 0x8017FDD4; // type:func
+
+neoArkNorthPromenadeRoomVisualEffectsTwinTrailTask = 0x80180838; // type:func
+
+neoArkNorthPromenadeRoomVisualEffectsSparkBurstTask = 0x80181120; // type:func
+
+neoArkNorthPromenadeRoomVisualEffectsMoteTask = 0x8017D7B0; // type:func
+
+neoArkNorthPromenadeRoomVisualEffectsHaloTask = 0x8017E4F8; // type:func
+
+neoArkNorthPromenadeRoomVisualEffectsHaloOrangeBurstTask = 0x8017E890; // type:func
+
+neoArkNorthPromenadeRoomVisualEffectsSparkEmitterTask = 0x8017FCA0; // type:func
+
+neoArkNorthPromenadeBindRoomEffectsTask = 0x8017D720; // type:func
+_roomVisualEffectsDrawMote = 0x8017DA7C; // type:func
+_roomVisualEffectsDrawHaloRing = 0x8017DD40; // type:func
+_roomVisualEffectsDrawHaloDisc = 0x8017E164; // type:func
+_roomVisualEffectsDrawHaloBurstGlow = 0x8017EA3C; // type:func
+_roomVisualEffectsDrawHaloBurstGroundQuad = 0x8017EF68; // type:func
+_roomVisualEffectsDrawHaloStar = 0x8017F2E0; // type:func
+_roomVisualEffectsDrawFlashRing = 0x80180078; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x801804A4; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x80180D28; // type:func
+_roomVisualEffectsDrawBurstStar = 0x801813A8; // type:func
+_neoArkNorthPromenadeRejectKeyItemUse = 0x8017d5d0; // type:func
+_neoArkNorthPromenadeIgnoreRoomCommand = 0x8017d66c; // type:func
+_neoArkNorthPromenadeIgnoreRoomAction = 0x8017d674; // type:func
+_neoArkNorthPromenadeRoomIdleState = 0x8017d6c0; // type:func
+_neoArkNorthPromenadeInitializeRoom = 0x8017d67c; // type:func
+neoArkNorthPromenadeRoomTask = 0x8017d6c8; // type:func
+_neoArkNorthPromenadeResolveRoomTransition = 0x8017d5d8; // type:func
+_gNeoArkNorthPromenadeRoomTaskStates = 0x8017d5c4;

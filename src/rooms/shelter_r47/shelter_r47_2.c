@@ -1,0 +1,1628 @@
+#include "shelter_r47_private.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+
+#include "common.h"
+
+#include "gameplay/action_prompt.h"
+#include "gameplay/area.h"
+#include "gameplay/captions.h"
+#include "gameplay/actor_presentation.h"
+#include "gameplay/player_actor.h"
+#include "gameplay/direction_input.h"
+#include "gameplay/item_menu.h"
+#include "gameplay/items.h"
+#include "gameplay/loading.h"
+#include "gameplay/pad_input.h"
+#include "gameplay/scene_runtime.h"
+#include "gameplay/sprites.h"
+
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/gameflag.h"
+#include "main/gameflag_types.h"
+#include "main/gameflow.h"
+#include "main/mc.h"
+#include "main/mc_types.h"
+#include "main/pad.h"
+#include "main/pad_types.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/sound.h"
+#include "main/task.h"
+#include "main/task_types.h"
+
+#include "overlay.h"
+#include "../../shared/room/action_prompt.h"
+
+/// Map width in screen pixels at which opening snaps to its full size (229).
+///
+/// Quarter-gap integer easing stops advancing in the last three pixels before
+/// the 232-pixel target. Reaching this threshold snaps both map dimensions,
+/// reveals the page overlay and enables the prompt.
+#define SHELTER_R47_MAP_WIDTH_SETTLED (SHELTER_R47_MAP_WIDTH - 3)
+
+/// Stage sentinel (255) ending an area's terminal-marker list before lookup.
+///
+/// Stored in signed-halfword `_ShelterR47MapMark::stage`; it is distinct from
+/// valid game stages. The reader stops before inspecting the other fields.
+#define SHELTER_R47_MAP_MARK_END 0xFF
+
+/// Where the room's map terminal draws the marker of one area.
+///
+/// Each page of the terminal's map has a table of these, closed by an entry
+/// whose `stage` is `SHELTER_R47_MAP_MARK_END`. An entry's marker is an 8x8
+/// sprite drawn over the page while the area's saved state has
+/// `AREA_SAVED_MAP_MARK` set and `AREA_SPAWN_RESTORE_SAVED_POSES` clear, the
+/// condition the map screen tests to mark the area's room.
+typedef struct {
+    s16 stage; // Stage the area belongs to, as `GameLocationKey.stage`, or `SHELTER_R47_MAP_MARK_END`
+    u16 area;  // Area the marker stands for, as `GameLocationKey.area`
+    s16 x;     // X of the marker's centre, in screen pixels from the display centre
+    s16 y;     // Y of the marker's centre, in the same units
+} _ShelterR47MapMark;
+STATIC_ASSERT_SIZEOF(_ShelterR47MapMark, 8);
+
+/// Console rows follow the saved-switch order, not the sprite UV order.
+enum {
+    SHELTER_R47_CONSOLE_ROW_TRANSFER_DOOR = 0,
+    SHELTER_R47_CONSOLE_ROW_SWITCH_2      = 1,
+    SHELTER_R47_CONSOLE_ROW_OBSERVATORY   = 2,
+    SHELTER_R47_CONSOLE_ROW_SWITCH_4      = 3,
+    SHELTER_R47_CONSOLE_ROW_WATCHERS      = 4,
+};
+
+/// Sprite ids in the console's composite sprite catalog.
+enum {
+    SHELTER_R47_CONSOLE_STATUS_SPRITE_BASE = 3,
+    SHELTER_R47_CONSOLE_MARKER_SPRITE      = 20,
+};
+
+/// Status index: two messages per switch, off followed by on.
+enum {
+    SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_OFF = 0,
+    SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_ON  = 1,
+    SHELTER_R47_CONSOLE_STATUS_SWITCH_2_OFF      = 2,
+    SHELTER_R47_CONSOLE_STATUS_SWITCH_2_ON       = 3,
+    SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_OFF   = 4,
+    SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_ON    = 5,
+    SHELTER_R47_CONSOLE_STATUS_SWITCH_4_OFF      = 6,
+    SHELTER_R47_CONSOLE_STATUS_SWITCH_4_ON       = 7,
+    SHELTER_R47_CONSOLE_STATUS_WATCHERS_OFF      = 8,
+    SHELTER_R47_CONSOLE_STATUS_WATCHERS_ON       = 9,
+};
+
+/// Input timing, byte-scale wipe levels and GPU packet codes shared by the room.
+enum {
+    SHELTER_R47_CONSOLE_LEVEL_MAX                 = 255,
+    SHELTER_R47_CONSOLE_INTERACTION_REARM_UPDATES = 10,
+    SHELTER_R47_MAP_TERMINAL_LABEL_OT             = 11,
+    SHELTER_R47_DRAW_MODE_COMMAND                 = 0xE1000000,
+    SHELTER_R47_SPRITE_GPU_WORDS                  = 4,
+    SHELTER_R47_SPRITE_COMMAND                    = 0x64,
+};
+
+static void _actionPromptResetDefault(Task* task);
+static void _shelterR47ConsoleHandleCommandTask(Task* task);
+static void _shelterR47ConsoleDrawStatusReveal(Task* task, s16 messageY);
+static void _shelterR47ConsoleDrawScrollingBackdrop(s16 scrollPixels);
+static void _shelterR47ConsoleFadeOutTask(Task* task);
+static s16  _shelterR47ConsoleValidateGuidedRow(Task* task, s16 selectedRow);
+static void _shelterR47ConsoleResetPromptTask(Task* task);
+static void _shelterR47ConsoleOpenViewTask(Task* task);
+static void _shelterR47ConsoleOpenCommandsTask(Task* task);
+static void _shelterR47ConsoleDismissTask(Task* task);
+static void _shelterR47ConsoleRevealRowTask(Task* task);
+static void _shelterR47ConsoleChangeViewTask(Task* task);
+static void _shelterR47ConsoleBeginButtonPressTask(Task* task);
+static void _shelterR47ConsoleApplyButtonPressTask(Task* task);
+static void _shelterR47ConsoleWaitButtonFlashTask(Task* task);
+static void _shelterR47ConsoleBeginFadeOutTask(Task* task);
+static void func_shelter_r47_801832E4(s16 status);
+static void _shelterR47ConsoleStartGuideDialogue(Task* task);
+static void _shelterR47ConsoleSaveSwitches(Task* task);
+static void _shelterR47ConsoleToggleSwitch(Task* task, s16 row);
+static void _shelterR47MapTerminalDrawPageOverlay(Task* task);
+
+/// Fourteen state handlers for the control-console screen.
+///
+/// Indexed by `Task::state` (0..13): initialize, reset prompt, reveal view,
+/// select hotspot, open commands, handle command, dismiss, change view,
+/// reveal row, begin button press, apply button press, wait for flash,
+/// begin closing fade and fade out. Entry zero owns work/prompt setup;
+/// dismiss and fade out save switches and release control. The dispatcher
+/// copies this complete 56-byte value before calling its selected handler.
+static const TaskFuncTable14 _gShelterR47ConsoleStateHandlers = {
+    .funcs = {
+        shelterR47ConsoleInitializeTask,
+        _shelterR47ConsoleResetPromptTask,
+        _shelterR47ConsoleOpenViewTask,
+        shelterR47ConsoleSelectHotspotTask,
+        _shelterR47ConsoleOpenCommandsTask,
+        _shelterR47ConsoleHandleCommandTask,
+        _shelterR47ConsoleDismissTask,
+        _shelterR47ConsoleChangeViewTask,
+        _shelterR47ConsoleRevealRowTask,
+        _shelterR47ConsoleBeginButtonPressTask,
+        _shelterR47ConsoleApplyButtonPressTask,
+        _shelterR47ConsoleWaitButtonFlashTask,
+        _shelterR47ConsoleBeginFadeOutTask,
+        _shelterR47ConsoleFadeOutTask,
+    },
+};
+
+/// Area-marker centres on the Shelter 1F terminal page, in display-centred pixels.
+///
+/// Ends with `SHELTER_R47_MAP_MARK_END`. Saved map-mark and pose-restore flags
+/// select which entries are drawn; this overlay owns the list while loaded.
+static _ShelterR47MapMark _gShelterR47MapTerminal1fMarks[7] = {
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_SHELTER_1F_PARKING_GARAGE, 124, 0 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_SHELTER_1F_VEHICULAR_AIRLOCK, 87, 0 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_SHELTER_1F_BULWARK, 55, 0 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_SHELTER_1F_HELIPORT, 0, 0 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_SHELTER_1F_AIRLOCK, 100, -17 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_SHELTER_1F_TENT, -57, 0 },
+    { SHELTER_R47_MAP_MARK_END },
+};
+
+/// Area-marker centres on the Shelter B1 terminal page, in display-centred pixels.
+///
+/// Ends with `SHELTER_R47_MAP_MARK_END`. Saved map-mark and pose-restore flags
+/// select which entries are drawn; this overlay owns the list while loaded.
+static _ShelterR47MapMark _gShelterR47MapTerminalB1Marks[17] = {
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_R47, 100, -77 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_POD_ACCESS_TUNNEL, 64, -58 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_STERILIZATION_ROOM, 55, -12 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_MAIN_CORRIDOR, 51, 48 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_SLEEPING_QUARTERS, 94, 13 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_NORTH_MAINTENANCE_WALKWAY, 130, -3 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_STOREROOM, 102, 40 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_ARMORY, 86, 56 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_SOUTH_MAINTENANCE_WALKWAY, 120, 81 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_ELEVATOR_HALL, 100, 93 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_CONTROL_ROOM_ACCESS_TUNNEL, 24, 53 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_TRANSFER_TUNNEL, 24, 25 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_CONTROL_ROOM, -15, 52 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_GOLEM_FREEZER_1, -15, 36 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_ACCESS_TUNNEL, 5, 25 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B1_UNDERGROUND_PARKING, -41, -17 },
+    { SHELTER_R47_MAP_MARK_END },
+};
+
+/// Area-marker centres on the Shelter B2 terminal page, in display-centred pixels.
+///
+/// Ends with `SHELTER_R47_MAP_MARK_END`. Saved map-mark and pose-restore flags
+/// select which entries are drawn; this overlay owns the list while loaded.
+static _ShelterR47MapMark _gShelterR47MapTerminalB2Marks[11] = {
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_R48, 53, -73 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B2_POD_ACCESS_TUNNEL, 13, -73 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B2_SEPTIC_TANK, 7, -11 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B2_MAIN_CORRIDOR, 11, 45 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B2_ELEVATOR_HALL, 20, 94 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B2_SOUTH_MAINTENANCE_WALKWAY, 84, 78 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B2_OPERATING_ROOM, 67, 33 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B2_LABORATORY, 45, 59 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B2_NORTH_MAINTENANCE_WALKWAY, 86, 2 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B2_BREEDING_ROOM, 56, 9 },
+    { SHELTER_R47_MAP_MARK_END },
+};
+
+/// Area-marker centres on the Shelter B3 terminal page, in display-centred pixels.
+///
+/// Ends with `SHELTER_R47_MAP_MARK_END`. Saved map-mark and pose-restore flags
+/// select which entries are drawn; this overlay owns the list while loaded.
+static _ShelterR47MapMark _gShelterR47MapTerminalB3Marks[5] = {
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B3_DUMPING_HOLE, -33, -59 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B3_GARBAGE_INCINERATOR, 85, -53 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B3_INCINERATOR_CONTROL_ROOM, 89, 51 },
+    { GAME_STAGE_MINE_SHELTER, GAME_AREA_SHELTER_B3_ELEVATOR_HALL, 99, 74 },
+    { SHELTER_R47_MAP_MARK_END },
+};
+
+/// Empty Neo Ark marker list before the second power plant is cleared.
+///
+/// The sole entry terminates traversal; the page draws its separate overlay.
+static _ShelterR47MapMark _gShelterR47MapTerminalEmptyMarks[1] = {
+    { SHELTER_R47_MAP_MARK_END },
+};
+
+/// Area-marker centres on the Neo Ark terminal page, in display-centred pixels.
+///
+/// Ends with `SHELTER_R47_MAP_MARK_END`. Saved map-mark and pose-restore flags
+/// select which entries are drawn; this overlay owns the list while loaded.
+static _ShelterR47MapMark _gShelterR47MapTerminalNeoArkMarks[15] = {
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_EVE_ACCESS_TUNNEL, 146, 6 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_NORTH_PROMENADE, 135, -65 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_FOREST_ZONE, 45, -75 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_SUBMARINE_TUNNEL, -15, -75 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_PAVILION, -57, -78 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_ISLAND, -23, -44 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_BRIDGE, -53, -36 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_GARDEN, -65, 24 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_SUBSTATION, -21, 28 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_POWER_PLANT_2, -21, 40 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_POWER_PLANT_1, -29, 60 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_SHRINE, 25, 79 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_SAVANNA_ZONE, 84, 60 },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_SOUTH_PROMENADE, 136, 52 },
+    { SHELTER_R47_MAP_MARK_END },
+};
+
+/// Terminal marker lists by page while the second power plant clear flag is not 1.
+///
+/// Indexed by `SHELTER_R47_MAP_PAGE_*` (0..4). Each borrowed list is terminated
+/// by `SHELTER_R47_MAP_MARK_END`; only the Neo Ark entry differs between the
+/// two directories. Selected when `GAME_FLAG_NEO_ARK_POWER_PLANT_2_CLEARED`
+/// is not 1; storage belongs to the loaded room overlay.
+static _ShelterR47MapMark* _gShelterR47MapTerminalMarksBeforeNeoArkClearByPage[SHELTER_R47_MAP_PAGE_COUNT] = {
+    [SHELTER_R47_MAP_PAGE_B1]      = _gShelterR47MapTerminalB1Marks,
+    [SHELTER_R47_MAP_PAGE_B2]      = _gShelterR47MapTerminalB2Marks,
+    [SHELTER_R47_MAP_PAGE_B3]      = _gShelterR47MapTerminalB3Marks,
+    [SHELTER_R47_MAP_PAGE_NEO_ARK] = _gShelterR47MapTerminalEmptyMarks,
+    [SHELTER_R47_MAP_PAGE_1F]      = _gShelterR47MapTerminal1fMarks,
+};
+
+/// Terminal marker lists by page while the second power plant clear flag is 1.
+///
+/// Indexed by `SHELTER_R47_MAP_PAGE_*` (0..4). Each borrowed list is terminated
+/// by `SHELTER_R47_MAP_MARK_END`; only the Neo Ark entry differs between the
+/// two directories. Selected when `GAME_FLAG_NEO_ARK_POWER_PLANT_2_CLEARED`
+/// is 1; storage belongs to the loaded room overlay.
+static _ShelterR47MapMark* _gShelterR47MapTerminalMarksAfterNeoArkClearByPage[SHELTER_R47_MAP_PAGE_COUNT] = {
+    [SHELTER_R47_MAP_PAGE_B1]      = _gShelterR47MapTerminalB1Marks,
+    [SHELTER_R47_MAP_PAGE_B2]      = _gShelterR47MapTerminalB2Marks,
+    [SHELTER_R47_MAP_PAGE_B3]      = _gShelterR47MapTerminalB3Marks,
+    [SHELTER_R47_MAP_PAGE_NEO_ARK] = _gShelterR47MapTerminalNeoArkMarks,
+    [SHELTER_R47_MAP_PAGE_1F]      = _gShelterR47MapTerminal1fMarks,
+};
+
+/// Texture V rows of the five terminal page titles, in texels.
+///
+/// Page indices 0..4 follow `SHELTER_R47_MAP_PAGE_*`; each title is 10 texels
+/// high. The retained sixth halfword has no reader and its purpose is unproven.
+static s16 _gShelterR47MapTerminalPageTitleV[6] = {
+    10,
+    20,
+    30,
+    40,
+    0,
+    0,
+};
+
+/// Texture V row from which the terminal's caption-strip offsets are measured.
+enum { SHELTER_R47_MAP_CAPTION_ATLAS_BASE_V = 56 };
+
+/// Texture V offsets of each page's first and second caption strips, in texels.
+///
+/// Page indices 0..4 follow `SHELTER_R47_MAP_PAGE_*`; columns 0 and 1 select
+/// the upper and lower 8-texel-high strips. Add `SHELTER_R47_MAP_CAPTION_ATLAS_BASE_V`.
+static s16 _gShelterR47MapTerminalPageCaptionVOffsets[SHELTER_R47_MAP_PAGE_COUNT][2] = {
+    { 0, 16 },
+    { 8, 24 },
+    { 16, 32 },
+    { 24, 0 },
+    { 32, 8 },
+};
+
+static inline s32 _areaIsSavedMapMarkEnabled(const GameLocationKey* location);
+static inline s16 _shelterR47MapTerminalIsAreaMarkerVisible(s32 stage, s32 area);
+
+/// Prepares one draw-mode/sprite packet for texture and geometry setup.
+///
+/// Requires a word-aligned writable `packet` and a complete E1 GPU command.
+/// RGB is retained. Merging the adjacent primitives clears the sprite tag to
+/// a no-op and makes six words follow the draw-mode tag. The caller supplies
+/// texture flags, CLUT, UVs and geometry before linking the packet into an OT.
+static inline void _shelterR47InitDrawModeSprite(SpriteDrawModePacket* packet, u32 drawModeCommand)
+{
+    setlen(&packet->drawMode, ARRAY_SIZE(packet->drawMode.code));
+    setlen(&packet->sprite.sprt, SHELTER_R47_SPRITE_GPU_WORDS);
+    packet->drawMode.code[0] = drawModeCommand;
+    setcode(&packet->sprite.sprt, SHELTER_R47_SPRITE_COMMAND);
+    MargePrim(packet, &packet->sprite.sprt);
+}
+
+/// Publishes a console status and queues its corresponding message sprite.
+///
+/// Requires `status` in 0..9 and live `ShelterR47ConsoleWork`. Coordinates are
+/// read from `work` in display-centred pixels before reloading the task's work
+/// and publishing its status. Statuses select sprites 3..12 in the room's
+/// catalog. Requires the textures, frame arena and OT of
+/// `shelterR47ConsoleDrawSprite`; this does not advance the status reveal.
+static inline void _shelterR47ConsoleDrawStatus(Task* task, ShelterR47ConsoleWork* work, s16 status)
+{
+    s16                    messageX    = work->messageX;
+    s16                    messageY    = work->messageY;
+    ShelterR47ConsoleWork* currentWork = task->work;
+
+    currentWork->status = status;
+    shelterR47ConsoleDrawSprite(messageX, messageY, SHELTER_R47_CONSOLE_STATUS_SPRITE_BASE + status);
+}
+
+/// Handles the confirmed console command, including first-use and guided dialogue.
+///
+/// Console state 5; requires live console work and the first port's prompt.
+/// Selection packs kind 0..4 in the high byte and a row 0..4 in the low byte
+/// for kind 0. Row changes clear the wipe and select state 7; switch presses
+/// select state 9. Status examination requires status 0..9. Cancelled, refused
+/// or dialogue-only commands return to state 3. An unrecognized confirmed kind
+/// leaves state 5 active. The selected row is narrowed to its stored signed byte.
+static void _shelterR47ConsoleHandleCommandTask(Task* task)
+{
+    enum {
+        SHELTER_R47_CONSOLE_HOTSPOT_KIND_SHIFT    = 8,
+        SHELTER_R47_CONSOLE_HOTSPOT_ROW_MASK      = 0xFF,
+        SHELTER_R47_CONSOLE_HOTSPOT_ROW           = 0,
+        SHELTER_R47_CONSOLE_HOTSPOT_SWITCH_BUTTON = 1,
+        SHELTER_R47_CONSOLE_HOTSPOT_STATUS        = 2,
+        SHELTER_R47_CONSOLE_HOTSPOT_HEADER        = 3,
+        SHELTER_R47_CONSOLE_HOTSPOT_LABEL         = 4,
+        SHELTER_R47_CONSOLE_GUIDE_FREE_USE        = 0,
+        SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT   = 0,
+        SHELTER_R47_CONSOLE_CAP_ROW_FIRST_USE     = 0x2E,
+        SHELTER_R47_CONSOLE_CAP_BUTTON_FIRST_USE  = 0x2C,
+        SHELTER_R47_CONSOLE_CAP_GUIDE_SAME_ROW    = 0xF,
+        SHELTER_R47_CONSOLE_CAP_HEADER            = 0x2B,
+        SHELTER_R47_CONSOLE_CAP_LABEL             = 0x2D,
+        SHELTER_R47_CONSOLE_CAP_TRANSFER_DOOR_OFF = 0x15,
+        SHELTER_R47_CONSOLE_CAP_TRANSFER_DOOR_ON  = 0x16,
+        SHELTER_R47_CONSOLE_CAP_SWITCH_2_OFF      = 0x17,
+        SHELTER_R47_CONSOLE_CAP_SWITCH_2_ON       = 0x18,
+        SHELTER_R47_CONSOLE_CAP_OBSERVATORY_OFF   = 0x1A,
+        SHELTER_R47_CONSOLE_CAP_OBSERVATORY_ON    = 0x19,
+        SHELTER_R47_CONSOLE_CAP_SWITCH_4_OFF      = 0x1B,
+        SHELTER_R47_CONSOLE_CAP_SWITCH_4_ON       = 0x1C,
+        SHELTER_R47_CONSOLE_CAP_WATCHERS_OFF      = 0x22,
+        SHELTER_R47_CONSOLE_CAP_WATCHERS_ON       = 0x23,
+        SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT  = 3,
+        SHELTER_R47_CONSOLE_STATE_CHANGE_VIEW     = 7,
+        SHELTER_R47_CONSOLE_STATE_BUTTON_PRESS    = 9,
+        SHELTER_R47_CONSOLE_WIPE_CLEAR            = 0,
+    };
+    ShelterR47ConsoleWork* work;
+    ActionPrompt*          prompt;
+    u32                    hotspotKind;
+
+    prompt = gActionPromptSlots;
+    work   = task->work;
+    shelterR47ConsoleUpdateAndDraw(task, SHELTER_R47_CONSOLE_LAYOUT_CURRENT);
+    prompt->mode        = ACTION_PROMPT_MODE_HIDDEN;
+    prompt->cursorSpeed = ACTION_PROMPT_SPEED_STOPPED;
+    if (itemMenuIsHotspotActionConfirmed() != 0) {
+        hotspotKind = (u16)work->selection >> SHELTER_R47_CONSOLE_HOTSPOT_KIND_SHIFT;
+        // First-use dialogue takes a command before a free-use row can change.
+        if (hotspotKind == SHELTER_R47_CONSOLE_HOTSPOT_ROW) {
+            if (work->row != (work->selection & SHELTER_R47_CONSOLE_HOTSPOT_ROW_MASK)) {
+                if (work->guideStep != SHELTER_R47_CONSOLE_GUIDE_FREE_USE) {
+                    if (_shelterR47ConsoleValidateGuidedRow(task, work->selection & SHELTER_R47_CONSOLE_HOTSPOT_ROW_MASK) == 0) {
+                        task->state = SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT;
+                        return;
+                    }
+                    work->previousRow = work->row;
+                    work->row         = work->selection;
+                    _shelterR47ConsoleSetWipe(task, SHELTER_R47_CONSOLE_WIPE_CLEAR);
+                    task->state = SHELTER_R47_CONSOLE_STATE_CHANGE_VIEW;
+                    return;
+                }
+                if (gShelterR47ConsoleRowFirstUseStarted == false) {
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_ROW_FIRST_USE, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    gShelterR47ConsoleRowFirstUseStarted = true;
+                    task->state                          = SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT;
+                    return;
+                }
+                work->previousRow = work->row;
+                work->row         = work->selection;
+                _shelterR47ConsoleSetWipe(task, SHELTER_R47_CONSOLE_WIPE_CLEAR);
+                task->state = SHELTER_R47_CONSOLE_STATE_CHANGE_VIEW;
+                return;
+            }
+            if (work->guideStep != SHELTER_R47_CONSOLE_GUIDE_FREE_USE) {
+                capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_GUIDE_SAME_ROW, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+            }
+            task->state = SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT;
+            return;
+        }
+        if (hotspotKind == SHELTER_R47_CONSOLE_HOTSPOT_SWITCH_BUTTON) {
+            if (gShelterR47ConsoleButtonFirstUseStarted == false) {
+                capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_BUTTON_FIRST_USE, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                gShelterR47ConsoleButtonFirstUseStarted = hotspotKind;
+                task->state                             = SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT;
+                return;
+            }
+            task->state = SHELTER_R47_CONSOLE_STATE_BUTTON_PRESS;
+            return;
+        }
+        if (hotspotKind == SHELTER_R47_CONSOLE_HOTSPOT_STATUS) {
+            switch (work->status) {
+                case SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_OFF:
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_TRANSFER_DOOR_OFF, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    break;
+                case SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_ON:
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_TRANSFER_DOOR_ON, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    break;
+                case SHELTER_R47_CONSOLE_STATUS_SWITCH_2_OFF:
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_SWITCH_2_OFF, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    break;
+                case SHELTER_R47_CONSOLE_STATUS_SWITCH_2_ON:
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_SWITCH_2_ON, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    break;
+                case SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_OFF:
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_OBSERVATORY_OFF, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    break;
+                case SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_ON:
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_OBSERVATORY_ON, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    break;
+                case SHELTER_R47_CONSOLE_STATUS_SWITCH_4_OFF:
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_SWITCH_4_OFF, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    break;
+                case SHELTER_R47_CONSOLE_STATUS_SWITCH_4_ON:
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_SWITCH_4_ON, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    break;
+                case SHELTER_R47_CONSOLE_STATUS_WATCHERS_OFF:
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_WATCHERS_OFF, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    break;
+                case SHELTER_R47_CONSOLE_STATUS_WATCHERS_ON:
+                    capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_WATCHERS_ON, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+                    break;
+            }
+            task->state = SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT;
+            return;
+        }
+        if (hotspotKind == SHELTER_R47_CONSOLE_HOTSPOT_HEADER) {
+            capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_HEADER, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+            task->state = SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT;
+            return;
+        }
+        if (hotspotKind == SHELTER_R47_CONSOLE_HOTSPOT_LABEL) {
+            capStartSequenceSlot(SHELTER_R47_CONSOLE_CAP_LABEL, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+            task->state = SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT;
+            return;
+        }
+        return;
+    }
+    task->state = SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT;
+}
+
+void shelterR47ConsoleUpdateAndDraw(Task* task, s16 changingView)
+{
+    enum {
+        SHELTER_R47_CONSOLE_HEADER_SPRITE            = 0,
+        SHELTER_R47_CONSOLE_BUTTON_SPRITE            = 1,
+        SHELTER_R47_CONSOLE_PRESSED_BUTTON_SPRITE    = 2,
+        SHELTER_R47_CONSOLE_LABEL_SPRITE_BASE        = 13,
+        SHELTER_R47_CONSOLE_ROW_SWITCH_SPRITE        = 18,
+        SHELTER_R47_CONSOLE_ACTIVE_ROW_SWITCH_SPRITE = 19,
+        SHELTER_R47_CONSOLE_SCROLLING_VIEW           = 20,
+        SHELTER_R47_CONSOLE_SCROLL_MAX               = 320,
+    };
+    ShelterR47ConsoleWork* work;
+    s32                    rowIndex;
+    s16                    rowX;
+    s32                    labelX;
+    s32                    rowY;
+    s16                    labelY;
+    s8                     labelRow;
+    s16                    labelRowIndex;
+
+    work = task->work;
+    // The row-3 view pans a backdrop wider than the display.
+    if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view == SHELTER_R47_CONSOLE_SCROLLING_VIEW) {
+        if (work->backdropToggle & 1) {
+            work->backdropScroll--;
+            if (work->backdropScroll < 0) {
+                work->backdropScroll = 0;
+            }
+        } else {
+            work->backdropScroll++;
+            if (work->backdropScroll > SHELTER_R47_CONSOLE_SCROLL_MAX) {
+                work->backdropScroll = SHELTER_R47_CONSOLE_SCROLL_MAX;
+            }
+        }
+        _shelterR47ConsoleDrawScrollingBackdrop(work->backdropScroll);
+    }
+    // Ease the controls and reveal the status retained from the last draw.
+    if (work->buttonFlash > 0) {
+        work->buttonFlash--;
+    }
+    work->headerX += (-0x98 - work->headerX) >> 2;
+    shelterR47ConsoleDrawSprite(work->headerX, work->headerY, SHELTER_R47_CONSOLE_HEADER_SPRITE);
+    if (changingView == 0) {
+        work->buttonY += (0x48 - work->buttonY) >> 2;
+        if (work->buttonFlash == 0) {
+            shelterR47ConsoleDrawSprite(work->buttonX, work->buttonY, SHELTER_R47_CONSOLE_BUTTON_SPRITE);
+        } else {
+            shelterR47ConsoleDrawSprite(work->buttonX, work->buttonY, SHELTER_R47_CONSOLE_PRESSED_BUTTON_SPRITE);
+        }
+        work->messageY += (0x58 - work->messageY) >> 2;
+        _shelterR47ConsoleDrawStatusReveal(task, work->messageY);
+        switch (work->row) {
+            case SHELTER_R47_CONSOLE_ROW_TRANSFER_DOOR:
+                if (work->toggles[0] == 0) {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_OFF);
+                } else {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_ON);
+                }
+                break;
+            case SHELTER_R47_CONSOLE_ROW_SWITCH_2:
+                if (work->toggles[1] == 0) {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_SWITCH_2_OFF);
+                } else {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_SWITCH_2_ON);
+                }
+                break;
+            case SHELTER_R47_CONSOLE_ROW_OBSERVATORY:
+                if (work->toggles[2] == 0) {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_OFF);
+                } else {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_ON);
+                }
+                break;
+            case SHELTER_R47_CONSOLE_ROW_SWITCH_4:
+                if (work->toggles[3] == 0) {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_SWITCH_4_OFF);
+                } else {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_SWITCH_4_ON);
+                }
+                break;
+            case SHELTER_R47_CONSOLE_ROW_WATCHERS:
+                if (work->toggles[4] == 0) {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_WATCHERS_OFF);
+                } else {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_WATCHERS_ON);
+                }
+                break;
+        }
+    } else {
+        work->buttonY += (0x80 - work->buttonY) >> 2;
+        shelterR47ConsoleDrawSprite(work->buttonX, work->buttonY, SHELTER_R47_CONSOLE_BUTTON_SPRITE);
+        work->messageY += (0x90 - work->messageY) >> 2;
+        _shelterR47ConsoleDrawStatusReveal(task, work->messageY);
+        switch (work->previousRow) {
+            case SHELTER_R47_CONSOLE_ROW_TRANSFER_DOOR:
+                if (work->toggles[0] == 0) {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_OFF);
+                } else {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_ON);
+                }
+                break;
+            case SHELTER_R47_CONSOLE_ROW_SWITCH_2:
+                if (work->toggles[1] == 0) {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_SWITCH_2_OFF);
+                } else {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_SWITCH_2_ON);
+                }
+                break;
+            case SHELTER_R47_CONSOLE_ROW_OBSERVATORY:
+                if (work->toggles[2] == 0) {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_OFF);
+                } else {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_ON);
+                }
+                break;
+            case SHELTER_R47_CONSOLE_ROW_SWITCH_4:
+                if (work->toggles[3] == 0) {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_SWITCH_4_OFF);
+                } else {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_SWITCH_4_ON);
+                }
+                break;
+            case SHELTER_R47_CONSOLE_ROW_WATCHERS:
+                if (work->toggles[4] == 0) {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_WATCHERS_OFF);
+                } else {
+                    _shelterR47ConsoleDrawStatus(task, work, SHELTER_R47_CONSOLE_STATUS_WATCHERS_ON);
+                }
+                break;
+        }
+    }
+    // Fan out unselected rows only while the scene view is changing.
+    if (changingView == 0) {
+        for (rowIndex = 0; rowIndex < (s32)ARRAY_SIZE(work->rowX); rowIndex++) {
+            rowX                 = work->rowX[rowIndex] + ((0x78 - work->rowX[rowIndex]) >> 2);
+            work->rowX[rowIndex] = rowX;
+            if (work->row == rowIndex) {
+                rowY = work->rowY[rowIndex];
+                shelterR47ConsoleDrawSprite((s16)(rowX + 0x18), rowY, SHELTER_R47_CONSOLE_MARKER_SPRITE);
+                shelterR47ConsoleDrawSprite(rowX, rowY, SHELTER_R47_CONSOLE_ROW_SWITCH_SPRITE);
+            } else {
+                shelterR47ConsoleDrawSprite(rowX, work->rowY[rowIndex], SHELTER_R47_CONSOLE_ROW_SWITCH_SPRITE);
+            }
+        }
+    } else {
+        for (rowIndex = 0; rowIndex < (s32)ARRAY_SIZE(work->rowX); rowIndex++) {
+            if (work->row == rowIndex) {
+                rowX                 = work->rowX[rowIndex] + ((0x78 - work->rowX[rowIndex]) >> 2);
+                rowY                 = work->rowY[rowIndex];
+                work->rowX[rowIndex] = rowX;
+                shelterR47ConsoleDrawSprite((s16)(rowX + 0x18), rowY, SHELTER_R47_CONSOLE_MARKER_SPRITE);
+                shelterR47ConsoleDrawSprite(rowX, rowY, SHELTER_R47_CONSOLE_ACTIVE_ROW_SWITCH_SPRITE);
+            } else {
+                switch (rowIndex) {
+                    case SHELTER_R47_CONSOLE_ROW_TRANSFER_DOOR:
+                        work->rowX[rowIndex] += (0xAA - work->rowX[rowIndex]) >> 2;
+                        break;
+                    case SHELTER_R47_CONSOLE_ROW_SWITCH_2:
+                        work->rowX[rowIndex] += (0xBE - work->rowX[rowIndex]) >> 2;
+                        break;
+                    case SHELTER_R47_CONSOLE_ROW_OBSERVATORY:
+                        work->rowX[rowIndex] += (0xD2 - work->rowX[rowIndex]) >> 2;
+                        break;
+                    case SHELTER_R47_CONSOLE_ROW_SWITCH_4:
+                        work->rowX[rowIndex] += (0xE6 - work->rowX[rowIndex]) >> 2;
+                        break;
+                    case SHELTER_R47_CONSOLE_ROW_WATCHERS:
+                        work->rowX[rowIndex] += (0xFA - work->rowX[rowIndex]) >> 2;
+                        break;
+                }
+                shelterR47ConsoleDrawSprite(work->rowX[rowIndex], work->rowY[rowIndex], SHELTER_R47_CONSOLE_ROW_SWITCH_SPRITE);
+            }
+        }
+    }
+    if (changingView == 0) {
+        labelRow = work->row;
+        labelX   = work->labelX;
+        labelY   = work->labelY;
+    } else {
+        labelRow = work->previousRow;
+        labelX   = work->labelX;
+        labelY   = work->labelY;
+    }
+    work->labelX += (0x7E - labelX) >> 2;
+    labelRowIndex = labelRow;
+    if ((u16)labelRowIndex < (s32)ARRAY_SIZE(work->rowX)) {
+        shelterR47ConsoleDrawSprite(work->labelX, labelY, (s16)(labelRowIndex + SHELTER_R47_CONSOLE_LABEL_SPRITE_BASE));
+    }
+}
+
+/// Draws the status reveal cursor and covers the message's unrevealed tail.
+///
+/// Requires live console work, a valid status 0..9 and its loaded reveal table.
+/// `messageY` is a display-centred pixel coordinate. Advances one stop on odd
+/// animation frames, then blinks the preceding stop for eight of sixteen frames.
+/// Status starts borrow the shared reveal buffer. Status 3 at cursor 0 reads
+/// the preceding byte; an inherited cursor 1 walks into status 4's stops.
+/// Queues a marker and, before the terminator, one raw textured quad in slot 10.
+static void _shelterR47ConsoleDrawStatusReveal(Task* task, s16 messageY)
+{
+    enum {
+        SHELTER_R47_CONSOLE_REVEAL_END        = 255,
+        SHELTER_R47_CONSOLE_REVEAL_BLINK_MASK = 15,
+        SHELTER_R47_CONSOLE_REVEAL_BLINK_ON   = 8,
+        SHELTER_R47_CONSOLE_SPRITE_OT         = 10,
+    };
+    ShelterR47ConsoleWork* work;
+    POLY_FT4*              maskQuad;
+    const u8*              revealStop;
+    s32                    stopX;
+
+    work       = task->work;
+    revealStop = gShelterR47ConsoleStatusRevealStarts[work->status] + work->revealPos;
+    stopX      = *revealStop;
+    if (stopX != SHELTER_R47_CONSOLE_REVEAL_END) {
+        shelterR47ConsoleDrawSprite(stopX - 0x9D, messageY, SHELTER_R47_CONSOLE_MARKER_SPRITE);
+        // Stretch the inset texture over the unrevealed tail of the message.
+        maskQuad       = gGpuPrimCursor;
+        gGpuPrimCursor = maskQuad + 1;
+        setPolyFT4(maskQuad);
+        setUVWH(maskQuad, 0x48, 0xB9, 0x2C, 0xE);
+        maskQuad->tpage = getTPage(0, GPU_BLEND_AVERAGE, 832, 0);
+        maskQuad->clut  = getClut(48, 255);
+        setXY4(maskQuad, stopX - 0x96, messageY + 1, 0x69, messageY + 1, stopX - 0x96, messageY + 0xF, 0x69, messageY + 0xF);
+        setShadeTex(maskQuad, 1);
+        addPrim(&gGpuCurrentOt[SHELTER_R47_CONSOLE_SPRITE_OT], maskQuad);
+        if (gDisplayState.animFrame & 1) {
+            work->revealPos++;
+        }
+    } else {
+        // Status 3 at cursor 0 uses the preceding byte of the shared buffer.
+        stopX = revealStop[-1];
+        if ((u32)(gDisplayState.animFrame & SHELTER_R47_CONSOLE_REVEAL_BLINK_MASK) < SHELTER_R47_CONSOLE_REVEAL_BLINK_ON) {
+            shelterR47ConsoleDrawSprite(stopX - 0x9D, messageY, SHELTER_R47_CONSOLE_MARKER_SPRITE);
+        }
+    }
+}
+
+/// Queues the console's 640x240 scrolling backdrop as three texture strips.
+///
+/// `scrollPixels` is 0..320 pixels left from its initial display-centred origin.
+/// Requires loaded textures, the current OT and arena space for three merged
+/// draw-mode/sprite packets; the GPU borrows them in slot 12 until completion.
+static void _shelterR47ConsoleDrawScrollingBackdrop(s16 scrollPixels)
+{
+    enum {
+        SHELTER_R47_CONSOLE_BACKDROP_OT = 12,
+    };
+    SpriteDrawModePacket* packet;
+    SPRT*                 sprite;
+
+    packet         = gGpuPrimCursor;
+    sprite         = &packet->sprite.sprt;
+    gGpuPrimCursor = packet + 1;
+    _shelterR47InitDrawModeSprite(packet, (SHELTER_R47_DRAW_MODE_COMMAND | getTPage(1, GPU_BLEND_AVERAGE, 384, 256)));
+    sprite->clut  = getClut(0, 256);
+    sprite->x0    = -0xA0 - scrollPixels;
+    sprite->y0    = -0x78;
+    sprite->u0    = 0;
+    sprite->v0    = 0;
+    sprite->w     = 0x100;
+    sprite->h     = 0xF0;
+    sprite->code |= SPRITE_SOURCE_RAW_TEXTURE;
+    addPrim(&gGpuCurrentOt[SHELTER_R47_CONSOLE_BACKDROP_OT], packet);
+
+    packet         = gGpuPrimCursor;
+    sprite         = &packet->sprite.sprt;
+    gGpuPrimCursor = packet + 1;
+    _shelterR47InitDrawModeSprite(packet, (SHELTER_R47_DRAW_MODE_COMMAND | getTPage(1, GPU_BLEND_AVERAGE, 512, 256)));
+    sprite->x0    = 0x60 - scrollPixels;
+    sprite->clut  = getClut(0, 256);
+    sprite->y0    = -0x78;
+    sprite->u0    = 0;
+    sprite->v0    = 0;
+    sprite->w     = 0x80;
+    sprite->h     = 0xF0;
+    sprite->code |= SPRITE_SOURCE_RAW_TEXTURE;
+    addPrim(&gGpuCurrentOt[SHELTER_R47_CONSOLE_BACKDROP_OT], packet);
+
+    packet         = gGpuPrimCursor;
+    sprite         = &packet->sprite.sprt;
+    gGpuPrimCursor = packet + 1;
+    _shelterR47InitDrawModeSprite(packet, (SHELTER_R47_DRAW_MODE_COMMAND | getTPage(1, GPU_BLEND_AVERAGE, 896, 0)));
+    sprite->clut  = getClut(0, 257);
+    sprite->x0    = 0xE0 - scrollPixels;
+    sprite->y0    = -0x78;
+    sprite->u0    = 0;
+    sprite->v0    = 0;
+    sprite->w     = 0x100;
+    sprite->h     = 0xF0;
+    sprite->code |= SPRITE_SOURCE_RAW_TEXTURE;
+    addPrim(&gGpuCurrentOt[SHELTER_R47_CONSOLE_BACKDROP_OT], packet);
+}
+
+/// Fades the console to black, saves its switches and releases the session.
+///
+/// Console state 13; requires live work and the prompt task in spawn argument 2.
+/// The fade increases by 16 from 0..255; crossing 255 restores player drawing
+/// and control, releases the menu hold and requests both tasks' teardown.
+static void _shelterR47ConsoleFadeOutTask(Task* task)
+{
+    enum {
+        SHELTER_R47_CONSOLE_EXIT_FADE_STEP = 16,
+    };
+    enum { SHELTER_R47_CONSOLE_MENU_UNLOCK_UPDATES = 8 };
+    ShelterR47ConsoleWork* work;
+    ShelterR47ConsoleWork* switchWork;
+    u16                    nextFade;
+    u8                     fadeLevel;
+
+    work = task->work;
+    shelterR47ConsoleUpdateAndDraw(task, SHELTER_R47_CONSOLE_LAYOUT_CURRENT);
+    nextFade   = work->fade + SHELTER_R47_CONSOLE_EXIT_FADE_STEP;
+    work->fade = nextFade;
+    // Commit the switches and release control only once the screen is black.
+    if ((s16)nextFade >= SHELTER_R47_CONSOLE_LEVEL_MAX + 1) {
+        work->fade = SHELTER_R47_CONSOLE_LEVEL_MAX;
+        switchWork = task->work;
+        gameFlagSetNibble(GAME_FLAG_B1_TRANSFER_TUNNEL_DOOR_UNLOCKED, switchWork->toggles[0]);
+        gameFlagSetNibble(GAME_FLAG_SHELTER_R47_CONSOLE_SWITCH_2, switchWork->toggles[1]);
+        gameFlagSetNibble(GAME_FLAG_B2_CORRIDOR_OBSERVATORY_ACCESS, switchWork->toggles[2]);
+        gameFlagSetNibble(GAME_FLAG_SHELTER_R47_CONSOLE_SWITCH_4, switchWork->toggles[3]);
+        gameFlagSetNibble(GAME_FLAG_SHELTER_WATCHERS_DISABLED, switchWork->toggles[4]);
+        playerActorSetScriptedControl(GAME_ACTOR_SCRIPTED_CONTROL_RESUME);
+        playerActorSetDrawMode(PLAYER_ACTOR_MODEL_DRAW_SHOW_AUTO);
+        gPadInputMenuUnlockUpdates        = SHELTER_R47_CONSOLE_MENU_UNLOCK_UPDATES;
+        gDirectionInteractionRearmUpdates = SHELTER_R47_CONSOLE_INTERACTION_REARM_UPDATES;
+        displayReleaseMenuHold();
+        gGameSession->eventState   = 0;
+        gGameSession->hideHud      = 0;
+        gGameSession->cutsceneHold = 0;
+        taskKill(task->spawnArg2.pointer);
+        taskRequestKill(task, 0);
+    }
+    fadeLevel = (u8)work->fade;
+    fadeDrawOverlay(fadeLevel, fadeLevel, fadeLevel, GPU_BLEND_SUBTRACT);
+}
+
+#include "../../shared/room/action_prompt_move_cursors.inc.c"
+
+#include "../../shared/room/action_prompt_draw_cursor.inc.c"
+
+/// Accepts the console's next guided row or requests corrective CAP dialogue.
+///
+/// Borrows live console work. Guide steps 1..3 require the equal selected row;
+/// success advances the guide and returns signed-halfword 1. A different row
+/// requests CAP slot 16 in the current display, variant equal to the guide step,
+/// and returns 0 without advancing. Free use, completion and other steps return
+/// 0 without CAP playback. This does not commit the console's selected row.
+static s16 _shelterR47ConsoleValidateGuidedRow(Task* task, s16 selectedRow)
+{
+    enum { GUIDE_EXPECT_ROW_1        = 1,
+           GUIDE_EXPECT_ROW_2        = 2,
+           GUIDE_EXPECT_ROW_3        = 3,
+           GUIDE_DONE                = 4,
+           GUIDE_REJECTED            = 0,
+           GUIDE_ACCEPTED            = 1,
+           GUIDE_CORRECTION_CAP_SLOT = 16,
+           GUIDE_CAP_CURRENT_DISPLAY = 0 };
+    ShelterR47ConsoleWork* work;
+    s8                     requiredRow;
+
+    work        = task->work;
+    requiredRow = work->guideStep;
+    switch (requiredRow) {
+        case GUIDE_EXPECT_ROW_1:
+            if (selectedRow != requiredRow) {
+                capStartSequenceSlot(GUIDE_CORRECTION_CAP_SLOT, GUIDE_CAP_CURRENT_DISPLAY, GUIDE_EXPECT_ROW_1);
+                return GUIDE_REJECTED;
+            }
+            work->guideStep = GUIDE_EXPECT_ROW_2;
+            return GUIDE_ACCEPTED;
+        case GUIDE_EXPECT_ROW_2:
+            if (selectedRow != requiredRow) {
+                capStartSequenceSlot(GUIDE_CORRECTION_CAP_SLOT, GUIDE_CAP_CURRENT_DISPLAY, GUIDE_EXPECT_ROW_2);
+                return GUIDE_REJECTED;
+            }
+            work->guideStep = GUIDE_EXPECT_ROW_3;
+            return GUIDE_ACCEPTED;
+        case GUIDE_EXPECT_ROW_3:
+            if (selectedRow != requiredRow) {
+                capStartSequenceSlot(GUIDE_CORRECTION_CAP_SLOT, GUIDE_CAP_CURRENT_DISPLAY, GUIDE_EXPECT_ROW_3);
+                return GUIDE_REJECTED;
+            }
+            work->guideStep = GUIDE_DONE;
+            return GUIDE_ACCEPTED;
+    }
+    return GUIDE_REJECTED;
+}
+
+void shelterR47ConsoleLoadSwitches(Task* task)
+{
+    enum {
+        SHELTER_R47_CONSOLE_SWITCH_2_OFF_VIEW = 18,
+        SHELTER_R47_CONSOLE_SWITCH_2_ON_VIEW  = 36,
+    };
+    ShelterR47ConsoleWork* work = task->work;
+
+    work->toggles[SHELTER_R47_CONSOLE_ROW_TRANSFER_DOOR] = gameFlagGetNibble(GAME_FLAG_B1_TRANSFER_TUNNEL_DOOR_UNLOCKED);
+    work->toggles[SHELTER_R47_CONSOLE_ROW_SWITCH_2]      = gameFlagGetNibble(GAME_FLAG_SHELTER_R47_CONSOLE_SWITCH_2);
+    // Switch 2 has distinct room images for its off and on states.
+    if (!(work->toggles[SHELTER_R47_CONSOLE_ROW_SWITCH_2] & 1)) {
+        gShelterR47ConsoleRowViews[SHELTER_R47_CONSOLE_ROW_SWITCH_2] = SHELTER_R47_CONSOLE_SWITCH_2_OFF_VIEW;
+    } else {
+        gShelterR47ConsoleRowViews[SHELTER_R47_CONSOLE_ROW_SWITCH_2] = SHELTER_R47_CONSOLE_SWITCH_2_ON_VIEW;
+    }
+    work->toggles[SHELTER_R47_CONSOLE_ROW_OBSERVATORY] = gameFlagGetNibble(GAME_FLAG_B2_CORRIDOR_OBSERVATORY_ACCESS);
+    work->toggles[SHELTER_R47_CONSOLE_ROW_SWITCH_4]    = gameFlagGetNibble(GAME_FLAG_SHELTER_R47_CONSOLE_SWITCH_4);
+    work->toggles[SHELTER_R47_CONSOLE_ROW_WATCHERS]    = gameFlagGetNibble(GAME_FLAG_SHELTER_WATCHERS_DISABLED);
+}
+
+void shelterR47ConsoleTask(Task* task)
+{
+    TaskFuncTable14 stateHandlers;
+
+    stateHandlers = _gShelterR47ConsoleStateHandlers;
+    stateHandlers.funcs[task->state](task);
+}
+
+s32 shelterR47ConsoleHitTestHotspots(Task* task, ActionPromptHotspot* hotspots, s16 cursorX, s16 cursorY)
+{
+    enum {
+        SHELTER_R47_CONSOLE_BUTTON_HOTSPOT = 0x101,
+    };
+    ShelterR47ConsoleWork* work;
+    s32                    anyHit;
+
+    work   = task->work;
+    anyHit = 0;
+    while (hotspots->id != ACTION_PROMPT_HOTSPOT_END) {
+        if ((cursorX >= hotspots->x) && ((hotspots->x + hotspots->w) >= cursorX) && (cursorY >= hotspots->y) && ((hotspots->y + hotspots->h) >= cursorY) &&
+            ((work->row != SHELTER_R47_CONSOLE_ROW_SWITCH_2) || (hotspots->id != SHELTER_R47_CONSOLE_BUTTON_HOTSPOT))) {
+            hotspots->hit = 1;
+            anyHit        = 1;
+        } else {
+            hotspots->hit = 0;
+        }
+        hotspots++;
+    }
+    return anyHit;
+}
+
+/// Hides and centres the console action cursor before its opening wipe.
+///
+/// Console state 1; requires the live singleton action prompt and advances to
+/// state 2 without allocating or releasing either task.
+static void _shelterR47ConsoleResetPromptTask(Task* task)
+{
+    ActionPrompt* prompt = gActionPromptSlots;
+
+    prompt->cursorSpeed = ACTION_PROMPT_SPEED_STOPPED;
+    prompt->mode        = ACTION_PROMPT_MODE_HIDDEN;
+    prompt->screen.xy.x = 0;
+    prompt->screen.xy.y = 0;
+    task->state         = task->state + 1;
+}
+
+/// Updates the inventory map's access markers from one console status.
+///
+/// Status 0/1 selects the transfer-door marker and 4/5 the observatory marker.
+/// Off writes visible state 2; on writes hidden state 0. Other signed-halfword
+/// statuses leave the flags intact. The caller supplies the status selected
+/// after drawing or dialogue; the live flag bank must be writable.
+static inline void _shelterR47ConsoleUpdateAccessMapMarker(s16 status)
+{
+    enum { SHELTER_R47_CONSOLE_MAP_MARK_HIDDEN  = 0,
+           SHELTER_R47_CONSOLE_MAP_MARK_VISIBLE = 2 };
+    s32 mapFlagId;
+    s32 mapMarkState;
+
+    switch (status) {
+        case SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_OFF:
+            mapFlagId    = GAME_FLAG_MAP_MARK_SHELTER_R47_1C6;
+            mapMarkState = SHELTER_R47_CONSOLE_MAP_MARK_VISIBLE;
+            break;
+        case SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_ON:
+            mapFlagId    = GAME_FLAG_MAP_MARK_SHELTER_R47_1C6;
+            mapMarkState = SHELTER_R47_CONSOLE_MAP_MARK_HIDDEN;
+            break;
+        case SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_OFF:
+            mapFlagId    = GAME_FLAG_MAP_MARK_B2_MAIN_CORRIDOR;
+            mapMarkState = SHELTER_R47_CONSOLE_MAP_MARK_VISIBLE;
+            break;
+        case SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_ON:
+            mapFlagId    = GAME_FLAG_MAP_MARK_B2_MAIN_CORRIDOR;
+            mapMarkState = SHELTER_R47_CONSOLE_MAP_MARK_HIDDEN;
+            break;
+        default:
+            return;
+    }
+    gameFlagSetNibble(mapFlagId, mapMarkState);
+}
+
+/// Clears the console's opening wipe and starts the initial guide dialogue.
+///
+/// Console state 2; requires live console work. Once the wipe is clear, guide
+/// step 1 starts CAP slot 10 and free use calls the retained status stub.
+/// The status is then reloaded to publish the transfer-door or observatory
+/// access-map marker (2 off, 0 on), and state 3 enables hotspot selection.
+static void _shelterR47ConsoleOpenViewTask(Task* task)
+{
+    enum { SHELTER_R47_CONSOLE_GUIDE_FREE_USE      = 0,
+           SHELTER_R47_CONSOLE_GUIDE_BEGIN         = 1,
+           SHELTER_R47_CONSOLE_GUIDE_CAP_SLOT      = 10,
+           SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT = 0 };
+    ShelterR47ConsoleWork* work;
+    ShelterR47ConsoleWork* currentWork;
+
+    work = task->work;
+    shelterR47ConsoleUpdateAndDraw(task, SHELTER_R47_CONSOLE_LAYOUT_CURRENT);
+    if (shelterR47ConsoleClearWipe(task) != 0) {
+        // Dialogue runs before reloading the status used by the access map.
+        if (work->guideStep == SHELTER_R47_CONSOLE_GUIDE_BEGIN) {
+            capStartSequenceSlot(SHELTER_R47_CONSOLE_GUIDE_CAP_SLOT, CAP_PLAYBACK_IN_PLACE, SHELTER_R47_CONSOLE_CAP_DEFAULT_VARIANT);
+        }
+        if (work->guideStep == SHELTER_R47_CONSOLE_GUIDE_FREE_USE) {
+            func_shelter_r47_801832E4(work->status);
+        }
+        currentWork = task->work;
+        _shelterR47ConsoleUpdateAccessMapMarker(currentWork->status);
+        task->state++;
+    }
+}
+
+/// Opens the console hotspot's command menu after hiding and stopping its cursor.
+///
+/// Console state 4; requires live console work and the first port's prompt.
+/// Free-use row selection and switch-button commands offer Examine until
+/// their first-use CAP event has run, retaining the hotspot's command kind
+/// otherwise. Menu coordinates are display-centred pixels. Advances to
+/// state 5 without checking queue acceptance.
+static void _shelterR47ConsoleOpenCommandsTask(Task* task)
+{
+    enum {
+        SHELTER_R47_CONSOLE_HOTSPOT_KIND_SHIFT    = 8,
+        SHELTER_R47_CONSOLE_HOTSPOT_ROW           = 0,
+        SHELTER_R47_CONSOLE_HOTSPOT_SWITCH_BUTTON = 1,
+        SHELTER_R47_CONSOLE_GUIDE_FREE_USE        = 0,
+        SHELTER_R47_CONSOLE_COMMAND_EXAMINE       = 0,
+        SHELTER_R47_CONSOLE_STATE_HANDLE_COMMAND  = 5,
+    };
+    ShelterR47ConsoleWork* work;
+    ActionPrompt*          prompt = gActionPromptSlots;
+
+    work = task->work;
+    shelterR47ConsoleUpdateAndDraw(task, SHELTER_R47_CONSOLE_LAYOUT_CURRENT);
+    prompt->mode        = ACTION_PROMPT_MODE_HIDDEN;
+    prompt->cursorSpeed = ACTION_PROMPT_SPEED_STOPPED;
+    // An unplayed first-use event takes precedence over the hotspot's command kind.
+    if (work->guideStep == SHELTER_R47_CONSOLE_GUIDE_FREE_USE &&
+        ((u16)work->selection >> SHELTER_R47_CONSOLE_HOTSPOT_KIND_SHIFT) == SHELTER_R47_CONSOLE_HOTSPOT_ROW && gShelterR47ConsoleRowFirstUseStarted == false) {
+        work->promptKind = SHELTER_R47_CONSOLE_COMMAND_EXAMINE;
+    }
+    if ((work->selection >> SHELTER_R47_CONSOLE_HOTSPOT_KIND_SHIFT) == SHELTER_R47_CONSOLE_HOTSPOT_SWITCH_BUTTON && gShelterR47ConsoleButtonFirstUseStarted == false) {
+        work->promptKind = SHELTER_R47_CONSOLE_COMMAND_EXAMINE;
+    }
+    itemMenuOpenHotspotCommands(prompt->screen.xy.x, prompt->screen.xy.y, work->promptKind);
+    task->state = SHELTER_R47_CONSOLE_STATE_HANDLE_COMMAND;
+}
+
+/// Saves console switches, restores the entry view and ends player use.
+///
+/// Console state 6; requires live console work and its prompt task in spawn
+/// argument 2. Resumes player control/drawing, clears session holds and requests
+/// teardown after restoring the saved view; the task system owns the work.
+static void _shelterR47ConsoleDismissTask(Task* task)
+{
+    ShelterR47ConsoleWork* work;
+
+    work                              = task->work;
+    gDirectionInteractionRearmUpdates = SHELTER_R47_CONSOLE_INTERACTION_REARM_UPDATES;
+    _shelterR47ConsoleSaveSwitches(task);
+    playerActorSetScriptedControl(GAME_ACTOR_SCRIPTED_CONTROL_RESUME);
+    playerActorSetDrawMode(PLAYER_ACTOR_MODEL_DRAW_SHOW_AUTO);
+    displayReleaseMenuHold();
+    gGameSession->eventState                               = 0;
+    gGameSession->hideHud                                  = 0;
+    gGameSession->cutsceneHold                             = 0;
+    gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view = work->savedView;
+    taskKill(task->spawnArg2.pointer);
+    taskRequestKill(task, 0);
+}
+
+/// Clears the changed row's wipe, starts its guide dialogue and enables input.
+///
+/// Console state 8; requires live console work. After the wipe clears, the
+/// current guide step selects dialogue, then the reloaded status publishes
+/// the transfer-door or observatory access-map marker (2 off, 0 on).
+/// Every completed wipe returns to state 3 without waiting for CAP playback;
+/// the selection state applies that wait before accepting input.
+static void _shelterR47ConsoleRevealRowTask(Task* task)
+{
+    enum { SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT = 3 };
+    ShelterR47ConsoleWork* work;
+    s16                    status;
+
+    shelterR47ConsoleUpdateAndDraw(task, SHELTER_R47_CONSOLE_LAYOUT_CURRENT);
+    if (shelterR47ConsoleClearWipe(task) != 0) {
+        _shelterR47ConsoleStartGuideDialogue(task);
+        work   = task->work;
+        status = work->status;
+        _shelterR47ConsoleUpdateAccessMapMarker(status);
+        task->state = SHELTER_R47_CONSOLE_STATE_SELECT_HOTSPOT;
+    }
+}
+
+/// Wipes over a row change, then selects its view and resets the reveal.
+///
+/// Console state 7; the previous row remains displayed until the wipe is black.
+/// The selection's low byte must be a row 0..4. On completion, fills all wipe
+/// components with 255 and advances to state 8, which clears the new view.
+static void _shelterR47ConsoleChangeViewTask(Task* task)
+{
+    ShelterR47ConsoleWork* work;
+
+    work = task->work;
+    shelterR47ConsoleUpdateAndDraw(task, SHELTER_R47_CONSOLE_LAYOUT_CHANGING_VIEW);
+    // Change the room image only after the circular wipe has hidden it.
+    if (shelterR47ConsoleFillWipe(task) != 0) {
+        gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view = gShelterR47ConsoleRowViews[(u8)work->selection];
+        work->revealPos                                        = 0;
+        _shelterR47ConsoleSetWipe(task, SHELTER_R47_CONSOLE_LEVEL_MAX);
+        task->state++;
+    }
+}
+
+/// Starts the console switch-button flash and restarts the status reveal.
+///
+/// Console state 9; draws the old state first, then sets a 16-frame flash and
+/// advances to state 10, where the selected switch is toggled.
+static void _shelterR47ConsoleBeginButtonPressTask(Task* task)
+{
+    enum {
+        SHELTER_R47_CONSOLE_BUTTON_FLASH_FRAMES = 16,
+    };
+    ShelterR47ConsoleWork* work;
+
+    work = task->work;
+    shelterR47ConsoleUpdateAndDraw(task, SHELTER_R47_CONSOLE_LAYOUT_CURRENT);
+    work->revealPos   = 0;
+    work->buttonFlash = SHELTER_R47_CONSOLE_BUTTON_FLASH_FRAMES;
+    task->state++;
+}
+
+/// Toggles the selected console switch and publishes its access-map state.
+///
+/// Console state 10; requires a selected row 0..4. Redraw selects the new status
+/// before the transfer-door and observatory map marks are updated. Advances to
+/// state 11, where input waits for the flash and CAP playback to finish.
+static void _shelterR47ConsoleApplyButtonPressTask(Task* task)
+{
+    enum { SHELTER_R47_CONSOLE_MAP_MARK_HIDDEN  = 0,
+           SHELTER_R47_CONSOLE_MAP_MARK_VISIBLE = 2 };
+    ShelterR47ConsoleWork* work;
+
+    work = task->work;
+    _shelterR47ConsoleToggleSwitch(task, work->row);
+    shelterR47ConsoleUpdateAndDraw(task, SHELTER_R47_CONSOLE_LAYOUT_CURRENT);
+    // Recompute status before updating the two access-related map markers.
+    switch (work->status) {
+        case SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_OFF:
+            gameFlagSetNibble(GAME_FLAG_MAP_MARK_SHELTER_R47_1C6, SHELTER_R47_CONSOLE_MAP_MARK_VISIBLE);
+            break;
+        case SHELTER_R47_CONSOLE_STATUS_TRANSFER_DOOR_ON:
+            gameFlagSetNibble(GAME_FLAG_MAP_MARK_SHELTER_R47_1C6, SHELTER_R47_CONSOLE_MAP_MARK_HIDDEN);
+            break;
+        case SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_OFF:
+            gameFlagSetNibble(GAME_FLAG_MAP_MARK_B2_MAIN_CORRIDOR, SHELTER_R47_CONSOLE_MAP_MARK_VISIBLE);
+            break;
+        case SHELTER_R47_CONSOLE_STATUS_OBSERVATORY_ON:
+            gameFlagSetNibble(GAME_FLAG_MAP_MARK_B2_MAIN_CORRIDOR, SHELTER_R47_CONSOLE_MAP_MARK_HIDDEN);
+            break;
+        case SHELTER_R47_CONSOLE_STATUS_SWITCH_2_OFF:
+        case SHELTER_R47_CONSOLE_STATUS_SWITCH_2_ON:
+        case SHELTER_R47_CONSOLE_STATUS_SWITCH_4_OFF:
+        case SHELTER_R47_CONSOLE_STATUS_SWITCH_4_ON:
+        case SHELTER_R47_CONSOLE_STATUS_WATCHERS_OFF:
+        case SHELTER_R47_CONSOLE_STATUS_WATCHERS_ON:
+            break;
+    }
+    task->state++;
+}
+
+/// Keeps drawing the pressed console button until its flash and CAP playback end.
+///
+/// Console state 11; requires live console work. The redraw decrements the
+/// remaining flash frames; state 3 resumes hotspot input only once both the
+/// flash and global CAP playback are idle.
+static void _shelterR47ConsoleWaitButtonFlashTask(Task* task)
+{
+    enum {
+        SHELTER_R47_CONSOLE_STATE_IDLE = 3,
+    };
+    ShelterR47ConsoleWork* work;
+
+    work = task->work;
+    shelterR47ConsoleUpdateAndDraw(task, SHELTER_R47_CONSOLE_LAYOUT_CURRENT);
+    if ((work->buttonFlash == 0) && (capIsBusy() == 0)) {
+        task->state = SHELTER_R47_CONSOLE_STATE_IDLE;
+    }
+}
+
+/// Draws the console once and starts its closing fade from clear.
+///
+/// Console state 12; requires live console work. Resets the fade after drawing
+/// and advances to state 13; switch saving and task teardown happen there.
+static void _shelterR47ConsoleBeginFadeOutTask(Task* task)
+{
+    enum {
+        SHELTER_R47_CONSOLE_FADE_CLEAR = 0,
+    };
+    ShelterR47ConsoleWork* work;
+
+    work = task->work;
+    shelterR47ConsoleUpdateAndDraw(task, SHELTER_R47_CONSOLE_LAYOUT_CURRENT);
+    work->fade = SHELTER_R47_CONSOLE_FADE_CLEAR;
+    task->state++;
+}
+
+void shelterR47ResetTerminalFirstUseEvents(void)
+{
+    gShelterR47ConsoleButtonFirstUseStarted = false;
+    gShelterR47ConsoleRowFirstUseStarted    = false;
+    gShelterR47MapPreviousFirstUseStarted   = false;
+    gShelterR47MapNextFirstUseStarted       = false;
+}
+
+void shelterR47ConsolePromptTask(Task* task)
+{
+    TaskFunc states[] = {
+        _actionPromptResetDefault,
+        _actionPromptMoveCursorsDefault,
+    };
+
+    states[task->state](task);
+}
+
+#include "../../shared/room/action_prompt_reset.inc.c"
+
+/// Empty callback receiving the console's free-use status; its intended role is unproven.
+static void func_shelter_r47_801832E4(s16 status)
+{
+}
+
+/// Requests the console dialogue after a guided row change finishes its wipe.
+///
+/// Borrows live console work. Guide steps 2/3/4 select CAP slots 11/12/13 in
+/// the current display with variant 0. Free use forwards the current status
+/// to the retained empty callback; step 1 and other values do nothing.
+/// Does not advance the guide or wait for CAP playback.
+static void _shelterR47ConsoleStartGuideDialogue(Task* task)
+{
+    enum { GUIDE_FREE_USE            = 0,
+           GUIDE_AFTER_ROW_1         = 2,
+           GUIDE_AFTER_ROW_2         = 3,
+           GUIDE_DONE                = 4,
+           GUIDE_ROW_1_CAP_SLOT      = 11,
+           GUIDE_ROW_2_CAP_SLOT      = 12,
+           GUIDE_DONE_CAP_SLOT       = 13,
+           GUIDE_CAP_CURRENT_DISPLAY = 0,
+           GUIDE_CAP_DEFAULT_VARIANT = 0 };
+    ShelterR47ConsoleWork* work = task->work;
+
+    switch (work->guideStep) {
+        case GUIDE_FREE_USE:
+            func_shelter_r47_801832E4(work->status);
+            break;
+        case GUIDE_AFTER_ROW_1:
+            capStartSequenceSlot(GUIDE_ROW_1_CAP_SLOT, GUIDE_CAP_CURRENT_DISPLAY, GUIDE_CAP_DEFAULT_VARIANT);
+            break;
+        case GUIDE_AFTER_ROW_2:
+            capStartSequenceSlot(GUIDE_ROW_2_CAP_SLOT, GUIDE_CAP_CURRENT_DISPLAY, GUIDE_CAP_DEFAULT_VARIANT);
+            break;
+        case GUIDE_DONE:
+            capStartSequenceSlot(GUIDE_DONE_CAP_SLOT, GUIDE_CAP_CURRENT_DISPLAY, GUIDE_CAP_DEFAULT_VARIANT);
+            break;
+    }
+}
+
+/// Writes the console's five working switches back to their saved game flags.
+///
+/// Requires live console work. Values are passed as stored to the nibble setter;
+/// this does not toggle them, restore the view or release the work block.
+static void _shelterR47ConsoleSaveSwitches(Task* task)
+{
+    ShelterR47ConsoleWork* work;
+
+    work = task->work;
+    gameFlagSetNibble(GAME_FLAG_B1_TRANSFER_TUNNEL_DOOR_UNLOCKED, work->toggles[0]);
+    gameFlagSetNibble(GAME_FLAG_SHELTER_R47_CONSOLE_SWITCH_2, work->toggles[1]);
+    gameFlagSetNibble(GAME_FLAG_B2_CORRIDOR_OBSERVATORY_ACCESS, work->toggles[2]);
+    gameFlagSetNibble(GAME_FLAG_SHELTER_R47_CONSOLE_SWITCH_4, work->toggles[3]);
+    gameFlagSetNibble(GAME_FLAG_SHELTER_WATCHERS_DISABLED, work->toggles[4]);
+}
+
+/// Flips one working console switch and applies its immediate display effect.
+///
+/// `row` must be 0..4 in live console work. Switch 2 selects room view 18 or 36
+/// and updates its view-table entry; switch 4 changes the backdrop scroll target.
+/// Saved game flags are committed separately when console use ends.
+static void _shelterR47ConsoleToggleSwitch(Task* task, s16 row)
+{
+    enum {
+        SHELTER_R47_CONSOLE_SWITCH_2_OFF_VIEW = 18,
+        SHELTER_R47_CONSOLE_SWITCH_2_ON_VIEW  = 36,
+    };
+    ShelterR47ConsoleWork* work;
+
+    work               = task->work;
+    work->toggles[row] = (work->toggles[row] + 1) & 1;
+    switch (row) {
+        case SHELTER_R47_CONSOLE_ROW_TRANSFER_DOOR:
+        case SHELTER_R47_CONSOLE_ROW_OBSERVATORY:
+        case SHELTER_R47_CONSOLE_ROW_WATCHERS:
+            break;
+        case SHELTER_R47_CONSOLE_ROW_SWITCH_2:
+            if (!(work->toggles[1] & 1)) {
+                gShelterR47ConsoleRowViews[SHELTER_R47_CONSOLE_ROW_SWITCH_2] = SHELTER_R47_CONSOLE_SWITCH_2_OFF_VIEW;
+                gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view       = SHELTER_R47_CONSOLE_SWITCH_2_OFF_VIEW;
+            } else {
+                gShelterR47ConsoleRowViews[SHELTER_R47_CONSOLE_ROW_SWITCH_2] = SHELTER_R47_CONSOLE_SWITCH_2_ON_VIEW;
+                gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view       = SHELTER_R47_CONSOLE_SWITCH_2_ON_VIEW;
+            }
+            break;
+        case SHELTER_R47_CONSOLE_ROW_SWITCH_4:
+            if (!(work->toggles[3] & 1)) {
+                work->backdropToggle = 0;
+            } else {
+                work->backdropToggle = 1;
+            }
+            break;
+    }
+}
+
+/// Tests whether an area's saved state enables its map marker.
+///
+/// Borrows a location with valid stage and area table indices; other components
+/// are ignored. Returns 0 for a missing stage table or saved state, otherwise
+/// the saved map-mark bit as 0 or 1. Does not change the saved state.
+static inline s32 _areaIsSavedMapMarkEnabled(const GameLocationKey* location)
+{
+    const AreaRecord* areaRecords;
+    AreaSavedState*   areaState;
+    s16               mapMarkFlag;
+
+    areaRecords = gAreaRecordsByStage[location->stage];
+    if (areaRecords != NULL) {
+        areaState = areaRecords[location->area].savedState;
+        if (areaState != NULL) {
+            mapMarkFlag = areaState->spawnFlags & AREA_SAVED_MAP_MARK;
+            return mapMarkFlag != 0;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+
+/// Tests whether the terminal should draw an area's saved map marker.
+///
+/// Stage and area must fit their tables. Requires `AREA_SAVED_MAP_MARK` set and
+/// `AREA_SPAWN_RESTORE_SAVED_POSES` clear; missing tables or saved state return 0.
+/// This is the predicate used by `menuMapRebuildMarkedAreaBits` for `gMenuMapMarkedAreaBits`.
+/// The synthetic room/view values are ignored by both flag queries.
+static inline s16 _shelterR47MapTerminalIsAreaMarkerVisible(s32 stage, s32 area)
+{
+    GameLocationKey location;
+
+    location.stage     = stage;
+    location.roomState = 1;
+    location.view      = 2;
+    location.area      = area;
+    if (_areaIsSavedMapMarkEnabled(&location) != 1 || areaIsSavedPoseRestoreEnabled(&location) == 1) {
+        return 0;
+    }
+    return 1;
+}
+
+/// Queues the selected terminal page's area markers or uncleared Neo Ark overlay.
+///
+/// Borrows initialized terminal work with page 0..4 and its terminated marker
+/// table. Brightness is four times the open-frame count, plus 48 per visible
+/// marker, narrowed to a byte each time. B1 also tests Micro Device catalog
+/// ID 0x12D outside timed viewing; that ID's progression role is unproven.
+/// Opening Neo Ark during the tour marks it complete and starts CAP slot 19.
+/// Requires current textures, OT entries 10/11 and sufficient packet storage.
+static void _shelterR47MapTerminalDrawPageOverlay(Task* task)
+{
+    ShelterR47MapTerminalWork* work;
+    _ShelterR47MapMark*        mark;
+    POLY_FT4*                  quad;
+    u8                         brightness;
+
+    enum { SHELTER_R47_MAP_OPEN_BRIGHTNESS_STEP    = 4,
+           SHELTER_R47_MAP_MARK_BRIGHTNESS_STEP    = 48,
+           SHELTER_R47_MAP_MARK_HALF_SIZE          = 4,
+           SHELTER_R47_MAP_B1_MICRO_DEVICE_ITEM_ID = 0x12D,
+           SHELTER_R47_MAP_TOUR_COMPLETE_CAP_SLOT  = 19 };
+
+    /// Queues an 8x8 area marker and advances its byte brightness by 48.
+    ///
+    /// markerQuad is a writable POLY_FT4* lvalue, areaMark a marker pointer,
+    /// and level a writable u8 lvalue. All must be stable and side-effect-free;
+    /// each is evaluated repeatedly. Uses this function's marker size and
+    /// brightness constants, the current packet cursor and OT entry 10.
+    /// The arena must have sizeof(POLY_FT4) bytes available until GPU completion;
+    /// brightness wraps at 256. Coordinates are display-centred screen pixels.
+    /// Invoke inside a braced caller context; expansion is a compound statement.
+#define SHELTER_R47_MAP_DRAW_AREA_MARKER(markerQuad, areaMark, level)                                                                                                                                                                                                                                                        \
+    {                                                                                                                                                                                                                                                                                                                        \
+        enum { SHELTER_R47_MAP_MARK_TEXTURE_U    = 80,                                                                                                                                                                                                                                                                       \
+               SHELTER_R47_MAP_MARK_TEXTURE_V    = 32,                                                                                                                                                                                                                                                                       \
+               SHELTER_R47_MAP_MARK_TEXTURE_SIZE = 8,                                                                                                                                                                                                                                                                        \
+               SHELTER_R47_MAP_MARK_TPAGE        = getTPage(0, GPU_BLEND_ADD, 960, 0),                                                                                                                                                                                                                                       \
+               SHELTER_R47_MAP_MARK_CLUT         = getClut(96, 255),                                                                                                                                                                                                                                                         \
+               SHELTER_R47_MAP_MARK_OT_TAG       = 10 };                                                                                                                                                                                                                                                                           \
+        (markerQuad)   = gGpuPrimCursor;                                                                                                                                                                                                                                                                                     \
+        (level)       += SHELTER_R47_MAP_MARK_BRIGHTNESS_STEP;                                                                                                                                                                                                                                                               \
+        gGpuPrimCursor = (markerQuad) + 1;                                                                                                                                                                                                                                                                                   \
+        setPolyFT4((markerQuad));                                                                                                                                                                                                                                                                                            \
+        setUV4((markerQuad), SHELTER_R47_MAP_MARK_TEXTURE_U, SHELTER_R47_MAP_MARK_TEXTURE_V,                                                                                                                                                                                                                                 \
+               SHELTER_R47_MAP_MARK_TEXTURE_U + SHELTER_R47_MAP_MARK_TEXTURE_SIZE, SHELTER_R47_MAP_MARK_TEXTURE_V,                                                                                                                                                                                                           \
+               SHELTER_R47_MAP_MARK_TEXTURE_U, SHELTER_R47_MAP_MARK_TEXTURE_V + SHELTER_R47_MAP_MARK_TEXTURE_SIZE,                                                                                                                                                                                                           \
+               SHELTER_R47_MAP_MARK_TEXTURE_U + SHELTER_R47_MAP_MARK_TEXTURE_SIZE, SHELTER_R47_MAP_MARK_TEXTURE_V + SHELTER_R47_MAP_MARK_TEXTURE_SIZE);                                                                                                                                                                      \
+        setRGB0((markerQuad), (level), (level), (level));                                                                                                                                                                                                                                                                    \
+        (markerQuad)->tpage = SHELTER_R47_MAP_MARK_TPAGE;                                                                                                                                                                                                                                                                    \
+        (markerQuad)->clut  = SHELTER_R47_MAP_MARK_CLUT;                                                                                                                                                                                                                                                                     \
+        setSemiTrans((markerQuad), 1);                                                                                                                                                                                                                                                                                       \
+        setXY4((markerQuad), (areaMark)->x - SHELTER_R47_MAP_MARK_HALF_SIZE, (areaMark)->y - SHELTER_R47_MAP_MARK_HALF_SIZE, (areaMark)->x + SHELTER_R47_MAP_MARK_HALF_SIZE, (areaMark)->y - SHELTER_R47_MAP_MARK_HALF_SIZE, (areaMark)->x - SHELTER_R47_MAP_MARK_HALF_SIZE, (areaMark)->y + SHELTER_R47_MAP_MARK_HALF_SIZE, \
+               (areaMark)->x + SHELTER_R47_MAP_MARK_HALF_SIZE, (areaMark)->y + SHELTER_R47_MAP_MARK_HALF_SIZE);                                                                                                                                                                                                              \
+        addPrim(&gGpuCurrentOt[SHELTER_R47_MAP_MARK_OT_TAG], (markerQuad));                                                                                                                                                                                                                                                  \
+    }
+
+    work       = task->work;
+    brightness = (u8)work->openFrames * SHELTER_R47_MAP_OPEN_BRIGHTNESS_STEP;
+    if (gameFlagGetNibble(GAME_FLAG_NEO_ARK_POWER_PLANT_2_CLEARED) == 1) {
+        mark = _gShelterR47MapTerminalMarksAfterNeoArkClearByPage[work->page];
+    } else {
+        mark = _gShelterR47MapTerminalMarksBeforeNeoArkClearByPage[work->page];
+    }
+    if (work->page != SHELTER_R47_MAP_PAGE_NEO_ARK) {
+        if (work->openMode != SHELTER_R47_MAP_MODE_TIMED && work->page == SHELTER_R47_MAP_PAGE_B1 && inventoryHasCollectedBit(SHELTER_R47_MAP_B1_MICRO_DEVICE_ITEM_ID) != 0) {
+            brightness    += SHELTER_R47_MAP_MARK_BRIGHTNESS_STEP;
+            quad           = gGpuPrimCursor;
+            gGpuPrimCursor = quad + 1;
+            setPolyFT4(quad);
+            setUV4(quad, 0x58, 0x20, 0x60, 0x20, 0x58, 0x28, 0x60, 0x28);
+            quad->tpage = 0x2F;
+            quad->clut  = 0x3FC7;
+            setRGB0(quad, brightness, brightness, brightness);
+            setSemiTrans(quad, 1);
+            setXY4(quad, 0x78, -0x4B, 0x80, -0x4B, 0x78, -0x43, 0x80, -0x43);
+            addPrim(&gGpuCurrentOt[10], quad);
+        }
+        while (mark->stage != SHELTER_R47_MAP_MARK_END) {
+            if (_shelterR47MapTerminalIsAreaMarkerVisible(mark->stage, mark->area)) {
+                SHELTER_R47_MAP_DRAW_AREA_MARKER(quad, mark, brightness);
+            }
+            mark++;
+        }
+    } else {
+        if (work->openMode == SHELTER_R47_MAP_MODE_TOUR) {
+            work->openMode = SHELTER_R47_MAP_MODE_TOUR_DONE;
+            capStartSequenceSlot(SHELTER_R47_MAP_TOUR_COMPLETE_CAP_SLOT, 0, 0);
+        }
+        if (gameFlagGetNibble(GAME_FLAG_NEO_ARK_POWER_PLANT_2_CLEARED) == 1) {
+            while (mark->stage != SHELTER_R47_MAP_MARK_END) {
+                if (_shelterR47MapTerminalIsAreaMarkerVisible(mark->stage, mark->area)) {
+                    SHELTER_R47_MAP_DRAW_AREA_MARKER(quad, mark, brightness);
+                }
+                mark++;
+            }
+        } else {
+            if (brightness == 0) {
+                sndEvtRequestScriptStart(SOUND_SHELTER_R47_MAP_TERMINAL_LOOP, 0, 0);
+            }
+            quad           = gGpuPrimCursor;
+            gGpuPrimCursor = quad + 1;
+            setPolyFT4(quad);
+            setUV4(quad, 0, 0, SHELTER_R47_MAP_WIDTH, 0, 0, SHELTER_R47_MAP_HEIGHT, SHELTER_R47_MAP_WIDTH, SHELTER_R47_MAP_HEIGHT);
+            quad->tpage = 0x36;
+            quad->clut  = 0x4000;
+            setRGB0(quad, brightness, brightness, brightness);
+            setSemiTrans(quad, 1);
+            setXY4(quad, -0x4D, -0x67, work->mapWidth - 0x4D, -0x67, -0x4D, work->mapHeight - 0x67,
+                   work->mapWidth - 0x4D, work->mapHeight - 0x67);
+            addPrim(&gGpuCurrentOt[11], quad);
+        }
+    }
+#undef SHELTER_R47_MAP_DRAW_AREA_MARKER
+}
+
+void shelterR47MapTerminalUpdateAndDrawQuads(Task* task)
+{
+    enum { SHELTER_R47_MAP_RAW_SEMITRANSPARENT = 3 };
+    ShelterR47MapTerminalWork* work;
+    POLY_FT4*                  quad;
+
+    work             = task->work;
+    work->mapWidth  += (work->mapTargetWidth - work->mapWidth) >> 2;
+    work->mapHeight += (work->mapTargetHeight - work->mapHeight) >> 2;
+    // Show page contents and enable its prompt only after the width settles.
+    if (work->mapWidth >= SHELTER_R47_MAP_WIDTH_SETTLED) {
+        work->mapWidth  = SHELTER_R47_MAP_WIDTH;
+        work->mapHeight = SHELTER_R47_MAP_HEIGHT;
+        _shelterR47MapTerminalDrawPageOverlay(task);
+        work->holdPrompt = 0;
+        work->openFrames++;
+    } else {
+        work->openFrames = 0;
+        work->holdPrompt = 1;
+    }
+
+    quad           = gGpuPrimCursor;
+    gGpuPrimCursor = quad + 1;
+    setPolyFT4(quad);
+    setUV4(quad, 0, 0, SHELTER_R47_MAP_WIDTH, 0, 0, SHELTER_R47_MAP_HEIGHT, SHELTER_R47_MAP_WIDTH, SHELTER_R47_MAP_HEIGHT);
+    quad->tpage = 0x2D;
+    quad->clut  = 0x3FC0;
+    quad->code |= SHELTER_R47_MAP_RAW_SEMITRANSPARENT;
+    setXY4(quad, -0x4D, -0x67, work->mapWidth - 0x4D, -0x67, -0x4D, work->mapHeight - 0x67,
+           work->mapWidth - 0x4D, work->mapHeight - 0x67);
+    addPrim(&gGpuCurrentOt[12], quad);
+
+    quad               = gGpuPrimCursor;
+    work->panelWidth  += (work->panelTargetWidth - work->panelWidth) >> 2;
+    work->panelHeight += (work->panelTargetHeight - work->panelHeight) >> 2;
+    gGpuPrimCursor     = quad + 1;
+    setPolyFT4(quad);
+    setUV4(quad, 0, 0, SHELTER_R47_MAP_PANEL_WIDTH, 0, 0, SHELTER_R47_MAP_PANEL_HEIGHT, SHELTER_R47_MAP_PANEL_WIDTH, SHELTER_R47_MAP_PANEL_HEIGHT);
+    quad->tpage = 0x2E;
+    quad->clut  = 0x3FC1;
+    quad->code |= SHELTER_R47_MAP_RAW_SEMITRANSPARENT;
+    setXY4(quad, -0x9C, -0x5B, work->panelWidth - 0x9C, -0x5B, -0x9C, work->panelHeight - 0x5B,
+           work->panelWidth - 0x9C, work->panelHeight - 0x5B);
+    addPrim(&gGpuCurrentOt[11], quad);
+}
+
+void shelterR47MapTerminalDrawPreviousButton(void)
+{
+    SpriteDrawModePacket* packet;
+    SPRT*                 sprite;
+
+    packet         = gGpuPrimCursor;
+    gGpuPrimCursor = packet + 1;
+    sprite         = &packet->sprite.sprt;
+    _shelterR47InitDrawModeSprite(packet, (SHELTER_R47_DRAW_MODE_COMMAND | getTPage(0, GPU_BLEND_ADD, 960, 0)));
+    sprite->clut  = getClut(64, 255);
+    sprite->x0    = -0x96;
+    sprite->y0    = 0x3F;
+    sprite->u0    = 0x50;
+    sprite->w     = 0x38;
+    sprite->v0    = 0;
+    sprite->h     = 0x10;
+    sprite->code |= SPRITE_SOURCE_RAW_TEXTURE | SPRITE_SOURCE_SEMI_TRANSPARENT;
+    addPrim(&gGpuCurrentOt[SHELTER_R47_MAP_TERMINAL_LABEL_OT], packet);
+}
+
+void shelterR47MapTerminalDrawNextButton(void)
+{
+    SpriteDrawModePacket* packet;
+    SPRT*                 sprite;
+
+    packet         = gGpuPrimCursor;
+    gGpuPrimCursor = packet + 1;
+    sprite         = &packet->sprite.sprt;
+    _shelterR47InitDrawModeSprite(packet, (SHELTER_R47_DRAW_MODE_COMMAND | getTPage(0, GPU_BLEND_ADD, 960, 0)));
+    sprite->clut  = getClut(80, 255);
+    sprite->x0    = -0x90;
+    sprite->y0    = 0x50;
+    sprite->u0    = 0x50;
+    sprite->v0    = 0x10;
+    sprite->w     = 0x38;
+    sprite->h     = 0x10;
+    sprite->code |= SPRITE_SOURCE_RAW_TEXTURE | SPRITE_SOURCE_SEMI_TRANSPARENT;
+    addPrim(&gGpuCurrentOt[SHELTER_R47_MAP_TERMINAL_LABEL_OT], packet);
+}
+
+void shelterR47MapTerminalDrawPageTitle(Task* task, s16 page)
+{
+    SpriteDrawModePacket*      packet;
+    SPRT*                      sprite;
+    ShelterR47MapTerminalWork* work;
+
+    packet         = gGpuPrimCursor;
+    work           = task->work;
+    sprite         = &packet->sprite.sprt;
+    gGpuPrimCursor = packet + 1;
+    work->labelX  += (work->labelTargetX - work->labelX) >> 2;
+    _shelterR47InitDrawModeSprite(packet, (SHELTER_R47_DRAW_MODE_COMMAND | getTPage(0, GPU_BLEND_ADD, 960, 0)));
+    sprite->clut  = getClut(32, 255);
+    sprite->code |= SPRITE_SOURCE_RAW_TEXTURE | SPRITE_SOURCE_SEMI_TRANSPARENT;
+    sprite->x0    = work->labelX;
+    sprite->y0    = -0x67;
+    sprite->u0    = 0;
+    sprite->v0    = _gShelterR47MapTerminalPageTitleV[page];
+    sprite->w     = 0x50;
+    sprite->h     = 0xA;
+    addPrim(&gGpuCurrentOt[SHELTER_R47_MAP_TERMINAL_LABEL_OT], packet);
+}
+
+void shelterR47MapTerminalDrawPageCaptions(Task* task, s16 page)
+{
+    SpriteDrawModePacket*      packet;
+    SPRT*                      sprite;
+    ShelterR47MapTerminalWork* work;
+
+    packet         = gGpuPrimCursor;
+    work           = task->work;
+    sprite         = &packet->sprite.sprt;
+    gGpuPrimCursor = packet + 1;
+    _shelterR47InitDrawModeSprite(packet, (SHELTER_R47_DRAW_MODE_COMMAND | getTPage(0, GPU_BLEND_ADD, 960, 0)));
+    sprite->clut  = getClut(48, 255);
+    sprite->code |= SPRITE_SOURCE_RAW_TEXTURE | SPRITE_SOURCE_SEMI_TRANSPARENT;
+    sprite->x0    = work->labelX;
+    sprite->y0    = 0x35;
+    sprite->u0    = 0;
+    sprite->v0    = _gShelterR47MapTerminalPageCaptionVOffsets[page][0] + SHELTER_R47_MAP_CAPTION_ATLAS_BASE_V;
+    sprite->w     = 0x50;
+    sprite->h     = 8;
+    addPrim(&gGpuCurrentOt[SHELTER_R47_MAP_TERMINAL_LABEL_OT], packet);
+
+    packet                   = gGpuPrimCursor;
+    sprite                   = &packet->sprite.sprt;
+    gGpuPrimCursor           = packet + 1;
+    packet->drawMode.code[0] = (SHELTER_R47_DRAW_MODE_COMMAND | getTPage(0, GPU_BLEND_ADD, 960, 0));
+    setlen(&packet->drawMode, ARRAY_SIZE(packet->drawMode.code));
+    setSprt(&packet->sprite.sprt);
+    MargePrim(packet, sprite);
+    sprite->clut  = getClut(48, 255);
+    sprite->code |= SPRITE_SOURCE_RAW_TEXTURE | SPRITE_SOURCE_SEMI_TRANSPARENT;
+    sprite->x0    = work->labelX;
+    sprite->y0    = 0x60;
+    sprite->u0    = 0;
+    sprite->v0    = _gShelterR47MapTerminalPageCaptionVOffsets[page][1] + SHELTER_R47_MAP_CAPTION_ATLAS_BASE_V;
+    sprite->w     = 0x50;
+    sprite->h     = 8;
+    addPrim(&gGpuCurrentOt[SHELTER_R47_MAP_TERMINAL_LABEL_OT], packet);
+}

@@ -1,0 +1,90 @@
+// Overlay-local symbols for neo_ark_submarine_gallery.
+_gNeoArkSubmarineGalleryIslandDestination = 0x80185924; // size:0x8 defined:True
+_gNeoArkSubmarineGalleryLightGeometry = 0x801818C8; // size:0x140 defined:True
+gNeoArkSubmarineGalleryViewMaps = 0x80181A08; // size:0x4 defined:True
+gNeoArkSubmarineGalleryViewCounts = 0x80181A0C; // size:0x2 defined:True
+gNeoArkSubmarineGalleryWarpEntries = 0x80181A10; // size:0x38 defined:True
+gNeoArkSubmarineGalleryDiverWaterY = 0x80181A48; // size:0x2 defined:True
+_gNeoArkSubmarineGalleryDiverPatrolRing0 = 0x80181A4C; // size:0x40 defined:True
+_gNeoArkSubmarineGalleryDiverPatrolRing1 = 0x80181A8C; // size:0x40 defined:True
+_gNeoArkSubmarineGalleryDiverPatrolRing2 = 0x80181ACC; // size:0x40 defined:True
+gNeoArkSubmarineGalleryDiverPatrolRings = 0x80181B0C; // size:0x10 defined:True
+gNeoArkSubmarineGalleryDiverSurfaceSpots = 0x80181B1C; // size:0x30 defined:True
+_gNeoArkSubmarineGalleryCollisionGridNormals = 0x80181B4C; // size:0xF8 defined:True
+_gNeoArkSubmarineGalleryCollisionGridVerts = 0x80181C44; // size:0x340 defined:True
+_gNeoArkSubmarineGalleryCollisionGridFaces = 0x80181F84; // size:0x258 defined:True
+_gNeoArkSubmarineGalleryCollisionGridCells = 0x801821DC; // size:0x19C defined:True
+_gNeoArkSubmarineGalleryCollisionGridTable = 0x80182378; // size:0x24 defined:True
+gNeoArkSubmarineGalleryCollisionGrid = 0x8018239C; // size:0x24 defined:True
+gNeoArkSubmarineGalleryViewCameras = 0x801823C0; // size:0xFC defined:True
+_gNeoArkSubmarineGalleryView1SpriteBatches = 0x801824BC; // size:0x10 defined:True
+_gNeoArkSubmarineGalleryView2SpriteSources = 0x801824CC; // size:0xBA4 defined:True
+_gNeoArkSubmarineGalleryView2SpriteBatches = 0x80183070; // size:0x30 defined:True
+_gNeoArkSubmarineGalleryView3SpriteSources = 0x801830A0; // size:0x618 defined:True
+_gNeoArkSubmarineGalleryView3SpriteBatches = 0x801836B8; // size:0x28 defined:True
+_gNeoArkSubmarineGalleryView4SpriteSources = 0x801836E0; // size:0x7E4 defined:True
+_gNeoArkSubmarineGalleryView4SpriteBatches = 0x80183EC4; // size:0x30 defined:True
+_gNeoArkSubmarineGalleryView5SpriteSources = 0x80183EF4; // size:0x99C defined:True
+_gNeoArkSubmarineGalleryView5SpriteBatches = 0x80184890; // size:0x38 defined:True
+_gNeoArkSubmarineGalleryView6SpriteSources = 0x801848C8; // size:0x17C defined:True
+_gNeoArkSubmarineGalleryView6SpriteBatches = 0x80184A44; // size:0x18 defined:True
+_gNeoArkSubmarineGalleryView7SpriteSources = 0x80184A5C; // size:0x294 defined:True
+_gNeoArkSubmarineGalleryView7SpriteBatches = 0x80184CF0; // size:0x20 defined:True
+gNeoArkSubmarineGallerySpriteViews = 0x80184D10; // size:0x54 defined:True
+_gNeoArkSubmarineGalleryRoomLightsDirectional = 0x80184D64; // size:0x160 defined:True
+_gNeoArkSubmarineGalleryRoomLightsPoint = 0x80184EC4; // size:0x3C0 defined:True
+gNeoArkSubmarineGalleryRoomLights = 0x80185284; // size:0x18 defined:True
+gNeoArkSubmarineGalleryViewBoundaryTriggers = 0x8018529C; // size:0x260 defined:True
+gNeoArkSubmarineGalleryActionTriggers = 0x801854FC; // size:0x2F8 defined:True
+_gNeoArkSubmarineGalleryVariant1Resources = 0x801857F4; // size:0x24 defined:True
+_gNeoArkSubmarineGalleryVariant2Resources = 0x80185818; // size:0x18 defined:True
+_gNeoArkSubmarineGalleryVariant3Resources = 0x80185830; // size:0x18 defined:True
+_gNeoArkSubmarineGalleryVariant11Resources = 0x80185848; // size:0x18 defined:True
+gNeoArkSubmarineGalleryPlacementVariants = 0x80185860; // size:0x68 defined:True
+_gNeoArkSubmarineGalleryFloorFootstepSounds = 0x801858C8; // size:0xC defined:True
+_gNeoArkSubmarineGalleryBlockingSurface = 0x801858D4; // size:0x8 defined:True
+_gNeoArkSubmarineGalleryProbePassSurface = 0x801858DC; // size:0x8 defined:True
+_gNeoArkSubmarineGalleryFloorSurface = 0x801858E4; // size:0x8 defined:True
+gActor100400Tasks = 0x80147E48; // absolute:True owner=actor_100400
+gActor206100SeaDiverTaskDescriptors = 0x80158B0C; // absolute:True owner=actor_206100
+gMapNeoArkSubmarineGalleryVariant1Placements = 0x8017C4A0; // absolute:True owner=map_neo_ark
+gMapNeoArkSubmarineGalleryVariant2Placements = 0x8017C4D0; // absolute:True owner=map_neo_ark
+gMapNeoArkSubmarineGalleryVariant3Placements = 0x8017C510; // absolute:True owner=map_neo_ark
+gMapNeoArkSubmarineGalleryVariant11Placements = 0x8017C530; // absolute:True owner=map_neo_ark
+gNeoArkSubmarineGallerySurfacePropertiesByClass = 0x801858EC; // size:0x20 defined:True
+_gNeoArkSubmarineGalleryIslandDepartureFade = 0x8018591C; // size:0x8 defined:True
+gNeoArkSubmarineGallerySeaDiverDefeatAreaUpdates = 0x8018590C; // size:0x10 defined:True
+gNeoArkSubmarineGalleryWaterTaskDescriptors = 0x8018186C; // size:0x18 defined:True
+gNeoArkSubmarineGalleryRoomMessages = 0x80181884; // size:0x28 defined:True
+gNeoArkSubmarineGalleryIslandDepartureTaskDesc = 0x801818AC; // size:0xC defined:True
+gNeoArkSubmarineGallerySeaDiverAwaitingArrival = 0x801818B8; // size:0x2 defined:True
+gNeoArkSubmarineGalleryRedDiscTaskDesc = 0x801818BC; // size:0xC defined:True
+
+neoArkSubmarineGalleryDrawViewGlowsTask = 0x8017EFEC; // type:func
+
+neoArkSubmarineGalleryWaterRippleTask = 0x8017F288; // type:func
+
+neoArkSubmarineGalleryWaterDriftTaskU16 = 0x8017F710; // type:func
+_waterDrawSplash = 0x8017F3DC; // type:func
+waterDistortBandTask = 0x8017E2CC; // type:func
+waterRefractionTask = 0x8017D678; // type:func
+_waterDrawSpinU16 = 0x8017FBCC; // type:func
+_waterDrawTileU16 = 0x8017FFB8; // type:func
+_glowDrawCapsule = 0x80180254; // type:func
+glowDrawDisc = 0x80180AC8; // type:func
+_neoArkSubmarineGalleryDrawLightPrism = 0x80180e80; // type:func
+_neoArkSubmarineGalleryDrawRedDisc = 0x8017ec24; // type:func
+_neoArkSubmarineGalleryInitRedDiscTask = 0x8017eed8; // type:func
+_neoArkSubmarineGalleryUpdateRedDiscTask = 0x8017ef14; // type:func
+_neoArkSubmarineGalleryIdleRedDiscTask = 0x8017ef8c; // type:func
+neoArkSubmarineGalleryRedDiscTask = 0x8017ef94; // type:func
+neoArkSubmarineGalleryRejectKeyItemUse = 0x8017ea04; // type:func
+neoArkSubmarineGalleryHandleCapCommand = 0x8017eabc; // type:func
+neoArkSubmarineGalleryIgnoreRoomAction = 0x8017eb48; // type:func
+_neoArkSubmarineGalleryMessageTaskIdle = 0x8017ebc4; // type:func
+neoArkSubmarineGalleryMessageTask = 0x8017ebcc; // type:func
+neoArkSubmarineGalleryDepartToIslandTask = 0x8017e86c; // type:func
+neoArkSubmarineGalleryResolveRoomEvent = 0x8017ea0c; // type:func
+_neoArkSubmarineGalleryInitializeRoom = 0x8017eb50; // type:func
+_gNeoArkSubmarineGalleryRedDiscTaskStates = 0x8017d63c;
+_gNeoArkSubmarineGalleryRoomStateHandlers = 0x8017d614;

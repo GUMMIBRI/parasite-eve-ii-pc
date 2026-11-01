@@ -1,0 +1,100 @@
+// Overlay-local symbols for dryfield_night_underpass.
+_gDryfieldNightUnderpassFlarePositions = 0x8017DD20; // size:0x40 defined:True
+_gUnderpassSwitchTaskDescriptors = 0x8017DCD8; // size:0x18 defined:True
+_gDryfieldNightUnderpassRoomMessages = 0x8017DCF0; // size:0x30 defined:True
+_gDryfieldNightUnderpassFlareViewMasks = 0x8017DD60; // size:0x10 defined:True
+gDryfieldNightUnderpassRoomCollisionResources = 0x8017DD70; // size:0x60 defined:True
+gDryfieldNightUnderpassRoomLighting = 0x8017DDD0; // size:0x30 defined:True
+_gDryfieldNightUnderpassRoom2ViewMap = 0x8017DE00; // size:0xC defined:True
+_gDryfieldNightUnderpassRoom3ViewMap = 0x8017DE0C; // size:0xC defined:True
+_gDryfieldNightUnderpassRoom4ViewMap = 0x8017DE18; // size:0xC defined:True
+_gDryfieldNightUnderpassRoom5ViewMap = 0x8017DE24; // size:0xC defined:True
+_gDryfieldNightUnderpassRoom6ViewMap = 0x8017DE30; // size:0xC defined:True
+gDryfieldNightUnderpassViewMaps = 0x8017DE3C; // size:0x18 defined:True
+gDryfieldNightUnderpassViewCounts = 0x8017DE54; // size:0xC defined:True
+gDryfieldNightUnderpassWarpEntries = 0x8017DE60; // size:0xA8 defined:True
+_gDryfieldNightUnderpassCollisionGridNormals = 0x8017DF08; // size:0x60 defined:True
+_gDryfieldNightUnderpassCollisionGridVerts = 0x8017DF68; // size:0x230 defined:True
+_gDryfieldNightUnderpassCollisionGridFaces = 0x8017E198; // size:0x228 defined:True
+_gDryfieldNightUnderpassCollisionGridCells = 0x8017E3C0; // size:0x2B4 defined:True
+_gDryfieldNightUnderpassCollisionGridTable = 0x8017E674; // size:0x60 defined:True
+_gDryfieldNightUnderpassCollisionGrid = 0x8017E6D4; // size:0x24 defined:True
+gDryfieldNightUnderpassViewCameras = 0x8017E6F8; // size:0x3A8 defined:True
+_gDryfieldNightUnderpassView1SpriteBatches = 0x8017EAA0; // size:0x10 defined:True
+_gDryfieldNightUnderpassView2SpriteBatches = 0x8017EAB0; // size:0x10 defined:True
+_gDryfieldNightUnderpassView3SpriteSources = 0x8017EAC0; // size:0x140 defined:True
+_gDryfieldNightUnderpassView3SpriteBatches = 0x8017EC00; // size:0x18 defined:True
+_gDryfieldNightUnderpassView4SpriteSources = 0x8017EC18; // size:0xDC defined:True
+_gDryfieldNightUnderpassView4SpriteBatches = 0x8017ECF4; // size:0x18 defined:True
+_gDryfieldNightUnderpassView5SpriteSources = 0x8017ED0C; // size:0xC8 defined:True
+_gDryfieldNightUnderpassView5SpriteBatches = 0x8017EDD4; // size:0x20 defined:True
+_gDryfieldNightUnderpassView6SpriteBatches = 0x8017EDF4; // size:0x10 defined:True
+_gDryfieldNightUnderpassView7SpriteBatches = 0x8017EE04; // size:0x10 defined:True
+_gDryfieldNightUnderpassView8SpriteBatches = 0x8017EE14; // size:0x10 defined:True
+_gDryfieldNightUnderpassView9SpriteSources = 0x8017EE24; // size:0xDC defined:True
+_gDryfieldNightUnderpassView9SpriteBatches = 0x8017EF00; // size:0x20 defined:True
+_gDryfieldNightUnderpassView10SpriteBatches = 0x8017EF20; // size:0x10 defined:True
+_gDryfieldNightUnderpassView11SpriteBatches = 0x8017EF30; // size:0x10 defined:True
+_gDryfieldNightUnderpassView12SpriteBatches = 0x8017EF40; // size:0x10 defined:True
+_gDryfieldNightUnderpassView13SpriteSources = 0x8017EF50; // size:0x140 defined:True
+_gDryfieldNightUnderpassView13SpriteBatches = 0x8017F090; // size:0x18 defined:True
+_gDryfieldNightUnderpassView14SpriteSources = 0x8017F0A8; // size:0xDC defined:True
+_gDryfieldNightUnderpassView14SpriteBatches = 0x8017F184; // size:0x18 defined:True
+_gDryfieldNightUnderpassView15SpriteSources = 0x8017F19C; // size:0xC8 defined:True
+_gDryfieldNightUnderpassView15SpriteBatches = 0x8017F264; // size:0x20 defined:True
+_gDryfieldNightUnderpassView16SpriteBatches = 0x8017F284; // size:0x10 defined:True
+_gDryfieldNightUnderpassView17SpriteBatches = 0x8017F294; // size:0x10 defined:True
+_gDryfieldNightUnderpassView18SpriteBatches = 0x8017F2A4; // size:0x10 defined:True
+_gDryfieldNightUnderpassView19SpriteSources = 0x8017F2B4; // size:0xDC defined:True
+_gDryfieldNightUnderpassView19SpriteBatches = 0x8017F390; // size:0x20 defined:True
+_gDryfieldNightUnderpassView20SpriteBatches = 0x8017F3B0; // size:0x10 defined:True
+_gDryfieldNightUnderpassView21SpriteBatches = 0x8017F3C0; // size:0x10 defined:True
+_gDryfieldNightUnderpassView22SpriteBatches = 0x8017F3D0; // size:0x10 defined:True
+_gDryfieldNightUnderpassView23SpriteBatches = 0x8017F3E0; // size:0x10 defined:True
+_gDryfieldNightUnderpassView24SpriteBatches = 0x8017F3F0; // size:0x10 defined:True
+_gDryfieldNightUnderpassView25SpriteBatches = 0x8017F400; // size:0x10 defined:True
+_gDryfieldNightUnderpassView26SpriteBatches = 0x8017F410; // size:0x10 defined:True
+gDryfieldNightUnderpassSpriteViews = 0x8017F420; // size:0x138 defined:True
+_gDryfieldNightUnderpassViewBoundaryTriggers = 0x8017F558; // size:0x4C0 defined:True
+_gDryfieldNightUnderpassActionTriggers = 0x8017FA18; // size:0x1C8 defined:True
+_gDryfieldNightUnderpassSightOccluders = 0x8017FBE0; // size:0xB4 defined:True
+_gDryfieldNightUnderpassLampPointLights = 0x8017FC94; // size:0x360 defined:True
+_gDryfieldNightUnderpassLampRoomLights = 0x8017FFF4; // size:0x18 defined:True
+_gDryfieldNightUnderpassDimPointLights = 0x8018000C; // size:0x240 defined:True
+_gDryfieldNightUnderpassDimRoomLights = 0x8018024C; // size:0x18 defined:True
+_gDryfieldNightUnderpassGrayStalkerResources = 0x80180264; // size:0x18 defined:True
+_gDryfieldNightUnderpassScavengerResources = 0x8018027C; // size:0x18 defined:True
+_gDryfieldNightUnderpassVariant3Resources = 0x80180294; // size:0x18 defined:True
+_gDryfieldNightUnderpassVariant7Resources = 0x801802AC; // size:0x18 defined:True
+_gDryfieldNightUnderpassVariant11Resources = 0x801802C4; // size:0x18 defined:True
+gDryfieldNightUnderpassAreaVariants = 0x801802DC; // size:0x60 defined:True
+_gDryfieldNightUnderpassSurfaceClass2And4FootstepSounds = 0x8018033C; // size:0xC defined:True
+_gDryfieldNightUnderpassSurfaceClass3FootstepSounds = 0x80180348; // size:0xC defined:True
+_gDryfieldNightUnderpassDefaultSurfaceProperties = 0x80180354; // size:0x8 defined:True
+_gDryfieldNightUnderpassSurfaceClass4Properties = 0x8018035C; // size:0x8 defined:True
+_gDryfieldNightUnderpassSurfaceClass2Properties = 0x80180364; // size:0x8 defined:True
+_gDryfieldNightUnderpassSurfaceClass3Properties = 0x8018036C; // size:0x8 defined:True
+gDryfieldNightUnderpassSurfacePropertiesByClass = 0x80180374; // size:0x20 defined:True
+gActor01500MindSucklerTaskDesc = 0x8013BE28; // absolute:True owner=actor_101500
+gActor101600ScavengerTaskDesc = 0x801445DC; // absolute:True owner=actor_101600
+gActor101100Tasks = 0x80147400; // absolute:True owner=actor_101100
+gActor400500TaskDesc = 0x80153D60; // absolute:True owner=actor_400500
+gActor402200GolemTaskDesc = 0x80154188; // absolute:True owner=actor_402200
+gMapDryfieldFullUnderpassVariant1Placements = 0x8017CF58; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullUnderpassVariant2Placements = 0x8017CF78; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullUnderpassVariant3Placements = 0x8017CFD8; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullUnderpassVariant7Placements = 0x8017D018; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullUnderpassVariant11Placements = 0x8017D038; // absolute:True owner=map_dryfield_full
+
+dryfieldNightUnderpassDrawFlaresTask = 0x8017DC3C; // type:func
+_glowDrawFlare = 0x8017D9B4; // type:func
+_roomVariantUnderpassMsg = 0x8017D788; // type:func
+_underpassSwitchTask = 0x8017D5D0; // type:func
+_underpassSwitchMsg = 0x8017D868; // type:func
+_underpassSoundMsg = 0x8017D8CC; // type:func
+_dryfieldNightUnderpassRejectKeyItemUse = 0x8017d900; // type:func
+_dryfieldNightUnderpassIgnoreRoomAction = 0x8017d908; // type:func
+_dryfieldNightUnderpassIdleTask = 0x8017d954; // type:func
+_dryfieldNightUnderpassInitializeRoom = 0x8017d910; // type:func
+dryfieldNightUnderpassRoomTask = 0x8017d95c; // type:func
+_gDryfieldNightUnderpassRoomStates = 0x8017d5c4;

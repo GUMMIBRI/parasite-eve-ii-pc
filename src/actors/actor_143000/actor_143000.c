@@ -1,0 +1,1124 @@
+#include "actor_143000_private.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/memory.h>
+#include <psyq/rand.h>
+#include <psyq/strings.h>
+
+#include "common.h"
+
+#include "gameplay/action_prompt.h"
+#include "gameplay/animation.h"
+#include "gameplay/captions.h"
+#include "gameplay/actor_presentation.h"
+#include "gameplay/player_actor.h"
+#include "gameplay/direction_input.h"
+#include "gameplay/display.h"
+#include "gameplay/item_menu.h"
+#include "gameplay/scene_combat.h"
+
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/fs.h"
+#include "main/gameflag.h"
+#include "main/mc.h"
+#include "main/mc_types.h"
+#include "main/mem.h"
+#include "main/pad.h"
+#include "main/pad_types.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/sound.h"
+#include "main/task.h"
+#include "main/task_types.h"
+#include "../../shared/room/action_prompt.h"
+
+/// Maximum entered characters, excluding the trailing NUL written by the drawer.
+///
+/// Bounds input and suppresses the caret at capacity. The backing buffer must
+/// provide at least one additional byte; this limit does not size that allocation.
+enum { ACTOR_143000_KEYPAD_CODE_CAPACITY = 20 };
+
+/// No result banner: the keypad drawer emits neither accepted nor rejected artwork.
+///
+/// Stored in the byte resultBanner at initialization and between timed result
+/// flashes. Zero affects only the banner, leaving the independent status line visible.
+#define ACTOR_143000_KEYPAD_BANNER_NONE 0
+
+/// Accepted-code artwork selected during the password-check result flash.
+///
+/// Stored in the byte resultBanner, independently of codeAccepted and statusLine.
+/// The drawer selects the accepted texture and palette only for this value.
+enum { ACTOR_143000_KEYPAD_BANNER_ACCEPTED = 1 };
+/// Rejected-password banner selector, independent of the timed status text.
+///
+/// Stored in the signed-byte result selector at ticks 120 and 210 after rejection;
+/// the drawer chooses the rejected atlas cell and CLUT. Zero clears the banner.
+enum { ACTOR_143000_KEYPAD_BANNER_REJECTED = 2 };
+
+/// States selected by the keypad task's eleven-entry callback table.
+enum {
+    ACTOR_143000_KEYPAD_STATE_INITIALIZE     = 0,
+    ACTOR_143000_KEYPAD_STATE_ARM_CURSOR     = 1,
+    ACTOR_143000_KEYPAD_STATE_INPUT          = 2,
+    ACTOR_143000_KEYPAD_STATE_OPEN_COMMANDS  = 3,
+    ACTOR_143000_KEYPAD_STATE_HANDLE_COMMAND = 4,
+    ACTOR_143000_KEYPAD_STATE_CLOSE          = 5,
+    ACTOR_143000_KEYPAD_STATE_RESUME_INPUT   = 6,
+    ACTOR_143000_KEYPAD_STATE_CHECK_CODE     = 7,
+    ACTOR_143000_KEYPAD_STATE_TYPE_KEY       = 8,
+    ACTOR_143000_KEYPAD_STATE_AUTO_TYPE_CODE = 9,
+    ACTOR_143000_KEYPAD_STATE_WAIT_FADE      = 10,
+};
+
+/// Choices in the keypad's hotspot table; several surround rectangles share one id.
+enum {
+    ACTOR_143000_KEYPAD_HOTSPOT_NONE     = 0,
+    ACTOR_143000_KEYPAD_HOTSPOT_STATUS   = 1,
+    ACTOR_143000_KEYPAD_HOTSPOT_SURROUND = 2,
+    ACTOR_143000_KEYPAD_HOTSPOT_ENTER    = 3,
+    ACTOR_143000_KEYPAD_HOTSPOT_ENTRY    = 4,
+    ACTOR_143000_KEYPAD_HOTSPOT_KEYS     = 5,
+};
+
+/// One-based status rows in the keypad atlas.
+enum {
+    ACTOR_143000_KEYPAD_STATUS_ENTER_PASSWORD = 1,
+    ACTOR_143000_KEYPAD_STATUS_WAIT           = 2,
+    ACTOR_143000_KEYPAD_STATUS_CHECK_PASSWORD = 3,
+    ACTOR_143000_KEYPAD_STATUS_ACCESS_GRANTED = 4,
+    ACTOR_143000_KEYPAD_STATUS_CONNECT_HOST   = 5,
+    ACTOR_143000_KEYPAD_STATUS_CHECK_DATABASE = 6,
+    ACTOR_143000_KEYPAD_STATUS_TRY_AGAIN      = 7,
+};
+
+/// Keypad atlas, screen grid and dog motion units, private to this drawer and input.
+enum {
+    ACTOR_143000_KEYPAD_TEXTURE_PAGE                 = 0x16,
+    ACTOR_143000_KEYPAD_OT_SLOT                      = 0x3FE,
+    ACTOR_143000_KEYPAD_CLUT_STATUS                  = 0x3DC0,
+    ACTOR_143000_KEYPAD_CLUT_HIGHLIGHT               = 0x3DC1,
+    ACTOR_143000_KEYPAD_CLUT_ACCEPTED                = 0x3DC3,
+    ACTOR_143000_KEYPAD_CLUT_REJECTED                = 0x3DC4,
+    ACTOR_143000_KEYPAD_CLUT_ENTRY                   = 0x3DC5,
+    ACTOR_143000_KEYPAD_CLUT_CARET                   = 0x3DC6,
+    ACTOR_143000_KEYPAD_CLUT_DOG                     = 0x3DC7,
+    ACTOR_143000_KEYPAD_GRID_LEFT                    = -128,
+    ACTOR_143000_KEYPAD_GRID_TOP                     = 32,
+    ACTOR_143000_KEYPAD_KEY_PIXELS                   = 16,
+    ACTOR_143000_KEYPAD_COLUMNS                      = 13,
+    ACTOR_143000_KEYPAD_GRID_TEXTURE_TOP             = 0x70,
+    ACTOR_143000_KEYPAD_ENTER_TEXTURE_LEFT           = 0x30,
+    ACTOR_143000_KEYPAD_ENTER_TEXTURE_TOP            = 0xB8,
+    ACTOR_143000_KEYPAD_ENTRY_TEXTURE_LEFT           = 0x58,
+    ACTOR_143000_KEYPAD_CARET_TEXTURE_LEFT           = 0x60,
+    ACTOR_143000_KEYPAD_ENTRY_TEXTURE_TOP            = 0xB8,
+    ACTOR_143000_KEYPAD_BANNER_ACCEPTED_TEXTURE_LEFT = 0x70,
+    ACTOR_143000_KEYPAD_BANNER_REJECTED_TEXTURE_LEFT = 0x30,
+    ACTOR_143000_KEYPAD_BANNER_TEXTURE_TOP           = 0xA0,
+    ACTOR_143000_KEYPAD_BANNER_WIDTH                 = 64,
+    ACTOR_143000_KEYPAD_BANNER_HEIGHT                = 24,
+    ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS           = 8,
+    ACTOR_143000_KEYPAD_CARET_BLINK_BIT              = 0x10,
+    ACTOR_143000_KEYPAD_STATUS_WIDTH                 = 254,
+    ACTOR_143000_KEYPAD_STATUS_HEIGHT                = 16,
+    ACTOR_143000_KEYPAD_DOG_FRACTION_BITS            = 4,
+    ACTOR_143000_KEYPAD_DOG_FRAME_UNITS              = 16,
+    ACTOR_143000_KEYPAD_DOG_TEXTURE_TOP              = 0xA0,
+    ACTOR_143000_KEYPAD_DOG_WIDTH                    = 48,
+    ACTOR_143000_KEYPAD_DOG_HEIGHT                   = 24,
+    ACTOR_143000_KEYPAD_DOG_START_X                  = 160 << ACTOR_143000_KEYPAD_DOG_FRACTION_BITS,
+    ACTOR_143000_KEYPAD_DOG_WRAP_X                   = -208 * (1 << ACTOR_143000_KEYPAD_DOG_FRACTION_BITS),
+    ACTOR_143000_KEYPAD_DOG_IDLE_SPEED               = 1 << ACTOR_143000_KEYPAD_DOG_FRACTION_BITS,
+    ACTOR_143000_KEYPAD_DOG_KEY_SPEED                = 3 << ACTOR_143000_KEYPAD_DOG_FRACTION_BITS,
+    ACTOR_143000_KEYPAD_DOG_SPEED_DECAY              = 4,
+    ACTOR_143000_KEYPAD_DEBUG_DEMO                   = 9,
+};
+
+/// Source origin of the stored 320-pixel image, in VRAM halfword coordinates.
+enum {
+    ACTOR_143000_CAPTURE_VRAM_X = 448,
+    ACTOR_143000_CAPTURE_VRAM_Y = 256,
+};
+
+/// Reserves and initializes one opaque textured quad in the frame arena.
+///
+/// quad must be a side-effect-free, writable POLY_FT4* lvalue; it is evaluated
+/// repeatedly. Captures gGpuPrimCursor, requiring word-aligned capacity for one
+/// packet, and advances it without checking. Expands to standalone statements;
+/// the caller still supplies geometry, UVs, CLUT, texture page and OT linkage.
+#define ACTOR_143000_RESERVE_KEYPAD_QUAD(quad) \
+    (quad)         = gGpuPrimCursor;           \
+    gGpuPrimCursor = (quad) + 1;               \
+    SetPolyFT4(quad);
+
+/// Work block of the Shelter B2 laboratory's code keypad task.
+///
+/// The task shows the keypad full screen and lets the action cursor confirm
+/// its hotspots. A confirmed hotspot is latched and offers its command at the
+/// cursor; accepting that command on the key grid makes the grid type from
+/// then on. Typed characters fill the entry line, and the Enter hotspot checks
+/// it: `statusLine`, `statusWidth` and `resultBanner` step through the answer,
+/// and an accepted code ends the task and spawns the one that follows.
+typedef struct {
+    byte                  field_0[2];      // Never read or written; role unproven
+    u16                   selectedHotspot; // `ActionPromptHotspot::id` confirmed this frame, kept while its command prompt is open (0 none)
+    s16                   field_4;         // Sends the task through a state that clears it when the command prompt closes unaccepted; nothing sets it, role unproven
+    s8                    promptKind;      // `ActionPromptHotspot::promptKind` of that hotspot, forwarded when its command prompt opens
+    s8                    keypadExamined;  // Whether the command was accepted on the key grid (0 a confirm there offers the command, 1 it types the key)
+    ActionPromptCursorPos keyPress;        // Cursor position latched with a confirm on the key grid; selects the key typed
+    s32                   codeAccepted;    // Result of the last check of the entry (0 rejected, 1 accepted); passed with the task's kill request when it ends
+    s16                   codeLength;      // Characters on the entry line, at most ACTOR_143000_KEYPAD_CODE_CAPACITY
+    s8                    statusLine;      // Status text drawn near the top of the screen, as its 1-based 16-pixel row in the texture (0 none)
+    s8                    resultBanner;    // Banner drawn at the screen center (0 none, 1 code accepted, 2 code rejected)
+    s16                   statusWidth;     // Pixels of the status line drawn, widened in steps while an answer is pending (0 the whole line)
+    s16                   marqueeX;        // Left edge of the animated sprite crossing the top of the screen, in 1/16 pixel from the screen center
+    s16                   marqueeSpeed;    // 1/16 pixels that sprite moves left each frame; a typed key raises it and it decays back to one pixel
+    s16                   field_1A;        // Cleared when the task starts and never read; role unproven
+} _Actor143000KeypadWork;
+STATIC_ASSERT_SIZEOF(_Actor143000KeypadWork, 0x1C);
+
+static void _actionPromptResetDefault(Task* task);
+static void _actor143000CheckKeypadCode(Task* task);
+static void _actor143000ArmKeypadCursor(Task* task);
+static void _actor143000OpenKeypadCommands(Task* task);
+static void _actor143000HandleKeypadCommand(Task* task);
+static void _actor143000CloseKeypad(Task* task);
+static void _actor143000ResumeKeypadInput(Task* task);
+static void _actor143000TypeKeypadKey(Task* task);
+static void _actor143000AutoTypeKeypadCode(Task* task);
+static void _actor143000WaitForKeypadFade(Task* task);
+static s32  _actor143000HitTestKeypadHotspots(ActionPromptHotspot* hotspots, s16 cursorX, s16 cursorY);
+static void _actor143000OutlineKeypadHotspots(void);
+
+static void _actor143000KeypadCursorTask(Task* task);
+static void _actor143000KeypadTask(Task* task);
+
+static const char _gActor143000KeypadBottomRow[ACTOR_143000_KEYPAD_COLUMNS + 1];
+static const char _gActor143000KeypadMiddleRow[ACTOR_143000_KEYPAD_COLUMNS + 1];
+static const char _gActor143000KeypadTopRow[ACTOR_143000_KEYPAD_COLUMNS + 1];
+
+/// Bodyless cursor companion of one keypad session, stopped when that session closes.
+static TaskDesc _gActor143000KeypadCursorTaskDesc = {
+    .header   = { .fields = { .flags = TASK_BODY_NONE, .priority = TASK_PRIORITY_CONTROL } },
+    .callback = _actor143000KeypadCursorTask,
+    .data     = { .value = 0 },
+};
+
+TaskDesc gActor143000KeypadTaskDesc = {
+    .header   = { .fields = { .flags = TASK_BODY_NONE, .priority = TASK_PRIORITY_SCENE } },
+    .callback = _actor143000KeypadTask,
+    .data     = { .value = 0 },
+};
+
+/// Repeating sixteen-step dog sequence, selecting atlas frames 0..2.
+///
+/// One sequence step spans sixteen phase units; the keypad adds its Q4
+/// marquee speed on each draw and wraps the step index through this table.
+static u8 _gActor143000KeypadDogFrames[16] = {
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    1,
+    1,
+};
+
+/// Laboratory keypad cursor rectangles and their latched hit flags.
+///
+/// Nine rectangles use center-origin screen pixels, followed by the end marker.
+/// Five surround rectangles share one choice ID. Enter selects prompt kind 1;
+/// all other choices select kind 0. The keypad hit test excludes the right and
+/// bottom edges, updates every hit flag, and confirms the first hit in table
+/// order. Initialization clears those flags; the sentinel remains untouched.
+static ActionPromptHotspot _gActor143000KeypadHotspots[10] = {
+    { -128, 32, 208, 48, ACTOR_143000_KEYPAD_HOTSPOT_KEYS, 0, 0 },
+    { -133, 11, 266, 17, ACTOR_143000_KEYPAD_HOTSPOT_ENTRY, 0, 0 },
+    { -160, -120, 27, 240, ACTOR_143000_KEYPAD_HOTSPOT_SURROUND, 0, 0 },
+    { 133, -120, 27, 240, ACTOR_143000_KEYPAD_HOTSPOT_SURROUND, 0, 0 },
+    { -160, -120, 320, 48, ACTOR_143000_KEYPAD_HOTSPOT_SURROUND, 0, 0 },
+    { -160, -55, 320, 66, ACTOR_143000_KEYPAD_HOTSPOT_SURROUND, 0, 0 },
+    { -160, 84, 320, 36, ACTOR_143000_KEYPAD_HOTSPOT_SURROUND, 0, 0 },
+    { -120, -72, 266, 17, ACTOR_143000_KEYPAD_HOTSPOT_STATUS, 0, 0 },
+    { 88, 64, 40, 16, ACTOR_143000_KEYPAD_HOTSPOT_ENTER, 1, 0 },
+    { 0, 0, 0, 0, ACTION_PROMPT_HOTSPOT_END, 0, 0 },
+};
+
+/// Character rows of the keypad, ordered from top to bottom.
+///
+/// Rows 0..2 each contain thirteen selectable characters and a trailing NUL.
+/// Columns 10 and 11 of the top row are Backspace ('-') and Clear ('#');
+/// column 12 inserts a space. The row strings remain loaded for the session.
+static const char* _gActor143000KeypadRows[3] = {
+    _gActor143000KeypadTopRow,
+    _gActor143000KeypadMiddleRow,
+    _gActor143000KeypadBottomRow,
+};
+
+#include "assets/rooms/shelter/b2_laboratory/console_clips.inc"
+
+Actor143000CaptureArgs gActor143000CompletionUpperCaptureBand = {
+    .band           = { 129, 39, 164, 90 },
+    .stripCount     = 10,
+    .stripsCaptured = 0,
+};
+
+Actor143000CaptureArgs gActor143000CompletionLowerCaptureBand = {
+    .band           = { 38, 138, 250, 75 },
+    .stripCount     = 8,
+    .stripsCaptured = 0,
+};
+
+static void _actor143000InitializeKeypad(Task* task);
+static void _actor143000HandleKeypadInput(Task* task);
+static void _actor143000DrawKeypad(Task* task);
+
+#include "../../shared/room/action_prompt_move_cursors.inc.c"
+
+#include "../../shared/room/action_prompt_draw_cursor.inc.c"
+
+/// Allocates the keypad work, starts its cursor and takes menu presentation.
+///
+/// Saves the current view, selects keypad view 11, clears old hotspot hits and
+/// holds/hides the player and HUD. The cursor task is retained in spawnArg2;
+/// keypad teardown releases the hold and ends it. Work allocation failure kills
+/// the keypad task and returns before acquiring the hold.
+static void _actor143000InitializeKeypad(Task* task)
+{
+/// Clears the keypad's hit latches up to its hotspot-table sentinel.
+///
+/// hotspotCursor is a writable ActionPromptHotspot* lvalue, evaluated repeatedly
+/// without other side effects. The live writable table must terminate with
+/// ACTION_PROMPT_HOTSPOT_END. Leaves the cursor at that record and its hit byte
+/// untouched; an empty table performs no write. Captures no caller identifiers
+/// and expands to one compound statement.
+#define ACTOR_143000_CLEAR_KEYPAD_HITS(hotspotCursor)                   \
+    {                                                                   \
+        if ((hotspotCursor)->id != ACTION_PROMPT_HOTSPOT_END) {         \
+            do {                                                        \
+                (hotspotCursor)->hit = 0;                               \
+                (hotspotCursor)++;                                      \
+            } while ((hotspotCursor)->id != ACTION_PROMPT_HOTSPOT_END); \
+        }                                                               \
+    }
+
+    enum {
+        ACTOR_143000_KEYPAD_VIEW = 11,
+    };
+
+    _Actor143000KeypadWork* work;
+    ActionPromptHotspot*    hotspot;
+    u8                      previousView;
+
+    hotspot = _gActor143000KeypadHotspots;
+    work    = memCalloc(sizeof(_Actor143000KeypadWork), false);
+    if (work == NULL) {
+        taskKill(task);
+        return;
+    }
+    task->spawnArg2.pointer                                = taskSpawnFromTable(&_gActor143000KeypadCursorTaskDesc, 0, 1, 0);
+    task->work                                             = work;
+    previousView                                           = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view;
+    gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view = ACTOR_143000_KEYPAD_VIEW;
+    gActor143000KeypadPreviousView                         = previousView;
+    task->state                                           += ACTOR_143000_KEYPAD_STATE_ARM_CURSOR - ACTOR_143000_KEYPAD_STATE_INITIALIZE;
+    work->field_4                                          = 0;
+    displayAcquireMenuHold();
+    ACTOR_143000_CLEAR_KEYPAD_HITS(hotspot);
+    work->keypadExamined       = 0;
+    work->statusLine           = ACTOR_143000_KEYPAD_STATUS_ENTER_PASSWORD;
+    work->resultBanner         = ACTOR_143000_KEYPAD_BANNER_NONE;
+    work->marqueeX             = ACTOR_143000_KEYPAD_DOG_START_X;
+    work->codeAccepted         = 0;
+    work->codeLength           = 0;
+    work->marqueeSpeed         = ACTOR_143000_KEYPAD_DOG_IDLE_SPEED;
+    work->field_1A             = 0;
+    gGameSession->cutsceneHold = 1;
+    gGameSession->hideHud      = 1;
+    playerActorSetScriptedControl(GAME_ACTOR_SCRIPTED_CONTROL_HOLD);
+    playerActorSetDrawMode(PLAYER_ACTOR_MODEL_DRAW_HIDE_ALLOCATE);
+
+#undef ACTOR_143000_CLEAR_KEYPAD_HITS
+}
+
+/// Handles keypad cursor input and queues hovered-key highlights.
+///
+/// Requires the initialized keypad work block and gameplay's first prompt slot.
+/// CAP playback hides and stops the cursor. Confirm either opens the hotspot's
+/// command menu or latches a key after the key grid was examined; cancel closes.
+static void _actor143000HandleKeypadInput(Task* task)
+{
+    enum {
+        ACTOR_143000_KEYPAD_CONFIRM_SLOT = 0,
+        ACTOR_143000_KEYPAD_CANCEL_SLOT  = 1,
+    };
+    _Actor143000KeypadWork* work;
+    u8                      textureU;
+    ActionPromptHotspot*    hotspot;
+    POLY_FT4*               quad;
+    ActionPrompt*           prompt;
+    s16                     gridLeft;
+    s16                     gridTop;
+    s16                     cellX;
+    s16                     cellY;
+    s16                     width;
+    s16                     height;
+    u8                      textureV;
+    u8                      textureWidth;
+    u8                      textureHeight;
+
+    // CAP playback owns input while a keypad description is on screen.
+    work                           = task->work;
+    gGameSession->hideHud          = 1;
+    gGameSession->eventState       = 1;
+    hotspot                        = _gActor143000KeypadHotspots;
+    gSceneCombatState.actorControl = SCENE_COMBAT_ACTORS_HIDDEN;
+    prompt                         = gActionPromptSlots;
+    if (capIsBusy() != 0) {
+        prompt->mode        = ACTION_PROMPT_MODE_HIDDEN;
+        prompt->cursorSpeed = ACTION_PROMPT_SPEED_STOPPED;
+        return;
+    }
+    prompt->cursorSpeed = ACTION_PROMPT_SPEED_AIM;
+    if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.demoScene == ACTOR_143000_KEYPAD_DEBUG_DEMO) {
+        _actor143000OutlineKeypadHotspots();
+    }
+    // Confirm latches a hotspot command, or a grid cell after the keypad was examined.
+    work->selectedHotspot = ACTOR_143000_KEYPAD_HOTSPOT_NONE;
+    if (_actor143000HitTestKeypadHotspots(hotspot, prompt->screen.xy.x, prompt->screen.xy.y) != 0) {
+        prompt->mode = ACTION_PROMPT_MODE_HIGHLIGHTED;
+        if (prompt->buttons.slots[ACTOR_143000_KEYPAD_CONFIRM_SLOT].state == ACTION_PROMPT_BUTTON_PRESSED) {
+            for (; hotspot->id != ACTION_PROMPT_HOTSPOT_END; hotspot++) {
+                if (hotspot->hit != 0) {
+                    if (work->keypadExamined != 0 && hotspot->id == ACTOR_143000_KEYPAD_HOTSPOT_KEYS) {
+                        sndEvtRequestScriptStart(SOUND_SHELTER_B2_LAB_KEYPAD_KEY, 0, 0);
+                        prompt->mode        = ACTION_PROMPT_MODE_HIDDEN;
+                        prompt->cursorSpeed = ACTION_PROMPT_SPEED_STOPPED;
+                        work->keyPress.x    = prompt->screen.xy.x;
+                        work->keyPress.y    = prompt->screen.xy.y;
+                        task->state         = ACTOR_143000_KEYPAD_STATE_TYPE_KEY;
+                        return;
+                    }
+                    prompt->mode          = ACTION_PROMPT_MODE_HIDDEN;
+                    prompt->cursorSpeed   = ACTION_PROMPT_SPEED_STOPPED;
+                    work->selectedHotspot = hotspot->id;
+                    work->promptKind      = hotspot->promptKind;
+                    task->state           = ACTOR_143000_KEYPAD_STATE_OPEN_COMMANDS;
+                    return;
+                }
+            }
+        }
+        // Highlight the hovered key or Enter without changing the cursor position.
+        for (hotspot = _gActor143000KeypadHotspots; hotspot->id != ACTION_PROMPT_HOTSPOT_END; hotspot++) {
+            if (hotspot->hit != 0) {
+                if (hotspot->id != ACTOR_143000_KEYPAD_HOTSPOT_ENTER) {
+                    if (hotspot->id == ACTOR_143000_KEYPAD_HOTSPOT_KEYS) {
+                        ACTOR_143000_RESERVE_KEYPAD_QUAD(quad);
+                        setShadeTex(quad, 1);
+                        cellX    = (s16)(prompt->screen.xy.x - hotspot->x) / ACTOR_143000_KEYPAD_KEY_PIXELS * ACTOR_143000_KEYPAD_KEY_PIXELS;
+                        cellY    = (s16)(prompt->screen.xy.y - hotspot->y) / ACTOR_143000_KEYPAD_KEY_PIXELS * ACTOR_143000_KEYPAD_KEY_PIXELS;
+                        gridLeft = hotspot->x;
+                        gridTop  = hotspot->y;
+                        textureU = cellX;
+                        textureV = cellY + ACTOR_143000_KEYPAD_GRID_TEXTURE_TOP;
+                        cellX   += gridLeft;
+                        cellY   += gridTop;
+                        setXYWH(quad, cellX, cellY, ACTOR_143000_KEYPAD_KEY_PIXELS, ACTOR_143000_KEYPAD_KEY_PIXELS);
+                        setUVWH(quad, textureU, textureV, ACTOR_143000_KEYPAD_KEY_PIXELS, ACTOR_143000_KEYPAD_KEY_PIXELS);
+                        quad->tpage = ACTOR_143000_KEYPAD_TEXTURE_PAGE;
+                        quad->clut  = ACTOR_143000_KEYPAD_CLUT_HIGHLIGHT;
+                        addPrim(&gGpuCurrentOt[ACTOR_143000_KEYPAD_OT_SLOT], quad);
+                    }
+                } else {
+                    ACTOR_143000_RESERVE_KEYPAD_QUAD(quad);
+                    setShadeTex(quad, 1);
+                    textureU      = ACTOR_143000_KEYPAD_ENTER_TEXTURE_LEFT;
+                    cellX         = hotspot->x;
+                    width         = hotspot->w;
+                    cellY         = hotspot->y;
+                    height        = hotspot->h;
+                    textureWidth  = hotspot->w;
+                    textureHeight = hotspot->h;
+                    setXY4(quad, cellX, cellY, cellX + width, cellY, cellX, cellY + height, cellX + width, cellY + height);
+                    setUV4(quad, textureU, ACTOR_143000_KEYPAD_ENTER_TEXTURE_TOP, textureWidth + ACTOR_143000_KEYPAD_ENTER_TEXTURE_LEFT, ACTOR_143000_KEYPAD_ENTER_TEXTURE_TOP, textureU, textureHeight + ACTOR_143000_KEYPAD_ENTER_TEXTURE_TOP - 0x100, textureWidth + ACTOR_143000_KEYPAD_ENTER_TEXTURE_LEFT, textureHeight + ACTOR_143000_KEYPAD_ENTER_TEXTURE_TOP - 0x100);
+                    quad->tpage = ACTOR_143000_KEYPAD_TEXTURE_PAGE;
+                    quad->clut  = ACTOR_143000_KEYPAD_CLUT_HIGHLIGHT;
+                    addPrim(&gGpuCurrentOt[ACTOR_143000_KEYPAD_OT_SLOT], quad);
+                }
+            }
+        }
+    } else {
+        prompt->mode = ACTION_PROMPT_MODE_NORMAL;
+    }
+    if (prompt->buttons.slots[ACTOR_143000_KEYPAD_CANCEL_SLOT].state == ACTION_PROMPT_BUTTON_PRESSED) {
+        task->state = ACTOR_143000_KEYPAD_STATE_CLOSE;
+    }
+}
+
+/// Bottom keypad row: thirteen selectable uppercase letters N..Z and a trailing NUL.
+static const char _gActor143000KeypadBottomRow[ACTOR_143000_KEYPAD_COLUMNS + 1] = "NOPQRSTUVWXYZ";
+/// Middle keypad row: thirteen selectable uppercase letters A..M and a trailing NUL.
+static const char _gActor143000KeypadMiddleRow[ACTOR_143000_KEYPAD_COLUMNS + 1] = "ABCDEFGHIJKLM";
+/// Top keypad row: digits, Backspace, Clear and space, followed by a NUL.
+static const char _gActor143000KeypadTopRow[ACTOR_143000_KEYPAD_COLUMNS + 1] = "0123456789-# ";
+
+/// Eleven keypad states, ordered by `ACTOR_143000_KEYPAD_STATE_*`.
+///
+/// The dispatcher copies this complete value before indexing `Task::state`;
+/// states must be 0..10. Closing releases the cursor and the keypad work.
+static const TaskFuncTable11 _gActor143000KeypadStates = { {
+    _actor143000InitializeKeypad,
+    _actor143000ArmKeypadCursor,
+    _actor143000HandleKeypadInput,
+    _actor143000OpenKeypadCommands,
+    _actor143000HandleKeypadCommand,
+    _actor143000CloseKeypad,
+    _actor143000ResumeKeypadInput,
+    _actor143000CheckKeypadCode,
+    _actor143000TypeKeypadKey,
+    _actor143000AutoTypeKeypadCode,
+    _actor143000WaitForKeypadFade,
+} };
+
+/// Laboratory login password, also copied in full by automatic entry.
+///
+/// Ten characters plus NUL; the entry drawer reveals the copied characters
+/// one at a time. Password comparison accepts this string in every session.
+static const char _gActor143000KeypadPassword[] = "A3EILM2S2Y";
+
+/// Alternative three-character login password accepted only in a nonzero demo scene.
+static const char _gActor143000KeypadDemoPassword[] = "YSD";
+
+/// Checks the entered password and presents its answer through tick 330.
+///
+/// Requires initialized work and a NUL-terminated entry; start killCountdown at
+/// zero to latch acceptance. The secondary password is accepted only in a demo.
+/// Rejection clears the entry and resumes input. Acceptance starts a 15-tick
+/// fade to black and selects the closing wait. The signed-halfword counter is
+/// incremented after either transition, including after loading the fade length.
+static void _actor143000CheckKeypadCode(Task* task)
+{
+    enum {
+        ACTOR_143000_KEYPAD_CHECK_TICK_BEGIN                = 0,
+        ACTOR_143000_KEYPAD_CHECK_TICK_CHECK                = 60,
+        ACTOR_143000_KEYPAD_CHECK_TICK_CHECK_FIRST_DOT      = 70,
+        ACTOR_143000_KEYPAD_CHECK_TICK_CHECK_SECOND_DOT     = 80,
+        ACTOR_143000_KEYPAD_CHECK_TICK_CHECK_FULL           = 90,
+        ACTOR_143000_KEYPAD_CHECK_TICK_RESULT_BANNER        = 120,
+        ACTOR_143000_KEYPAD_CHECK_TICK_RESULT_TEXT          = 150,
+        ACTOR_143000_KEYPAD_CHECK_TICK_DATABASE_FIRST_DOT   = 160,
+        ACTOR_143000_KEYPAD_CHECK_TICK_DATABASE_SECOND_DOT  = 170,
+        ACTOR_143000_KEYPAD_CHECK_TICK_DATABASE_FULL        = 180,
+        ACTOR_143000_KEYPAD_CHECK_TICK_SECOND_REJECT_BANNER = 210,
+        ACTOR_143000_KEYPAD_CHECK_TICK_FINAL_TEXT           = 240,
+        ACTOR_143000_KEYPAD_CHECK_TICK_FINISH               = 330,
+        ACTOR_143000_KEYPAD_STATUS_WIDTH_PREFIX             = 124,
+        ACTOR_143000_KEYPAD_STATUS_WIDTH_FIRST_DOT          = 131,
+        ACTOR_143000_KEYPAD_STATUS_WIDTH_SECOND_DOT         = 138,
+        ACTOR_143000_KEYPAD_STATUS_WIDTH_FULL               = 0,
+        ACTOR_143000_KEYPAD_FADE_FRAMES                     = 15,
+        ACTOR_143000_KEYPAD_FADE_BANK                       = 1,
+        ACTOR_143000_KEYPAD_FADE_SLOT                       = 49,
+    };
+
+    _Actor143000KeypadWork* work;
+
+    work = task->work;
+    if (task->killCountdown == 0) {
+        s32 accepted = 0;
+
+        if ((strcmp(gActor143000KeypadCode, _gActor143000KeypadPassword) == 0) || ((strcmp(gActor143000KeypadCode, _gActor143000KeypadDemoPassword) == 0) && (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.demoScene != 0))) {
+            accepted = 1;
+        }
+        work->codeAccepted = accepted;
+    }
+    // Advance the timed password/database status sequence for the latched result.
+    if (work->codeAccepted != 0) {
+        switch (task->killCountdown) {
+            case ACTOR_143000_KEYPAD_CHECK_TICK_BEGIN:
+                work->statusLine = ACTOR_143000_KEYPAD_STATUS_WAIT;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_CHECK:
+                work->statusLine  = ACTOR_143000_KEYPAD_STATUS_CHECK_PASSWORD;
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_PREFIX;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_CHECK_FIRST_DOT:
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_FIRST_DOT;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_CHECK_SECOND_DOT:
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_SECOND_DOT;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_CHECK_FULL:
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_FULL;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_RESULT_BANNER:
+                sndEvtRequestScriptStart(SOUND_SHELTER_B2_LAB_KEYPAD_CODE_ACCEPTED, 0, 0);
+                work->resultBanner = ACTOR_143000_KEYPAD_BANNER_ACCEPTED;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_RESULT_TEXT:
+                work->statusLine   = ACTOR_143000_KEYPAD_STATUS_ACCESS_GRANTED;
+                work->resultBanner = ACTOR_143000_KEYPAD_BANNER_NONE;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_FINAL_TEXT:
+                work->statusLine = ACTOR_143000_KEYPAD_STATUS_CONNECT_HOST;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_FINISH:
+                task->state = ACTOR_143000_KEYPAD_STATE_WAIT_FADE;
+                // Fade to black, and stay in the closing state for as long as the ramp takes.
+                gActor143000CodeAcceptedFade.blend      = SCREEN_FADE_SUBTRACT;
+                gActor143000CodeAcceptedFade.phase      = SCREEN_FADE_RUNNING;
+                gActor143000CodeAcceptedFade.rampFrames = ACTOR_143000_KEYPAD_FADE_FRAMES;
+                task->killCountdown                     = ACTOR_143000_KEYPAD_FADE_FRAMES;
+                taskSpawn(ACTOR_143000_KEYPAD_FADE_BANK, ACTOR_143000_KEYPAD_FADE_SLOT, 0, &gActor143000CodeAcceptedFade);
+                break;
+        }
+    } else {
+        switch (task->killCountdown) {
+            case ACTOR_143000_KEYPAD_CHECK_TICK_BEGIN:
+                work->statusLine = ACTOR_143000_KEYPAD_STATUS_WAIT;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_CHECK:
+                work->statusLine  = ACTOR_143000_KEYPAD_STATUS_CHECK_PASSWORD;
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_PREFIX;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_CHECK_FIRST_DOT:
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_FIRST_DOT;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_CHECK_SECOND_DOT:
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_SECOND_DOT;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_CHECK_FULL:
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_FULL;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_RESULT_BANNER:
+                sndEvtRequestScriptStart(SOUND_SHELTER_B2_LAB_KEYPAD_CODE_REJECTED, 0, 0);
+                work->resultBanner = ACTOR_143000_KEYPAD_BANNER_REJECTED;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_RESULT_TEXT:
+                work->statusLine   = ACTOR_143000_KEYPAD_STATUS_CHECK_DATABASE;
+                work->statusWidth  = ACTOR_143000_KEYPAD_STATUS_WIDTH_PREFIX;
+                work->resultBanner = ACTOR_143000_KEYPAD_BANNER_NONE;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_DATABASE_FIRST_DOT:
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_FIRST_DOT;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_DATABASE_SECOND_DOT:
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_SECOND_DOT;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_DATABASE_FULL:
+                work->statusWidth = ACTOR_143000_KEYPAD_STATUS_WIDTH_FULL;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_SECOND_REJECT_BANNER:
+                work->resultBanner = ACTOR_143000_KEYPAD_BANNER_REJECTED;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_FINAL_TEXT:
+                work->statusLine   = ACTOR_143000_KEYPAD_STATUS_TRY_AGAIN;
+                work->resultBanner = ACTOR_143000_KEYPAD_BANNER_NONE;
+                break;
+            case ACTOR_143000_KEYPAD_CHECK_TICK_FINISH:
+                work->statusLine = ACTOR_143000_KEYPAD_STATUS_ENTER_PASSWORD;
+                work->codeLength = 0;
+                task->state      = ACTOR_143000_KEYPAD_STATE_INPUT;
+                break;
+        }
+    }
+    task->killCountdown = (s16)((u16)task->killCountdown + 1);
+}
+
+/// Draws the keypad entry, status, result banner and animated dog each frame.
+///
+/// Requires initialized keypad work with codeLength in [0, ACTOR_143000_KEYPAD_CODE_CAPACITY] and
+/// a writable entry buffer including its terminator. Borrows free frame-arena
+/// packets and ordering-table slot 1022; the caller must provide capacity.
+/// Coordinates are center-origin pixels; the dog's position and speed have
+/// four fractional bits. The atlas and its CLUTs must be loaded for view 11.
+static void _actor143000DrawKeypad(Task* task)
+{
+    _Actor143000KeypadWork* work;
+    POLY_FT4*               quad;
+    s32                     characterIndex;
+    s16                     entryY;
+    s16                     edgeX;
+    s16                     left;
+    u8                      textureRow;
+    s16                     top;
+    s16                     edgeY;
+    u8                      textureU;
+    u8                      textureV;
+    u8                      bottomV;
+    u8                      rightU;
+    s16                     clut;
+
+    // Keep the entry terminated before another state checks or copies it.
+    edgeX                                    = -0x48;
+    work                                     = task->work;
+    gActor143000KeypadCode[work->codeLength] = '\0';
+    gActor143000KeypadCaretDrawCalls++;
+    entryY = 0x10;
+    // Draw one mask glyph per character and a blinking insertion caret.
+    for (characterIndex = 0; characterIndex < work->codeLength; characterIndex++) {
+        edgeY    = entryY + ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS;
+        textureU = ACTOR_143000_KEYPAD_ENTRY_TEXTURE_LEFT;
+        textureV = ACTOR_143000_KEYPAD_ENTRY_TEXTURE_TOP;
+        rightU   = textureU + ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS;
+        bottomV  = textureV + ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS;
+        ACTOR_143000_RESERVE_KEYPAD_QUAD(quad);
+        setXY4(quad, edgeX, entryY, edgeX + ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS, entryY, edgeX, edgeY, edgeX + ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS, edgeY);
+        setUV4(quad, textureU, textureV, rightU, textureV, textureU, bottomV, rightU, bottomV);
+        quad->tpage = ACTOR_143000_KEYPAD_TEXTURE_PAGE;
+        quad->clut  = ACTOR_143000_KEYPAD_CLUT_ENTRY;
+        setShadeTex(quad, 1);
+        addPrim(&gGpuCurrentOt[ACTOR_143000_KEYPAD_OT_SLOT], quad);
+        edgeX += ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS;
+    }
+    if (work->codeLength != ACTOR_143000_KEYPAD_CODE_CAPACITY && task->state != ACTOR_143000_KEYPAD_STATE_CHECK_CODE) {
+        textureU = ACTOR_143000_KEYPAD_CARET_TEXTURE_LEFT;
+        textureV = ACTOR_143000_KEYPAD_ENTRY_TEXTURE_TOP;
+        ACTOR_143000_RESERVE_KEYPAD_QUAD(quad);
+        setXYWH(quad, edgeX, entryY, ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS, ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS);
+        setUVWH(quad, textureU, textureV, ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS, ACTOR_143000_KEYPAD_ENTRY_GLYPH_PIXELS);
+        quad->tpage = ACTOR_143000_KEYPAD_TEXTURE_PAGE;
+        quad->clut  = ACTOR_143000_KEYPAD_CLUT_CARET;
+        setShadeTex(quad, 1);
+        if (gActor143000KeypadCaretDrawCalls & ACTOR_143000_KEYPAD_CARET_BLINK_BIT) {
+            addPrim(&gGpuCurrentOt[ACTOR_143000_KEYPAD_OT_SLOT], quad);
+        }
+    }
+    // Status rows use the atlas text; a nonzero width reveals its prefix.
+    if (work->statusLine != 0) {
+        edgeY = ACTOR_143000_KEYPAD_STATUS_WIDTH;
+        if (work->statusWidth != 0) {
+            edgeY = work->statusWidth;
+        }
+        left       = -0x78;
+        top        = -0x48;
+        textureRow = (work->statusLine - 1) * ACTOR_143000_KEYPAD_STATUS_HEIGHT;
+        ACTOR_143000_RESERVE_KEYPAD_QUAD(quad);
+        setXYWH(quad, left, top, edgeY, ACTOR_143000_KEYPAD_STATUS_HEIGHT);
+        setUVWH(quad, 0, textureRow, edgeY, ACTOR_143000_KEYPAD_STATUS_HEIGHT);
+        quad->tpage = ACTOR_143000_KEYPAD_TEXTURE_PAGE;
+        quad->clut  = ACTOR_143000_KEYPAD_CLUT_STATUS;
+        setShadeTex(quad, 1);
+        addPrim(&gGpuCurrentOt[ACTOR_143000_KEYPAD_OT_SLOT], quad);
+    }
+    if (work->resultBanner != ACTOR_143000_KEYPAD_BANNER_NONE) {
+        top = left = -0x28;
+        edgeX      = 0x18;
+        edgeY      = -0x10;
+        if (work->resultBanner == ACTOR_143000_KEYPAD_BANNER_ACCEPTED) {
+            textureU = ACTOR_143000_KEYPAD_BANNER_ACCEPTED_TEXTURE_LEFT;
+            textureV = ACTOR_143000_KEYPAD_BANNER_TEXTURE_TOP;
+            clut     = ACTOR_143000_KEYPAD_CLUT_ACCEPTED;
+        } else {
+            textureU = ACTOR_143000_KEYPAD_BANNER_REJECTED_TEXTURE_LEFT;
+            textureV = ACTOR_143000_KEYPAD_BANNER_TEXTURE_TOP;
+            clut     = ACTOR_143000_KEYPAD_CLUT_REJECTED;
+        }
+        ACTOR_143000_RESERVE_KEYPAD_QUAD(quad);
+        setXY4(quad, left, top, edgeX, top, left, edgeY, edgeX, edgeY);
+        setUVWH(quad, textureU, textureV, ACTOR_143000_KEYPAD_BANNER_WIDTH, ACTOR_143000_KEYPAD_BANNER_HEIGHT);
+        quad->tpage = ACTOR_143000_KEYPAD_TEXTURE_PAGE;
+        quad->clut  = clut;
+        setShadeTex(quad, 1);
+        addPrim(&gGpuCurrentOt[ACTOR_143000_KEYPAD_OT_SLOT], quad);
+    }
+    // Advance the three-frame dog and its 1/16-pixel position.
+    top        = -0x60;
+    left       = work->marqueeX >> ACTOR_143000_KEYPAD_DOG_FRACTION_BITS;
+    edgeY      = top + ACTOR_143000_KEYPAD_DOG_HEIGHT;
+    edgeX      = left + ACTOR_143000_KEYPAD_DOG_WIDTH;
+    textureRow = _gActor143000KeypadDogFrames[(gActor143000KeypadDogPhaseQ4 / ACTOR_143000_KEYPAD_DOG_FRAME_UNITS) % (s32)ARRAY_SIZE(_gActor143000KeypadDogFrames)] * ACTOR_143000_KEYPAD_DOG_HEIGHT + ACTOR_143000_KEYPAD_DOG_TEXTURE_TOP - 0x100;
+    bottomV    = textureRow + ACTOR_143000_KEYPAD_DOG_HEIGHT;
+    clut       = ACTOR_143000_KEYPAD_CLUT_DOG;
+    ACTOR_143000_RESERVE_KEYPAD_QUAD(quad);
+    setXY4(quad, left, top, edgeX, top, left, edgeY, edgeX, edgeY);
+    setUV4(quad, 0, textureRow, ACTOR_143000_KEYPAD_DOG_WIDTH, textureRow, 0, bottomV, ACTOR_143000_KEYPAD_DOG_WIDTH, bottomV);
+    quad->tpage = ACTOR_143000_KEYPAD_TEXTURE_PAGE;
+    quad->clut  = clut;
+    setShadeTex(quad, 1);
+    addPrim(&gGpuCurrentOt[ACTOR_143000_KEYPAD_OT_SLOT], quad);
+    gActor143000KeypadDogPhaseQ4 += work->marqueeSpeed;
+    if (task->state != ACTOR_143000_KEYPAD_STATE_CHECK_CODE && task->state != ACTOR_143000_KEYPAD_STATE_WAIT_FADE) {
+        work->marqueeX -= work->marqueeSpeed;
+        if (work->marqueeX < ACTOR_143000_KEYPAD_DOG_WRAP_X) {
+            work->marqueeX = ACTOR_143000_KEYPAD_DOG_START_X;
+        }
+    }
+    work->marqueeSpeed -= ACTOR_143000_KEYPAD_DOG_SPEED_DECAY;
+    if (work->marqueeSpeed < ACTOR_143000_KEYPAD_DOG_IDLE_SPEED) {
+        work->marqueeSpeed = ACTOR_143000_KEYPAD_DOG_IDLE_SPEED;
+    }
+}
+
+#undef ACTOR_143000_RESERVE_KEYPAD_QUAD
+
+#include "../../shared/room/action_prompt_outline_rect.inc.c"
+
+/// Resets the keypad's action cursors, then updates them on each task tick.
+///
+/// Task state must be 0 (reset both ports) or 1 (move the selected port).
+/// The keypad spawns this companion task with spawnArg1 = 1, selecting port 0.
+static void _actor143000KeypadCursorTask(Task* task)
+{
+    TaskFunc states[] = {
+        _actionPromptResetDefault,
+        _actionPromptMoveCursorsDefault,
+    };
+
+    states[task->state](task);
+}
+
+/// Dispatches the laboratory keypad's state and draws its current presentation.
+///
+/// Task state indexes the eleven-entry keypad table. Initialization allocates
+/// the work block and the companion cursor task; closing releases both tasks.
+/// Drawing follows the state callback, including on the closing tick.
+static void _actor143000KeypadTask(Task* task)
+{
+    TaskFuncTable11 states;
+
+    states = _gActor143000KeypadStates;
+    states.funcs[task->state](task);
+    _actor143000DrawKeypad(task);
+}
+
+/// Arms the first keypad cursor at the screen center and advances to input.
+///
+/// Sets the published pixel position; the companion cursor task owns its
+/// fixed-point position. Requires the initialized first action-prompt slot.
+static void _actor143000ArmKeypadCursor(Task* task)
+{
+    ActionPrompt* prompt = gActionPromptSlots;
+
+    prompt->cursorSpeed = ACTION_PROMPT_SPEED_AIM;
+    prompt->mode        = ACTION_PROMPT_MODE_NORMAL;
+    prompt->screen.xy.x = 0;
+    prompt->screen.xy.y = 0;
+    task->state         = task->state + 1;
+}
+
+/// Opens the latched keypad hotspot's commands at the cursor position.
+///
+/// Requires initialized work and promptKind latched by the input state.
+/// Hides and stops the cursor, then advances to command-result handling.
+static void _actor143000OpenKeypadCommands(Task* task)
+{
+    ActionPrompt*           prompt = gActionPromptSlots;
+    _Actor143000KeypadWork* work   = task->work;
+
+    prompt->mode        = ACTION_PROMPT_MODE_HIDDEN;
+    prompt->cursorSpeed = ACTION_PROMPT_SPEED_STOPPED;
+    itemMenuOpenHotspotCommands(prompt->screen.xy.x, prompt->screen.xy.y, work->promptKind);
+    task->state = ACTOR_143000_KEYPAD_STATE_HANDLE_COMMAND;
+}
+
+/// Applies the latched hotspot's command result and chooses the next keypad state.
+///
+/// Requires initialized work and selectedHotspot from the input handler.
+/// Accepted description commands return to input; Enter starts validation and
+/// examining the keys enables typing, or auto-typing at laboratory progress 1.
+/// The subtract-one signed-halfword switch preserves the hotspot id conversion.
+/// An unaccepted command may visit the unused resume state via field_4.
+static void _actor143000HandleKeypadCommand(Task* task)
+{
+    enum {
+        ACTOR_143000_KEYPAD_CAP_STATUS         = 8,
+        ACTOR_143000_KEYPAD_CAP_SURROUND       = 7,
+        ACTOR_143000_KEYPAD_CAP_ENTRY          = 9,
+        ACTOR_143000_KEYPAD_CAP_KEYS           = 10,
+        ACTOR_143000_KEYPAD_AUTO_TYPE_INTERVAL = 10,
+    };
+
+    _Actor143000KeypadWork* work   = task->work;
+    ActionPrompt*           prompt = gActionPromptSlots;
+
+    prompt->mode        = ACTION_PROMPT_MODE_HIDDEN;
+    prompt->cursorSpeed = ACTION_PROMPT_SPEED_STOPPED;
+    if (itemMenuIsHotspotActionConfirmed() != 0) {
+        switch ((s16)(work->selectedHotspot - 1)) {
+            case ACTOR_143000_KEYPAD_HOTSPOT_STATUS - 1:
+                capRunCommand(ACTOR_143000_KEYPAD_CAP_STATUS, CAP_PLAYBACK_IN_PLACE);
+                break;
+            case ACTOR_143000_KEYPAD_HOTSPOT_SURROUND - 1:
+                capRunCommand(ACTOR_143000_KEYPAD_CAP_SURROUND, CAP_PLAYBACK_IN_PLACE);
+                break;
+            case ACTOR_143000_KEYPAD_HOTSPOT_ENTRY - 1:
+                capRunCommand(ACTOR_143000_KEYPAD_CAP_ENTRY, CAP_PLAYBACK_IN_PLACE);
+                break;
+            case ACTOR_143000_KEYPAD_HOTSPOT_ENTER - 1:
+                sndEvtRequestScriptStart(SOUND_SHELTER_B2_LAB_KEYPAD_ENTER, 0, 0);
+                task->state         = ACTOR_143000_KEYPAD_STATE_CHECK_CODE;
+                task->killCountdown = 0;
+                return;
+            case ACTOR_143000_KEYPAD_HOTSPOT_KEYS - 1:
+                work->keypadExamined = 1;
+                capRunCommand(ACTOR_143000_KEYPAD_CAP_KEYS, CAP_PLAYBACK_IN_PLACE);
+                if (gameFlagGetNibble(GAME_FLAG_SHELTER_B2_LABORATORY_PROGRESS) == 1) {
+                    task->killCountdown = ACTOR_143000_KEYPAD_AUTO_TYPE_INTERVAL;
+                    task->state         = ACTOR_143000_KEYPAD_STATE_AUTO_TYPE_CODE;
+                    return;
+                }
+                break;
+            default:
+                break;
+        }
+        task->state = ACTOR_143000_KEYPAD_STATE_INPUT;
+    } else if (work->field_4 != 0) {
+        task->state = ACTOR_143000_KEYPAD_STATE_RESUME_INPUT;
+    } else {
+        task->state = ACTOR_143000_KEYPAD_STATE_INPUT;
+    }
+}
+
+/// Releases keypad presentation and requests deferred keypad teardown.
+///
+/// Requires live keypad work and its cursor task. Rejection restores the saved
+/// view, player drawing, HUD and actor control, with ten eligible interaction
+/// updates before rearming. Acceptance passes the persistent fade record to
+/// the terminal session. The cursor is killed first; keypad work remains live
+/// for the enclosing task's final draw until kill polling releases it.
+static void _actor143000CloseKeypad(Task* task)
+{
+    enum {
+        ACTOR_143000_KEYPAD_INTERACTION_REARM_UPDATES = 10,
+        ACTOR_143000_TERMINAL_TASK_SLOT               = 1,
+    };
+
+    _Actor143000KeypadWork* work = task->work;
+
+    displayReleaseMenuHold();
+    gGameSession->cutsceneHold = 0;
+    if (work->codeAccepted == 0) {
+        gDirectionInteractionRearmUpdates                      = ACTOR_143000_KEYPAD_INTERACTION_REARM_UPDATES;
+        gGameSession->eventState                               = 0;
+        gGameSession->hideHud                                  = 0;
+        gSceneCombatState.actorControl                         = SCENE_COMBAT_ACTORS_RUNNING;
+        gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view = gActor143000KeypadPreviousView;
+        playerActorSetDrawMode(PLAYER_ACTOR_MODEL_DRAW_SHOW_AUTO);
+    } else {
+        taskSpawnFromTable(gActor143000TerminalTasks, ACTOR_143000_TERMINAL_TASK_SLOT, 0, &gActor143000CodeAcceptedFade);
+    }
+    taskKill(task->spawnArg2.pointer);
+    taskRequestKill(task, work->codeAccepted);
+}
+
+/// Returns the keypad to cursor input after clearing its unused work value.
+///
+/// The cleared value's wider role is unproven; this package never sets it nonzero.
+static void _actor143000ResumeKeypadInput(Task* task)
+{
+    _Actor143000KeypadWork* work = task->work;
+
+    work->field_4 = 0;
+    task->state   = ACTOR_143000_KEYPAD_STATE_INPUT;
+}
+
+/// Applies the key at the latched cursor position, then resumes keypad input.
+///
+/// The screen grid has three 13-key rows of 16-pixel cells. '#' clears the
+/// entry and '-' deletes its last character; other keys append up to capacity.
+/// A valid key also accelerates the dog. Division truncates toward zero, so
+/// callers must latch a position inside the grid rather than use this as a hit test.
+static void _actor143000TypeKeypadKey(Task* task)
+{
+    enum {
+        ACTOR_143000_KEYPAD_CLEAR_KEY     = '#',
+        ACTOR_143000_KEYPAD_BACKSPACE_KEY = '-',
+    };
+    _Actor143000KeypadWork* work   = task->work;
+    s32                     column = (work->keyPress.x - ACTOR_143000_KEYPAD_GRID_LEFT) / ACTOR_143000_KEYPAD_KEY_PIXELS;
+    s32                     row    = (work->keyPress.y - ACTOR_143000_KEYPAD_GRID_TOP) / ACTOR_143000_KEYPAD_KEY_PIXELS;
+    const char*             keyCharacter;
+
+    if ((u32)column < ACTOR_143000_KEYPAD_COLUMNS) {
+        if (row >= 0) {
+            if (row < (s32)ARRAY_SIZE(_gActor143000KeypadRows)) {
+                keyCharacter = _gActor143000KeypadRows[row] + column;
+                if ((s8)*keyCharacter == ACTOR_143000_KEYPAD_CLEAR_KEY) {
+                    work->codeLength = 0;
+                } else if ((s8)*keyCharacter == ACTOR_143000_KEYPAD_BACKSPACE_KEY) {
+                    if (work->codeLength > 0) {
+                        work->codeLength--;
+                    }
+                } else if (work->codeLength < ACTOR_143000_KEYPAD_CODE_CAPACITY) {
+                    gActor143000KeypadCode[work->codeLength] = *keyCharacter;
+                    work->codeLength++;
+                }
+                work->marqueeSpeed = ACTOR_143000_KEYPAD_DOG_KEY_SPEED;
+            }
+        }
+    }
+    task->state = ACTOR_143000_KEYPAD_STATE_INPUT;
+}
+
+/// Reveals the accepted keypad code one character at a time after CAP playback.
+///
+/// Requires a caption-triggered entry with codeLength initially zero and a
+/// positive tick countdown. Each character takes another 8..15 task ticks;
+/// drawing terminates the copied code at the revealed length. Input resumes
+/// when all ten characters have been revealed.
+static void _actor143000AutoTypeKeypadCode(Task* task)
+{
+    enum {
+        ACTOR_143000_KEYPAD_AUTO_TYPE_MIN_FRAMES    = 8,
+        ACTOR_143000_KEYPAD_AUTO_TYPE_RANDOM_FRAMES = 8,
+        ACTOR_143000_RANDOM_FRACTION_BITS           = 15,
+    };
+    _Actor143000KeypadWork* work = task->work;
+    u32                     remainingFrames;
+    u32                     revealedLength;
+
+    if (capIsBusy() == 0) {
+        remainingFrames     = (u16)task->killCountdown - 1;
+        task->killCountdown = remainingFrames;
+        if ((s16)remainingFrames <= 0) {
+            task->killCountdown = (rand() * ACTOR_143000_KEYPAD_AUTO_TYPE_RANDOM_FRAMES >> ACTOR_143000_RANDOM_FRACTION_BITS) + ACTOR_143000_KEYPAD_AUTO_TYPE_MIN_FRAMES;
+            work->codeLength++;
+            sndEvtRequestScriptStart(SOUND_SHELTER_B2_LAB_KEYPAD_KEY, 0, 0);
+            // Copy the whole code; the drawer reveals only codeLength characters.
+            memcpy(gActor143000KeypadCode, _gActor143000KeypadPassword, sizeof(_gActor143000KeypadPassword));
+            revealedLength = work->codeLength;
+            if (revealedLength >= sizeof(_gActor143000KeypadPassword) - 1) {
+                task->state = ACTOR_143000_KEYPAD_STATE_INPUT;
+            }
+        }
+    }
+}
+
+/// Counts down the keypad's fade-to-black wait, then selects its closing state.
+///
+/// killCountdown is the remaining task ticks, seeded with the fade's ramp length.
+/// Unsigned decrement and signed comparison preserve the stored 16-bit countdown.
+static void _actor143000WaitForKeypadFade(Task* task)
+{
+    u16 remainingFrames = (u16)task->killCountdown - 1;
+
+    task->killCountdown = remainingFrames;
+    if ((s16)remainingFrames <= 0) {
+        task->state = ACTOR_143000_KEYPAD_STATE_CLOSE;
+    }
+}
+
+/// Updates every keypad hotspot's hit flag and returns the first hit id, or zero.
+///
+/// Requires writable entries ending at ACTION_PROMPT_HOTSPOT_END. Cursor and
+/// rectangles use signed center-origin pixels; right and bottom edges are
+/// excluded and overlapping hits are all marked. Choices must be the keypad's
+/// nonzero ids (1..5). The sentinel is untouched.
+/// Demo 9 additionally outlines hits in black and misses in red.
+static s32 _actor143000HitTestKeypadHotspots(ActionPromptHotspot* hotspots, s16 cursorX, s16 cursorY)
+{
+    s32 firstHitId = ACTOR_143000_KEYPAD_HOTSPOT_NONE;
+
+    if (hotspots->id != ACTION_PROMPT_HOTSPOT_END) {
+        do {
+            if (cursorX >= hotspots->x && cursorX < hotspots->x + hotspots->w && cursorY >= hotspots->y && cursorY < hotspots->y + hotspots->h) {
+                if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.demoScene == ACTOR_143000_KEYPAD_DEBUG_DEMO) {
+                    _actionPromptOutlineRectDefault(hotspots, 0, 0, 0);
+                }
+                hotspots->hit = 1;
+                if (firstHitId == ACTOR_143000_KEYPAD_HOTSPOT_NONE) {
+                    firstHitId = hotspots->id;
+                }
+            } else {
+                if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.demoScene == ACTOR_143000_KEYPAD_DEBUG_DEMO) {
+                    _actionPromptOutlineRectDefault(hotspots, 0xFF, 0, 0);
+                }
+                hotspots->hit = 0;
+            }
+            hotspots++;
+        } while (hotspots->id != ACTION_PROMPT_HOTSPOT_END);
+    }
+    return firstHitId;
+}
+
+/// Queues green outlines for every keypad hotspot except the end marker.
+///
+/// Used by demo 9 before the hit test adds its black/red outlines. Requires
+/// the loaded hotspot table and four free LINE_F2 packets per non-sentinel entry.
+static void _actor143000OutlineKeypadHotspots(void)
+{
+    ActionPromptHotspot* hotspot = _gActor143000KeypadHotspots;
+
+    if (hotspot->id != ACTION_PROMPT_HOTSPOT_END) {
+        do {
+            _actionPromptOutlineRectDefault(hotspot, 0, 0xFF, 0);
+            hotspot++;
+        } while (hotspot->id != ACTION_PROMPT_HOTSPOT_END);
+    }
+}
+
+#include "../../shared/room/action_prompt_reset.inc.c"
+
+/// Captures full-width rows of the stored background into the resident workspace.
+///
+/// Borrows strip for this call; only its y and h select the source rows.
+/// imageByteOffset is a word-aligned byte offset into gFsImageWorkspacePtr and the
+/// complete 320-pixel strip must fit there. The source starts at VRAM (448,256),
+/// in RGB555 halfwords. The caller owns workspace reuse and GPU synchronization.
+static inline void _actor143000StoreStrip(const RECT* strip, s32 imageByteOffset)
+{
+    RECT sourceRect = *strip;
+
+    sourceRect.x  = ACTOR_143000_CAPTURE_VRAM_X;
+    sourceRect.w  = FILE_SYSTEM_IMAGE_WIDTH;
+    sourceRect.y += ACTOR_143000_CAPTURE_VRAM_Y;
+    StoreImage(&sourceRect, (u_long*)((u8*)gFsImageWorkspacePtr + imageByteOffset));
+}
+
+void actor143000CaptureStripTask(Task* task)
+{
+    enum {
+        ACTOR_143000_CAPTURE_VIEW             = 14,
+        ACTOR_143000_CAPTURE_INTERVAL_FRAMES  = 6,
+        ACTOR_143000_CAPTURE_STATE_INITIALIZE = 0,
+        ACTOR_143000_CAPTURE_STATE_STORE      = 1,
+    };
+    Actor143000CaptureArgs* capture = task->spawnArg2.pointer;
+    RECT                    strip;
+    s32                     stripBottom;
+    s32                     imageByteOffset;
+
+    if (gGameSession->location.view != ACTOR_143000_CAPTURE_VIEW) {
+        taskKill(task);
+        return;
+    }
+    switch (task->state) {
+        case ACTOR_143000_CAPTURE_STATE_INITIALIZE:
+            task->killCountdown     = ACTOR_143000_CAPTURE_INTERVAL_FRAMES;
+            capture->stripsCaptured = 0;
+            task->state++;
+            break;
+        case ACTOR_143000_CAPTURE_STATE_STORE:
+            if (--task->killCountdown > 0) {
+                break;
+            }
+            task->killCountdown = ACTOR_143000_CAPTURE_INTERVAL_FRAMES;
+            strip.x             = capture->band.x;
+            strip.w             = capture->band.w;
+            strip.y             = capture->band.y + capture->band.h * capture->stripsCaptured / capture->stripCount;
+            capture->stripsCaptured++;
+            stripBottom     = capture->band.y + capture->band.h * capture->stripsCaptured / capture->stripCount;
+            imageByteOffset = strip.y * FILE_SYSTEM_IMAGE_ROW_BYTES;
+            strip.h         = stripBottom - strip.y;
+            // Retained compiler dependency between the row offset and rectangle copy.
+            __asm__("" : "+m"(strip) : "r"(imageByteOffset));
+            _actor143000StoreStrip(&strip, imageByteOffset);
+            if (capture->stripsCaptured >= capture->stripCount) {
+                taskKill(task);
+            }
+            break;
+    }
+}

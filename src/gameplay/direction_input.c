@@ -1,0 +1,420 @@
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+
+#include "types.h"
+
+#include "gameplay/area_entry.h"
+#include "area_transitions.h"
+#include "gameplay/attachment_state.h"
+#include "gameplay/attachments.h"
+#include "gameplay/direction.h"
+#include "direction.h"
+#include "hud_sprites.h"
+#include "loading.h"
+#include "gameplay/message.h"
+#include "gameplay/scene_combat.h"
+#include "gameplay/view.h"
+#include "gameplay/world_collision.h"
+
+#include "main/display.h"
+#include "main/gameflow.h"
+#include "main/mc.h"
+#include "main/pad.h"
+#include "main/session.h"
+#include "main/sound.h"
+#include "main/wipsys.h"
+
+/* Define BSS before API headers to preserve first-declaration order. */
+u16 gDirectionPreviousActionControl;
+
+u16 gDirectionActionControl;
+
+u16 gDirectionSecondaryActionControl;
+
+u16 gDirectionActionPhase;
+
+u8 gDirectionActionParameter0;
+
+u8 gDirectionActionParameter1;
+
+u8 gDirectionSecondaryActionParameter0;
+
+u8 gDirectionSecondaryActionParameter1;
+
+u8 gDirectionActionControlChanged;
+
+u8 gDirectionStairBattleFinished;
+
+u8 gDirectionPreviousBattlePhase;
+
+s16 D_80114CE0;
+
+RoomEventMsg gDirectionWarpRequest;
+
+/// Sound script selected for the current warp's departure or in-area execution.
+///
+/// DIRECTION_WARP_SOUND_NONE skips playback and the wait. Retained from the
+/// room query through execution and script completion; dead players skip playback.
+s32 _gDirectionWarpSoundId;
+
+/// Room query reply retained through the turn and resolve phases.
+///
+/// Dispatch narrows to s16: 0 executes in this area, 1 departs, and 2 executes
+/// the room's replacement action immediately. Other replies keep the query phase.
+s16 _gDirectionWarpQueryResult;
+
+u16 gDirectionWarpDepartureShade;
+
+u8 gDirectionActionActive;
+
+u32 gMenuMapMarkedAreaBits[2];
+
+s16 gDirectionInteractionRearmUpdates;
+
+#include "direction_input.h"
+
+#include "gameplay/direction_input.h"
+
+#include "menu_map.h"
+
+/// Trigger byte packing and the fixed facing target used by Dryfield's driveway exits.
+enum {
+    DIRECTION_WARP_ENDPOINT_SHIFT       = 4,
+    DIRECTION_WARP_ARRIVAL_MASK         = 0xF,
+    DIRECTION_WARP_DEFAULT_ROOM         = 1,
+    DIRECTION_WARP_DEPARTURE_FADE_START = 30,
+    DIRECTION_WARP_DRIVEWAY_FACING_X    = -1473,
+    DIRECTION_WARP_DRIVEWAY_FACING_Z    = 2497
+};
+
+MenuMapMarkedAreaLimitStorage gMenuMapStageAreaCounts = { { 17, 38, 38, 49, 33 }, { 0xE1, 0xFF, 0x22 } };
+
+u8 gViewIdentityMap[VIEW_IDENTITY_MAP_LENGTH] = {
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+};
+
+void directionUpdateAction(void)
+{
+    enum { DIRECTION_INTERACTION_REARM_UPDATES = 10 };
+    const Task*          viewGateTask;
+    const PlayerStatus*  playerStatus;
+    u32                  triggerControl;
+    u32                  actionIndex;
+    u32                  automaticFlag;
+    DirectionActionTable actions;
+
+    actions      = gDirectionActionHandlers;
+    playerStatus = &gPlayerStatus;
+    viewGateTask = gameGetTaskSlot(GAME_TASK_SLOT_VIEW_GATE);
+    // View changes rearm manual interaction before this eligible update is counted.
+    if (viewGateTask != NULL) {
+        if (viewGateTask->spawnArg1.value != gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view) {
+            viewChangeStub();
+            gDirectionInteractionRearmUpdates = DIRECTION_INTERACTION_REARM_UPDATES;
+        }
+    }
+    if (gDisplayState.pendingMode != DISPLAY_MODE_NONE) {
+        gDirectionInteractionRearmUpdates = DIRECTION_INTERACTION_REARM_UPDATES;
+    }
+    if (gDirectionActionActive == 0) {
+        if (gAttachmentState.mode == ATTACHMENT_MODE_IDLE) {
+            gGameSession->dirActionBusy = 0;
+            if (gDirectionInteractionRearmUpdates != 0) {
+                gDirectionInteractionRearmUpdates = (u16)gDirectionInteractionRearmUpdates - 1;
+            }
+            if (worldCollisionReadActionHit(&gDirectionActionControl, &gDirectionActionParameter0, &gDirectionActionParameter1) != 0) {
+                if ((s16)gDirectionPreviousActionControl != (s16)gDirectionActionControl) {
+                    gDirectionActionControlChanged = true;
+                } else {
+                    gDirectionActionControlChanged = false;
+                }
+                gDirectionActionPhase = 0;
+                triggerControl        = gDirectionActionControl;
+                automaticFlag         = triggerControl & WORLD_COLLISION_TRIGGER_AUTOMATIC;
+                if (gSceneCombatState.signals.bytes.endDelayFrames == 0) {
+                    if (automaticFlag && (gDisplayState.pendingMode == DISPLAY_MODE_NONE) && !(gGameSession->padPressed & PAD_BUTTON_TRIANGLE)) {
+                        if (!(triggerControl & WORLD_COLLISION_TRIGGER_OUTSIDE_BATTLE)) {
+                            gDirectionActionActive = true;
+                        } else if (gSceneCombatState.signals.bytes.battlePhase != SCENE_COMBAT_BATTLE_ENGAGED) {
+                            gDirectionActionActive = true;
+                        }
+                    } else if (playerStatus->interactionPressed != 0) {
+                        if (!(gGameSession->padPressed & PAD_BUTTON_TRIANGLE)) {
+                            if (!(gDirectionActionControl & WORLD_COLLISION_TRIGGER_OUTSIDE_BATTLE)) {
+                                if (gDirectionInteractionRearmUpdates == 0) {
+                                    gDirectionActionActive            = true;
+                                    gDirectionInteractionRearmUpdates = DIRECTION_INTERACTION_REARM_UPDATES;
+                                }
+                            } else if (gSceneCombatState.signals.bytes.battlePhase != SCENE_COMBAT_BATTLE_ENGAGED) {
+                                if (gDirectionInteractionRearmUpdates == 0) {
+                                    gDirectionActionActive            = true;
+                                    gDirectionInteractionRearmUpdates = DIRECTION_INTERACTION_REARM_UPDATES;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Once latched, actions advance regardless of the gates for new requests.
+    gDirectionPreviousActionControl = gDirectionActionControl;
+    if (gDirectionActionActive != 0) {
+        gGameSession->dirActionBusy = 1;
+        actionIndex                 = (u8)gDirectionActionControl;
+        if (actionIndex != WORLD_COLLISION_TRIGGER_ACTION_CANCEL) {
+            actions.handlers[actionIndex]();
+        } else {
+            _directionClearTriggerParameters();
+            gDirectionActionActive = false;
+        }
+    } else {
+        _directionClearTriggerParameters();
+    }
+    gDirectionPreviousBattlePhase = gSceneCombatState.signals.bytes.battlePhase;
+}
+
+void directionQueryWarp(void)
+{
+    Task*                  roomTask;
+    Task*                  playerTask;
+    PlayerStatus*          playerStatus;
+    const GameActor*       playerActor;
+    const GameLocationKey* location;
+    DirectionWarpEntry     warpEntry;
+    ActorTransform         turnRequest;
+    SVECTOR                departureFacingPoint;
+    SVECTOR                stayFacingPoint;
+    s32                    stageId;
+    s32                    areaId;
+    s16                    queryResult;
+
+    /// Prepares a rotation-only request, reversing arrival yaw or resolving its sentinel.
+    ///
+    /// Arguments must be side-effect-free lvalues or a live player pointer: each
+    /// is evaluated repeatedly. Borrows the registered player task for world-point
+    /// bearing. Caller-owned point storage keeps each branch's distinct temporary.
+#define DIRECTION_PREPARE_WARP_TURN(request, endpoint, playerActorPtr, point)                                           \
+    {                                                                                                                   \
+        (request).rot.vx = 0;                                                                                           \
+        (request).rot.vz = 0;                                                                                           \
+        (request).rot.vy = ((endpoint).player.yaw.word + ACTOR_TRANSFORM_ANGLE_HALF_TURN) & ACTOR_TRANSFORM_ANGLE_MASK; \
+        if ((endpoint).player.yaw.word == ACTOR_SPAWN_YAW_FACE_TRANSITION_POINT_ALT ||                                  \
+            (endpoint).player.yaw.word == ACTOR_SPAWN_YAW_FACE_TRANSITION_POINT) {                                      \
+            (point).vx       = DIRECTION_WARP_DRIVEWAY_FACING_X;                                                        \
+            (point).vy       = 0;                                                                                       \
+            (point).vz       = DIRECTION_WARP_DRIVEWAY_FACING_Z;                                                        \
+            (request).rot.vy = actorAngleTaskYawTowardPoint(gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER], &(point));     \
+        } else if ((endpoint).player.yaw.word == ACTOR_SPAWN_YAW_KEEP_FACING) {                                         \
+            (request).rot.vy = (playerActorPtr)->rotation.vy;                                                           \
+        }                                                                                                               \
+    }
+
+    location     = &gGameSession->location;
+    stageId      = location->stage;
+    areaId       = location->area;
+    roomTask     = gameGetTaskSlot(GAME_TASK_SLOT_ROOM);
+    playerTask   = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
+    playerStatus = &gPlayerStatus;
+    playerActor  = playerTask->work;
+
+    if (gGameSession->eventState != 0) {
+        gDirectionActionActive = false;
+        _directionClearTriggerParameters();
+        return;
+    }
+
+    _gDirectionWarpQueryResult   = 0;
+    gDirectionWarpDepartureShade = 0;
+    // The current endpoint supplies facing and sounds for this departure.
+    warpEntry = gDirectionAreaWarpEntriesByStage[stageId - 1][areaId - 1][(gDirectionActionParameter1 >> DIRECTION_WARP_ENDPOINT_SHIFT) - 1];
+
+    gDirectionWarpRequest.field_4   = 1;
+    gDirectionWarpRequest.roomState = DIRECTION_WARP_DEFAULT_ROOM;
+    gDirectionWarpRequest.queryOnly = ROOM_EVENT_QUERY_ONLY;
+    gDirectionWarpRequest.areaId    = gDirectionActionParameter0;
+    gDirectionWarpRequest.warp      = gDirectionActionParameter1 & DIRECTION_WARP_ARRIVAL_MASK;
+    gDirectionWarpRequest.flagId    = warpEntry.mapFlagId;
+
+    // The room may resolve the reusable request in place while answering the query.
+    queryResult                = TASK_MESSAGE_DISPATCH_POINTERS(roomTask, ROOM_EVENT_MESSAGE_RESOLVE, &gDirectionWarpRequest, &gDirectionWarpRequest);
+    _gDirectionWarpQueryResult = queryResult;
+
+    switch (queryResult) {
+        case ROOM_EVENT_DEPART:
+            if (warpEntry.departureSound != DIRECTION_WARP_SOUND_NONE) {
+                _gDirectionWarpSoundId = warpEntry.departureSound;
+            } else {
+                _gDirectionWarpSoundId = DIRECTION_WARP_SOUND_NONE;
+            }
+            DIRECTION_PREPARE_WARP_TURN(turnRequest, warpEntry, playerActor, departureFacingPoint);
+            TASK_MESSAGE_DISPATCH_POINTER(playerTask, GAME_ACTOR_MESSAGE_TURN_TO_YAW, &turnRequest, 0);
+            if (warpEntry.flags & DIRECTION_WARP_FLAG_FADE_DEPARTURE) {
+                gDirectionWarpDepartureShade = DIRECTION_WARP_DEPARTURE_FADE_START;
+            }
+            gDirectionActionPhase++;
+            break;
+
+        case ROOM_EVENT_STAY:
+            if (warpEntry.blockedSound != DIRECTION_WARP_SOUND_NONE) {
+                _gDirectionWarpSoundId = warpEntry.blockedSound;
+            } else {
+                _gDirectionWarpSoundId = DIRECTION_WARP_SOUND_NONE;
+            }
+            if (gSceneCombatState.signals.bytes.battlePhase == SCENE_COMBAT_BATTLE_ENGAGED) {
+                gDirectionWarpRequest.field_4   = gSceneCombatState.signals.bytes.battlePhase;
+                gDirectionWarpRequest.roomState = gSceneCombatState.signals.bytes.battlePhase;
+                gDirectionWarpRequest.queryOnly = ROOM_EVENT_EXECUTE;
+                gDirectionWarpRequest.areaId    = gDirectionActionParameter0;
+                gDirectionWarpRequest.warp      = gDirectionActionParameter1 & DIRECTION_WARP_ARRIVAL_MASK;
+                gDirectionWarpRequest.flagId    = warpEntry.mapFlagId;
+                TASK_MESSAGE_DISPATCH_POINTERS(roomTask, ROOM_EVENT_MESSAGE_RESOLVE, &gDirectionWarpRequest, &gDirectionWarpRequest);
+                gDirectionActionActive           = false;
+                gDirectionActionParameter1       = 0;
+                gDirectionActionParameter0       = 0;
+                gDirectionActionControl          = 0;
+                playerStatus->interactionPressed = 0;
+                if (_gDirectionWarpSoundId != DIRECTION_WARP_SOUND_NONE && playerStatus->hp > 0) {
+                    sndEvtRequestScriptStart(_gDirectionWarpSoundId, 0, 0);
+                }
+                return;
+            }
+            DIRECTION_PREPARE_WARP_TURN(turnRequest, warpEntry, playerActor, stayFacingPoint);
+            TASK_MESSAGE_DISPATCH_POINTER(playerTask, GAME_ACTOR_MESSAGE_TURN_TO_YAW, &turnRequest, 0);
+            gDirectionActionPhase++;
+            break;
+
+        case ROOM_EVENT_ROOM_ACTION:
+            gDirectionWarpRequest.field_4   = 1;
+            gDirectionWarpRequest.roomState = DIRECTION_WARP_DEFAULT_ROOM;
+            gDirectionWarpRequest.queryOnly = ROOM_EVENT_EXECUTE;
+            gDirectionWarpRequest.areaId    = gDirectionActionParameter0;
+            gDirectionWarpRequest.warp      = gDirectionActionParameter1 & DIRECTION_WARP_ARRIVAL_MASK;
+            gDirectionWarpRequest.flagId    = warpEntry.mapFlagId;
+            TASK_MESSAGE_DISPATCH_POINTERS(roomTask, ROOM_EVENT_MESSAGE_RESOLVE, &gDirectionWarpRequest, &gDirectionWarpRequest);
+            gDirectionActionActive           = false;
+            gDirectionActionParameter1       = 0;
+            gDirectionActionParameter0       = 0;
+            gDirectionActionControl          = 0;
+            playerStatus->interactionPressed = 0;
+            break;
+    }
+#undef DIRECTION_PREPARE_WARP_TURN
+}
+
+void directionAwaitWarpTurn(void)
+{
+    Task* playerTask;
+
+    playerTask = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
+    _directionStepDepartureFade();
+    if (taskMessageDispatch(playerTask, GAME_ACTOR_MESSAGE_IS_SCRIPTED_MOTION_PENDING, 0, 0) == 0) {
+        if (_gDirectionWarpQueryResult != 0) {
+            gSceneCombatState.actorControl = SCENE_COMBAT_ACTORS_PAUSED;
+        }
+        gDirectionActionPhase++;
+    }
+}
+
+void directionResolveWarp(void)
+{
+    Task*                  playerTask;
+    Task*                  roomTask;
+    PlayerStatus*          playerStatus;
+    const GameLocationKey* location;
+    DirectionWarpEntry     warpEntry;
+    RoomEventMsg*          request;
+
+    playerTask   = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
+    playerStatus = &gPlayerStatus;
+    roomTask     = gameGetTaskSlot(GAME_TASK_SLOT_ROOM);
+
+    location  = &gGameSession->location;
+    warpEntry = gDirectionAreaWarpEntriesByStage[location->stage - 1][location->area - 1][(gDirectionActionParameter1 >> DIRECTION_WARP_ENDPOINT_SHIFT) - 1];
+
+    _directionStepDepartureFade();
+
+    // Rebuild the request from the trigger; query-time selector edits do not survive.
+    request                      = &gDirectionWarpRequest;
+    request->field_4             = 1;
+    request->roomState           = DIRECTION_WARP_DEFAULT_ROOM;
+    request->queryOnly           = ROOM_EVENT_EXECUTE;
+    gDirectionWarpRequest.areaId = gDirectionActionParameter0;
+    request->warp                = gDirectionActionParameter1 & DIRECTION_WARP_ARRIVAL_MASK;
+    request->flagId              = warpEntry.mapFlagId;
+    TASK_MESSAGE_DISPATCH_POINTERS(roomTask, ROOM_EVENT_MESSAGE_RESOLVE, request, request);
+
+    if (_gDirectionWarpSoundId != DIRECTION_WARP_SOUND_NONE) {
+        if (playerStatus->hp > 0) {
+            sndEvtRequestScriptStart(_gDirectionWarpSoundId, 0, 0);
+        }
+    }
+
+    if (_gDirectionWarpQueryResult == ROOM_EVENT_STAY) {
+        taskMessageDispatch(playerTask, GAME_ACTOR_MESSAGE_END_SCRIPTED, 0, 0);
+        gDirectionActionActive           = false;
+        gDirectionActionParameter1       = 0;
+        gDirectionActionParameter0       = 0;
+        gDirectionActionControl          = 0;
+        playerStatus->interactionPressed = 0;
+    } else {
+        gDirectionActionPhase++;
+    }
+}
+
+void directionAwaitWarpSound(void)
+{
+    _directionStepDepartureFade();
+    if (_gDirectionWarpSoundId == DIRECTION_WARP_SOUND_NONE || sndScriptHasActiveId(_gDirectionWarpSoundId) == 0) {
+        gDirectionActionPhase++;
+    }
+}

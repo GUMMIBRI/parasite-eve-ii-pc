@@ -1,0 +1,863 @@
+#include "rooms/shelter_1f_tent.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/inline_c.h>
+
+#include "gte.h"
+#include "common.h"
+
+#include "shelter_1f_tent_private.h"
+
+#include "actors/actor_460200.h"
+
+#include "gameplay/area.h"
+#include "gameplay/area_flags.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/light.h"
+#include "gameplay/loading.h"
+#include "gameplay/room.h"
+#include "gameplay/room_effects.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/areas.h"
+#include "main/coord.h"
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/gfx.h"
+#include "main/scratch.h"
+#include "main/sound_types.h"
+#include "main/task_types.h"
+
+#include "mapui/map_neo_ark.h"
+
+#include "overlay.h"
+
+#include "rooms/room.h"
+
+#include "rooms/room_common.h"
+#include "../../shared/effects/glow_draw.h"
+#include "../../shared/room/room_cutscene.h"
+
+/// World-space centre of the green flickering disc visible in mapped views 2, 3 and 7.
+static SVECTOR _gShelter1fTentGreenDiscCentre = { -4475, -1050, 8880, 0 };
+
+/// World-space grey/cyan disc centres, in that order, for mapped views 2, 3 and 7.
+///
+/// View 5 draws only the grey centre. The drawers borrow these positions for
+/// the current frame and retain no pointer; coordinates are signed world units.
+static SVECTOR _gShelter1fTentDiscPair1Centres[2] = {
+    { -4015, -1050, 8880, 0 },
+    { -2830, -960, 5685, 0 },
+};
+
+/// World-space grey/cyan disc centres, in that order, for mapped views 2, 4 and 6.
+///
+/// The drawers borrow these signed world-coordinate positions for the current
+/// frame and retain no pointer.
+static SVECTOR _gShelter1fTentDiscPair2Centres[2] = {
+    { -3125, -1110, 2950, 0 },
+    { -2840, -965, 2485, 0 },
+};
+
+/// World-space endpoints of the mapped-view-2 capsule glow.
+///
+/// Two signed world-coordinate points, borrowed only during drawing. Earlier
+/// disc addresses are still derived from this base across separate objects.
+static SVECTOR _gShelter1fTentCapsuleEndpoints[2] = {
+    { -2910, -3500, 6980, 0 },
+    { -2270, -3500, 6980, 0 },
+};
+
+/// World-space cyan highlight shared by the diamond and pulsing-disc glows.
+///
+/// Mapped views 2, 3 and 7 draw the diamond; view 5 draws the layered disc.
+/// The signed world-coordinate point is borrowed only for each draw call.
+static SVECTOR _gShelter1fTentCyanHighlightCentre = { -3230, -1130, 8780, 0 };
+
+u8* gShelter1fTentViewMaps[1] = {
+    gViewIdentityMap,
+};
+
+ViewCount gShelter1fTentRoomViewCounts[1] = { SHELTER_1F_TENT_VIEW_RESOURCE_COUNT };
+
+DirectionWarpEntry gShelter1fTentWarpEntries[1] = {
+    {
+        .player         = { .yaw = { .word = (ACTOR_TRANSFORM_ANGLE_TURN * 3 / 4) }, .x = -638, .y = 0, .z = 4300 },
+        .unknown_10     = { 0 },
+        .companion      = { .yaw = { .word = (ACTOR_TRANSFORM_ANGLE_TURN * 3 / 4) }, .x = -638, .y = 0, .z = 4300 },
+        .unknown_24     = { 0 },
+        .arrivalSound   = DIRECTION_WARP_SOUND_NONE,
+        .departureSound = DIRECTION_WARP_SOUND_NONE,
+        .blockedSound   = DIRECTION_WARP_SOUND_NONE,
+        .initialView    = 2,
+        .flags          = DIRECTION_WARP_FLAG_NONE,
+        .mapFlagId      = DIRECTION_WARP_MAP_FLAG_NONE,
+    },
+};
+
+/// Room-space collision normals, with 4096 representing unit length.
+static SVECTOR _gShelter1fTentCollisionGridNormals[17] = {
+#include "assets/shelter_1f_tent_collision_04D30_normals.inc"
+};
+
+/// Collision vertices in signed room-coordinate units.
+static SVECTOR _gShelter1fTentCollisionGridVerts[66] = {
+#include "assets/shelter_1f_tent_collision_04D30_verts.inc"
+};
+
+/// Indexed collision faces referencing the grid's vertex and normal pools.
+static WorldCollisionGridFace _gShelter1fTentCollisionGridFaces[37] = {
+#include "assets/shelter_1f_tent_collision_04D30_faces.inc"
+};
+
+/// Face-index lists for six cells, each ending with `WORLD_COLLISION_GRID_CELL_END`.
+static s16 _gShelter1fTentCollisionGridCells[128] = {
+#include "assets/shelter_1f_tent_collision_04D30_cells.inc"
+};
+
+/// Supplies this grid's cell face-list addresses to its generated table.
+///
+/// Captures `_gShelter1fTentCollisionGridCells`.
+/// `halfwordOffset` is a constant s16-element offset in 0..127,
+/// evaluated once and selecting a list's first entry. Lists end at
+/// `WORLD_COLLISION_GRID_CELL_END`. Returns a borrowed `s16*`; no pool writes.
+/// `cell_face_list_macro` selects this binding for the table include.
+/// The binding is undefined immediately after that include.
+#define SHELTER_1F_TENT_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelter1fTentCollisionGridCells[(halfwordOffset)])
+/// X-major 2-by-3 directory of the grid's face-index lists.
+static s16* _gShelter1fTentCollisionGridTable[6] = {
+#include "assets/shelter_1f_tent_collision_04D30_table.inc"
+};
+#undef SHELTER_1F_TENT_CELL_FACE_LIST_AT_OFFSET
+
+WorldCollisionGrid gShelter1fTentCollisionGrid = {
+    .viewCoord   = NULL,
+    .normals     = _gShelter1fTentCollisionGridNormals,
+    .vertices    = _gShelter1fTentCollisionGridVerts,
+    .faces       = _gShelter1fTentCollisionGridFaces,
+    .cellFaceIds = _gShelter1fTentCollisionGridTable,
+    .xBias       = 4800,
+    .zBias       = 200,
+    .cellCountX  = 2,
+    .cellCountZ  = 3,
+    .cellSize    = 4000,
+    .faceCount   = ARRAY_SIZE(_gShelter1fTentCollisionGridFaces),
+};
+
+ViewCamera gShelter1fTentViewCameras[10] = {
+    { .transform = { .m = { { ONE, 0, 0 }, { 0, 0, -ONE }, { 0, ONE, 0 } }, .t = { 2575, 0x31E7, -4545 } }, .screenDistance = 235 },
+    { .transform = { .m = { { 4009, 0, -835 }, { -44, 4090, -213 }, { 834, 217, 4004 } }, .t = { 3620, 1480, -280 } }, .screenDistance = 257 },
+    { .transform = { .m = { { 3983, 0, -954 }, { -613, 3137, -2560 }, { 730, 2633, 3050 } }, .t = { 3560, 2960, -4230 } }, .screenDistance = 257 },
+    { .transform = { .m = { { -4007, 0, -845 }, { -486, 3352, 2303 }, { 692, 2353, -3279 } }, .t = { 3350, 3100, -6130 } }, .screenDistance = 257 },
+    { .transform = { .m = { { 4007, 0, 845 }, { -17, 4095, 85 }, { -845, -86, 4006 } }, .t = { 3160, 1170, -7860 } }, .screenDistance = 289 },
+    { .transform = { .m = { { -2400, 0, 3318 }, { -134, 4092, -97 }, { -3315, -166, -2398 } }, .t = { 1041, 1253, -5501 } }, .screenDistance = 292 },
+    { .transform = { .m = { { 4094, 0, 110 }, { -3, 4094, 125 }, { -110, -125, 4092 } }, .t = { 1506, 807, -2325 } }, .screenDistance = 292 },
+    { .transform = { .m = { { -3850, 0, -1397 }, { 49, 4093, -137 }, { 1396, -145, -3847 } }, .t = { 2509, 697, -8572 } }, .screenDistance = 292 },
+    { .transform = { .m = { { -1937, 0, -3608 }, { -1759, 3576, 944 }, { 3150, 1997, -1691 } }, .t = { 2010, 1390, -6535 } }, .screenDistance = 234 },
+    { .transform = { .m = { { -1937, 0, -3608 }, { -1759, 3576, 944 }, { 3150, 1997, -1691 } }, .t = { 2010, 1390, -6535 } }, .screenDistance = 234 },
+};
+
+/// Texture bindings shared by the tent's opaque, modulated sprite rectangles.
+///
+/// An 8-bit page at VRAM (960, 0), with the 256-colour CLUT at (0, 255).
+enum {
+    SHELTER_1F_TENT_SPRITE_TPAGE = getTPage(1, 0, 960, 0),
+    SHELTER_1F_TENT_SPRITE_CLUT  = getClut(0, 255),
+};
+
+/// Empty sprite list for mapped view 1, retaining decoded background strips.
+static SpriteBatch _gShelter1fTentView1SpriteBatches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mapped view 2's 78 depth-sorted texture rectangles.
+///
+/// XY and dimensions are pixels relative to the view centre; UV is in texels.
+/// Depth is the unscaled ordering value quantized by the sprite renderer.
+/// The renderer borrows writable sources while this room overlay is loaded.
+static SpriteSource _gShelter1fTentView2SpriteSources[78] = {
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, 16, 0, 636, { .fields = { 64, 88 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -40, 8, 1525, { .fields = { 64, 200 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -16, 0, 703, { .fields = { 64, 216 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 0, 0, 634, { .fields = { 64, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -24, 8, 1340, { .fields = { 56, 16 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -8, 8, 628, { .fields = { 56, 8 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -24, 16, 728, { .fields = { 72, 16 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -24, 32, 751, { .fields = { 72, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -24, 48, 719, { .fields = { 80, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -24, 64, 933, { .fields = { 72, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 8, 8, 636, { .fields = { 56, 120 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 24, 8, 668, { .fields = { 56, 184 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 0, 16, 635, { .fields = { 72, 112 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 24, 16, 671, { .fields = { 80, 96 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 0, 32, 637, { .fields = { 72, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 24, 32, 616, { .fields = { 88, 224 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 40, 32, 625, { .fields = { 88, 144 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 0, 48, 712, { .fields = { 80, 64 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 24, 48, 700, { .fields = { 80, 48 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 48, 48, 600, { .fields = { 88, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 0, 64, 712, { .fields = { 80, 208 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 24, 64, 602, { .fields = { 80, 192 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 48, 64, 604, { .fields = { 88, 176 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 64, 56, 561, { .fields = { 56, 40 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 64, 64, 544, { .fields = { 64, 64 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -8, 80, 522, { .fields = { 56, 96 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -8, 96, 522, { .fields = { 56, 128 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 8 } }, -8, 112, 524, { .fields = { 48, 112 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 16, 80, 577, { .fields = { 64, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 16, 96, 591, { .fields = { 64, 144 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 8 } }, 16, 112, 591, { .fields = { 48, 192 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 40, 80, 561, { .fields = { 64, 48 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 56, 80, 550, { .fields = { 72, 224 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 40, 96, 563, { .fields = { 72, 176 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 40, 112, 564, { .fields = { 64, 208 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 56, 96, 554, { .fields = { 80, 128 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 56, 112, 608, { .fields = { 56, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -40, 16, 1668, { .fields = { 120, 176 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -32, 16, 1115, { .fields = { 120, 192 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -40, 32, 1673, { .fields = { 120, 144 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -32, 32, 1077, { .fields = { 120, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -40, 48, 662, { .fields = { 120, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -32, 48, 917, { .fields = { 112, 128 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -32, 64, 747, { .fields = { 120, 208 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -40, 64, 1033, { .fields = { 120, 224 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -40, 80, 678, { .fields = { 120, 128 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -48, 112, 735, { .fields = { 64, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, 8, 112, 654, { .fields = { 64, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -48, 40, 725, { .fields = { 112, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -40, 56, 662, { .fields = { 112, 48 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -40, 72, 713, { .fields = { 112, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -40, 88, 700, { .fields = { 112, 16 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -40, 104, 700, { .fields = { 112, 96 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -24, 64, 744, { .fields = { 112, 112 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -24, 80, 660, { .fields = { 112, 64 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -24, 96, 625, { .fields = { 112, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -8, 72, 517, { .fields = { 104, 144 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -8, 88, 519, { .fields = { 96, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -8, 104, 522, { .fields = { 96, 96 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, 8, 80, 661, { .fields = { 104, 48 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -72, 16, 1250, { .fields = { 64, 24 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -72, 56, 1246, { .fields = { 72, 192 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -64, 16, 1346, { .fields = { 104, 64 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -64, 32, 1245, { .fields = { 104, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -64, 48, 1246, { .fields = { 104, 192 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -56, 24, 1349, { .fields = { 96, 112 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -56, 40, 1258, { .fields = { 96, 128 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -48, 56, 1266, { .fields = { 56, 176 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -88, 8, 1875, { .fields = { 96, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -72, 8, 1875, { .fields = { 112, 192 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -88, 24, 1850, { .fields = { 104, 208 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -72, 24, 1850, { .fields = { 112, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 56, 8, 1611, { .fields = { 104, 176 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 56, 24, 1681, { .fields = { 96, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 56, 40, 1632, { .fields = { 64, 248 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 72, 8, 1573, { .fields = { 96, 16 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 72, 24, 1481, { .fields = { 104, 224 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 72, 40, 1475, { .fields = { 104, 240 } }, 128, 128, 128, 0 },
+};
+
+/// Sentinel-ended ranges of mapped view 2's 78 source sprites.
+///
+/// The zero-count first record retains decoded background strips. Ranges are
+/// in source elements; visibility and cached-packet controls remain writable.
+static SpriteBatch _gShelter1fTentView2SpriteBatches[7] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 46, 0, 0, { 0, 0 } },
+    { 46, 14, 0, 0, { 3, 0 } },
+    { 60, 8, 0, 0, { 2, 0 } },
+    { 68, 4, 0, 0, { 4, 0 } },
+    { 72, 6, 0, 0, { 1, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mapped view 3's 67 depth-sorted texture rectangles.
+///
+/// XY and dimensions are pixels relative to the view centre; UV is in texels.
+/// Depth is the unscaled ordering value quantized by the sprite renderer.
+/// The renderer borrows writable sources while this room overlay is loaded.
+static SpriteSource _gShelter1fTentView3SpriteSources[67] = {
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, 16, -24, 850, { .fields = { 72, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -32, -8, 850, { .fields = { 96, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -24, 24, 950, { .fields = { 72, 112 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -16, 24, 737, { .fields = { 88, 248 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -24, 32, 950, { .fields = { 80, 48 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -16, 32, 713, { .fields = { 80, 248 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, 48, 32, 709, { .fields = { 120, 248 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, 64, 64, 575, { .fields = { 112, 248 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, 72, 80, 550, { .fields = { 88, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 0, 104, 548, { .fields = { 104, 24 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -8, 88, 585, { .fields = { 112, 40 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 8, 88, 576, { .fields = { 112, 56 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -8, 72, 608, { .fields = { 112, 72 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 8, 72, 640, { .fields = { 112, 88 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -16, 56, 648, { .fields = { 112, 104 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 0, 56, 650, { .fields = { 104, 120 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -16, 40, 681, { .fields = { 112, 136 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 0, 40, 681, { .fields = { 104, 152 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 16 } }, 24, 104, 544, { .fields = { 96, 168 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 56, 104, 548, { .fields = { 104, 184 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 80, 104, 547, { .fields = { 112, 200 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 16 } }, 24, 88, 576, { .fields = { 80, 200 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 56, 88, 550, { .fields = { 112, 216 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 72, 88, 550, { .fields = { 96, 88 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 16 } }, 24, 72, 640, { .fields = { 80, 56 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 56, 72, 550, { .fields = { 96, 72 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 24, 56, 650, { .fields = { 88, 40 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 48, 56, 650, { .fields = { 96, 136 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 24, 40, 650, { .fields = { 80, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 48, 40, 650, { .fields = { 96, 216 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -8, 24, 725, { .fields = { 96, 232 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 8, 24, 722, { .fields = { 88, 104 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 32, 24, 725, { .fields = { 112, 232 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -8, 8, 753, { .fields = { 64, 168 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 16, 8, 769, { .fields = { 88, 120 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 32, 8, 775, { .fields = { 88, 152 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -24, -8, 832, { .fields = { 88, 16 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -8, -8, 829, { .fields = { 80, 72 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 8, -8, 830, { .fields = { 80, 88 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 24, -8, 832, { .fields = { 80, 232 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -32, -16, 825, { .fields = { 64, 216 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -16, -16, 825, { .fields = { 64, 224 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 0, -16, 850, { .fields = { 64, 248 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 16, -16, 850, { .fields = { 96, 248 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 0, -24, 850, { .fields = { 64, 232 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -24, 8, 825, { .fields = { 64, 192 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -24, 16, 825, { .fields = { 64, 184 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -64, 64, 631, { .fields = { 72, 200 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 24 } }, -32, 96, 650, { .fields = { 104, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -48, 104, 646, { .fields = { 64, 136 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -64, 104, 577, { .fields = { 64, 152 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -32, 80, 692, { .fields = { 56, 48 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -48, 88, 678, { .fields = { 64, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -64, 88, 600, { .fields = { 64, 64 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -64, 72, 643, { .fields = { 64, 96 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -48, 72, 675, { .fields = { 64, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -72, 104, 549, { .fields = { 80, 184 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -72, 88, 567, { .fields = { 80, 104 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -72, 72, 598, { .fields = { 80, 152 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -112, -16, 1124, { .fields = { 72, 208 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -88, -16, 1168, { .fields = { 72, 120 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -104, -16, 1130, { .fields = { 88, 184 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -88, -32, 1118, { .fields = { 72, 16 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -88, -48, 1080, { .fields = { 72, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -104, -48, 1047, { .fields = { 80, 136 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -120, -48, 1024, { .fields = { 80, 216 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -112, -32, 1100, { .fields = { 88, 168 } }, 128, 128, 128, 0 },
+};
+
+/// Sentinel-ended ranges of mapped view 3's 67 source sprites.
+///
+/// The zero-count first record retains decoded background strips. Ranges are
+/// in source elements; visibility and cached-packet controls remain writable.
+static SpriteBatch _gShelter1fTentView3SpriteBatches[5] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 47, 0, 0, { 1, 0 } },
+    { 47, 12, 0, 0, { 2, 0 } },
+    { 59, 8, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mapped view 4's 47 depth-sorted texture rectangles.
+///
+/// XY and dimensions are pixels relative to the view centre; UV is in texels.
+/// Depth is the unscaled ordering value quantized by the sprite renderer.
+/// The renderer borrows writable sources while this room overlay is loaded.
+static SpriteSource _gShelter1fTentView4SpriteSources[47] = {
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, 40, -24, 1106, { .fields = { 80, 40 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -32, 32, 813, { .fields = { 80, 8 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, 32, 88, 881, { .fields = { 80, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 0, -32, 954, { .fields = { 72, 48 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 16, -32, 923, { .fields = { 72, 56 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -8, -24, 951, { .fields = { 112, 64 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 8, -24, 953, { .fields = { 112, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 24, -24, 1068, { .fields = { 104, 96 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -8, -8, 950, { .fields = { 104, 48 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 16, -8, 946, { .fields = { 104, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -24, 0, 989, { .fields = { 72, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -32, 8, 900, { .fields = { 112, 144 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -16, 8, 962, { .fields = { 104, 112 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 8, 8, 954, { .fields = { 112, 16 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 24, 8, 958, { .fields = { 112, 128 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -24, 24, 842, { .fields = { 104, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 0, 24, 814, { .fields = { 104, 192 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 24, 24, 840, { .fields = { 112, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -32, 40, 700, { .fields = { 104, 208 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -8, 40, 780, { .fields = { 104, 224 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 16, 40, 783, { .fields = { 96, 16 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 32, 48, 761, { .fields = { 72, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -40, 56, 650, { .fields = { 96, 64 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -24, 56, 726, { .fields = { 104, 176 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, 0, 56, 726, { .fields = { 88, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 24, 56, 780, { .fields = { 96, 144 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, 40, 56, 729, { .fields = { 104, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -48, 72, 600, { .fields = { 88, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -32, 72, 684, { .fields = { 72, 128 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -8, 72, 684, { .fields = { 88, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 16, 72, 687, { .fields = { 96, 128 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 32, 72, 684, { .fields = { 88, 48 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -48, 88, 600, { .fields = { 88, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -32, 88, 646, { .fields = { 80, 96 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -8, 88, 648, { .fields = { 80, 112 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 16, 88, 756, { .fields = { 88, 176 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -56, 104, 575, { .fields = { 80, 16 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -40, 104, 609, { .fields = { 80, 224 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 24, 16 } }, -16, 104, 610, { .fields = { 80, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 8, 104, 612, { .fields = { 112, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, 24, 104, 751, { .fields = { 120, 96 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, 40, 48, 1000, { .fields = { 96, 192 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 32, 32, 980, { .fields = { 80, 144 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 32, 16, 1021, { .fields = { 80, 64 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, 48, 8, 917, { .fields = { 88, 208 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, 48, -8, 980, { .fields = { 96, 208 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, 32, 0, 1039, { .fields = { 80, 192 } }, 128, 128, 128, 0 },
+};
+
+/// Sentinel-ended ranges of mapped view 4's 47 source sprites.
+///
+/// The zero-count first record retains decoded background strips. Ranges are
+/// in source elements; visibility and cached-packet controls remain writable.
+static SpriteBatch _gShelter1fTentView4SpriteBatches[4] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 41, 0, 0, { 1, 0 } },
+    { 41, 6, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Empty sprite list for mapped view 5, retaining decoded background strips.
+static SpriteBatch _gShelter1fTentView5SpriteBatches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Empty sprite list for mapped view 6, retaining decoded background strips.
+static SpriteBatch _gShelter1fTentView6SpriteBatches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Empty sprite list for mapped view 7, retaining decoded background strips.
+static SpriteBatch _gShelter1fTentView7SpriteBatches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mapped view 8's 40 depth-sorted texture rectangles.
+///
+/// XY and dimensions are pixels relative to the view centre; UV is in texels.
+/// Depth is the unscaled ordering value quantized by the sprite renderer.
+/// The renderer borrows writable sources while this room overlay is loaded.
+static SpriteSource _gShelter1fTentView8SpriteSources[40] = {
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -104, -8, 704, { .fields = { 40, 64 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -56, 32, 700, { .fields = { 40, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -104, 80, 683, { .fields = { 56, 232 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -112, -8, 785, { .fields = { 88, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -104, 0, 718, { .fields = { 56, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -88, 8, 702, { .fields = { 72, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -88, 24, 706, { .fields = { 112, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -104, 32, 701, { .fields = { 96, 240 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -104, 48, 750, { .fields = { 48, 184 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -104, 64, 675, { .fields = { 40, 232 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -88, 40, 725, { .fields = { 32, 40 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -72, 40, 700, { .fields = { 40, 216 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -72, 56, 700, { .fields = { 48, 200 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -56, 64, 700, { .fields = { 56, 216 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, -72, 32, 733, { .fields = { 32, 72 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -64, 56, 980, { .fields = { 48, 248 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -160, 80, 688, { .fields = { 40, 56 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 40 } }, -160, -120, 710, { .fields = { 32, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 40 } }, -160, -80, 686, { .fields = { 96, 200 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 40 } }, -160, -40, 686, { .fields = { 96, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 40 } }, -160, 0, 683, { .fields = { 64, 40 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 40 } }, -160, 40, 735, { .fields = { 64, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 40 } }, -128, -120, 834, { .fields = { 96, 40 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 40 } }, -128, -80, 797, { .fields = { 96, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 40 } }, -128, -40, 780, { .fields = { 96, 120 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 40 } }, -128, 0, 786, { .fields = { 96, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 32, 32 } }, -128, 40, 850, { .fields = { 32, 104 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 40 } }, -96, -120, 919, { .fields = { 64, 120 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 40 } }, -96, -80, 889, { .fields = { 64, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 40 } }, -96, -40, 883, { .fields = { 64, 200 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 40 } }, -96, 0, 917, { .fields = { 64, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 32 } }, -96, 40, 919, { .fields = { 48, 72 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 40 } }, -80, -120, 994, { .fields = { 80, 120 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 40 } }, -80, -80, 971, { .fields = { 80, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 40 } }, -80, -40, 968, { .fields = { 80, 200 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 40 } }, -80, 0, 978, { .fields = { 80, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 24 } }, -80, 40, 969, { .fields = { 48, 136 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 32 } }, -64, -120, 1069, { .fields = { 48, 40 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 24 } }, -64, -88, 1130, { .fields = { 48, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, -64, -64, 1060, { .fields = { 80, 240 } }, 128, 128, 128, 0 },
+};
+
+/// Sentinel-ended ranges of mapped view 8's 40 source sprites.
+///
+/// The zero-count first record retains decoded background strips. Ranges are
+/// in source elements; visibility and cached-packet controls remain writable.
+static SpriteBatch _gShelter1fTentView8SpriteBatches[4] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 15, 0, 0, { 1, 0 } },
+    { 15, 25, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mapped view 9's 16 depth-sorted texture rectangles.
+///
+/// XY and dimensions are pixels relative to the view centre; UV is in texels.
+/// Depth is the unscaled ordering value quantized by the sprite renderer.
+/// The renderer borrows writable sources while this room overlay is loaded.
+static SpriteSource _gShelter1fTentView9SpriteSources[16] = {
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -48, 0, 363, { .fields = { 120, 192 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -56, 8, 375, { .fields = { 120, 200 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -32, 24, 379, { .fields = { 120, 160 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -24, 48, 394, { .fields = { 120, 168 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 8 } }, -56, 72, 441, { .fields = { 120, 176 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -72, -24, 353, { .fields = { 112, 96 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -64, -8, 350, { .fields = { 112, 80 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -48, 8, 370, { .fields = { 112, 112 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -48, 24, 375, { .fields = { 112, 144 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -32, 32, 375, { .fields = { 112, 128 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -16, 48, 399, { .fields = { 112, 16 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -16, 64, 409, { .fields = { 112, 0 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 8, 16 } }, 0, 64, 413, { .fields = { 120, 32 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 8 } }, 0, 80, 420, { .fields = { 112, 184 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -56, 40, 405, { .fields = { 112, 64 } }, 128, 128, 128, 0 },
+    { SHELTER_1F_TENT_SPRITE_TPAGE, SHELTER_1F_TENT_SPRITE_CLUT, { .fields = { 16, 16 } }, -56, 56, 426, { .fields = { 112, 48 } }, 128, 128, 128, 0 },
+};
+
+/// Sentinel-ended ranges of mapped view 9's 16 source sprites.
+///
+/// The zero-count first record retains decoded background strips. Ranges are
+/// in source elements; visibility and cached-packet controls remain writable.
+static SpriteBatch _gShelter1fTentView9SpriteBatches[3] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 16, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Empty sprite list for mapped view 10, retaining decoded background strips.
+static SpriteBatch _gShelter1fTentView10SpriteBatches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+SpriteView gShelter1fTentSpriteViews[SHELTER_1F_TENT_VIEW_RESOURCE_COUNT] = {
+    { { .empty = _gShelter1fTentView1SpriteBatches }, _gShelter1fTentView1SpriteBatches, NULL },
+    { { .elements = _gShelter1fTentView2SpriteSources }, _gShelter1fTentView2SpriteBatches, NULL },
+    { { .elements = _gShelter1fTentView3SpriteSources }, _gShelter1fTentView3SpriteBatches, NULL },
+    { { .elements = _gShelter1fTentView4SpriteSources }, _gShelter1fTentView4SpriteBatches, NULL },
+    { { .empty = _gShelter1fTentView5SpriteBatches }, _gShelter1fTentView5SpriteBatches, NULL },
+    { { .empty = _gShelter1fTentView6SpriteBatches }, _gShelter1fTentView6SpriteBatches, NULL },
+    { { .empty = _gShelter1fTentView7SpriteBatches }, _gShelter1fTentView7SpriteBatches, NULL },
+    { { .elements = _gShelter1fTentView8SpriteSources }, _gShelter1fTentView8SpriteBatches, NULL },
+    { { .elements = _gShelter1fTentView9SpriteSources }, _gShelter1fTentView9SpriteBatches, NULL },
+    { { .empty = _gShelter1fTentView10SpriteBatches }, _gShelter1fTentView10SpriteBatches, NULL },
+};
+
+/// Neutral point lights at world X/Y (-2600, -3002) and Z 4500, 2000 and 7000.
+///
+/// RGB intensity is 2867/4096; full strength extends to 3500 world units and
+/// fades to zero at 5000. Every view admits them. Coordinate composition and
+/// light queries update the transforms and attenuation in place.
+static WorldCoordPointLight _gShelter1fTentPointLights[3] = {
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -2600, -3002, 4500 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 2867, 2867, 2867 }, { 0, 0 } }, 3500, 5000 },
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -2600, -3002, 2000 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 2867, 2867, 2867 }, { 0, 0 } }, 3500, 5000 },
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -2600, -3002, 7000 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 2867, 2867, 2867 }, { 0, 0 } }, 3500, 5000 },
+};
+
+WorldCoordRoomLights gShelter1fTentRoomLights = {
+    .directionalLightCount = 0,
+    .directionalLights     = NULL,
+    .pointLightCount       = ARRAY_SIZE(_gShelter1fTentPointLights),
+    .pointLights           = _gShelter1fTentPointLights,
+    .coneLightCount        = 0,
+    .coneLights            = NULL,
+};
+
+WorldCollisionTrigger gShelter1fTentViewBoundaryTriggers[8] = {
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -4254, -3248, 3741, 0 }, .vertices = { { -1414, -3712, 0, 0 }, { 1414, -3712, 1, 0 }, { -1414, 3712, 0, 0 }, { 1414, 3712, 1, 0 } }, .normal = { 0, 0, -4100, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 3965, .control = 0, .parameter0 = 4, .parameter1 = 2, .flags = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -4324, -3312, 3640, 0 }, .vertices = { { 1604, -3712, -2, 0 }, { -1603, -3712, 2, 0 }, { 1604, 3712, -2, 0 }, { -1603, 3712, 2, 0 } }, .normal = { 4, 0, 4109, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 4039, .control = 0, .parameter0 = 2, .parameter1 = 4, .flags = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -4592, -3296, 6032, 0 }, .vertices = { { 1611, -3712, -567, 0 }, { -1629, -3712, 555, 0 }, { 1611, 3712, -567, 0 }, { -1629, 3712, 555, 0 } }, .normal = { 1341, 0, 3873, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 4087, .control = 0, .parameter0 = 3, .parameter1 = 2, .flags = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -4528, -3232, 6096, 0 }, .vertices = { { -1582, -3712, 572, 0 }, { 1572, -3712, -580, 0 }, { -1582, 3712, 572, 0 }, { 1572, 3712, -580, 0 } }, .normal = { -1407, 0, -3851, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 4071, .control = 0, .parameter0 = 2, .parameter1 = 3, .flags = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -1376, -3424, 3615, 0 }, .vertices = { { 1591, -3712, -163, 0 }, { -1600, -3712, 156, 0 }, { 1591, 3712, -163, 0 }, { -1600, 3712, 156, 0 } }, .normal = { 408, 0, 4088, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 4039, .control = 0, .parameter0 = 2, .parameter1 = 4, .flags = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -1312, -3328, 3742, 0 }, .vertices = { { -1598, -3712, 158, 0 }, { 1594, -3712, -161, 0 }, { -1598, 3712, 158, 0 }, { 1594, 3712, -161, 0 } }, .normal = { -410, 0, -4091, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 4039, .control = 0, .parameter0 = 4, .parameter1 = 2, .flags = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -1185, -3264, 6719, 0 }, .vertices = { { -1396, -3712, -1082, 0 }, { 1328, -3712, 995, 0 }, { -1396, 3712, -1082, 0 }, { 1328, 3712, 995, 0 } }, .normal = { 2482, 0, -3258, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 4087, .control = 0, .parameter0 = 2, .parameter1 = 3, .flags = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -1123, -3296, 6527, 0 }, .vertices = { { 1363, -3712, 1012, 0 }, { -1377, -3712, -1050, 0 }, { 1363, 3712, 1012, 0 }, { -1377, 3712, -1050, 0 } }, .normal = { -2466, 0, 3275, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 4087, .control = 0, .parameter0 = 3, .parameter1 = 2, .flags = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY | WORLD_COLLISION_TRIGGER_LAST, .hit = 0 },
+};
+
+/// Action payloads: packed departure/arrival slots and room-local selectors.
+enum {
+    SHELTER_1F_TENT_TRIGGER_WARP_TO_1F_HELIPORT   = (1 << 4) | 2,
+    SHELTER_1F_TENT_TRIGGER_COMMAND_SCENE         = 1,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_2         = 2,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_6         = 6,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_5         = 5,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_4         = 4,
+    SHELTER_1F_TENT_TRIGGER_ACTION_TALK_SOLDIER_C = 1,
+    SHELTER_1F_TENT_TRIGGER_ACTION_TALK_SOLDIER_A = 2,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_15        = 15,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_16        = 16,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_17        = 17,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_19        = 19,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_20        = 20,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_21        = 21,
+    SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_18        = 18,
+};
+
+WorldCollisionTrigger gShelter1fTentActionTriggers[17] = {
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -720, -80, 4592, 0 }, .vertices = { { -464, 0, -720, 0 }, { 464, 0, -720, 0 }, { -464, 0, 720, 0 }, { 464, 0, 720, 0 } }, .normal = { 0, 4110, 0, 0 }, .facingNormal = { -4096, 0, 0, 0 }, .radius = 856, .control = WORLD_COLLISION_TRIGGER_ACTION_WARP, .parameter0 = GAME_AREA_SHELTER_1F_HELIPORT, .parameter1 = SHELTER_1F_TENT_TRIGGER_WARP_TO_1F_HELIPORT, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -3120, -64, 8448, 0 }, .vertices = { { -480, 0, -528, 0 }, { 480, 0, -528, 0 }, { -480, 0, 528, 0 }, { 480, 0, 528, 0 } }, .normal = { 0, 4098, 0, 0 }, .facingNormal = { 0, 0, -4096, 0 }, .radius = 712, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_COMMAND_SCENE, .parameter1 = WORLD_COLLISION_TRIGGER_CAP_ROOM_MESSAGE, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -1776, -64, 1232, 0 }, .vertices = { { -592, 0, -800, 0 }, { 592, 0, -256, 0 }, { -592, 0, 256, 0 }, { 592, 0, 800, 0 } }, .normal = { 0, 4115, 0, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 993, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_2, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -4128, -64, 1008, 0 }, .vertices = { { -720, 0, -448, 0 }, { 528, 0, -448, 0 }, { -720, 0, 448, 0 }, { 528, 0, 448, 0 } }, .normal = { 0, 4117, 0, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 846, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_6, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -3680, -64, 3168, 0 }, .vertices = { { -624, 0, -288, 0 }, { 624, 0, -288, 0 }, { -624, 0, 288, 0 }, { 624, 0, 288, 0 } }, .normal = { 0, 4105, 0, 0 }, .facingNormal = { -4096, 0, 0, 0 }, .radius = 686, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_5, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -2912, -64, 6528, 0 }, .vertices = { { -1456, 0, -112, 0 }, { 1360, 0, 48, 0 }, { -1136, 0, 1328, 0 }, { 1136, 0, 1264, 0 } }, .normal = { 0, 4095, 0, 0 }, .facingNormal = { -4096, 0, 0, 0 }, .radius = 1745, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_4, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_NEAR_OR_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -2320, -64, 4720, 0 }, .vertices = { { -128, 0, -1344, 0 }, { 1185, 0, -1024, 0 }, { -128, 0, 288, 0 }, { 1409, 0, -160, 0 } }, .normal = { 0, 4119, 0, 0 }, .facingNormal = { 401, 0, 4076, 0 }, .radius = 1562, .control = WORLD_COLLISION_TRIGGER_ACTION_ROOM, .parameter0 = SHELTER_1F_TENT_TRIGGER_ACTION_TALK_SOLDIER_C, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_NEAR_OR_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -4080, -64, 8591, 0 }, .vertices = { { -765, 0, -1366, 0 }, { 1089, 0, -698, 0 }, { -1441, 0, -804, 0 }, { 1085, 0, 23, 0 } }, .normal = { 0, 4102, 0, 0 }, .facingNormal = { 401, 0, 4076, 0 }, .radius = 1649, .control = WORLD_COLLISION_TRIGGER_ACTION_ROOM, .parameter0 = SHELTER_1F_TENT_TRIGGER_ACTION_TALK_SOLDIER_A, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_NEAR_OR_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -1088, -64, 8416, 0 }, .vertices = { { -976, 0, -336, 0 }, { 976, 0, -336, 0 }, { -976, 0, 336, 0 }, { 976, 0, 336, 0 } }, .normal = { 0, 4095, 0, 0 }, .facingNormal = { 0, 0, -4096, 0 }, .radius = 1031, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_15, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -3848, -64, 4232, 0 }, .vertices = { { -336, 0, 816, 0 }, { -336, 0, -816, 0 }, { 336, 0, 816, 0 }, { 336, 0, -816, 0 } }, .normal = { 0, 4113, 0, 0 }, .facingNormal = { -4096, 0, 0, 0 }, .radius = 882, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_16, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -3904, -64, 6080, 0 }, .vertices = { { -784, 0, -496, 0 }, { 784, 0, -496, 0 }, { -784, 0, 496, 0 }, { 784, 0, 496, 0 } }, .normal = { 0, 4099, 0, 0 }, .facingNormal = { -2897, 0, 2896, 0 }, .radius = 927, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_17, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -3056, -64, 928, 0 }, .vertices = { { -512, 0, -496, 0 }, { 160, 0, -496, 0 }, { -512, 0, 496, 0 }, { 160, 0, 496, 0 } }, .normal = { 0, 4105, 0, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 712, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_19, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -704, -64, 1568, 0 }, .vertices = { { -512, 0, -496, 0 }, { 512, 0, -496, 0 }, { -512, 0, 496, 0 }, { 512, 0, 496, 0 } }, .normal = { 0, 4097, 0, 0 }, .facingNormal = { 0, 0, 4096, 0 }, .radius = 712, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_20, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -4769, -64, 5360, 0 }, .vertices = { { -512, 0, -928, 0 }, { 512, 0, -928, 0 }, { -512, 0, 928, 0 }, { 512, 0, 928, 0 } }, .normal = { 0, 4098, 0, 0 }, .facingNormal = { 4096, 0, 0, 0 }, .radius = 1055, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_21, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -3744, -64, 2464, 0 }, .vertices = { { -624, 0, -480, 0 }, { 624, 0, -480, 0 }, { -624, 0, 480, 0 }, { 624, 0, 480, 0 } }, .normal = { 0, 4101, 0, 0 }, .facingNormal = { -4096, 0, 0, 0 }, .radius = 786, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_18, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -4000, -64, 5456, 0 }, .vertices = { { -784, 0, -384, 0 }, { 784, 0, -384, 0 }, { -784, 0, 384, 0 }, { 784, 0, 384, 0 } }, .normal = { 0, 4105, 0, 0 }, .facingNormal = { -4092, 0, -202, 0 }, .radius = 872, .control = WORLD_COLLISION_TRIGGER_ACTION_CAP, .parameter0 = SHELTER_1F_TENT_TRIGGER_CAP_COMMAND_17, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD, .hit = 0 },
+    { .next = NULL, .prevLink = NULL, .coord = NULL, .origin = { -2231, -64, 4062, 0 }, .vertices = { { -460, 0, -639, 0 }, { 686, 0, -432, 0 }, { -717, 0, 385, 0 }, { 494, 0, 688, 0 } }, .normal = { 0, 4103, 0, 0 }, .facingNormal = { 0, 0, -4096, 0 }, .radius = 846, .control = WORLD_COLLISION_TRIGGER_ACTION_ROOM, .parameter0 = SHELTER_1F_TENT_TRIGGER_ACTION_TALK_SOLDIER_C, .parameter1 = 0, .flags = WORLD_COLLISION_TRIGGER_FACING_QUAD | WORLD_COLLISION_TRIGGER_LAST, .hit = 0 },
+};
+
+/// Placement-entry keys, decimal file numbers and table selectors for these layouts.
+enum {
+    SHELTER_1F_TENT_RESOURCE_SOLDIER_C = 113,
+    SHELTER_1F_TENT_RESOURCE_SOLDIER_B = 116,
+    SHELTER_1F_TENT_RESOURCE_SOLDIER_A = 117,
+    SHELTER_1F_TENT_FILE_SOLDIERS_B_C  = 602,
+    SHELTER_1F_TENT_FILE_SOLDIER_A     = 603,
+};
+
+/// Soldier C, B and A resource recipes for the default placement variant (1).
+///
+/// Keys 113, 116 and 117 select files 460200, 660200 and 660300; descriptor
+/// zero comes from actor_460200 in each case. Base-60 files supply textures.
+/// Paired with `gMapNeoArkTentDefaultPlacements`; AREA_PLACEMENT_END ends the list.
+/// Retain room recipes, placements and actor descriptors through loading,
+/// spawning and model-flag updates.
+static AreaResource _gShelter1fTentDefaultResources[4] = {
+    { .entryId = SHELTER_1F_TENT_RESOURCE_SOLDIER_C, .fileNumber = SHELTER_1F_TENT_FILE_SOLDIERS_B_C, .fileGroupIndex = AREA_RESOURCE_FILE_GROUP_BASE_40, .taskIndex = 0, .taskTable = &gActor460200SoldierCTaskDesc },
+    { .entryId = SHELTER_1F_TENT_RESOURCE_SOLDIER_B, .fileNumber = SHELTER_1F_TENT_FILE_SOLDIERS_B_C, .fileGroupIndex = AREA_RESOURCE_FILE_GROUP_BASE_60, .taskIndex = 0, .taskTable = gActor460200SoldierBTasks },
+    { .entryId = SHELTER_1F_TENT_RESOURCE_SOLDIER_A, .fileNumber = SHELTER_1F_TENT_FILE_SOLDIER_A, .fileGroupIndex = AREA_RESOURCE_FILE_GROUP_BASE_60, .taskIndex = 0, .taskTable = &gActor460200SoldierATaskDesc },
+    { .entryId = AREA_PLACEMENT_END },
+};
+
+AreaVariant gShelter1fTentAreaVariants[SHELTER_1F_TENT_AREA_VARIANT_COUNT] = {
+    [AREA_DEFAULT_VARIANT] = { .placements = gMapNeoArkTentDefaultPlacements, .resources = _gShelter1fTentDefaultResources },
+};
+
+/// Cue-2 footstep bases in the loaded type-1 bank; cue 1 uses the next entry.
+enum {
+    SHELTER_1F_TENT_FOOTSTEP_WALK = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x41,
+    SHELTER_1F_TENT_FOOTSTEP_RUN  = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x43,
+};
+
+/// Floor footstep bases; scripted jumps share the walking pair.
+///
+/// Surface class 1 borrows these requests while the overlay is loaded.
+/// Cue 1 adds one to the base; companion playback adds another 100.
+static WorldCollisionFootstepSounds _gShelter1fTentFloorFootstepSounds = {
+    .walk         = SHELTER_1F_TENT_FOOTSTEP_WALK,
+    .run          = SHELTER_1F_TENT_FOOTSTEP_RUN,
+    .scriptedJump = SHELTER_1F_TENT_FOOTSTEP_WALK,
+};
+
+/// Solid collision policy without footstep cues, shared by classes 0 and 2..7.
+static WorldCollisionSurfaceProperties _gShelter1fTentSilentSurfaceProperties = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = NULL,
+};
+
+/// Class 1 floor policy: solid contacts with walking, running and scripted-jump cues.
+static WorldCollisionSurfaceProperties _gShelter1fTentFloorSurfaceProperties = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gShelter1fTentFloorFootstepSounds,
+};
+
+WorldCollisionSurfaceProperties* gShelter1fTentSurfacePropertiesByClass[SHELTER_1F_TENT_SURFACE_CLASS_COUNT] = {
+    &_gShelter1fTentSilentSurfaceProperties,
+    &_gShelter1fTentFloorSurfaceProperties,
+    &_gShelter1fTentSilentSurfaceProperties,
+    &_gShelter1fTentSilentSurfaceProperties,
+    &_gShelter1fTentSilentSurfaceProperties,
+    &_gShelter1fTentSilentSurfaceProperties,
+    &_gShelter1fTentSilentSurfaceProperties,
+    &_gShelter1fTentSilentSurfaceProperties,
+};
+
+enum { SHELTER_1F_TENT_AREA_MAP_MARK_HIDE = 0,
+       SHELTER_1F_TENT_AREA_MAP_MARK_SHOW = 1 };
+
+const AreaApplyRec gShelter1fTentFirstArrivalAreaUpdates[53] SECTION(".data") = {
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_SHELTER_1F_PARKING_GARAGE, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_SHELTER_1F_VEHICULAR_AIRLOCK, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_SHELTER_1F_BULWARK, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_SHELTER_1F_AIRLOCK, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_NORTH_PROMENADE, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_FOREST_ZONE, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_SUBMARINE_TUNNEL, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_PAVILION, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_ISLAND, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_GARDEN, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_POWER_PLANT_2, .variant = 11, .policy = AREA_APPLY_MODE_REPLAY_SCAVENGER | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_POWER_PLANT_2, .variant = 17, .policy = AREA_APPLY_MODE_BOUNTY_NIGHTMARE | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_POWER_PLANT_1, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_SAVANNA_ZONE, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_SOUTH_PROMENADE, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_SHRINE, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_BRIDGE, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_WOODLAND_PATH, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_SUBMARINE_GALLERY, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_NEO_ARK_PYRAMID, .variant = 11, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_MINE_MESA, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_MINE_CAVERN, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_MINE_TUNNEL_ENTRANCE, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_MINE_TUNNEL, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_MINE_GORGE, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_MINE_FORKED_TUNNEL, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_MINE_SECRET_PASSAGE, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_ELEVATOR_HALL, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_SOUTH_MAINTENANCE_WALKWAY, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_STOREROOM, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_NORTH_MAINTENANCE_WALKWAY, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_SLEEPING_QUARTERS, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_MAIN_CORRIDOR, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_STERILIZATION_ROOM, .variant = 5, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_POD_ACCESS_TUNNEL, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_CONTROL_ROOM, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_ACCESS_TUNNEL, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_GOLEM_FREEZER_1, .variant = 22, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_TRANSFER_TUNNEL, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_CONTROL_ROOM_ACCESS_TUNNEL, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B2_ELEVATOR_HALL, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B2_SOUTH_MAINTENANCE_WALKWAY, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B2_NORTH_MAINTENANCE_WALKWAY, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B2_BREEDING_ROOM, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B2_MAIN_CORRIDOR, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B2_SEPTIC_TANK, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B2_POD_ACCESS_TUNNEL, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_SHOW },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B3_ELEVATOR_HALL, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B4_LOWER_SEWER, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B4_UPPER_SEWER, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B4_RESERVOIR, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B4_WATER_SUPPLY, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = AREA_APPLY_END },
+};
+
+const AreaApplyRec gShelter1fTentHeliportBeforeItemFollowupAreaUpdates[2] SECTION(".data") = {
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_SHELTER_1F_HELIPORT, .variant = 2, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = AREA_APPLY_END },
+};
+
+const AreaApplyRec gShelter1fTentHeliportAfterItemFollowupAreaUpdates[2] SECTION(".data") = {
+    { .stage = GAME_STAGE_SHELTER_NEO_ARK, .area = GAME_AREA_SHELTER_1F_HELIPORT, .variant = 1, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = AREA_APPLY_END },
+};
+
+const AreaApplyRec gShelter1fTentGolemFreezer1AfterItemFollowupAreaUpdates[2] SECTION(".data") = {
+    { .stage = GAME_STAGE_MINE_SHELTER, .area = GAME_AREA_SHELTER_B1_GOLEM_FREEZER_1, .variant = 21, .policy = AREA_APPLY_MODE_ALWAYS | SHELTER_1F_TENT_AREA_MAP_MARK_HIDE },
+    { .stage = AREA_APPLY_END },
+};
+
+Task* gRoomCutsceneSoundTask = NULL;
+
+RoomCutsceneRec gShelter1fTentReplayCutscene = { 0 };
+
+static void _glowDrawCapsule(const SVECTOR worldPoints[2], s32 radiusScale, s32 packedColor);
+static void _glowDrawPulsingDisc(const SVECTOR* worldPoint, s32 pulseRate, s32 radiusScale);
+
+enum {
+    SHELTER_1F_TENT_GLOW_DISC_RADIUS_SCALE       = 0x280,
+    SHELTER_1F_TENT_GLOW_SMALL_DISC_RADIUS_SCALE = 0x180,
+    SHELTER_1F_TENT_GLOW_CAPSULE_RADIUS_SCALE    = 0x200,
+    SHELTER_1F_TENT_GLOW_HIGHLIGHT_RADIUS_SCALE  = 0x80,
+    SHELTER_1F_TENT_GLOW_PULSE_RATE              = 0x60, // 4096 angle units per turn per animation frame
+    SHELTER_1F_TENT_GLOW_GREEN_RGB444            = 0x040,
+    SHELTER_1F_TENT_GLOW_GREY_RGB444             = 0x444,
+    SHELTER_1F_TENT_GLOW_CYAN_RGB444             = 0x022,
+    SHELTER_1F_TENT_GLOW_CAPSULE_RGB444          = 0x111,
+};
+
+/// Draws grey and cyan flickering discs at two world-space centres.
+///
+/// Borrows two consecutive world-space centres during the call. Element 0 is
+/// grey with radius scale 640; element 1 is cyan with radius scale 384. Each
+/// pixel radius is its scale times 64 divided by camera Z / 4.
+/// Requires the view transform, initialized scratch stack and space in the
+/// current frame's packet arena and ordering table. Each centre independently
+/// rejects negative GTE flags and otherwise requires nonzero projection depth.
+/// Accepted centres queue four additive wedges each; queued packets live until
+/// the frame's GPU work completes. No point pointer is retained.
+static inline void _shelter1fTentDrawDiscPair(const SVECTOR worldPoints[2])
+{
+    glowDrawDisc(&worldPoints[0], SHELTER_1F_TENT_GLOW_DISC_RADIUS_SCALE, SHELTER_1F_TENT_GLOW_GREY_RGB444);
+    glowDrawDisc(&worldPoints[1], SHELTER_1F_TENT_GLOW_SMALL_DISC_RADIUS_SCALE, SHELTER_1F_TENT_GLOW_CYAN_RGB444);
+}
+
+void shelter1fTentDrawViewGlowsTask(Task* unusedTask)
+{
+    u8 mappedView;
+
+    // Select visible world points; the drawers project and queue this frame's glows.
+    mappedView = viewGetMappedIndex();
+    switch (mappedView) {
+        case 2: {
+            const SVECTOR* capsulePoints = _gShelter1fTentCapsuleEndpoints;
+            _glowDrawCapsule(&capsulePoints[0], SHELTER_1F_TENT_GLOW_CAPSULE_RADIUS_SCALE, SHELTER_1F_TENT_GLOW_CAPSULE_RGB444);
+            glowDrawDisc(&capsulePoints[-5], SHELTER_1F_TENT_GLOW_DISC_RADIUS_SCALE, SHELTER_1F_TENT_GLOW_GREEN_RGB444);
+            _shelter1fTentDrawDiscPair(&capsulePoints[-4]);
+            _shelter1fTentDrawDiscPair(&capsulePoints[-2]);
+            _glowDrawWideDiamond(&_gShelter1fTentCyanHighlightCentre, SHELTER_1F_TENT_GLOW_PULSE_RATE, SHELTER_1F_TENT_GLOW_HIGHLIGHT_RADIUS_SCALE);
+            break;
+        }
+        case 3: {
+            const SVECTOR* greenPoint = &_gShelter1fTentGreenDiscCentre;
+            glowDrawDisc(&greenPoint[0], SHELTER_1F_TENT_GLOW_DISC_RADIUS_SCALE, SHELTER_1F_TENT_GLOW_GREEN_RGB444);
+            _shelter1fTentDrawDiscPair(&greenPoint[1]);
+            _glowDrawWideDiamond(&greenPoint[7], SHELTER_1F_TENT_GLOW_PULSE_RATE, SHELTER_1F_TENT_GLOW_HIGHLIGHT_RADIUS_SCALE);
+            break;
+        }
+        case 5: {
+            const SVECTOR* discPoints = _gShelter1fTentDiscPair1Centres;
+            glowDrawDisc(&discPoints[0], SHELTER_1F_TENT_GLOW_DISC_RADIUS_SCALE, SHELTER_1F_TENT_GLOW_GREY_RGB444);
+            _glowDrawPulsingDisc(&discPoints[6], SHELTER_1F_TENT_GLOW_PULSE_RATE, SHELTER_1F_TENT_GLOW_HIGHLIGHT_RADIUS_SCALE);
+            break;
+        }
+        case 4:
+        case 6: {
+            const SVECTOR* discPair = _gShelter1fTentDiscPair2Centres;
+            _shelter1fTentDrawDiscPair(&discPair[0]);
+            break;
+        }
+        case 7: {
+            const SVECTOR* greenPoint = &_gShelter1fTentGreenDiscCentre;
+            glowDrawDisc(&greenPoint[0], SHELTER_1F_TENT_GLOW_DISC_RADIUS_SCALE, SHELTER_1F_TENT_GLOW_GREEN_RGB444);
+            _shelter1fTentDrawDiscPair(&greenPoint[1]);
+            _glowDrawWideDiamond(&_gShelter1fTentCyanHighlightCentre, SHELTER_1F_TENT_GLOW_PULSE_RATE, SHELTER_1F_TENT_GLOW_HIGHLIGHT_RADIUS_SCALE);
+            break;
+        }
+    }
+}
+
+#include "../../shared/effects/glow_draw_capsule.inc.c"
+
+#include "../../shared/effects/glow_draw_disc.inc.c"
+
+#include "../../shared/effects/glow_draw_wide_diamond.inc.c"
+
+#include "../../shared/effects/glow_draw_pulsing_disc.inc.c"

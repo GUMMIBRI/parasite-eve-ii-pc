@@ -1,0 +1,409 @@
+#include "actors/actor_210600.h"
+#include "actors/actor_210600.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/abs.h>
+#include <psyq/inline_c.h>
+#include <psyq/memory.h>
+
+#include "common.h"
+#include "gte.h"
+
+#include "actors/actor.h"
+
+#include "gameplay/actor_render.h"
+#include "gameplay/animation.h"
+#include "gameplay/effects.h"
+#include "gameplay/enemy.h"
+#include "gameplay/geometry.h"
+#include "gameplay/message.h"
+#include "gameplay/damage.h"
+#include "gameplay/player_actor.h"
+#include "gameplay/scene_runtime.h"
+#include "gameplay/world_collision.h"
+#include "gameplay/world_coords.h"
+#include "gameplay/world_targets.h"
+#include "gameplay/room_effects.h"
+
+#include "main/coord.h"
+#include "main/gfx.h"
+#include "main/mc.h"
+#include "main/mc_types.h"
+#include "main/mem.h"
+#include "main/scratch.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/tmd.h"
+#include "main/tmd_types.h"
+
+#include "overlay.h"
+#include "../../shared/actor/actor_messages.h"
+
+/// Values of `_Actor210600Work::animRequest` and `_Actor210600Work::blendRequest`.
+///
+/// A zero-filled block holds 0, on which the driver only advances the slots.
+enum {
+    ACTOR_210600_ANIM_REQUEST_BLEND   = 1, // seek the slots to the animation, blending over the frames the transition table gives
+    ACTOR_210600_ANIM_REQUEST_RESET   = 2, // restart the slots on the animation
+    ACTOR_210600_ANIM_REQUEST_PLAYING = 3  // the request has been applied
+};
+
+/// Work block of the actor 210600 task.
+///
+/// The spawn state allocates it zeroed and keeps it at `Task::work`. It holds
+/// the model's animation rig with its driver's request state, the flag the
+/// draw-mode message suspends the update state with, the cue index the update
+/// state keeps between frames, and storage for the model's matrices.
+///
+/// The driver state from `animRequest` to `blendRequest` is laid out, and
+/// driven, like the same run of `OddStrangerWork`, and the bytes between `rig`
+/// and it are where that block keeps a second rig. This actor carries only the
+/// part of that driver which applies a request and advances `rig`: nothing
+/// stores a blend request of either kind, and no second rig is ever touched.
+///
+/// Animation ids index the package's animation bank; rates are sixteenths of
+/// a frame per tick, `ANIMATION_RATE_ONE` being normal speed.
+typedef struct {
+    ActorAnimRig19 rig;              // playback of the model's parts; the driver uses slots 1 to 18
+    byte           field_43C[0x440]; // never accessed
+    s16            animRequest;      // `ACTOR_210600_ANIM_REQUEST_*` for `rig`
+    byte           field_87E[0x2];   // never accessed
+    s16            appliedAnim;      // animation `rig` was last started on
+    s16            animId;           // animation requested of `rig`; only 1 is ever requested
+    u16            animFrames;       // ticks since `animRequest` was last applied; never read
+    s16            animRate;         // playback rate of `rig`'s slots; 0 until the room command stores `ANIMATION_RATE_ONE`
+    byte           field_888[0x2];   // never accessed
+    s16            blendRequest;     // a pending `ACTOR_210600_ANIM_REQUEST_RESET` is marked applied by the driver and has no other effect; nothing requests it
+    byte           field_88C[0x4];   // never accessed
+    s16            suspended;        // 1 while the update state does nothing: set by draw modes 0 and 2, cleared by the other modes and by the room command (0 otherwise)
+    byte           field_892[0x4];   // never accessed
+    s16            lastCueIndex;     // cue index of slot 0's current pose at the last update, which the cue effect is tested against
+    MATRIX         light;            // storage for the model's `TmdObject::lightMtx`
+    MATRIX         color;            // storage for the model's `TmdObject::colorMtx`
+} _Actor210600Work;
+STATIC_ASSERT_SIZEOF(_Actor210600Work, 0x8D8);
+
+/// Psy-Q `RotMatrixY` (it sits right after `RotMatrixX`).
+
+/// Integer part of the last movement step `func_actor_210600_8014A9D0`
+/// applied.
+static SVECTOR ActorContact_ScratchPosition;
+
+MATRIX* ScaleMatrix(MATRIX* m, VECTOR* v);
+
+static TmdSource _gStrangerGrinningBody;
+static s32       _actor210600SetModelDraw(Task* task, s32 unusedMessageId, s32 drawMode, s32 unusedArg);
+static s32       _actor210600ApplyCommand(Task* task, s32 unusedMessageId, const ActorCommand* message, s32 unusedArg);
+static void      _actor210600Task(Task* task);
+
+#include "../../shared/actor/actor_contacts.h"
+
+#include "assets/rooms/akropolis/cafeteria/stranger_clips_1.inc"
+
+#include "assets/enemies/stranger/grinning/body.inc"
+
+#include "assets/rooms/akropolis/cafeteria/stranger_clips_2.inc"
+
+/// Transition blend durations in normal-rate frames, indexed [previous clip][requested clip].
+///
+/// Both indices must be in 0..4. Every stored duration is zero. This package
+/// only requests clip 1 with RESET, so its retained BLEND path is not selected.
+static s8 _gActor210600AnimationBlendFrames[5][5] = { 0 };
+
+/// Grinning Stranger body bank, with its sole playable clip in slot 1.
+///
+/// Slots 0 and 2..5 are empty. The body rig borrows this six-pointer table
+/// and its clip data for the task lifetime; the package must stay loaded.
+#include "assets/rooms/akropolis/cafeteria/grinning_stranger_bank.inc"
+
+/// Grinning Stranger draw, placement and room-command message handlers.
+///
+/// Borrowed by the live body task. The final end marker permits unknown IDs
+/// to return zero. Payloads are a draw-mode word, ActorTransform pointer or
+/// ActorCommand pointer respectively; the second payload is unused.
+static TaskMessageEntry _gActor210600GrinningStrangerMessages[4] = {
+    { ACTOR_MESSAGE_SET_MODEL_DRAW, _actor210600SetModelDraw },
+    { ACTOR_MESSAGE_PLACE, actorMsgPlace },
+    { ACTOR_COMMAND_MESSAGE_APPLY, _actor210600ApplyCommand },
+    { TASK_MESSAGE_TABLE_END, NULL },
+};
+
+TaskDesc gActor210600GrinningStrangerTaskDesc = {
+    .header   = { .fields = { .flags = (TASK_BODY_TMD | TASK_DESC_SKIP_AUTO_MODEL_BUFFER), .priority = TASK_PRIORITY_ACTOR } },
+    .callback = _actor210600Task,
+    .data     = { .model = &_gStrangerGrinningBody },
+};
+
+#include "assets/rooms/akropolis/cafeteria/stranger_clips_3.inc"
+
+static SVECTOR ActorContact_ScratchPosition;
+
+/// Returns this carrier's persistent last contact-push correction.
+///
+/// Components are signed 16.16 corrections shifted right by 16 and narrowed
+/// to halfwords. Fractional X/Z add a further unit in the correction's sign;
+/// X/Z record the root correction, while Y is only recorded. No grid hit
+/// leaves the old value intact. The borrowed vector lives for the overlay's
+/// lifetime; `pad` is unused.
+static inline SVECTOR* _actorContactGetLastPushStep(void)
+{
+    return &ActorContact_ScratchPosition;
+}
+
+static void _actor210600DriveAnimation(Task* task);
+static void _actor210600Update(Enemy* unusedEnemy, Task* task);
+static void _actor210600Spawn(Enemy* enemy, Task* task);
+
+#include "../../shared/actor/actor_contacts.inc.c"
+
+/// Restarts the primary rig's tracks and records the requested animation.
+///
+/// Requires the initialized nineteen-part rig and a loaded set covering tracks
+/// 1..18. Leaves root slot 0 intact. Reset installs normal rate; the driver
+/// reapplies animRate before ticking. Does not consume requests or clear counters.
+static inline void _actor210600RestartPrimaryAnimation(_Actor210600Work* work)
+{
+    s32 slotIndex;
+
+    for (slotIndex = 1; slotIndex < ARRAY_SIZE(work->rig.slots); slotIndex++) {
+        work->rig.slots[slotIndex].rate = work->animRate;
+        animationResetSlot(&work->rig.anim, slotIndex, work->animId);
+    }
+    work->appliedAnim = work->animId;
+}
+
+/// Applies the actor's animation request and advances its eighteen animated parts.
+///
+/// Requires initialized work and a bound nineteen-part rig with a loaded bank.
+/// Slot 0 is the placed root; slots 1..18 are driven at animRate sixteenths of a
+/// frame per call. This package only requests set 1 with RESET. A BLEND would
+/// require appliedAnim and animId within the five-by-five transition table and
+/// a loaded requested set. Each applied request clears animFrames before this
+/// call increments it modulo 65536. A secondary reset is only marked applied.
+static void _actor210600DriveAnimation(Task* task)
+{
+    _Actor210600Work* work;
+    _Actor210600Work* seekWork;
+    _Actor210600Work* resetWork;
+    _Actor210600Work* tickWork;
+    s32               seekSlot;
+    s32               tickSlot;
+
+    work = task->work;
+    // Retain the blend path; this package never stores a BLEND request.
+    if (work->animRequest == ACTOR_210600_ANIM_REQUEST_BLEND) {
+        seekWork = task->work;
+        for (seekSlot = 1; seekSlot < ARRAY_SIZE(seekWork->rig.slots); seekSlot++) {
+            seekWork->rig.slots[seekSlot].rate = seekWork->animRate;
+            animationSeekSlotWithBlend(&seekWork->rig.anim, seekSlot, seekWork->animId, 0,
+                                       _gActor210600AnimationBlendFrames[seekWork->appliedAnim][seekWork->animId]);
+        }
+        seekWork->appliedAnim = seekWork->animId;
+        work->animRequest     = ACTOR_210600_ANIM_REQUEST_PLAYING;
+        work->animFrames      = 0;
+    } else if (work->animRequest == ACTOR_210600_ANIM_REQUEST_RESET) {
+        resetWork = task->work;
+        _actor210600RestartPrimaryAnimation(resetWork);
+        work->animRequest = ACTOR_210600_ANIM_REQUEST_PLAYING;
+        work->animFrames  = 0;
+    }
+    if (work->blendRequest == ACTOR_210600_ANIM_REQUEST_RESET) {
+        work->blendRequest = ACTOR_210600_ANIM_REQUEST_PLAYING;
+    }
+    work->animFrames++;
+    // Reset installs normal rate, so restore the requested rate before advancing.
+    tickWork = task->work;
+    for (tickSlot = 1; tickSlot < ARRAY_SIZE(tickWork->rig.slots); tickSlot++) {
+        tickWork->rig.slots[tickSlot].rate = tickWork->animRate;
+        animationTickSlot(&tickWork->rig.anim, tickSlot);
+    }
+}
+
+/// Advances the Grinning Stranger animation and emits its cue-7 effect.
+///
+/// Requires live work/model and the bound nineteen-part rig. Suspension skips
+/// all work. Rebuilds root yaw at Q12 scale 3072; compares slot 1 cue index with
+/// the saved slot 0 index and emits at model part 1. Slot 0 is not advanced by
+/// this package, so its zero-initialized index remains the latch source. The
+/// Enemy callback argument is unused.
+static void _actor210600Update(Enemy* unusedEnemy, Task* task)
+{
+    enum {
+        ACTOR_210600_EFFECT_CUE_INDEX    = 7,
+        ACTOR_210600_EFFECT_ATTACK_ID    = 0x1001,
+        ACTOR_210600_EFFECT_SPAWN_ARG_LO = 256,
+        ACTOR_210600_EFFECT_COUNT        = 2,
+    };
+    _Actor210600Work* work;
+    SVECTOR           offset;
+    EffectSpawnArg    effectArg;
+    s32               cueIndex;
+
+    work = task->work;
+    if (work->suspended == 0) {
+        _actor210600DriveAnimation(task);
+        _actorRenderRescaleYaw(task->extra.tmd->coords, ONE * 3 / 4);
+
+        cueIndex = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+        if (cueIndex == ACTOR_210600_EFFECT_CUE_INDEX && work->lastCueIndex != cueIndex) {
+            memset(&offset, 0, sizeof(offset));
+            effectArg.coord      = task->extra.tmd->coords;
+            effectArg.spawnArgLo = ACTOR_210600_EFFECT_SPAWN_ARG_LO;
+            effectArg.spawnArgHi = ACTOR_210600_EFFECT_COUNT;
+            effectSpawnHit(damageGetPlayerAttackEffectId(ACTOR_210600_EFFECT_ATTACK_ID), task->extra.tmd->coords + 1, &offset, &effectArg);
+        }
+        // Slot 0 is retained as the latch source although only slots 1..18 are driven.
+        work->lastCueIndex = work->rig.slots[0].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+    }
+}
+
+/// Sets model draw flags and suspends or resumes the actor's update state.
+///
+/// Requires a live model and initialized work. drawMode 0 hides and allocates
+/// buffers, 1 shows and allocates buffers, and 2 adds SKIP_AUTO_BUFFER without
+/// changing active visibility. Other modes replace flags with SKIP_AUTO_BUFFER.
+/// Modes 0/2 suspend updating; 1/other modes resume it. Ignores the message ID
+/// and second payload and returns zero for every mode.
+static s32 _actor210600SetModelDraw(Task* task, s32 unusedMessageId, s32 drawMode, s32 unusedArg)
+{
+    TmdObject*        model;
+    _Actor210600Work* work;
+
+    model = task->extra.tmd;
+    work  = task->work;
+    switch (drawMode) {
+        case ACTOR_MESSAGE_DRAW_HIDE:
+            model->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            tmdAllocPrimitiveBuffer(model);
+            work->suspended = 1;
+            break;
+        case ACTOR_MESSAGE_DRAW_SHOW:
+            model->flags = 0;
+            tmdAllocPrimitiveBuffer(model);
+            work->suspended = 0;
+            break;
+        case ACTOR_MESSAGE_DRAW_HIDE_SKIP_AUTO_BUFFER:
+            model->flags   |= TMD_OBJECT_SKIP_AUTO_BUFFER;
+            work->suspended = 1;
+            break;
+        default:
+            model->flags    = TMD_OBJECT_SKIP_AUTO_BUFFER;
+            work->suspended = 0;
+            break;
+    }
+    return 0;
+}
+
+#include "../../shared/actor/actor_messages_place.inc.c"
+
+/// Restarts animation 1 and resumes updating for command 1 in context 1/4.
+///
+/// Requires initialized work and a borrowed `ActorCommand` through this call.
+/// Context packs stage tag 1 and area tag 4; other contexts or commands have
+/// no effect. The message ID and second payload are ignored. Returns 1 even
+/// for an ignored command; animation playback begins on the next update.
+static s32 _actor210600ApplyCommand(Task* task, s32 unusedMessageId, const ActorCommand* message, s32 unusedArg)
+{
+    enum { ACTOR_210600_COMMAND_CONTEXT = (4 << 8) | 1,
+           ACTOR_210600_COMMAND_PLAY    = 1 };
+
+    _Actor210600Work* work;
+    u16               command;
+
+    work = task->work;
+    if (message->context.key == ACTOR_210600_COMMAND_CONTEXT) {
+        command = message->command;
+        if (command == ACTOR_210600_COMMAND_PLAY) {
+            work->animRate    = ANIMATION_RATE_ONE;
+            work->animId      = command;
+            work->suspended   = 0;
+            work->animRequest = ACTOR_210600_ANIM_REQUEST_RESET;
+        }
+    }
+    return 1;
+}
+
+#include "../../shared/actor/coord_math_yaw_scale.inc.c"
+
+/// Initializes the Grinning Stranger task, rig, target node and lighting storage.
+///
+/// Allocates owned zeroed work or destroys the enemy/task on failure. The model
+/// borrows its lighting matrices from that work; initializes nonroot animation
+/// tracks on set 1, with rate initially zero until a room command resumes them.
+/// Parents the root to the view coordinate and advances to the update state.
+static void _actor210600Spawn(Enemy* enemy, Task* task)
+{
+    enum { ACTOR_210600_INITIAL_ANIMATION_SET = 1 };
+    VECTOR            composedPosition;
+    GfxCoord*         rootCoord;
+    TmdObject*        model;
+    _Actor210600Work* work;
+    _Actor210600Work* allocatedWork;
+    TmdObject*        lightingModel;
+
+    model         = task->extra.tmd;
+    rootCoord     = model->coords;
+    allocatedWork = memCalloc(sizeof(_Actor210600Work), false);
+    work          = allocatedWork;
+    task->work    = allocatedWork;
+    if (allocatedWork == NULL) {
+        enemyDestroy(enemy, task);
+        return;
+    }
+    lightingModel           = task->extra.tmd;
+    lightingModel->lightMtx = &work->light;
+    lightingModel->colorMtx = &work->color;
+    enemy->field_4          = &rootCoord->coord;
+    enemy->field_48         = 0;
+    enemy->bodyPos.vx       = 0;
+    enemy->bodyPos.vy       = 0;
+    enemy->bodyPos.vz       = 0;
+    enemy->coord            = &task->extra.tmd->coords[2];
+    worldTargetLinkNode(&enemy->node);
+    enemy->node.state.parts.flags = WORLD_TARGET_NOT_LOCKABLE;
+    enemy->field_4D               = 0;
+    enemy->reactionFlags          = 0;
+    enemy->field_4D               = 0;
+    animationInitContext(&work->rig.anim, _gActor210600GrinningStrangerAnimationSets, model, work->rig.poses, work->rig.slots);
+    work->animRequest = ACTOR_210600_ANIM_REQUEST_RESET;
+    work->animId      = ACTOR_210600_INITIAL_ANIMATION_SET;
+    _actor210600DriveAnimation(task);
+    task->msgTable          = _gActor210600GrinningStrangerMessages;
+    rootCoord->parent       = &gGfxViewCoord;
+    rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+    actorRenderComposeCoord(rootCoord);
+    composedPosition.vx = rootCoord->workm.t[0];
+    composedPosition.vy = rootCoord->workm.t[1];
+    composedPosition.vz = rootCoord->workm.t[2];
+    worldCoordSetModelLighting(task->extra.tmd, &composedPosition, 0, 3);
+    task->state++;
+}
+
+/// Grinning Stranger lifecycle: 0 spawn, 1 update, 2 destroy the enemy and task.
+///
+/// Task state indexes a complete twelve-byte value copy, without a terminator.
+/// Each handler receives the live Enemy spawn payload and owning Task. Spawn
+/// owns animation/lighting work; keep this package loaded until destruction.
+static const EnemyTaskFuncTable3 _gActor210600GrinningStrangerTaskStates = {
+    {
+        _actor210600Spawn,
+        _actor210600Update,
+        enemyDestroy,
+    },
+};
+
+/// Dispatches the Grinning Stranger spawn, update or teardown task state.
+///
+/// Requires Task::state in 0..2 and a live Enemy in the second spawn argument.
+/// Spawn establishes owned work; later states require it until teardown.
+static void _actor210600Task(Task* task)
+{
+    EnemyTaskFuncTable3 stateHandlers;
+    // Never accessed. The stack slot could hold a 1..8-byte aggregate;
+    // its original type and extent are unproven.
+    byte unused[8];
+
+    stateHandlers = _gActor210600GrinningStrangerTaskStates;
+    stateHandlers.funcs[task->state](task->spawnArg2.pointer, task);
+}

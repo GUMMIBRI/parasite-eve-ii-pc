@@ -1,0 +1,101 @@
+/* Part of the room variants library; see room_variants.h. */
+
+#include "main/event_flags.h"
+
+#ifndef ROOM_VARIANT_RESOLVE_SHELTER
+#error Include room_variants.h and retain its resolver binding through this fragment.
+#endif
+
+/// Sets the Shelter B1 underground parking destination room from event progress.
+///
+/// Progress states 0/1/2/3 select rooms 1/6/7/8; other nibble values select room 1.
+/// The caller selects the parking area and gates query requests. Borrows a live,
+/// writable `reply` for this call; only `reply->roomState` changes, and no field needs
+/// an initial value. The room selectors are one-based indices within the area.
+static inline void _roomVariantShelterResolveParking(RoomEventMsg* reply)
+{
+    enum {
+        ROOM_VARIANT_PARKING_STATE_INITIAL                     = 0,
+        ROOM_VARIANT_PARKING_STATE_AFTER_CHOICE                = 1,
+        ROOM_VARIANT_PARKING_STATE_SCENE_STARTED               = 2,
+        ROOM_VARIANT_PARKING_STATE_STERILIZATION_EVENT_STARTED = 3,
+        ROOM_VARIANT_PARKING_ROOM_INITIAL                      = 1,
+        ROOM_VARIANT_PARKING_ROOM_AFTER_CHOICE                 = 6,
+        ROOM_VARIANT_PARKING_ROOM_SCENE_STARTED                = 7,
+        ROOM_VARIANT_PARKING_ROOM_STERILIZATION_EVENT_STARTED  = 8
+    };
+
+    switch (gameFlagGetNibble(GAME_FLAG_UNDERGROUND_PARKING_STATE)) {
+        case ROOM_VARIANT_PARKING_STATE_INITIAL:
+            reply->roomState = ROOM_VARIANT_PARKING_ROOM_INITIAL;
+            break;
+        case ROOM_VARIANT_PARKING_STATE_AFTER_CHOICE:
+            reply->roomState = ROOM_VARIANT_PARKING_ROOM_AFTER_CHOICE;
+            break;
+        case ROOM_VARIANT_PARKING_STATE_SCENE_STARTED:
+            reply->roomState = ROOM_VARIANT_PARKING_ROOM_SCENE_STARTED;
+            break;
+        case ROOM_VARIANT_PARKING_STATE_STERILIZATION_EVENT_STARTED:
+            reply->roomState = ROOM_VARIANT_PARKING_ROOM_STERILIZATION_EVENT_STARTED;
+            break;
+        default:
+            reply->roomState = ROOM_VARIANT_PARKING_ROOM_INITIAL;
+            break;
+    }
+}
+
+/// Resolves Mine/Shelter destination rooms from game progress.
+///
+/// Reads `request->queryOnly` and, on `ROOM_EVENT_EXECUTE`, `request->areaId`
+/// within the Mine/Shelter stage. Only `reply->roomState` can change.
+/// Queries, unhandled areas and unmet progress thresholds preserve the reply;
+/// initialize its room before calling. Both pointers borrow live RoomEventMsg
+/// records for this call and may alias; neither pointer is retained.
+/// Always returns 1. Direct nibble-to-room rules yield 1..16; progress values
+/// and initialized destinations must identify valid rooms in their areas.
+s32 ROOM_VARIANT_RESOLVE_SHELTER(RoomEventMsg* request, RoomEventMsg* reply)
+{
+    enum {
+        ROOM_VARIANT_MINE_CAVERN_AFTER_INTRO   = 2,
+        ROOM_VARIANT_MINE_CAVERN_AFTER_PASSAGE = 3,
+        ROOM_VARIANT_MINE_PASSAGE_TRAVERSED    = 2,
+        ROOM_VARIANT_BULWARK_STORY_CHAPTER     = 6,
+        ROOM_VARIANT_STERILIZATION_LATE_ROOM   = 3,
+        ROOM_VARIANT_ACCEPTED                  = 1
+    };
+
+    // Preserve the prepared destination except for progress-dependent rooms.
+    if (request->queryOnly == ROOM_EVENT_EXECUTE) {
+        switch (request->areaId) {
+            case GAME_AREA_MINE_CAVERN:
+                if (gameFlagGetNibble(GAME_FLAG_MINE_CAVERN_INTRO_SEEN) != 0) {
+                    reply->roomState = ROOM_VARIANT_MINE_CAVERN_AFTER_INTRO;
+                }
+                // Traversing the secret passage supersedes the cavern's intro room.
+                if (gameFlagGetNibble(GAME_FLAG_MINE_SECRET_PASSAGE_PROGRESS) >= ROOM_VARIANT_MINE_PASSAGE_TRAVERSED) {
+                    reply->roomState = ROOM_VARIANT_MINE_CAVERN_AFTER_PASSAGE;
+                }
+                break;
+            case GAME_AREA_MINE_GORGE:
+                reply->roomState = gameFlagGetNibble(GAME_FLAG_MINE_GORGE_TRIGGER_EVENT_DONE) + 1;
+                break;
+            case GAME_AREA_SHELTER_B1_STERILIZATION_ROOM:
+                if (gameFlagGetNibble(EVENT_FLAG_STORY_CHAPTER) >= ROOM_VARIANT_BULWARK_STORY_CHAPTER) {
+                    reply->roomState = ROOM_VARIANT_STERILIZATION_LATE_ROOM;
+                }
+                break;
+            case GAME_AREA_SHELTER_B1_UNDERGROUND_PARKING:
+                _roomVariantShelterResolveParking(reply);
+                break;
+            case GAME_AREA_SHELTER_B4_RESERVOIR:
+                reply->roomState = gameFlagGetNibble(GAME_FLAG_B4_RESERVOIR_EVENT_DONE) + 1;
+                break;
+            case GAME_AREA_SHELTER_B3_INCINERATOR_CONTROL_ROOM:
+                reply->roomState = gameFlagGetNibble(GAME_FLAG_INCINERATOR_CONTROL_ROOM_STATE) + 1;
+                break;
+            default:
+                break;
+        }
+    }
+    return ROOM_VARIANT_ACCEPTED;
+}

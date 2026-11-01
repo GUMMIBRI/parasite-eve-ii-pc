@@ -1,0 +1,65 @@
+// Overlay-local symbols for dryfield_cellar.
+_gDryfieldCellarView2GlowLocalPoints = 0x8017DBBC; // size:0x10 defined:True
+_gDryfieldCellarMessageTable = 0x8017DB8C; // size:0x30 defined:True
+_gDryfieldCellarView3GlowLocalPoints = 0x8017DBCC; // size:0x10 defined:True
+gDryfieldCellarRoomCollisionResources = 0x8017DBDC; // size:0x20 defined:True
+_gDryfieldCellarRoom2ViewMap = 0x8017DBFC; // size:0x8 defined:True
+gDryfieldCellarRoomViewMaps = 0x8017DC04; // size:0x8 defined:True
+gDryfieldCellarRoomViewCounts = 0x8017DC0C; // size:0x4 defined:True
+gDryfieldCellarRoomLighting = 0x8017DC10; // size:0x10 defined:True
+gDryfieldCellarWarpEntries = 0x8017DC20; // size:0x38 defined:True
+_gDryfieldCellarCollisionGridNormals = 0x8017DC58; // size:0x40 defined:True
+_gDryfieldCellarCollisionGridVerts = 0x8017DC98; // size:0x138 defined:True
+_gDryfieldCellarCollisionGridFaces = 0x8017DDD0; // size:0xF0 defined:True
+_gDryfieldCellarCollisionGridCells = 0x8017DEC0; // size:0x16 defined:True
+_gDryfieldCellarCollisionGridTable = 0x8017DF3C; // size:0x18 defined:True
+_gDryfieldCellarCollisionGrid = 0x8017DF54; // size:0x24 defined:True
+gDryfieldCellarViewCameras = 0x8017DF78; // size:0x18C defined:True
+_gDryfieldCellarView1SpriteBatches = 0x8017E104; // size:0x10 defined:True
+_gDryfieldCellarView2SpriteSources = 0x8017E114; // size:0x488 defined:True
+_gDryfieldCellarView2SpriteBatches = 0x8017E59C; // size:0x38 defined:True
+_gDryfieldCellarView3SpriteSources = 0x8017E5D4; // size:0x3D4 defined:True
+_gDryfieldCellarView3SpriteBatches = 0x8017E9A8; // size:0x38 defined:True
+_gDryfieldCellarView4SpriteSources = 0x8017E9E0; // size:0x294 defined:True
+_gDryfieldCellarView4SpriteBatches = 0x8017EC74; // size:0x20 defined:True
+_gDryfieldCellarView5SpriteSources = 0x8017EC94; // size:0x1A4 defined:True
+_gDryfieldCellarView5SpriteBatches = 0x8017EE38; // size:0x18 defined:True
+_gDryfieldCellarView6SpriteBatches = 0x8017EE50; // size:0x10 defined:True
+_gDryfieldCellarView7SpriteSources = 0x8017EE60; // size:0x488 defined:True
+_gDryfieldCellarView7SpriteBatches = 0x8017F2E8; // size:0x38 defined:True
+_gDryfieldCellarView8SpriteSources = 0x8017F320; // size:0x3D4 defined:True
+_gDryfieldCellarView8SpriteBatches = 0x8017F6F4; // size:0x38 defined:True
+_gDryfieldCellarView9SpriteSources = 0x8017F72C; // size:0x528 defined:True
+_gDryfieldCellarView9SpriteBatches = 0x8017FC54; // size:0x20 defined:True
+_gDryfieldCellarView10SpriteSources = 0x8017FC74; // size:0x1A4 defined:True
+_gDryfieldCellarView10SpriteBatches = 0x8017FE18; // size:0x18 defined:True
+_gDryfieldCellarView11SpriteBatches = 0x8017FE30; // size:0x10 defined:True
+gDryfieldCellarSpriteViews = 0x8017FE40; // size:0x84 defined:True
+_gDryfieldCellarViewBoundaries = 0x8017FEC4; // size:0x1C8 defined:True
+_gDryfieldCellarRoom1ActionTriggers = 0x8018008C; // size:0x2F8 defined:True
+_gDryfieldCellarRoom2ActionTriggers = 0x80180384; // size:0x2F8 defined:True
+_gDryfieldCellarOccluders = 0x8018067C; // size:0x3C defined:True
+_gDryfieldCellarRoom1PointLights = 0x801806B8; // size:0x1E0 defined:True
+_gDryfieldCellarRoom1Lights = 0x80180898; // size:0x18 defined:True
+_gDryfieldCellarRoom2PointLights = 0x801808B0; // size:0x1E0 defined:True
+_gDryfieldCellarRoom2Lights = 0x80180A90; // size:0x18 defined:True
+_gDryfieldCellarVariant1Resources = 0x80180AA8; // size:0x24 defined:True
+gDryfieldCellarAreaVariants = 0x80180ACC; // size:0x60 defined:True
+_gDryfieldCellarFootstepSounds = 0x80180B2C; // size:0xC defined:True
+_gDryfieldCellarSurfaceProperties = 0x80180B38; // size:0x8 defined:True
+gDryfieldCellarSurfacePropertiesByClass = 0x80180B40; // size:0x20 defined:True
+gActor103700BatTaskDesc = 0x80139DAC; // absolute:True owner=actor_103700
+gActor200700RatTaskDesc = 0x80150C80; // absolute:True owner=actor_200700
+gMapDryfieldCellarVariant1Placements = 0x8017BC14; // absolute:True owner=map_dryfield
+
+dryfieldCellarDrawGlowsTask = 0x8017DAEC; // type:func
+_glowDrawFlareLocal = 0x8017D7DC; // type:func
+_cellarHandleCommand = 0x8017D5D0; // type:func
+_roomVariantResolveCellar = 0x8017D634; // type:func
+_dryfieldCellarRejectKeyItem = 0x8017d62c; // type:func
+_dryfieldCellarIgnoreActionMessage = 0x8017d6f4; // type:func
+_dryfieldCellarHandleSoundMessage = 0x8017d6fc; // type:func
+_dryfieldCellarIdle = 0x8017d77c; // type:func
+_dryfieldCellarInitRoomTask = 0x8017d730; // type:func
+dryfieldCellarRoomTask = 0x8017d784; // type:func
+_gDryfieldCellarRoomTaskStates = 0x8017d5c4;

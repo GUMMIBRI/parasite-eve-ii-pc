@@ -1,0 +1,56 @@
+// Overlay-local symbols for dryfield_night_souvenir_shop.
+gGlowPrismCorners = 0x8017E064; // size:0x80 defined:True
+_gDryfieldNightSouvenirShopRoomMessages = 0x8017E03C; // size:0x28 defined:True
+gDryfieldNightSouvenirShopRoomLighting = 0x8017E0E4; // size:0x8 defined:True
+gDryfieldNightSouvenirShopRoomCollisionResources = 0x8017E0EC; // size:0x10 defined:True
+gDryfieldNightSouvenirShopViewMaps = 0x8017E0FC; // size:0x4 defined:True
+gDryfieldNightSouvenirShopViewCounts = 0x8017E100; // size:0x2 defined:True
+gDryfieldNightSouvenirShopWarpEntries = 0x8017E104; // size:0x38 defined:True
+_gDryfieldNightSouvenirShopCollisionGridNormals = 0x8017E13C; // size:0x58 defined:True
+_gDryfieldNightSouvenirShopCollisionGridVerts = 0x8017E194; // size:0x1F0 defined:True
+_gDryfieldNightSouvenirShopCollisionGridFaces = 0x8017E384; // size:0x198 defined:True
+_gDryfieldNightSouvenirShopCollisionGridCells = 0x8017E51C; // size:0xD8 defined:True
+_gDryfieldNightSouvenirShopCollisionGridTable = 0x8017E5F4; // size:0x10 defined:True
+_gDryfieldNightSouvenirShopCollisionGrid = 0x8017E604; // size:0x24 defined:True
+gDryfieldNightSouvenirShopViewCameras = 0x8017E628; // size:0x90 defined:True
+_gDryfieldNightSouvenirShopView1SpriteBatches = 0x8017E6B8; // size:0x10 defined:True
+_gDryfieldNightSouvenirShopView2SpriteSources = 0x8017E6C8; // size:0x384 defined:True
+_gDryfieldNightSouvenirShopView2SpriteBatches = 0x8017EA4C; // size:0x38 defined:True
+_gDryfieldNightSouvenirShopView3SpriteSources = 0x8017EA84; // size:0x424 defined:True
+_gDryfieldNightSouvenirShopView3SpriteBatches = 0x8017EEA8; // size:0x50 defined:True
+_gDryfieldNightSouvenirShopView4SpriteBatches = 0x8017EEF8; // size:0x10 defined:True
+gDryfieldNightSouvenirShopSpriteViews = 0x8017EF08; // size:0x30 defined:True
+_gDryfieldNightSouvenirShopPointLights = 0x8017EF38; // size:0x240 defined:True
+_gDryfieldNightSouvenirShopRoomLights = 0x8017F178; // size:0x18 defined:True
+_gDryfieldNightSouvenirShopViewBoundaryTriggers = 0x8017F190; // size:0x98 defined:True
+_gDryfieldNightSouvenirShopAmbientByView = 0x8017F228; // size:0x20 defined:True
+_gDryfieldNightSouvenirShopActionTriggers = 0x8017F248; // size:0x390 defined:True
+_gDryfieldNightSouvenirShopVariant1Resources = 0x8017F5D8; // size:0x18 defined:True
+_gDryfieldNightSouvenirShopVariant3Resources = 0x8017F5F0; // size:0x18 defined:True
+_gDryfieldNightSouvenirShopVariant11Resources = 0x8017F608; // size:0x24 defined:True
+gDryfieldNightSouvenirShopAreaVariants = 0x8017F62C; // size:0x60 defined:True
+_gDryfieldNightSouvenirShopSurface1FootstepSounds = 0x8017F68C; // size:0xC defined:True
+_gDryfieldNightSouvenirShopSurface2FootstepSounds = 0x8017F698; // size:0xC defined:True
+_gDryfieldNightSouvenirShopSilentSurfaceProperties = 0x8017F6A4; // size:0x8 defined:True
+_gDryfieldNightSouvenirShopSurface3Properties = 0x8017F6AC; // size:0x8 defined:True
+_gDryfieldNightSouvenirShopSurface4Properties = 0x8017F6B4; // size:0x8 defined:True
+_gDryfieldNightSouvenirShopSurface1Properties = 0x8017F6BC; // size:0x8 defined:True
+_gDryfieldNightSouvenirShopSurface2Properties = 0x8017F6C4; // size:0x8 defined:True
+gDryfieldNightSouvenirShopSurfacePropertiesByClass = 0x8017F6CC; // size:0x20 defined:True
+gActor00700MothTaskDesc = 0x801393C8; // absolute:True owner=actor_100700
+gActor101600ScavengerTaskDesc = 0x801445DC; // absolute:True owner=actor_101600
+gActor02500Tasks = 0x8014F9A8; // absolute:True owner=actor_202500
+gMapDryfieldFullSouvenirShopVariant1Placements = 0x8017B2B8; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullSouvenirShopVariant3Placements = 0x8017B308; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullSouvenirShopVariant11Placements = 0x8017B358; // absolute:True owner=map_dryfield_full
+
+dryfieldNightSouvenirShopPrismLightTask = 0x8017DFF4; // type:func
+_glowDrawPrism = 0x8017D6B4; // type:func
+_dryfieldNightSouvenirShopRejectKeyItemUse = 0x8017d5d0; // type:func
+_dryfieldNightSouvenirShopResolveRoomEvent = 0x8017d5d8; // type:func
+_dryfieldNightSouvenirShopIgnoreRoomCommand = 0x8017d600; // type:func
+_dryfieldNightSouvenirShopIgnoreRoomAction = 0x8017d608; // type:func
+_dryfieldNightSouvenirShopIdleRoomTask = 0x8017d654; // type:func
+_dryfieldNightSouvenirShopInitRoomTask = 0x8017d610; // type:func
+dryfieldNightSouvenirShopRoomTask = 0x8017d65c; // type:func
+_gDryfieldNightSouvenirShopRoomTaskStates = 0x8017d5c4;

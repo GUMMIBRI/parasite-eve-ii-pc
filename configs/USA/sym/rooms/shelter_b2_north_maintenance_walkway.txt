@@ -1,0 +1,112 @@
+// Overlay-local symbols for shelter_b2_north_maintenance_walkway.
+_gShelterB2NorthMaintenanceWalkwaySceneAreaUpdates = 0x80186380; // size:0x20 defined:True
+_gShelterB2NorthMaintenanceWalkwayGlowPoints = 0x80183B90; // size:0x98 defined:True
+_gShelterB2NorthMaintenanceWalkwayUnlockedDoorGlowCentre = 0x80183C28; // size:0x8 defined:True
+_gShelterB2NorthMaintenanceWalkwayLockedDoorGlowCentre = 0x80183C30; // size:0x8 defined:True
+_gShelterB2NorthMaintenanceWalkwayVariant1Placements = 0x801860C8; // size:0x30 defined:True
+_gShelterB2NorthMaintenanceWalkwayVariant3Placements = 0x801860F8; // size:0x60 defined:True
+_gShelterB2NorthMaintenanceWalkwayVariant4Placements = 0x80186158; // size:0x50 defined:True
+_gShelterB2NorthMaintenanceWalkwayVariant11Placements = 0x801861A8; // size:0x60 defined:True
+_gShelterB2NorthMaintenanceWalkwayVariant21Placements = 0x80186208; // size:0x50 defined:True
+gShelterB2NorthMaintenanceWalkwayAreaVariants = 0x80186258; // size:0xB0 defined:True
+gShelterB2NorthMaintenanceWalkwaySightOccluders = 0x80186308; // size:0x3C defined:True
+_gShelterB2NorthMaintenanceWalkwayFloorFootstepSounds = 0x80186344; // size:0xC defined:True
+_gShelterB2NorthMaintenanceWalkwaySilentSurfaceProperties = 0x80186350; // size:0x8 defined:True
+_gShelterB2NorthMaintenanceWalkwayFloorSurfaceProperties = 0x80186358; // size:0x8 defined:True
+gShelterB2NorthMaintenanceWalkwaySurfacePropertiesByClass = 0x80186360; // size:0x20 defined:True
+gRoomEventFade = 0x801863A0; // size:0x8 defined:True
+gShelterB2NorthMaintenanceWalkwayRoomViewMaps = 0x80183C5C; // size:0x4 defined:True
+gShelterB2NorthMaintenanceWalkwayRoomViewCounts = 0x80183C60; // size:0x4 defined:True
+gShelterB2NorthMaintenanceWalkwayWarpEntries = 0x80183C64; // size:0x70 defined:True
+_gShelterB2NorthMaintenanceWalkwayCollisionGridNormals = 0x80183CD4; // size:0x70 defined:True
+_gShelterB2NorthMaintenanceWalkwayCollisionGridVerts = 0x80183D44; // size:0x130 defined:True
+_gShelterB2NorthMaintenanceWalkwayCollisionGridFaces = 0x80183E74; // size:0xD8 defined:True
+_gShelterB2NorthMaintenanceWalkwayCollisionGridCells = 0x80183F4C; // size:0xB8 defined:True
+_gShelterB2NorthMaintenanceWalkwayCollisionGridTable = 0x80184004; // size:0x18 defined:True
+gShelterB2NorthMaintenanceWalkwayCollisionGrid = 0x8018401C; // size:0x24 defined:True
+gShelterB2NorthMaintenanceWalkwayViewCameras = 0x80184040; // size:0x120 defined:True
+_gShelterB2NorthMaintenanceWalkwayView1SpriteBatches = 0x80184160; // size:0x10 defined:True
+_gShelterB2NorthMaintenanceWalkwayView2SpriteBatches = 0x80184170; // size:0x10 defined:True
+_gShelterB2NorthMaintenanceWalkwayView3SpriteSources = 0x80184180; // size:0x230 defined:True
+_gShelterB2NorthMaintenanceWalkwayView3SpriteBatches = 0x801843B0; // size:0x20 defined:True
+_gShelterB2NorthMaintenanceWalkwayView4SpriteSources = 0x801843D0; // size:0x370 defined:True
+_gShelterB2NorthMaintenanceWalkwayView4SpriteBatches = 0x80184740; // size:0x18 defined:True
+_gShelterB2NorthMaintenanceWalkwayView5SpriteBatches = 0x80184758; // size:0x10 defined:True
+_gShelterB2NorthMaintenanceWalkwayView6SpriteBatches = 0x80184768; // size:0x10 defined:True
+_gShelterB2NorthMaintenanceWalkwayView7SpriteSources = 0x80184778; // size:0xA14 defined:True
+_gShelterB2NorthMaintenanceWalkwayView7SpriteBatches = 0x8018518C; // size:0x18 defined:True
+_gShelterB2NorthMaintenanceWalkwayView8SpriteSources = 0x801851A4; // size:0x938 defined:True
+_gShelterB2NorthMaintenanceWalkwayView8SpriteBatches = 0x80185ADC; // size:0x28 defined:True
+gShelterB2NorthMaintenanceWalkwaySpriteViews = 0x80185B04; // size:0x60 defined:True
+_gShelterB2NorthMaintenanceWalkwayPointLights = 0x80185B64; // size:0x1E0 defined:True
+gShelterB2NorthMaintenanceWalkwayLights = 0x80185D44; // size:0x18 defined:True
+gShelterB2NorthMaintenanceWalkwayViewBoundaryTriggers = 0x80185D5C; // size:0x1C8 defined:True
+gShelterB2NorthMaintenanceWalkwayActionTriggers = 0x80185F24; // size:0xE4 defined:True
+_gShelterB2NorthMaintenanceWalkwayVariant1Resources = 0x80186008; // size:0x24 defined:True
+_gShelterB2NorthMaintenanceWalkwayVariant3Resources = 0x8018602C; // size:0x24 defined:True
+_gShelterB2NorthMaintenanceWalkwayVariant4Resources = 0x80186050; // size:0x24 defined:True
+_gShelterB2NorthMaintenanceWalkwayVariant11Resources = 0x80186074; // size:0x30 defined:True
+_gShelterB2NorthMaintenanceWalkwayVariant21Resources = 0x801860A4; // size:0x24 defined:True
+gViewIdentityMap = 0x8010CAF8; // absolute:True
+gActor102100WatcherTaskDesc = 0x80135C30; // absolute:True owner=actor_102100
+gActor107000SlouchTaskDescs = 0x8013F5F0; // absolute:True owner=actor_107000
+gActor04400MadChaserTaskDescs = 0x80142604; // absolute:True owner=actor_104400
+gActor101100Tasks = 0x80147400; // absolute:True owner=actor_101100
+gActor100300Tasks = 0x80148110; // absolute:True owner=actor_100300
+gActor207200SkullStalkerTaskDesc = 0x8014E7A4; // absolute:True owner=actor_207200
+gActor207200CreepingStrangerTaskDesc = 0x80153EC8; // absolute:True owner=actor_207200
+gActor207000SlouchTaskDescs = 0x801575F0; // absolute:True owner=actor_207000
+gActor202000PawnGolemTasks = 0x8015FDF0; // absolute:True owner=actor_202000
+gActor341300ScriptTaskDescriptors = 0x80165208; // absolute:True owner=actor_341300
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x80183C4C; // size:0x10 defined:True
+_gRoomVisualEffectsHaloShades = 0x80183C38; // size:0x14 defined:True
+_gRoomEventStagedMsg = 0x801863A8; // size:0x8 defined:True
+_gShelterB2NorthMaintenanceWalkwayStagedEventStart = 0x801863B0; // size:0x8 defined:True
+_gRoomEventMsg = 0x801863B8; // size:0x8 defined:True
+gRoomEventActive = 0x801863C0; // size:0x1 defined:True
+gRoomEventLatched = 0x801863C4; // size:0x10 defined:True
+gRoomEventReq = 0x801863D4; // size:0x14 defined:True
+gShelterB2NorthMaintenanceWalkwayStagedEventTaskDesc = 0x80183B48; // size:0xC defined:True
+gRoomEventTaskDesc = 0x80183B54; // size:0xC defined:True
+gShelterB2NorthMaintenanceWalkwayRoomMessages = 0x80183B60; // size:0x30 defined:True
+
+shelterB2NorthMaintenanceWalkwayRoomVisualEffectsFlashTask = 0x80181BB4; // type:func
+
+shelterB2NorthMaintenanceWalkwayRoomVisualEffectsTwinTrailTask = 0x80182618; // type:func
+
+shelterB2NorthMaintenanceWalkwayRoomVisualEffectsSparkBurstTask = 0x80182F00; // type:func
+
+shelterB2NorthMaintenanceWalkwayRoomVisualEffectsMoteTask = 0x8017F590; // type:func
+
+shelterB2NorthMaintenanceWalkwayRoomVisualEffectsHaloTask = 0x801802D8; // type:func
+
+shelterB2NorthMaintenanceWalkwayRoomVisualEffectsHaloOrangeBurstTask = 0x80180670; // type:func
+
+shelterB2NorthMaintenanceWalkwayRoomVisualEffectsSparkEmitterTask = 0x80181A80; // type:func
+
+shelterB2NorthMaintenanceWalkwayGlowTask = 0x8017DDE8; // type:func
+_roomVisualEffectsDrawMote = 0x8017F85C; // type:func
+_roomVisualEffectsDrawHaloRing = 0x8017FB20; // type:func
+_roomVisualEffectsDrawHaloDisc = 0x8017FF44; // type:func
+_roomVisualEffectsDrawHaloBurstGlow = 0x8018081C; // type:func
+_roomVisualEffectsDrawHaloBurstGroundQuad = 0x80180D48; // type:func
+_roomVisualEffectsDrawHaloStar = 0x801810C0; // type:func
+_roomVisualEffectsDrawFlashRing = 0x80181E58; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x80182284; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x80182B08; // type:func
+_roomVisualEffectsDrawBurstStar = 0x80183188; // type:func
+glowDrawDimGreyCapsule = 0x8017E0DC; // type:func
+glowDrawRedDisc = 0x8017E858; // type:func
+_glowDrawTintedDisc = 0x8017EBB4; // type:func
+_roomEventGate = 0x8017D7B4; // type:func
+roomEventTask = 0x8017D918; // type:func
+roomEventStagedTask = 0x8017D61C; // type:func
+shelterB2NorthMaintenanceWalkwayRejectKeyItemMessage = 0x8017dc44; // type:func
+shelterB2NorthMaintenanceWalkwayIgnoreCommandMessage = 0x8017dc4c; // type:func
+shelterB2NorthMaintenanceWalkwayHandleSoundMessage = 0x8017dce4; // type:func
+_shelterB2NorthMaintenanceWalkwayIdleRoomTask = 0x8017dd80; // type:func
+shelterB2NorthMaintenanceWalkwayResolveRoomEvent = 0x8017da88; // type:func
+shelterB2NorthMaintenanceWalkwayHandleRoomAction = 0x8017dc54; // type:func
+_shelterB2NorthMaintenanceWalkwayInitRoomTask = 0x8017dd18; // type:func
+shelterB2NorthMaintenanceWalkwayRoomTask = 0x8017dd90; // type:func
+_gShelterB2NorthMaintenanceWalkwayStateHandlers = 0x8017d5f4;

@@ -1,0 +1,109 @@
+// Overlay-local symbols for shelter_b4_water_supply.
+_gShelterB4WaterSupplyWaterWaveSurfaces = 0x80182648; // size:0x14 defined:True
+_gShelterB4WaterSupplyXWaterWaveSurfaces = 0x8018265C; // size:0x14 defined:True
+_gShelterB4WaterSupplyViews234LightBeamEndpoints = 0x80182670; // size:0x10 defined:True
+_gShelterB4WaterSupplyViews56LightBeamEndpoints = 0x80182680; // size:0x10 defined:True
+_gShelterB4WaterSupplyPlayerSplashPositionHistory = 0x801826E0; // size:0x10 defined:True
+_gRoomVisualEffectsGlowDiscShades = 0x801826F0; // size:0xC defined:True
+_gShelterB4WaterSupplyLightBeamEndpoints = 0x80182690; // size:0x50 defined:True
+_gShelterB4WaterSupplyWaterHoleDepartureTaskDesc = 0x801825E4; // size:0xC defined:True
+_gShelterB4WaterSupplyRoomMessages = 0x801825F0; // size:0x30 defined:True
+_gShelterB4WaterSupplyDepartureTaskDescs = 0x80182620; // size:0x18 defined:True
+_gShelterB4WaterSupplyWaterY = 0x80182638; // size:0x2 defined:True
+_gShelterB4WaterSupplyWaterTaskDesc = 0x8018263C; // size:0xC defined:True
+gShelterB4WaterSupplyStairSurfaceRows = 0x801826FC; // size:0x40 defined:True
+gShelterB4WaterSupplyViewMaps = 0x8018273C; // size:0x4 defined:True
+gShelterB4WaterSupplyViewCounts = 0x80182740; // size:0x2 defined:True
+gShelterB4WaterSupplyWarpEntries = 0x80182744; // size:0xA8 defined:True
+_gShelterB4WaterSupplyCollisionGridNormals = 0x801827EC; // size:0x60 defined:True
+_gShelterB4WaterSupplyCollisionGridVerts = 0x8018284C; // size:0x1D8 defined:True
+_gShelterB4WaterSupplyCollisionGridFaces = 0x80182A24; // size:0x21C defined:True
+_gShelterB4WaterSupplyCollisionGridCells = 0x80182C40; // size:0x1BC defined:True
+_gShelterB4WaterSupplyCollisionGridTable = 0x80182DFC; // size:0x40 defined:True
+gShelterB4WaterSupplyCollisionGrid = 0x80182E3C; // size:0x24 defined:True
+gShelterB4WaterSupplyViewCameras = 0x80182E60; // size:0x18C defined:True
+_gShelterB4WaterSupplyView1SpriteBatches = 0x80182FEC; // size:0x10 defined:True
+_gShelterB4WaterSupplyView2SpriteBatches = 0x80182FFC; // size:0x10 defined:True
+_gShelterB4WaterSupplyView3SpriteBatches = 0x8018300C; // size:0x10 defined:True
+_gShelterB4WaterSupplyView4SpriteSources = 0x8018301C; // size:0x2A8 defined:True
+_gShelterB4WaterSupplyView4SpriteBatches = 0x801832C4; // size:0x18 defined:True
+_gShelterB4WaterSupplyView5SpriteBatches = 0x801832DC; // size:0x10 defined:True
+_gShelterB4WaterSupplyView6SpriteBatches = 0x801832EC; // size:0x10 defined:True
+_gShelterB4WaterSupplyView7SpriteSources = 0x801832FC; // size:0x870 defined:True
+_gShelterB4WaterSupplyView7SpriteBatches = 0x80183B6C; // size:0x30 defined:True
+_gShelterB4WaterSupplyView8SpriteSources = 0x80183B9C; // size:0x3AC defined:True
+_gShelterB4WaterSupplyView8SpriteBatches = 0x80183F48; // size:0x18 defined:True
+_gShelterB4WaterSupplyView9SpriteBatches = 0x80183F60; // size:0x10 defined:True
+_gShelterB4WaterSupplyView10SpriteBatches = 0x80183F70; // size:0x10 defined:True
+_gShelterB4WaterSupplyView11SpriteBatches = 0x80183F80; // size:0x10 defined:True
+gShelterB4WaterSupplySpriteViews = 0x80183F90; // size:0x84 defined:True
+_gShelterB4WaterSupplyPointLights = 0x80184014; // size:0x3C0 defined:True
+gShelterB4WaterSupplyRoomLights = 0x801843D4; // size:0x18 defined:True
+gShelterB4WaterSupplyViewBoundaryTriggers = 0x801843EC; // size:0x558 defined:True
+gShelterB4WaterSupplyActionTriggers = 0x80184944; // size:0x214 defined:True
+_gShelterB4WaterSupplyVariant1Resources = 0x80184B58; // size:0x18 defined:True
+_gShelterB4WaterSupplyVariant2Resources = 0x80184B70; // size:0x24 defined:True
+_gShelterB4WaterSupplyVariant3Resources = 0x80184B94; // size:0x18 defined:True
+_gShelterB4WaterSupplyVariant11Resources = 0x80184BAC; // size:0x18 defined:True
+_gShelterB4WaterSupplyVariant1Placements = 0x80184BC4; // size:0x20 defined:True
+_gShelterB4WaterSupplyVariant2Placements = 0x80184BE4; // size:0x50 defined:True
+_gShelterB4WaterSupplyVariant3Placements = 0x80184C34; // size:0x40 defined:True
+_gShelterB4WaterSupplyVariant11Placements = 0x80184C74; // size:0x30 defined:True
+gShelterB4WaterSupplyPlacementVariants = 0x80184CA4; // size:0x60 defined:True
+gShelterB4WaterSupplyOccluders = 0x80184D04; // size:0x78 defined:True
+gShelterB4WaterSupplyRoomAmbient = 0x80184D7C; // size:0x60 defined:True
+_gShelterB4WaterSupplySurface1FootstepSounds = 0x80184DDC; // size:0xC defined:True
+_gShelterB4WaterSupplySurface2FootstepSounds = 0x80184DE8; // size:0xC defined:True
+_gShelterB4WaterSupplyDefaultSurface = 0x80184DF4; // size:0x8 defined:True
+_gShelterB4WaterSupplySurface1 = 0x80184DFC; // size:0x8 defined:True
+_gShelterB4WaterSupplySurface2 = 0x80184E04; // size:0x8 defined:True
+_gShelterB4WaterSupplySurface3 = 0x80184E0C; // size:0x8 defined:True
+gShelterB4WaterSupplySurfacePropertiesByClass = 0x80184E14; // size:0x20 defined:True
+_gShelterB4WaterSupplyUpperSewerFade = 0x80184E34; // size:0x8 defined:True
+gActor102400Tasks = 0x8013647C; // absolute:True owner=actor_102400
+gActor107000SlouchTaskDescs = 0x8013F5F0; // absolute:True owner=actor_107000
+gActor100400Tasks = 0x80147E48; // absolute:True owner=actor_100400
+gActor207200CreepingStrangerTaskDesc = 0x80153EC8; // absolute:True owner=actor_207200
+_gShelterB4WaterSupplyUpperSewerDestination = 0x80184E3C; // size:0x8 defined:True
+gRoomDeparture = 0x80184E44; // size:0xC defined:True
+_gShelterB4WaterSupplyWaterPacketCursor = 0x80184E50; // size:0x4 defined:True
+
+shelterB4WaterSupplySplashAndLightBeamsTask = 0x8017EE54; // type:func
+
+shelterB4WaterSupplyWaterRippleTask = 0x8017F24C; // type:func
+
+shelterB4WaterSupplyWaterDriftTask = 0x8017F6D4; // type:func
+
+shelterB4WaterSupplyRoomVisualEffectsGlowDiscTask = 0x801809DC; // type:func
+
+shelterB4WaterSupplyRoomVisualEffectsFlyingSparkTask = 0x80180F34; // type:func
+
+shelterB4WaterSupplyRoomVisualEffectsFlyingOrangeBurstTask = 0x80181B94; // type:func
+_roomVisualEffectsDrawFlyingSpark = 0x80181158; // type:func
+_roomVisualEffectsDrawFlyingRing = 0x801813DC; // type:func
+_roomVisualEffectsDrawFlyingDisc = 0x80181800; // type:func
+_roomVisualEffectsDrawFlyingBurstGlow = 0x80181D40; // type:func
+_roomVisualEffectsDrawFlyingBurstGroundQuad = 0x8018226C; // type:func
+glowDrawDimGreyCapsule = 0x80180260; // type:func
+_waterDrawSplash = 0x8017F3A0; // type:func
+_waterDrawSpin = 0x8017FB90; // type:func
+_waterDrawTile = 0x8017FF7C; // type:func
+roomEventDepartureTask = 0x8017D650; // type:func
+_waterDrawWaveStrips = 0x8017DE74; // type:func
+_shelterB4WaterSupplyRejectKeyItem = 0x8017d970; // type:func
+_shelterB4WaterSupplyIgnoreCommand = 0x8017da28; // type:func
+_shelterB4WaterSupplyHandleSound = 0x8017dae4; // type:func
+_shelterB4WaterSupplyInitializeRoom = 0x8017dd40; // type:func
+_shelterB4WaterSupplyIdleRoom = 0x8017dd9c; // type:func
+shelterB4WaterSupplyRoomTask = 0x8017dda4; // type:func
+_shelterB4WaterSupplyResolveWaterHoleVariant = 0x8017ddfc; // type:func
+_shelterB4WaterSupplyDrawXWaveStrips = 0x8017e5d8; // type:func
+_shelterB4WaterSupplyInitializeWater = 0x8017ed90; // type:func
+_shelterB4WaterSupplyDrawWater = 0x8017edd0; // type:func
+_shelterB4WaterSupplyWaterTask = 0x8017ed28; // type:func
+_shelterB4WaterSupplyDepartToWaterHole = 0x8017db18; // type:func
+_shelterB4WaterSupplyUpperSewerDepartureTask = 0x8017d7c0; // type:func
+_shelterB4WaterSupplyResolveRoomEvent = 0x8017d978; // type:func
+_shelterB4WaterSupplyHandleRoomAction = 0x8017da30; // type:func
+_shelterB4WaterSupplyFirstValveDepartureTask = 0x8017dc28; // type:func
+_gShelterB4WaterSupplyRoomStates = 0x8017d5d8; // size:0xC defined:True

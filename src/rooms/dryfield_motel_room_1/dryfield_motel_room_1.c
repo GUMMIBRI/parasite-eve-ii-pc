@@ -1,0 +1,133 @@
+#include "rooms/dryfield_motel_room_1.h"
+
+#include "common.h"
+
+#include "dryfield_motel_room_1_private.h"
+
+#include "gameplay/direction.h"
+#include "gameplay/message.h"
+
+#include "main/gameflag.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/task.h"
+#include "main/task_types.h"
+
+static s32 _dryfieldMotelRoom1RejectKeyItemUse(Task* unusedTask, s32 unusedMessageId, s32 itemId, s32 unusedSecondArg);
+static s32 _dryfieldMotelRoom1ResolveTransition(Task* unusedTask, s32 unusedMessageId, const RoomEventMsg* request, RoomEventMsg* reply);
+static s32 _dryfieldMotelRoom1IgnoreRoomCommand(Task* unusedTask, s32 unusedMessageId, s32 unusedCommand, s32 unusedCommandArg);
+static s32 _dryfieldMotelRoom1HandleRoomAction(Task* unusedTask, s32 unusedMessageId, const DirectionActionRequest* request, s32 unusedSecondArg);
+
+/// Room-task message interface, borrowed from this overlay until receiver teardown.
+///
+/// Transition resolution, refused key-item use, direction actions and CAP commands.
+/// The final `TASK_MESSAGE_TABLE_END` record terminates dispatch; it is not a handler.
+static const TaskMessageEntry _gDryfieldMotelRoom1MessageTable[5] SECTION(".data") = {
+    { ROOM_EVENT_MESSAGE_RESOLVE, _dryfieldMotelRoom1ResolveTransition },
+    { ROOM_MESSAGE_USE_KEY_ITEM, _dryfieldMotelRoom1RejectKeyItemUse },
+    { DIRECTION_MESSAGE_ROOM_ACTION, _dryfieldMotelRoom1HandleRoomAction },
+    { ROOM_MESSAGE_COMMAND, _dryfieldMotelRoom1IgnoreRoomCommand },
+    { TASK_MESSAGE_TABLE_END, NULL },
+};
+
+static void _dryfieldMotelRoom1InitRoomTask(Task* task);
+static void _dryfieldMotelRoom1IdleRoomTask(Task* unusedTask);
+
+/// Refuses every request to use a collected key item in motel room 1.
+///
+/// Handles `ROOM_MESSAGE_USE_KEY_ITEM`. Ignores both integer payload words
+/// and the receiver; returns `ROOM_KEY_ITEM_USE_REFUSED` without consuming an item.
+static s32 _dryfieldMotelRoom1RejectKeyItemUse(Task* unusedTask, s32 unusedMessageId, s32 itemId, s32 unusedSecondArg)
+{
+    return ROOM_KEY_ITEM_USE_REFUSED;
+}
+
+/// Allows a room transition without changing its requested destination.
+///
+/// Handles `ROOM_EVENT_MESSAGE_RESOLVE`. Borrows an eight-byte readable request
+/// and writable reply for synchronous dispatch; both may be the same record.
+/// Copies the complete request and returns 1 to permit the ordinary transition.
+/// Queries and execution requests have the same result and no room side effects.
+static s32 _dryfieldMotelRoom1ResolveTransition(Task* unusedTask, s32 unusedMessageId, const RoomEventMsg* request, RoomEventMsg* reply)
+{
+    enum { DRYFIELD_MOTEL_ROOM_1_TRANSITION_ALLOWED = 1 };
+
+    *reply = *request;
+    return DRYFIELD_MOTEL_ROOM_1_TRANSITION_ALLOWED;
+}
+
+/// Ignores every CAP room command and returns zero.
+///
+/// Handles `ROOM_MESSAGE_COMMAND`; neither integer payload word nor the receiver
+/// is accessed, and no command is deferred.
+static s32 _dryfieldMotelRoom1IgnoreRoomCommand(Task* unusedTask, s32 unusedMessageId, s32 unusedCommand, s32 unusedCommandArg)
+{
+    return 0;
+}
+/// Starts the one-time opening encounter when its room action is triggered.
+///
+/// Handles `DIRECTION_MESSAGE_ROOM_ACTION` with a borrowed four-byte request
+/// and an ignored zero second word. Variant 3 and action 1 latch the seen flag
+/// before requesting the event task; a failed spawn still leaves it latched.
+/// Does not retain the request, use its argument byte or write a reply. Returns 0.
+static s32 _dryfieldMotelRoom1HandleRoomAction(Task* unusedTask, s32 unusedMessageId, const DirectionActionRequest* request, s32 unusedSecondArg)
+{
+    enum { DRYFIELD_MOTEL_ROOM_1_OPENING_VARIANT = 3,
+           DRYFIELD_MOTEL_ROOM_1_ACTION_OPENING  = 1,
+           DRYFIELD_MOTEL_ROOM_1_OPENING_TASK    = 0 };
+
+    if (gGameSession->location.variant == DRYFIELD_MOTEL_ROOM_1_OPENING_VARIANT && gameFlagGetNibble(GAME_FLAG_MOTEL_ROOM_1_EVENT_SEEN) == 0 && request->actionId == DRYFIELD_MOTEL_ROOM_1_ACTION_OPENING) {
+        gameFlagSetNibble(GAME_FLAG_MOTEL_ROOM_1_EVENT_SEEN, 1);
+        taskSpawnFromTable(&gDryfieldMotelRoom1OpeningEventTaskDesc, DRYFIELD_MOTEL_ROOM_1_OPENING_TASK, 0, 0);
+    }
+    return 0;
+}
+
+/// Registers motel room 1's receiver and broadcasts its pending entry actor command.
+///
+/// Requires the live room task in state 0. Variant 3 broadcasts command 0 in
+/// the current stage/area namespace until the room event has been seen;
+/// the scene manager must be live on that path. The command is borrowed only
+/// through synchronous dispatch. Advances to idle state 1 with a borrowed
+/// message table.
+static void _dryfieldMotelRoom1InitRoomTask(Task* task)
+{
+    enum {
+        DRYFIELD_MOTEL_ROOM_1_EVENT_VARIANT       = 3,
+        DRYFIELD_MOTEL_ROOM_1_ENTRY_ACTOR_COMMAND = 0,
+    };
+    ActorCommand entryCommand;
+
+    task->msgTable = _gDryfieldMotelRoom1MessageTable;
+    gameSetTaskSlot(task, GAME_TASK_SLOT_ROOM);
+    if (gGameSession->location.variant == DRYFIELD_MOTEL_ROOM_1_EVENT_VARIANT && gameFlagGetNibble(GAME_FLAG_MOTEL_ROOM_1_EVENT_SEEN) == 0) {
+        entryCommand.context.loc.stage = gGameSession->location.stage;
+        entryCommand.context.loc.area  = gGameSession->location.area;
+        entryCommand.command           = DRYFIELD_MOTEL_ROOM_1_ENTRY_ACTOR_COMMAND;
+        TASK_MESSAGE_DISPATCH_POINTER(gameGetTaskSlot(GAME_TASK_SLOT_SCENE), SCENE_MESSAGE_BROADCAST_TO_ACTORS, &entryCommand, ACTOR_COMMAND_MESSAGE_APPLY);
+    }
+    task->state += 1;
+}
+/// Keeps the initialized motel room 1 task idle in state 1.
+///
+/// Ignores its argument; messages continue through the installed room table.
+static void _dryfieldMotelRoom1IdleRoomTask(Task* unusedTask)
+{
+}
+
+/// Room-task lifecycle: state 0 initializes, state 1 waits or updates, state 2 releases.
+///
+/// The dispatcher copies all three callback pointers before indexing by `Task::state`.
+/// The selector must be in 0..2; there is no terminator or bounds check.
+/// Keep this overlay loaded until the room task is released.
+static const TaskFuncTable3 _gDryfieldMotelRoom1RoomTaskStates = {
+    { _dryfieldMotelRoom1InitRoomTask, _dryfieldMotelRoom1IdleRoomTask, taskKill },
+};
+
+void dryfieldMotelRoom1Task(Task* task)
+{
+    TaskFuncTable3 stateHandlers;
+
+    stateHandlers = _gDryfieldMotelRoom1RoomTaskStates;
+    stateHandlers.funcs[task->state](task);
+}

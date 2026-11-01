@@ -1,0 +1,3934 @@
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/abs.h>
+#include <psyq/inline_c.h>
+#include <psyq/memory.h>
+
+#include "common.h"
+#include "gte.h"
+
+#include "actors/actor.h"
+#include "actors/hit_effect.h"
+
+#include "gameplay/actor.h"
+#include "gameplay/actor_render.h"
+#include "gameplay/animation.h"
+#include "gameplay/collision.h"
+#include "gameplay/damage.h"
+#include "gameplay/effect_tasks.h"
+#include "gameplay/effects.h"
+#include "gameplay/enemy.h"
+#include "gameplay/geometry.h"
+#include "gameplay/loading.h"
+#include "gameplay/message.h"
+#include "gameplay/enemy_params.h"
+#include "gameplay/player_actor.h"
+#include "gameplay/room_effects.h"
+#include "gameplay/scene.h"
+#include "gameplay/scene_combat.h"
+#include "gameplay/scene_runtime.h"
+#include "gameplay/world_collision.h"
+#include "gameplay/world_coords.h"
+#include "gameplay/world_targets.h"
+
+#include "main/areas.h"
+#include "main/coord.h"
+#include "main/random.h"
+#include "main/gfx.h"
+#include "main/mc.h"
+#include "main/mc_types.h"
+#include "main/mem.h"
+#include "main/scratch.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/sound.h"
+#include "main/task.h"
+#include "main/task_types.h"
+#include "main/tmd.h"
+#include "main/tmd_types.h"
+#include "main/wipsys.h"
+#include "main/wipsys_types.h"
+
+#include "overlay.h"
+#include "../../shared/actor/player_detection.h"
+#include "../../shared/actor/actor_messages.h"
+
+/// Uniform model-root scale for yaw rebuilds, with 12 fractional bits.
+enum { ACTOR_01900_ROOT_SCALE = 0x1194 };
+
+/// Clip-bank selectors used by the Grinning Stranger's behavior and sound cues.
+///
+/// WALK/RUN, ALERT/SCRIPTED_WATCH and DOWN/STATUS_HOLD share stored clips.
+/// DORMANT_SCRIPTED is installed on state entry. SLIDE names the requested slot;
+/// its clip remains NULL in the stored bank and no installation is recovered.
+enum {
+    ACTOR_01900_ANIM_WALK              = 2,
+    ACTOR_01900_ANIM_RUN               = 3,
+    ACTOR_01900_ANIM_STRIKE            = 4,
+    ACTOR_01900_ANIM_STEP_BACK         = 7,
+    ACTOR_01900_ANIM_RISE              = 8,
+    ACTOR_01900_ANIM_ALERT             = 9,
+    ACTOR_01900_ANIM_FALL              = 10,
+    ACTOR_01900_ANIM_DOWN              = 11,
+    ACTOR_01900_ANIM_FLINCH            = 13,
+    ACTOR_01900_ANIM_DORMANT_SCRIPTED  = 16,
+    ACTOR_01900_ANIM_BACK_OFF          = 17,
+    ACTOR_01900_ANIM_SLIDE             = 18,
+    ACTOR_01900_ANIM_SCRIPTED_WATCH    = 19,
+    ACTOR_01900_ANIM_SIDESTEP_NEGATIVE = 20,
+    ACTOR_01900_ANIM_SIDESTEP_POSITIVE = 21,
+    ACTOR_01900_ANIM_STATUS_HOLD       = 23,
+    ACTOR_01900_ANIM_DEATH_BURST       = 24,
+};
+
+/// Collision-sphere radii in game-coordinate units.
+enum {
+    ACTOR_01900_BODY_RADIUS         = 384,
+    ACTOR_01900_COMPACT_BODY_RADIUS = 192
+};
+
+/// Hit-effect argument halves; each selected effect kind interprets the low half.
+enum {
+    ACTOR_01900_HIT_EFFECT_ARGUMENT_LOW = 0x300,
+    ACTOR_01900_HIT_EFFECT_REPEAT_COUNT = 2
+};
+
+/// Burn-sequence tick offsets and root flattening rate (Q12 units per tick).
+enum {
+    ACTOR_01900_DEATH_BURN_RELEASE_OFFSET     = 0,
+    ACTOR_01900_DEATH_BURN_EFFECT_OFFSET      = 5,
+    ACTOR_01900_DEATH_BURN_BLACK_OFFSET       = 17,
+    ACTOR_01900_DEATH_BURN_TRANSLUCENT_OFFSET = 23,
+    ACTOR_01900_DEATH_BURN_HIDE_OFFSET        = 39,
+    ACTOR_01900_DEATH_FLATTEN_START           = 26,
+    ACTOR_01900_DEATH_FLATTEN_ORIGIN          = 20,
+    ACTOR_01900_DEATH_FLATTEN_STEP            = 11
+};
+
+/// Shared burst-effect arguments: particle radius/mode and detached-model radius.
+enum {
+    ACTOR_01900_BURST_PARTICLE_ARGUMENT = (1 << 16) | 0x300,
+    ACTOR_01900_BURST_MODEL_RADIUS      = 0x200,
+    ACTOR_01900_BURST_MODEL_SLOT        = (u16)EFFECT_BURST_BODY_PART_BANK10
+};
+
+/// Values of `_Actor01900Work::state`: the index of the handler the per-frame
+/// tick runs.
+///
+/// Five numbers have no handler and are never selected. `UNUSED_0C` and
+/// `UNUSED_0D` are still tested when a hit lands: with `playerHeld` set, the
+/// hit sends the player the message that ends a scripted hold.
+enum {
+    ACTOR_01900_STATE_HIDDEN           = 0x00, // not drawn, not lockable and not collided with
+    ACTOR_01900_STATE_PLAY_WALK        = 0x01, // loops the walk animation in place; never selected
+    ACTOR_01900_STATE_PLAY_RUN         = 0x02, // loops the run animation in place; never selected
+    ACTOR_01900_STATE_PLAY_DOWN        = 0x03, // holds the lying animation; never selected
+    ACTOR_01900_STATE_STATUS_HOLD      = 0x04, // twitches in place until the status buildup runs out
+    ACTOR_01900_STATE_FLINCH           = 0x05, // recoils from damage over time, then chases
+    ACTOR_01900_STATE_ALERT            = 0x06, // turns to the player and raises the combat alert, then chases
+    ACTOR_01900_STATE_CHASE            = 0x07, // runs at the player; strikes when close, sidesteps a distant player who faces it
+    ACTOR_01900_STATE_CIRCLE           = 0x08, // runs round the player, speeding up and then easing off
+    ACTOR_01900_STATE_TURN_AROUND      = 0x09, // swings `turnYaw` round to `turnYawTarget`, then circles
+    ACTOR_01900_STATE_SIDESTEP         = 0x0A, // hops along `sidestepDir`, then chases
+    ACTOR_01900_STATE_STRIKE           = 0x0B, // swings at the player with `attackBody` enabled
+    ACTOR_01900_STATE_UNUSED_0C        = 0x0C, // has no handler and is never selected
+    ACTOR_01900_STATE_UNUSED_0D        = 0x0D, // has no handler and is never selected
+    ACTOR_01900_STATE_STEP_BACK        = 0x0E, // steps back from a player still close when the strike ends
+    ACTOR_01900_STATE_RISE             = 0x0F, // gets up after `DOWN`, then chases
+    ACTOR_01900_STATE_UNUSED_10        = 0x10, // has no handler and is never selected
+    ACTOR_01900_STATE_DOWN             = 0x11, // lies where it fell until `stateTimer` runs out
+    ACTOR_01900_STATE_APPROACH         = 0x12, // runs at the player on a half-rate animation; never selected
+    ACTOR_01900_STATE_FALL             = 0x13, // staggers backward and falls
+    ACTOR_01900_STATE_UNUSED_14        = 0x14, // has no handler and is never selected
+    ACTOR_01900_STATE_DEATH_BURN       = 0x15, // burns away: the corpse-burn effect, then the model flattens and fades
+    ACTOR_01900_STATE_UNUSED_16        = 0x16, // has no handler and is never selected
+    ACTOR_01900_STATE_DORMANT_SCRIPTED = 0x17, // loops an animation of its own until the player comes within `noticeRange` or makes noise
+    ACTOR_01900_STATE_PATROL           = 0x18, // walks between the two `patrolPoints`, watching for the player
+    ACTOR_01900_STATE_BACK_OFF         = 0x19, // faces the player, backs away and turns aside; never selected
+    ACTOR_01900_STATE_SLIDE            = 0x1A, // coasts forward by the shrinking `runStep`, then turns around
+    ACTOR_01900_STATE_ALERT_REPEAT     = 0x1B, // replays the alert animation in place after a long chase in sight of the player, then chases again
+    ACTOR_01900_STATE_SCRIPTED_WATCH   = 0x1C, // holds a pose where a room command placed it, `lookYawTarget` following the player
+    ACTOR_01900_STATE_DEATH_BURST      = 0x1D, // bursts into body parts where it stands
+    ACTOR_01900_STATE_DEATH_BURST_WALK = 0x1E, // walks a few steps, bursts and burns away
+    ACTOR_01900_STATE_REFALL           = 0x1F, // drops back down: knocked down while in `RISE`, or killed in `STATUS_HOLD`
+    ACTOR_01900_STATE_COUNT                    // number of states, and of the handlers in `_Actor01900StateTable`
+};
+
+/// Values of `_Actor01900Work::animRequest` and `_Actor01900Work::blendRequest`.
+///
+/// A zero-filled block holds 0, on which the driver only advances the slots.
+/// The blend rig is never asked to blend in.
+enum {
+    ACTOR_01900_ANIM_REQUEST_BLEND   = 1, // seek the slots to the animation, blending over the frames its transition table gives
+    ACTOR_01900_ANIM_REQUEST_RESET   = 2, // restart the slots on the animation
+    ACTOR_01900_ANIM_REQUEST_PLAYING = 3  // the request has been applied
+};
+
+/// Local message slot ignored by this actor; its sender-side purpose is unproven.
+enum { ACTOR_01900_MESSAGE_IGNORED = 2015 };
+
+/// Number of active height-clamp rows; the trailing zero row is not scanned.
+enum { ACTOR_01900_HEIGHT_CLAMP_COUNT = 2 };
+
+/// Work block of the Grinning Stranger task.
+///
+/// The spawn handler allocates it zeroed and keeps it at `Task::work`; the
+/// exit callback unlinks its three collision bodies. It holds the state
+/// machine, both animation rigs and their driver's state, the bodies with
+/// their contact records, storage for the model's matrices and the values the
+/// pursuit states share.
+///
+/// Angles are 4096ths of a turn and positions are in the root coordinate's
+/// parent space unless a field says otherwise. Animation ids index the
+/// package's animation bank; rates are sixteenths of a frame per tick.
+typedef struct {
+    s16                   state;             // `ACTOR_01900_STATE_*`
+    s16                   prevState;         // `state` the tick last ran; -1 makes the next tick enter `state` afresh
+    s16                   stateEntered;      // 1 on the first tick of a state, when the handler sets itself up (0 otherwise)
+    s16                   stateTimer;        // frame counter of the state: most count up from 0, `DOWN` counts down; the task also counts its three-frame wait after setup here
+    s16                   stateCounter;      // second counter of `CHASE` and `CIRCLE`, cleared as either begins: in `CHASE` the ticks since sight of the player was last blocked, 0x5B of which lead to `ALERT_REPEAT`; in `CIRCLE` the ticks on which `gridContacts` moved the root, seven of which end it
+    byte                  field_A[0x2];      // never accessed
+    ActorPatrolPoint      patrolPoints[2];   // the spawn position and a point 2000 units ahead along the spawn facing
+    s16                   patrolTarget;      // index into `patrolPoints` of the end being walked toward
+    s16                   placedYaw;         // heading of the root after the last placement message; never read
+    byte                  field_18[0x4];     // never accessed
+    ActorAnimRig19        rig;               // playback of the model's parts; slot 1's status and frame time the states
+    ActorAnimRig19        blend;             // second playback of the same model, mixed into slots 1 to 10 while `blendActive`
+    s32                   dormantAnimFrame;  // slot 1's frame on the last `DORMANT_SCRIPTED` tick, so the sound of frame 15 and the effect of frame 5 each fire once
+    s16                   animRequest;       // `ACTOR_01900_ANIM_REQUEST_*` for `rig`
+    s16                   blendActive;       // 1 while `blend`'s animation is mixed in; cleared when its slot 1 settles
+    s16                   appliedAnim;       // animation `rig` was last started on
+    s16                   animId;            // animation requested of `rig`
+    u16                   animFrames;        // ticks since `animRequest` was last applied; never read
+    s16                   animRate;          // playback rate of `rig`'s slots; negative plays backward
+    s16                   baseRate;          // `animRate` that `RISE` starts on; 0x10 from setup
+    s16                   blendRequest;      // `ACTOR_01900_ANIM_REQUEST_*` for `blend`; only `RESET` is requested
+    s16                   blendAnimId;       // animation requested of `blend`
+    s16                   blendRate;         // playback rate of `blend`'s slots, 0x30 from each restart
+    s16                   blendWeight;       // share of `blend`'s pose in the mix, of 0x1000; 0x800 from each restart
+    s16                   lookYawTarget;     // bearing to what the state faces, relative to the facing
+    s16                   lookYaw;           // eased toward `lookYawTarget` by 0x100 a tick; within +-0x400, parts 5 and 2 turn by 2/3 and 1/2 of it
+    s32                   lastCueFrame;      // slot 1's frame as the sound cues last saw it, so a held cue frame fires once; 0 from each applied request
+    EffectSpawnArg        effectArg;         // argument record of the hit and dormant effects, hung off part 1
+    byte                  field_8C0[0x8];    // never accessed
+    WorldCollisionBody    hitBody;           // sphere at part 2; takes the hits and is pushed off other bodies
+    WorldCollisionContact hitContacts[12];   // contacts of `hitBody`; also the enemy's hit records
+    WorldCollisionBody    gridBody;          // sphere 0x100 above the root that the room grid pushes the root with
+    WorldCollisionContact gridContacts[12];  // contacts of `gridBody`
+    WorldCollisionBody    attackBody;        // sphere on part 4 carrying the key of attack 0; enabled only on ticks 0x16 to 0x1C of `STRIKE`
+    WorldCollisionContact attackContacts[3]; // contacts of `attackBody`, which is given the first as a one-record table; `STRIKE` scans all three, and a kind-0x10000 record ends the swing
+    MATRIX                lightMtx;          // storage for the model's `TmdObject::lightMtx`
+    MATRIX                colorMtx;          // storage for the model's `TmdObject::colorMtx`
+    byte                  field_BF0[0x20];   // never accessed
+    s16                   hitCooldown;       // ticks before another hit is taken; set from the hit's id parameter 2
+    s16                   recentDamage;      // damage of the hits taken while `recentHitFrames` runs; 0x4C or more turns a flinch into a fall
+    s16                   recentHitFrames;   // ticks left before `recentDamage` is forgotten, 5 from each hit; while it runs a hit pushes the root back 0x19 instead of 0x64
+    byte                  field_C16[0x2];    // never accessed
+    SVECTOR               sidestepDir;       // unit direction of the sidestep, to one side of the bearing to the player
+    s16                   turnYaw;           // heading the turn-around holds the root at, moved 0x89 a tick
+    s16                   turnYawTarget;     // heading the turn-around ends on: the facing plus twice the bearing to the player
+    s16                   runStep;           // forward step per tick: `CIRCLE` sets it to 8 times `animRate`, halved while `blendActive` and 2 once it has been pushed; `SLIDE` takes 10 off it each tick
+    s16                   circleRateStep;    // change of `animRate` per tick of `CIRCLE`: 8 until the rate reaches 0x18, -1 back down to 0x12, then 0 for its last five ticks
+    s16                   sidestepSide;      // side the next sidestep takes (1 or -1), flipped by each; 0 draws one at random. `CHASE` veers 0x300 to the same side while its sight of the player is blocked
+    s16                   sidestepStep;      // length of the sidestep's step, 0xDE; halved while `blendActive` and by each push of `gridContacts`
+    s16                   downFramesBase;    // ticks `DOWN` lasts, before a random 0..15 more; first value of the variant record
+    s16                   sidestepAngle;     // angle between the bearing to the player and `sidestepDir`; second value of the variant record
+    s16                   sidestepDelay;     // `stateTimer` value `CHASE` must pass before it sidesteps, raised by half `sidestepCount`; third value of the variant record
+    s16                   noticeRange;       // distance at which `DORMANT_SCRIPTED` and `PATROL` notice the player; fourth value of the variant record
+    u8                    commandBytes[3];   // first three bytes of the last actor command received: its 16-bit kind and the low byte of its sub-code
+    u8                    field_C37;         // counted down to 0 by `CHASE`; nothing raises it, role unproven
+    Task*                 childTask0;        // killed by the exit callback when set; nothing sets it
+    Task*                 childTask1;        // killed by the exit callback when set; nothing sets it
+    s16                   circleCount;       // times `CIRCLE` has begun since `CHASE`, `STRIKE` or a hit cleared it; from the second, a turn-around ending within 0x384 of the player does not circle again
+    s16                   sidestepCount;     // sidesteps since the last hit; the first is thrown 0x171 wider
+    s16                   playerHeld;        // 1 makes a hit in `UNUSED_0C` or `UNUSED_0D` end the player's scripted hold; nothing sets it
+    byte                  field_C46[0x2];    // never accessed
+    SVECTOR               bodyPosHistory[7]; // ring of part 2's view-space position on the last seven ticks; during a sidestep the enemy's target point is the oldest
+    byte                  field_C80[0x18];   // never accessed
+    s16                   bodyPosCursor;     // index of the next entry of `bodyPosHistory` to write
+} _Actor01900Work;
+STATIC_ASSERT_SIZEOF(_Actor01900Work, 0xC9C);
+
+/// The actor's state handlers, indexed by `_Actor01900Work::state`.
+///
+/// The package defines one table. The per-frame tick copies it to the stack
+/// by assignment, which is why the array is wrapped in a struct, and then
+/// calls the entry of the current state. The call is unconditional, so the
+/// `NULL` entries of the five `ACTOR_01900_STATE_UNUSED_*` values mark states
+/// the actor must not be in when the tick dispatches.
+typedef struct {
+    TaskFunc handlers[ACTOR_01900_STATE_COUNT]; // Handler of each `ACTOR_01900_STATE_*`, taking the actor's task
+} _Actor01900StateTable;
+STATIC_ASSERT_SIZEOF(_Actor01900StateTable, ACTOR_01900_STATE_COUNT * sizeof(TaskFunc));
+
+static AnimationSet _gStrangerGrinningScriptedDormantClip;
+static TmdSource    _gStrangerBurstHand;
+
+#include "../../shared/actor/actor_contacts.h"
+
+static void _actor01900TakeHit(Task* task);
+static void _actor01900SpawnHitEffect(Task* task, s16 hitYaw, s32 attackKey);
+static void _actor01900UpdateAnimation(Task* task);
+static void _actor01900StateDown(Task* task);
+static void _actor01900Exit(Task* task);
+static s32  _actor01900ApplyBodyPushback(Task* task, const WorldCollisionContact* contacts, s16 contactCount);
+static void _actor01900StateDeathBurst(Task* task);
+static void _actor01900StatePlayWalk(Task* task);
+static void _actor01900ClampRootHeight(const GameLocationKey* location, GfxCoord* coord);
+static s32  _actor01900HandleAnimationRequest(Task* task, s32 messageId, const AnimationPlayRequest* request, s32 unused);
+static s32  _actor01900ApplyCommand(Task* task, s32 messageId, const ActorCommand* command, s32 unused);
+
+static TmdSource _gStrangerGrinningBody;
+static s32       _actor01900AcknowledgeHoldRelease(Task* task, s32 messageId, s32 unusedPayload, s32 unused);
+static s32       _actor01900IgnoreMessage2015(Task* task, s32 messageId, s32 unusedPayload, s32 unused);
+static void      _actor01900Task(Task* task);
+
+/// Row of the Stranger strike.
+enum {
+    ACTOR_01900_STRIKE_ATTACK_INDEX = 0
+};
+
+/// Grinning Stranger attack rows borrowed by its enemy parameters.
+///
+/// The strike sphere uses row 0. Row 1 retains an ordinary 22-power attack;
+/// no recovered code selects it.
+static DamageAttack _gActor01900Attacks[2] = {
+    { 16, GAME_ACTOR_REACTION_SPARK_AND_PUFFS },
+    { 22, GAME_ACTOR_REACTION_ORDINARY },
+};
+
+/// Grinning Stranger combat, reaction and release-reward parameters.
+///
+/// Starting HP is copied into each enemy; this record and its two attack rows
+/// remain borrowed by damage/reaction logic until the overlay unloads.
+static EnemyParams _gActor01900GrinningStrangerParams = {
+    .attacks              = _gActor01900Attacks,
+    .hpMax                = 160,
+    .exp                  = 42,
+    .bp                   = 48,
+    .mp                   = 4,
+    .critChance           = 100,
+    .buildupSteps         = 10,
+    .damageOverTimeChance = 100,
+    .damageOverTimeTicks  = 0,
+};
+
+/// Three Grinning Stranger movement and notice tunings selected at spawn.
+///
+/// Low-nibble selector 2 takes row 0, 1 takes row 2, and other values take row 1.
+/// Rows supply downed ticks, sidestep angle/delay and notice radius; their four
+/// unread trailing bytes retain zero values and have no established role.
+static ActorStrangerVariant _gActor01900StrangerVariants[3] = {
+    { 15, 400, 8, 2000, { 0, 0, 0, 0 } },
+    { 0, 300, 12, 2500, { 0, 0, 0, 0 } },
+    { 0, 200, 7, 3000, { 0, 0, 0, 0 } },
+};
+
+#include "assets/enemies/stranger/grinning/body.inc"
+
+#include "assets/enemies/stranger/burst_hand.inc"
+
+#include "assets/enemies/stranger/grinning/package_1_clips.inc"
+
+/// Whole normal-rate blend frames indexed by previous and requested clip IDs.
+///
+/// Both IDs must be in 0..44 and select loaded tracks. Zero switches without
+/// a timed blend. Signed bytes promote to the playback API's frame count.
+static s8 _gActor01900AnimationBlendFrames[45][45] = {
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 4, 4, 4, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 3, 3, 0, 0, 0, 0, 15, 5, 0, 0, 8, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 4, 0, 0, 4, 3, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 3, 3, 3, 3, 5, 0, 0, 0, 15, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 3, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 5, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 3, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 12, 12, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 8, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+};
+
+/// Mutable clip bank shared by the primary and reaction rigs for the overlay lifetime.
+///
+/// Behavior selectors are `ACTOR_01900_ANIM_*`; unlisted slots are NULL.
+/// Dormant entry installs slot 16. Slide requests slot 18 and message requests
+/// map to 34..37/39, but no loaded clips for those slots are established.
+#include "assets/enemies/stranger/grinning/bank.inc"
+
+/// Part-local Grinning Stranger hit-effect positions and model coordinate selectors.
+///
+/// Relative attack yaw selects front rows 0..4, rear 5..7 or side pairs 8/9
+/// and 10/11. The retained random masks never select rows 4 or 6. Each complete
+/// eight-byte anchor names a live coordinate (2, 7 or 9) and an XYZ offset.
+static ActorHitAnchor _gActor01900HitAnchors[12] = {
+    { .anchor = { 60, -12, 30, 2 } },
+    { .anchor = { -50, -130, 29, 2 } },
+    { .anchor = { 20, -70, 25, 2 } },
+    { .anchor = { -30, -65, 25, 2 } },
+    { .anchor = { 60, -120, 30, 2 } },
+    { .anchor = { 20, -20, -5, 2 } },
+    { .anchor = { -15, -50, 0, 2 } },
+    { .anchor = { 2, 10, -15, 2 } },
+    { .anchor = { 14, 0, 0, 7 } },
+    { .anchor = { 25, 0, 0, 2 } },
+    { .anchor = { -14, 0, 0, 9 } },
+    { .anchor = { -25, 0, 0, 2 } },
+};
+
+/// Grinning Stranger message dispatch for animation, placement and actor control.
+///
+/// Contains seven typed-payload callbacks followed by the end marker. Commands
+/// and animation requests are borrowed through synchronous dispatch; visibility,
+/// presence and hold release use integer or unused payload words.
+static TaskMessageEntry _gActor01900Messages[8] = {
+    { ACTOR_01900_MESSAGE_IGNORED, _actor01900IgnoreMessage2015 },
+    { ACTOR_MESSAGE_PLAY_ANIMATION, _actor01900HandleAnimationRequest },
+    { ACTOR_MESSAGE_SET_MODEL_DRAW, actorMsgSetVisibility },
+    { ACTOR_MESSAGE_IS_PRESENT, actorMsgIsPresent },
+    { ACTOR_MESSAGE_PLACE, actorMsgPlaceRecordYaw },
+    { ACTOR_MESSAGE_RELEASE_HOLD, _actor01900AcknowledgeHoldRelease },
+    { ACTOR_COMMAND_MESSAGE_APPLY, _actor01900ApplyCommand },
+    { TASK_MESSAGE_TABLE_END, NULL },
+};
+
+/// Room-specific inclusive limits on the Grinning Stranger root's parent-space Y.
+///
+/// Only the first two rows are searched: Acropolis patio (-300..0) and Neo Ark
+/// woodland path (0..300), in game-coordinate units. The third zero row and
+/// each row's unread suffix are retained; their roles are unproven.
+static ActorHeightClamp _gActor01900RoomHeightClamps[3] = {
+    { GAME_STAGE_AKROPOLIS, GAME_AREA_AKROPOLIS_PATIO, -300, 0, { 0, 0, 0, 0, 0, 0, 0, 0 } },
+    { GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_WOODLAND_PATH, 0, 300, { 0, 0, 0, 0, 0, 0, 0, 0 } },
+    { GAME_STAGE_NONE, 0, 0, 0, { 0, 0, 0, 0, 0, 0, 0, 0 } },
+};
+
+/// Overlay-wide sum of forward displacement during the current circling phase.
+///
+/// Reset on circle entry, then increased by each signed run step in parent-frame
+/// coordinate units, retaining signed-halfword wrapping. No recovered code reads it.
+static s16 _gActor01900CircleTravel = 0;
+
+TaskDesc gActor01900GrinningStrangerTaskDesc = { { { TASK_BODY_TMD, TASK_PRIORITY_ACTOR } }, _actor01900Task, { .model = &_gStrangerGrinningBody } };
+
+static SVECTOR ActorContact_ScratchPosition = { 0 };
+
+/// Returns this carrier's persistent last contact-push correction.
+///
+/// Components are signed 16.16 corrections shifted right by 16 and narrowed
+/// to halfwords. Fractional X/Z add a further unit in the correction's sign;
+/// X/Z record the root correction, while Y is only recorded. No grid hit
+/// leaves the old value intact. The borrowed vector lives for the overlay's
+/// lifetime; `pad` is unused.
+static inline SVECTOR* _actorContactGetLastPushStep(void)
+{
+    return &ActorContact_ScratchPosition;
+}
+
+static SVECTOR ActorContact_ScratchPosition;
+
+static const _Actor01900StateTable _gActor01900StateHandlers;
+
+static void _actor01900StateStatusHold(Task* task);
+
+static void _actor01900StateAlert(Task* task);
+
+static void _actor01900StateChase(Task* task);
+
+static void _actor01900StateCircle(Task* task);
+
+static void _actor01900StateTurnAround(Task* task);
+
+static void _actor01900StateSidestep(Task* task);
+
+static void _actor01900StateStepBack(Task* task);
+
+static void _actor01900StateApproach(Task* task);
+
+static void _actor01900StateFall(Task* task);
+
+static void _actor01900StateDeathBurn(Task* task);
+
+static void _actor01900StateDormantScripted(Task* task);
+
+static void _actor01900StatePatrol(Task* task);
+
+static void _actor01900StateSlide(Task* task);
+
+static void _actor01900StateBackOff(Task* task);
+
+static void _actor01900StateAlertRepeat(Task* task);
+
+static void _actor01900StateScriptedWatch(Task* task);
+
+static void _actor01900StateDeathBurstWalk(Task* task);
+
+static void _actor01900StateStrike(Task* task);
+
+static void _actor01900StateRefall(Task* task);
+
+static void _actor01900StateHidden(Task* task);
+
+static void _actor01900StatePlayRun(Task* task);
+
+static void _actor01900StatePlayDown(Task* task);
+
+static void _actor01900StateFlinch(Task* task);
+
+static void _actor01900StateRise(Task* task);
+
+static void _actor01900WaitAfterSetup(Enemy* enemy, Task* task);
+
+static inline void _actorRenderCollapseYaw(GfxCoord* coord);
+
+static void        _actor01900TickBlendedAnimSlots(Task* task);
+static s32         _actor01900TakeAnimSoundCue(_Actor01900Work* work);
+static inline void _actor01900BindLightingMatrices(Task* task);
+static void        _actor01900Initialize(Enemy* enemy, Task* task);
+static inline s32  _actor01900FindIncomingAttack(const WorldCollisionContact* contacts, SVECTOR* hitPosition);
+static inline s32  _actor01900EngageBattleIfPlayerLevel(Task* task);
+static inline s32  _actor01900HasHeightClamp(const GameLocationKey* location);
+static s32         _actor01900ApplyCappedGridPushback(GfxCoord* coord, const WorldCollisionContact* contacts, s16 contactCount, s16 heightOffset);
+static inline s32  _actor01900HasPlayerBodyContact(const WorldCollisionContact* contacts);
+static void        _actor01900Tick(Enemy* enemy, Task* task);
+
+/// Replaces a coordinate's rotation with its current yaw at 1/4096 scale.
+///
+/// Collapses a visible model part while preserving local translation. Requires
+/// a live writable coordinate separate from the aligned scratch stack, which
+/// needs 0x58 free bytes including nested rotation workspace. Pitch, roll and old
+/// scale are discarded; composition is dirtied and scratch is released.
+static inline void _actorRenderCollapseYaw(GfxCoord* coord)
+{
+    enum { ACTOR_RENDER_COLLAPSED_YAW_SCALE = 1 };
+    ActorScaleRotScratch* yawScratch;
+    s16                   yaw;
+
+    yawScratch      = SCRATCH_STACK_RESERVE_BLOCK(ActorScaleRotScratch);
+    yaw             = ratan2(-coord->coord.m[2][0], coord->coord.m[2][2]);
+    yawScratch->yaw = yaw;
+    gfxRotMatrixY(&yawScratch->rotation, yaw, GRAPHICS_ROTATION_REPLACE);
+    yawScratch->scale.vz = ACTOR_RENDER_COLLAPSED_YAW_SCALE;
+    yawScratch->scale.vy = ACTOR_RENDER_COLLAPSED_YAW_SCALE;
+    yawScratch->scale.vx = ACTOR_RENDER_COLLAPSED_YAW_SCALE;
+    ScaleMatrix(&yawScratch->rotation, &yawScratch->scale);
+    _actorRenderCopyRotation(coord, yawScratch->rotation.m);
+    coord->composeStamp = GRAPHICS_COORD_DIRTY;
+    SCRATCH_STACK_RELEASE_BLOCK(ActorScaleRotScratch);
+}
+
+/// Psy-Q `RotMatrixY` (it sits right after `RotMatrixX`).
+
+#include "../../shared/actor/actor_contacts.h"
+
+#include "../../shared/actor/actor_contacts.inc.c"
+
+#include "../../shared/actor/player_detection_sight.inc.c"
+
+/// Ticks both rigs and mixes rotations for body slots 1..10.
+///
+/// Requires live initialized work, model coordinates and loaded animation sets.
+/// Slots 11..18 tick only the primary rig; slot 0 is untouched. Rates are in
+/// sixteenths of a frame: primary uses `animRate` minus 3, secondary uses `blendRate`.
+/// The primary rotation takes `blendWeight` / `ONE` and the secondary its complement;
+/// translation always comes from the primary pose. Stack poses are borrowed only
+/// through each apply call. Scratch and GTE state must be available.
+static void _actor01900TickBlendedAnimSlots(Task* task)
+{
+    enum { ACTOR_01900_LAST_BLENDED_SLOT = 10 };
+
+    AnimationPose     primaryPose;
+    AnimationPose     blendPose;
+    AnimationContext* primaryContext;
+    s16               primaryWeight;
+    s16               slotIndex;
+    _Actor01900Work*  work;
+
+    work           = task->work;
+    primaryWeight  = work->blendWeight;
+    primaryContext = &work->rig.anim;
+    for (slotIndex = 1; slotIndex < (s32)ARRAY_SIZE(work->rig.slots); slotIndex++) {
+        if (slotIndex <= ACTOR_01900_LAST_BLENDED_SLOT) {
+            work->blend.slots[slotIndex].rate = work->blendRate;
+            work->rig.slots[slotIndex].rate   = (work->animRate - 3);
+            animationTickSlotPose(primaryContext, slotIndex, &primaryPose, NULL);
+            animationTickSlotPose(&work->blend.anim, slotIndex, &blendPose, NULL);
+            animationApplyPoseWithBlendedRotation(primaryContext, slotIndex, &primaryPose, &blendPose, primaryWeight, ONE - primaryWeight);
+        } else {
+            work->rig.slots[slotIndex].rate = (work->animRate - 3);
+            animationTickSlot(&work->rig.anim, slotIndex);
+        }
+    }
+}
+
+/// Returns the newly reached animation sound cue, or zero.
+///
+/// Uses the low ten bits of slot 1's current keyframe record index, not elapsed
+/// frames. The returned bank/entry id leaves its instance byte zero for the caller.
+/// A held cue is latched in `lastCueFrame` and fires once; two-cue clips clear the
+/// latch between cues, while single-cue and other clips remember the current index.
+static s32 _actor01900TakeAnimSoundCue(_Actor01900Work* work)
+{
+    enum {
+        ACTOR_01900_CUE_ANIM_WALK        = ACTOR_01900_ANIM_WALK,
+        ACTOR_01900_CUE_ANIM_RUN         = ACTOR_01900_ANIM_RUN,
+        ACTOR_01900_CUE_ANIM_STRIKE      = ACTOR_01900_ANIM_STRIKE,
+        ACTOR_01900_CUE_ANIM_STEP_BACK   = ACTOR_01900_ANIM_STEP_BACK,
+        ACTOR_01900_CUE_ANIM_ALERT       = ACTOR_01900_ANIM_ALERT,
+        ACTOR_01900_CUE_ANIM_DOWN        = ACTOR_01900_ANIM_DOWN,
+        ACTOR_01900_CUE_ANIM_SIDESTEP_1  = ACTOR_01900_ANIM_SIDESTEP_NEGATIVE,
+        ACTOR_01900_CUE_ANIM_SIDESTEP_2  = ACTOR_01900_ANIM_SIDESTEP_POSITIVE,
+        ACTOR_01900_SOUND_GAIT_FIRST     = 0x400A0002,
+        ACTOR_01900_SOUND_GAIT_SECOND    = 0x400A0001,
+        ACTOR_01900_SOUND_ALERT          = 0x400A0006,
+        ACTOR_01900_SOUND_STRIKE         = 0x400A000C,
+        ACTOR_01900_SOUND_DOWN           = 0x400A0005,
+        ACTOR_01900_SOUND_EVASION_FIRST  = 0x400A0010,
+        ACTOR_01900_SOUND_EVASION_SECOND = 0x400A0011
+    };
+
+    s32 cueIndex;
+    s32 previousCueIndex;
+
+    switch (work->animId) {
+        case ACTOR_01900_CUE_ANIM_SIDESTEP_1:
+        case ACTOR_01900_CUE_ANIM_SIDESTEP_2:
+            cueIndex = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            if (cueIndex == 7) {
+                if (work->lastCueFrame != cueIndex) {
+                    work->lastCueFrame = cueIndex;
+                    return ACTOR_01900_SOUND_EVASION_FIRST;
+                }
+                work->lastCueFrame = cueIndex;
+            } else if (cueIndex == 0x10) {
+                previousCueIndex = work->lastCueFrame;
+                if (previousCueIndex != cueIndex) {
+                    work->lastCueFrame = cueIndex;
+                    return ACTOR_01900_SOUND_EVASION_SECOND;
+                }
+                work->lastCueFrame = previousCueIndex;
+            } else {
+                work->lastCueFrame = 0;
+            }
+            break;
+        case ACTOR_01900_CUE_ANIM_STEP_BACK:
+            cueIndex = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            if (cueIndex == 0xF) {
+                if (work->lastCueFrame != cueIndex) {
+                    work->lastCueFrame = cueIndex;
+                    return ACTOR_01900_SOUND_EVASION_FIRST;
+                }
+                work->lastCueFrame = cueIndex;
+            } else if (cueIndex == 0x14) {
+                previousCueIndex = work->lastCueFrame;
+                if (previousCueIndex != cueIndex) {
+                    work->lastCueFrame = cueIndex;
+                    return ACTOR_01900_SOUND_EVASION_SECOND;
+                }
+                work->lastCueFrame = previousCueIndex;
+            } else {
+                work->lastCueFrame = 0;
+            }
+            break;
+        case ACTOR_01900_CUE_ANIM_WALK:
+        case ACTOR_01900_CUE_ANIM_RUN:
+            cueIndex = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            if (cueIndex == 0x24) {
+                if (work->lastCueFrame != cueIndex) {
+                    work->lastCueFrame = cueIndex;
+                    return ACTOR_01900_SOUND_GAIT_FIRST;
+                }
+                work->lastCueFrame = cueIndex;
+            } else if (cueIndex == 0x2C) {
+                previousCueIndex = work->lastCueFrame;
+                if (previousCueIndex != cueIndex) {
+                    work->lastCueFrame = cueIndex;
+                    return ACTOR_01900_SOUND_GAIT_SECOND;
+                }
+                work->lastCueFrame = previousCueIndex;
+            } else {
+                work->lastCueFrame = 0;
+            }
+            break;
+        case ACTOR_01900_CUE_ANIM_ALERT:
+            cueIndex = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            if (cueIndex == 4 && work->lastCueFrame != cueIndex) {
+                work->lastCueFrame = cueIndex;
+                return ACTOR_01900_SOUND_ALERT;
+            }
+            work->lastCueFrame = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            break;
+        case ACTOR_01900_CUE_ANIM_STRIKE:
+            cueIndex = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            if (cueIndex == 0xC && work->lastCueFrame != cueIndex) {
+                work->lastCueFrame = cueIndex;
+                return ACTOR_01900_SOUND_STRIKE;
+            }
+            work->lastCueFrame = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            break;
+        case ACTOR_01900_CUE_ANIM_DOWN:
+            cueIndex = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            if (cueIndex == 4 && work->lastCueFrame != cueIndex) {
+                work->lastCueFrame = cueIndex;
+                return ACTOR_01900_SOUND_DOWN;
+            }
+            work->lastCueFrame = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            break;
+        default:
+            previousCueIndex   = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            work->lastCueFrame = previousCueIndex;
+            break;
+    }
+    return 0;
+}
+
+/// Seeks primary slots 1..18 into the requested clip when its id changes.
+///
+/// Requires initialized work and loaded clips for both `appliedAnim` and `animId`.
+/// The signed transition-table byte is a duration in whole normal-rate frames;
+/// track offset is zero. Sets each slot's rate in sixteenths of a frame before
+/// the seek captures its old pose, then records the new applied id. Slot 0 is untouched.
+static inline void _actor01900BlendToRequestedAnim(Task* task)
+{
+    _Actor01900Work* work;
+    s32              slotIndex;
+
+    work = task->work;
+    if (work->appliedAnim != work->animId) {
+        for (slotIndex = 1; slotIndex < (s32)ARRAY_SIZE(work->rig.slots); slotIndex++) {
+            work->rig.slots[slotIndex].rate = work->animRate;
+            animationSeekSlotWithBlend(&work->rig.anim, slotIndex, work->animId, 0,
+                                       _gActor01900AnimationBlendFrames[work->appliedAnim][work->animId]);
+        }
+        work->appliedAnim = work->animId;
+    }
+}
+
+/// Restarts primary slots 1..18 on the requested loaded clip.
+///
+/// Requires initialized work, a live model and a loaded `animId`. Records `appliedAnim`
+/// after resetting. The rate writes precede animationResetSlot, which replaces
+/// each slot rate with `ANIMATION_RATE_ONE`; the following tick reapplies `animRate`.
+/// Slot 0 is untouched.
+static inline void _actor01900ResetToRequestedAnim(Task* task)
+{
+    _Actor01900Work* work;
+    s32              slotIndex;
+
+    work = task->work;
+    for (slotIndex = 1; slotIndex < (s32)ARRAY_SIZE(work->rig.slots); slotIndex++) {
+        work->rig.slots[slotIndex].rate = work->animRate;
+        animationResetSlot(&work->rig.anim, slotIndex, work->animId);
+    }
+    work->appliedAnim = work->animId;
+}
+
+/// Restarts secondary slots 1..18 and restores the half-weight blend defaults.
+///
+/// Requires initialized work and a loaded `blendAnimId`. `blendRate` becomes three
+/// normal frames per tick, `blendWeight` becomes `ONE` / 2. The retained rate writes
+/// target primary slots; secondary reset uses the API's normal rate until its
+/// next blended tick. Does not enable blending and leaves slot 0 untouched.
+static inline void _actor01900ResetBlendAnim(Task* task)
+{
+    _Actor01900Work* work;
+    s32              slotIndex;
+
+    work              = task->work;
+    work->blendRate   = 3 * ANIMATION_RATE_ONE;
+    work->blendWeight = ONE / 2;
+    for (slotIndex = 1; slotIndex < (s32)ARRAY_SIZE(work->rig.slots); slotIndex++) {
+        work->rig.slots[slotIndex].rate = work->blendRate;
+        animationResetSlot(&work->blend.anim, slotIndex, work->blendAnimId);
+    }
+}
+
+/// Ticks primary body slots 1..18 at `animRate`, leaving slot 0 untouched.
+///
+/// Requires initialized work, live model coordinates and loaded referenced clips.
+/// The rate uses sixteenths of a frame per call; reverse playback requires
+/// bank-backed current endpoints. Writes poses to the primary model coordinates.
+static inline void _actor01900TickAnimSlots(Task* task)
+{
+    _Actor01900Work* work;
+    s32              slotIndex;
+
+    work = task->work;
+    for (slotIndex = 1; slotIndex < (s32)ARRAY_SIZE(work->rig.slots); slotIndex++) {
+        work->rig.slots[slotIndex].rate = work->animRate;
+        animationTickSlot(&work->rig.anim, slotIndex);
+    }
+}
+
+/// Eases relative look yaw and applies it to the two animated model joints.
+///
+/// Call after animation writes the coordinates, with this task's initialized work.
+/// Angles use 4096 units per turn. Signed linear easing advances at most 256 units
+/// per call without wrapping. Joint input clamps to -1024..1024; parts 5 and 2
+/// receive two thirds and one half, with division truncating toward zero. The
+/// stored eased yaw remains unclamped; affected composition caches become dirty.
+static inline void _actor01900UpdateLookYaw(Task* task, _Actor01900Work* work)
+{
+    enum {
+        ACTOR_01900_LOOK_YAW_STEP  = ACTOR_TRANSFORM_ANGLE_TURN / 16,
+        ACTOR_01900_LOOK_YAW_LIMIT = ACTOR_TRANSFORM_ANGLE_TURN / 4
+    };
+
+    s16 currentYaw;
+    s16 targetYaw;
+    s16 lookYaw;
+    s32 clampedYaw;
+    u16 currentYawBits;
+    u16 targetYawBits;
+
+    // Ease look direction, then rotate the two joints after animation has written them.
+    targetYaw      = work->lookYawTarget;
+    currentYaw     = work->lookYaw;
+    targetYawBits  = (u16)work->lookYawTarget;
+    currentYawBits = (u16)work->lookYaw;
+    if (targetYaw > currentYaw) {
+        if ((targetYaw - currentYaw) >= (ACTOR_01900_LOOK_YAW_STEP + 1)) {
+            work->lookYaw = currentYawBits + ACTOR_01900_LOOK_YAW_STEP;
+        } else {
+            work->lookYaw = (s16)targetYawBits;
+        }
+    } else if ((currentYaw - targetYaw) >= (ACTOR_01900_LOOK_YAW_STEP + 1)) {
+        work->lookYaw = currentYawBits - ACTOR_01900_LOOK_YAW_STEP;
+    } else {
+        work->lookYaw = (s16)targetYawBits;
+    }
+    lookYaw    = work->lookYaw;
+    clampedYaw = (u16)work->lookYaw;
+    if (lookYaw != 0) {
+        if (lookYaw >= (ACTOR_01900_LOOK_YAW_LIMIT + 1)) {
+            clampedYaw = ACTOR_01900_LOOK_YAW_LIMIT;
+        }
+        if (lookYaw < -ACTOR_01900_LOOK_YAW_LIMIT) {
+            clampedYaw = -ACTOR_01900_LOOK_YAW_LIMIT;
+        }
+        _actorRenderYawJointInWorld(task->extra.tmd->coords + 5, (s16)(((s16)clampedYaw * 2) / 3));
+        _actorRenderYawJointInWorld(task->extra.tmd->coords + 2, (s16)((s16)clampedYaw / 2));
+        task->extra.tmd->coords[5].composeStamp = GRAPHICS_COORD_DIRTY;
+        task->extra.tmd->coords[4].composeStamp = GRAPHICS_COORD_DIRTY;
+        task->extra.tmd->coords[3].composeStamp = GRAPHICS_COORD_DIRTY;
+        task->extra.tmd->coords[2].composeStamp = GRAPHICS_COORD_DIRTY;
+    }
+}
+
+/// Updates clip requests, poses, look direction and spatial animation sounds.
+///
+/// Requires initialized work, both rigs bound to loaded clips, a live model and
+/// an `Enemy` spawn argument. Main requests seek with the transition-table duration
+/// or reset outright, then mark the request playing and restart cue accounting.
+/// Only reset is handled for the secondary rig. A blended tick ends blending when
+/// secondary slot 1 settles. Look yaw uses 4096 units per turn: it approaches the
+/// target by at most 256 per call and joint offsets are limited to a quarter-turn.
+/// The tick counter wraps at 16 bits. Sound instances use the enemy placement index.
+static void _actor01900UpdateAnimation(Task* task)
+{
+    enum { ACTOR_01900_SOUND_INSTANCE_SHIFT = 8 };
+
+    _Actor01900Work* work;
+    Enemy*           enemy;
+    s32              soundCue;
+    s32              soundScript;
+    s32              audioPan;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    // Apply pending clip requests before sampling this tick's poses.
+    if (work->animRequest == ACTOR_01900_ANIM_REQUEST_BLEND) {
+        _actor01900BlendToRequestedAnim(task);
+        work->animRequest  = ACTOR_01900_ANIM_REQUEST_PLAYING;
+        work->animFrames   = 0;
+        work->lastCueFrame = 0;
+    } else if (work->animRequest == ACTOR_01900_ANIM_REQUEST_RESET) {
+        _actor01900ResetToRequestedAnim(task);
+        work->animRequest  = ACTOR_01900_ANIM_REQUEST_PLAYING;
+        work->animFrames   = 0;
+        work->lastCueFrame = 0;
+    }
+    if (work->blendRequest == ACTOR_01900_ANIM_REQUEST_RESET) {
+        _actor01900ResetBlendAnim(task);
+        work->blendRequest = ACTOR_01900_ANIM_REQUEST_PLAYING;
+    }
+    work->animFrames = (u16)(work->animFrames + 1);
+    if (work->blendActive == 0) {
+        _actor01900TickAnimSlots(task);
+    } else {
+        _actor01900TickBlendedAnimSlots(task);
+        if (work->blend.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) {
+            work->blendActive = 0;
+        }
+    }
+    _actor01900UpdateLookYaw(task, work);
+    // Tag this placement's sound instance and narrow the spatial offsets to signed bytes.
+    soundCue = _actor01900TakeAnimSoundCue(work);
+    if (soundCue != 0) {
+        soundScript = soundCue | ((enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << ACTOR_01900_SOUND_INSTANCE_SHIFT);
+        audioPan    = (s8)worldCoordGetOriginAudioPan(task->extra.tmd->coords);
+        sndEvtRequestScriptStart(soundScript, audioPan, (s8)worldCoordGetOriginAudioDepth(task->extra.tmd->coords));
+    }
+}
+
+/// Binds the model's lighting matrices to storage owned by the actor's work block.
+///
+/// Requires a live TMD model and initialized `_Actor01900Work`. The model borrows
+/// both matrix addresses until task teardown releases its work.
+static inline void _actor01900BindLightingMatrices(Task* task)
+{
+    _Actor01900Work* work;
+    TmdObject*       model;
+
+    work            = task->work;
+    model           = task->extra.tmd;
+    model->lightMtx = &work->lightMtx;
+    model->colorMtx = &work->colorMtx;
+}
+
+/// Initializes the Grinning Stranger's animation rigs, collision bodies and behavior.
+///
+/// Requires a live enemy task with its loaded model and spawn arguments. Allocates
+/// zeroed task-owned work, borrows the package's clip bank and links three bodies.
+/// Allocation failure destroys the enemy and task. Spawn mode selects hidden,
+/// scripted dormancy or patrol; the low spawn nibble selects the pursuit tuning.
+/// Success installs the exit callback and advances the task to its setup wait.
+static void _actor01900Initialize(Enemy* enemy, Task* task)
+{
+    enum {
+        ACTOR_01900_SPAWN_MODE_SHIFT    = 16,
+        ACTOR_01900_SPAWN_SELECTOR_MASK = 0xF,
+        ACTOR_01900_STATE_REENTER       = -1,
+        ACTOR_01900_SPAWN_MODE_HIDDEN   = 2,
+        ACTOR_01900_SPAWN_MODE_DORMANT  = 4
+    };
+
+    SVECTOR             localOffset;
+    VECTOR              worldPosition;
+    SVECTOR*            stepVector;
+    TmdObject*          model;
+    GfxCoord*           rootCoord;
+    _Actor01900Work*    work;
+    WorldCollisionBody* hitBody;
+    WorldCollisionBody* attackBody;
+    s32                 spawnMode;
+
+    rootCoord  = task->extra.tmd->coords;
+    model      = task->extra.tmd;
+    work       = memCalloc(sizeof(_Actor01900Work), 0);
+    task->work = work;
+    if (work == NULL) {
+        enemyDestroy(enemy, task);
+        return;
+    }
+    (sceneAcquireBattleRef)(0);
+    task->exitCallback = _actor01900Exit;
+    _actor01900BindLightingMatrices(task);
+    enemy->field_4    = &task->extra.tmd->coords->coord;
+    enemy->field_48   = 0;
+    enemy->bodyPos.vx = 0;
+    enemy->bodyPos.vy = 0;
+    enemy->bodyPos.vz = 0;
+    enemy->coord      = &task->extra.tmd->coords[2];
+    worldTargetLinkNode(&enemy->node);
+    enemy->node.state.parts.flags = WORLD_TARGET_NOT_LOCKABLE;
+    enemy->reactionFlags          = 0;
+    enemy->hp                     = (s16)_gActor01900GrinningStrangerParams.hpMax;
+    enemy->param                  = &_gActor01900GrinningStrangerParams;
+    enemy->recs                   = work->hitContacts;
+    animationInitContext(&work->rig.anim, _gActor01900AnimationSets, model,
+                         work->rig.poses, work->rig.slots);
+    animationInitContext(&work->blend.anim, _gActor01900AnimationSets, model,
+                         work->blend.poses, work->blend.slots);
+    work->animRequest   = ACTOR_01900_ANIM_REQUEST_RESET;
+    work->blendActive   = 0;
+    work->animId        = ACTOR_01900_ANIM_WALK;
+    work->lookYaw       = 0;
+    work->lookYawTarget = 0;
+    work->baseRate      = ANIMATION_RATE_ONE;
+    work->animRate      = ANIMATION_RATE_ONE;
+    _actor01900UpdateAnimation(task);
+
+    // Keep grid, incoming-hit and outgoing-attack contacts in separate lists.
+    work->gridBody.context.contacts = work->gridContacts;
+    work->gridBody.coord            = rootCoord;
+    work->gridBody.pos.vx           = 0;
+    work->gridBody.pos.vy           = -0x100;
+    work->gridBody.pos.vz           = 0;
+    work->gridBody.key              = WORLD_COLLISION_CONTACT_ENEMY_BODY | 0x13;
+    work->gridBody.radius           = ACTOR_01900_BODY_RADIUS;
+    work->gridBody.flags            = WORLD_COLLISION_BODY_SPHERE;
+    worldCollisionLinkBody(WORLD_COLLISION_LIST_ENEMY_BODIES, &work->gridBody);
+    work->hitCooldown    = 0;
+    work->gridBody.flags = (work->gridBody.flags | WORLD_COLLISION_BODY_GRID_ENABLED) & (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    worldCollisionInitContacts(work->gridBody.context.contacts, ARRAY_SIZE(work->gridContacts), 0);
+
+    hitBody                   = &work->hitBody;
+    hitBody->coord            = &task->extra.tmd->coords[2];
+    hitBody->context.contacts = work->hitContacts;
+    hitBody->pos.vx           = 0;
+    hitBody->pos.vy           = 0;
+    hitBody->pos.vz           = 0;
+    hitBody->key              = WORLD_COLLISION_CONTACT_ENEMY_BODY;
+    hitBody->radius           = ACTOR_01900_BODY_RADIUS;
+    hitBody->flags            = WORLD_COLLISION_BODY_SPHERE;
+    worldCollisionLinkBody(WORLD_COLLISION_LIST_ENEMY_BODIES, hitBody);
+    hitBody->flags |= WORLD_COLLISION_BODY_PAIR_ENABLED;
+    worldCollisionInitContacts(hitBody->context.contacts, ARRAY_SIZE(work->hitContacts), 0);
+
+    // Stage the attack-body offset before reusing the vector for the patrol endpoint.
+    localOffset.vx               = 0;
+    localOffset.vy               = 0;
+    localOffset.vz               = 0;
+    attackBody                   = &work->attackBody;
+    attackBody->coord            = &task->extra.tmd->coords[4];
+    attackBody->context.contacts = work->attackContacts;
+    stepVector                   = &localOffset;
+    attackBody->pos.vx           = stepVector->vx;
+    attackBody->pos.vy           = stepVector->vy;
+    attackBody->pos.vz           = stepVector->vz;
+    attackBody->radius           = ACTOR_01900_BODY_RADIUS;
+    attackBody->flags            = WORLD_COLLISION_BODY_SPHERE;
+    worldCollisionLinkBody(WORLD_COLLISION_LIST_ENEMY_ATTACKS, attackBody);
+    worldCollisionInitContacts(attackBody->context.contacts, 1, 0);
+    work->attackBody.key = damagePackEnemyAttackKey(enemy, ACTOR_01900_STRIKE_ATTACK_INDEX);
+
+    // Patrol between the placement and a point 2000 units ahead in parent space.
+    work->patrolTarget      = 0;
+    work->patrolPoints[0].x = task->extra.tmd->coords->coord.t[0];
+    work->patrolPoints[0].z = task->extra.tmd->coords->coord.t[2];
+    gfxReadMatrixZAxis(&task->extra.tmd->coords->coord, stepVector);
+    localOffset.vy = 0;
+    _actorMovementBuildDisplacement(stepVector, 2000);
+    work->patrolPoints[1].x = task->extra.tmd->coords->coord.t[0] + localOffset.vx;
+    work->patrolPoints[1].z = task->extra.tmd->coords->coord.t[2] + localOffset.vz;
+
+    task->msgTable          = _gActor01900Messages;
+    rootCoord->parent       = &gGfxViewCoord;
+    rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+    actorRenderComposeCoord(rootCoord);
+    worldPosition.vx = rootCoord->workm.t[0];
+    worldPosition.vy = rootCoord->workm.t[1];
+    worldPosition.vz = rootCoord->workm.t[2];
+    worldCoordUpdateActorColor(enemy, &worldPosition, 0, 0);
+
+    work->effectArg.coord      = &task->extra.tmd->coords[1];
+    work->effectArg.spawnArgLo = ACTOR_01900_HIT_EFFECT_ARGUMENT_LOW;
+    work->effectArg.spawnArgHi = ACTOR_01900_HIT_EFFECT_REPEAT_COUNT;
+    spawnMode                  = task->spawnArg1.value >> ACTOR_01900_SPAWN_MODE_SHIFT;
+    switch (spawnMode & ACTOR_01900_SPAWN_SELECTOR_MASK) {
+        case ACTOR_01900_SPAWN_MODE_HIDDEN:
+            work->prevState = ACTOR_01900_STATE_REENTER;
+            work->state     = ACTOR_01900_STATE_HIDDEN;
+            break;
+        case ACTOR_01900_SPAWN_MODE_DORMANT:
+            work->prevState = ACTOR_01900_STATE_REENTER;
+            work->state     = ACTOR_01900_STATE_DORMANT_SCRIPTED;
+            break;
+        default:
+            work->prevState = ACTOR_01900_STATE_REENTER;
+            work->state     = ACTOR_01900_STATE_PATROL;
+            tmdAllocPrimitiveBuffer(model);
+            break;
+    }
+    switch (task->spawnArg1.value & ACTOR_01900_SPAWN_SELECTOR_MASK) {
+        case 2:
+            work->downFramesBase = _gActor01900StrangerVariants[0].downFramesBase;
+            work->sidestepAngle  = _gActor01900StrangerVariants[0].sidestepAngle;
+            work->sidestepDelay  = _gActor01900StrangerVariants[0].sidestepDelay;
+            work->noticeRange    = _gActor01900StrangerVariants[0].noticeRadius;
+            break;
+        case 1:
+            work->downFramesBase = _gActor01900StrangerVariants[2].downFramesBase;
+            work->sidestepAngle  = _gActor01900StrangerVariants[2].sidestepAngle;
+            work->sidestepDelay  = _gActor01900StrangerVariants[2].sidestepDelay;
+            work->noticeRange    = _gActor01900StrangerVariants[2].noticeRadius;
+            break;
+        case 0:
+        default:
+            work->downFramesBase = _gActor01900StrangerVariants[1].downFramesBase;
+            work->sidestepAngle  = _gActor01900StrangerVariants[1].sidestepAngle;
+            work->sidestepDelay  = _gActor01900StrangerVariants[1].sidestepDelay;
+            work->noticeRange    = _gActor01900StrangerVariants[1].noticeRadius;
+            break;
+    }
+
+    _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+    work->bodyPosCursor = 0;
+    task->state++;
+}
+
+/// Spawns an incoming attack's hit effect at a bearing-selected model offset.
+///
+/// `hitYaw` is relative to the actor's facing in 4096 units per turn, normally
+/// -2048..2048. `attackKey` must identify a valid player attack. Anchor part selectors
+/// name model coordinates 2, 7 or 9. The spawner borrows the scratch offset through the
+/// call and the work-owned argument record; one scratch `ActorHitAnchor` is released on return.
+/// The rear random selector retains its mask of 2 and unreachable case 1.
+static void _actor01900SpawnHitEffect(Task* task, s16 hitYaw, s32 attackKey)
+{
+    ActorHitAnchor*  hitAnchor;
+    s32              yawMagnitude;
+    _Actor01900Work* work;
+
+    hitAnchor    = SCRATCH_STACK_RESERVE_BLOCK(ActorHitAnchor);
+    yawMagnitude = (hitYaw >= 0) ? hitYaw : -hitYaw;
+    work         = task->work;
+    if (yawMagnitude < (ACTOR_TRANSFORM_ANGLE_TURN / 8)) {
+        RANDOM_LCG_ADVANCE();
+        switch ((s32)RANDOM_LCG_DRAW() & 3) {
+            case 0:
+                *hitAnchor = _gActor01900HitAnchors[0];
+                break;
+            case 1:
+                *hitAnchor = _gActor01900HitAnchors[1];
+                break;
+            case 2:
+                *hitAnchor = _gActor01900HitAnchors[2];
+                break;
+            case 3:
+                *hitAnchor = _gActor01900HitAnchors[3];
+                break;
+            default:
+                *hitAnchor = _gActor01900HitAnchors[4];
+                break;
+        }
+    } else if (yawMagnitude > (3 * ACTOR_TRANSFORM_ANGLE_TURN / 8)) {
+        RANDOM_LCG_ADVANCE();
+        switch ((s32)RANDOM_LCG_DRAW() & 2) {
+            case 0:
+                *hitAnchor = _gActor01900HitAnchors[5];
+                break;
+            case 1:
+                *hitAnchor = _gActor01900HitAnchors[6];
+                break;
+            default:
+                *hitAnchor = _gActor01900HitAnchors[7];
+                break;
+        }
+    } else if (hitYaw > 0) {
+        RANDOM_LCG_ADVANCE();
+        if (RANDOM_LCG_DRAW() & 1) {
+            *hitAnchor = _gActor01900HitAnchors[8];
+        } else {
+            *hitAnchor = _gActor01900HitAnchors[9];
+        }
+    } else {
+        RANDOM_LCG_ADVANCE();
+        if (RANDOM_LCG_DRAW() & 1) {
+            *hitAnchor = _gActor01900HitAnchors[10];
+        } else {
+            *hitAnchor = _gActor01900HitAnchors[11];
+        }
+    }
+    // The anchor selects a live model part and its local impact position.
+    work->effectArg.coord      = &task->extra.tmd->coords[1];
+    work->effectArg.spawnArgLo = ACTOR_01900_HIT_EFFECT_ARGUMENT_LOW;
+    work->effectArg.spawnArgHi = ACTOR_01900_HIT_EFFECT_REPEAT_COUNT;
+    effectSpawnHit(damageGetPlayerAttackEffectId(attackKey), &task->extra.tmd->coords[hitAnchor->anchor.partIndex], &hitAnchor->position, &work->effectArg);
+    SCRATCH_STACK_RELEASE_BLOCK(ActorHitAnchor);
+}
+
+/// Returns the first incoming attack key and copies its contact point.
+///
+/// `contacts` borrows twelve readable records from the hit body. A zero key ends
+/// the scan; a kind-attack key returns its full signed word. No attack returns 0
+/// and leaves `hitPosition` intact. The output receives view-space XYZ, with its
+/// pad word untouched; no pointer is retained.
+static inline s32 _actor01900FindIncomingAttack(const WorldCollisionContact* contacts, SVECTOR* hitPosition)
+{
+    enum { ACTOR_01900_INCOMING_CONTACT_COUNT = ARRAY_SIZE(((_Actor01900Work*)NULL)->hitContacts) };
+
+    s16 contactIndex;
+
+    for (contactIndex = 0; contactIndex < ACTOR_01900_INCOMING_CONTACT_COUNT; contactIndex++) {
+        if (!contacts[contactIndex].key.value)
+            break;
+        if ((contacts[contactIndex].key.value & WORLD_COLLISION_CONTACT_KIND_MASK) == WORLD_COLLISION_CONTACT_ATTACK) {
+            hitPosition->vx = contacts[contactIndex].point.vx;
+            hitPosition->vy = contacts[contactIndex].point.vy;
+            hitPosition->vz = contacts[contactIndex].point.vz;
+            return contacts[contactIndex].key.value;
+        }
+    }
+    return 0;
+}
+
+/// Consumes an incoming player attack and advances damage-over-time reactions.
+///
+/// Called only after the hit cooldown has elapsed, with live initialized work,
+/// enemy, model, player and scratch stack. Living enemies scan the terminated
+/// hit-contact table, apply recoil and damage, choose a reaction or death state
+/// and start hit cooldown. Critical rolls multiply damage by four; rear hits
+/// beyond 1280/4096 turn double it outside fall/down/status poses. No new contact
+/// still advances the five-tick recent-damage window and damage over time.
+static void _actor01900TakeHit(Task* task)
+{
+    enum {
+        ACTOR_01900_STATE_REENTER             = -1,
+        ACTOR_01900_HIT_ATTACHMENT_BIT        = 0x8000,
+        ACTOR_01900_HIT_REACTION_MASK         = 0xFFFF,
+        ACTOR_01900_HIT_REACTION_FALL         = 4,
+        ACTOR_01900_HIT_REACTION_STANDARD     = 5,
+        ACTOR_01900_HIT_REACTION_FRONT_FALL   = 8,
+        ACTOR_01900_HIT_REACTION_RESTART_FALL = 9,
+        ACTOR_01900_HIT_BEHIND_YAW_LIMIT      = 0x500,
+        ACTOR_01900_HIT_RECENT_PUSH_STEP      = 25,
+        ACTOR_01900_HIT_PUSH_STEP             = 100,
+        ACTOR_01900_HIT_FALL_DAMAGE           = 76,
+        ACTOR_01900_HIT_RECENT_FRAMES         = 5,
+        ACTOR_01900_HIT_REFALL_RISE_FRAMES    = 12,
+        ACTOR_01900_CRITICAL_EFFECT_NONE      = -1,
+        ACTOR_01900_CRITICAL_EFFECT_ROLLED    = 0,
+        ACTOR_01900_CRITICAL_EFFECT_BEHIND    = 4,
+        ACTOR_01900_SOUND_HURT                = SOUND_CHARACTER(SOUND_BANK_LESSER_STRANGER, 7),
+        ACTOR_01900_SOUND_DEATH               = SOUND_CHARACTER(SOUND_BANK_LESSER_STRANGER, 8)
+    };
+
+    PlayerStatus*    playerStatus = &gPlayerStatus;
+    _Actor01900Work* work;
+    Enemy*           enemy;
+    ActorHitScratch* hitScratch;
+    GfxCoord*        rootCoord;
+    Task*            player;
+    SVECTOR*         knockback;
+    s16              hitOffsetZ;
+    s32              hitBearing;
+    s32 // Range damage, rolled criticals and rear hits accumulate before reactions.
+        playerDeltaX;
+    s32 playerDeltaY;
+    s32 playerDeltaZ;
+    s32 deathSound;
+    s32 deathPan;
+    s32 hitSound;
+    s32 hitPan;
+    s32 absHitYaw;
+    s16 reactionState;
+    s16 criticalEffectKind;
+    u32 doubledDamage;
+
+    enemy = task->spawnArg2.pointer;
+    work  = task->work;
+    if (enemy->hp > 0) {
+        hitScratch         = SCRATCH_STACK_RESERVE_BLOCK(ActorHitScratch);
+        hitScratch->hitKey = _actor01900FindIncomingAttack(work->hitContacts, &hitScratch->hitPos);
+        // Attachment attacks use the player origin rather than the contact point.
+        if (hitScratch->hitKey != 0) {
+            if (hitScratch->hitKey & ACTOR_01900_HIT_ATTACHMENT_BIT) {
+                player                = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
+                hitScratch->hitPos.vx = player->extra.tmd->coords->workm.t[0];
+                hitScratch->hitPos.vy = player->extra.tmd->coords->workm.t[1];
+                hitScratch->hitPos.vz = player->extra.tmd->coords->workm.t[2];
+            }
+            work->circleCount                     = 0;
+            work->sidestepCount                   = 0;
+            task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+            actorRenderComposeCoord(task->extra.tmd->coords);
+            hitScratch->hitOffset.vx = task->extra.tmd->coords->workm.t[0];
+            hitScratch->hitOffset.vy = task->extra.tmd->coords->workm.t[1];
+            hitScratch->hitOffset.vz = task->extra.tmd->coords->workm.t[2];
+            hitScratch->hitOffset.vx = hitScratch->hitPos.vx - task->extra.tmd->coords->workm.t[0];
+            hitScratch->hitOffset.vy = hitScratch->hitPos.vy - task->extra.tmd->coords->workm.t[1];
+            hitOffsetZ               = hitScratch->hitPos.vz - task->extra.tmd->coords->workm.t[2];
+            hitScratch->hitOffset.vz = hitOffsetZ;
+            hitBearing               = ratan2(hitScratch->hitOffset.vx, hitOffsetZ);
+            rootCoord                = task->extra.tmd->coords;
+            hitScratch->hitYaw       = hitBearing - ratan2(-rootCoord->workm.m[2][0], rootCoord->workm.m[2][2]);
+            hitScratch->hitYaw       = _actorAngleNormalizeYaw(hitScratch->hitYaw);
+            _actor01900SpawnHitEffect(task, hitScratch->hitYaw, hitScratch->hitKey);
+            work->lookYaw              = 0;
+            work->lookYawTarget        = 0;
+            hitScratch->criticalEffect = ACTOR_01900_CRITICAL_EFFECT_NONE;
+            reactionState              = work->state;
+            if (reactionState != ACTOR_01900_STATE_FALL && reactionState != ACTOR_01900_STATE_DOWN && reactionState != ACTOR_01900_STATE_REFALL && reactionState != ACTOR_01900_STATE_RISE && reactionState != ACTOR_01900_STATE_STATUS_HOLD) {
+                hitScratch->towardHit = task->extra.tmd->coords->coord;
+                gfxRotMatrixY(&hitScratch->towardHit, hitScratch->hitYaw, GRAPHICS_ROTATION_COMPOSE);
+                knockback = &hitScratch->hitOffset;
+                gfxReadMatrixZAxis(&hitScratch->towardHit, knockback);
+                VectorNormalSS(knockback, knockback);
+                if (work->recentHitFrames > 0) {
+                    gte_lddp(-ACTOR_01900_HIT_RECENT_PUSH_STEP);
+                    gte_ldsv(knockback);
+                    gte_gpf12();
+                    gte_stsv(knockback);
+                } else {
+                    gte_lddp(-ACTOR_01900_HIT_PUSH_STEP);
+                    gte_ldsv(knockback);
+                    gte_gpf12();
+                    gte_stsv(knockback);
+                }
+                task->extra.tmd->coords->coord.t[0]  += hitScratch->hitOffset.vx;
+                task->extra.tmd->coords->coord.t[1]  += hitScratch->hitOffset.vy;
+                task->extra.tmd->coords->coord.t[2]  += hitScratch->hitOffset.vz;
+                task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+            }
+            playerDeltaX               = playerStatus->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0];
+            hitScratch->toPlayer.vx    = playerDeltaX;
+            playerDeltaY               = playerStatus->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1];
+            hitScratch->toPlayer.vy    = playerDeltaY;
+            playerDeltaZ               = playerStatus->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2];
+            hitScratch->toPlayer.vz    = playerDeltaZ;
+            hitScratch->playerDistance = SquareRoot0(playerDeltaX * playerDeltaX + playerDeltaY * playerDeltaY + playerDeltaZ * playerDeltaZ);
+            hitScratch->damage         = damageComputePlayerAttack(hitScratch->hitKey, hitScratch->playerDistance, 0, 0);
+            if (damageRollCriticalHit(enemy, hitScratch->hitKey, 0) != 0) {
+                hitScratch->critical       = 1;
+                hitScratch->criticalEffect = ACTOR_01900_CRITICAL_EFFECT_ROLLED;
+                hitScratch->damage        *= 4;
+            } else {
+                hitScratch->critical = 0;
+            }
+            absHitYaw = hitScratch->hitYaw;
+            if (absHitYaw < 0) {
+                absHitYaw = -absHitYaw;
+            }
+            if (absHitYaw > ACTOR_01900_HIT_BEHIND_YAW_LIMIT) {
+                reactionState = work->state;
+                if (reactionState != ACTOR_01900_STATE_FALL && reactionState != ACTOR_01900_STATE_DOWN && reactionState != ACTOR_01900_STATE_REFALL && reactionState != ACTOR_01900_STATE_RISE && reactionState != ACTOR_01900_STATE_STATUS_HOLD) {
+                    doubledDamage      = hitScratch->damage * 2;
+                    hitScratch->damage = doubledDamage;
+                    if (doubledDamage != 0) {
+                        hitScratch->criticalEffect = ACTOR_01900_CRITICAL_EFFECT_BEHIND;
+                    }
+                }
+            }
+            damageAccumulateLifeDrainHp(enemy, hitScratch->hitKey, hitScratch->damage, 0);
+            enemy->hp -= hitScratch->damage;
+            worldTargetAddReadoutAmount(&enemy->node, hitScratch->damage, 0);
+            work->recentDamage += hitScratch->damage;
+            criticalEffectKind  = hitScratch->criticalEffect;
+            if (criticalEffectKind != ACTOR_01900_CRITICAL_EFFECT_NONE) {
+                effectSpawn(EFFECT_CRITICAL_HIT, &task->extra.tmd->coords[2], (s32)criticalEffectKind, NULL);
+            }
+            if (work->state == ACTOR_01900_STATE_DORMANT_SCRIPTED) {
+                sndEvtRequestScriptStop(SOUND_AKROPOLIS_PATIO_STRANGER_DORMANT, SOUND_SCRIPT_STOP_KEEP_RELEASE);
+            }
+            if ((work->state == ACTOR_01900_STATE_UNUSED_0C || work->state == ACTOR_01900_STATE_UNUSED_0D) && playerStatus->hp > 0 && work->playerHeld == 1) {
+                taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER), GAME_ACTOR_MESSAGE_END_SCRIPTED, 0, 0);
+            }
+            if (enemy->hp <= 0) {
+                deathSound = ((enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_01900_SOUND_DEATH;
+                deathPan   = (s8)worldCoordGetOriginAudioPan(task->extra.tmd->coords);
+                sndEvtRequestScriptStart(deathSound, deathPan, (s8)worldCoordGetOriginAudioDepth(task->extra.tmd->coords));
+            } else {
+                hitSound = ((enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_01900_SOUND_HURT;
+                hitPan   = (s8)worldCoordGetOriginAudioPan(task->extra.tmd->coords);
+                sndEvtRequestScriptStart(hitSound, hitPan, (s8)worldCoordGetOriginAudioDepth(task->extra.tmd->coords));
+            }
+            work->hitCooldown = damageGetPlayerAttackHitCooldown(hitScratch->hitKey);
+            switch (damageGetPlayerAttackReaction(hitScratch->hitKey) & ACTOR_01900_HIT_REACTION_MASK) {
+                case ACTOR_01900_HIT_REACTION_FALL:
+                    work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+                    reactionState           = work->state;
+                    if (reactionState != ACTOR_01900_STATE_FALL && reactionState != ACTOR_01900_STATE_REFALL && reactionState != ACTOR_01900_STATE_DOWN) {
+                        if (reactionState == ACTOR_01900_STATE_RISE && work->stateTimer < ACTOR_01900_HIT_REFALL_RISE_FRAMES) {
+                            work->state = ACTOR_01900_STATE_REFALL;
+                        } else {
+                            work->state = ACTOR_01900_STATE_FALL;
+                        }
+                    }
+                    break;
+                case DAMAGE_PLAYER_REACTION_NONE:
+                case ACTOR_01900_HIT_REACTION_STANDARD:
+                case DAMAGE_PLAYER_REACTION_EXPLOSION:
+                case DAMAGE_PLAYER_REACTION_INCENDIARY:
+                    if (work->state == ACTOR_01900_STATE_DORMANT_SCRIPTED || work->state == ACTOR_01900_STATE_PATROL) {
+                        work->state = ACTOR_01900_STATE_ALERT;
+                    }
+                    reactionState = work->state;
+                    if (reactionState == ACTOR_01900_STATE_FALL || reactionState == ACTOR_01900_STATE_RISE || reactionState == ACTOR_01900_STATE_STATUS_HOLD || reactionState == ACTOR_01900_STATE_DOWN) {
+                        work->blendActive  = 1;
+                        work->blendAnimId  = ACTOR_01900_ANIM_DOWN;
+                        work->blendRequest = ACTOR_01900_ANIM_REQUEST_RESET;
+                    } else if (work->recentDamage >= ACTOR_01900_HIT_FALL_DAMAGE || hitScratch->critical == 1) {
+                        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+                        reactionState           = work->state;
+                        if (reactionState != ACTOR_01900_STATE_FALL && reactionState != ACTOR_01900_STATE_REFALL && reactionState != ACTOR_01900_STATE_DOWN) {
+                            if (reactionState == ACTOR_01900_STATE_RISE && work->stateTimer < ACTOR_01900_HIT_REFALL_RISE_FRAMES) {
+                                work->state = ACTOR_01900_STATE_REFALL;
+                            } else {
+                                work->state = ACTOR_01900_STATE_FALL;
+                            }
+                        }
+                    } else {
+                        work->blendActive  = 1;
+                        work->blendAnimId  = ACTOR_01900_ANIM_FLINCH;
+                        work->blendRequest = ACTOR_01900_ANIM_REQUEST_RESET;
+                    }
+                    break;
+                case DAMAGE_PLAYER_REACTION_BUILDUP:
+                    work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+                    damageStartEnemyBuildup(enemy, hitScratch->hitKey, 0);
+                    reactionState = work->state;
+                    if (reactionState != ACTOR_01900_STATE_DOWN && reactionState != ACTOR_01900_STATE_STATUS_HOLD) {
+                        if (reactionState == ACTOR_01900_STATE_RISE && work->stateTimer < ACTOR_01900_HIT_REFALL_RISE_FRAMES) {
+                            work->state = ACTOR_01900_STATE_REFALL;
+                        } else {
+                            work->state = ACTOR_01900_STATE_FALL;
+                        }
+                    } else {
+                        work->state = ACTOR_01900_STATE_STATUS_HOLD;
+                    }
+                    break;
+                case DAMAGE_PLAYER_REACTION_POISON:
+                    work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+                    if (work->state == ACTOR_01900_STATE_DORMANT_SCRIPTED || work->state == ACTOR_01900_STATE_PATROL) {
+                        work->state = ACTOR_01900_STATE_ALERT;
+                    }
+                    damageTryStartEnemyDamageOverTime(enemy, hitScratch->hitKey, 0);
+                    break;
+                case DAMAGE_PLAYER_REACTION_STAGGER:
+                    enemy->reactionFlags   &= ENEMY_REACTION_STAGGER_CLEAR;
+                    work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+                    reactionState           = work->state;
+                    if (reactionState != ACTOR_01900_STATE_FALL && reactionState != ACTOR_01900_STATE_REFALL && reactionState != ACTOR_01900_STATE_STATUS_HOLD && reactionState != ACTOR_01900_STATE_DOWN) {
+                        if (reactionState == ACTOR_01900_STATE_RISE && work->stateTimer < ACTOR_01900_HIT_REFALL_RISE_FRAMES) {
+                            work->state = ACTOR_01900_STATE_REFALL;
+                        } else {
+                            work->state = ACTOR_01900_STATE_FALL;
+                        }
+                    }
+                    break;
+                case ACTOR_01900_HIT_REACTION_FRONT_FALL:
+                    work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+                    reactionState           = work->state;
+                    if (reactionState != ACTOR_01900_STATE_FALL && reactionState != ACTOR_01900_STATE_REFALL && reactionState != ACTOR_01900_STATE_STATUS_HOLD && reactionState != ACTOR_01900_STATE_DOWN) {
+                        absHitYaw = hitScratch->hitYaw;
+                        if (absHitYaw < 0) {
+                            absHitYaw = -absHitYaw;
+                        }
+                        if (absHitYaw <= ACTOR_01900_HIT_BEHIND_YAW_LIMIT) {
+                            if (reactionState == ACTOR_01900_STATE_RISE && work->stateTimer < ACTOR_01900_HIT_REFALL_RISE_FRAMES) {
+                                work->state = ACTOR_01900_STATE_REFALL;
+                            } else {
+                                work->state = ACTOR_01900_STATE_FALL;
+                            }
+                        }
+                    }
+                    break;
+                case ACTOR_01900_HIT_REACTION_RESTART_FALL:
+                    work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+                    reactionState           = work->state;
+                    if (reactionState != ACTOR_01900_STATE_FALL && reactionState != ACTOR_01900_STATE_DOWN) {
+                        if (reactionState == ACTOR_01900_STATE_RISE && work->stateTimer < ACTOR_01900_HIT_REFALL_RISE_FRAMES) {
+                            work->state = ACTOR_01900_STATE_REFALL;
+                        } else {
+                            work->state = ACTOR_01900_STATE_FALL;
+                        }
+                    }
+                    break;
+            }
+            work->recentHitFrames = ACTOR_01900_HIT_RECENT_FRAMES;
+        } else if (work->recentHitFrames <= 0) {
+            work->recentDamage = 0;
+        } else {
+            work->recentHitFrames--;
+        }
+        // Damage over time also runs when this tick contains no new contact.
+        if (enemy->reactionFlags & ENEMY_REACTION_DAMAGE_OVER_TIME_BITS) {
+            hitScratch->damage = damageTickEnemyDamageOverTime(enemy);
+            if (damageIsEnemyDamageOverTimeExpired(enemy) != 0) {
+                enemy->reactionFlags &= ENEMY_REACTION_DAMAGE_OVER_TIME_CLEAR;
+            }
+            if (hitScratch->damage != 0) {
+                work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+                enemy->hp              -= hitScratch->damage;
+                worldTargetAddReadoutAmount(&enemy->node, hitScratch->damage, 0);
+                reactionState = work->state;
+                if (reactionState == ACTOR_01900_STATE_CHASE || reactionState == ACTOR_01900_STATE_STRIKE || reactionState == ACTOR_01900_STATE_APPROACH || reactionState == ACTOR_01900_STATE_ALERT_REPEAT) {
+                    work->state = ACTOR_01900_STATE_FLINCH;
+                } else if (reactionState == ACTOR_01900_STATE_STATUS_HOLD) {
+                    work->prevState = ACTOR_01900_STATE_REENTER;
+                } else if (reactionState != ACTOR_01900_STATE_RISE) {
+                    if (reactionState == ACTOR_01900_STATE_FALL || reactionState == ACTOR_01900_STATE_DOWN) {
+                        work->blendActive  = 1;
+                        work->blendAnimId  = ACTOR_01900_ANIM_DOWN;
+                        work->blendRequest = ACTOR_01900_ANIM_REQUEST_RESET;
+                    } else {
+                        work->blendActive  = 1;
+                        work->blendAnimId  = ACTOR_01900_ANIM_FLINCH;
+                        work->blendRequest = ACTOR_01900_ANIM_REQUEST_RESET;
+                    }
+                }
+            }
+        }
+        if (enemy->hp <= 0) {
+            if (hitScratch->hitKey != 0) {
+                if ((damageGetPlayerAttackReaction(hitScratch->hitKey) & ACTOR_01900_HIT_REACTION_MASK) == ACTOR_01900_HIT_REACTION_FALL || (damageGetPlayerAttackReaction(hitScratch->hitKey) & ACTOR_01900_HIT_REACTION_MASK) == DAMAGE_PLAYER_REACTION_EXPLOSION) {
+                    if (work->animId == ACTOR_01900_ANIM_WALK || work->animId == ACTOR_01900_ANIM_RUN) {
+                        work->state = ACTOR_01900_STATE_DEATH_BURST_WALK;
+                    } else {
+                        work->state = ACTOR_01900_STATE_DEATH_BURST;
+                    }
+                } else if (work->state == ACTOR_01900_STATE_RISE && work->stateTimer < ACTOR_01900_HIT_REFALL_RISE_FRAMES) {
+                    work->state = ACTOR_01900_STATE_REFALL;
+                } else if (work->state == ACTOR_01900_STATE_STATUS_HOLD) {
+                    work->state = ACTOR_01900_STATE_REFALL;
+                } else if (work->state != ACTOR_01900_STATE_FALL && work->state != ACTOR_01900_STATE_REFALL && work->state != ACTOR_01900_STATE_DOWN) {
+                    work->state = ACTOR_01900_STATE_FALL;
+                }
+            } else if (work->state == ACTOR_01900_STATE_RISE && work->stateTimer < ACTOR_01900_HIT_REFALL_RISE_FRAMES) {
+                work->state = ACTOR_01900_STATE_REFALL;
+            } else if (work->state != ACTOR_01900_STATE_FALL && work->state != ACTOR_01900_STATE_REFALL && work->state != ACTOR_01900_STATE_DOWN && work->state != ACTOR_01900_STATE_DEATH_BURN && work->state != ACTOR_01900_STATE_HIDDEN && work->state != ACTOR_01900_STATE_DEATH_BURST && work->state != ACTOR_01900_STATE_DEATH_BURST_WALK) {
+                work->state = ACTOR_01900_STATE_FALL;
+            }
+        }
+        SCRATCH_STACK_RELEASE_BLOCK(ActorHitScratch);
+    }
+}
+
+/// Enables the actor's combat-model drawing and targeting and requests its buffers.
+///
+/// Both borrowed objects must be live and belong to the same initialized actor.
+/// Clears all model and target presentation flags. A missing primitive buffer is
+/// allocated from the configured auxiliary heap; existing buffers are retained,
+/// allocation failure is ignored here and ownership remains with the model.
+static inline void _actor01900EnableCombatModel(Enemy* enemy, TmdObject* model)
+{
+    enemy->node.state.parts.flags = 0;
+    model->flags                  = 0;
+    tmdAllocPrimitiveBuffer(model);
+}
+
+/// Holds the status-buildup pose with alternating forward and reverse twitches.
+///
+/// Entry restarts the status clip and advances its low-ten-bit record index to
+/// at least 6. Later ticks halve the signed rate, restarting at -1 frame per tick
+/// when it reaches +1/16 and at +1 frame when it reaches -1/16. Buildup expiry or
+/// death selects `ACTOR_01900_STATE_DOWN`. Reverse playback requires bank-backed
+/// current endpoints; the task and loaded rig must remain live throughout.
+static void _actor01900StateStatusHold(Task* task)
+{
+    _Actor01900Work* work;
+    Enemy*           enemy;
+    TmdObject*       model;
+    s32              nextRate;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(enemy, model);
+        work->animRequest     = ACTOR_01900_ANIM_REQUEST_RESET;
+        work->animRate        = ANIMATION_RATE_ONE;
+        work->animId          = ACTOR_01900_ANIM_STATUS_HOLD;
+        work->gridBody.flags |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        // Restart on bank poses and advance before the first backward playback.
+        do {
+            _actor01900UpdateAnimation(task);
+        } while ((u32)(work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) < 6U);
+        work->animRate = 2 * ANIMATION_RATE_ONE;
+        return;
+    }
+    // Halving the signed rate alternates decaying forward and reverse twitches.
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    nextRate                              = (s16)work->animRate / 2;
+    work->animRate                        = (u16)nextRate;
+    if (nextRate == 1) {
+        work->animRate = -ANIMATION_RATE_ONE;
+    }
+    if ((s16)work->animRate == -1) {
+        work->animRate = ANIMATION_RATE_ONE;
+    }
+    _actor01900UpdateAnimation(task);
+    if (damageTickEnemyBuildup(enemy) == 1) {
+        enemy->reactionFlags &= ENEMY_REACTION_BUILDUP_CLEAR;
+        work->state           = ACTOR_01900_STATE_DOWN;
+    }
+    if (enemy->hp <= 0) {
+        work->state = ACTOR_01900_STATE_DOWN;
+    }
+}
+
+/// Engages battle when a non-scripted player is within 500 vertical units.
+///
+/// Both live model roots must share a parent frame and the player task must exist.
+/// The range is strict and ignores X/Z. Returns 1 when the battle-engage request
+/// is made, even if battle was already engaged; otherwise returns 0.
+static inline s32 _actor01900EngageBattleIfPlayerLevel(Task* task)
+{
+    enum { ACTOR_01900_BATTLE_HEIGHT_RANGE = 500 };
+
+    Task* player;
+    s32   heightDifference;
+
+    player = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
+    if (((GameActor*)player->work)->mode != GAME_ACTOR_MODE_SCRIPTED) {
+        heightDifference = task->extra.tmd->coords->coord.t[1] - player->extra.tmd->coords->coord.t[1];
+        if (ABS(heightDifference) < ACTOR_01900_BATTLE_HEIGHT_RANGE) {
+            sceneEngageBattle(1);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/// Plays the alert and turns toward the player before starting pursuit.
+///
+/// Entry enables model drawing, disables attack and room-grid response and
+/// engages battle outside the cached Patio command namespace. Later ticks turn
+/// by at most 16/4096 of a turn, retaining the full player turn for look yaw.
+/// A settled alert pose selects `ACTOR_01900_STATE_CHASE`. Requires initialized
+/// work and live actor/player roots in the same parent frame.
+static void _actor01900StateAlert(Task* task)
+{
+    enum {
+        ACTOR_01900_ALERT_TURN_STEP = ACTOR_TRANSFORM_ANGLE_TURN / 256
+    };
+
+    _Actor01900Work*   work;
+    ActorChaseScratch* turnScratch;
+    GfxCoord*          rootCoord;
+    TmdObject*         model;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->animRequest      = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animRate         = ANIMATION_RATE_ONE;
+        work->animId           = ACTOR_01900_ANIM_ALERT;
+        work->blendActive      = 0;
+        work->attackBody.flags = (u16)(work->attackBody.flags & (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED));
+        work->gridBody.flags   = (u16)(work->gridBody.flags & (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED));
+        _actor01900UpdateAnimation(task);
+        work->hitBody.radius = ACTOR_01900_BODY_RADIUS;
+        if (*(u16*)work->commandBytes != ((GAME_AREA_AKROPOLIS_PATIO << 8) | GAME_STAGE_AKROPOLIS)) {
+            _actor01900EngageBattleIfPlayerLevel(task);
+        }
+    } else {
+        SCRATCH_STACK_RESERVE_BLOCK(ActorChaseScratch);
+        turnScratch                           = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+        task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+        if (work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) {
+            work->state = ACTOR_01900_STATE_CHASE;
+        }
+        turnScratch->turn   = _actorAngleTurnToPlayer(task, &turnScratch->delta, &gPlayerStatus);
+        work->lookYawTarget = turnScratch->turn;
+        if (turnScratch->turn >= ACTOR_01900_ALERT_TURN_STEP + 1) {
+            turnScratch->turn = ACTOR_01900_ALERT_TURN_STEP;
+        }
+        if (turnScratch->turn < -ACTOR_01900_ALERT_TURN_STEP) {
+            turnScratch->turn = -ACTOR_01900_ALERT_TURN_STEP;
+        }
+        rootCoord          = task->extra.tmd->coords;
+        turnScratch->turn += ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]);
+        gfxRotMatrixY(&task->extra.tmd->coords->coord, turnScratch->turn, GRAPHICS_ROTATION_REPLACE);
+        _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+        _actor01900UpdateAnimation(task);
+        SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+    }
+}
+
+/// Clamps the root's parent-space Y translation for a configured stage and area.
+///
+/// Scans the two active rows, ignoring view and game mode. The first matching row
+/// sets an inclusive minimum/maximum; no match leaves translation unchanged.
+/// The caller must invalidate composition after a change.
+static void _actor01900ClampRootHeight(const GameLocationKey* location, GfxCoord* coord)
+{
+    const ActorHeightClamp* row;
+    s32                     rootY;
+    s32                     minY;
+    s16                     rowIndex;
+
+    for (rowIndex = 0; rowIndex < ACTOR_01900_HEIGHT_CLAMP_COUNT; rowIndex++) {
+        row = &_gActor01900RoomHeightClamps[rowIndex];
+        if (location->stage == row->stage && location->area == row->area) {
+            minY  = row->minY;
+            rootY = coord->coord.t[1];
+            if (rootY < minY) {
+                coord->coord.t[1] = minY;
+            } else if (row->maxY < rootY) {
+                coord->coord.t[1] = row->maxY;
+            }
+            return;
+        }
+    }
+}
+
+/// Returns 1 when the stage and area have an active height-clamp row, else 0.
+///
+/// View and game mode do not participate; the third zero row is not scanned.
+static inline s32 _actor01900HasHeightClamp(const GameLocationKey* location)
+{
+    const ActorHeightClamp* row;
+    s16                     rowIndex;
+
+    for (rowIndex = 0; rowIndex < ACTOR_01900_HEIGHT_CLAMP_COUNT; rowIndex++) {
+        row = &_gActor01900RoomHeightClamps[rowIndex];
+        if (location->stage == row->stage && location->area == row->area) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/// Applies capped room-grid correction and the configured height adjustment.
+///
+/// Borrows `contactCount` readable records, in 1..12, and a writable coordinate
+/// in their room frame. The resolver writes 16.16 corrections; X/Z whole units
+/// are capped to a 192-unit step, then fractional remainders add signed units.
+/// In height-clamped rooms, Y correction is capped to 384 units, the coordinate
+/// is clamped and `heightOffset` parent-space units are added even without a hit.
+/// Returns 1 for nonzero raw X/Z correction, else 0; vertical-only changes return
+/// 0. Freeze equal to 1 skips all work. Does not invalidate composition. Reserves
+/// one scratch block plus nested resolver space and retains no pointers.
+static s32 _actor01900ApplyCappedGridPushback(GfxCoord* coord, const WorldCollisionContact* contacts, s16 contactCount, s16 heightOffset)
+{
+    enum {
+        ACTOR_01900_GRID_VERTICAL_LIMIT   = 384,
+        ACTOR_01900_GRID_HORIZONTAL_LIMIT = 192,
+        ACTOR_01900_FIXED_FRACTION_BITS   = 16,
+        ACTOR_01900_FIXED_FRACTION_MASK   = 0xFFFF
+    };
+
+    ActorContactCappedPushScratch* scratchEnd;
+    ActorContactCappedPushScratch* scratch;
+    s16                            verticalStep;
+    SVECTOR*                       displacement;
+
+    if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.actorsFrozen == 1) {
+        return 0;
+    }
+    scratchEnd                                          = SCRATCH_STACK_CURSOR(ActorContactCappedPushScratch);
+    SCRATCH_STACK_CURSOR(ActorContactCappedPushScratch) = scratchEnd - 1;
+    scratch                                             = SCRATCH_STACK_CURSOR(ActorContactCappedPushScratch);
+    scratch->moved                                      = 0;
+    if (worldCollisionResolvePushback(contacts, &scratch->delta, contactCount, NULL) != WORLD_COLLISION_PUSHBACK_NO_GRID_HIT) {
+        // Apply whole 16.16 correction units, capping the horizontal displacement.
+        scratch->step.vx = scratchEnd[-1].delta.fixed.vx.word >> ACTOR_01900_FIXED_FRACTION_BITS;
+        scratch->step.vy = scratch->delta.fixed.vy.word >> ACTOR_01900_FIXED_FRACTION_BITS;
+        scratch->step.vz = scratch->delta.fixed.vz.word >> ACTOR_01900_FIXED_FRACTION_BITS;
+        if (_actor01900HasHeightClamp(&gGameSession->location)) {
+            verticalStep = scratch->step.vy;
+            if (((verticalStep >= 0) ? verticalStep : -verticalStep) > ACTOR_01900_GRID_VERTICAL_LIMIT) {
+                scratch->step.vy = (verticalStep <= 0) ? -ACTOR_01900_GRID_VERTICAL_LIMIT : ACTOR_01900_GRID_VERTICAL_LIMIT;
+            }
+        }
+        coord->coord.t[1]  += scratch->step.vy;
+        scratch->stepLength = scratch->step.vx * scratch->step.vx + scratch->step.vz * scratch->step.vz;
+        scratch->stepLength = SquareRoot0(scratch->stepLength);
+        displacement        = &scratch->step;
+        if (scratch->stepLength >= ACTOR_01900_GRID_HORIZONTAL_LIMIT) {
+            scratch->step.vy = 0;
+            _actorMovementBuildDisplacement(displacement, ACTOR_01900_GRID_HORIZONTAL_LIMIT);
+            coord->coord.t[0] += scratch->step.vx;
+            coord->coord.t[2] += scratch->step.vz;
+        } else {
+            coord->coord.t[0] += scratch->step.vx;
+            coord->coord.t[2] += scratch->step.vz;
+        }
+        // Preserve the one-unit signed correction for each fractional X/Z remainder.
+        if (scratch->delta.fixed.vx.word & ACTOR_01900_FIXED_FRACTION_MASK) {
+            if (scratch->delta.fixed.vx.word > 0) {
+                coord->coord.t[0]++;
+            } else {
+                coord->coord.t[0]--;
+            }
+        }
+        if (scratch->delta.fixed.vz.word & ACTOR_01900_FIXED_FRACTION_MASK) {
+            if (scratch->delta.fixed.vz.word > 0) {
+                coord->coord.t[2]++;
+            } else {
+                coord->coord.t[2]--;
+            }
+        }
+    }
+    if (_actor01900HasHeightClamp(&gGameSession->location)) {
+        _actor01900ClampRootHeight(&gGameSession->location, coord);
+        coord->coord.t[1] += heightOffset;
+    }
+    if (scratch->delta.fixed.vx.word != 0 || scratch->delta.fixed.vz.word != 0) {
+        scratch->moved = 1;
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(ActorContactCappedPushScratch);
+    return scratch->moved;
+}
+
+/// Pushes the root away from contacted player and enemy bodies.
+///
+/// `contacts` borrows `contactCount` records, with `contactCount` in 0..12. A zero key
+/// ends the scan. Each qualifying record contributes half its X/Z offset, capped
+/// to 192 units before halving; Y translation is untouched. The measurement
+/// origin is model coordinate 1 composed into view space. Root translations must
+/// use those same axes. Returns 1 when a qualifying record was processed, even
+/// for a zero offset, otherwise 0. Freeze or viewReady equal to 1 skips the scan.
+/// The scratch stack needs one `ActorBodyPushScratch` block; no pointer is retained.
+static s32 _actor01900ApplyBodyPushback(Task* task, const WorldCollisionContact* contacts, s16 contactCount)
+{
+    enum { ACTOR_01900_BODY_PUSH_LIMIT = 192 };
+
+    ActorBodyPushScratch* scratch;
+
+    if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.actorsFrozen == 1 || gGameSession->viewReady == 1) {
+        return 0;
+    }
+    task->extra.tmd->coords[1].composeStamp = GRAPHICS_COORD_DIRTY;
+    scratch                                 = SCRATCH_STACK_RESERVE_BLOCK(ActorBodyPushScratch);
+    actorRenderComposeCoord(&task->extra.tmd->coords[1]);
+    scratch->position.vx = task->extra.tmd->coords[1].workm.t[0];
+    scratch->position.vy = task->extra.tmd->coords[1].workm.t[1];
+    scratch->position.vz = task->extra.tmd->coords[1].workm.t[2];
+    scratch->hit         = 0;
+    for (scratch->recordIndex = 0; scratch->recordIndex < contactCount; scratch->recordIndex++) {
+        if (contacts[scratch->recordIndex].key.value == 0) {
+            scratch->marks[scratch->recordIndex] = ACTOR_BODY_PUSH_MARK_END;
+            break;
+        }
+        scratch->kind = contacts[scratch->recordIndex].key.value & WORLD_COLLISION_CONTACT_KIND_MASK;
+        if (scratch->kind == WORLD_COLLISION_CONTACT_PLAYER_BODY || scratch->kind == WORLD_COLLISION_CONTACT_ENEMY_BODY) {
+            scratch->hit = 1;
+            worldCollisionCalcContactWorldOffset(&scratch->position, &contacts[scratch->recordIndex], &scratch->offset);
+            scratch->offsetLength = scratch->offset.vx * scratch->offset.vx + scratch->offset.vz * scratch->offset.vz;
+            scratch->offsetLength = SquareRoot0(scratch->offsetLength);
+            if (scratch->offsetLength >= ACTOR_01900_BODY_PUSH_LIMIT) {
+                scratch->offset.vy = 0;
+                _actorMovementBuildDisplacement(&scratch->offset, ACTOR_01900_BODY_PUSH_LIMIT);
+                task->extra.tmd->coords->coord.t[0] += scratch->offset.vx / 2;
+                task->extra.tmd->coords->coord.t[2] += scratch->offset.vz / 2;
+            } else {
+                task->extra.tmd->coords->coord.t[0] += scratch->offset.vx / 2;
+                task->extra.tmd->coords->coord.t[2] += scratch->offset.vz / 2;
+            }
+            task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+        }
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(ActorBodyPushScratch);
+    return scratch->hit;
+}
+
+/// Pursues the player, selecting a sidestep, strike or repeated alert.
+///
+/// Entry enables drawing and grid response, starts the run clip and resets its
+/// timers. Subsequent ticks resolve contacts before steering and forward movement.
+/// Clear sight permits attack and repeated-alert transitions; blocked sight adds
+/// a signed veer. The strike turn test retains its one-sided comparison.
+/// Requires initialized work and live actor/player roots in the same parent frame.
+static void _actor01900StateChase(Task* task)
+{
+    enum {
+        ACTOR_01900_CHASE_RUN_RATE            = 66,
+        ACTOR_01900_CHASE_STEP_DISTANCE       = 40,
+        ACTOR_01900_CHASE_BLEND_STEP_DISTANCE = 10,
+        ACTOR_01900_CHASE_HIT_BODY_GRID_MODE  = 0x10,
+        ACTOR_01900_CHASE_HEIGHT_OFFSET       = 96,
+        ACTOR_01900_CHASE_PLAYER_FACING_LIMIT = 68,
+        ACTOR_01900_CHASE_SIDESTEP_TURN_LIMIT = 128,
+        ACTOR_01900_CHASE_TURN_STEP           = 48,
+        ACTOR_01900_CHASE_SIDESTEP_RANGE      = 1800,
+        ACTOR_01900_CHASE_STRIKE_RANGE        = 700,
+        ACTOR_01900_CHASE_STRIKE_TURN_LIMIT   = ACTOR_TRANSFORM_ANGLE_TURN / 8,
+        ACTOR_01900_CHASE_ALERT_TICKS         = 91,
+        ACTOR_01900_CHASE_SIDE_SWITCH_TICKS   = 241,
+        ACTOR_01900_CHASE_BLOCKED_TURN_BIAS   = 3 * ACTOR_TRANSFORM_ANGLE_TURN / 16
+    };
+
+    _Actor01900Work*   work;
+    TmdObject*         model;
+    GfxCoord*          rootCoord;
+    GfxCoord*          facingCoord;
+    ActorChaseScratch* chase;
+    s32                playerFacingError;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->hitBody.radius    = ACTOR_01900_BODY_RADIUS;
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animRate          = ACTOR_01900_CHASE_RUN_RATE;
+        work->animId            = ACTOR_01900_ANIM_RUN;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        _actor01900UpdateAnimation(task);
+        work->circleCount = 0;
+        if (*(u16*)work->commandBytes != ((GAME_AREA_AKROPOLIS_PATIO << 8) | GAME_STAGE_AKROPOLIS)) {
+            _actor01900EngageBattleIfPlayerLevel(task);
+        }
+        work->stateTimer   = 0;
+        work->stateCounter = 0;
+        if ((task->spawnArg1.value >> 16) == ACTOR_01900_CHASE_HIT_BODY_GRID_MODE) {
+            work->hitBody.flags |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        }
+        return;
+    }
+    work->stateTimer++;
+    work->stateCounter++;
+    SCRATCH_STACK_RESERVE_BLOCK(ActorChaseScratch);
+    chase = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+    // Resolve the grid before body overlaps, then choose pursuit or evasion.
+    if (_actor01900ApplyCappedGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts), ACTOR_01900_CHASE_HEIGHT_OFFSET) != 1) {
+        if (_actorContactApplyGridPushback(task->extra.tmd->coords, work->hitContacts, ARRAY_SIZE(work->hitContacts)) != 1) {
+            _actor01900ApplyBodyPushback(task, work->hitContacts, ARRAY_SIZE(work->hitContacts));
+        }
+    }
+    _actorPositionDeltaToPlayer(&gPlayerStatus, task->extra.tmd->coords, &chase->delta);
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    _actor01900UpdateAnimation(task);
+    chase->playerYaw = ratan2(-(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER))->extra.tmd->coords->coord.m[2][0],
+                              (gameGetTaskSlot(GAME_TASK_SLOT_PLAYER))->extra.tmd->coords->coord.m[2][2]);
+    _actorPositionDeltaToPlayer(&gPlayerStatus, task->extra.tmd->coords, &chase->delta);
+    chase->yawFromPlayer = ratan2(chase->delta.vx, chase->delta.vz) + ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+    chase->yawFromPlayer = _actorAngleNormalizeYaw(chase->yawFromPlayer);
+    rootCoord            = task->extra.tmd->coords;
+    chase->turn          = _actorAngleNormalizeYaw(ratan2(chase->delta.vx, chase->delta.vz) - ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]));
+    work->lookYawTarget  = chase->turn;
+    playerFacingError    = chase->yawFromPlayer - chase->playerYaw;
+    if (ABS(playerFacingError) < ACTOR_01900_CHASE_PLAYER_FACING_LIMIT && work->sidestepDelay + work->sidestepCount / 2 < work->stateTimer && ABS(chase->turn) < ACTOR_01900_CHASE_SIDESTEP_TURN_LIMIT) {
+        if (_actorRangeOutsideRadiusXZ(&chase->delta, ACTOR_01900_CHASE_SIDESTEP_RANGE)) {
+            work->state = ACTOR_01900_STATE_SIDESTEP;
+        }
+    }
+    if (_playerDetectionSightBlocked(task) != 1) {
+        work->stateTimer++;
+        rootCoord           = task->extra.tmd->coords;
+        chase->turn         = _actorAngleNormalizeYaw(ratan2(chase->delta.vx, chase->delta.vz) - ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]));
+        work->lookYawTarget = chase->turn;
+        if (chase->turn < ACTOR_01900_CHASE_STRIKE_TURN_LIMIT) {
+            if (!_actorRangeOutsideRadiusXZ(&chase->delta, ACTOR_01900_CHASE_STRIKE_RANGE)) {
+                work->state = ACTOR_01900_STATE_STRIKE;
+            }
+        }
+        if (work->stateCounter >= ACTOR_01900_CHASE_ALERT_TICKS) {
+            work->state = ACTOR_01900_STATE_ALERT_REPEAT;
+        }
+    } else {
+        work->stateTimer    = 0;
+        work->stateCounter  = 0;
+        rootCoord           = task->extra.tmd->coords;
+        chase->turn         = _actorAngleNormalizeYaw(ratan2(chase->delta.vx, chase->delta.vz) - ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]));
+        work->lookYawTarget = chase->turn;
+        if (work->sidestepSide == 0) {
+            RANDOM_LCG_ADVANCE();
+            if (RANDOM_LCG_DRAW() & 1) {
+                work->sidestepSide = -1;
+            } else {
+                work->sidestepSide = 1;
+            }
+        }
+        if (work->sidestepSide == 1) {
+            chase->turn += ACTOR_01900_CHASE_BLOCKED_TURN_BIAS;
+        } else {
+            chase->turn -= ACTOR_01900_CHASE_BLOCKED_TURN_BIAS;
+        }
+        if (work->stateTimer >= ACTOR_01900_CHASE_SIDE_SWITCH_TICKS) {
+            work->stateTimer   = 0;
+            work->sidestepSide = -work->sidestepSide;
+        }
+    }
+    // Steer the root and rebuild its uniform scale before translating it.
+    if (chase->turn > ACTOR_01900_CHASE_TURN_STEP) {
+        chase->turn = ACTOR_01900_CHASE_TURN_STEP;
+    }
+    if (chase->turn < -ACTOR_01900_CHASE_TURN_STEP) {
+        chase->turn = -ACTOR_01900_CHASE_TURN_STEP;
+    }
+    facingCoord  = task->extra.tmd->coords;
+    chase->turn += ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
+    gfxRotMatrixY(&task->extra.tmd->coords->coord, chase->turn, GRAPHICS_ROTATION_REPLACE);
+    _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    if (work->animId == ACTOR_01900_ANIM_RUN) {
+        if (work->blendActive == 0) {
+            _actorMovementStepForward(task->extra.tmd->coords, ACTOR_01900_CHASE_STEP_DISTANCE);
+        } else {
+            _actorMovementStepForward(task->extra.tmd->coords, ACTOR_01900_CHASE_BLEND_STEP_DISTANCE);
+        }
+    } else if (work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) {
+        work->animId      = ACTOR_01900_ANIM_RUN;
+        work->animRequest = ACTOR_01900_ANIM_REQUEST_BLEND;
+    }
+    if (work->field_C37 != 0) {
+        work->field_C37--;
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+}
+
+/// Measures the player's heading and wrapped bearing back to this actor.
+///
+/// `scratch->delta` is the signed-halfword player-minus-actor offset in the live
+/// roots' common parent frame. The registered player must have a live model root.
+/// Writes `playerYaw` and `yawFromPlayer` in 4096ths of a turn, the latter in
+/// [-2048, 2048]. Borrows caller-owned scratch without reserving or retaining it.
+static inline void _actor01900MeasurePlayerFacing(ActorChaseScratch* scratch)
+{
+    scratch->playerYaw     = ratan2(-gameGetTaskSlot(GAME_TASK_SLOT_PLAYER)->extra.tmd->coords->coord.m[2][0],
+                                    gameGetTaskSlot(GAME_TASK_SLOT_PLAYER)->extra.tmd->coords->coord.m[2][2]);
+    scratch->yawFromPlayer = ratan2(scratch->delta.vx, scratch->delta.vz) + ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+    scratch->yawFromPlayer = _actorAngleNormalizeYaw(scratch->yawFromPlayer);
+}
+
+/// Runs around the player while accelerating and then easing its animation rate.
+///
+/// Steers toward a heading about 1000/4096 turn from the player bearing, with
+/// each turn limited to 96/4096. Grid corrections count toward a slide; after
+/// deceleration, a player facing within a quarter-turn can also select slide.
+/// Forward distance follows the animation rate, halves while blending and drops
+/// to two units after a grid correction. Requires initialized work and live roots.
+static void _actor01900StateCircle(Task* task)
+{
+    enum {
+        ACTOR_01900_CIRCLE_ACCELERATION        = 8,
+        ACTOR_01900_CIRCLE_DECELERATION        = -1,
+        ACTOR_01900_CIRCLE_PEAK_RATE           = 24,
+        ACTOR_01900_CIRCLE_CRUISE_RATE         = 18,
+        ACTOR_01900_CIRCLE_COAST_TICKS         = 5,
+        ACTOR_01900_CIRCLE_GRID_PUSH_LIMIT     = 7,
+        ACTOR_01900_STATE_REENTER              = -1,
+        ACTOR_01900_CIRCLE_TANGENT_YAW         = 1000,
+        ACTOR_01900_CIRCLE_TURN_STEP           = 96,
+        ACTOR_01900_CIRCLE_PLAYER_FACING_LIMIT = ACTOR_TRANSFORM_ANGLE_TURN / 4
+    };
+
+    _Actor01900Work*   work;
+    TmdObject*         model;
+    GfxCoord*          rootCoord;
+    GfxCoord*          facingCoord;
+    ActorChaseScratch* chase;
+    s32                playerTurn;
+    s32                positiveTangentError;
+    s32                negativeTangentError;
+    s32                playerFacingError;
+    s32                normalizedPlayerBearing;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->hitBody.radius    = ACTOR_01900_COMPACT_BODY_RADIUS;
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animId            = ACTOR_01900_ANIM_RUN;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        _actor01900UpdateAnimation(task);
+        work->circleRateStep     = ACTOR_01900_CIRCLE_ACCELERATION;
+        work->stateTimer         = 0;
+        work->stateCounter       = 0;
+        _gActor01900CircleTravel = 0;
+        work->circleCount++;
+        return;
+    }
+    SCRATCH_STACK_RESERVE_BLOCK(ActorChaseScratch);
+    chase                                 = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    _actor01900UpdateAnimation(task);
+    if (_actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts)) != 0) {
+        work->stateCounter++;
+    } else {
+        _actor01900ApplyBodyPushback(task, work->hitContacts, ARRAY_SIZE(work->hitContacts));
+    }
+    _actorPositionDeltaToPlayer(&gPlayerStatus, task->extra.tmd->coords, &chase->delta);
+    if (work->stateCounter >= ACTOR_01900_CIRCLE_GRID_PUSH_LIMIT) {
+        _actor01900MeasurePlayerFacing(chase);
+        work->state = ACTOR_01900_STATE_SLIDE;
+    }
+    rootCoord   = task->extra.tmd->coords;
+    chase->turn = _actorAngleNormalizeYaw(ratan2(chase->delta.vx, chase->delta.vz) - ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]));
+    // Stay approximately a quarter-turn from the player bearing to circle them.
+    playerTurn = chase->turn;
+    if (playerTurn >= 0) {
+        positiveTangentError = playerTurn - ACTOR_01900_CIRCLE_TANGENT_YAW;
+        if (((positiveTangentError < 0) ? -positiveTangentError : positiveTangentError) < ACTOR_01900_CIRCLE_TURN_STEP) {
+            chase->heading = chase->turn - ACTOR_01900_CIRCLE_TANGENT_YAW;
+        } else if (positiveTangentError > 0) {
+            chase->heading = ACTOR_01900_CIRCLE_TURN_STEP;
+        } else {
+            chase->heading = -ACTOR_01900_CIRCLE_TURN_STEP;
+        }
+    } else {
+        negativeTangentError = playerTurn + ACTOR_01900_CIRCLE_TANGENT_YAW;
+        if (((negativeTangentError < 0) ? -negativeTangentError : negativeTangentError) < ACTOR_01900_CIRCLE_TURN_STEP) {
+            chase->heading = chase->turn + ACTOR_01900_CIRCLE_TANGENT_YAW;
+        } else if (negativeTangentError > 0) {
+            chase->heading = ACTOR_01900_CIRCLE_TURN_STEP;
+        } else {
+            chase->heading = -ACTOR_01900_CIRCLE_TURN_STEP;
+        }
+    }
+    facingCoord     = task->extra.tmd->coords;
+    chase->heading += ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
+    gfxRotMatrixY(&task->extra.tmd->coords->coord, chase->heading, GRAPHICS_ROTATION_REPLACE);
+    _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+    rootCoord                             = task->extra.tmd->coords;
+    work->lookYawTarget                   = _actorAngleNormalizeYaw(ratan2(chase->delta.vx, chase->delta.vz) - ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]));
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    work->runStep                         = work->animRate * 8;
+    if (work->blendActive != 0) {
+        work->runStep = work->runStep >> 1;
+    }
+    if (work->stateCounter != 0) {
+        work->runStep = 2;
+    }
+    _actorMovementTranslateForwardNonzero(task->extra.tmd->coords, work->runStep);
+    _gActor01900CircleTravel += work->runStep;
+    // Accelerate, ease back to the cruising rate, then test whether to slide.
+    if (work->circleRateStep == ACTOR_01900_CIRCLE_ACCELERATION && work->animRate >= ACTOR_01900_CIRCLE_PEAK_RATE) {
+        work->circleRateStep = ACTOR_01900_CIRCLE_DECELERATION;
+    }
+    if (work->circleRateStep == ACTOR_01900_CIRCLE_DECELERATION && work->animRate == ACTOR_01900_CIRCLE_CRUISE_RATE) {
+        work->circleRateStep = 0;
+        work->stateTimer     = 0;
+    }
+    if (work->circleRateStep == 0) {
+        if (++work->stateTimer == ACTOR_01900_CIRCLE_COAST_TICKS) {
+            chase->playerYaw = ratan2(-(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER))->extra.tmd->coords->coord.m[2][0],
+                                      (gameGetTaskSlot(GAME_TASK_SLOT_PLAYER))->extra.tmd->coords->coord.m[2][2]);
+            _actorPositionDeltaToPlayer(&gPlayerStatus, task->extra.tmd->coords, &chase->delta);
+            chase->yawFromPlayer    = ratan2(chase->delta.vx, chase->delta.vz) + ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+            normalizedPlayerBearing = _actorAngleNormalizeYaw(chase->yawFromPlayer);
+            chase->yawFromPlayer    = normalizedPlayerBearing;
+            playerFacingError       = normalizedPlayerBearing - chase->playerYaw;
+            if (playerFacingError < 0) {
+                playerFacingError = -playerFacingError;
+            }
+            if (playerFacingError <= ACTOR_01900_CIRCLE_PLAYER_FACING_LIMIT) {
+                work->state     = ACTOR_01900_STATE_SLIDE;
+                work->prevState = ACTOR_01900_STATE_REENTER;
+            }
+        }
+    }
+    work->animRate += work->circleRateStep;
+    SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+}
+
+/// Turns through the player bearing to a reflected heading before circling.
+///
+/// Entry stores the root yaw and a signed-halfword target equal to that yaw plus
+/// twice the relative player turn. Ticks approach it by 137/4096 turn while moving
+/// and resolving contacts. At the target, fewer than two circles or range
+/// at least 900 parent-space units selects circle. Yaw comparison retains signed linear
+/// ordering without wrapping the difference. Requires initialized work and live roots.
+static void _actor01900StateTurnAround(Task* task)
+{
+    enum {
+        ACTOR_01900_TURN_AROUND_STEP_DISTANCE       = 40,
+        ACTOR_01900_TURN_AROUND_BLEND_STEP_DISTANCE = 20,
+        ACTOR_01900_TURN_AROUND_STEP                = 137,
+        ACTOR_01900_TURN_AROUND_CIRCLE_RANGE        = 900
+    };
+
+    _Actor01900Work*   work;
+    TmdObject*         model;
+    GfxCoord*          rootCoord;
+    GfxCoord*          facingCoord;
+    ActorChaseScratch* scratchEnd;
+    ActorChaseScratch* turnScratch;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        scratchEnd                              = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+        model                                   = task->extra.tmd;
+        SCRATCH_STACK_CURSOR(ActorChaseScratch) = scratchEnd - 1;
+        turnScratch                             = scratchEnd - 1;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->hitBody.radius    = ACTOR_01900_BODY_RADIUS;
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animRate          = ANIMATION_RATE_ONE;
+        work->animId            = ACTOR_01900_ANIM_RUN;
+        work->blendActive       = 0;
+        work->lookYawTarget     = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        _actor01900UpdateAnimation(task);
+        _actorPositionDeltaToPlayer(&gPlayerStatus, task->extra.tmd->coords, &turnScratch->delta);
+        rootCoord            = task->extra.tmd->coords;
+        turnScratch->turn    = _actorAngleNormalizeYaw(ratan2(scratchEnd[-1].delta.vx, turnScratch->delta.vz) - ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]));
+        facingCoord          = task->extra.tmd->coords;
+        turnScratch->heading = ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
+        work->turnYaw        = turnScratch->heading;
+        // Reflect the initial heading about the player bearing, preserving halfword wrap.
+        work->turnYawTarget = turnScratch->heading + (u16)turnScratch->turn * 2;
+        SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+        return;
+    }
+    scratchEnd                              = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+    SCRATCH_STACK_CURSOR(ActorChaseScratch) = scratchEnd - 1;
+    turnScratch                             = scratchEnd - 1;
+    _actor01900UpdateAnimation(task);
+    _actorPositionDeltaToPlayer(&gPlayerStatus, task->extra.tmd->coords, &turnScratch->delta);
+    if (work->turnYaw == work->turnYawTarget) {
+        if (work->circleCount < 2 || _actorRangeOutsideRadiusXZ(&turnScratch->delta, ACTOR_01900_TURN_AROUND_CIRCLE_RANGE)) {
+            work->state = ACTOR_01900_STATE_CIRCLE;
+        }
+    }
+    if (work->turnYaw > work->turnYawTarget) {
+        work->turnYaw -= ACTOR_01900_TURN_AROUND_STEP;
+        if (work->turnYaw < work->turnYawTarget) {
+            work->turnYaw = work->turnYawTarget;
+        }
+    }
+    if (work->turnYaw < work->turnYawTarget) {
+        work->turnYaw += ACTOR_01900_TURN_AROUND_STEP;
+        if (work->turnYaw > work->turnYawTarget) {
+            work->turnYaw = work->turnYawTarget;
+        }
+    }
+    gfxRotMatrixY(&task->extra.tmd->coords->coord, work->turnYaw, GRAPHICS_ROTATION_REPLACE);
+    _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    if (work->blendActive == 0) {
+        _actorMovementStepForward(task->extra.tmd->coords, ACTOR_01900_TURN_AROUND_STEP_DISTANCE);
+    } else {
+        _actorMovementStepForward(task->extra.tmd->coords, ACTOR_01900_TURN_AROUND_BLEND_STEP_DISTANCE);
+    }
+    if (_actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts)) != 1) {
+        _actor01900ApplyBodyPushback(task, work->hitContacts, ARRAY_SIZE(work->hitContacts));
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+}
+
+/// Hops along a side-selected direction, then restarts pursuit.
+///
+/// Entry alternates the side and builds a normalized direction from the player
+/// bearing, variant lean and first-hop extra yaw. `stateTimer` 12..21 moves by the stored
+/// distance, halved while blending; grid correction halves later steps. Tick 30
+/// selects chase and forces state re-entry. Scratch delta changes from player
+/// offset to halfword displacement. Requires initialized work and live roots.
+static void _actor01900StateSidestep(Task* task)
+{
+    enum {
+        ACTOR_01900_FIRST_SIDESTEP_EXTRA_YAW = 369,
+        ACTOR_01900_SIDESTEP_DISTANCE        = 222,
+        ACTOR_01900_SIDESTEP_MOVE_FIRST_TICK = 12,
+        ACTOR_01900_SIDESTEP_MOVE_TICKS      = 10U,
+        ACTOR_01900_SIDESTEP_TOTAL_TICKS     = 30,
+        ACTOR_01900_STATE_REENTER            = -1
+    };
+
+    _Actor01900Work*   work;
+    ActorChaseScratch* scratchEnd;
+    ActorChaseScratch* sidestepScratch;
+    TmdObject*         model;
+    GfxCoord*          rootCoord;
+    SVECTOR*           sidestepDirection;
+    MATRIX             sidestepRotation;
+    u16                firstSidestepYaw;
+
+    scratchEnd                              = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+    work                                    = task->work;
+    SCRATCH_STACK_CURSOR(ActorChaseScratch) = scratchEnd - 1;
+    sidestepScratch                         = scratchEnd - 1;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->hitBody.radius    = ACTOR_01900_COMPACT_BODY_RADIUS;
+        work->stateTimer        = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        _actorPositionDeltaToPlayer(&gPlayerStatus, task->extra.tmd->coords, &sidestepScratch->delta);
+        sidestepScratch->turn = ratan2(scratchEnd[-1].delta.vx, sidestepScratch->delta.vz);
+        if (work->sidestepSide == 0) {
+            RANDOM_LCG_ADVANCE();
+            if (RANDOM_LCG_DRAW() & 1) {
+                work->sidestepSide = 1;
+            } else {
+                work->sidestepSide = -1;
+            }
+        }
+        if (work->sidestepSide == 1) {
+            work->animId = ACTOR_01900_ANIM_SIDESTEP_POSITIVE;
+            if (work->sidestepCount == 0) {
+                firstSidestepYaw      = sidestepScratch->turn + ACTOR_01900_FIRST_SIDESTEP_EXTRA_YAW;
+                sidestepScratch->turn = work->sidestepAngle + firstSidestepYaw;
+            } else {
+                sidestepScratch->turn += work->sidestepAngle;
+            }
+            work->sidestepSide = -1;
+        } else {
+            work->animId = ACTOR_01900_ANIM_SIDESTEP_NEGATIVE;
+            if (work->sidestepCount == 0) {
+                firstSidestepYaw      = sidestepScratch->turn - ACTOR_01900_FIRST_SIDESTEP_EXTRA_YAW;
+                sidestepScratch->turn = firstSidestepYaw - work->sidestepAngle;
+            } else {
+                sidestepScratch->turn -= work->sidestepAngle;
+            }
+            work->sidestepSide = 1;
+        }
+        work->animRequest = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animRate    = 3 * ANIMATION_RATE_ONE / 4;
+        work->blendActive = 0;
+        _actor01900UpdateAnimation(task);
+        gfxRotMatrixY(&sidestepRotation, sidestepScratch->turn, GRAPHICS_ROTATION_REPLACE);
+        sidestepDirection = &work->sidestepDir;
+        gfxReadMatrixZAxis(&sidestepRotation, sidestepDirection);
+        VectorNormalSS(sidestepDirection, sidestepDirection);
+        work->sidestepStep = ACTOR_01900_SIDESTEP_DISTANCE;
+        work->sidestepCount++;
+    }
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    _actor01900UpdateAnimation(task);
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    if (work->blendActive == 0) {
+        gte_lddp(work->sidestepStep);
+        gte_ldsv(&work->sidestepDir);
+        gte_gpf12();
+        gte_stsv(&sidestepScratch->delta);
+    } else {
+        gte_lddp(work->sidestepStep >> 1);
+        gte_ldsv(&work->sidestepDir);
+        gte_gpf12();
+        gte_stsv(&sidestepScratch->delta);
+    }
+    // Only ticks 12..21 translate; a grid push halves each subsequent step.
+    if ((u32)((u16)work->stateTimer - ACTOR_01900_SIDESTEP_MOVE_FIRST_TICK) < ACTOR_01900_SIDESTEP_MOVE_TICKS) {
+        rootCoord              = task->extra.tmd->coords;
+        rootCoord->coord.t[0] += sidestepScratch->delta.vx;
+        rootCoord              = task->extra.tmd->coords;
+        rootCoord->coord.t[2] += sidestepScratch->delta.vz;
+        if (_actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts)) != 0) {
+            work->sidestepStep >>= 1;
+        }
+    }
+    if (++work->stateTimer >= ACTOR_01900_SIDESTEP_TOTAL_TICKS) {
+        work->state     = ACTOR_01900_STATE_CHASE;
+        work->prevState = ACTOR_01900_STATE_REENTER;
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+}
+
+/// Retreats during the step-back clip, then sidesteps if targeted or alerts otherwise.
+///
+/// Requires live initialized work, enemy and model. The backward step is 120
+/// parent-space units on pose cues 16..22; grid contacts correct each step.
+/// The clip's settled flag selects the next state. Entry does not rebuild buffers.
+static void _actor01900StateStepBack(Task* task)
+{
+    enum {
+        ACTOR_01900_STEP_BACK_CLIP      = ACTOR_01900_ANIM_STEP_BACK,
+        ACTOR_01900_STEP_BACK_FIRST_CUE = 16,
+        ACTOR_01900_STEP_BACK_CUE_COUNT = 7,
+        ACTOR_01900_STEP_BACK_DISTANCE  = -120
+    };
+
+    _Actor01900Work* work;
+    Enemy*           enemy;
+    GfxCoord*        rootCoord;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if (work->stateEntered != 0) {
+        work->animRate    = ANIMATION_RATE_ONE;
+        work->animId      = ACTOR_01900_STEP_BACK_CLIP;
+        work->animRequest = ACTOR_01900_ANIM_REQUEST_RESET;
+        work->stateTimer  = 0;
+    }
+    _actor01900UpdateAnimation(task);
+    // Retreat only while the low-ten-bit pose cue is in 16..22.
+    if ((u32)((work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) - ACTOR_01900_STEP_BACK_FIRST_CUE) < ACTOR_01900_STEP_BACK_CUE_COUNT) {
+        rootCoord = task->extra.tmd->coords;
+        _actorMovementStepForward(rootCoord, ACTOR_01900_STEP_BACK_DISTANCE);
+        _actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts));
+        task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    }
+    if (work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) {
+        if (enemy->node.state.parts.targeted == 1) {
+            work->state = ACTOR_01900_STATE_SIDESTEP;
+        } else {
+            work->state = ACTOR_01900_STATE_ALERT;
+        }
+    }
+}
+
+/// Runs toward the player with a half-rate animation request and no state transition.
+///
+/// Requires initialized work, enemy, model and player roots in a common parent
+/// frame, plus the scratch stack. Turns by at most 64/4096 turn per tick and
+/// steps 40 parent-space units, or 20 while blending, after resolving contacts.
+static void _actor01900StateApproach(Task* task)
+{
+    enum {
+        ACTOR_01900_APPROACH_TURN_STEP        = 64,
+        ACTOR_01900_APPROACH_STEP             = 40,
+        ACTOR_01900_APPROACH_BLEND_STEP       = 20,
+        ACTOR_01900_APPROACH_PROBE_TURN_LIMIT = 512,
+        ACTOR_01900_APPROACH_PROBE_RADIUS     = 900
+    };
+
+    _Actor01900Work*   work;
+    TmdObject*         model;
+    GfxCoord*          rootCoord;
+    GfxCoord*          facingCoord;
+    ActorChaseScratch* chase;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->hitBody.radius    = ACTOR_01900_BODY_RADIUS;
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animRate          = ANIMATION_RATE_ONE / 2;
+        work->animId            = ACTOR_01900_ANIM_RUN;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        _actor01900UpdateAnimation(task);
+        work->circleCount = 0;
+        return;
+    }
+    SCRATCH_STACK_RESERVE_BLOCK(ActorChaseScratch);
+    chase = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+    if (_actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts)) != true) {
+        _actor01900ApplyBodyPushback(task, work->hitContacts, ARRAY_SIZE(work->hitContacts));
+    }
+    _actorPositionDeltaToPlayer(&gPlayerStatus, task->extra.tmd->coords, &chase->delta);
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    _actor01900UpdateAnimation(task);
+    rootCoord           = task->extra.tmd->coords;
+    chase->turn         = _actorAngleNormalizeYaw(ratan2(chase->delta.vx, chase->delta.vz) - ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]));
+    work->lookYawTarget = chase->turn;
+    // This retained range probe does not select a state or gate movement.
+    if (chase->turn < ACTOR_01900_APPROACH_PROBE_TURN_LIMIT) {
+        _actorRangeOutsideRadiusXZ(&chase->delta, ACTOR_01900_APPROACH_PROBE_RADIUS);
+    }
+    if (chase->turn > ACTOR_01900_APPROACH_TURN_STEP) {
+        chase->turn = ACTOR_01900_APPROACH_TURN_STEP;
+    }
+    if (chase->turn < -ACTOR_01900_APPROACH_TURN_STEP) {
+        chase->turn = -ACTOR_01900_APPROACH_TURN_STEP;
+    }
+    facingCoord  = task->extra.tmd->coords;
+    chase->turn += ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
+    gfxRotMatrixY(&task->extra.tmd->coords->coord, chase->turn, GRAPHICS_ROTATION_REPLACE);
+    _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    if (work->blendActive == 0) {
+        _actorMovementStepForward(task->extra.tmd->coords, ACTOR_01900_APPROACH_STEP);
+    } else {
+        _actorMovementStepForward(task->extra.tmd->coords, ACTOR_01900_APPROACH_BLEND_STEP);
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+}
+
+/// Staggers backward and falls, then selects down, status hold or death burn.
+///
+/// Requires initialized work, enemy and model. The stagger steps backward by 87
+/// parent-space units per tick. Both contact tables correct the root until the
+/// down clip settles; then hit-body grid tests are disabled. Entry alerts only
+/// for negative HP and three independent cached-command byte mismatches.
+static void _actor01900StateFall(Task* task)
+{
+    enum {
+        ACTOR_01900_FALL_NO_ALERT_COMMAND_BYTE = 2,
+        ACTOR_01900_FALL_BACKWARD_STEP         = -87
+    };
+
+    _Actor01900Work* work;
+    Enemy*           enemy;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if (work->stateEntered != 0) {
+        task->extra.tmd->flags        = 0;
+        work->hitBody.radius          = ACTOR_01900_BODY_RADIUS;
+        work->attackBody.flags       &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags         |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        enemy->node.state.parts.flags = 0;
+        work->animRequest             = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animId                  = ACTOR_01900_ANIM_FALL;
+        work->blendActive             = 0;
+        work->animRate                = ANIMATION_RATE_ONE;
+        work->lookYaw                 = 0;
+        work->lookYawTarget           = 0;
+        // Alert requires all three cached command bytes to differ independently.
+        if (enemy->hp < 0 && work->commandBytes[0] != GAME_STAGE_AKROPOLIS && work->commandBytes[1] != GAME_AREA_AKROPOLIS_PATIO && work->commandBytes[2] != ACTOR_01900_FALL_NO_ALERT_COMMAND_BYTE) {
+            sceneSetEnemyAlert(1);
+        }
+        work->hitBody.flags |= WORLD_COLLISION_BODY_GRID_ENABLED;
+    }
+    if (work->animId == ACTOR_01900_ANIM_FALL) {
+        _actorMovementStepForward(task->extra.tmd->coords, ACTOR_01900_FALL_BACKWARD_STEP);
+    }
+    _actor01900UpdateAnimation(task);
+    _actorContactApplyGridPushback(task->extra.tmd->coords, work->hitContacts, ARRAY_SIZE(work->hitContacts));
+    _actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts));
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    // Finish the stagger, then the down clip, before choosing recovery or death.
+    if (work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) {
+        if (work->animId == ACTOR_01900_ANIM_FALL) {
+            work->animId      = ACTOR_01900_ANIM_DOWN;
+            work->animRequest = ACTOR_01900_ANIM_REQUEST_RESET;
+            _actor01900UpdateAnimation(task);
+        }
+        if ((work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) && work->animId == ACTOR_01900_ANIM_DOWN) {
+            work->hitBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+            if (enemy->hp > 0) {
+                if (enemy->reactionFlags & ENEMY_REACTION_BUILDUP) {
+                    work->state = ACTOR_01900_STATE_STATUS_HOLD;
+                } else {
+                    work->state = ACTOR_01900_STATE_DOWN;
+                }
+            } else {
+                work->state = ACTOR_01900_STATE_DEATH_BURN;
+            }
+        }
+    }
+}
+
+/// Releases battle rewards, burns the corpse, then flattens and hides its model.
+///
+/// Requires initialized work, enemy and model. Entry disables attacks and grid
+/// correction and makes the target non-lockable. Actions use the pre-increment
+/// timer: release at 24, burn at 29, black at 41, transparency at 47 and hide at 63.
+/// Flattening continues through timer 1025; it does not destroy the task.
+static void _actor01900StateDeathBurn(Task* task)
+{
+    enum {
+        ACTOR_01900_DEATH_BURN_DELAY       = 24,
+        ACTOR_01900_DEATH_BURN_TIMER_LIMIT = 1025,
+        ACTOR_01900_DEATH_BURN_BURSTS      = 3
+    };
+
+    _Actor01900Work* work;
+    Enemy*           enemy;
+    TmdObject*       model;
+    s16              elapsedFrames;
+
+    work  = task->work;
+    model = task->extra.tmd;
+    enemy = task->spawnArg2.pointer;
+    if (work->stateEntered != 0) {
+        model->flags                  = 0;
+        work->attackBody.flags       &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags         &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+        enemy->node.state.parts.flags = WORLD_TARGET_NOT_LOCKABLE;
+        work->stateTimer              = 0;
+    }
+    if (work->stateTimer < ACTOR_01900_DEATH_BURN_TIMER_LIMIT) {
+        switch ((s16)(work->stateTimer++ - ACTOR_01900_DEATH_BURN_DELAY)) {
+            case ACTOR_01900_DEATH_BURN_RELEASE_OFFSET:
+                sceneReleaseBattleRefWithRewards(task, 0x13);
+                break;
+            case ACTOR_01900_DEATH_BURN_EFFECT_OFFSET:
+                worldCoordSetActorColorMode(enemy, ENEMY_COLOR_WEIGHTED);
+                effectSpawn(EFFECT_CORPSE_BURN, task->extra.tmd->coords + 2, ACTOR_01900_DEATH_BURN_BURSTS, NULL);
+                break;
+            case ACTOR_01900_DEATH_BURN_TRANSLUCENT_OFFSET:
+                task->extra.tmd->flags = TMD_OBJECT_SEMI_TRANS;
+                break;
+            case ACTOR_01900_DEATH_BURN_BLACK_OFFSET:
+                worldCoordSetActorColorMode(enemy, ENEMY_COLOR_BLACK);
+                break;
+            case ACTOR_01900_DEATH_BURN_HIDE_OFFSET:
+                task->extra.tmd->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+                break;
+        }
+        elapsedFrames = work->stateTimer;
+        if (elapsedFrames >= ACTOR_01900_DEATH_FLATTEN_START) {
+            _actorRenderRescaleYawY(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE, ACTOR_01900_ROOT_SCALE - (elapsedFrames - ACTOR_01900_DEATH_FLATTEN_ORIGIN) * ACTOR_01900_DEATH_FLATTEN_STEP);
+        }
+    }
+}
+
+/// Loops the dormant scripted pose until proximity or a scene stimulus alerts it.
+///
+/// Requires live work, enemy, model, player roots in a common parent frame and
+/// scratch storage. Installs clip 16 on entry. Pose-record cues 15 and 5 trigger
+/// area-specific sound and a hit effect once per newly reached record. Proximity
+/// uses noticeRange in XZ plus the engagement helper's height/action gates;
+/// scene noise or another cast selects alert independently of those gates.
+static void _actor01900StateDormantScripted(Task* task)
+{
+    enum {
+        ACTOR_01900_DORMANT_SOUND_CUE              = 15,
+        ACTOR_01900_DORMANT_EFFECT_CUE             = 5,
+        ACTOR_01900_DORMANT_EFFECT_ATTACK_KEY      = 0x1001,
+        ACTOR_01900_DORMANT_EFFECT_ARGUMENT_LOW    = 0x200,
+        ACTOR_01900_DORMANT_SOUND_A                = SOUND_AREA(GAME_STAGE_AKROPOLIS, GAME_AREA_AKROPOLIS_FORKED_ROAD, 8),
+        ACTOR_01900_DORMANT_SOUND_B                = SOUND_AREA(GAME_STAGE_AKROPOLIS, GAME_AREA_AKROPOLIS_FORKED_ROAD, 9),
+        ACTOR_01900_DORMANT_PATIO_EFFECT_SKIP_VIEW = 16
+    };
+
+    SVECTOR          delta;
+    SVECTOR*         playerOffset;
+    _Actor01900Work* work;
+    Enemy*           enemy;
+    TmdObject*       model;
+    GfxCoord*        rootCoord;
+    s32              sound;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if (work->stateEntered != 0) {
+        model                                                        = task->extra.tmd;
+        _gActor01900AnimationSets[ACTOR_01900_ANIM_DORMANT_SCRIPTED] = &_gStrangerGrinningScriptedDormantClip;
+        work->animId                                                 = ACTOR_01900_ANIM_DORMANT_SCRIPTED;
+        work->animRequest                                            = ACTOR_01900_ANIM_REQUEST_RESET;
+        model->flags                                                 = 0;
+        tmdAllocPrimitiveBuffer(model);
+        work->hitBody.radius          = ACTOR_01900_BODY_RADIUS;
+        work->attackBody.flags       &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags         |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        enemy->node.state.parts.flags = 0;
+        work->lookYaw                 = 0;
+        work->animRate                = ANIMATION_RATE_ONE;
+        work->lookYawTarget           = 0;
+        work->stateTimer              = 0;
+        work->dormantAnimFrame        = 0;
+    }
+    _actor01900UpdateAnimation(task);
+    // Edge-trigger cues on the low ten bits of the pose record index.
+    if ((work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) == ACTOR_01900_DORMANT_SOUND_CUE && work->dormantAnimFrame != (work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) &&
+        (GAME_LOCATION_WORD(gGameSession->location) & GAME_LOCATION_STAGE_AREA_MASK) == GAME_LOCATION_KEY(GAME_STAGE_AKROPOLIS, GAME_AREA_AKROPOLIS_FORKED_ROAD, 0, 0)) {
+        RANDOM_LCG_ADVANCE();
+        sound = ACTOR_01900_DORMANT_SOUND_B;
+        if ((u16)(RANDOM_LCG_DRAW() % 3) == 0) {
+            sound = ACTOR_01900_DORMANT_SOUND_A;
+        }
+        switch ((u8)viewGetMappedIndex()) {
+            case 2:
+                sndEvtRequestScriptStart(sound, 0x64, 0);
+                break;
+            case 3:
+                sndEvtRequestScriptStart(sound, 0x50, 0x1F);
+                break;
+            case 4:
+            default:
+                sndEvtRequestScriptStart(sound, 0x40, 0x4C);
+                break;
+        }
+    }
+    if ((work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) == ACTOR_01900_DORMANT_EFFECT_CUE && work->dormantAnimFrame != (work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK)) {
+        work->effectArg.coord      = task->extra.tmd->coords + 1;
+        work->effectArg.spawnArgLo = ACTOR_01900_DORMANT_EFFECT_ARGUMENT_LOW;
+        work->effectArg.spawnArgHi = ACTOR_01900_HIT_EFFECT_REPEAT_COUNT;
+        if ((GAME_LOCATION_WORD(gGameSession->location) & GAME_LOCATION_STAGE_AREA_MASK) != GAME_LOCATION_KEY(GAME_STAGE_AKROPOLIS, GAME_AREA_AKROPOLIS_PATIO, 0, 0) || (u8)viewGetMappedIndex() != ACTOR_01900_DORMANT_PATIO_EFFECT_SKIP_VIEW) {
+            effectSpawnHit(damageGetPlayerAttackEffectId(ACTOR_01900_DORMANT_EFFECT_ATTACK_KEY), task->extra.tmd->coords + 5, NULL, &work->effectArg);
+        }
+    }
+    work->dormantAnimFrame = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+    rootCoord              = task->extra.tmd->coords;
+    playerOffset           = &delta;
+    delta.vx               = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+    playerOffset->vy       = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
+    playerOffset->vz       = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    if (!_actorRangeOutsideRadiusXZ(playerOffset, work->noticeRange)) {
+        sndEvtRequestScriptStop(SOUND_AKROPOLIS_PATIO_STRANGER_DORMANT, SOUND_SCRIPT_STOP_KEEP_RELEASE);
+        if (_actor01900EngageBattleIfPlayerLevel(task) == 1) {
+            work->state = ACTOR_01900_STATE_ALERT;
+        }
+    }
+    if (gSceneCombatState.signals.packed & SCENE_COMBAT_SIGNAL_NOISE_OR_OTHER_CAST) {
+        work->state = ACTOR_01900_STATE_ALERT;
+    }
+}
+
+/// Walks between the spawn waypoint pair while watching for the player.
+///
+/// Requires initialized work, enemy, model, player roots in a common parent frame
+/// and available scratch storage. `patrolTarget` is 0 or 1. Arrival within 160
+/// units or 21 aligned grid-correction ticks swaps it. Turns by at most 32/4096
+/// per tick and steps ten units unless blending. Visible proximity can engage
+/// battle and alert; combat attack signals alert independently.
+static void _actor01900StatePatrol(Task* task)
+{
+    enum {
+        ACTOR_01900_PATROL_SPAWN_MODE_SHIFT    = 16,
+        ACTOR_01900_PATROL_HIT_BODY_GRID_MODE  = 16,
+        ACTOR_01900_PATROL_ARRIVAL_RADIUS      = 160,
+        ACTOR_01900_PATROL_BLOCKED_TICKS       = 21,
+        ACTOR_01900_PATROL_TURN_STEP           = 32,
+        ACTOR_01900_PATROL_STEP                = 10,
+        ACTOR_01900_PATROL_BLOCKED_YAW_LIMIT   = 128,
+        ACTOR_01900_PATROL_FRONT_NOTICE_RADIUS = 4000,
+        ACTOR_01900_PATROL_FRONT_YAW_LIMIT     = 768
+    };
+
+    _Actor01900Work*  work;
+    TmdObject*        model;
+    GfxCoord*         rootCoord;
+    ActorTurnScratch* turnScratch;
+    GfxCoord*         facingCoord;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->hitBody.radius    = ACTOR_01900_BODY_RADIUS;
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animRate          = ANIMATION_RATE_ONE;
+        work->animId            = ACTOR_01900_ANIM_WALK;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        _actor01900UpdateAnimation(task);
+        work->stateTimer = 0;
+        if ((task->spawnArg1.value >> ACTOR_01900_PATROL_SPAWN_MODE_SHIFT) == ACTOR_01900_PATROL_HIT_BODY_GRID_MODE) {
+            work->hitBody.flags |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        }
+        return;
+    }
+    SCRATCH_STACK_RESERVE_BLOCK(ActorTurnScratch);
+    turnScratch           = SCRATCH_STACK_CURSOR(ActorTurnScratch);
+    turnScratch->delta.vx = work->patrolPoints[work->patrolTarget].x - task->extra.tmd->coords->coord.t[0];
+    turnScratch->delta.vy = 0;
+    turnScratch->delta.vz = work->patrolPoints[work->patrolTarget].z - task->extra.tmd->coords->coord.t[2];
+    // Swap destinations on arrival or after 21 aligned grid-correction ticks.
+    if (!_actorRangeOutsideRadiusXZ(&turnScratch->delta, ACTOR_01900_PATROL_ARRIVAL_RADIUS) || work->stateTimer >= ACTOR_01900_PATROL_BLOCKED_TICKS) {
+        if (work->patrolTarget == 0) {
+            work->patrolTarget = 1;
+        } else {
+            work->patrolTarget = 0;
+        }
+        work->stateTimer = 0;
+    }
+    _actor01900UpdateAnimation(task);
+    rootCoord           = task->extra.tmd->coords;
+    turnScratch->angle  = _actorAngleNormalizeYaw(ratan2(turnScratch->delta.vx, turnScratch->delta.vz) - ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]));
+    work->lookYawTarget = turnScratch->angle;
+    if (turnScratch->angle > ACTOR_01900_PATROL_TURN_STEP) {
+        turnScratch->angle = ACTOR_01900_PATROL_TURN_STEP;
+    }
+    if (turnScratch->angle < -ACTOR_01900_PATROL_TURN_STEP) {
+        turnScratch->angle = -ACTOR_01900_PATROL_TURN_STEP;
+    }
+    facingCoord         = task->extra.tmd->coords;
+    turnScratch->angle += ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
+    gfxRotMatrixY(&task->extra.tmd->coords->coord, turnScratch->angle, GRAPHICS_ROTATION_REPLACE);
+    _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+    if (work->blendActive == 0) {
+        _actorMovementStepForward(task->extra.tmd->coords, ACTOR_01900_PATROL_STEP);
+    }
+    if ((task->spawnArg1.value >> ACTOR_01900_PATROL_SPAWN_MODE_SHIFT) != ACTOR_01900_PATROL_HIT_BODY_GRID_MODE) {
+        if (_actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts)) == true && ABS(work->lookYawTarget) < ACTOR_01900_PATROL_BLOCKED_YAW_LIMIT) {
+            work->stateTimer++;
+        } else {
+            _actor01900ApplyBodyPushback(task, work->hitContacts, ARRAY_SIZE(work->hitContacts));
+        }
+    } else {
+        if ((_actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts)) == true ||
+             _actorContactApplyGridPushback(task->extra.tmd->coords, work->hitContacts, ARRAY_SIZE(work->hitContacts)) == true) &&
+            ABS(work->lookYawTarget) < ACTOR_01900_PATROL_BLOCKED_YAW_LIMIT) {
+            work->stateTimer++;
+        } else {
+            _actor01900ApplyBodyPushback(task, work->hitContacts, ARRAY_SIZE(work->hitContacts));
+        }
+    }
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    // Sight gates proximity detection; combat signals can alert independently.
+    if (_playerDetectionSightBlocked(task) != 1) {
+        _actorPositionDeltaToPlayer(&gPlayerStatus, task->extra.tmd->coords, &turnScratch->delta);
+        if (!_actorRangeOutsideRadiusXZ(&turnScratch->delta, work->noticeRange)) {
+            if (_actor01900EngageBattleIfPlayerLevel(task) == 1) {
+                work->state = ACTOR_01900_STATE_ALERT;
+            }
+        } else if (!_actorRangeOutsideRadiusXZ(&turnScratch->delta, ACTOR_01900_PATROL_FRONT_NOTICE_RADIUS)) {
+            rootCoord          = task->extra.tmd->coords;
+            turnScratch->angle = _actorAngleNormalizeYaw(ratan2(turnScratch->delta.vx, turnScratch->delta.vz) - ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]));
+            if (ABS(turnScratch->angle) < ACTOR_01900_PATROL_FRONT_YAW_LIMIT) {
+                if (_actor01900EngageBattleIfPlayerLevel(task) == 1) {
+                    work->state = ACTOR_01900_STATE_ALERT;
+                }
+            }
+        }
+    }
+    if (gSceneCombatState.signals.packed & SCENE_COMBAT_SIGNAL_ATTACK_MASK) {
+        work->state = ACTOR_01900_STATE_ALERT;
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(ActorTurnScratch);
+}
+
+/// Coasts toward the player by the carried run step, then turns around.
+///
+/// Requires initialized work, enemy, model, player roots and scratch storage.
+/// Clamps each turn to 64/4096, resolves contacts, moves by `runStep` parent-space
+/// units and reduces a positive step by ten with signed-halfword truncation.
+/// Zero speed or a settled slide clip selects turn-around. Entry keeps the speed.
+static void _actor01900StateSlide(Task* task)
+{
+    enum {
+        ACTOR_01900_SLIDE_CLIP         = ACTOR_01900_ANIM_SLIDE,
+        ACTOR_01900_SLIDE_RATE         = 30,
+        ACTOR_01900_SLIDE_TURN_STEP    = 64,
+        ACTOR_01900_SLIDE_DECELERATION = 10
+    };
+
+    _Actor01900Work*  work;
+    Enemy*            enemy;
+    TmdObject*        model;
+    GfxCoord*         rootCoord;
+    ActorTurnScratch* turnScratch;
+    u16               nextRunStep;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        enemy             = task->spawnArg2.pointer;
+        model             = task->extra.tmd;
+        work->animId      = ACTOR_01900_SLIDE_CLIP;
+        work->animRequest = ACTOR_01900_ANIM_REQUEST_BLEND;
+        model->flags      = 0;
+        tmdAllocPrimitiveBuffer(model);
+        work->hitBody.radius          = ACTOR_01900_BODY_RADIUS;
+        work->attackBody.flags       &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags         |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        enemy->node.state.parts.flags = 0;
+        work->lookYaw                 = 0;
+        work->animRate                = ACTOR_01900_SLIDE_RATE;
+    }
+    SCRATCH_STACK_RESERVE_BLOCK(ActorTurnScratch);
+    turnScratch         = SCRATCH_STACK_CURSOR(ActorTurnScratch);
+    turnScratch->angle  = _actorAngleTurnToPlayer(task, &turnScratch->delta, &gPlayerStatus);
+    work->lookYawTarget = turnScratch->angle;
+    if (turnScratch->angle > ACTOR_01900_SLIDE_TURN_STEP) {
+        turnScratch->angle = ACTOR_01900_SLIDE_TURN_STEP;
+    }
+    if (turnScratch->angle < -ACTOR_01900_SLIDE_TURN_STEP) {
+        turnScratch->angle = -ACTOR_01900_SLIDE_TURN_STEP;
+    }
+    rootCoord           = task->extra.tmd->coords;
+    turnScratch->angle += ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]);
+    gfxRotMatrixY(&task->extra.tmd->coords->coord, turnScratch->angle, GRAPHICS_ROTATION_REPLACE);
+    if (_actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts)) != true) {
+        _actor01900ApplyBodyPushback(task, work->hitContacts, ARRAY_SIZE(work->hitContacts));
+    }
+    _actorMovementTranslateForwardNonzero(task->extra.tmd->coords, work->runStep);
+    // Keep the halfword subtraction and signed clamp of the carried speed.
+    if (work->runStep > 0) {
+        nextRunStep   = work->runStep - ACTOR_01900_SLIDE_DECELERATION;
+        work->runStep = nextRunStep;
+        if ((s16)nextRunStep < 0) {
+            work->runStep = 0;
+        }
+    }
+    _actor01900UpdateAnimation(task);
+    if ((work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) || work->runStep == 0) {
+        work->state = ACTOR_01900_STATE_TURN_AROUND;
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(ActorTurnScratch);
+}
+
+/// Faces the player, backs away for nineteen ticks, then turns aside and chases.
+///
+/// Requires initialized work, enemy, model, player roots and scratch storage.
+/// Within 128/4096 turn, switches from walk to the retreat clip. Positive turns
+/// are capped at 128 then halved; negative turns below -128 are capped without
+/// halving. Retreat steps -16 parent-space units; the exit adds +/-1200/4096 yaw.
+static void _actor01900StateBackOff(Task* task)
+{
+    enum {
+        ACTOR_01900_BACK_OFF_RATE       = 22,
+        ACTOR_01900_BACK_OFF_CLIP       = ACTOR_01900_ANIM_BACK_OFF,
+        ACTOR_01900_BACK_OFF_TURN_LIMIT = 128,
+        ACTOR_01900_BACK_OFF_STEP       = -16,
+        ACTOR_01900_BACK_OFF_TICKS      = 19,
+        ACTOR_01900_BACK_OFF_EXIT_YAW   = 1200
+    };
+
+    _Actor01900Work*   work;
+    TmdObject*         model;
+    GfxCoord*          rootCoord;
+    ActorChaseScratch* chase;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->hitBody.radius    = ACTOR_01900_BODY_RADIUS;
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animRate          = ACTOR_01900_BACK_OFF_RATE;
+        work->animId            = ACTOR_01900_ANIM_WALK;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        _actor01900UpdateAnimation(task);
+        return;
+    }
+    _actor01900UpdateAnimation(task);
+    SCRATCH_STACK_RESERVE_BLOCK(ActorChaseScratch);
+    chase               = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+    chase->turn         = _actorAngleTurnToPlayer(task, &chase->delta, &gPlayerStatus);
+    work->lookYawTarget = chase->turn;
+    if (ABS(chase->turn) <= ACTOR_01900_BACK_OFF_TURN_LIMIT && work->animId == ACTOR_01900_ANIM_WALK) {
+        work->animRate    = ACTOR_01900_BACK_OFF_RATE;
+        work->animId      = ACTOR_01900_BACK_OFF_CLIP;
+        work->animRequest = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->stateTimer  = 0;
+        _actor01900UpdateAnimation(task);
+    }
+    // Preserve the asymmetric steering: only the negative clamp skips halving.
+    if (chase->turn > ACTOR_01900_BACK_OFF_TURN_LIMIT) {
+        chase->turn = ACTOR_01900_BACK_OFF_TURN_LIMIT;
+    }
+    if (chase->turn < -ACTOR_01900_BACK_OFF_TURN_LIMIT) {
+        chase->turn = -ACTOR_01900_BACK_OFF_TURN_LIMIT;
+    } else {
+        chase->turn = chase->turn >> 1;
+    }
+    rootCoord    = task->extra.tmd->coords;
+    chase->turn += ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]);
+    gfxRotMatrixY(&task->extra.tmd->coords->coord, chase->turn, GRAPHICS_ROTATION_REPLACE);
+    _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    if (work->animId == ACTOR_01900_BACK_OFF_CLIP) {
+        work->stateTimer++;
+        _actorMovementStepForward(task->extra.tmd->coords, ACTOR_01900_BACK_OFF_STEP);
+        if (_actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts)) != true) {
+            _actor01900ApplyBodyPushback(task, work->hitContacts, ARRAY_SIZE(work->hitContacts));
+        }
+        task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+        if (work->stateTimer >= ACTOR_01900_BACK_OFF_TICKS) {
+            if (work->lookYawTarget <= 0) {
+                gfxRotMatrixY(&task->extra.tmd->coords->coord, ACTOR_01900_BACK_OFF_EXIT_YAW, GRAPHICS_ROTATION_COMPOSE);
+            } else {
+                gfxRotMatrixY(&task->extra.tmd->coords->coord, -ACTOR_01900_BACK_OFF_EXIT_YAW, GRAPHICS_ROTATION_COMPOSE);
+            }
+            work->state = ACTOR_01900_STATE_CHASE;
+        }
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+}
+
+/// Replays the alert clip in place, then returns to chase when it settles.
+///
+/// Requires initialized work, enemy, model, player roots and scratch storage.
+/// Entry disables attack pairs and grid tests. Later ticks update the look target
+/// but rebuild the root at its existing yaw and package scale without translating.
+static void _actor01900StateAlertRepeat(Task* task)
+{
+    enum {
+        ACTOR_01900_ALERT_REPEAT_CLIP = ACTOR_01900_ANIM_ALERT
+    };
+
+    _Actor01900Work*   work;
+    TmdObject*         model;
+    GfxCoord*          rootCoord;
+    ActorChaseScratch* chase;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->hitBody.radius    = ACTOR_01900_BODY_RADIUS;
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animRate          = ANIMATION_RATE_ONE;
+        work->animId            = ACTOR_01900_ALERT_REPEAT_CLIP;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+        _actor01900UpdateAnimation(task);
+        work->stateTimer = 0;
+        return;
+    }
+    work->stateTimer++;
+    SCRATCH_STACK_RESERVE_BLOCK(ActorChaseScratch);
+    chase                                 = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    if (work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) {
+        work->state = ACTOR_01900_STATE_CHASE;
+    }
+    // The look follows the player; root yaw stays at its existing heading.
+    chase->turn         = _actorAngleTurnToPlayer(task, &chase->delta, &gPlayerStatus);
+    work->lookYawTarget = chase->turn;
+    if (chase->turn > 0) {
+        chase->turn = 0;
+    }
+    if (chase->turn < 0) {
+        chase->turn = 0;
+    }
+    rootCoord    = task->extra.tmd->coords;
+    chase->turn += ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]);
+    gfxRotMatrixY(&task->extra.tmd->coords->coord, chase->turn, GRAPHICS_ROTATION_REPLACE);
+    _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+    _actor01900UpdateAnimation(task);
+    SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+}
+
+/// Eases the scripted pose's look target toward the player by 40/4096 turn.
+///
+/// Borrows initialized work. playerTurn is the normalized player bearing relative
+/// to the root, in signed 4096ths of a turn. Moves lookYawTarget by at most 40
+/// or snaps to that bearing; comparisons stay linear across the half-turn endpoints.
+static inline void _actor01900EaseScriptedWatchLook(_Actor01900Work* work, s16 playerTurn)
+{
+    enum { ACTOR_01900_SCRIPTED_WATCH_LOOK_STEP = 40 };
+
+    if (work->lookYawTarget < playerTurn) {
+        if (playerTurn - work->lookYawTarget > ACTOR_01900_SCRIPTED_WATCH_LOOK_STEP) {
+            work->lookYawTarget += ACTOR_01900_SCRIPTED_WATCH_LOOK_STEP;
+        } else {
+            work->lookYawTarget = playerTurn;
+        }
+    } else if (work->lookYawTarget - playerTurn > ACTOR_01900_SCRIPTED_WATCH_LOOK_STEP) {
+        work->lookYawTarget -= ACTOR_01900_SCRIPTED_WATCH_LOOK_STEP;
+    } else {
+        work->lookYawTarget = playerTurn;
+    }
+}
+
+/// Holds the scripted watch pose and eases its look target toward the player.
+///
+/// Requires initialized work, enemy, model, player roots and scratch storage.
+/// Entry makes the target non-lockable and disables attack pairs and grid tests.
+/// Later ticks approach the relative player bearing by 40/4096 using signed linear
+/// comparisons, hold the root's yaw at package scale and restart the watch clip.
+/// The placement command, rather than this handler, sets the root position.
+static void _actor01900StateScriptedWatch(Task* task)
+{
+    enum {
+        ACTOR_01900_SCRIPTED_WATCH_CLIP = ACTOR_01900_ANIM_SCRIPTED_WATCH
+    };
+
+    _Actor01900Work*   work;
+    Enemy*             enemy;
+    TmdObject*         model;
+    GfxCoord*          rootCoord;
+    ActorChaseScratch* chase;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model                         = task->extra.tmd;
+        enemy                         = task->spawnArg2.pointer;
+        enemy->node.state.parts.flags = WORLD_TARGET_NOT_LOCKABLE;
+        model->flags                  = 0;
+        tmdAllocPrimitiveBuffer(model);
+        work->hitBody.radius    = ACTOR_01900_BODY_RADIUS;
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_RESET;
+        work->animRate          = ANIMATION_RATE_ONE;
+        work->animId            = ACTOR_01900_SCRIPTED_WATCH_CLIP;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+        _actor01900UpdateAnimation(task);
+        _actor01900UpdateAnimation(task);
+        work->stateTimer = 0;
+        work->lookYaw    = 0;
+        return;
+    }
+    SCRATCH_STACK_RESERVE_BLOCK(ActorChaseScratch);
+    chase       = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+    chase->turn = _actorAngleTurnToPlayer(task, &chase->delta, &gPlayerStatus);
+    _actor01900EaseScriptedWatchLook(work, chase->turn);
+    rootCoord   = task->extra.tmd->coords;
+    chase->turn = ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]);
+    gfxRotMatrixY(&task->extra.tmd->coords->coord, chase->turn, GRAPHICS_ROTATION_REPLACE);
+    _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+    // Restart the pose each tick while the look target eases toward the player.
+    work->animRequest = ACTOR_01900_ANIM_REQUEST_RESET;
+    _actor01900UpdateAnimation(task);
+    SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+}
+
+/// Hides the body, releases rewards and spawns detached-part burst effects.
+///
+/// Requires initialized work, enemy and a model with coordinates through 12.
+/// Entry disables grid correction and targeting; ticks 3 and 4 spawn parts with
+/// placement texture offsets. Tick 61 selects hidden. The tick-4 offset's Z
+/// component is left uninitialized by the retained implementation.
+static void _actor01900StateDeathBurst(Task* task)
+{
+    enum {
+        ACTOR_01900_DEATH_BURST_HIDE_TICK = 61
+    };
+
+    SVECTOR          spawnOffset;
+    EffectWork*      burstEffect;
+    _Actor01900Work* work;
+    Enemy*           enemy;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if (work->stateEntered != 0) {
+        task->extra.tmd->flags        = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+        work->hitBody.radius          = ACTOR_01900_BODY_RADIUS;
+        work->gridBody.flags         &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+        enemy->node.state.parts.flags = WORLD_TARGET_NOT_LOCKABLE;
+        work->lookYawTarget           = 0;
+        work->stateTimer              = 0;
+        spawnOffset.vx                = 0x64;
+        spawnOffset.vz                = 0;
+        spawnOffset.vy                = 0;
+        effectSpawn(EFFECT_030, task->extra.tmd->coords + 1, ACTOR_01900_BURST_PARTICLE_ARGUMENT, &spawnOffset);
+        sceneReleaseBattleRefWithRewards(task, 0x13);
+    }
+    work->stateTimer++;
+    switch (work->stateTimer) {
+        case 3:
+            gEffectBurstTaskDescriptors[ACTOR_01900_BURST_MODEL_SLOT].data.model = &_gStrangerBurstHand;
+            spawnOffset.vz                                                       = 0x64;
+            spawnOffset.vy                                                       = 0;
+            spawnOffset.vx                                                       = 0;
+            burstEffect                                                          = effectSpawn(EFFECT_BURST_BODY_PART_BANK10, task->extra.tmd->coords + 9, ACTOR_01900_BURST_MODEL_RADIUS, &spawnOffset);
+            if (burstEffect != NULL) {
+                _actorRenderApplyTaskPlacementTextureOffsets(burstEffect->task, enemy);
+            }
+            break;
+        case 4:
+            gEffectBurstTaskDescriptors[ACTOR_01900_BURST_MODEL_SLOT].data.model = &_gStrangerBurstHand;
+            spawnOffset.vy                                                       = 0;
+            spawnOffset.vx                                                       = 0;
+            burstEffect                                                          = effectSpawn(EFFECT_BURST_BODY_PART_BANK10, task->extra.tmd->coords + 12, ACTOR_01900_BURST_MODEL_RADIUS, &spawnOffset);
+            if (burstEffect != NULL) {
+                _actorRenderApplyTaskPlacementTextureOffsets(burstEffect->task, enemy);
+            }
+            break;
+    }
+    if (work->stateTimer >= ACTOR_01900_DEATH_BURST_HIDE_TICK) {
+        work->state = ACTOR_01900_STATE_HIDDEN;
+    }
+}
+
+/// Walks while shedding parts, then burns, flattens and hides the corpse.
+///
+/// Requires initialized work, enemy, model coordinates through 10 and scratch.
+/// Clip 2 moves ten units per tick; a control jump after at least 16 ticks starts
+/// clip 24. The burn timer resets until that clip settles, then releases rewards
+/// at 25, burns at 30, turns black at 42, becomes translucent at 48 and hides at
+/// 64. Animation is advanced before parts 2..10 are collapsed to 1/4096 scale.
+static void _actor01900StateDeathBurstWalk(Task* task)
+{
+    enum {
+        ACTOR_01900_DEATH_BURST_WALK_MIN_TICKS   = 16,
+        ACTOR_01900_DEATH_BURST_WALK_STEP        = 10,
+        ACTOR_01900_DEATH_BURST_WALK_BURN_DELAY  = 25,
+        ACTOR_01900_DEATH_BURST_WALK_BURN_BURSTS = 2
+    };
+
+    SVECTOR          spawnOffset;
+    EffectWork*      burstEffect;
+    _Actor01900Work* work;
+    Enemy*           enemy;
+    s16              elapsedFrames;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if (work->stateEntered != 0) {
+        work->hitBody.radius          = ACTOR_01900_BODY_RADIUS;
+        work->gridBody.flags          = (u16)(work->gridBody.flags | WORLD_COLLISION_BODY_GRID_ENABLED);
+        enemy->node.state.parts.flags = WORLD_TARGET_NOT_LOCKABLE;
+        work->lookYawTarget           = 0;
+        work->stateTimer              = 0;
+        spawnOffset.vx                = 0x64;
+        spawnOffset.vz                = 0;
+        spawnOffset.vy                = 0;
+        work->animId                  = ACTOR_01900_ANIM_WALK;
+        work->animRequest             = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animRate                = ANIMATION_RATE_ONE;
+        effectSpawn(EFFECT_030, task->extra.tmd->coords + 1, ACTOR_01900_BURST_PARTICLE_ARGUMENT, &spawnOffset);
+        work->stateTimer = 0;
+    }
+    work->stateTimer++;
+    switch (work->animId) {
+        case ACTOR_01900_ANIM_WALK:
+            if (work->stateTimer >= ACTOR_01900_DEATH_BURST_WALK_MIN_TICKS && (work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_FOLLOWED_JUMP)) {
+                work->animId      = ACTOR_01900_ANIM_DEATH_BURST;
+                work->animRequest = ACTOR_01900_ANIM_REQUEST_RESET;
+                work->animRate    = ANIMATION_RATE_ONE;
+                work->blendActive = 0;
+            }
+            _actorMovementStepForward(task->extra.tmd->coords, ACTOR_01900_DEATH_BURST_WALK_STEP);
+            _actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts));
+            if (work->stateTimer == 3) {
+                gEffectBurstTaskDescriptors[ACTOR_01900_BURST_MODEL_SLOT].data.model = &_gStrangerBurstHand;
+                spawnOffset.vz                                                       = 0x64;
+                spawnOffset.vy                                                       = 0;
+                spawnOffset.vx                                                       = 0;
+                burstEffect                                                          = effectSpawn(EFFECT_BURST_BODY_PART_BANK10, task->extra.tmd->coords + 9, ACTOR_01900_BURST_MODEL_RADIUS, &spawnOffset);
+                _actorRenderApplyEffectPlacementTextureOffsets(burstEffect, enemy);
+            }
+            if (work->stateTimer == 5) {
+                gEffectBurstTaskDescriptors[ACTOR_01900_BURST_MODEL_SLOT].data.model = &_gStrangerBurstHand;
+                burstEffect                                                          = effectSpawn(EFFECT_BURST_BODY_PART_BANK10, task->extra.tmd->coords + 1, ACTOR_01900_BURST_MODEL_RADIUS, NULL);
+                _actorRenderApplyEffectPlacementTextureOffsets(burstEffect, enemy);
+            }
+            break;
+        case ACTOR_01900_ANIM_DEATH_BURST:
+            if (!(work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED)) {
+                work->stateTimer = 0;
+            }
+            switch ((s16)(work->stateTimer - ACTOR_01900_DEATH_BURST_WALK_BURN_DELAY)) {
+                case ACTOR_01900_DEATH_BURN_RELEASE_OFFSET:
+                    sceneReleaseBattleRefWithRewards(task, 0x13);
+                    break;
+                case ACTOR_01900_DEATH_BURN_EFFECT_OFFSET:
+                    worldCoordSetActorColorMode(enemy, ENEMY_COLOR_WEIGHTED);
+                    effectSpawn(EFFECT_CORPSE_BURN, task->extra.tmd->coords + 2, ACTOR_01900_DEATH_BURST_WALK_BURN_BURSTS, NULL);
+                    break;
+                case ACTOR_01900_DEATH_BURN_TRANSLUCENT_OFFSET:
+                    task->extra.tmd->flags = TMD_OBJECT_SEMI_TRANS;
+                    break;
+                case ACTOR_01900_DEATH_BURN_BLACK_OFFSET:
+                    worldCoordSetActorColorMode(enemy, ENEMY_COLOR_BLACK);
+                    break;
+                case ACTOR_01900_DEATH_BURN_HIDE_OFFSET:
+                    task->extra.tmd->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+                    work->state            = ACTOR_01900_STATE_HIDDEN;
+                    break;
+            }
+            elapsedFrames = work->stateTimer;
+            if (elapsedFrames >= ACTOR_01900_DEATH_FLATTEN_START) {
+                _actorRenderRescaleYawY(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE, ACTOR_01900_ROOT_SCALE - (elapsedFrames - ACTOR_01900_DEATH_FLATTEN_ORIGIN) * ACTOR_01900_DEATH_FLATTEN_STEP);
+            }
+            break;
+    }
+    _actor01900UpdateAnimation(task);
+    // Collapse the rendered body parts after animation restores their pose.
+    _actorRenderCollapseYaw(task->extra.tmd->coords + 2);
+    _actorRenderCollapseYaw(task->extra.tmd->coords + 3);
+    _actorRenderCollapseYaw(task->extra.tmd->coords + 4);
+    _actorRenderCollapseYaw(task->extra.tmd->coords + 5);
+    _actorRenderCollapseYaw(task->extra.tmd->coords + 6);
+    _actorRenderCollapseYaw(task->extra.tmd->coords + 7);
+    _actorRenderCollapseYaw(task->extra.tmd->coords + 8);
+    _actorRenderCollapseYaw(task->extra.tmd->coords + 9);
+    _actorRenderCollapseYaw(task->extra.tmd->coords + 10);
+}
+
+/// Returns 1 when the outgoing attack contacts include a player or companion body.
+///
+/// Borrows three readable records, stopping at the first zero key. Returns 0 when
+/// none has the player-body kind. The collision body produces only the first
+/// record here; the other two remain in the zero-initialized work allocation.
+static inline s32 _actor01900HasPlayerBodyContact(const WorldCollisionContact* contacts)
+{
+    enum { ACTOR_01900_ATTACK_CONTACT_SCAN_COUNT = ARRAY_SIZE(((_Actor01900Work*)NULL)->attackContacts) };
+
+    s16 contactIndex;
+
+    for (contactIndex = 0; contactIndex < ACTOR_01900_ATTACK_CONTACT_SCAN_COUNT; contactIndex++) {
+        if (!contacts[contactIndex].key.value)
+            break;
+        if ((contacts[contactIndex].key.value & WORLD_COLLISION_CONTACT_KIND_MASK) == WORLD_COLLISION_CONTACT_PLAYER_BODY) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/// Swings at the player, then alerts if distant or steps back if still close.
+///
+/// Requires initialized work, enemy, model, player roots and scratch storage.
+/// Tracks the player by at most 48/4096 turn on ticks 1..13. Attack pairs are
+/// enabled on ticks 22..28 and disabled early on player/companion body contact.
+/// The settled clip tests a 700-unit XZ radius. Entry engages battle except in
+/// the cached Acropolis Patio context; all three attack-contact records are live.
+static void _actor01900StateStrike(Task* task)
+{
+    enum {
+        ACTOR_01900_STRIKE_CLIP              = ACTOR_01900_ANIM_STRIKE,
+        ACTOR_01900_STRIKE_FIRST_ATTACK_TICK = 22,
+        ACTOR_01900_STRIKE_END_ATTACK_TICK   = 29,
+        ACTOR_01900_STRIKE_AIM_TICKS         = 14,
+        ACTOR_01900_STRIKE_TURN_STEP         = 48,
+        ACTOR_01900_STRIKE_RETREAT_RADIUS    = 700
+    };
+
+    _Actor01900Work*   work;
+    TmdObject*         model;
+    GfxCoord*          rootCoord;
+    GfxCoord*          facingCoord;
+    ActorChaseScratch* chase;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->hitBody.radius    = ACTOR_01900_BODY_RADIUS;
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_BLEND;
+        work->animRate          = ANIMATION_RATE_ONE;
+        work->animId            = ACTOR_01900_STRIKE_CLIP;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        _actor01900UpdateAnimation(task);
+        work->circleCount = 0;
+        // Read the aligned cached stage/area bytes as one little-endian context key.
+        if (*(u16*)work->commandBytes != ((GAME_AREA_AKROPOLIS_PATIO << 8) | GAME_STAGE_AKROPOLIS)) {
+            _actor01900EngageBattleIfPlayerLevel(task);
+        }
+        work->stateTimer        = 0;
+        work->stateCounter      = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        return;
+    }
+    // Attack ticks 22..28 end early on a player or companion body contact.
+    work->stateTimer++;
+    if (work->stateTimer == ACTOR_01900_STRIKE_FIRST_ATTACK_TICK) {
+        work->attackBody.flags |= WORLD_COLLISION_BODY_PAIR_ENABLED;
+    }
+    if (work->stateTimer == ACTOR_01900_STRIKE_END_ATTACK_TICK) {
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    }
+    if (_actor01900HasPlayerBodyContact(work->attackContacts) == 1) {
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    }
+
+    SCRATCH_STACK_RESERVE_BLOCK(ActorChaseScratch);
+    chase = SCRATCH_STACK_CURSOR(ActorChaseScratch);
+    _actorPositionDeltaToPlayer(&gPlayerStatus, task->extra.tmd->coords, &chase->delta);
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    _actor01900UpdateAnimation(task);
+    if (work->stateTimer < ACTOR_01900_STRIKE_AIM_TICKS) {
+        rootCoord = task->extra.tmd->coords;
+        chase->turn =
+            _actorAngleNormalizeYaw(ratan2(chase->delta.vx, chase->delta.vz) - ratan2(-rootCoord->coord.m[2][0], rootCoord->coord.m[2][2]));
+        work->lookYawTarget = chase->turn;
+        if (chase->turn > ACTOR_01900_STRIKE_TURN_STEP) {
+            chase->turn = ACTOR_01900_STRIKE_TURN_STEP;
+        }
+        if (chase->turn < -ACTOR_01900_STRIKE_TURN_STEP) {
+            chase->turn = -ACTOR_01900_STRIKE_TURN_STEP;
+        }
+        facingCoord  = task->extra.tmd->coords;
+        chase->turn += ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
+        gfxRotMatrixY(&task->extra.tmd->coords->coord, chase->turn, GRAPHICS_ROTATION_REPLACE);
+        _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_01900_ROOT_SCALE);
+    }
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    if (work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) {
+        if (_actorRangeOutsideRadiusXZ(&chase->delta, ACTOR_01900_STRIKE_RETREAT_RADIUS)) {
+            work->state = ACTOR_01900_STATE_ALERT;
+        } else {
+            work->state = ACTOR_01900_STATE_STEP_BACK;
+        }
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(ActorChaseScratch);
+}
+
+/// Drops back into the down clip after interrupted rising or death during status hold.
+///
+/// Requires initialized work, enemy and model. Entry enables both grid-contact
+/// paths, clears look yaw and alerts for negative HP. Once the clip settles,
+/// disables hit-body grid tests and selects death burn for nonpositive HP,
+/// status hold for surviving buildup, or down otherwise.
+static void _actor01900StateRefall(Task* task)
+{
+    _Actor01900Work* work;
+    Enemy*           enemy;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if (work->stateEntered != 0) {
+        task->extra.tmd->flags        = 0;
+        work->hitBody.radius          = ACTOR_01900_BODY_RADIUS;
+        work->attackBody.flags       &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags         |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        enemy->node.state.parts.flags = 0;
+        work->animRequest             = ACTOR_01900_ANIM_REQUEST_RESET;
+        work->animId                  = ACTOR_01900_ANIM_DOWN;
+        work->animRate                = ANIMATION_RATE_ONE;
+        work->lookYaw                 = 0;
+        work->lookYawTarget           = 0;
+        if (enemy->hp < 0) {
+            sceneSetEnemyAlert(1);
+        }
+        work->hitBody.flags |= WORLD_COLLISION_BODY_GRID_ENABLED;
+    }
+    _actor01900UpdateAnimation(task);
+    _actorContactApplyGridPushback(task->extra.tmd->coords, work->hitContacts, ARRAY_SIZE(work->hitContacts));
+    _actorContactApplyGridPushback(task->extra.tmd->coords, work->gridContacts, ARRAY_SIZE(work->gridContacts));
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    if (work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) {
+        work->hitBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+        if (enemy->hp <= 0) {
+            work->state = ACTOR_01900_STATE_DEATH_BURN;
+        } else if (enemy->reactionFlags & ENEMY_REACTION_BUILDUP) {
+            work->state = ACTOR_01900_STATE_STATUS_HOLD;
+        } else {
+            work->state = ACTOR_01900_STATE_DOWN;
+        }
+    }
+}
+
+/// Draws the root shadow for visible states, including the walking burst phase.
+///
+/// Borrows initialized work and the composed root. Ordinary visible states
+/// enable model drawing; the walking burst state has a shadow only on clip 2.
+static inline void _actor01900DrawStateShadow(Task* task, _Actor01900Work* work)
+{
+    enum { ACTOR_01900_SHADOW_HALF_SIZE = 384 };
+
+    s32 actorState;
+    actorState = work->state;
+    if ((actorState != ACTOR_01900_STATE_HIDDEN) && (actorState != ACTOR_01900_STATE_DEATH_BURN) && (actorState != ACTOR_01900_STATE_DEATH_BURST) && (actorState != ACTOR_01900_STATE_DEATH_BURST_WALK)) {
+        task->extra.tmd->flags = 0;
+        effectDrawGroundShadow(GRAPHICS_MATRIX_TRANSLATION(&task->extra.tmd->coords->workm), ACTOR_01900_SHADOW_HALF_SIZE, gRoomEffectState->groundShadowShade);
+        actorState = work->state;
+    }
+    if ((actorState == ACTOR_01900_STATE_DEATH_BURST_WALK) && (work->animId == ACTOR_01900_ANIM_WALK)) {
+        effectDrawGroundShadow(GRAPHICS_MATRIX_TRANSLATION(&task->extra.tmd->coords->workm), ACTOR_01900_SHADOW_HALF_SIZE, gRoomEffectState->groundShadowShade);
+    }
+}
+
+/// Clears the actor's three terminated collision-contact tables after their use.
+static inline void _actor01900ClearContacts(_Actor01900Work* work)
+{
+    worldCollisionClearContacts(work->gridContacts);
+    worldCollisionClearContacts(work->hitContacts);
+    worldCollisionClearContacts(work->attackContacts);
+}
+
+/// Updates lighting, combat state, contacts and the enemy's body-position target.
+///
+/// Requires initialized work, enemy, nineteen-part model, player and scratch.
+/// bodyPosCursor must be 0..6, maintained from its zero-initialized value.
+/// Paused actors retain shadows but clear contacts without advancing behavior;
+/// hidden actors also skip drawing. Running actors take hits after cooldown,
+/// mark state entry and dispatch a valid non-NULL ACTOR_01900_STATE_* handler.
+/// Records part 2's world position in a seven-entry halfword ring. Sidestep clips
+/// 20 and 21 target its oldest entry; other clips use the current position.
+/// The target is published with the view coordinate expected by enemy consumers.
+static void _actor01900Tick(Enemy* enemy, Task* task)
+{
+    enum { ACTOR_01900_TARGET_HISTORY_FIRST_CLIP = 20,
+           ACTOR_01900_TARGET_HISTORY_CLIP_COUNT = 2 };
+
+    VECTOR                    lightSample;
+    _Actor01900StateTable     states;
+    _Actor01900Work*          work;
+    ActorPartPositionScratch* scratch;
+    s32                       actorState;
+
+    work   = task->work;
+    states = _gActor01900StateHandlers;
+
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    actorRenderComposeCoord(task->extra.tmd->coords);
+    lightSample.vx = task->extra.tmd->coords->workm.t[0];
+    lightSample.vy = task->extra.tmd->coords->workm.t[1];
+    lightSample.vz = task->extra.tmd->coords->workm.t[2];
+    worldCoordUpdateActorColor(enemy, &lightSample, 0, 0);
+
+    switch (gSceneCombatState.actorControl) {
+        case SCENE_COMBAT_ACTORS_RUNNING:
+            _actor01900DrawStateShadow(task, work);
+            break;
+        case SCENE_COMBAT_ACTORS_PAUSED:
+            _actor01900DrawStateShadow(task, work);
+            _actor01900ClearContacts(work);
+            return;
+        case SCENE_COMBAT_ACTORS_HIDDEN:
+            task->extra.tmd->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            _actor01900ClearContacts(work);
+            return;
+    }
+
+    scratch = SCRATCH_STACK_RESERVE_BLOCK(ActorPartPositionScratch);
+
+    // Hits can change state before this tick marks entry and dispatches it.
+    if (work->hitCooldown > 0) {
+        work->hitCooldown = (s16)((u16)work->hitCooldown - 1);
+    } else {
+        _actor01900TakeHit(task);
+    }
+    if (work->prevState != work->state) {
+        work->stateEntered = 1;
+    } else {
+        work->stateEntered = 0;
+    }
+    work->prevState = (u16)work->state;
+    actorState      = work->state;
+    if ((actorState == ACTOR_01900_STATE_SCRIPTED_WATCH) || (actorState == ACTOR_01900_STATE_DEATH_BURN) || (actorState == ACTOR_01900_STATE_HIDDEN) || (actorState == ACTOR_01900_STATE_DEATH_BURST) || (actorState == ACTOR_01900_STATE_DEATH_BURST_WALK)) {
+        work->hitBody.flags  &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    } else {
+        work->hitBody.flags |= WORLD_COLLISION_BODY_PAIR_ENABLED;
+    }
+    states.handlers[work->state](task);
+    _actor01900ClearContacts(work);
+    if ((gSceneCombatState.signals.bytes.enemyAlert == 1) && (work->state == ACTOR_01900_STATE_PATROL)) {
+        work->state = ACTOR_01900_STATE_ALERT;
+    }
+
+    scratch->position.vx = 0;
+    scratch->position.vy = 0;
+    scratch->position.vz = 0;
+    _actorRenderTransformToWorld(task->extra.tmd->coords + 2, &scratch->position);
+
+    work->bodyPosHistory[work->bodyPosCursor].vx = scratch->position.vx;
+    work->bodyPosHistory[work->bodyPosCursor].vy = scratch->position.vy;
+    work->bodyPosHistory[work->bodyPosCursor].vz = scratch->position.vz;
+
+    // No reservation or call intervenes before the remaining position reads.
+    SCRATCH_STACK_RELEASE_BLOCK(ActorPartPositionScratch);
+    work->bodyPosCursor = (u16)work->bodyPosCursor + 1;
+    if (work->bodyPosCursor == ARRAY_SIZE(work->bodyPosHistory)) {
+        work->bodyPosCursor = 0;
+    }
+    if ((u32)((u16)work->animId - ACTOR_01900_TARGET_HISTORY_FIRST_CLIP) < ACTOR_01900_TARGET_HISTORY_CLIP_COUNT) {
+        enemy->bodyPos.vx = work->bodyPosHistory[work->bodyPosCursor].vx;
+        enemy->bodyPos.vy = work->bodyPosHistory[work->bodyPosCursor].vy;
+        enemy->bodyPos.vz = work->bodyPosHistory[work->bodyPosCursor].vz;
+    } else {
+        enemy->bodyPos.vx = scratch->position.vx;
+        enemy->bodyPos.vy = scratch->position.vy;
+        enemy->bodyPos.vz = scratch->position.vz;
+    }
+    enemy->coord = &gGfxViewCoord;
+}
+
+/// Ignores message 2015 without accessing the receiver or either argument.
+///
+/// The matched callback falls off its signed-return body without setting a result.
+/// Senders must ignore the result; the message's sender-side purpose is unproven.
+static s32 _actor01900IgnoreMessage2015(Task* task, s32 messageId, s32 unusedPayload, s32 unused)
+{
+}
+
+/// Grinning Stranger behavior callbacks indexed by `ACTOR_01900_STATE_*`.
+///
+/// The 32 stored slots include NULL at 12, 13, 16, 20 and 22; callers must select
+/// a populated slot. Each callback receives the live body task.
+static const _Actor01900StateTable _gActor01900StateHandlers = {
+    .handlers = {
+        [ACTOR_01900_STATE_HIDDEN]           = _actor01900StateHidden,
+        [ACTOR_01900_STATE_PLAY_WALK]        = _actor01900StatePlayWalk,
+        [ACTOR_01900_STATE_PLAY_RUN]         = _actor01900StatePlayRun,
+        [ACTOR_01900_STATE_PLAY_DOWN]        = _actor01900StatePlayDown,
+        [ACTOR_01900_STATE_STATUS_HOLD]      = _actor01900StateStatusHold,
+        [ACTOR_01900_STATE_FLINCH]           = _actor01900StateFlinch,
+        [ACTOR_01900_STATE_ALERT]            = _actor01900StateAlert,
+        [ACTOR_01900_STATE_CHASE]            = _actor01900StateChase,
+        [ACTOR_01900_STATE_CIRCLE]           = _actor01900StateCircle,
+        [ACTOR_01900_STATE_TURN_AROUND]      = _actor01900StateTurnAround,
+        [ACTOR_01900_STATE_SIDESTEP]         = _actor01900StateSidestep,
+        [ACTOR_01900_STATE_STRIKE]           = _actor01900StateStrike,
+        [ACTOR_01900_STATE_UNUSED_0C]        = NULL,
+        [ACTOR_01900_STATE_UNUSED_0D]        = NULL,
+        [ACTOR_01900_STATE_STEP_BACK]        = _actor01900StateStepBack,
+        [ACTOR_01900_STATE_RISE]             = _actor01900StateRise,
+        [ACTOR_01900_STATE_UNUSED_10]        = NULL,
+        [ACTOR_01900_STATE_DOWN]             = _actor01900StateDown,
+        [ACTOR_01900_STATE_APPROACH]         = _actor01900StateApproach,
+        [ACTOR_01900_STATE_FALL]             = _actor01900StateFall,
+        [ACTOR_01900_STATE_UNUSED_14]        = NULL,
+        [ACTOR_01900_STATE_DEATH_BURN]       = _actor01900StateDeathBurn,
+        [ACTOR_01900_STATE_UNUSED_16]        = NULL,
+        [ACTOR_01900_STATE_DORMANT_SCRIPTED] = _actor01900StateDormantScripted,
+        [ACTOR_01900_STATE_PATROL]           = _actor01900StatePatrol,
+        [ACTOR_01900_STATE_BACK_OFF]         = _actor01900StateBackOff,
+        [ACTOR_01900_STATE_SLIDE]            = _actor01900StateSlide,
+        [ACTOR_01900_STATE_ALERT_REPEAT]     = _actor01900StateAlertRepeat,
+        [ACTOR_01900_STATE_SCRIPTED_WATCH]   = _actor01900StateScriptedWatch,
+        [ACTOR_01900_STATE_DEATH_BURST]      = _actor01900StateDeathBurst,
+        [ACTOR_01900_STATE_DEATH_BURST_WALK] = _actor01900StateDeathBurstWalk,
+        [ACTOR_01900_STATE_REFALL]           = _actor01900StateRefall,
+    },
+};
+
+/// Grinning Stranger task callbacks: 0 initialize, 1 wait three ticks, 2 tick, 3 destroy.
+///
+/// Each callback receives the separate live Enemy and Task; destruction releases them.
+static const EnemyTaskFuncTable4 _gActor01900TaskStates = {
+    .funcs = {
+        _actor01900Initialize,
+        _actor01900WaitAfterSetup,
+        _actor01900Tick,
+        enemyDestroy,
+    },
+};
+
+/// Maps a requested animation id and forces entry into the down state.
+///
+/// Requires live initialized work and a borrowed request. IDs 0..4 map to local
+/// clips 34, 35, 36, 37 and 39; other IDs leave `animId` unchanged. No animation
+/// request flag is set, and no bank is installed here. All IDs select `ACTOR_01900_STATE_DOWN` and
+/// force its next state entry. Other request fields and argument words are ignored.
+/// Returns 0. The mapped clips' contents are unproven; the static bank leaves them empty.
+static s32 _actor01900HandleAnimationRequest(Task* task, s32 messageId, const AnimationPlayRequest* request, s32 unused)
+{
+    enum { ACTOR_01900_REQUEST_CLIP_BASE = 0x22,
+           ACTOR_01900_FORCE_STATE_ENTRY = -1 };
+
+    _Actor01900Work* work = task->work;
+
+    switch (request->animationId) {
+        case 0:
+            work->animId = ACTOR_01900_REQUEST_CLIP_BASE;
+            break;
+        case 1:
+            work->animId = ACTOR_01900_REQUEST_CLIP_BASE + 1;
+            break;
+        case 2:
+            work->animId = ACTOR_01900_REQUEST_CLIP_BASE + 2;
+            break;
+        case 3:
+            work->animId = ACTOR_01900_REQUEST_CLIP_BASE + 3;
+            break;
+        case 4:
+            work->animId = ACTOR_01900_REQUEST_CLIP_BASE + 5;
+            break;
+    }
+    work->state     = ACTOR_01900_STATE_DOWN;
+    work->prevState = ACTOR_01900_FORCE_STATE_ENTRY;
+    return 0;
+}
+
+#include "../../shared/actor/actor_messages_visibility.inc.c"
+
+#include "../../shared/actor/actor_messages_is_present.inc.c"
+
+/// Selects this actor's allocated work type for recording placement heading.
+///
+/// The following XYZ-placement fragment borrows live `Task::work` as
+/// `_Actor01900Work` and writes its `s16 placedYaw` in 4096 units per turn.
+/// Keep this type binding scoped to that fragment include.
+#define ACTOR_MESSAGE_YAW_WORK_TYPE _Actor01900Work
+#include "../../shared/actor/actor_messages_place_yaw.inc.c"
+#undef ACTOR_MESSAGE_YAW_WORK_TYPE
+
+/// Acknowledges `ACTOR_MESSAGE_RELEASE_HOLD` by returning 1.
+///
+/// Does not access the task or arguments, or change any player-hold state.
+static s32 _actor01900AcknowledgeHoldRelease(Task* task, s32 messageId, s32 unusedPayload, s32 unused)
+{
+    return 1;
+}
+
+/// Applies an actor `command` in the Patio or Dryfield Toilet namespace.
+///
+/// Requires live initialized work and a model; `command` borrows a complete four-byte
+/// `ActorCommand` for this call. Caches its context and only the low `command` byte,
+/// including unsupported commands. Command 0 hides in either namespace; Patio
+/// `command` 1 selects scripted dormancy, Toilet `command` 2 places the scripted watch
+/// pose at (-1429, 0, -1457), yaw -1024 in parent space. Returns 1 for these actions,
+/// zero otherwise. Does not force state re-entry. Other argument words are ignored.
+static s32 _actor01900ApplyCommand(Task* task, s32 messageId, const ActorCommand* command, s32 unused)
+{
+    enum {
+        ACTOR_01900_COMMAND_HIDE          = 0,
+        ACTOR_01900_COMMAND_PATIO_DORMANT = 1,
+        ACTOR_01900_COMMAND_TOILET_WATCH  = 2
+    };
+
+    u16              contextKey;
+    u16              patioCommand;
+    u16              toiletCommand;
+    _Actor01900Work* work;
+
+    work = task->work;
+    // Cache only three bytes; the context and command tests retain their full widths.
+    work->commandBytes[0] = command->context.loc.stage;
+    work->commandBytes[1] = command->context.loc.area;
+    work->commandBytes[2] = (u8)command->command;
+    contextKey            = command->context.key;
+    if (contextKey == ((GAME_AREA_AKROPOLIS_PATIO << 8) | GAME_STAGE_AKROPOLIS)) {
+        patioCommand = command->command;
+        switch (patioCommand) {
+            case ACTOR_01900_COMMAND_HIDE:
+                work->state = ACTOR_01900_STATE_HIDDEN;
+                return 1;
+            case ACTOR_01900_COMMAND_PATIO_DORMANT:
+                work->state = ACTOR_01900_STATE_DORMANT_SCRIPTED;
+                return 1;
+            default:
+                return 0;
+        }
+    } else if (contextKey == ((GAME_AREA_DRYFIELD_TOILET << 8) | GAME_STAGE_DRYFIELD)) {
+        toiletCommand = command->command;
+        switch (toiletCommand) {
+            case ACTOR_01900_COMMAND_HIDE:
+                work->state = ACTOR_01900_STATE_HIDDEN;
+                return 1;
+            case ACTOR_01900_COMMAND_TOILET_WATCH:
+                work->state                         = ACTOR_01900_STATE_SCRIPTED_WATCH;
+                task->extra.tmd->coords->coord.t[0] = -0x595;
+                task->extra.tmd->coords->coord.t[1] = 0;
+                task->extra.tmd->coords->coord.t[2] = -0x5B1;
+                gfxRotMatrixY(&task->extra.tmd->coords->coord, -ACTOR_TRANSFORM_ANGLE_TURN / 4, GRAPHICS_ROTATION_REPLACE);
+                task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+                return 1;
+            default:
+                return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+
+/// Unlinks the Stranger's collision bodies and releases its enemy and task.
+///
+/// Requires the live enemy stored in `spawnArg2.pointer`; work may be NULL.
+/// Kills either retained auxiliary task, unlinks all three bodies and clears the
+/// enemy's borrowed contact pointer before destruction. Task teardown frees work;
+/// the task, enemy and work pointers must not be used after this call.
+static void _actor01900Exit(Task* task)
+{
+    _Actor01900Work* work;
+    Enemy*           enemy;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if (work != NULL) {
+        if (work->childTask0 != NULL) {
+            taskKill(work->childTask0);
+        }
+        if (work->childTask1 != NULL) {
+            taskKill(work->childTask1);
+        }
+        worldCollisionUnlinkBody(&work->attackBody);
+        worldCollisionUnlinkBody(&work->hitBody);
+        worldCollisionUnlinkBody(&work->gridBody);
+        enemy->recs = NULL;
+    }
+    enemyDestroy(enemy, task);
+}
+
+/// Hides the model and disables targeting, attack pairs and grid tests on entry.
+///
+/// Requires initialized work, enemy and model. Later ticks do nothing. The outer
+/// actor tick disables hit-body pairs for this state; buffers remain owned by the model.
+static void _actor01900StateHidden(Task* task)
+{
+    Enemy*           enemy;
+    TmdObject*       model;
+    _Actor01900Work* work;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model                         = task->extra.tmd;
+        enemy                         = task->spawnArg2.pointer;
+        enemy->node.state.parts.flags = WORLD_TARGET_NOT_LOCKABLE;
+        model->flags                 |= TMD_OBJECT_SKIP_ACTIVE_DRAW;
+        work->attackBody.flags       &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags         &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+    }
+}
+
+/// Plays the walk clip in place without selecting another state.
+///
+/// Requires initialized work, enemy and model. Entry enables drawing and targeting,
+/// requests a normal-rate restart and disables attack pairs and grid tests.
+/// Later ticks dirty the root and advance playback without moving it.
+static void _actor01900StatePlayWalk(Task* task)
+{
+    TmdObject*       model;
+    _Actor01900Work* work;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_RESET;
+        work->animRate          = ANIMATION_RATE_ONE;
+        work->animId            = ACTOR_01900_ANIM_WALK;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+        _actor01900UpdateAnimation(task);
+    } else {
+        task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+        _actor01900UpdateAnimation(task);
+    }
+}
+
+/// Plays the run clip in place without selecting another state.
+///
+/// Requires initialized work, enemy and model. Entry enables drawing and targeting,
+/// requests a normal-rate restart and disables attack pairs and grid tests.
+/// Later ticks dirty the root and advance playback without moving it.
+static void _actor01900StatePlayRun(Task* task)
+{
+    TmdObject*       model;
+    _Actor01900Work* work;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_RESET;
+        work->animRate          = ANIMATION_RATE_ONE;
+        work->animId            = ACTOR_01900_ANIM_RUN;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+        _actor01900UpdateAnimation(task);
+    } else {
+        task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+        _actor01900UpdateAnimation(task);
+    }
+}
+
+/// Plays the down clip in place and holds its boundary pose.
+///
+/// Requires initialized work, enemy and model. Entry enables drawing and targeting,
+/// requests a normal-rate restart and disables attack pairs and grid tests.
+/// Later ticks dirty the root and advance playback without a state transition.
+static void _actor01900StatePlayDown(Task* task)
+{
+    TmdObject*       model;
+    _Actor01900Work* work;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_RESET;
+        work->animRate          = ANIMATION_RATE_ONE;
+        work->animId            = ACTOR_01900_ANIM_DOWN;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+        _actor01900UpdateAnimation(task);
+    } else {
+        task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+        _actor01900UpdateAnimation(task);
+    }
+}
+
+/// Plays the damage-over-time recoil clip and returns to chase when it settles.
+///
+/// Requires initialized work, enemy and model. Entry enables drawing/targeting,
+/// requests clip 13 at 18/16 frames per tick and disables attack and grid tests.
+/// Each tick dirties the root and advances animation.
+static void _actor01900StateFlinch(Task* task)
+{
+    enum {
+        ACTOR_01900_FLINCH_RATE = 18
+    };
+
+    _Actor01900Work* work;
+    TmdObject*       model;
+
+    work = task->work;
+    if (work->stateEntered != 0) {
+        model = task->extra.tmd;
+        _actor01900EnableCombatModel(task->spawnArg2.pointer, model);
+        work->animRequest       = ACTOR_01900_ANIM_REQUEST_RESET;
+        work->animRate          = ACTOR_01900_FLINCH_RATE;
+        work->animId            = ACTOR_01900_ANIM_FLINCH;
+        work->blendActive       = 0;
+        work->attackBody.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags   &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_GRID_ENABLED);
+    }
+    task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
+    _actor01900UpdateAnimation(task);
+    if (work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) {
+        work->state = ACTOR_01900_STATE_CHASE;
+    }
+}
+
+/// Plays the get-up clip and returns to chase when its boundary pose settles.
+///
+/// Requires initialized work, enemy and model. Entry restores the 384-unit hit
+/// sphere, enables grid correction and targeting, disables attacks and restarts
+/// clip 8 at the initialized baseRate (sixteenths of a frame per tick).
+static void _actor01900StateRise(Task* task)
+{
+    _Actor01900Work* work;
+    Enemy*           enemy;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if (work->stateEntered != 0) {
+        task->extra.tmd->flags        = 0;
+        work->hitBody.radius          = ACTOR_01900_BODY_RADIUS;
+        work->attackBody.flags       &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        work->gridBody.flags         |= WORLD_COLLISION_BODY_GRID_ENABLED;
+        enemy->node.state.parts.flags = 0;
+        work->animRequest             = ACTOR_01900_ANIM_REQUEST_RESET;
+        work->animId                  = ACTOR_01900_ANIM_RISE;
+        work->lookYaw                 = 0;
+        work->lookYawTarget           = 0;
+        work->animRate                = work->baseRate;
+    }
+    _actor01900UpdateAnimation(task);
+    if (work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_SETTLED) {
+        work->state = ACTOR_01900_STATE_CHASE;
+    }
+}
+
+/// Holds the fallen pose for a randomized delay, then rises or starts corpse burn.
+///
+/// Requires live work and enemy. Entry seeds the countdown from downFramesBase
+/// plus 0..15 ticks. The signed halfword decrements before testing for expiry;
+/// nonpositive HP overrides the rise transition. This handler advances no animation.
+static void _actor01900StateDown(Task* task)
+{
+    enum {
+        ACTOR_01900_DOWN_RANDOM_FRAME_MASK = 15
+    };
+
+    _Actor01900Work* work;
+    Enemy*           enemy;
+    u32              randomState;
+    s16              remainingFrames;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if (work->stateEntered != 0) {
+        randomState      = RANDOM_LCG_NEXT(gRandomLcgState);
+        gRandomLcgState  = randomState;
+        work->stateTimer = ((randomState >> 16) & ACTOR_01900_DOWN_RANDOM_FRAME_MASK) + work->downFramesBase;
+    }
+    remainingFrames  = work->stateTimer - 1;
+    work->stateTimer = remainingFrames;
+    if (remainingFrames < 0) {
+        work->state = ACTOR_01900_STATE_RISE;
+    }
+    if (enemy->hp <= 0) {
+        work->state = ACTOR_01900_STATE_DEATH_BURN;
+    }
+}
+
+/// Waits three callback ticks after setup before enabling the enemy frame update.
+///
+/// Requires initialized work with stateTimer zeroed by setup. Advances the signed
+/// halfword counter with retained wraparound and increments Task::state on expiry.
+/// The enemy argument is unused; it preserves the EnemyTaskFunc interface.
+static void _actor01900WaitAfterSetup(Enemy* enemy, Task* task)
+{
+    enum {
+        ACTOR_01900_SETUP_WAIT_TICKS = 3
+    };
+
+    u16              elapsedFrames;
+    _Actor01900Work* work;
+
+    work             = task->work;
+    elapsedFrames    = work->stateTimer + 1;
+    work->stateTimer = elapsedFrames;
+    if ((s16)elapsedFrames >= ACTOR_01900_SETUP_WAIT_TICKS) {
+        task->state++;
+    }
+}
+
+/// Dispatches the Grinning Stranger task's setup, wait, frame update or teardown.
+///
+/// Task::state must be 0..3 and spawnArg2.pointer must hold its live Enemy.
+/// Copies the four typed callbacks to the frame before invoking the selected one;
+/// the selected callback owns allocation, state advancement and teardown.
+static void _actor01900Task(Task* task)
+{
+    EnemyTaskFuncTable4 states;
+
+    states = _gActor01900TaskStates;
+    states.funcs[task->state](task->spawnArg2.pointer, task);
+}
+
+#ifdef PACKAGE_ALIASES
+PACKAGE_ALIASES
+#endif

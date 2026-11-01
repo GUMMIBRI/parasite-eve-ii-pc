@@ -1,0 +1,287 @@
+#ifndef INCLUDE_ROOMS_SHELTER_R48_H
+#define INCLUDE_ROOMS_SHELTER_R48_H
+
+#include "types.h"
+
+#include "gameplay/area.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/task_types.h"
+
+/// Authored directory extents, counted in records rather than bytes.
+enum {
+    SHELTER_R48_ROOM_COUNT         = 1,
+    SHELTER_R48_VIEW_COUNT         = 18,
+    SHELTER_R48_WARP_COUNT         = 1,
+    SHELTER_R48_AREA_VARIANT_COUNT = 13,
+};
+
+/// Mutable arena collision grid, including Brahman's four body-face slots.
+///
+/// Owns 40 normals, 136 vertices and 83 faces indexed by a 5-by-7 XZ cell
+/// table. Coordinates and the 4000-unit cell size use room game units;
+/// normals use `ONE` for unit length. Activation binds the view coordinate.
+/// The boss rebuilds the first four faces/normals and eight vertices from
+/// model part 1, retaining the cell lists. The room and boss overlays must
+/// stay loaded while their resources are used.
+extern WorldCollisionGrid gShelterR48CollisionGrid;
+
+/// Priority-192 water-refraction model recipe exported to room-task startup.
+///
+/// Entry 0 takes zero payloads and attaches a synthetic one-part TMD body,
+/// skipping automatic model-buffer allocation. The callback owns its explicit
+/// two-half packet buffer; the room's writable source and stream remain borrowed
+/// until teardown. Requires shelter_r48 resources to remain loaded.
+extern TaskDesc gShelterR48WaterRefractionTaskDesc;
+
+/// Area layouts indexed directly by the saved placement variant, 0..12.
+///
+/// Slots 1 and 2 each place the actor_503500 boss and tentacle at (8000,1000,7000).
+/// Slot 3 places actor_403600 at (8000,500,6400), facing -1024 angle units.
+/// Slots 0 and 4..12 are absent. Placement and resource lists include their
+/// `AREA_PLACEMENT_END` records; borrowed tables and actor descriptors require
+/// their owning room and actor overlays to stay loaded.
+extern AreaVariant gShelterR48AreaVariants[SHELTER_R48_AREA_VARIANT_COUNT];
+
+// shelter_r48
+/// Room-1 lighting: 57 point lights, one cone light and default ambient minima.
+///
+/// Indexed by room ID minus one; only room ID 1 is valid. Every authored
+/// light admits every view. The room owns the writable lights and their
+/// composition/attenuation state; borrowers require its overlay to stay loaded.
+extern WorldCoordRoomLighting gShelterR48RoomLighting[1];
+
+/// Room-1 collision resources: the arena grid, 16 view boundaries and five actions.
+///
+/// Indexed by room ID minus one; only room ID 1 is valid. No sight occluders
+/// are supplied. Trigger lists include their final LAST-marked records and
+/// become mutable view-bound runtime lists; keep the room loaded until unlinked.
+extern WorldCollisionRoomResources gShelterR48RoomCollisionResources[SHELTER_R48_ROOM_COUNT];
+
+/// Room-1 logical views map directly to camera, image and sprite indices 1..18.
+///
+/// Indexed by room ID minus one; only room ID 1 is valid. Borrows gameplay's
+/// `gViewIdentityMap`; the room's 18-view count limits lookups independently
+/// of that shared map's capacity. Both owning overlays must remain loaded.
+extern u8* gShelterR48ViewMaps[1];
+
+/// Room-1's signed-halfword reverse-search limit of 18 logical views.
+///
+/// Indexed by room ID minus one; only room ID 1 is valid. Limits searches in
+/// `gShelterR48ViewMaps` independently of the borrowed identity map's capacity.
+/// The Shelter map borrows this count while the room overlay remains loaded.
+extern ViewCount gShelterR48ViewCounts[SHELTER_R48_ROOM_COUNT];
+
+/// The room's sole warp endpoint, indexed by warp ID 1 minus one.
+///
+/// Player and companion arrive at (1542,-1998,7374), yaw 1024 (4096 per turn),
+/// in view 2. There are no sound cues or spawn/fade options. Later arrivals
+/// mark `GAME_FLAG_MAP_MARK_POD_SERVICE_GANTRY`. The departure trigger selects
+/// this endpoint and arrival endpoint 2 in the requested Pod Access Tunnel.
+/// The Shelter map borrows the entry while this room overlay remains loaded.
+extern DirectionWarpEntry gShelterR48WarpEntries[SHELTER_R48_WARP_COUNT];
+
+/// Eighteen writable camera records selected by mapped view index 1..18 minus one.
+///
+/// Rotation is Q12; translation is the negated world-space camera origin in
+/// game units, applied before rotation. Projection distances are pixels.
+/// The Shelter map borrows this array; queued camera applications require
+/// the room overlay to stay loaded until they copy the selected record.
+extern ViewCamera gShelterR48ViewCameras[SHELTER_R48_VIEW_COUNT];
+
+/// Eighteen mutable sprite views selected by mapped view index 1..18 minus one.
+///
+/// Views 1, 11 and 14..16 retain empty batch-list addresses in `sources.empty`;
+/// other views supply source-element ranges. All batch lists end with
+/// `SPRITE_BATCH_END`, and every view retains decoded background strips.
+/// No clipping lists are supplied. The Shelter map and sprite renderer borrow
+/// the descriptors and backing arrays while this room overlay remains loaded.
+extern SpriteView gShelterR48SpriteViews[SHELTER_R48_VIEW_COUNT];
+
+/// Eight collision-surface classes, indexed directly by class 0..7.
+///
+/// Class 1 passes probes, ignores weapon impacts and supplies footstep cues;
+/// every other class blocks probes, allows weapon impacts and has no cues.
+/// All classes apply pushback. Entries borrow single records owned by this
+/// room; their pointers must not outlive its loaded overlay.
+extern WorldCollisionSurfaceProperties* gShelterR48SurfacePropertiesByClass[8];
+
+/// Dispatches Shelter R48's room setup, idle and teardown states.
+///
+/// Requires a live room task with state 0 (setup), 1 (idle) or 2 (kill).
+/// Setup installs the room's message table, registers the room task slot and
+/// starts the entry scene before advancing to idle. State 2 tears down the
+/// task and its children. The room and its scene actor overlay must be loaded; no state bounds
+/// check is performed.
+void shelterR48RoomTask(Task* task);
+
+/// Shows or hides the room's selected background-sprite batches across seven views.
+///
+/// `visible` is 0 to hide, 1 to show; other byte values leave them unchanged.
+/// Requires Shelter R48's mutable sprite resources to be installed for the
+/// current stage and area. The selected view indices are 1,2,3,5,6,7 and 17
+/// in the zero-based view array; no resource or index validation is performed.
+void shelterR48SetBackgroundSpritesVisible(u8 visible);
+
+/// Initializes the ring texture phases and draws the room's progress-dependent glow.
+///
+/// Bank-6 effect 0x14C requires a live task, room-effect state and loaded room
+/// resources. State 0 disables ground traces, consumes 96 LCG updates to seed
+/// six bands of sixteen phase bytes, sets state 1 and also draws that tick.
+/// Later ticks preserve the phases. Mapped views 3, 4, 6, 7, 8 and 18 draw an
+/// orange glow at progress nibble 0x100 value 1, a blue glow at 2 and none at
+/// other values. Radius scale is 256; both packed tints use flicker shift 5.
+/// Requires composed view coordinates, scratch and primitive capacity. The
+/// task does not inspect suspension/cancellation or retire itself; room
+/// teardown owns its lifetime.
+void shelterR48InitRingsAndDrawGlowTask(Task* task);
+
+/// Draws Brahman's small orb, trails spray and emits its requested final burst.
+///
+/// Bank-6 slot 0x189 requires counted, zero-initialized owned `EffectWork`,
+/// a coordinate body and a live borrowed parent. State 0 attaches and composes
+/// an identity transform. `spawnArg1.value` is a mutable mode: 0 emits launch
+/// spray and selects 1; 1 draws a size-896 tile and trails spray; 2 emits one
+/// core plus four spray/drift pairs and selects 3; 3 retires next active tick.
+/// Trail mode increments signed-halfword age twice per tick, retaining its
+/// even-age emission test. Suspension redraws without aging; cancellation
+/// redraws once before freeing work/body/task and decrementing the count.
+/// Requires composed drawing coordinates, scratch and primitive capacity.
+void shelterR48SmallOrbTask(Task* task);
+
+/// Charges two yellow discs and a contracting glow band, then flashes and fades.
+///
+/// Bank-6 slot 0x18A requires counted, zero-initialized owned `EffectWork`,
+/// a coordinate body and a live parent. Initialization attaches an identity
+/// transform, overwrites `spawnArg1.value` with a 90-active-tick countdown and
+/// draws the first charge tick. Scale/period hold disc/band brightness and
+/// angle holds disc radius in drawing-coordinate units. Brightness 97 enables
+/// the band; charge completion spawns the ring wall and starts a shrinking,
+/// additive screen flash fading by 16 per active tick. Suspension freezes
+/// charge and fade but still increments age; cancellation retires without
+/// drawing. Retirement frees work/body/task and decrements the effect count.
+/// Requires composed drawing coordinates, scratch and primitive capacity.
+void shelterR48YellowRingFlashTask(Task* task);
+
+/// Advances one counted eight-cell water-spray particle using this room's drawers.
+///
+/// Requires owned, initialized `EffectWork` in `spawnArg2.pointer`, a coordinate
+/// body and initial state/cell zero. `spawnArg1` bits 0..11 give size, 12..15
+/// updates per cell (0 selects 1), 16..23 launch speed (0 selects 64), 24..27
+/// velocity kind (0 stationary, 1 upward burst, 2 all-axis spray, 3 narrow
+/// upward jet, 5 copied position direction; others leave a zero direction),
+/// and any bits 28..31 select the upright drawer. A supplied
+/// nonzero move is already a velocity; generated directions are normalized
+/// and scaled. Initialization draws nothing; later running updates draw,
+/// move in parent-coordinate units and add 6 to Y velocity with halfword wrap.
+/// Suspended updates redraw without aging; cancellation releases immediately.
+/// Retirement frees work/body/task and decrements the effect count. Requires
+/// composed drawing resources, scratch and primitive space; spin is in 4096
+/// units per turn.
+void shelterR48WaterDriftTaskU16(Task* task);
+
+/// Advances Shelter R48's drifting sprite with sign-selected palettes and fixed Y acceleration.
+///
+/// Requires a live coordinate-body task with initialized `EffectWork` in
+/// `spawnArg2.pointer`. Bits 0..11 of `spawnArg1.value` give size, 12..14 give
+/// period (1 only when bits 12..15 are all zero), 16..23 give speed (0 means 64),
+/// and 24..27 select movement kind. A nonzero period nibble must encode a
+/// nonzero period. Any bit in 28..31 selects the ten-cell alternate running
+/// drawer; otherwise the twelve-cell banked drawer runs. Bit 31 selects palette
+/// 1 (CLUT 0x428F), with palette 0 otherwise. Spin uses 4096 units per turn.
+/// Initializes without drawing; moving updates advance position in coordinate
+/// units then subtract 2/1 from banked/alternate Y velocity, even for kind 7.
+/// Nonzero effect control freezes updates and selects the redraw's drawer from
+/// bit 31 alone; control >= 4 frees work and task after the redraw. Drawing
+/// requires composed coordinates, initialized scratch and primitive-packet space.
+void shelterR48SpriteDriftTask(Task* task);
+
+/// Draws Brahman's projectile and emits spray until its particle-only linger mode.
+///
+/// Bank-6 slot 0x18D requires counted, zero-initialized owned `EffectWork`,
+/// a coordinate body and a live parent. State 0 attaches an identity transform.
+/// `spawnArg1.value` modes: 0 emits launch spray and selects 1; 1 draws the
+/// twelve-cell size-2048 sprite and trails spray; 2 draws no core and emits
+/// drift every sixth age tick and spray on even ticks. Trail mode increments
+/// signed-halfword age twice per active tick; particle mode increments once.
+/// Suspension redraws the core without aging; cancellation redraws once, then
+/// frees work/body/task and decrements the count. The caller owns natural
+/// teardown; there is no self-expiring linger timer. Requires composed drawing
+/// coordinates, scratch and primitive capacity.
+void shelterR48ProjectileTask(Task* task);
+
+/// Draws Brahman's large orb with the alternate palette and trails drifting sprites.
+///
+/// Bank-6 slot 0x18E requires counted, zero-initialized owned `EffectWork`,
+/// a coordinate body and a live parent. State 0 attaches an identity transform.
+/// `spawnArg1.value` modes: 0 emits launch drift and selects 1; 1 draws a
+/// twelve-cell size-2048 core and trails drift; 2 emits drift on even age ticks
+/// without drawing a core. Trail mode increments signed-halfword age twice per
+/// active tick; particle mode increments once. Suspension redraws a size-2560
+/// core without aging; cancellation redraws once, then frees work/body/task
+/// and decrements the count. The caller owns natural teardown; there is no
+/// self-expiring linger timer. Requires composed coordinates, scratch and
+/// primitive capacity.
+void shelterR48LargeOrbTask(Task* task);
+
+/// Expands and fades the three textured bands of the room's ring-wall effect.
+///
+/// Requires a counted coordinate-body effect with owned `EffectWork` and an
+/// already composed coordinate. Its angle/step are radii in coordinate units,
+/// period is the retained lift, and scale's low byte is brightness. A fresh
+/// running tick sets brightness 128 and draws at 120; each running draw adds 512 to
+/// base radius and 256 to spread and subtracts 8 from brightness. Suspension
+/// redraws all three bands without aging. Cancellation redraws once, then
+/// frees work/body/task and decrements the effect count; natural exhaustion
+/// also retires the effect. Requires initialized texture-phase rows, scratch
+/// and primitive space.
+void shelterR48RingWallTask(Task* task);
+
+/// Charges two orange discs and a pulsing band, then flashes with shockwave rings.
+///
+/// Bank-6 slot 0x190 requires counted, zero-initialized owned `EffectWork`,
+/// a coordinate body and a live parent. `spawnArg1.value` is the positive
+/// active-tick charge count: 1..256 gives a nonzero brightness step. Initialization
+/// attaches a minus-quarter-turn X rotation and immediately draws a charge tick.
+/// Scale holds brightness, angle the disc radius in drawing-coordinate units,
+/// and step the unsigned-read increment floor(256 / initial countdown).
+/// Charge completion starts a 4-per-tick additive screen fade, spawns shockwave
+/// rings and parents their task to this task if spawning succeeds. Suspension
+/// freezes charge/fade but still increments age; cancellation retires without
+/// drawing. Retirement frees work/body/task and decrements the count. Requires
+/// composed drawing coordinates, scratch and primitive capacity.
+void shelterR48OrangeRingFlashTask(Task* task);
+
+/// Expands three shockwave bands with an orange screen tint, then fades them.
+///
+/// Requires a counted coordinate-body effect with owned `EffectWork` and a
+/// live borrowed parent. Initialization attaches an identity transform to the
+/// parent, composes once and sets brightness 128 without drawing. Running
+/// updates grow radius/lift/spread by 16 coordinate units; age 49 starts an
+/// eight-update fade by 16. Its local transform stays fixed; the render pass
+/// refreshes the composed transform with the parent. Suspended
+/// updates redraw the bands without tint or aging; cancellation redraws once
+/// before retiring. Retirement frees work/body/task and decrements the count.
+/// Requires initialized texture-phase rows, scratch and primitive space.
+void shelterR48ShockwaveRingsTask(Task* task);
+
+/// Charges a pink ring flash, fades its disc and separates two shrinking glow beams.
+///
+/// Requires a counted coordinate-body effect, owned zero-initialized
+/// `EffectWork` and a live parent. Initialization attaches and composes an
+/// identity transform, overwrites spawnArg1 with a 30-running-update countdown
+/// and immediately draws the first charge tick. The local transform stays
+/// fixed; the render pass refreshes it with the parent. Angle is the disc
+/// radius; period later holds beam radius and step
+/// the mirrored beam yaws (4096 units per turn). Suspension freezes geometry
+/// and brightness, but age still advances and a completed flash may change
+/// state; cancellation frees work/body/task without drawing. Natural beam
+/// exhaustion also retires the effect and decrements the count. Requires
+/// scratch and primitive capacity, and nonzero projected beam-end depths.
+void shelterR48PinkRingFlashTask(Task* task);
+
+#endif // INCLUDE_ROOMS_SHELTER_R48_H

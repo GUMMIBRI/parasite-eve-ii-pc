@@ -1,0 +1,2 @@
+// Overlay-local symbols for P08 (file 10304).
+p08AttackState = 0x8011d1d8; // type:func

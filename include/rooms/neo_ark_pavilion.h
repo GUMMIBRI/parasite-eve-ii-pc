@@ -1,0 +1,240 @@
+#ifndef INCLUDE_ROOMS_NEO_ARK_PAVILION_H
+#define INCLUDE_ROOMS_NEO_ARK_PAVILION_H
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+
+#include "types.h"
+
+#include "gameplay/area.h"
+#include "gameplay/direction.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/task_types.h"
+
+/// Four borrowed eight-point Bog Diver patrol rings, selected by spawn bits 4..5.
+///
+/// Selectors 0 and 3 share the 1500-unit-depth ring; 1 selects 3000 and 2
+/// selects 4500. X/Z are room coordinates; Y is depth added to
+/// `gNeoArkPavilionDiverWaterY`. All values use game units. The rings remain
+/// valid while the pavilion overlay is loaded.
+extern SVECTOR* gNeoArkPavilionDiverPatrolRings[4];
+
+/// Writable emergence spots shared by the pavilion's Bog Divers.
+///
+/// Entries 1..6 supply room-coordinate X/Z; entry 0 is the reserved fallback
+/// claim and is never searched. Searches preserve the Diver's previous Y.
+/// The fourth halfword (`pad`) stores 0 free or 1 claimed; entry 7 has -1
+/// and ends the list. With no eligible spot, the Diver retains its previous
+/// emergence position and switches its claim index to 0. Claims are released
+/// on relocation or despawn. Keep this overlay loaded until all claims end.
+extern SVECTOR gNeoArkPavilionDiverSurfaceSpots[8];
+
+/// Room-coordinate water-surface Y sampled by each pavilion Bog Diver at spawn.
+///
+/// Positive Y points downward; patrol depths are added to this height. Keep
+/// the pavilion overlay loaded while the Diver configuration is read.
+extern s16 gNeoArkPavilionDiverWaterY;
+
+/// Bodyless, priority-192 recipe for the pavilion's framebuffer water refraction.
+///
+/// Spawn descriptor index 0 with zero arguments; configured views 2..7 draw
+/// into the reserved actor-buffer-2 packet banks. Keep this room overlay,
+/// camera and packet storage live through task execution and GPU consumption.
+extern TaskDesc gNeoArkPavilionWaterRefractionTaskDesc;
+
+/// Placement/resource pairs indexed by the saved pavilion variant (0..12).
+///
+/// Slots 1..5 and 11 are present; 0, 6..10 and 12 are absent (both pointers
+/// NULL). Variant 1 is the default. Placements borrow the Neo Ark map overlay;
+/// resource lists borrow this room overlay and end with `AREA_PLACEMENT_END`.
+/// Keep both overlays and the selected actor descriptors loaded while loading,
+/// spawning or updating model flags. The directory has no terminator.
+extern AreaVariant gNeoArkPavilionAreaVariants[13];
+
+/// Collision resources for pavilion rooms 1 and 2, indexed by room ID minus one.
+///
+/// Both rooms share the grid, two view boundaries and one sight occluder;
+/// each has four distinct action triggers. Setup mutates and links the
+/// borrowed arrays through their LAST-marked records. Keep the pavilion
+/// overlay loaded until the grid is retired and the lists are unlinked.
+extern WorldCollisionRoomResources gNeoArkPavilionRoomCollisionResources[2];
+
+/// Lighting for pavilion rooms 1 and 2, indexed by room ID minus one.
+///
+/// Both rooms borrow the same four directional lights and use default ambient
+/// minima. Keep the pavilion overlay loaded while these records are selected.
+extern WorldCoordRoomLighting gNeoArkPavilionRoomLighting[2];
+
+/// Logical-view maps for pavilion rooms 1 and 2, indexed by room ID minus one.
+///
+/// Each room has seven logical views, indexed by view ID minus one. Room 1
+/// borrows `gViewIdentityMap`; room 2 maps them to 1, 4, 5, 2, 3, 6, 7.
+/// Values select the shared camera, image and sprite resources at index minus
+/// one. Borrowed room storage remains valid while this overlay is loaded.
+extern u8* gNeoArkPavilionViewMaps[2];
+
+/// Seven logical views in each pavilion room, indexed by room ID minus one.
+///
+/// Counts bound the logical-view search in `gNeoArkPavilionViewMaps`; the
+/// retained eighth byte of room 2's map is outside its count. Borrowed storage
+/// remains valid while the pavilion overlay is loaded.
+extern ViewCount gNeoArkPavilionViewCounts[2];
+
+/// Three pavilion warp endpoints, indexed by warp ID minus one without a terminator.
+///
+/// Slot 1 connects to the submarine tunnel; slots 2 and 3 are the left bridge
+/// and right island exits. Each gives identical player/companion room-space
+/// placements, with yaw in 4096 units per turn. Arrival views are 2, 3 and 2.
+/// Slot 1 is silent; the bridge/island endpoints request area-bank sounds 4
+/// on arrival and 3 on departure. No entry requests a blocked sound or map
+/// flag. Keep the pavilion overlay loaded during lookup and complete-entry copying.
+extern DirectionWarpEntry gNeoArkPavilionWarpEntries[3];
+
+/// Seven pavilion cameras, indexed by mapped view ID minus one.
+///
+/// Transforms use Q12 rotation and signed world-coordinate translation;
+/// projection distances are pixels. Both rooms share this array. A queued
+/// camera application requires the pavilion overlay to remain loaded.
+extern ViewCamera gNeoArkPavilionViewCameras[7];
+
+/// Sprite resources for the pavilion's seven mapped views, indexed at ID minus one.
+///
+/// Every view keeps the decoded background image. View 1 has no source sprites;
+/// views 2..7 add 149, 97, 157, 115, 43 and 48 depth-sorted sprites respectively.
+/// No view supplies clipping areas. Descriptors and writable sources/batches
+/// remain borrowed only while the pavilion overlay is loaded.
+extern SpriteView gNeoArkPavilionSpriteViews[7];
+
+/// Collision policies indexed by the pavilion's surface classes 0..7.
+///
+/// Class 1 passes probes and ignores weapon impacts; class 4 blocks probes,
+/// allows weapon impacts and supplies floor footstep cues. Other classes block probes and allow weapon
+/// impacts without footstep cues. All classes apply pushback. The eight entries
+/// share three writable records owned by the loaded pavilion overlay.
+extern WorldCollisionSurfaceProperties* gNeoArkPavilionSurfaceProperties[8];
+
+/// Installs the pavilion's eight enemy and water effect IDs on the first task tick.
+///
+/// State 0 installs the IDs and advances to state 1; later ticks are idle.
+/// Spawn arguments and the coordinate body are unused. Keep the pavilion overlay
+/// loaded while tasks using these IDs are live.
+void neoArkPavilionInstallRoomEffectsTask(Task* task);
+
+/// Advances an expanding, fading pavilion water ripple using its cached draw transform.
+///
+/// Requires a live counted effect with owned `EffectWork` in `spawnArg2.pointer`,
+/// one coordinate body with a composed `workm`, initial state 0 and age 0,
+/// as `effectSpawn` supplies. Spawn bits 0..11 give the initial local half-side
+/// (0..4095 coordinate units); higher bits are ignored. Half-side is stored in
+/// `EffectWork::angle` and RGB brightness in `EffectWork::scale`.
+///
+/// Each running update ages, grows by 32, draws, then dims by 2. The first sets
+/// brightness 64 and replaces local rotation with one random Y rotation,
+/// preserving translation. The task never composes: its first draw uses the
+/// cache before that yaw, and model draw passes refresh the linked coordinate.
+/// A fresh ripple lasts 32 running updates, drawing brightness 64..2 and
+/// half-sides from initial size + 32 through initial size + 1024 (32..5119).
+///
+/// Non-running control freezes initialization and aging but still draws;
+/// control 4 or above draws once before cancellation. Completion and cancellation
+/// release the work, counted task and body. Keep the overlay loaded and scratch
+/// and frame packet storage available while live; released pointers must not be retained.
+void neoArkPavilionWaterRippleTask(Task* task);
+
+/// Animates one eight-cell pavilion water-spray particle using its cached draw coordinate.
+///
+/// Requires a live counted effect with owned `EffectWork` in `spawnArg2.pointer`,
+/// a coordinate body, initial state 0 and cell index 0, as `effectSpawn` supplies.
+/// Drawers read the coordinate's composed `workm`; this task never composes it.
+/// Movement changes local translation in parent-coordinate units and marks it
+/// dirty, so drawing uses the cached position until another user composes it.
+///
+/// `spawnArg1` bits 0..11 give perspective size (0..4095), bits 12..15 running
+/// updates per cell (0 selects 1), and bits 16..23 launch speed in parent units
+/// per update (0 selects 64). Bits 24..27 select direction: 0 stationary,
+/// 1 upward burst, 2 all-axis spray, 3 narrow upward jet, 5 the copied `pos`
+/// offset; other values leave the zero direction for SDK normalization.
+/// Nonzero bits 28..31 select the upright drawer; otherwise the sprite uses
+/// a retained random angle in 4096 units per turn. A supplied nonzero `move`
+/// bypasses direction generation and scaling; `step` becomes 64 to enable it.
+///
+/// The first running update initializes without drawing or moving. Later
+/// updates draw cells 0..7 through u16 indices, move by signed halfword
+/// velocity, and add 6 to Y velocity with halfword truncation. Stationary
+/// particles skip movement and gravity. Each cell lasts `period` running
+/// updates; retirement follows initialization plus 8 * `period` updates.
+/// Non-running control freezes initialization and aging but still draws,
+/// including once before cancellation at control 4 or above. Retirement frees
+/// the work and tears down the counted task and body. Keep the overlay loaded
+/// and scratch/frame packet storage available while live; released pointers
+/// must not be retained.
+void neoArkPavilionWaterSprayTask(Task* task);
+
+/// Runs the pavilion's pink charge flash, peak screen tint and fading star.
+///
+/// Requires a coordinate body and an owned, zero-initialized `EffectWork` in
+/// `spawnArg2.pointer`. `spawnArg1.value` is a positive charge duration in active
+/// ticks, consumed as a countdown. Nonzero room effect control pauses the task;
+/// control 4 or above cancels it. Completion and cancellation release the work.
+void neoArkPavilionRoomVisualEffectsFlashTask(Task* task);
+
+/// Records two anchored endpoints in eight-frame histories and draws their fading beam.
+///
+/// Requires a coordinate body and an owned, zero-initialized `EffectWork` in
+/// `spawnArg2.pointer`; its `parent` coordinate must remain live. Owns a separate
+/// history allocation in `Task::work`, released by task teardown. Allocation
+/// failure resets the age and retries. After initialization, `spawnArg1.value`
+/// stops the effect when it equals the nonzero signed 16-bit age; 0 disables
+/// the timed stop. Control 0 and 1 record and draw; control 2 or above freezes
+/// the history until resumed or torn down.
+void neoArkPavilionRoomVisualEffectsTwinTrailTask(Task* task);
+
+/// Runs an impact flash followed by smoke puffs or expanding orange rings and sparks.
+///
+/// Starts in state 0 with a coordinate body and owned, zero-aged `EffectWork`
+/// in `spawnArg2.pointer`. Nonzero `spawnArg1.value` selects smoke; zero selects
+/// rings. Active age 7 enters release; age 8 releases work and the task.
+/// Room effect control 1..3 pauses and 4 or above cancels. Spawned effects
+/// remain independent. Keep this overlay and the effect controller loaded.
+void neoArkPavilionRoomVisualEffectsSparkBurstTask(Task* task);
+
+/// Runs an anchored charge disc with player-joint sparks, flicker and a fading ring.
+///
+/// Requires a coordinate body and owned, zeroed `EffectWork` in
+/// `spawnArg2.pointer`. `spawnArg1.value` selects tint 0 or 1; the work's parent
+/// coordinate and its ancestors must outlive the task. State 0 attaches without
+/// drawing; growth emits an adopted spark every fourth active age from player
+/// parts 3..18. The owner requests flicker, release or cancel with
+/// `ROOM_VISUAL_EFFECTS_GLOW_DISC_*`. Control 1..3 pauses and 4 or above
+/// cancels. Teardown releases work and adopted sparks. Keep the player model,
+/// installed flying-spark callback, room overlay and effect controller live.
+void neoArkPavilionRoomVisualEffectsGlowDiscTask(Task* task);
+
+/// Sends an animated spark toward an initial target position for twenty active ticks.
+///
+/// Requires a coordinate body and an owned, zero-initialized `EffectWork` in
+/// `spawnArg2.pointer`. `spawnArg1.pointer` borrows a target `GfxCoord`; both
+/// matrices must be current in the same view space on the first active tick.
+/// The target is sampled once to fix the flight step. Nonzero room effect control pauses the
+/// task; control 4 or above cancels it. Completion and cancellation release the work.
+void neoArkPavilionRoomVisualEffectsFlyingSparkTask(Task* task);
+
+/// Runs the pavilion's expanding orange disc and layered glow with a fading ring.
+///
+/// Requires a coordinate body and an owned, zero-initialized `EffectWork` in
+/// `spawnArg2.pointer`; `spawnArg1` is unused. The ring fades before the centre.
+/// Nonzero room effect control pauses the task; control 4 or above cancels it.
+/// Completion and cancellation release the work.
+void neoArkPavilionRoomVisualEffectsFlyingOrangeBurstTask(Task* task);
+
+/// Runs the pavilion's room-message task.
+///
+/// Requires a live task in state 0..2: initialize the receiver and ambience,
+/// idle while messages handle requests, then teardown. The room overlay must
+/// remain loaded through dispatch.
+void neoArkPavilionRoomTask(Task* task);
+
+#endif // INCLUDE_ROOMS_NEO_ARK_PAVILION_H

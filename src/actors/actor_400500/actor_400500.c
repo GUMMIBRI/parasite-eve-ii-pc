@@ -1,0 +1,6677 @@
+#include "actors/actor_400500.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/inline_c.h>
+#include <psyq/memory.h>
+
+#include "common.h"
+#include "gte.h"
+
+#include "actors/actor.h"
+
+#include "gameplay/actor.h"
+#include "gameplay/actor_render.h"
+#include "gameplay/animation.h"
+#include "gameplay/area_entry.h"
+#include "gameplay/attachment_state.h"
+#include "gameplay/attachments.h"
+#include "gameplay/collision.h"
+#include "gameplay/damage.h"
+#include "gameplay/effects.h"
+#include "gameplay/enemy.h"
+#include "gameplay/hud_sprites.h"
+#include "gameplay/loading.h"
+#include "gameplay/message.h"
+#include "gameplay/model_lighting.h"
+#include "gameplay/pad_script.h"
+#include "gameplay/enemy_params.h"
+#include "gameplay/player_actor.h"
+#include "gameplay/room_effects.h"
+#include "gameplay/scene_combat.h"
+#include "gameplay/scene_runtime.h"
+#include "gameplay/sprites.h"
+#include "gameplay/world_collision.h"
+#include "gameplay/world_coords.h"
+#include "gameplay/world_targets.h"
+
+#include "main/coord.h"
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/gameflag.h"
+#include "main/random.h"
+#include "main/gfx.h"
+#include "main/gfx_types.h"
+#include "main/mc.h"
+#include "main/mc_types.h"
+#include "main/mem.h"
+#include "main/scratch.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/sound.h"
+#include "main/stage.h"
+#include "main/task.h"
+#include "main/task_types.h"
+#include "main/tmd.h"
+#include "main/tmd_types.h"
+#include "main/wipsys.h"
+#include "main/wipsys_types.h"
+
+#include "overlay.h"
+static void _frameCaptureQueue(s32 orderingTableSlot);
+#define FRAME_CAPTURE_QUEUE _frameCaptureQueue
+#include "../../shared/screen/frame_capture.h"
+#include "../../shared/actor/coord_math.h"
+
+/// Values of `_Actor400500GrayStalkerWork::state` while the Stalker is alive.
+///
+/// Each is entered by name, together with a reset of `subState`, and selects
+/// a handler of `_Actor400500StateTable`. The death sequence and the teardown
+/// step the same field through tables of their own, outside this numbering.
+enum {
+    ACTOR_400500_STATE_CRAWL          = 0x0, // crawls the ceiling or the floor along the room's axes; picks the attacks, the drop and the jump
+    ACTOR_400500_STATE_GRAB           = 0x1, // reaches down from the ceiling for a target right below it and carries what it catches
+    ACTOR_400500_STATE_STRIKE_CEILING = 0x2, // swings the right arm out from the ceiling and strikes
+    ACTOR_400500_STATE_STRIKE_FLOOR   = 0x3, // swings the left arm out on the floor and strikes, then crawls on or jumps up
+    ACTOR_400500_STATE_FALL           = 0x4, // falls from the ceiling onto its back and gets up into `CRAWL_FALLEN`
+    ACTOR_400500_STATE_KNOCKDOWN      = 0x5, // recoil of a knockdown hit; one taken on the ceiling ends in a fall
+    ACTOR_400500_STATE_AMBUSH         = 0x6, // first state: waits cloaked until the target comes close, then strikes, or until it is hit
+    ACTOR_400500_STATE_DROP           = 0x7, // lets go of the ceiling and lands on the floor where it hung
+    ACTOR_400500_STATE_JUMP           = 0x8, // jumps from the floor back onto the ceiling
+    ACTOR_400500_STATE_TURN_OVER      = 0x9, // ends `CRAWL_FALLEN`: turns over, reversing `yaw`, then crawls on or jumps up
+    ACTOR_400500_STATE_CRAWL_FALLEN   = 0xA, // crawls the floor after a fall from the ceiling, until it turns over
+    ACTOR_400500_STATE_ROOM_SEQUENCE  = 0xB, // sequence started by room command 1, whose steps wait for commands 2, 3 and 4
+    ACTOR_400500_STATE_STATUS_HOLD    = 0xC, // recoil held until the status buildup runs out; one taken on the ceiling ends in a fall
+    ACTOR_400500_STATE_COUNT                 // number of states, and of the handlers in `_Actor400500StateTable`
+};
+
+/// The living Stalker's state handlers, indexed by `ACTOR_400500_STATE_*`.
+///
+/// The package defines one table. While combat is running, the task's
+/// per-frame handler copies it to the stack by assignment, which is why the
+/// array is wrapped in a struct, and calls the entry of the current state.
+/// The call is unconditional and every entry is a handler. Most of them run a
+/// table of their own in turn, indexed by `subState`.
+typedef struct {
+    TaskFunc handlers[ACTOR_400500_STATE_COUNT]; // Handler of each `ACTOR_400500_STATE_*`, taking the Stalker's task
+} _Actor400500StateTable;
+STATIC_ASSERT_SIZEOF(_Actor400500StateTable, ACTOR_400500_STATE_COUNT * sizeof(TaskFunc));
+
+/// Values of `_Actor400500GrayStalkerWork::animRequest`.
+enum {
+    ACTOR_400500_ANIM_REQUEST_BLEND   = 1, // blend into `animId` over `animBlendFrames` frames
+    ACTOR_400500_ANIM_REQUEST_RESET   = 2, // cut straight to `animId`
+    ACTOR_400500_ANIM_REQUEST_PLAYING = 3  // `animId` has been applied and is playing
+};
+
+/// Bits of `_Actor400500GrayStalkerWork::posture`.
+enum {
+    ACTOR_400500_POSTURE_ON_FLOOR = 1 << 0, // standing on the floor; clear while it hangs from the ceiling
+    ACTOR_400500_POSTURE_ON_BACK  = 1 << 1  // landed on its back; cleared when it rights itself
+};
+
+/// Values of `_Actor400500GrayStalkerWork::cloakRequest`.
+///
+/// The running bit is the sign bit of the byte, so a fade in progress reads
+/// negative. The low bits say which fade it is.
+enum {
+    ACTOR_400500_CLOAK_HIDE      = 0,    // cloak, then fade the body out and drop it from lock-on
+    ACTOR_400500_CLOAK_SHOW      = 1,    // fade the body in and make it lockable, then drop the cloak
+    ACTOR_400500_CLOAK_KIND_MASK = 0x7F, // the fade a request asks for
+    ACTOR_400500_CLOAK_RUNNING   = 0x80  // the fade has not finished
+};
+
+/// Values of `_Actor400500GrayStalkerWork::turnRequest`.
+enum {
+    ACTOR_400500_TURN_NONE     = 0,
+    ACTOR_400500_TURN_YAW_DOWN = 1, // turn on the spot towards lower `yaw`
+    ACTOR_400500_TURN_YAW_UP   = 2  // turn on the spot towards higher `yaw`
+};
+
+/// Values of `_Actor400500GrayStalkerWork::hitReaction`, the reaction a hit asks for.
+enum {
+    ACTOR_400500_HIT_REACTION_NONE   = 0,
+    ACTOR_400500_HIT_REACTION_LIGHT  = 1, // light recoil
+    ACTOR_400500_HIT_REACTION_HEAVY  = 2, // heavy recoil
+    ACTOR_400500_HIT_REACTION_STATUS = 3, // held until the status buildup runs out
+    ACTOR_400500_HIT_REACTION_BLAST  = 4  // heavy recoil; a blast that kills bursts the body
+};
+
+/// Target-range gates in game-coordinate units; bearings use 4096 units per turn.
+enum {
+    ACTOR_400500_GRAB_RANGE              = 0x500,
+    ACTOR_400500_STRIKE_RANGE            = 0x640,
+    ACTOR_400500_GRAB_HALF_ANGLE         = 0x2E0,
+    ACTOR_400500_STRIKE_HALF_ANGLE       = 0x300,
+    ACTOR_400500_TARGET_MOVE_RANGE_SCALE = 8
+};
+
+/// Sound-script entries for step contacts and grab cues, before adding a placement tag.
+enum {
+    ACTOR_400500_SOUND_STEP_1        = 0x40050001,
+    ACTOR_400500_SOUND_STEP_2        = 0x40050002,
+    ACTOR_400500_SOUND_GRAB_FRAME_12 = 6, // Uses bank zero for this cue
+    ACTOR_400500_SOUND_GRAB_FRAME_30 = 0x40050007,
+    ACTOR_400500_SOUND_GRAB_FRAME_42 = 0x40050008
+};
+
+/// Model coordinates at the ends of the two arm chains.
+enum {
+    ACTOR_400500_PART_RIGHT_ARM_TIP = 8,
+    ACTOR_400500_PART_LEFT_ARM_TIP  = 11
+};
+
+/// Steps of the ordinary crawl route, indexed by the living crawl's `subState`.
+enum {
+    ACTOR_400500_CRAWL_STEP_SELECT                 = 0,
+    ACTOR_400500_CRAWL_STEP_POSITIVE_X             = 1,
+    ACTOR_400500_CRAWL_STEP_TURN_NEGATIVE_X        = 2,
+    ACTOR_400500_CRAWL_STEP_NEGATIVE_X             = 3,
+    ACTOR_400500_CRAWL_STEP_TURN_POSITIVE_X        = 4,
+    ACTOR_400500_CRAWL_STEP_CORNER_CHOICE          = 5,
+    ACTOR_400500_CRAWL_STEP_POSITIVE_Z             = 6,
+    ACTOR_400500_CRAWL_STEP_TURN_NEGATIVE_Z        = 7,
+    ACTOR_400500_CRAWL_STEP_NEGATIVE_Z             = 8,
+    ACTOR_400500_CRAWL_STEP_CORNER_TURN_NEGATIVE_X = 9,
+    ACTOR_400500_CRAWL_STEP_TURN_POSITIVE_Z        = 10
+};
+
+/// IDs of the route rectangles; zero is outside every rectangle.
+enum {
+    ACTOR_400500_CRAWL_ZONE_X_SEGMENT = 1,
+    ACTOR_400500_CRAWL_ZONE_CORNER    = 2,
+    ACTOR_400500_CRAWL_ZONE_Z_SEGMENT = 3,
+    ACTOR_400500_CRAWL_ZONE_X_END     = 4,
+    ACTOR_400500_CRAWL_ZONE_PATROL    = 5,
+    ACTOR_400500_CRAWL_ZONE_Z_END     = 6
+};
+
+/// Crawl headings in 4096ths of a turn, clip index and sixteenth-frame rate.
+enum {
+    ACTOR_400500_CRAWL_YAW_POSITIVE_Z = 0,
+    ACTOR_400500_CRAWL_YAW_POSITIVE_X = ACTOR_TRANSFORM_ANGLE_TURN / 4,
+    ACTOR_400500_CRAWL_YAW_NEGATIVE_Z = ACTOR_TRANSFORM_ANGLE_HALF_TURN,
+    ACTOR_400500_CRAWL_YAW_NEGATIVE_X = ACTOR_TRANSFORM_ANGLE_TURN * 3 / 4,
+    ACTOR_400500_ANIM_CRAWL           = 2,
+    ACTOR_400500_CRAWL_RATE           = ANIMATION_RATE_ONE * 3 / 2
+};
+
+/// The two crawl lines and the ceiling reset position, in room-coordinate units.
+enum {
+    ACTOR_400500_CRAWL_LINE_X               = 16500,
+    ACTOR_400500_CRAWL_LINE_Z               = -8350,
+    ACTOR_400500_CRAWL_RESET_X              = -1000,
+    ACTOR_400500_CRAWL_CEILING_Y            = -4000,
+    ACTOR_400500_CRAWL_RESET_Z              = -8470,
+    ACTOR_400500_POSTURE_CHANGE_TARGET_GAP  = 4000,
+    ACTOR_400500_POSTURE_CHANGE_CHANCE_MASK = 31 // One accepted high-word value out of 32
+};
+
+/// Arm-strike cues, whole state ticks and 4096ths-of-a-turn return increments.
+enum {
+    ACTOR_400500_SOUND_ARM_STRIKE            = 0x40050005,
+    ACTOR_400500_CEILING_STRIKE_CONTACT_TICK = 11,
+    ACTOR_400500_CEILING_STRIKE_RETURN_TICK  = 18,
+    ACTOR_400500_FLOOR_STRIKE_CONTACT_TICK   = 13,
+    ACTOR_400500_FLOOR_STRIKE_RETURN_TICK    = 16,
+    ACTOR_400500_ARM_RETURN_ANGLE_STEP       = 128,
+    ACTOR_400500_ATTACK_COOLDOWN_TICKS       = 60,
+    ACTOR_400500_ARM_LEFT                    = 0,
+    ACTOR_400500_ARM_RIGHT                   = 1
+};
+
+/// Motion, recoil and fallen-route values used by the Stalker's transition handlers.
+///
+/// Heights are root-parent game coordinates, angles are 4096ths of a turn,
+/// and delays are whole handler ticks. Animation IDs index the loaded set table.
+enum {
+    ACTOR_400500_PART_BODY                 = 3,
+    ACTOR_400500_POSTURE_CHANGE_STEP_START = 0,
+    ACTOR_400500_TURN_OVER_STEP_START      = 0,
+    ACTOR_400500_CLOAK_PHASE_FIRST_RAMP    = 0,
+    ACTOR_400500_FLOOR_Y                   = -1000,
+    ACTOR_400500_FALL_PIVOT_Y              = -2200,
+    ACTOR_400500_ANIM_CEILING_HOLD         = 1,
+    ACTOR_400500_ANIM_FALLEN_CRAWL         = 4,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL       = 15,
+    ACTOR_400500_ANIM_ON_BACK_RECOIL       = 17,
+    ACTOR_400500_ANIM_FALL_LANDING         = 19,
+    ACTOR_400500_ANIM_POSTURE_SETTLE       = 25,
+    ACTOR_400500_RECOIL_STEP_FLOOR_WAIT    = 1,
+    ACTOR_400500_RECOIL_STEP_CEILING_WAIT  = 3,
+    ACTOR_400500_SOUND_DROP_LANDING        = 0x40050003,
+    ACTOR_400500_SOUND_FALL_LANDING        = 0x40050006,
+    ACTOR_400500_FALLEN_TARGET_GAP         = 4000
+};
+
+/// Arm extension angles in 4096ths of a turn and animation-set indices.
+enum {
+    ACTOR_400500_ARM_EXTEND_ANGLE_STEP  = 128,
+    ACTOR_400500_ARM_STRIKE_SWING_ANGLE = ACTOR_TRANSFORM_ANGLE_TURN / 8,
+    ACTOR_400500_ANIM_FLOOR_STRIKE      = 7,
+    ACTOR_400500_ANIM_CEILING_STRIKE    = 8,
+    ACTOR_400500_ANIM_UPRIGHT_RECOVERY  = 16,
+    ACTOR_400500_ANIM_ON_BACK_RECOVERY  = 18,
+    ACTOR_400500_ANIM_FALL_RECOVERY     = 20
+};
+
+/// Sound-script cue used to begin a floor/ceiling posture transition.
+enum { ACTOR_400500_SOUND_POSTURE_CHANGE = 0x40050004 };
+
+/// Steps of crawling on the back, indexed by the fallen crawl's `subState`.
+enum {
+    ACTOR_400500_FALLEN_CRAWL_STEP_SELECT          = 0,
+    ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_X      = 1,
+    ACTOR_400500_FALLEN_CRAWL_STEP_TURN_NEGATIVE_X = 2,
+    ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_X      = 3,
+    ACTOR_400500_FALLEN_CRAWL_STEP_TURN_POSITIVE_X = 4,
+    ACTOR_400500_FALLEN_CRAWL_STEP_CORNER_CHOICE   = 5,
+    ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_Z      = 6,
+    ACTOR_400500_FALLEN_CRAWL_STEP_TURN_NEGATIVE_Z = 7,
+    ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_Z      = 8
+};
+
+/// Work block of the Gray Stalker task.
+///
+/// The spawn handler allocates it zeroed and keeps it at `Task::work`. It holds
+/// the animation context and its storage, the matrices the model borrows, the
+/// body sphere and the two pairs of arm spheres with their contact records, and
+/// the state machine: the task state picks a table of states, `state` an entry
+/// of that table and `subState` a step of that entry's own table.
+///
+/// The Stalker crawls the ceiling or the floor along the room's axes, turning
+/// on the spot between them. It is cloaked between attacks: a hide request
+/// fades the body out and takes it off lock-on, and every attack, recoil and
+/// fall starts by requesting a show.
+typedef struct {
+    ActorAnimRig18        rig;                 // playback of the model's parts: slots 1 to 17 play `animId`, and slot 1's status tells when it ended
+    byte                  field_404[0x404];    // never accessed
+    MATRIX                savedRootMtx;        // root matrix at the start of the death shrink; each frame rescales a copy of it
+    WorldCollisionBody    body;                // sphere on part 3 that takes hits; shrunk while the grab reaches out
+    WorldCollisionContact bodyContacts[3];     // contacts of `body`; also the enemy's hit records
+    WorldCollisionBody    rightArmOuter;       // attack sphere far along part 7; enabled only while the right arm strikes
+    WorldCollisionBody    rightArmInner;       // attack sphere nearer the root of part 7; shares `rightArmContacts`
+    WorldCollisionContact rightArmContacts[1]; // contacts of the two right-arm spheres
+    WorldCollisionBody    leftArmOuter;        // attack sphere far along part 10; enabled only while the left arm strikes
+    WorldCollisionBody    leftArmInner;        // attack sphere nearer the root of part 10; shares `leftArmContacts`
+    WorldCollisionContact leftArmContacts[1];  // contacts of the two left-arm spheres
+    EffectSpawnArg        effectArg;           // argument record of the effects its hits spawn, hung off part 3
+    s16                   pitch;               // root pitch in 4096ths of a turn; swept through half a turn by a drop or a jump
+    s16                   yaw;                 // root heading in 4096ths of a turn
+    s16                   roll;                // root roll in 4096ths of a turn; half a turn apart on the ceiling and on the floor
+    byte                  field_94E[2];        // never accessed
+    s16                   dropStartX;          // root X when the drop from the ceiling began; the drop lands back on it
+    byte                  field_952[2];        // never accessed
+    s16                   dropStartZ;          // root Z when the drop from the ceiling began; the drop lands back on it
+    byte                  field_956[6];        // never accessed
+    MATRIX                colorMtx;            // storage for the model's `TmdObject::colorMtx`
+    MATRIX                lightMtx;            // storage for the model's `TmdObject::lightMtx`
+    byte                  field_99C[4];        // never accessed
+    SVECTOR3              anchorPos;           // view-space X and Z a part is pinned to while the root moves around it; `vy` is never accessed
+    byte                  field_9A6[0x16];     // never accessed
+    s16                   armReachAngle;       // turn of parts 6 and 9 towards the target while the grab reaches; eased back to zero after
+    byte                  field_9BE[2];        // never accessed
+    VECTOR                rootPos;             // root position at the start of the frame; never read
+    SVECTOR               playerPrevPos;       // the player's root position when the previous frame ended
+    SVECTOR               playerLocalMove;     // the player's movement since then, turned into the Stalker's heading; `vz` biases the attack ranges
+    SVECTOR3              toTarget;            // offset from the root to the player, or to the patrol point while the player is in zone 5
+    byte                  field_9E6[0xA];      // never accessed
+    Task*                 armTasks[2];         // tasks of the arm models (0 left on part 10, 1 right on part 7), shown only during an arm strike
+    s16                   animRate;            // playback rate of slots 1..17; `ANIMATION_RATE_ONE` is normal speed
+    s16                   animRequest;         // `ACTOR_400500_ANIM_REQUEST_*`
+    s16                   appliedAnim;         // animation last applied to the slots
+    s16                   animId;              // requested animation: index into the animation set table
+    s16                   animFrames;          // frames since `animId` was applied; rescaled when a blend repeats it at a new rate
+    s16                   shrinkScaleY;        // Y scale of the death shrink, 0x1000 = 1.0
+    u16                   stateFrames;         // frames spent in the current state or sub-state
+    u16                   state;               // index into the state table of the current task state
+    u16                   subState;            // index into the step table of the current state
+    u16                   deathStep;           // step of the fall a kill on the ceiling runs before the death sequence
+    byte                  field_A0C[2];        // never accessed
+    s16                   animBlendFrames;     // frames a blend request takes; cleared when the blend starts
+    s16                   moveAccel;           // added to `moveSpeed` each frame; itself changes by 2 each frame
+    s16                   moveSpeed;           // vertical speed of a drop or a jump
+    byte                  field_A14[2];        // never accessed
+    s16                   targetDist;          // horizontal length of `toTarget`
+    s16                   playerCaught;        // 1 once the grab has caught the player; the grab then carries the player with part 8
+    s16                   zone;                // id of the `ActorZone` holding the root, 0 outside them all
+    u16                   playerZone;          // id of the `ActorZone` holding the player, 0 outside them all or without a player
+    u16                   posture;             // `ACTOR_400500_POSTURE_*`
+    s16                   cloakLevel;          // grey level of the cloak shading, 0 (none) to 0xFF
+    u16                   patrolFrames;        // frames the player has spent in zone 5; bit 8 picks the end of the patrol line `toTarget` aims at
+    s16                   colorBlend;          // the model's `TmdObject::shading.colorBlend`, 0 to `TMD_OBJECT_COLOR_BLEND_ONE`
+    u16                   armSwingAngle;       // yaw an arm model has swung out by, 0 to 0x200 in steps of 0x80
+    s16                   shadowShade;         // brightness of the limb shadows, 0 to 0xFF
+    s16                   cloakTimer;          // frames the holding phase of a cloak fade has lasted
+    s16                   hideHoldFrames;      // frames a hide holds the cloak before the body fades out
+    s16                   hideCooldownReset;   // value `hideCooldown` starts from when a show completes; longer at lower health
+    s16                   hideCooldown;        // frames before another hide may be requested
+    s16                   attackCooldown;      // frames before the next attack; 0x3C after one ends
+    s16                   attackCooling;       // 1 while `attackCooldown` was still running this frame
+    u16                   targetBearing;       // heading of `toTarget` relative to `yaw`, 0..0xFFF
+    s16                   turnRequest;         // `ACTOR_400500_TURN_*`
+    s16                   turnStarted;         // 1 once the requested turn's animation has been started
+    s16                   hitTaken;            // 1 when a hit or a status tick dealt damage; lets `hitReaction` be consumed
+    s16                   hitReaction;         // `ACTOR_400500_HIT_REACTION_*` awaiting the state machine
+    s16                   lastHitReaction;     // the last reaction a hit asked for; never cleared, so the death can tell a blast
+    s16                   deathHeld;           // 1 while the current move must finish before the death sequence starts
+    s16                   hitCooldown;         // frames before another hit is taken; set from the hit's id parameter 2
+    s8                    cloakRequest;        // `ACTOR_400500_CLOAK_*`
+    s8                    cloakPhase;          // step of the running cloak fade (0 first ramp, 1 hold, 2 second ramp)
+    s8                    grabStep;            // player animation of a grab (0 none, 1 caught, 2 start the follow-up, 3 release follow-up, 4 hit follow-up)
+    s8                    ceilingFallPending;  // asks a ceiling crawl to fall onto its back; the crawl states take it, but nothing sets it
+    s8                    knockdownPending;    // set by a hit whose id parameter 0 is 8 or 9; the next state step enters the knockdown
+    u8                    roomCommand;         // kind of the last room command (1..4); 1 starts the room-driven sequence, whose steps wait for 2, 3 and 4
+    u8                    commandActive;       // 1 from room command 1 until command 4 is taken; keeps `WORLD_TARGET_KEEP_SCANNED` off the target
+    u8                    grabLanded;          // 1 once the grab has hit the player; picks the player's follow-up animation
+    byte                  field_A4E[2];        // never accessed
+} _Actor400500GrayStalkerWork;
+STATIC_ASSERT_SIZEOF(_Actor400500GrayStalkerWork, 0xA50);
+
+static void _actor400500DrawLimbShadow(Task* task, s16 firstJoint, s16 secondJoint, s16 halfWidth, s32 worldY, s32 shade);
+static void _actor400500FinishGrabRecovery(Task* task);
+static s32  _actor400500LocalizeWorldRotation(const GfxCoord* joint, MATRIX* worldRotation);
+
+/* The records closing three of the overlay's model streams, selected through
+   `gTaskBank2Descs[TASK_BANK2_BURST_MODEL_PART_SLOT].data.model`. */
+static TmdSource _gStalkerGrayBurstHead;
+static TmdSource _gStalkerGrayBurstLegRight;
+static TmdSource _gStalkerGrayBurstLegLeft;
+
+static void _actor400500UpdateTargetMotion(Task* task);
+static void _actor400500DrawLimbShadows(Task* task, s16 worldY, s32 shade);
+static s32  _actor400500TryStartAttack(Task* task);
+static void _actor400500TickCloakFade(Task* task);
+static s32  _actor400500TickTurn(Task* task);
+static s32  _actor400500HandleHeavyHitReaction(Task* task);
+static s32  _actor400500HandleFallenHitReaction(Task* task);
+static void _actor400500TickCrawl(Task* task);
+static void _actor400500TickScriptedCrawl(Task* task);
+static void _actor400500TickFallenCrawl(Task* task);
+static void _actor400500TakeDamage(Task* task);
+static void _actor400500TickCombatTask(Task* task);
+static void _actor400500TickCrawlState(Task* task);
+static void _actor400500SelectCrawlRoute(Task* task);
+static void _actor400500TickCrawlPositiveX(Task* task);
+static void _actor400500TickCrawlTurnNegativeX(Task* task);
+static void _actor400500TickCrawlNegativeX(Task* task);
+static void _actor400500TickCrawlTurnPositiveX(Task* task);
+static void _actor400500TickCrawlCornerChoice(Task* task);
+static void _actor400500TickCrawlPositiveZ(Task* task);
+static void _actor400500TickCrawlTurnNegativeZ(Task* task);
+static void _actor400500TickCrawlNegativeZ(Task* task);
+static void _actor400500TickCrawlCornerTurnNegativeX(Task* task);
+static void _actor400500TickCrawlTurnPositiveZ(Task* task);
+static void _actor400500TickCeilingStrikeState(Task* task);
+static void _actor400500TickCeilingArmStrike(Task* task);
+static void _actor400500TickFloorStrikeState(Task* task);
+static void _actor400500TickFloorArmStrike(Task* task);
+static void _actor400500RetractFloorStrikeArm(Task* task);
+static void _actor400500FinishFloorArmStrike(Task* task);
+static void _actor400500TickCeilingFallState(Task* task);
+static void _actor400500TickKnockdownState(Task* task);
+static void _actor400500StartKnockdownRecoil(Task* task);
+static void _actor400500TickAmbushState(Task* task);
+static void _actor400500WaitAmbushTrigger(Task* task);
+static void _actor400500TickDropState(Task* task);
+static void _actor400500TickDropFromCeiling(Task* task);
+static void _actor400500FinishDropLanding(Task* task);
+static void _actor400500TickJumpState(Task* task);
+static void _actor400500TickJumpToCeiling(Task* task);
+static void _actor400500TickTurnOverState(Task* task);
+static void _actor400500TickTurnOver(Task* task);
+static void _actor400500TickStatusHoldState(Task* task);
+static void _actor400500StartStatusHoldRecoil(Task* task);
+static void _actor400500TickDeathTask(Task* task);
+static void _actor400500StartDeath(Task* task);
+static void _actor400500WaitDeathAnimation(Task* task);
+static void _actor400500TickDeathShrink(Task* task);
+static void _actor400500TickFallenCrawlState(Task* task);
+static void _actor400500SelectFallenCrawlRoute(Task* task);
+static void _actor400500TickFallenCrawlPositiveX(Task* task);
+static void _actor400500TickFallenCrawlCornerChoice(Task* task);
+static void _actor400500UpdateCloakTiming(Task* task);
+static void _actor400500TickRoomSequenceState(Task* task);
+static void _actor400500TickGrabState(Task* task);
+static void _actor400500StartCrawlDeathFall(Task* task);
+static void _actor400500TickCrawlDeathFall(Task* task);
+static void _actor400500FinishCrawlDeathLanding(Task* task);
+static void _actor400500StartCeilingStrikeDeathFall(Task* task);
+static void _actor400500TickCeilingStrikeDeathFall(Task* task);
+static void _actor400500FinishCeilingStrikeDeathLanding(Task* task);
+static void _actor400500StartCeilingArmStrike(Task* task);
+static void _actor400500ExtendCeilingStrikeArm(Task* task);
+static void _actor400500StartFloorArmStrike(Task* task);
+static void _actor400500ExtendFloorStrikeArm(Task* task);
+static void _actor400500StartCeilingFall(Task* task);
+static void _actor400500TickCeilingFall(Task* task);
+static void _actor400500FinishCeilingFallLanding(Task* task);
+static void _actor400500FinishCeilingFallRecovery(Task* task);
+static void _actor400500FinishFloorKnockdownRecoil(Task* task);
+static void _actor400500FinishFloorKnockdownRecovery(Task* task);
+static void _actor400500FinishCeilingKnockdownRecoil(Task* task);
+static void _actor400500TickKnockdownCeilingFall(Task* task);
+static void _actor400500FinishKnockdownCeilingLanding(Task* task);
+static void _actor400500FinishKnockdownCeilingRecovery(Task* task);
+static void _actor400500StartAmbush(Task* task);
+static void _actor400500StartDropFromCeiling(Task* task);
+static void _actor400500StartJumpToCeiling(Task* task);
+static void _actor400500FinishJumpToCeiling(Task* task);
+static void _actor400500StartTurnOver(Task* task);
+static void _actor400500CheckFallenCrawlNegativeXHeading(Task* task);
+static void _actor400500TickFallenCrawlFacingNegativeX(Task* task);
+static void _actor400500CheckFallenCrawlPositiveXHeading(Task* task);
+static void _actor400500TickFallenCrawlFacingPositiveZ(Task* task);
+static void _actor400500CheckFallenCrawlNegativeZHeading(Task* task);
+static void _actor400500TickFallenCrawlFacingNegativeZ(Task* task);
+static void _actor400500CheckFallenCrawlCornerNegativeXHeading(Task* task);
+static void _actor400500CheckFallenCrawlPositiveZHeading(Task* task);
+static void _actor400500StartRoomSequence(Task* task);
+static void _actor400500WaitRoomCrawlCommand(Task* task);
+static void _actor400500TickRoomSequenceCrawl(Task* task);
+static void _actor400500WaitRoomRevealCommand(Task* task);
+static void _actor400500WaitRoomReleaseCommand(Task* task);
+static void _actor400500FinishFloorStatusHoldRecoil(Task* task);
+static void _actor400500FinishFloorStatusHoldRecovery(Task* task);
+static void _actor400500FinishCeilingStatusHoldRecoil(Task* task);
+static void _actor400500TickStatusHoldCeilingFall(Task* task);
+static void _actor400500FinishStatusHoldCeilingLanding(Task* task);
+static void _actor400500FinishStatusHoldCeilingRecovery(Task* task);
+static void _actor400500PrepareDeathShrink(Task* task);
+static void _actor400500WaitDeathShrinkDelay(Task* task);
+static void _actor400500BeginTeardown(Task* task);
+static void _actor400500HideBurstBody(Task* task);
+static void _actor400500WaitBurstBufferDelay(Task* task);
+static void _actor400500ReleaseBurstBufferAndSpawnFragments(Task* task);
+static void _actor400500BeginBurstTeardown(Task* task);
+static void _actor400500EnterState(Task* task, s16 state);
+static s32  _actor400500TryTurnOverNearTarget(Task* task);
+static void _actor400500SamplePartWorldXZ(Task* task, s16 partIndex, SVECTOR3* worldPosition);
+static void _actor400500ResetAnimSlots(Task* task);
+static void _actor400500RequestAnimReset(Task* task, s16 setIndex, s16 rateSixteenths);
+static void _actor400500BlendAnimSlots(Task* task);
+static s16  _actor400500RescaleAnimFrames(Task* task, s16 frames);
+static s32  _actor400500CheckAnimBoundary(Task* task);
+static void _actor400500CopyRotation(const MATRIX* source, MATRIX* destination);
+static void _actor400500TickTeardown(Task* task);
+static void _actor400500ClearHitReaction(Task* task);
+static void _actor400500KillArmModels(Task* task);
+static void _actor400500WaitDestroyDelay(Task* task);
+
+static TmdSource _gStalkerGrayBody;
+static void      _actor400500Task(Task* task);
+
+static TmdSource _gStalkerGrayBurstArmRight;
+static TmdSource _gStalkerGrayBurstArmLeft;
+static s32       _actor400500ApplyRoomCommand(Task* task, s32 messageId, const ActorCommand* command, s32 unusedPayload);
+static void      _actor400500LeftArmTask(Task* task);
+static void      _actor400500RightArmTask(Task* task);
+
+#include "assets/enemies/stalker/gray/body.inc"
+
+#include "assets/enemies/stalker/gray/burst_arm_right.inc"
+
+#include "assets/enemies/stalker/gray/burst_arm_left.inc"
+
+#include "assets/enemies/stalker/gray/burst_head.inc"
+
+#include "assets/enemies/stalker/gray/burst_leg_right.inc"
+
+#include "assets/enemies/stalker/gray/burst_leg_left.inc"
+
+#include "assets/enemies/stalker/gray/package_4_clips.inc"
+
+/// Gray Stalker attack definitions: arm strikes, grab damage and an unused third row.
+///
+/// Power is the base damage before health-band scaling; reaction selects the
+/// player's hit presentation/status. Both arms use row 0; the grab uses row 1.
+/// No package code selects row 2, whose stored definition is retained.
+static DamageAttack _gActor400500Attacks[3] = {
+    { 28, GAME_ACTOR_REACTION_SPARK_AND_PUFFS },
+    { 35, GAME_ACTOR_REACTION_CONFUSION },
+    { 8, GAME_ACTOR_REACTION_SPARK_AND_PUFFS },
+};
+
+/// Shared Gray Stalker health, battle rewards and incoming-hit reaction parameters.
+///
+/// Live enemies borrow this record and its attack definitions while the package
+/// is loaded. New enemies start with 450 HP and award 500 EXP, 200 BP and 15 MP.
+static EnemyParams _gActor400500EnemyParams = { _gActor400500Attacks, 450, 500, 200, 15, 100, 8, 100, 10 };
+
+/// Gray Stalker room-command message binding, followed by the lookup terminator.
+///
+/// Tasks borrow this table while the package is loaded. The command payload is
+/// a borrowed `ActorCommand`; unsupported message IDs return zero.
+static TaskMessageEntry _gActor400500RoomCommandMessages[2] = {
+    { ACTOR_COMMAND_MESSAGE_APPLY, _actor400500ApplyRoomCommand },
+    { TASK_MESSAGE_TABLE_END, NULL },
+};
+
+/// Gray Stalker grab clips borrowed by the player's scripted animation playback.
+///
+/// Clip IDs are 1 caught, 2 surviving release and 3 fatal follow-up; slot 0 is
+/// NULL and cannot be played. The table and clips must stay loaded until the
+/// player's borrowed playback finishes.
+#include "assets/enemies/stalker/gray/player_bank.inc"
+
+/// Gray Stalker animation bank borrowed by the body rig and its playback slots.
+///
+/// Loaded clip IDs are 1..32; slots 0 and 33 are NULL and cannot be played.
+/// The table and its clip records remain live for the rig's entire lifetime.
+#include "assets/enemies/stalker/gray/bank.inc"
+
+/// Attached strike-arm spawn recipes, indexed by `ACTOR_400500_ARM_LEFT/RIGHT`.
+///
+/// Each creates an owned TMD body from borrowed package geometry at priority 96.
+/// The parent owns the child handles and ends both tasks during teardown.
+static TaskDesc _gActor400500ArmTaskDescs[2] = {
+    { { { TASK_BODY_TMD, TASK_PRIORITY_ACTOR } }, _actor400500LeftArmTask, { .model = &_gStalkerGrayBurstArmLeft } },
+    { { { TASK_BODY_TMD, TASK_PRIORITY_ACTOR } }, _actor400500RightArmTask, { .model = &_gStalkerGrayBurstArmRight } },
+};
+
+TaskDesc gActor400500TaskDesc = { { { TASK_BODY_TMD, TASK_PRIORITY_ACTOR } }, _actor400500Task, { .model = &_gStalkerGrayBody } };
+
+/// Six crawl-route rectangles in room X/Z coordinates, followed by `ACTOR_ZONE_END`.
+///
+/// The same table classifies the Stalker and player. Edges are inclusive and
+/// the first matching rectangle wins, so order resolves overlapping edges.
+static ActorZone _gActor400500CrawlZones[7] = {
+    { -1700, -10200, 1700, 3200, ACTOR_400500_CRAWL_ZONE_X_END },
+    { 0, -10200, 15300, 3200, ACTOR_400500_CRAWL_ZONE_X_SEGMENT },
+    { 15000, -10200, 3000, 3200, ACTOR_400500_CRAWL_ZONE_CORNER },
+    { 15000, -7200, 3000, 5200, ACTOR_400500_CRAWL_ZONE_Z_SEGMENT },
+    { 4200, -11800, 2200, 1600, ACTOR_400500_CRAWL_ZONE_PATROL },
+    { 15000, -2000, 3000, 1800, ACTOR_400500_CRAWL_ZONE_Z_END },
+    { 0, 0, 0, 0, ACTOR_ZONE_END },
+};
+
+/// Per-tick turn-in-place yaw increments, in 4096ths of a turn.
+///
+/// Indexed by the low four bits of `stateFrames`, repeating until the turn
+/// animation ends. The same magnitudes serve both directions; a full cycle
+/// sums to 512 units, one eighth of a turn.
+static u16 _gActor400500TurnYawSteps[16] = {
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    32,
+    48,
+    64,
+    80,
+    96,
+    80,
+    64,
+    48,
+    0,
+    0,
+};
+
+/// Loaded clip IDs used only through the death-pose selection map.
+enum {
+    ACTOR_400500_DEATH_POSE_CLIP_26 = 26,
+    ACTOR_400500_DEATH_POSE_CLIP_27 = 27,
+    ACTOR_400500_DEATH_POSE_CLIP_30 = 30
+};
+
+/// Death-pose clip selected by the prior body animation ID, in the range 0..32.
+///
+/// Outputs are loaded clip IDs 15, 26, 27 and 30 in `_gActor400500AnimationSets`.
+/// The NULL bank endpoint at 33 is excluded from this map's input domain.
+static u8 _gActor400500DeathPoseByAnim[33] = {
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_27,
+    ACTOR_400500_DEATH_POSE_CLIP_27,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_27,
+    ACTOR_400500_DEATH_POSE_CLIP_27,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_27,
+    ACTOR_400500_DEATH_POSE_CLIP_27,
+    ACTOR_400500_DEATH_POSE_CLIP_30,
+    ACTOR_400500_DEATH_POSE_CLIP_27,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_DEATH_POSE_CLIP_26,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+    ACTOR_400500_ANIM_UPRIGHT_RECOIL,
+};
+
+static void           _actor400500InitCollisionBodies(Task* task);
+static void           _actor400500SpawnArmModels(Task* task);
+static void           _actor400500PlaceAtArrival(Task* task);
+static inline void    _actor400500SetState(Task* task, s32 state, s32 subState);
+static inline void    _actor400500PlayPlacedSound(Task* task, s32 baseSoundId);
+static void           _actor400500PositionGrabbedPlayer(Task* task, s32 easePosition);
+static void           _actor400500SpawnDeathFragments(Task* task);
+static void           _actor400500InitTask(Task* task);
+static inline s32     _actor400500FindRouteZone(Task* task);
+static inline VECTOR* _actor400500PushCachedPosition(const GfxCoord* coord);
+static inline void    _scratchStackReleaseBytes(s32 byteCount);
+static void           _actor400500StartGrab(Task* task);
+static inline void    _actor400500RequestCloakFade(Task* task, s32 cloakRequest);
+static inline s32     _actor400500AccumulateWorldRotation(const GfxCoord* coord, MATRIX* worldRotation);
+static inline void    _actor400500TurnPartWorldYaw(GfxCoord* part, u16 yawDelta);
+static inline s16     _actor400500PlayerDistance(GfxCoord* part);
+static inline void    _actor400500RequestAnimBlend(Task* task, s32 setIndex);
+static void           _actor400500TickGrab(Task* task);
+static inline void    _actor400500UpdateColor(Task* task, const GfxCoord* coord, const TmdObject* model);
+
+/// Player playback phases of a grab, independent of the Stalker's attack sub-state.
+enum {
+    ACTOR_400500_GRAB_STEP_NONE     = 0,
+    ACTOR_400500_GRAB_STEP_CAUGHT   = 1,
+    ACTOR_400500_GRAB_STEP_FOLLOWUP = 2,
+    ACTOR_400500_GRAB_STEP_RELEASE  = 3,
+    ACTOR_400500_GRAB_STEP_FATAL    = 4
+};
+
+/// Clips in the borrowed player grab-animation table, whose slot zero is unused.
+enum {
+    ACTOR_400500_PLAYER_ANIM_CAUGHT  = 1,
+    ACTOR_400500_PLAYER_ANIM_RELEASE = 2,
+    ACTOR_400500_PLAYER_ANIM_FATAL   = 3
+};
+
+/// Grab-release clip and positioning policies of the captured-player helpers.
+///
+/// Clip IDs index the Stalker's animation table; positioning tests the signed
+/// low halfword of the policy and uses quarter-step easing for a nonzero value.
+enum { ACTOR_400500_ANIM_GRAB_MISS     = 6,
+       ACTOR_400500_GRAB_POSITION_SNAP = 0,
+       ACTOR_400500_GRAB_POSITION_EASE = 1 };
+
+/// Model-coordinate parents of the Stalker's arm spheres and attached strike models.
+enum { ACTOR_400500_PART_RIGHT_ARM = 7,
+       ACTOR_400500_PART_LEFT_ARM  = 10 };
+
+/// Links the Stalker's body sphere and four initially disabled arm attack spheres.
+///
+/// Requires zeroed live work, a populated 18-coordinate model and live enemy
+/// attack parameters. Positions/radii are part-local game units. The body
+/// uses three contacts; each arm's two spheres share one contact record and
+/// attack row zero. Linked spheres and contact arrays remain borrowed until
+/// task teardown unlinks them. Reinitializing a linked work block is invalid.
+static void _actor400500InitCollisionBodies(Task* task)
+{
+    /// Part-local arm attack centres and radii; X is mirrored between sides.
+    enum { ACTOR_400500_ARM_OUTER_X      = 0x460,
+           ACTOR_400500_ARM_INNER_X      = 0x200,
+           ACTOR_400500_ARM_OUTER_RADIUS = 0x290,
+           ACTOR_400500_ARM_INNER_RADIUS = 0x250 };
+
+    /// Links an inactive arm sphere and clears its borrowed contact array.
+    ///
+    /// Captures live task; sphere is an unlinked body lvalue and contactArray
+    /// must be a complete array, not a pointer. Both are evaluated repeatedly
+    /// without side effects; the scalar arguments are evaluated once. X and
+    /// radius use part-local game units. Each arm pair intentionally clears the
+    /// same contacts twice. Use as a standalone block; teardown must unlink it.
+#define ACTOR_400500_INIT_ARM_ATTACK_SPHERE(sphere, contactArray, partIndex, localX, localRadius) \
+    {                                                                                             \
+        (sphere).key              = damagePackEnemyAttackKey(task->spawnArg2.pointer, 0);         \
+        (sphere).coord            = &task->extra.tmd->coords[(partIndex)];                        \
+        (sphere).context.contacts = (contactArray);                                               \
+        (sphere).pos.vx           = (localX);                                                     \
+        (sphere).pos.vy           = 0;                                                            \
+        (sphere).pos.vz           = 0;                                                            \
+        (sphere).radius           = (localRadius);                                                \
+        (sphere).flags            = WORLD_COLLISION_BODY_SPHERE;                                  \
+        worldCollisionLinkBody(WORLD_COLLISION_LIST_ENEMY_ATTACKS, &(sphere));                    \
+        worldCollisionInitContacts((contactArray), ARRAY_SIZE(contactArray), 0);                  \
+        (sphere).flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);  \
+    }
+    enum { ACTOR_400500_BODY_ID = 5 };
+    _Actor400500GrayStalkerWork* work;
+
+    work = task->work;
+
+    // Enable the receiving body independently of the dormant arm attacks.
+    work->body.coord            = &task->extra.tmd->coords[ACTOR_400500_PART_BODY];
+    work->body.context.contacts = work->bodyContacts;
+    work->body.pos.vz           = 0x110;
+    work->body.pos.vx           = 0;
+    work->body.pos.vy           = 0;
+    work->body.key              = WORLD_COLLISION_CONTACT_ENEMY_BODY | ACTOR_400500_BODY_ID;
+    work->body.radius           = 0x260;
+    work->body.flags            = WORLD_COLLISION_BODY_SPHERE;
+    worldCollisionLinkBody(WORLD_COLLISION_LIST_ENEMY_BODIES, &work->body);
+    worldCollisionInitContacts(work->bodyContacts, ARRAY_SIZE(work->bodyContacts), 0);
+    work->body.flags |= WORLD_COLLISION_BODY_PAIR_ENABLED;
+
+    // Each pair shares its arm contact record and attack identity.
+    ACTOR_400500_INIT_ARM_ATTACK_SPHERE(work->rightArmOuter, work->rightArmContacts, ACTOR_400500_PART_RIGHT_ARM, -ACTOR_400500_ARM_OUTER_X, ACTOR_400500_ARM_OUTER_RADIUS);
+
+    ACTOR_400500_INIT_ARM_ATTACK_SPHERE(work->rightArmInner, work->rightArmContacts, ACTOR_400500_PART_RIGHT_ARM, -ACTOR_400500_ARM_INNER_X, ACTOR_400500_ARM_INNER_RADIUS);
+
+    ACTOR_400500_INIT_ARM_ATTACK_SPHERE(work->leftArmOuter, work->leftArmContacts, ACTOR_400500_PART_LEFT_ARM, ACTOR_400500_ARM_OUTER_X, ACTOR_400500_ARM_OUTER_RADIUS);
+
+    ACTOR_400500_INIT_ARM_ATTACK_SPHERE(work->leftArmInner, work->leftArmContacts, ACTOR_400500_PART_LEFT_ARM, ACTOR_400500_ARM_INNER_X, ACTOR_400500_ARM_INNER_RADIUS);
+#undef ACTOR_400500_INIT_ARM_ATTACK_SPHERE
+}
+
+/// Gives an attached strike-arm model its parent's texture-page and CLUT offsets.
+///
+/// Both models must remain live for this call. Copies signed texture-page word
+/// displacements and CLUT-row displacements; no pointer or texture is owned.
+/// With allocated packet storage, rebuilds both halves and preserves the next
+/// half selector. The arm source, buffer capacities, GPU lifetime and scratch
+/// space must satisfy `tmdBuildBufferHalf`. With no buffer, stores offsets only.
+static inline void _actor400500ApplyArmTexturePlacement(const TmdObject* parentModel, TmdObject* armModel)
+{
+    armModel->texturePageOffset = parentModel->texturePageOffset;
+    armModel->clutRowOffset     = parentModel->clutRowOffset;
+    if (armModel->buffer != NULL) {
+        tmdBuildBufferHalf(armModel);
+        tmdBuildBufferHalf(armModel);
+    }
+}
+
+/// Spawns and attaches the hidden left and right arm models used by strikes.
+///
+/// Requires initialized Stalker work/model and loaded arm descriptors/textures;
+/// both task allocations must succeed. Roots attach to parts 10 and 7 at
+/// opposite local-X offsets and 4096-unit yaw angles. Copies the parent's
+/// texture offsets and rebuilds both primitive halves when allocated. The
+/// Stalker retains both child handles, controls their visibility and kills
+/// them during teardown; their per-frame callbacks are idle.
+static void _actor400500SpawnArmModels(Task* task)
+{
+    enum { ACTOR_400500_ARM_ATTACHMENT_YAW = 384 };
+    _Actor400500GrayStalkerWork* work;
+    MATRIX                       armRotation;
+    GfxCoord*                    partCoords;
+    GfxCoord*                    rightArmCoord;
+    GfxCoord*                    leftArmCoord;
+    GfxCoord*                    childRoot;
+    Task*                        armTask;
+    TmdObject*                   armModel;
+    TmdObject*                   texturedModel;
+    TmdObject*                   parentModel;
+
+    partCoords                            = task->extra.tmd->coords;
+    work                                  = task->work;
+    rightArmCoord                         = &partCoords[ACTOR_400500_PART_RIGHT_ARM];
+    leftArmCoord                          = &partCoords[ACTOR_400500_PART_LEFT_ARM];
+    armTask                               = taskSpawnFromTable(_gActor400500ArmTaskDescs, ACTOR_400500_ARM_LEFT, 0, 0);
+    work->armTasks[ACTOR_400500_ARM_LEFT] = armTask;
+    armModel                              = armTask->extra.tmd;
+    childRoot                             = armModel->coords;
+    armModel->flags                       = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+    childRoot->parent                     = leftArmCoord;
+    childRoot->coord.t[0]                 = 0x400;
+    childRoot->coord.t[1]                 = 0;
+    childRoot->coord.t[2]                 = 0;
+    gfxSetRotIdentity(&armRotation);
+    RotMatrixY((s16)-ACTOR_400500_ARM_ATTACHMENT_YAW, &armRotation);
+    _actor400500CopyRotation(&armRotation, &childRoot->coord);
+    parentModel   = task->extra.tmd;
+    texturedModel = armTask->extra.tmd;
+    _actor400500ApplyArmTexturePlacement(parentModel, texturedModel);
+    armTask                                = taskSpawnFromTable(_gActor400500ArmTaskDescs, ACTOR_400500_ARM_RIGHT, 0, 0);
+    work->armTasks[ACTOR_400500_ARM_RIGHT] = armTask;
+    armModel                               = armTask->extra.tmd;
+    childRoot                              = armModel->coords;
+    armModel->flags                        = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+    childRoot->parent                      = rightArmCoord;
+    childRoot->coord.t[0]                  = -0x400;
+    childRoot->coord.t[1]                  = 0;
+    childRoot->coord.t[2]                  = 0;
+    parentModel                            = task->extra.tmd;
+    texturedModel                          = armTask->extra.tmd;
+    _actor400500ApplyArmTexturePlacement(parentModel, texturedModel);
+    gfxSetRotIdentity(&armRotation);
+    RotMatrixY((s16)ACTOR_400500_ARM_ATTACHMENT_YAW, &armRotation);
+    _actor400500CopyRotation(&armRotation, &childRoot->coord);
+}
+
+/// Updates the target offset, horizontal range/bearing and player movement in the Stalker's axes.
+///
+/// Requires live work/model roots in a common parent frame. Without a player,
+/// leaves the snapshots intact. Offsets narrow to signed 16-bit game units;
+/// the horizontal length also narrows to s16, and bearing wraps to 0..4095.
+/// Uses the previous tick's player zone: zone 5 selects alternating patrol
+/// endpoints every 256 calls and suppresses attacks with a two-tick cooldown.
+/// The player-position snapshot is advanced separately after the state step.
+static void _actor400500UpdateTargetMotion(Task* task)
+{
+    enum { ACTOR_400500_PATROL_X_FAR           = 10000,
+           ACTOR_400500_PATROL_X_NEAR          = 1000,
+           ACTOR_400500_PATROL_Z               = -8400,
+           ACTOR_400500_PATROL_ENDPOINT_BIT    = 1 << 8,
+           ACTOR_400500_PATROL_ATTACK_COOLDOWN = 2 };
+    SVECTOR                      targetOffset;
+    SVECTOR*                     targetOffsetPtr;
+    SVECTOR                      playerDelta;
+    MATRIX                       inverseYaw;
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    GfxCoord*                    playerRoot;
+    s16                          distanceXZ;
+    s16                          yaw;
+    s16                          targetZ;
+    s32                          patrolY;
+    s32                          patrolZ;
+    u16                          patrolTicks;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+    if (gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER] != NULL) {
+        playerRoot       = gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER]->extra.tmd->coords;
+        work->rootPos.vx = rootCoord->coord.t[0];
+        work->rootPos.vy = rootCoord->coord.t[1];
+        work->rootPos.vz = rootCoord->coord.t[2];
+        if ((s16)work->playerZone != ACTOR_400500_CRAWL_ZONE_PATROL) {
+            targetOffset.vx = (u16)playerRoot->coord.t[0] - (u16)rootCoord->coord.t[0];
+            targetOffset.vy = (u16)playerRoot->coord.t[1] - (u16)rootCoord->coord.t[1];
+            targetOffset.vz = (u16)playerRoot->coord.t[2] - (u16)rootCoord->coord.t[2];
+        } else {
+            work->attackCooldown = ACTOR_400500_PATROL_ATTACK_COOLDOWN;
+            patrolTicks          = work->patrolFrames + 1;
+            work->patrolFrames   = patrolTicks;
+            if (!(patrolTicks & ACTOR_400500_PATROL_ENDPOINT_BIT)) {
+                targetOffset.vx = ACTOR_400500_PATROL_X_FAR - (u16)rootCoord->coord.t[0];
+            } else {
+                targetOffset.vx = ACTOR_400500_PATROL_X_NEAR - (u16)rootCoord->coord.t[0];
+            }
+            patrolY         = ACTOR_400500_FLOOR_Y;
+            targetOffset.vy = patrolY - (u16)rootCoord->coord.t[1];
+            patrolZ         = ACTOR_400500_PATROL_Z;
+            targetOffset.vz = patrolZ - (u16)rootCoord->coord.t[2];
+        }
+        // Save the unnormalized offset before computing its heading.
+        distanceXZ        = SquareRoot0((targetOffset.vx * targetOffset.vx) + (targetOffset.vz * targetOffset.vz));
+        work->toTarget.vx = (u16)targetOffset.vx;
+        targetOffsetPtr   = &targetOffset;
+        work->toTarget.vy = (u16)targetOffset.vy;
+        targetZ           = (u16)targetOffset.vz;
+        work->targetDist  = distanceXZ;
+        work->toTarget.vz = targetZ;
+        VectorNormalSS(targetOffsetPtr, targetOffsetPtr);
+        work->targetBearing = (ratan2(targetOffset.vx, targetOffset.vz) - (u16)work->yaw) & (ACTOR_TRANSFORM_ANGLE_TURN - 1);
+        // Rotate the player's frame-to-frame displacement into the Stalker's yaw.
+        playerDelta.vx = (u16)playerRoot->coord.t[0] - (u16)work->playerPrevPos.vx;
+        playerDelta.vy = (u16)playerRoot->coord.t[1] - (u16)work->playerPrevPos.vy;
+        playerDelta.vz = (u16)playerRoot->coord.t[2] - (u16)work->playerPrevPos.vz;
+        gfxSetRotIdentity(&inverseYaw);
+        yaw = work->yaw;
+        RotMatrixY(-yaw, &inverseYaw);
+        ApplyMatrixSV(&inverseYaw, &playerDelta, &work->playerLocalMove);
+    }
+}
+
+/// Draws a horizontal subtractive limb shadow at a caller-selected world height.
+///
+/// Requires a live 18-coordinate model rooted under the composed view; joint
+/// indices are 0..17, and equal indices draw nothing. halfWidth and worldY
+/// are world-coordinate units. X/Z endpoints and corners truncate to signed
+/// halfwords; half spans remain s32 and overhang each end by half the limb.
+/// shade is 0..255 texture modulation, grey in rooms 1/3/5/6 and half green
+/// elsewhere. A negative GTE FLAG discards the quad rather than fully clipping it.
+/// Requires GTE/scratch facilities, loaded texture/CLUT, room for POLY_FT4 in
+/// the frame arena and the current 1024-tag depth table. Changes caches/GTE;
+/// a queued packet remains live until frame DMA completes.
+static void _actor400500DrawLimbShadow(Task* task, s16 firstJoint, s16 secondJoint, s16 halfWidth, s32 worldY, s32 shade)
+{
+    enum { ACTOR_400500_SHADOW_TRIG_FRACTION_BITS = 12,
+           ACTOR_400500_SHADOW_TEXTURE_4_BIT      = 0,
+           ACTOR_400500_SHADOW_U_MIN              = 192,
+           ACTOR_400500_SHADOW_U_MAX              = 247,
+           ACTOR_400500_SHADOW_V_MIN              = 152,
+           ACTOR_400500_SHADOW_V_MAX              = 207,
+           ACTOR_400500_SHADOW_PAGE_X             = 512,
+           ACTOR_400500_SHADOW_PAGE_Y             = 0,
+           ACTOR_400500_SHADOW_CLUT_X             = 48,
+           ACTOR_400500_SHADOW_CLUT_Y             = 266 };
+    MATRIX    firstMatrix;
+    MATRIX    secondMatrix;
+    SVECTOR   first;
+    SVECTOR   second;
+    SVECTOR   corner0;
+    SVECTOR   corner1;
+    SVECTOR   corner2;
+    SVECTOR   corner3;
+    long      screen0;
+    long      screen1;
+    long      screen2;
+    long      screen3;
+    long      depthCue;
+    long      projectionFlags;
+    s16       segmentYaw;
+    GfxCoord* secondCoord;
+    GfxCoord* firstCoord;
+    s32       widthCosine0;
+    s32       widthCosine1;
+    s32       widthCosine2;
+    s32       widthCosine3;
+    s32       halfSpanX;
+    s32       halfSpanZ;
+    s32       depth;
+    GfxCoord* partCoords;
+    GfxCoord* viewCoord;
+    POLY_FT4* poly;
+    u8        room;
+    u8        modulation;
+
+    /// Queues a subtractive limb shadow with the current room's colour modulation.
+    ///
+    /// Captures screen0..3, depth, shade, modulation, poly and room. Invoke as
+    /// a standalone block after successful projection. Inputs are packed screen
+    /// X/Y words, sorting Z/4 and byte-range modulation. Requires the loaded
+    /// texture and one free POLY_FT4 in the frame arena. Advances the cursor
+    /// without a bounds check; packet storage must survive frame DMA.
+#define ACTOR_400500_QUEUE_LIMB_SHADOW()                                                \
+    {                                                                                   \
+        poly           = gGpuPrimCursor;                                                \
+        gGpuPrimCursor = poly + 1;                                                      \
+        setPolyFT4(poly);                                                               \
+        setSemiTrans(poly, true);                                                       \
+        GPU_PRIMITIVE_XY_WORD(poly, 0) = screen0;                                       \
+        GPU_PRIMITIVE_XY_WORD(poly, 1) = screen1;                                       \
+        GPU_PRIMITIVE_XY_WORD(poly, 2) = screen2;                                       \
+        GPU_PRIMITIVE_XY_WORD(poly, 3) = screen3;                                       \
+        setUV4(poly, ACTOR_400500_SHADOW_U_MIN, ACTOR_400500_SHADOW_V_MIN,              \
+               ACTOR_400500_SHADOW_U_MAX, ACTOR_400500_SHADOW_V_MIN,                    \
+               ACTOR_400500_SHADOW_U_MIN, ACTOR_400500_SHADOW_V_MAX,                    \
+               ACTOR_400500_SHADOW_U_MAX, ACTOR_400500_SHADOW_V_MAX);                   \
+        poly->tpage = getTPage(ACTOR_400500_SHADOW_TEXTURE_4_BIT, GPU_BLEND_SUBTRACT,   \
+                               ACTOR_400500_SHADOW_PAGE_X, ACTOR_400500_SHADOW_PAGE_Y); \
+        poly->clut  = getClut(ACTOR_400500_SHADOW_CLUT_X, ACTOR_400500_SHADOW_CLUT_Y);  \
+        room        = gGameSession->location.roomState;                                 \
+        if ((room == 1) || (room == 3) || (room == 5) || (room == 6)) {                 \
+            poly->r0 = modulation;                                                      \
+            poly->g0 = modulation;                                                      \
+            poly->b0 = modulation;                                                      \
+        } else {                                                                        \
+            poly->r0 = shade;                                                           \
+            poly->g0 = modulation >> 1;                                                 \
+            poly->b0 = shade;                                                           \
+        }                                                                               \
+        addPrim(GPU_ORDERING_TABLE_ENTRY_AT_DEPTH(depth), poly);                        \
+    }
+    modulation  = shade;
+    partCoords  = task->extra.tmd->coords;
+    firstCoord  = partCoords + firstJoint;
+    secondCoord = partCoords + secondJoint;
+    if (firstJoint != secondJoint) {
+        // Remove the view transform; positions and final corners narrow to halfwords.
+        actorRenderComposeCoord(firstCoord);
+        actorRenderComposeCoord(secondCoord);
+        gfxMakeRelativeTransform(&gGfxViewCoord.workm, &firstCoord->workm, &firstMatrix);
+        gfxMakeRelativeTransform(&gGfxViewCoord.workm, &secondCoord->workm, &secondMatrix);
+        first.vy   = (s16)worldY;
+        second.vy  = (s16)worldY;
+        first.vx   = firstMatrix.t[0];
+        first.vz   = firstMatrix.t[2];
+        second.vx  = secondMatrix.t[0];
+        second.vz  = secondMatrix.t[2];
+        segmentYaw = ratan2((s16)secondMatrix.t[0] - (s16)firstMatrix.t[0], (s16)secondMatrix.t[2] - (s16)firstMatrix.t[2]);
+        // Overhang each end by half the limb span and widen perpendicular to it.
+        halfSpanX    = (first.vx - second.vx) / 2;
+        halfSpanZ    = (first.vz - second.vz) / 2;
+        widthCosine0 = rcos(segmentYaw) * halfWidth;
+        corner0.vy   = (s16)worldY;
+        corner0.vx   = halfSpanX + (first.vx - (widthCosine0 >> ACTOR_400500_SHADOW_TRIG_FRACTION_BITS));
+        corner0.vz   = halfSpanZ + (first.vz + ((rsin(segmentYaw) * halfWidth) >> ACTOR_400500_SHADOW_TRIG_FRACTION_BITS));
+        widthCosine1 = rcos(segmentYaw) * halfWidth;
+        corner1.vy   = (s16)worldY;
+        corner1.vx   = halfSpanX + (first.vx + (widthCosine1 >> ACTOR_400500_SHADOW_TRIG_FRACTION_BITS));
+        corner1.vz   = halfSpanZ + (first.vz - ((rsin(segmentYaw) * halfWidth) >> ACTOR_400500_SHADOW_TRIG_FRACTION_BITS));
+        widthCosine2 = rcos(segmentYaw) * halfWidth;
+        corner2.vy   = (s16)worldY;
+        corner2.vx   = (second.vx - (widthCosine2 >> ACTOR_400500_SHADOW_TRIG_FRACTION_BITS)) - halfSpanX;
+        corner2.vz   = (second.vz + ((rsin(segmentYaw) * halfWidth) >> ACTOR_400500_SHADOW_TRIG_FRACTION_BITS)) - halfSpanZ;
+        widthCosine3 = rcos(segmentYaw) * halfWidth;
+        corner3.vy   = (s16)worldY;
+        corner3.vx   = (second.vx + (widthCosine3 >> ACTOR_400500_SHADOW_TRIG_FRACTION_BITS)) - halfSpanX;
+        corner3.vz   = (second.vz - ((rsin(segmentYaw) * halfWidth) >> ACTOR_400500_SHADOW_TRIG_FRACTION_BITS)) - halfSpanZ;
+        // Project the world-ground corners through the refreshed view transform.
+        viewCoord               = &gGfxViewCoord;
+        viewCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+        actorRenderComposeCoord(viewCoord);
+        gte_SetRotMatrix(&gGfxViewCoord.workm);
+        gte_SetTransMatrix(&gGfxViewCoord.workm);
+        depth = RotTransPers4(&corner0, &corner1, &corner2, &corner3, &screen0, &screen1, &screen2, &screen3,
+                              &depthCue, &projectionFlags);
+        if (projectionFlags >= 0) {
+            ACTOR_400500_QUEUE_LIMB_SHADOW();
+        }
+    }
+#undef ACTOR_400500_QUEUE_LIMB_SHADOW
+}
+
+/// Draws the Stalker's thirteen limb shadows on one horizontal world plane.
+///
+/// Requires a live 18-coordinate model beneath the composed view and the shadow
+/// texture/palette and GPU packet storage. `worldY` is a signed game-coordinate
+/// height; only the low byte of `shade` is used. Each segment has half-width 256.
+/// The segment drawer applies the room's green tint and refreshes coordinate caches.
+static void _actor400500DrawLimbShadows(Task* task, s16 worldY, s32 shade)
+{
+    enum { ACTOR_400500_LIMB_SHADOW_HALF_WIDTH = 256,
+           ACTOR_400500_SHADOW_SHADE_MASK      = 0xFF };
+    s32 byteShade;
+
+    byteShade = shade & ACTOR_400500_SHADOW_SHADE_MASK;
+    _actor400500DrawLimbShadow(task, ACTOR_400500_PART_BODY, 9, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, 9, ACTOR_400500_PART_LEFT_ARM, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, ACTOR_400500_PART_LEFT_ARM, ACTOR_400500_PART_LEFT_ARM_TIP, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, ACTOR_400500_PART_BODY, 6, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, 6, ACTOR_400500_PART_RIGHT_ARM, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, ACTOR_400500_PART_RIGHT_ARM, ACTOR_400500_PART_RIGHT_ARM_TIP, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, 1, 5, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, 1, 0xC, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, 0xC, 0xD, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, 0xD, 0xE, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, 1, 0xF, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, 0xF, 0x10, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+    _actor400500DrawLimbShadow(task, 0x10, 0x11, ACTOR_400500_LIMB_SHADOW_HALF_WIDTH, (s32)worldY, byteShade);
+}
+
+/// Places the Stalker on its ceiling route for the saved arrival selector.
+///
+/// Requires live work/model parented to the composed view and a valid saved
+/// location. Arrival 1 starts at X 5280 facing -Z, 2 at X 16500 facing +Z,
+/// and 3 at X 4000 facing -X; all use Y -4000, Z -8350 and half-turn roll.
+/// Other selectors retain position/yaw/roll. Rebuilds the root basis without
+/// pitch and samples part 11's world X/Z into the anchor, leaving anchor Y intact.
+static void _actor400500PlaceAtArrival(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    MATRIX                       rootRotation;
+    GfxCoord*                    rootCoord;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+    switch (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.warp) {
+        case 1:
+            work->yaw             = ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+            work->roll            = ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+            rootCoord->coord.t[0] = 0x14A0;
+            rootCoord->coord.t[1] = ACTOR_400500_CRAWL_CEILING_Y;
+            rootCoord->coord.t[2] = ACTOR_400500_CRAWL_LINE_Z;
+            break;
+        case 2:
+            work->roll            = ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+            work->yaw             = ACTOR_400500_CRAWL_YAW_POSITIVE_Z;
+            rootCoord->coord.t[0] = ACTOR_400500_CRAWL_LINE_X;
+            rootCoord->coord.t[1] = ACTOR_400500_CRAWL_CEILING_Y;
+            rootCoord->coord.t[2] = ACTOR_400500_CRAWL_LINE_Z;
+            break;
+        case 3:
+            work->yaw             = ACTOR_400500_CRAWL_YAW_NEGATIVE_X;
+            work->roll            = ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+            rootCoord->coord.t[0] = 0xFA0;
+            rootCoord->coord.t[1] = ACTOR_400500_CRAWL_CEILING_Y;
+            rootCoord->coord.t[2] = ACTOR_400500_CRAWL_LINE_Z;
+            break;
+    }
+    gfxSetRotIdentity(&rootRotation);
+    RotMatrixZ(work->roll, &rootRotation);
+    RotMatrixY(work->yaw, &rootRotation);
+    _actor400500CopyRotation(&rootRotation, &rootCoord->coord);
+    _actor400500SamplePartWorldXZ(task, ACTOR_400500_PART_LEFT_ARM_TIP, &work->anchorPos);
+}
+
+/// Enters a grab or arm strike when the target's range, bearing and cooldown allow it.
+///
+/// Returns 1 after entering an attack state, otherwise 0. Requires the live
+/// Stalker's work and this frame's target measurements. Zone 5 suppresses attacks.
+/// The narrower grab gate takes priority: failing its cooldown or ceiling test
+/// returns 0 without trying a strike. Grab accepts unsigned cooldowns 0..7;
+/// strikes require zero. Positive local player Z movement reduces both ranges.
+static s32 _actor400500TryStartAttack(Task* task)
+{
+    enum { ACTOR_400500_NO_ATTACK_PLAYER_ZONE = 5 };
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* strikeWork;
+
+    work = (_Actor400500GrayStalkerWork*)task->work;
+    if ((s16)work->playerZone != ACTOR_400500_NO_ATTACK_PLAYER_ZONE) {
+        // Unsigned subtraction tests the cone across the 0/4096 bearing wrap.
+        if ((work->targetDist < (ACTOR_400500_GRAB_RANGE - (work->playerLocalMove.vz * ACTOR_400500_TARGET_MOVE_RANGE_SCALE))) &&
+            ((u32)(work->targetBearing - ACTOR_400500_GRAB_HALF_ANGLE) >= (ONE - 2 * ACTOR_400500_GRAB_HALF_ANGLE + 1U))) {
+            if ((((u16)work->attackCooldown >> 3) == 0) && !(work->posture & ACTOR_400500_POSTURE_ON_FLOOR)) {
+                _actor400500EnterState(task, ACTOR_400500_STATE_GRAB);
+                return 1;
+            }
+            return 0;
+        }
+        if ((work->targetDist < (ACTOR_400500_STRIKE_RANGE - (work->playerLocalMove.vz * ACTOR_400500_TARGET_MOVE_RANGE_SCALE))) &&
+            ((u32)(work->targetBearing - ACTOR_400500_STRIKE_HALF_ANGLE) >= (ONE - 2 * ACTOR_400500_STRIKE_HALF_ANGLE + 1U)) &&
+            (work->attackCooldown == 0)) {
+            strikeWork = (_Actor400500GrayStalkerWork*)task->work;
+            if (!(strikeWork->posture & ACTOR_400500_POSTURE_ON_FLOOR)) {
+                _actor400500EnterState(task, ACTOR_400500_STATE_STRIKE_CEILING);
+            } else {
+                _actor400500EnterState(task, ACTOR_400500_STATE_STRIKE_FLOOR);
+            }
+            return 1;
+        }
+        return 0;
+    }
+    return 0;
+}
+
+/// Advances a requested hide/show cloak fade and ages the hide cooldown once.
+///
+/// Requires live work, enemy/model and layer-material state. Negative signed
+/// request bytes run phases 0 ramp, 1 hold and 2 ramp; nonnegative bytes only
+/// age cooldown. Cloak and shadow levels use 0..255; colour blend is Q12 unity.
+/// Ramps retain signed halfword truncation and quarter-step rounding. Hiding
+/// sets draw exclusion and removes lock-on; showing clears exclusion before its ramp.
+/// Show completion refreshes HP-dependent timing and seeds only an idle cooldown.
+/// That newly seeded cooldown is decremented on the completion call too.
+static void _actor400500TickCloakFade(Task* task)
+{
+    enum { ACTOR_400500_CLOAK_PHASE_HOLD        = 1,
+           ACTOR_400500_CLOAK_PHASE_SECOND_RAMP = 2,
+           ACTOR_400500_CLOAK_IDLE              = 0,
+           ACTOR_400500_CLOAK_FULL_LEVEL        = 255,
+           ACTOR_400500_CLOAK_HIDE_SNAP_LEVEL   = 248,
+           ACTOR_400500_CLOAK_SHOW_SNAP_LEVEL   = 9,
+           ACTOR_400500_CLOAK_SHOW_HOLD_TICKS   = 17,
+           ACTOR_400500_CLOAK_BLEND_SNAP_GAP    = 16,
+           ACTOR_400500_CLOAK_FULL_SHADOW_SHADE = 255 };
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    TmdObject*                   model;
+
+    enemy = task->spawnArg2.pointer;
+    work  = task->work;
+    model = task->extra.tmd;
+    if (work->cloakRequest < 0) {
+        // Hiding builds the cloak material, holds it, then removes the body and lock-on.
+        if (!((u8)work->cloakRequest & ACTOR_400500_CLOAK_SHOW)) {
+            switch (work->cloakPhase) {
+                case ACTOR_400500_CLOAK_PHASE_FIRST_RAMP:
+                    work->cloakLevel = (u16)work->cloakLevel + ((s16)(ACTOR_400500_CLOAK_FULL_LEVEL - (u16)work->cloakLevel) >> 2);
+                    if (work->cloakLevel >= ACTOR_400500_CLOAK_HIDE_SNAP_LEVEL) {
+                        work->cloakLevel = ACTOR_400500_CLOAK_FULL_LEVEL;
+                        work->cloakTimer = 0;
+                        work->cloakPhase = (u8)work->cloakPhase + 1;
+                    }
+                    modelLightingSetLayerMaterials(work->cloakLevel);
+                    break;
+                case ACTOR_400500_CLOAK_PHASE_HOLD:
+                    work->cloakTimer = (u16)work->cloakTimer + 1;
+                    if (work->hideHoldFrames < work->cloakTimer) {
+                        work->cloakPhase = (u8)work->cloakPhase + 1;
+                    }
+                    break;
+                case ACTOR_400500_CLOAK_PHASE_SECOND_RAMP:
+                    work->colorBlend  = (u16)work->colorBlend + ((s16) - (u16)work->colorBlend >> 2);
+                    work->shadowShade = (u16)work->shadowShade + (-work->shadowShade >> 2);
+                    if (work->colorBlend == 0) {
+                        enemy->node.state.parts.flags = WORLD_TARGET_NOT_LOCKABLE;
+                        if (work->commandActive == 0) {
+                            enemy->node.state.parts.flags = (WORLD_TARGET_NOT_LOCKABLE | WORLD_TARGET_KEEP_SCANNED);
+                        }
+                        work->shadowShade  = 0;
+                        work->cloakRequest = ACTOR_400500_CLOAK_IDLE;
+                        model->flags      |= TMD_OBJECT_SKIP_ACTIVE_DRAW;
+                    }
+                    model->shading.colorBlend = work->colorBlend;
+                    break;
+            }
+        } else {
+            // Showing restores draw/lock-on first, then removes the cloak material.
+            switch (work->cloakPhase) {
+                case ACTOR_400500_CLOAK_PHASE_FIRST_RAMP:
+                    enemy->node.state.parts.flags = 0;
+                    if (work->commandActive == 0) {
+                        enemy->node.state.parts.flags = WORLD_TARGET_KEEP_SCANNED;
+                    }
+                    model->flags     &= ~TMD_OBJECT_SKIP_ACTIVE_DRAW;
+                    work->colorBlend  = (u16)work->colorBlend + ((s16)(TMD_OBJECT_COLOR_BLEND_ONE - (u16)work->colorBlend) >> 2);
+                    work->shadowShade = (u16)work->shadowShade + ((ACTOR_400500_CLOAK_FULL_SHADOW_SHADE - work->shadowShade) >> 2);
+                    if (work->colorBlend >= TMD_OBJECT_COLOR_BLEND_ONE - ACTOR_400500_CLOAK_BLEND_SNAP_GAP) {
+                        work->shadowShade = ACTOR_400500_CLOAK_FULL_SHADOW_SHADE;
+                        work->colorBlend  = TMD_OBJECT_COLOR_BLEND_ONE;
+                        work->cloakTimer  = 0;
+                        work->cloakPhase  = (u8)work->cloakPhase + 1;
+                    }
+                    model->shading.colorBlend = work->colorBlend;
+                    break;
+                case ACTOR_400500_CLOAK_PHASE_HOLD:
+                    work->cloakTimer = (u16)work->cloakTimer + 1;
+                    if (work->cloakTimer >= ACTOR_400500_CLOAK_SHOW_HOLD_TICKS) {
+                        work->cloakPhase = (u8)work->cloakPhase + 1;
+                    }
+                    break;
+                case ACTOR_400500_CLOAK_PHASE_SECOND_RAMP:
+                    work->cloakLevel = (u16)work->cloakLevel + ((s16) - (u16)work->cloakLevel >> 2);
+                    if (work->cloakLevel < ACTOR_400500_CLOAK_SHOW_SNAP_LEVEL) {
+                        work->cloakLevel   = 0;
+                        work->cloakRequest = ACTOR_400500_CLOAK_IDLE;
+                        _actor400500UpdateCloakTiming(task);
+                        if (work->hideCooldown == 0) {
+                            work->hideCooldown = (u16)work->hideCooldownReset;
+                        }
+                    }
+                    modelLightingSetLayerMaterials(work->cloakLevel);
+                    break;
+            }
+        }
+    }
+    if (work->hideCooldown > 0) {
+        work->hideCooldown = (u16)work->hideCooldown - 1;
+    }
+}
+
+/// Queues a packed sound-script start at the model root's cached view position.
+///
+/// Requires a live TMD task, composed root, initialized GTE/scratch facilities
+/// and loaded sound resources that remain live through playback. `soundId`
+/// supplies bank, instance and entry bytes unchanged. Pan uses three SPU steps
+/// per signed-byte unit; depth uses 256 game-coordinate units per signed-byte
+/// unit. Admission failure is ignored and no task pointer is retained.
+static inline void _actor400500EnqueueRootSound(Task* task, s32 soundId)
+{
+    s32 panOffset;
+
+    panOffset = (s8)worldCoordGetOriginAudioPan(task->extra.tmd->coords);
+    sndEvtRequestScriptStart(soundId, panOffset, (s8)worldCoordGetOriginAudioDepth(task->extra.tmd->coords));
+}
+
+/// Advances a requested turn in place and consumes hits while it runs.
+///
+/// Requires the live work block and this frame's animation-slot results.
+/// Returns 1 for either yaw direction, including the completion tick, and 0
+/// without a turn. Requests the matching clip once at normal speed; yaw uses
+/// 4096 units per turn and the 16-frame profile repeats until a boundary.
+/// Completion snaps yaw to a 512-unit grid. Sound uses the composed root and
+/// placement tag. Animation playback and the root's rotation update happen elsewhere.
+static s32 _actor400500TickTurn(Task* task)
+{
+    enum {
+        ACTOR_400500_ANIM_TURN_YAW_DOWN = 0x17,
+        ACTOR_400500_ANIM_TURN_YAW_UP   = 0x18,
+        ACTOR_400500_TURN_PROFILE_MASK  = ARRAY_SIZE(_gActor400500TurnYawSteps) - 1,
+        ACTOR_400500_TURN_SOUND_PHASE   = 8,
+        ACTOR_400500_TURN_GRID_MASK     = 0xE00
+    };
+    _Actor400500GrayStalkerWork* work;
+    s32                          soundId;
+    u16                          nextYaw;
+
+    work = (_Actor400500GrayStalkerWork*)task->work;
+    // Consume the requested turn before ordinary crawling resumes.
+    if (work->turnRequest == ACTOR_400500_TURN_YAW_DOWN) {
+        if (work->turnStarted == 0) {
+            _actor400500RequestAnimReset(task, ACTOR_400500_ANIM_TURN_YAW_DOWN, ANIMATION_RATE_ONE);
+            work->stateFrames = 0;
+            work->turnStarted = 1;
+        }
+        work->stateFrames = work->stateFrames + 1;
+        if ((work->stateFrames & ACTOR_400500_TURN_PROFILE_MASK) == ACTOR_400500_TURN_SOUND_PHASE) {
+            soundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_STEP_1;
+            _actor400500EnqueueRootSound(task, soundId);
+        }
+        nextYaw   = (u16)work->yaw - _gActor400500TurnYawSteps[work->stateFrames & ACTOR_400500_TURN_PROFILE_MASK];
+        work->yaw = nextYaw;
+        if ((_actor400500CheckAnimBoundary(task) << 0x10) != 0) {
+            work->stateFrames = 0;
+            work->turnRequest = ACTOR_400500_TURN_NONE;
+            work->yaw         = (u16)work->yaw & ACTOR_400500_TURN_GRID_MASK;
+        }
+        _actor400500ClearHitReaction(task);
+        return 1;
+    }
+    if (work->turnRequest == ACTOR_400500_TURN_YAW_UP) {
+        if (work->turnStarted == 0) {
+            _actor400500RequestAnimReset(task, ACTOR_400500_ANIM_TURN_YAW_UP, ANIMATION_RATE_ONE);
+            work->stateFrames = 0;
+            work->turnStarted = 1;
+        }
+        work->stateFrames = work->stateFrames + 1;
+        if ((work->stateFrames & ACTOR_400500_TURN_PROFILE_MASK) == ACTOR_400500_TURN_SOUND_PHASE) {
+            soundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_STEP_2;
+            _actor400500EnqueueRootSound(task, soundId);
+        }
+        nextYaw   = (u16)work->yaw + _gActor400500TurnYawSteps[work->stateFrames & ACTOR_400500_TURN_PROFILE_MASK];
+        work->yaw = nextYaw;
+        if ((_actor400500CheckAnimBoundary(task) << 0x10) != 0) {
+            work->stateFrames = 0;
+            work->turnRequest = ACTOR_400500_TURN_NONE;
+            work->yaw         = (u16)work->yaw & ACTOR_400500_TURN_GRID_MASK;
+        }
+        _actor400500ClearHitReaction(task);
+        return 1;
+    }
+    return 0;
+}
+
+/// Returns 1 when slot 1 reports a reached boundary, control jump, or held boundary pose.
+///
+/// Requires the live Stalker's initialized animation rig. Reads the latest slot
+/// results without advancing playback or consuming the flags.
+static inline s32 _actor400500HasAnimBoundary(Task* task)
+{
+    _Actor400500GrayStalkerWork* work = (_Actor400500GrayStalkerWork*)task->work;
+
+    if ((work->rig.slots[1].status.fields.flags & ANIMATION_SLOT_REACHED_BOUNDARY) ||
+        (work->rig.slots[1].status.word & (ANIMATION_SLOT_FOLLOWED_JUMP | ANIMATION_SLOT_SETTLED))) {
+        return 1;
+    }
+    return 0;
+}
+
+/// Consumes light hits and handles heavy, blast and status recoil requests.
+///
+/// Requires the live Stalker's work. Returns 0 for no active hit or a discarded
+/// light reaction; returns 1 while heavy recoil is active or after entering the
+/// status-hold state. Heavy and blast reactions show the body and request a
+/// four-frame blend into recoil; the active hit clears at an animation boundary.
+static s32 _actor400500HandleHeavyHitReaction(Task* task)
+{
+    enum {
+        ACTOR_400500_ANIM_HEAVY_RECOIL = 0xA,
+        ACTOR_400500_HIT_BLEND_FRAMES  = 4
+    };
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* animationWork;
+    s16                          hitActive;
+    s16                          reaction;
+    s32                          cloakMode;
+
+    work      = (_Actor400500GrayStalkerWork*)task->work;
+    hitActive = work->hitTaken;
+    if (hitActive == 1) {
+        reaction = work->hitReaction;
+        if (reaction == ACTOR_400500_HIT_REACTION_LIGHT) {
+            work->hitTaken    = 0;
+            work->hitReaction = ACTOR_400500_HIT_REACTION_NONE;
+            return 0;
+        }
+        if ((reaction == ACTOR_400500_HIT_REACTION_HEAVY) || (reaction == ACTOR_400500_HIT_REACTION_BLAST)) {
+            if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+                cloakMode          = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+                work->cloakRequest = cloakMode;
+                work->cloakPhase   = 0;
+            }
+            animationWork                  = (_Actor400500GrayStalkerWork*)task->work;
+            animationWork->animBlendFrames = ACTOR_400500_HIT_BLEND_FRAMES;
+            animationWork->animRate        = ANIMATION_RATE_ONE;
+            animationWork->animId          = ACTOR_400500_ANIM_HEAVY_RECOIL;
+            animationWork->animRequest     = ACTOR_400500_ANIM_REQUEST_BLEND;
+            work->hitReaction              = ACTOR_400500_HIT_REACTION_NONE;
+        } else if (reaction == ACTOR_400500_HIT_REACTION_STATUS) {
+            _actor400500EnterState(task, ACTOR_400500_STATE_STATUS_HOLD);
+            work->hitTaken    = 0;
+            work->hitReaction = ACTOR_400500_HIT_REACTION_NONE;
+            return 1;
+        }
+        if (_actor400500HasAnimBoundary(task)) {
+            work->hitTaken = 0;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+/// Handles light, heavy, blast and status recoil during fallen crawling.
+///
+/// Requires the live Stalker's work and current slot results; the caller supplies
+/// the fallen posture context. Returns 0 unless `hitTaken` is exactly 1.
+/// An identified reaction requests a show without the hide cooldown gate and
+/// requests a cut to its recoil clip, consuming the reaction code. Heavy and blast share
+/// a clip; status uses a separate clip. Returns 1 even on the animation boundary
+/// that clears the active hit. Playback advances in the calling state handler.
+static s32 _actor400500HandleFallenHitReaction(Task* task)
+{
+    enum {
+        ACTOR_400500_ANIM_FALLEN_LIGHT_RECOIL  = 0xB,
+        ACTOR_400500_ANIM_FALLEN_HEAVY_RECOIL  = 0xC,
+        ACTOR_400500_ANIM_FALLEN_STATUS_RECOIL = 0xE,
+        ACTOR_400500_FALLEN_LIGHT_RECOIL_RATE  = 0x1C
+    };
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* animationWork;
+    s16                          hitActive;
+    s16                          reaction;
+    s32                          cloakRequest;
+
+    work      = (_Actor400500GrayStalkerWork*)task->work;
+    hitActive = work->hitTaken;
+    if (hitActive == 1) {
+        reaction = work->hitReaction;
+        if (reaction == ACTOR_400500_HIT_REACTION_LIGHT) {
+            if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+                cloakRequest       = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+                work->cloakRequest = cloakRequest;
+                work->cloakPhase   = 0;
+            }
+            animationWork              = (_Actor400500GrayStalkerWork*)task->work;
+            animationWork->animRate    = ACTOR_400500_FALLEN_LIGHT_RECOIL_RATE;
+            animationWork->animId      = ACTOR_400500_ANIM_FALLEN_LIGHT_RECOIL;
+            animationWork->animRequest = ACTOR_400500_ANIM_REQUEST_RESET;
+            work->hitReaction          = ACTOR_400500_HIT_REACTION_NONE;
+        } else if (reaction == ACTOR_400500_HIT_REACTION_HEAVY) {
+            if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+                cloakRequest       = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+                work->cloakRequest = cloakRequest;
+                work->cloakPhase   = 0;
+            }
+            animationWork              = (_Actor400500GrayStalkerWork*)task->work;
+            animationWork->animRate    = ANIMATION_RATE_ONE;
+            animationWork->animId      = ACTOR_400500_ANIM_FALLEN_HEAVY_RECOIL;
+            animationWork->animRequest = ACTOR_400500_ANIM_REQUEST_RESET;
+            work->hitReaction          = ACTOR_400500_HIT_REACTION_NONE;
+        } else if (reaction == ACTOR_400500_HIT_REACTION_BLAST) {
+            if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+                cloakRequest       = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+                work->cloakRequest = cloakRequest;
+                work->cloakPhase   = 0;
+            }
+            animationWork              = (_Actor400500GrayStalkerWork*)task->work;
+            animationWork->animRate    = ANIMATION_RATE_ONE;
+            animationWork->animId      = ACTOR_400500_ANIM_FALLEN_HEAVY_RECOIL;
+            animationWork->animRequest = ACTOR_400500_ANIM_REQUEST_RESET;
+            work->hitReaction          = ACTOR_400500_HIT_REACTION_NONE;
+        } else if (reaction == ACTOR_400500_HIT_REACTION_STATUS) {
+            if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+                cloakRequest       = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+                work->cloakRequest = cloakRequest;
+                work->cloakPhase   = 0;
+            }
+            animationWork              = (_Actor400500GrayStalkerWork*)task->work;
+            animationWork->animRate    = ANIMATION_RATE_ONE;
+            animationWork->animId      = ACTOR_400500_ANIM_FALLEN_STATUS_RECOIL;
+            animationWork->animRequest = ACTOR_400500_ANIM_REQUEST_RESET;
+            work->hitReaction          = ACTOR_400500_HIT_REACTION_NONE;
+        }
+        if (_actor400500HasAnimBoundary(task)) {
+            work->hitTaken = 0;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+/// Requests a cut to an animation set at a signed sixteenth-frame playback rate.
+///
+/// Requires the live Stalker's work and a loaded set at `setIndex` (1..32)
+/// in its borrowed table; entries 0 and 33 are NULL. Latches the request;
+/// `_actor400500TickAnim` resets slots 1..17 on the next update. The rate is
+/// retained as s16 here and narrowed to the slot's signed low byte when applied;
+/// `ANIMATION_RATE_ONE` is one normal-rate frame per tick.
+static inline void _actor400500SetAnim(Task* task, s16 setIndex, s16 rateSixteenths)
+{
+    _Actor400500GrayStalkerWork* work = (_Actor400500GrayStalkerWork*)task->work;
+
+    work->animRate    = rateSixteenths;
+    work->animId      = setIndex;
+    work->animRequest = ACTOR_400500_ANIM_REQUEST_RESET;
+}
+
+/// Selects a living Stalker state and its sub-state without resetting frame counters.
+///
+/// Requires a live Stalker work block. `state` is an `ACTOR_400500_STATE_*`
+/// and `subState` must index that state's step table; both stores keep the low
+/// 16 bits. Current callers enter crawl or ambush at sub-state zero.
+static inline void _actor400500SetState(Task* task, s32 state, s32 subState)
+{
+    _Actor400500GrayStalkerWork* work;
+
+    work           = (_Actor400500GrayStalkerWork*)task->work;
+    work->state    = state;
+    work->subState = subState;
+}
+
+/// Applies a pending animation request and advances the Stalker's part slots once.
+///
+/// Requires the live, initialized rig and loaded clip data. Drives slots 1..17,
+/// leaving root slot 0 untouched. A repeated blend request rescales the elapsed
+/// whole-frame counter; a new blend or cut resets it, and ordinary playback
+/// increments it with halfword wrapping. Slots consume the rate's signed low
+/// byte in sixteenths of a frame. All borrowed rig/model storage stays live.
+static inline void _actor400500TickAnim(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          slotIndex;
+
+    work = (_Actor400500GrayStalkerWork*)task->work;
+    // Apply a request before advancing the part poses at the requested rate.
+    if (work->animRequest == ACTOR_400500_ANIM_REQUEST_BLEND) {
+        if (work->appliedAnim != work->animId) {
+            work->animFrames = 0;
+        } else {
+            work->animFrames = _actor400500RescaleAnimFrames(task, work->animFrames);
+        }
+        _actor400500BlendAnimSlots(task);
+        work->animRequest = ACTOR_400500_ANIM_REQUEST_PLAYING;
+    } else if (work->animRequest == ACTOR_400500_ANIM_REQUEST_RESET) {
+        _actor400500ResetAnimSlots(task);
+        work->animRequest = ACTOR_400500_ANIM_REQUEST_PLAYING;
+        work->animFrames  = 0;
+    } else if (work->animRequest == ACTOR_400500_ANIM_REQUEST_PLAYING) {
+        work->animFrames = (u16)work->animFrames + 1;
+    }
+    slotIndex = 1;
+    do {
+        work->rig.slots[slotIndex].rate = work->animRate;
+        animationTickSlot(&work->rig.anim, slotIndex);
+        slotIndex++;
+    } while (slotIndex < ARRAY_SIZE(work->rig.slots));
+}
+
+/// Consumes a pending knockdown and enters its first state-machine step.
+///
+/// Requires a live Stalker work block. Clears any nonzero `knockdownPending`
+/// and enters `ACTOR_400500_STATE_KNOCKDOWN` at sub-state zero, returning 1.
+/// Returns 0 with no change when no request is pending; frame counters stay intact.
+static inline s32 _actor400500TakeKnockdown(Task* task)
+{
+    _Actor400500GrayStalkerWork* work = (_Actor400500GrayStalkerWork*)task->work;
+
+    if (work->knockdownPending != 0) {
+        work->knockdownPending = 0;
+        _actor400500EnterState(task, ACTOR_400500_STATE_KNOCKDOWN);
+        return 1;
+    }
+    return 0;
+}
+
+/// Samples a model part's world X/Z position into signed halfwords.
+///
+/// The live model root must be parented directly to `gGfxViewCoord`, with an
+/// acyclic hierarchy and `partIndex` in its coordinate array. `worldPosition`
+/// is writable for this call only: X/Z retain the low 16 bits, and Y is left
+/// untouched. Requires the composed view, GTE and scratch-stack facilities.
+/// Refreshes the part's cache, removes the view transform, then marks it dirty.
+static inline void _actor400500ReadPartWorldXZ(Task* task, s16 partIndex, SVECTOR3* worldPosition)
+{
+    MATRIX    partWorldTransform;
+    GfxCoord* partCoord;
+
+    partCoord = &task->extra.tmd->coords[partIndex];
+    actorRenderComposeCoord(partCoord);
+    gfxMakeRelativeTransform(&gGfxViewCoord.workm, &partCoord->workm, &partWorldTransform);
+    worldPosition->vx       = partWorldTransform.t[0];
+    worldPosition->vz       = partWorldTransform.t[2];
+    partCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+}
+
+/// Moves the model root in X/Z to hold a part at a saved world position.
+///
+/// The live model root must be parented directly to `gGfxViewCoord`, with an
+/// acyclic hierarchy and `partIndex` in its coordinate array. `worldPosition`
+/// supplies signed game-coordinate X/Z for this call only; Y is ignored and
+/// root Y is preserved. A sample from `_actor400500ReadPartWorldXZ` already
+/// carries halfword truncation. Requires the composed view, GTE and scratch
+/// stack; refreshes the part and root caches after moving the root.
+static inline void _actor400500PinPartWorldXZ(Task* task, s16 partIndex, const SVECTOR3* worldPosition)
+{
+    MATRIX    rootWorldTransform;
+    MATRIX    partWorldTransform;
+    GfxCoord* partCoord;
+    GfxCoord* coords;
+
+    coords    = task->extra.tmd->coords;
+    partCoord = &coords[partIndex];
+    actorRenderComposeCoord(partCoord);
+    gfxMakeRelativeTransform(&gGfxViewCoord.workm, &coords[0].workm, &rootWorldTransform);
+    gfxMakeRelativeTransform(&gGfxViewCoord.workm, &partCoord->workm, &partWorldTransform);
+    // Subtract the part-to-root offset from the saved world position.
+    coords[0].coord.t[0]    = worldPosition->vx - (partWorldTransform.t[0] - rootWorldTransform.t[0]);
+    coords[0].coord.t[2]    = worldPosition->vz - (partWorldTransform.t[2] - rootWorldTransform.t[2]);
+    coords[0].composeStamp  = GRAPHICS_COORD_DIRTY;
+    partCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+    actorRenderComposeCoord(partCoord);
+    actorRenderComposeCoord(coords);
+}
+
+/// Queues a packed sound-script id with spatial pan and attenuation at the model root.
+///
+/// The live TMD root's local-to-view cache must already be composed. `soundId`
+/// includes the bank, instance and entry bytes; no placement tag is added.
+/// Requires the origin-audio projection/scratch facilities and loaded sound
+/// resources. Pan and depth are narrowed to signed bytes; admission failure
+/// is ignored. Sound resources must remain loaded through playback; the request
+/// retains no task pointer.
+static inline void _actor400500EnqueueSound(Task* task, s32 soundId)
+{
+    s32 panOffset;
+
+    panOffset = (s8)worldCoordGetOriginAudioPan(task->extra.tmd->coords);
+    sndEvtRequestScriptStart(soundId, panOffset, (s8)worldCoordGetOriginAudioDepth(task->extra.tmd->coords));
+}
+
+/// Queues a sound-script entry with this enemy placement's instance tag.
+///
+/// Requires a live enemy in `spawnArg2.pointer` and a composed TMD root.
+/// `baseSoundId` supplies the bank and entry bytes, normally with an empty
+/// instance byte; the placement index is ORed into that byte. The bank stays
+/// as supplied, including bank zero. Pan and attenuation use signed low bytes.
+/// Admission failure is ignored; sound resources must stay loaded for playback.
+/// Neither the task nor the enemy pointer is retained.
+static inline void _actor400500PlayPlacedSound(Task* task, s32 baseSoundId)
+{
+    s32 placedSoundId;
+
+    placedSoundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | baseSoundId;
+    _actor400500EnqueueRootSound(task, placedSoundId);
+}
+
+/// Replaces a coordinate's rotation with a unit-scale yaw in its parent's frame.
+///
+/// `yawAngle` uses 4096 units per turn. The live writable coordinate keeps its
+/// translation, matrix alignment bytes, stored Euler state and parent link.
+/// Only the nine Q12 rotation coefficients are replaced; pitch, roll and scale
+/// are discarded. Leaves the cache stamp untouched; callers arrange recomposition.
+static inline void _actor400500SetCoordYaw(GfxCoord* coord, s16 yawAngle)
+{
+    MATRIX yawRotation;
+
+    gfxSetRotIdentity(&yawRotation);
+    RotMatrixY(yawAngle, &yawRotation);
+    _actor400500CopyRotation(&yawRotation, &coord->coord);
+}
+
+/// Converts a clip frame to a rate-scaled whole tick, retaining the low byte.
+///
+/// Requires live Stalker work and a nonnegative clip frame whose product with
+/// 256 fits s32. Current callers use contact boundaries through clip frame 27.
+/// Rates use signed sixteenths of a frame; zero yields zero. Signed division
+/// occurs before unsigned division by 16 and byte narrowing, including at a
+/// negative rate. This only reads the rate and retains no pointer.
+static inline u8 _actor400500GaitFrameTick(Task* task, s32 clipFrame)
+{
+    u8 frameTick;
+
+    if (((_Actor400500GrayStalkerWork*)task->work)->animRate == 0) {
+        frameTick = 0;
+    } else {
+        frameTick = (u32)((clipFrame * ANIMATION_RATE_ONE * ANIMATION_RATE_ONE) /
+                          ((_Actor400500GrayStalkerWork*)task->work)->animRate) /
+                    ANIMATION_RATE_ONE;
+    }
+    return frameTick;
+}
+
+/// Moves a crawl cycle by alternately anchoring the two arm tips in world X/Z.
+///
+/// Starts clip 2 at 1.5 normal speed only when another clip is selected; the
+/// existing clip's rate is retained. Left contact spans clip frames 0..11 and
+/// right contact 12..21, inclusive, with a placement-tagged sound at each start.
+/// Requires a live 18-part rig beneath the view coordinate and current slot
+/// results. A boundary restarts elapsed frames; ordinary playback advances in
+/// the calling state. Rate-scaled whole-tick bounds narrow to u8, zero at rate
+/// zero; anchor coordinates retain signed low halfwords. Root Y stays intact.
+static void _actor400500TickCrawl(Task* task)
+{
+    enum { ACTOR_400500_GAIT_CLIP = 2 };
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    u8                           firstContactEnd;
+    u8                           secondContactStart;
+    u8                           secondContactEnd;
+    // Byte bounds preserve the clip-to-tick conversion and its wrapping.
+    u8  firstContactStart;
+    s32 placedSoundId;
+
+    work      = (_Actor400500GrayStalkerWork*)task->work;
+    rootCoord = task->extra.tmd->coords;
+    if (work->animId != ACTOR_400500_GAIT_CLIP) {
+        _actor400500SetAnim(task, ACTOR_400500_GAIT_CLIP, ANIMATION_RATE_ONE * 3 / 2);
+        _actor400500TickAnim(task);
+    }
+    firstContactStart  = 0;
+    firstContactEnd    = _actor400500GaitFrameTick(task, 11);
+    secondContactStart = _actor400500GaitFrameTick(task, 12);
+    secondContactEnd   = _actor400500GaitFrameTick(task, 21);
+    if (_actor400500HasAnimBoundary(task)) {
+        work->animFrames = 0;
+    }
+    // Sample each planted tip before moving the root around its saved position.
+    if (work->animFrames == firstContactStart) {
+        _actor400500ReadPartWorldXZ(task, ACTOR_400500_PART_LEFT_ARM_TIP, &work->anchorPos);
+        placedSoundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_STEP_1;
+        _actor400500EnqueueSound(task, placedSoundId);
+    }
+    if (work->animFrames == secondContactStart) {
+        _actor400500ReadPartWorldXZ(task, ACTOR_400500_PART_RIGHT_ARM_TIP, &work->anchorPos);
+        placedSoundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_STEP_2;
+        _actor400500EnqueueSound(task, placedSoundId);
+    }
+    if (work->animFrames >= firstContactStart && work->animFrames <= firstContactEnd) {
+        _actor400500PinPartWorldXZ(task, ACTOR_400500_PART_LEFT_ARM_TIP, &work->anchorPos);
+    }
+    if (work->animFrames >= secondContactStart && work->animFrames <= secondContactEnd) {
+        _actor400500PinPartWorldXZ(task, ACTOR_400500_PART_RIGHT_ARM_TIP, &work->anchorPos);
+    }
+    rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+}
+
+/// Moves the room-command crawl cycle at its currently selected animation rate.
+///
+/// Cuts to clip 2 at the existing rate only when a different clip is selected.
+/// Left-arm contact spans clip frames 0..11 and right contact 12..21, inclusive,
+/// with a placement-tagged sound at each start. Requires a live 18-part rig
+/// beneath the view coordinate and current slot results. A boundary restarts
+/// elapsed frames; ordinary playback advances in the calling state. Rate-scaled
+/// whole-tick bounds narrow to u8, zero at rate zero; world X/Z anchors retain
+/// signed low halfwords and moving the root preserves Y.
+static void _actor400500TickScriptedCrawl(Task* task)
+{
+    enum { ACTOR_400500_GAIT_CLIP = 2 };
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    u8                           firstContactEnd;
+    u8                           secondContactStart;
+    u8                           secondContactEnd;
+    // Byte bounds preserve the clip-to-tick conversion and its wrapping.
+    u8 firstContactStart;
+
+    work      = (_Actor400500GrayStalkerWork*)task->work;
+    rootCoord = task->extra.tmd->coords;
+    if (work->animId != ACTOR_400500_GAIT_CLIP) {
+        _actor400500SetAnim(task, ACTOR_400500_GAIT_CLIP, work->animRate);
+        _actor400500TickAnim(task);
+    }
+    firstContactStart  = 0;
+    firstContactEnd    = _actor400500GaitFrameTick(task, 11);
+    secondContactStart = _actor400500GaitFrameTick(task, 12);
+    secondContactEnd   = _actor400500GaitFrameTick(task, 21);
+    if (_actor400500HasAnimBoundary(task)) {
+        work->animFrames = 0;
+    }
+    // Sample each planted tip before moving the root around its saved position.
+    if (work->animFrames == firstContactStart) {
+        _actor400500ReadPartWorldXZ(task, ACTOR_400500_PART_LEFT_ARM_TIP, &work->anchorPos);
+        _actor400500PlayPlacedSound(task, ACTOR_400500_SOUND_STEP_1);
+    }
+    if (work->animFrames == secondContactStart) {
+        _actor400500ReadPartWorldXZ(task, ACTOR_400500_PART_RIGHT_ARM_TIP, &work->anchorPos);
+        _actor400500PlayPlacedSound(task, ACTOR_400500_SOUND_STEP_2);
+    }
+    if (work->animFrames >= firstContactStart && work->animFrames <= firstContactEnd) {
+        _actor400500PinPartWorldXZ(task, ACTOR_400500_PART_LEFT_ARM_TIP, &work->anchorPos);
+    }
+    if (work->animFrames >= secondContactStart && work->animFrames <= secondContactEnd) {
+        _actor400500PinPartWorldXZ(task, ACTOR_400500_PART_RIGHT_ARM_TIP, &work->anchorPos);
+    }
+    rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+}
+
+/// Moves a fallen crawl cycle by anchoring the right arm, then the left arm.
+///
+/// Starts clip 4 at normal speed only when another clip is selected; the
+/// existing clip's rate is retained. Right contact spans clip frames 0..13 and
+/// left contact 14..27, inclusive, with a placement-tagged sound at each start.
+/// Requires a live 18-part rig beneath the view coordinate and current slot
+/// results. A boundary restarts elapsed frames; ordinary playback advances in
+/// the calling state. Rate-scaled whole-tick bounds narrow to u8, zero at rate
+/// zero; anchor coordinates retain signed low halfwords. Root Y stays intact.
+static void _actor400500TickFallenCrawl(Task* task)
+{
+    enum { ACTOR_400500_GAIT_CLIP = 4 };
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    u8                           firstContactEnd;
+    u8                           secondContactStart;
+    u8                           secondContactEnd;
+    // Byte bounds preserve the clip-to-tick conversion and its wrapping.
+    u8  firstContactStart;
+    s32 placedSoundId;
+
+    work      = (_Actor400500GrayStalkerWork*)task->work;
+    rootCoord = task->extra.tmd->coords;
+    if (work->animId != ACTOR_400500_GAIT_CLIP) {
+        _actor400500SetAnim(task, ACTOR_400500_GAIT_CLIP, ANIMATION_RATE_ONE);
+        _actor400500TickAnim(task);
+    }
+    firstContactStart  = 0;
+    firstContactEnd    = _actor400500GaitFrameTick(task, 13);
+    secondContactStart = _actor400500GaitFrameTick(task, 14);
+    secondContactEnd   = _actor400500GaitFrameTick(task, 27);
+    if (_actor400500HasAnimBoundary(task)) {
+        work->animFrames = 0;
+    }
+    // Sample each planted tip before moving the root around its saved position.
+    if (work->animFrames == firstContactStart) {
+        _actor400500ReadPartWorldXZ(task, ACTOR_400500_PART_RIGHT_ARM_TIP, &work->anchorPos);
+        placedSoundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_STEP_1;
+        _actor400500EnqueueSound(task, placedSoundId);
+    }
+    if (work->animFrames == secondContactStart) {
+        _actor400500ReadPartWorldXZ(task, ACTOR_400500_PART_LEFT_ARM_TIP, &work->anchorPos);
+        placedSoundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_STEP_2;
+        _actor400500EnqueueSound(task, placedSoundId);
+    }
+    if (work->animFrames >= firstContactStart && work->animFrames <= firstContactEnd) {
+        _actor400500PinPartWorldXZ(task, ACTOR_400500_PART_RIGHT_ARM_TIP, &work->anchorPos);
+    }
+    if (work->animFrames >= secondContactStart && work->animFrames <= secondContactEnd) {
+        _actor400500PinPartWorldXZ(task, ACTOR_400500_PART_LEFT_ARM_TIP, &work->anchorPos);
+    }
+    rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+}
+
+/// Consumes body attacks and status ticks, applies HP loss and queues the Stalker's recoil.
+///
+/// Requires live enemy/work/model and all three initialized contact records.
+/// Attack keys must index the resident damage tables. HP loss, Life Drain
+/// credit, readouts and hit effects obey the hit cooldown; attack attributes
+/// still run during cooldown, including Life Drain motes. Critical damage
+/// multiplies the base's unsigned low halfword by four; HP/readout amounts
+/// narrow to signed halfwords. Fatal direct hits hold death until the move ends.
+/// Status ticks retain their separate HP clamping behavior. Clears all body
+/// contacts and decrements/clamps the hit cooldown after processing.
+static void _actor400500TakeDamage(Task* task)
+{
+    enum { ACTOR_400500_HEAVY_HIT_HP                = 50,
+           ACTOR_400500_ATTACK_REACTION_BLAST       = 4,
+           ACTOR_400500_ATTACK_REACTION_HEAVY       = 5,
+           ACTOR_400500_ATTACK_REACTION_KNOCKDOWN_8 = 8,
+           ACTOR_400500_ATTACK_REACTION_KNOCKDOWN_9 = 9 };
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    u32                          baseDamage;
+    u32                          hpDamage;
+    s16                          hpDamage16;
+    s16                          remainingHp;
+    u8                           reactionFlags;
+    s32                          damageOverTime;
+    s16                          damageOverTime16;
+    s32                          contactIndex;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    // HP cooldown gates damage, while each attack may still request a status or recoil.
+    for (contactIndex = 0; contactIndex < ARRAY_SIZE(work->bodyContacts); contactIndex++) {
+        if ((work->bodyContacts[contactIndex].key.value & WORLD_COLLISION_CONTACT_KIND_MASK) == WORLD_COLLISION_CONTACT_ATTACK) {
+            if (work->hitCooldown == 0) {
+                work->hitTaken    = 1;
+                baseDamage        = damageComputePlayerAttack(work->bodyContacts[contactIndex].key.value, work->targetDist, 0, 0);
+                hpDamage          = baseDamage;
+                work->hitCooldown = damageGetPlayerAttackHitCooldown(work->bodyContacts[contactIndex].key.value);
+                if (damageRollCriticalHit(enemy, work->bodyContacts[contactIndex].key.value, 0) != 0) {
+                    hpDamage = ((u32)baseDamage << 16) >> 14;
+                    effectSpawn(EFFECT_CRITICAL_HIT, &task->extra.tmd->coords[ACTOR_400500_PART_BODY], 0, NULL);
+                }
+                hpDamage16 = hpDamage;
+                damageAccumulateLifeDrainHp(enemy, work->bodyContacts[contactIndex].key.value, hpDamage16, 0);
+                worldTargetAddReadoutAmount(&enemy->node, hpDamage16, 0);
+                remainingHp = (u16)enemy->hp - hpDamage;
+                enemy->hp   = remainingHp;
+                if ((remainingHp << 16) <= 0) {
+                    enemy->hp       = 0;
+                    work->deathHeld = 1;
+                }
+                effectSpawnHit(
+                    damageGetPlayerAttackEffectId(work->bodyContacts[contactIndex].key.value),
+                    &task->extra.tmd->coords[ACTOR_400500_PART_BODY],
+                    NULL,
+                    &work->effectArg);
+                if (hpDamage16 >= ACTOR_400500_HEAVY_HIT_HP) {
+                    work->hitReaction     = ACTOR_400500_HIT_REACTION_HEAVY;
+                    hpDamage              = baseDamage;
+                    work->lastHitReaction = ACTOR_400500_HIT_REACTION_HEAVY;
+                } else {
+                    work->hitReaction     = ACTOR_400500_HIT_REACTION_LIGHT;
+                    work->lastHitReaction = ACTOR_400500_HIT_REACTION_LIGHT;
+                }
+            } else if ((damageGetPlayerAttackEffectId(work->bodyContacts[contactIndex].key.value)) == EFFECT_HIT_KIND_LIFE_DRAIN_MOTES) {
+                effectSpawnHit(EFFECT_HIT_KIND_LIFE_DRAIN_MOTES, &task->extra.tmd->coords[1], NULL, &work->effectArg);
+            }
+            switch (damageGetPlayerAttackReaction(work->bodyContacts[contactIndex].key.value) & 0xFFFF) {
+                case DAMAGE_PLAYER_REACTION_NONE:
+                    break;
+                case DAMAGE_PLAYER_REACTION_STAGGER:
+                    damageStartEnemyStagger(enemy);
+                    break;
+                case DAMAGE_PLAYER_REACTION_BUILDUP:
+                    damageStartEnemyBuildup(enemy, work->bodyContacts[contactIndex].key.value, 0);
+                    break;
+                case DAMAGE_PLAYER_REACTION_POISON:
+                    damageTryStartEnemyDamageOverTime(enemy, work->bodyContacts[contactIndex].key.value, 0);
+                    break;
+                case ACTOR_400500_ATTACK_REACTION_BLAST:
+                    work->hitReaction     = ACTOR_400500_HIT_REACTION_BLAST;
+                    work->lastHitReaction = ACTOR_400500_HIT_REACTION_BLAST;
+                    break;
+                case ACTOR_400500_ATTACK_REACTION_HEAVY:
+                    work->hitReaction     = ACTOR_400500_HIT_REACTION_HEAVY;
+                    work->lastHitReaction = ACTOR_400500_HIT_REACTION_HEAVY;
+                    break;
+                case DAMAGE_PLAYER_REACTION_EXPLOSION:
+                    work->hitReaction     = ACTOR_400500_HIT_REACTION_BLAST;
+                    work->lastHitReaction = ACTOR_400500_HIT_REACTION_BLAST;
+                    break;
+                case DAMAGE_PLAYER_REACTION_INCENDIARY:
+                    work->hitReaction     = ACTOR_400500_HIT_REACTION_HEAVY;
+                    work->lastHitReaction = ACTOR_400500_HIT_REACTION_HEAVY;
+                    break;
+                case ACTOR_400500_ATTACK_REACTION_KNOCKDOWN_8:
+                case ACTOR_400500_ATTACK_REACTION_KNOCKDOWN_9:
+                    work->knockdownPending = 1;
+                    break;
+            }
+        }
+    }
+
+    // Consume accumulated status requests after the contacts, then clear the frame records.
+    reactionFlags = enemy->reactionFlags;
+    if (reactionFlags & ENEMY_REACTION_STAGGER) {
+        enemy->reactionFlags  = reactionFlags & ENEMY_REACTION_STAGGER_CLEAR;
+        work->hitReaction     = ACTOR_400500_HIT_REACTION_HEAVY;
+        work->lastHitReaction = ACTOR_400500_HIT_REACTION_HEAVY;
+    }
+    if (enemy->reactionFlags & ENEMY_REACTION_BUILDUP) {
+        enemy->reactionFlags &= ENEMY_REACTION_BUILDUP_CLEAR;
+        work->hitReaction     = ACTOR_400500_HIT_REACTION_STATUS;
+        work->lastHitReaction = ACTOR_400500_HIT_REACTION_STATUS;
+    }
+    if (enemy->reactionFlags & ENEMY_REACTION_DAMAGE_OVER_TIME_BITS) {
+        damageOverTime   = damageTickEnemyDamageOverTime(enemy);
+        damageOverTime16 = damageOverTime;
+        if (damageOverTime16 != 0) {
+            enemy->hp = (u16)enemy->hp - damageOverTime;
+            worldTargetAddReadoutAmount(&enemy->node, damageOverTime16, 0);
+            if (enemy->hp < 0) {
+                enemy->hp = 0;
+            }
+            work->hitTaken        = 1;
+            work->hitReaction     = ACTOR_400500_HIT_REACTION_HEAVY;
+            work->lastHitReaction = ACTOR_400500_HIT_REACTION_HEAVY;
+        }
+        if (damageIsEnemyDamageOverTimeExpired(enemy) != 0) {
+            enemy->reactionFlags &= ENEMY_REACTION_DAMAGE_OVER_TIME_CLEAR;
+        }
+    }
+    worldCollisionClearContacts(work->bodyContacts);
+    if (work->hitCooldown > 0) {
+        work->hitCooldown = (u16)work->hitCooldown - 1;
+        return;
+    }
+    work->hitCooldown = 0;
+}
+
+/// Positions the captured player at the next grab pose, then rewinds the Stalker's part animation.
+///
+/// Requires the live Stalker rig and a player model rooted in the same world
+/// frame; an absent player leaves all state intact. The part-8 local point
+/// (352,328,704) transforms to signed-halfword world coordinates. Changes only
+/// player X/Z: zero low halfword of `easePosition` snaps, otherwise each axis
+/// closes one quarter of the gap. Composes the player, ticks backward at -16
+/// sixteenths per frame and restores rate +16. Both passes process requests
+/// and the wrapping frame counter; this is not a side-effect-free pose sample.
+/// Requires composed view/GTE and the animation helpers' scratch space.
+static void _actor400500PositionGrabbedPlayer(Task* task, s32 easePosition)
+{
+    SVECTOR                      grabPosition;
+    GfxCoord*                    coords;
+    GfxCoord*                    grabJoint;
+    GfxCoord*                    playerRoot;
+    Task*                        playerTask;
+    _Actor400500GrayStalkerWork* work;
+    s32                          currentPosition;
+    s32                          targetPosition;
+
+    coords     = task->extra.tmd->coords;
+    playerTask = gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER];
+    grabJoint  = coords + ACTOR_400500_PART_RIGHT_ARM_TIP;
+    work       = task->work;
+    if (playerTask != NULL) {
+        playerRoot = playerTask->extra.tmd->coords;
+        // Sample the next arm pose before restoring playback with the reverse pass.
+        _actor400500TickAnim(task);
+        gGfxViewCoord.composeStamp = GRAPHICS_COORD_DIRTY;
+        actorRenderComposeCoord(&gGfxViewCoord);
+        grabJoint->composeStamp = GRAPHICS_COORD_DIRTY;
+        actorRenderComposeCoord(grabJoint);
+        grabPosition.vx = 0x160;
+        grabPosition.vy = 0x148;
+        grabPosition.vz = 0x2C0;
+        _actorRenderTransformPointToWorld(grabJoint, &grabPosition);
+        if ((easePosition << 0x10) == 0) {
+            playerRoot->coord.t[0] = grabPosition.vx;
+            playerRoot->coord.t[2] = grabPosition.vz;
+        } else {
+            targetPosition         = grabPosition.vx;
+            currentPosition        = playerRoot->coord.t[0];
+            currentPosition       += (targetPosition - currentPosition) >> 2;
+            playerRoot->coord.t[0] = currentPosition;
+            targetPosition         = grabPosition.vz;
+            currentPosition        = playerRoot->coord.t[2];
+            currentPosition       += (targetPosition - currentPosition) >> 2;
+            playerRoot->coord.t[2] = currentPosition;
+        }
+        playerRoot->composeStamp = GRAPHICS_COORD_DIRTY;
+        actorRenderComposeCoord(playerRoot);
+        work->animRate = -ANIMATION_RATE_ONE;
+        _actor400500TickAnim(task);
+        work->animRate = ANIMATION_RATE_ONE;
+    }
+}
+
+/// Copies body texture placement to a live death fragment and rebuilds both packet halves.
+///
+/// Both models and their loaded textures must remain live; the fragment's
+/// existing buffer must satisfy `tmdBuildBufferHalf`. Neither pointer is retained.
+static inline void _actor400500ApplyFragmentTexturePlacement(const Task* task, const EffectWork* fragment)
+{
+    TmdObject* bodyModel     = task->extra.tmd;
+    TmdObject* fragmentModel = fragment->task->extra.tmd;
+
+    fragmentModel->texturePageOffset = bodyModel->texturePageOffset;
+    fragmentModel->clutRowOffset     = bodyModel->clutRowOffset;
+    if (fragmentModel->buffer != NULL) {
+        tmdBuildBufferHalf(fragmentModel);
+        tmdBuildBufferHalf(fragmentModel);
+    }
+}
+
+/// Spawns the blast death's head/two-leg model chunks and three gravity particles.
+///
+/// Requires the live body coordinates and loaded fragment/texture resources.
+/// Selects each model before its spawn, then copies texture-page/CLUT placement
+/// to any successful chunk and rebuilds both existing primitive halves. Spawn
+/// failures are independent and ignored. Size 512 supplies the chunks' puff
+/// size and the gravity particles' drawing extent in game units. Effect tasks
+/// own the spawned work/models and retain their borrowed package resources.
+static void _actor400500SpawnDeathFragments(Task* task)
+{
+    enum { ACTOR_400500_DEATH_FRAGMENT_SIZE = 512 };
+    EffectWork* headEffect;
+    EffectWork* rightLegEffect;
+    EffectWork* leftLegEffect;
+
+    gTaskBank2Descs[TASK_BANK2_BURST_MODEL_PART_SLOT].data.model = &_gStalkerGrayBurstHead;
+    headEffect                                                   = effectSpawn(EFFECT_BODY_CHUNK, &task->extra.tmd->coords[ACTOR_400500_PART_BODY], ACTOR_400500_DEATH_FRAGMENT_SIZE, NULL);
+    if (headEffect != NULL) {
+        _actor400500ApplyFragmentTexturePlacement(task, headEffect);
+    }
+    gTaskBank2Descs[TASK_BANK2_BURST_MODEL_PART_SLOT].data.model = &_gStalkerGrayBurstLegRight;
+    rightLegEffect                                               = effectSpawn(EFFECT_BODY_CHUNK, &task->extra.tmd->coords[1], ACTOR_400500_DEATH_FRAGMENT_SIZE, NULL);
+    if (rightLegEffect != NULL) {
+        _actor400500ApplyFragmentTexturePlacement(task, rightLegEffect);
+    }
+    gTaskBank2Descs[TASK_BANK2_BURST_MODEL_PART_SLOT].data.model = &_gStalkerGrayBurstLegLeft;
+    leftLegEffect                                                = effectSpawn(EFFECT_BODY_CHUNK, &task->extra.tmd->coords[1], ACTOR_400500_DEATH_FRAGMENT_SIZE, NULL);
+    if (leftLegEffect != NULL) {
+        _actor400500ApplyFragmentTexturePlacement(task, leftLegEffect);
+    }
+    effectSpawn(EFFECT_030, &task->extra.tmd->coords[1], ACTOR_400500_DEATH_FRAGMENT_SIZE, NULL);
+    effectSpawn(EFFECT_030, &task->extra.tmd->coords[2], ACTOR_400500_DEATH_FRAGMENT_SIZE, NULL);
+    effectSpawn(EFFECT_030, &task->extra.tmd->coords[ACTOR_400500_PART_BODY], ACTOR_400500_DEATH_FRAGMENT_SIZE, NULL);
+}
+
+#include "../../shared/screen/frame_capture.inc.c"
+
+/// Requests hiding when no matching fade is running and the cooldown is zero.
+///
+/// `task` is evaluated once. `workCursor` and `requestValue` must be writable,
+/// side-effect-free identifiers of work-pointer and s32 type, respectively.
+/// Refreshes the cursor and forms the full-width request before byte truncation;
+/// a matching running hide retains its phase. An idle request or a running
+/// non-hide request can restart HIDE only at zero cooldown. Stores 0x80 as a
+/// negative s8 request and resets to the first ramp; otherwise requestValue is
+/// untouched. Captures no caller locals; the work pointer is borrowed.
+#define ACTOR_400500_REQUEST_HIDE(task, workCursor, requestValue)                              \
+    {                                                                                          \
+        (workCursor) = (task)->work;                                                           \
+        if ((((workCursor)->cloakRequest >= 0) ||                                              \
+             ((u8)(workCursor)->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK)) &&               \
+            ((workCursor)->hideCooldown == 0)) {                                               \
+            (requestValue)             = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_HIDE; \
+            (workCursor)->cloakRequest = (requestValue);                                       \
+            (workCursor)->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;                  \
+        }                                                                                      \
+    }
+
+/// Allocates and initializes the Gray Stalker's combat task and attached arms.
+///
+/// Requires a live model, enemy spawn record and loaded package resources.
+/// Owns a zeroed work block; allocation failure destroys the enemy/task.
+/// Initializes the borrowed animation bank, lighting storage and collision
+/// bodies, links the target, and acquires a battle reference. Arm allocations
+/// must succeed. Enters ambush at the saved arrival pose, requests hiding and
+/// selects battle music; subsequent task states own playback and teardown.
+static void _actor400500InitTask(Task* task)
+{
+    enum { ACTOR_400500_INITIAL_CLOAK_HOLD_TICKS = 16,
+           ACTOR_400500_VISIBLE_CLOAK_HOLD_TICKS = 8192,
+           ACTOR_400500_BATTLE_MUSIC_ENTRY       = 2,
+           ACTOR_400500_HIT_EFFECT_ARGUMENT      = 256,
+           ACTOR_400500_HIT_EFFECT_COUNT         = 3,
+           ACTOR_400500_CLOAK_MAX_LEVEL          = 255,
+           ACTOR_400500_SHADOW_MAX_SHADE         = 255,
+           ACTOR_400500_AMBUSH_STEP_START        = 0 };
+    TmdObject*                   model;
+    Enemy*                       enemy;
+    GfxCoord*                    rootCoord;
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* movementWork;
+    _Actor400500GrayStalkerWork* appearanceWork;
+    GfxCoord*                    playerRoot;
+    GfxCoord*                    partCoords;
+    TmdObject*                   litModel;
+    _Actor400500GrayStalkerWork* cloakWork;
+    s32                          cloakRequest;
+    u8                           room;
+
+    model      = task->extra.tmd;
+    enemy      = task->spawnArg2.pointer;
+    rootCoord  = model->coords;
+    task->work = memCalloc(sizeof(_Actor400500GrayStalkerWork), 0);
+    work       = task->work;
+    if (work == NULL) {
+        enemyDestroy(enemy, task);
+        return;
+    }
+    // Publish work-owned lighting and hit storage to the model and enemy.
+    model->lightMtx   = &work->lightMtx;
+    model->colorMtx   = &work->colorMtx;
+    model->flags      = 0;
+    enemy->field_4    = &rootCoord->coord;
+    enemy->field_48   = 0;
+    enemy->bodyPos.vx = 0;
+    enemy->bodyPos.vy = 0;
+    enemy->bodyPos.vz = 0;
+    enemy->coord      = &task->extra.tmd->coords[ACTOR_400500_PART_BODY];
+    worldTargetLinkNode(&enemy->node);
+    enemy->node.state.parts.flags = WORLD_TARGET_NOT_LOCKABLE;
+    enemy->recs                   = work->bodyContacts;
+    enemy->param                  = &_gActor400500EnemyParams;
+    enemy->hp = enemy->hpMax = _gActor400500EnemyParams.hpMax;
+    // Borrow the package clip bank and install the initial crawl pose.
+    animationInitContext(&work->rig.anim, _gActor400500AnimationSets, model, work->rig.poses,
+                         work->rig.slots);
+    rootCoord->parent = &gGfxViewCoord;
+    _actor400500SetAnim(task, ACTOR_400500_ANIM_CRAWL, ACTOR_400500_CRAWL_RATE);
+    _actor400500TickAnim(task);
+    task->msgTable = _gActor400500RoomCommandMessages;
+    _actor400500PlaceAtArrival(task);
+    movementWork = task->work;
+    if (gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER] != NULL) {
+        playerRoot                     = gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER]->extra.tmd->coords;
+        movementWork->playerPrevPos.vx = playerRoot->coord.t[0];
+        movementWork->playerPrevPos.vy = playerRoot->coord.t[1];
+        movementWork->playerPrevPos.vz = playerRoot->coord.t[2];
+    }
+    // The night-room variants begin cloaked; other rooms hold the visible phase.
+    appearanceWork = task->work;
+    room           = gGameSession->location.roomState;
+    litModel       = task->extra.tmd;
+    if ((room == 1) || (room == 3) || (room == 5) || (room == 6)) {
+        appearanceWork->cloakLevel     = ACTOR_400500_CLOAK_MAX_LEVEL;
+        appearanceWork->colorBlend     = 0;
+        appearanceWork->shadowShade    = 0;
+        appearanceWork->hideHoldFrames = ACTOR_400500_INITIAL_CLOAK_HOLD_TICKS;
+    } else {
+        appearanceWork->colorBlend     = TMD_OBJECT_COLOR_BLEND_ONE;
+        appearanceWork->shadowShade    = ACTOR_400500_SHADOW_MAX_SHADE;
+        appearanceWork->cloakLevel     = 0;
+        appearanceWork->hideHoldFrames = ACTOR_400500_VISIBLE_CLOAK_HOLD_TICKS;
+    }
+    modelLightingSetLayerMaterials(appearanceWork->cloakLevel);
+    litModel->shading.colorBlend = appearanceWork->colorBlend;
+    // Join combat only after the body, attacks and attached arms are ready.
+    _actor400500InitCollisionBodies(task);
+    _actor400500SpawnArmModels(task);
+    sceneAcquireBattleRef(0);
+    partCoords                 = task->extra.tmd->coords;
+    work->effectArg.spawnArgLo = ACTOR_400500_HIT_EFFECT_ARGUMENT;
+    work->effectArg.spawnArgHi = ACTOR_400500_HIT_EFFECT_COUNT;
+    work->effectArg.coord      = &partCoords[ACTOR_400500_PART_BODY];
+    _actor400500SetState(task, ACTOR_400500_STATE_AMBUSH, ACTOR_400500_AMBUSH_STEP_START);
+    gStageCountdownMusicEntry = ACTOR_400500_BATTLE_MUSIC_ENTRY;
+    ACTOR_400500_REQUEST_HIDE(task, cloakWork, cloakRequest);
+    task->state = task->state + 1;
+}
+
+/// Indices of the Gray Stalker's task lifecycle table.
+enum {
+    ACTOR_400500_TASK_INIT     = 0,
+    ACTOR_400500_TASK_COMBAT   = 1,
+    ACTOR_400500_TASK_DEATH    = 2,
+    ACTOR_400500_TASK_TEARDOWN = 3
+};
+
+/// Gray Stalker lifecycle handlers, indexed by `Task::state` in `ACTOR_400500_TASK_*`.
+///
+/// All four entries are live callbacks. Combat and death use distinct work-state
+/// tables; teardown releases the arm children before the delayed enemy release.
+static const TaskFuncTable4 _gActor400500TaskStates = { {
+    [ACTOR_400500_TASK_INIT]     = _actor400500InitTask,
+    [ACTOR_400500_TASK_COMBAT]   = _actor400500TickCombatTask,
+    [ACTOR_400500_TASK_DEATH]    = _actor400500TickDeathTask,
+    [ACTOR_400500_TASK_TEARDOWN] = _actor400500TickTeardown,
+} };
+
+/// Returns the first crawl-route zone containing a model root's X/Z, or zero outside all zones.
+///
+/// Requires a live root in the route rectangles' room frame. X/Z narrow to
+/// signed 16-bit game coordinates; both edges are inclusive and table order
+/// resolves overlaps. Scans through `ACTOR_ZONE_END`; nonzero results are IDs
+/// 1..6. The same rectangles classify the Stalker and the player.
+static inline s32 _actor400500FindRouteZone(Task* task)
+{
+    const ActorZone* zone;
+    GfxCoord*        rootCoord = task->extra.tmd->coords;
+    s16              x         = rootCoord->coord.t[0];
+    s16              z         = rootCoord->coord.t[2];
+
+    for (zone = _gActor400500CrawlZones; zone->id != ACTOR_ZONE_END; zone++) {
+        if (zone->x <= x && x <= zone->x + zone->width && zone->z <= z && z <= zone->z + zone->depth) {
+            return zone->id;
+        }
+    }
+    return 0;
+}
+
+/// Reserves a VECTOR scratch block containing a coordinate's cached XYZ translation.
+///
+/// Does not compose or convert `coord`; its cache must already describe the
+/// caller's desired frame. Requires an initialized word-aligned scratch stack
+/// with room for one VECTOR plus nested consumers. Only XYZ are written;
+/// pad is untouched. The returned block is borrowed until the caller releases
+/// it in reverse order with `SCRATCH_STACK_RELEASE_BLOCK(VECTOR)`.
+static inline VECTOR* _actor400500PushCachedPosition(const GfxCoord* coord)
+{
+    VECTOR* position = (VECTOR*)(SCRATCH_STACK_CURSOR(u8) - sizeof(VECTOR));
+
+    position->vx                 = coord->workm.t[0];
+    position->vy                 = coord->workm.t[1];
+    position->vz                 = coord->workm.t[2];
+    SCRATCH_STACK_CURSOR(VECTOR) = position;
+    return position;
+}
+
+/// Releases a caller-selected byte extent from the shared scratch stack.
+///
+/// Requires an initialized cursor and a nonnegative byte count equal to the
+/// latest live reservation(s). Releases in reverse order without bounds checks;
+/// no released pointer remains usable. The signed count preserves the inline
+/// release's interface; callers with typed blocks pass their complete sizeof.
+static inline void _scratchStackReleaseBytes(s32 byteCount)
+{
+    SCRATCH_STACK_RELEASE_BYTES(byteCount);
+}
+
+/// Reserves an origin-projection block and initializes its XYZ to the coordinate origin.
+///
+/// Requires an initialized word-aligned scratch stack with room for this block
+/// and nested capture storage. The pad and projection outputs remain unwritten.
+/// The caller must release the complete block in reverse reservation order.
+static inline ActorOriginDepthScratch* _actor400500PushOriginDepth(void)
+{
+    ActorOriginDepthScratch* block = SCRATCH_STACK_RESERVE_BLOCK(ActorOriginDepthScratch);
+
+    block->origin.vx = 0;
+    block->origin.vy = 0;
+    block->origin.vz = 0;
+    return block;
+}
+
+/// Queues a scene-frame capture at a coordinate's projected depth plus a tag bias.
+///
+/// Refreshes `coord` through its live parent chain, then projects its local origin.
+/// Divides SZ3 by 64 to select the ordering-table tag; `depthBias` is added after
+/// quantization. A negative GTE FLAG substitutes zero depth before that addition.
+/// The biased slot must fit the live ordering table (normally 0..1055), with no
+/// clamp. Requires the loaded frame-capture resources, eleven free GPU packets
+/// and 44 scratch bytes across this projection and its nested capture. Releases
+/// both scratch blocks before returning; GTE working state is clobbered.
+static inline void _actor400500QueueCoordFrameCapture(GfxCoord* coord, s32 depthBias)
+{
+    ActorOriginDepthScratch* projection;
+    MATRIX*                  composedMatrix;
+
+    projection = _actor400500PushOriginDepth();
+    actorRenderComposeCoord(coord);
+    composedMatrix = &coord->workm;
+    gte_SetRotMatrix(composedMatrix);
+    gte_SetTransMatrix(composedMatrix);
+    gte_ldv0(&projection->origin);
+    gte_rtps();
+    gte_stsxy(&projection->screenPos);
+    gte_stdp(&projection->depthCue);
+    gte_stflg(&projection->flag);
+    gte_stszotz(&projection->otz);
+    if (projection->flag < 0) {
+        projection->otz = 0;
+    }
+    projection->otz = (projection->otz >> FRAME_CAPTURE_DEPTH_TO_SLOT_SHIFT) + depthBias;
+    FRAME_CAPTURE_QUEUE(projection->otz);
+    SCRATCH_STACK_RELEASE_BLOCK(ActorOriginDepthScratch);
+}
+
+/// Living Gray Stalker handlers, indexed by `ACTOR_400500_STATE_*` (0..12).
+///
+/// Every entry is a live callback; this numbering applies only during combat.
+static const _Actor400500StateTable _gActor400500States = { {
+    _actor400500TickCrawlState,
+    _actor400500TickGrabState,
+    _actor400500TickCeilingStrikeState,
+    _actor400500TickFloorStrikeState,
+    _actor400500TickCeilingFallState,
+    _actor400500TickKnockdownState,
+    _actor400500TickAmbushState,
+    _actor400500TickDropState,
+    _actor400500TickJumpState,
+    _actor400500TickTurnOverState,
+    _actor400500TickFallenCrawlState,
+    _actor400500TickRoomSequenceState,
+    _actor400500TickStatusHoldState,
+} };
+
+/// Advances the living Stalker and maintains its player grab, cloak and scene capture.
+///
+/// Requires live work, enemy, body/arm models and animation resources. Living
+/// state indexes `ACTOR_400500_STATE_*`. Player grab playback advances even
+/// while combat is hidden or paused; running combat advances movement and
+/// damage, then falls through to lighting and shadows. Capture is suppressed
+/// by the session pause. Death waits for any held fall and surviving grab to
+/// finish. An active grab requires the live player and its borrowed clip table.
+/// The initialized scratch stack must support nested rendering calls. Capture
+/// uses normal ordering-table slots 30..1053, including failed projections at 30.
+static void _actor400500TickCombatTask(Task* task)
+{
+    enum { ACTOR_400500_TASK_DEATH             = 2,
+           ACTOR_400500_DEATH_STEP_START       = 0,
+           ACTOR_400500_PART_COLOR_SAMPLE      = 1,
+           ACTOR_400500_PART_CAPTURE_ORIGIN    = 2,
+           ACTOR_400500_AMBIENT_GREY           = ONE / 8,
+           ACTOR_400500_AMBIENT_GREEN_RED_BLUE = ONE / 4,
+           ACTOR_400500_CAPTURE_TAG_BIAS       = 30 };
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    TmdObject*                   bodyModel;
+    TmdObject*                   drawModel;
+    Task*                        playerTask;
+    GfxCoord*                    captureCoord;
+    PlayerStatus*                playerStatus;
+    AnimationPlayRequest         playerAnimation;
+    _Actor400500StateTable       states;
+    MATRIX                       rootRotation;
+    s8                           grabStep;
+    _Actor400500GrayStalkerWork* movementWork;
+    _Actor400500GrayStalkerWork* deathWork;
+    _Actor400500GrayStalkerWork* rotationWork;
+    s16                          pitch;
+    s16                          roll;
+    s16                          yaw;
+    GfxCoord*                    rootCoord;
+    GfxCoord*                    playerRoot;
+
+    /// Samples the Stalker's cached part position and applies its combat-room tint.
+    ///
+    /// Requires a live Task, Enemy and model with part 1 already composed in the
+    /// lighting query's frame. Reads that cached XYZ without refreshing it.
+    /// Rooms 1, 3, 5 and 6 use Q12 grey (512,512,512); other rooms use green
+    /// (1024,4096,1024). Captures this handler's part and tint constants plus the
+    /// live session. actorTask is evaluated repeatedly and must be side-effect-free.
+    /// Borrows one VECTOR scratch block plus nested lighting workspace, releasing
+    /// the block before leaving; no pointer is retained.
+#define ACTOR_400500_UPDATE_COMBAT_COLOR(actorTask)                                                 \
+    {                                                                                               \
+        TmdObject* lightingModel;                                                                   \
+        TmdObject* roomModel;                                                                       \
+        TmdObject* ambientModel;                                                                    \
+        VECTOR*    samplePosition;                                                                  \
+        GfxCoord*  sampleCoord;                                                                     \
+        u8         room;                                                                            \
+        s16        ambientRedBlue;                                                                  \
+        s16        ambientGreen;                                                                    \
+        lightingModel  = (actorTask)->extra.tmd;                                                    \
+        roomModel      = lightingModel;                                                             \
+        sampleCoord    = lightingModel->coords + ACTOR_400500_PART_COLOR_SAMPLE;                    \
+        samplePosition = _actor400500PushCachedPosition(sampleCoord);                               \
+        worldCoordUpdateActorColor((actorTask)->spawnArg2.pointer, samplePosition, 0, 0);           \
+        room = gGameSession->location.roomState;                                                    \
+        if ((room == 1) || (room == 3) || (room == 5) || (room == 6)) {                             \
+            ambientModel   = roomModel;                                                             \
+            ambientRedBlue = ACTOR_400500_AMBIENT_GREY;                                             \
+            ambientGreen   = ambientRedBlue;                                                        \
+        } else {                                                                                    \
+            ambientModel   = lightingModel;                                                         \
+            ambientRedBlue = ACTOR_400500_AMBIENT_GREEN_RED_BLUE;                                   \
+            ambientGreen   = ONE;                                                                   \
+        }                                                                                           \
+        worldCoordSetModelAmbientColor(ambientModel, ambientRedBlue, ambientGreen, ambientRedBlue); \
+        _scratchStackReleaseBytes(sizeof(VECTOR));                                                  \
+    }
+
+    playerStatus = &gPlayerStatus;
+    work         = task->work;
+    enemy        = task->spawnArg2.pointer;
+    bodyModel    = task->extra.tmd;
+    captureCoord = bodyModel->coords + ACTOR_400500_PART_CAPTURE_ORIGIN;
+    drawModel    = bodyModel;
+    playerTask   = gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER];
+    states       = _gActor400500States;
+
+    // Finish the caught clip before releasing a survivor or retaining the fatal pose.
+    grabStep = work->grabStep;
+    switch (grabStep) {
+        case ACTOR_400500_GRAB_STEP_CAUGHT:
+            if (taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER), ANIMATION_MESSAGE_IS_PLAYING, 0, 0) == 0) {
+                work->grabStep = ACTOR_400500_GRAB_STEP_FOLLOWUP;
+            }
+            break;
+        case ACTOR_400500_GRAB_STEP_FOLLOWUP:
+            playerAnimation.source.sets          = _gActor400500PlayerAnimationSets;
+            playerAnimation.blend                = ANIMATION_BLEND_RESET;
+            playerAnimation.blendFrames          = 0;
+            playerAnimation.enableWorldCollision = ANIMATION_WORLD_COLLISION_DISABLE;
+            if (work->grabLanded != 0) {
+                playerAnimation.animationId = ACTOR_400500_PLAYER_ANIM_FATAL;
+                work->grabStep              = ACTOR_400500_GRAB_STEP_FATAL;
+                TASK_MESSAGE_DISPATCH_POINTER(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER), ANIMATION_MESSAGE_REPLACE_AND_PLAY, &playerAnimation, 0);
+            } else {
+                // Followup step 2 also supplies player release clip 2.
+                playerAnimation.animationId = grabStep;
+                work->grabStep              = ACTOR_400500_GRAB_STEP_RELEASE;
+                TASK_MESSAGE_DISPATCH_POINTER(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER), ANIMATION_MESSAGE_INSTALL_AND_PLAY, &playerAnimation, 0);
+            }
+            break;
+        case ACTOR_400500_GRAB_STEP_RELEASE:
+            if (taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER), ANIMATION_MESSAGE_IS_PLAYING, 0, 0) == 0) {
+                taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER), GAME_ACTOR_MESSAGE_END_SCRIPTED, 0, 0);
+                work->grabStep = ACTOR_400500_GRAB_STEP_NONE;
+            }
+            break;
+    }
+
+    switch (gSceneCombatState.actorControl) {
+        case SCENE_COMBAT_ACTORS_HIDDEN:
+            drawModel->flags |= TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            return;
+        case SCENE_COMBAT_ACTORS_RUNNING:
+            // State callbacks move the root; commit its wrapped Euler basis afterwards.
+            _actor400500UpdateTargetMotion(task);
+            work->zone = _actor400500FindRouteZone(task);
+            if (playerTask == NULL) {
+                work->playerZone = 0;
+            } else {
+                work->playerZone = _actor400500FindRouteZone(playerTask);
+            }
+            states.handlers[(s16)work->state](task);
+            movementWork = task->work;
+            if (gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER] != NULL) {
+                playerRoot                     = gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER]->extra.tmd->coords;
+                movementWork->playerPrevPos.vx = playerRoot->coord.t[0];
+                movementWork->playerPrevPos.vy = playerRoot->coord.t[1];
+                movementWork->playerPrevPos.vz = playerRoot->coord.t[2];
+            }
+            rotationWork        = task->work;
+            rootCoord           = task->extra.tmd->coords;
+            pitch               = rotationWork->pitch;
+            yaw                 = rotationWork->yaw;
+            rotationWork->pitch = pitch & ACTOR_TRANSFORM_ANGLE_MASK;
+            roll                = rotationWork->roll;
+            rotationWork->yaw   = yaw & ACTOR_TRANSFORM_ANGLE_MASK;
+            rotationWork->roll  = roll & ACTOR_TRANSFORM_ANGLE_MASK;
+            gfxSetRotIdentity(&rootRotation);
+            RotMatrixZ(rotationWork->roll, &rootRotation);
+            RotMatrixX(rotationWork->pitch, &rootRotation);
+            RotMatrixY(rotationWork->yaw, &rootRotation);
+            _actor400500CopyRotation(&rootRotation, &rootCoord->coord);
+            _actor400500TickCloakFade(task);
+            if (work->attackCooldown > 0) {
+                work->attackCooldown = (u16)work->attackCooldown - 1;
+                work->attackCooling  = 1;
+            } else {
+                work->attackCooling = 0;
+            }
+            // Cloaking keeps the environment layer drawing after the fade's hide store.
+            drawModel->flags &= (u16)~TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            if ((enemy->hp > 0) || (playerStatus->hp <= 0)) {
+                _actor400500TakeDamage(task);
+            } else if ((work->deathHeld == 0) && (work->grabStep == ACTOR_400500_GRAB_STEP_NONE)) {
+                deathWork           = task->work;
+                task->state         = ACTOR_400500_TASK_DEATH;
+                deathWork->state    = ACTOR_400500_DEATH_STEP_START;
+                deathWork->subState = 0;
+            }
+        case SCENE_COMBAT_ACTORS_PAUSED:
+            // Paused combat retains lighting and shadow drawing without advancing movement.
+            ACTOR_400500_UPDATE_COMBAT_COLOR(task);
+            if (gGameSession->sceneUpdatesPaused != 0) {
+                _actor400500DrawLimbShadows(task, ACTOR_400500_CRAWL_CEILING_Y, (u8)work->shadowShade);
+                return;
+            }
+            _actor400500DrawLimbShadows(task, ACTOR_400500_CRAWL_CEILING_Y, ((u16)work->shadowShade >> 2) & 0xFF);
+            _actor400500DrawLimbShadows(task, ACTOR_400500_FLOOR_Y, (u8)work->shadowShade);
+            _actor400500QueueCoordFrameCapture(captureCoord, ACTOR_400500_CAPTURE_TAG_BIAS);
+            return;
+    }
+}
+
+#undef ACTOR_400500_UPDATE_COMBAT_COLOR
+
+/// Ordinary ceiling/floor crawl-route handlers, indexed by `ACTOR_400500_CRAWL_STEP_*` (0..10).
+static const TaskFuncTable11 _gActor400500CrawlSteps = { {
+    _actor400500SelectCrawlRoute,
+    _actor400500TickCrawlPositiveX,
+    _actor400500TickCrawlTurnNegativeX,
+    _actor400500TickCrawlNegativeX,
+    _actor400500TickCrawlTurnPositiveX,
+    _actor400500TickCrawlCornerChoice,
+    _actor400500TickCrawlPositiveZ,
+    _actor400500TickCrawlTurnNegativeZ,
+    _actor400500TickCrawlNegativeZ,
+    _actor400500TickCrawlCornerTurnNegativeX,
+    _actor400500TickCrawlTurnPositiveZ,
+} };
+
+/// Lethal ceiling-crawl fall handlers, indexed by `deathStep` (0 setup, 1 fall, 2 landing).
+///
+/// The final step releases the death hold without advancing beyond the table.
+/// A floor death or blast releases the hold at step zero instead.
+static const TaskFuncTable3 _gActor400500CrawlDeathFallSteps = { {
+    _actor400500StartCrawlDeathFall,
+    _actor400500TickCrawlDeathFall,
+    _actor400500FinishCrawlDeathLanding,
+} };
+
+/// Disables contact participation for all four arm attack spheres.
+///
+/// Borrows writable Stalker work for this call. Clears pair/trigger participation
+/// while retaining list links, recorded contacts and all other body flags.
+/// The receiving body and both arm models retain their current state.
+static inline void _actor400500DisableArmContacts(_Actor400500GrayStalkerWork* work)
+{
+    work->rightArmOuter.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    work->rightArmInner.flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    work->leftArmOuter.flags  &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    work->leftArmInner.flags  &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+}
+
+/// Requests a cloak fade without consulting the hide cooldown.
+///
+/// Requires live work. `cloakRequest` combines the running bit with HIDE or
+/// SHOW. Preserves a matching running fade; otherwise stores the signed low
+/// byte of the full-width request and resets its phase. No pointer is retained.
+static inline void _actor400500RequestCloakFadeIgnoringCooldown(Task* task, s32 cloakRequest)
+{
+    _Actor400500GrayStalkerWork* work = task->work;
+
+    if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != (cloakRequest & ACTOR_400500_CLOAK_KIND_MASK))) {
+        work->cloakRequest = cloakRequest;
+        work->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;
+    }
+}
+
+/// Dispatches the ceiling/floor crawl or its ceiling-death fall each frame.
+///
+/// Requires initialized Stalker work, enemy and rig. `subState` indexes the
+/// eleven crawl steps; at nonpositive HP, `deathStep` indexes three death-fall
+/// steps instead. Playback advances after a death step, but before a living
+/// crawl step unless it is the route-selection step. Requests hiding while
+/// alive; death requests showing and disables all arm attack contacts.
+static void _actor400500TickCrawlState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    TaskFuncTable11              crawlSteps;
+    TaskFuncTable3               deathSteps;
+    _Actor400500GrayStalkerWork* cloakWork;
+    s32                          cloakRequest;
+
+    work       = task->work;
+    enemy      = task->spawnArg2.pointer;
+    crawlSteps = _gActor400500CrawlSteps;
+    deathSteps = _gActor400500CrawlDeathFallSteps;
+    if (enemy->hp <= 0) {
+        // Finish the ceiling-death fall while showing the body and ending attacks.
+        deathSteps.funcs[(s16)work->deathStep](task);
+        _actor400500TickAnim(task);
+        _actor400500RequestCloakFadeIgnoringCooldown(task, ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW);
+        _actor400500DisableArmContacts(work);
+        return;
+    }
+    if ((s16)work->subState != ACTOR_400500_CRAWL_STEP_SELECT) {
+        _actor400500TickAnim(task);
+    }
+    crawlSteps.funcs[(s16)work->subState](task);
+    ACTOR_400500_REQUEST_HIDE(task, cloakWork, cloakRequest);
+}
+
+#undef ACTOR_400500_REQUEST_HIDE
+
+/// Consumes a pending ceiling-fall request and reports whether fall was entered.
+///
+/// Requires stable task, workCursor and taken identifiers: a live Task*, a writable
+/// _Actor400500GrayStalkerWork* local and an s32 result. Refreshes the work cursor
+/// and clears a pending request even on the floor. Returns its result through taken:
+/// 0 for no request or an actor already on the floor, 1 after entering fall otherwise.
+/// Arguments are evaluated repeatedly and no pointer is retained.
+/// Statement-only GNU expression; its value is not part of the interface.
+#define ACTOR_400500_TAKE_CEILING_FALL(task, workCursor, taken)          \
+    ({                                                                   \
+        (workCursor) = (task)->work;                                     \
+        if ((workCursor)->ceilingFallPending != 0) {                     \
+            (workCursor)->ceilingFallPending = 0;                        \
+            if ((workCursor)->posture & ACTOR_400500_POSTURE_ON_FLOOR) { \
+                (taken) = 0;                                             \
+            } else {                                                     \
+                _actor400500EnterState((task), ACTOR_400500_STATE_FALL); \
+                (taken) = 1;                                             \
+            }                                                            \
+        } else {                                                         \
+            (taken) = 0;                                                 \
+        }                                                                \
+    })
+
+/// Chooses a crawl direction from the room zone and current target offset.
+///
+/// Requires the live Stalker work, model beneath the view coordinate and current
+/// targeting results. Knockdown, ceiling fall and attack requests take priority.
+/// Otherwise resets the crawl clip, clears turn progress and saves the left arm
+/// tip's world X/Z anchor. An unrecognized zone restores the ceiling start pose.
+static void _actor400500SelectCrawlRoute(Task* task)
+{
+    MATRIX                       resetRotation;
+    MATRIX*                      rotation;
+    MATRIX*                      rootRotation;
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* fallWork;
+    _Actor400500GrayStalkerWork* turnWork;
+    GfxCoord*                    rootCoord;
+    s32                          fallTaken;
+    s32                          yawHeading;
+    s32                          playerZone;
+
+    work       = task->work;
+    yawHeading = (u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK;
+    rootCoord  = task->extra.tmd->coords;
+    if (!_actor400500TakeKnockdown(task)) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, fallWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0)) {
+            turnWork              = task->work;
+            turnWork->turnRequest = ACTOR_400500_TURN_NONE;
+            turnWork->turnStarted = 0;
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_CRAWL, ACTOR_400500_CRAWL_RATE);
+            _actor400500TickAnim(task);
+            switch ((s16)((u16)work->zone - ACTOR_400500_CRAWL_ZONE_X_SEGMENT)) {
+                case ACTOR_400500_CRAWL_ZONE_X_END - ACTOR_400500_CRAWL_ZONE_X_SEGMENT:
+                    if (yawHeading == ACTOR_400500_CRAWL_YAW_POSITIVE_X) {
+                        work->subState = ACTOR_400500_CRAWL_STEP_POSITIVE_X;
+                    } else {
+                        work->subState = ACTOR_400500_CRAWL_STEP_TURN_POSITIVE_X;
+                    }
+                    break;
+                case ACTOR_400500_CRAWL_ZONE_X_SEGMENT - ACTOR_400500_CRAWL_ZONE_X_SEGMENT:
+                    if (work->toTarget.vx < 0) {
+                        work->subState = ACTOR_400500_CRAWL_STEP_NEGATIVE_X;
+                    } else {
+                        work->subState = ACTOR_400500_CRAWL_STEP_POSITIVE_X;
+                    }
+                    break;
+                case ACTOR_400500_CRAWL_ZONE_CORNER - ACTOR_400500_CRAWL_ZONE_X_SEGMENT:
+                    playerZone = (s16)work->playerZone;
+                    if ((playerZone == ACTOR_400500_CRAWL_ZONE_X_SEGMENT) || (playerZone == ACTOR_400500_CRAWL_ZONE_X_END) || (playerZone == ACTOR_400500_CRAWL_ZONE_PATROL)) {
+                        work->subState = ACTOR_400500_CRAWL_STEP_NEGATIVE_X;
+                    } else if ((playerZone == ACTOR_400500_CRAWL_ZONE_Z_SEGMENT) && (yawHeading == ACTOR_400500_CRAWL_YAW_POSITIVE_Z) && (rootCoord->coord.t[0] >= ACTOR_400500_CRAWL_LINE_X)) {
+                        work->subState = ACTOR_400500_CRAWL_STEP_POSITIVE_Z;
+                    } else if ((s16)work->playerZone == ACTOR_400500_CRAWL_ZONE_CORNER) {
+                        if (rootCoord->coord.t[2] >= (ACTOR_400500_CRAWL_LINE_Z + 1)) {
+                            work->subState = ACTOR_400500_CRAWL_STEP_POSITIVE_Z;
+                        } else {
+                            work->subState = ACTOR_400500_CRAWL_STEP_POSITIVE_X;
+                        }
+                    } else {
+                        work->subState = ACTOR_400500_CRAWL_STEP_POSITIVE_X;
+                    }
+                    break;
+                case ACTOR_400500_CRAWL_ZONE_Z_SEGMENT - ACTOR_400500_CRAWL_ZONE_X_SEGMENT:
+                    if (work->toTarget.vz < 0) {
+                        work->subState = ACTOR_400500_CRAWL_STEP_NEGATIVE_Z;
+                    } else {
+                        work->subState = ACTOR_400500_CRAWL_STEP_POSITIVE_Z;
+                    }
+                    break;
+                case ACTOR_400500_CRAWL_ZONE_Z_END - ACTOR_400500_CRAWL_ZONE_X_SEGMENT:
+                    if (yawHeading == ACTOR_400500_CRAWL_YAW_NEGATIVE_Z) {
+                        work->subState = ACTOR_400500_CRAWL_STEP_NEGATIVE_Z;
+                    } else {
+                        work->subState = ACTOR_400500_CRAWL_STEP_TURN_NEGATIVE_Z;
+                    }
+                    break;
+                default:
+                    rootCoord->coord.t[0] = ACTOR_400500_CRAWL_RESET_X;
+                    rootCoord->coord.t[1] = ACTOR_400500_CRAWL_CEILING_Y;
+                    rootCoord->coord.t[2] = ACTOR_400500_CRAWL_RESET_Z;
+                    work->yaw             = ACTOR_400500_CRAWL_YAW_POSITIVE_X;
+                    work->roll            = ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+                    rotation              = &resetRotation;
+                    work->pitch           = 0;
+                    work->posture         = 0;
+                    gfxSetRotIdentity(rotation);
+                    RotMatrixZ(work->roll, rotation);
+                    RotMatrixY(work->yaw, rotation);
+                    rootRotation = &rootCoord->coord;
+                    gfxCopyRotation(rootRotation, rotation);
+                    _actor400500ReadPartWorldXZ(task, ACTOR_400500_PART_LEFT_ARM_TIP, &work->anchorPos);
+                    work->subState = ACTOR_400500_CRAWL_STEP_POSITIVE_X;
+                    break;
+            }
+            _actor400500ReadPartWorldXZ(task, ACTOR_400500_PART_LEFT_ARM_TIP, &work->anchorPos);
+        }
+    }
+}
+
+/// Crawls toward +X on the fixed-Z route, turning or taking the corner as needed.
+///
+/// Requires live Stalker work/root and current target and animation-slot results.
+/// State changes, recoil and active turns preempt route movement. At the X end,
+/// a cooled attack permits reversal; while cooling, a distant target gives a
+/// 1/32 chance per eligible tick to drop from the ceiling or jump off the floor.
+/// The caller advances ordinary animation playback.
+static void _actor400500TickCrawlPositiveX(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* requestWork;
+    GfxCoord*                    rootCoord;
+    s32                          knockdownTaken;
+    s32                          fallTaken;
+    s32                          yawHeading;
+    s32                          zone;
+    s32                          nextState;
+    u32                          randomState;
+    u16                          playerZone;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+    // Consume preempting actions before changing the route or pinning its axis.
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if (knockdownTaken == 0) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, requestWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0) &&
+            ((_actor400500HandleHeavyHitReaction(task) << 0x10) == 0) &&
+            ((_actor400500TickTurn(task) << 0x10) == 0)) {
+            yawHeading = (u16)work->yaw;
+            if ((yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) != ACTOR_400500_CRAWL_YAW_POSITIVE_X) {
+                if (((ACTOR_400500_CRAWL_YAW_POSITIVE_X - yawHeading) << 0x14) > 0) {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                } else {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                }
+                requestWork->turnStarted = 0;
+            } else {
+                zone = work->zone;
+                if (zone != ACTOR_400500_CRAWL_ZONE_X_SEGMENT) {
+                    if ((zone == ACTOR_400500_CRAWL_ZONE_CORNER) && (rootCoord->coord.t[0] >= (ACTOR_400500_CRAWL_LINE_X + 1))) {
+                        playerZone = work->playerZone;
+                        if (((u32)(playerZone - ACTOR_400500_CRAWL_ZONE_CORNER) < 2U) || ((s16)playerZone == ACTOR_400500_CRAWL_ZONE_Z_END)) {
+                            work->subState = ACTOR_400500_CRAWL_STEP_CORNER_CHOICE;
+                        } else {
+                            work->subState = zone;
+                        }
+                    } else {
+                        _actor400500TickCrawl(task);
+                    }
+                } else {
+                    if (work->attackCooling == 0) {
+                        if (work->toTarget.vx <= 0) {
+                            work->subState = ACTOR_400500_CRAWL_STEP_TURN_NEGATIVE_X;
+                        }
+                    } else if (work->toTarget.vx < (-ACTOR_400500_POSTURE_CHANGE_TARGET_GAP + 1)) {
+                        randomState     = RANDOM_LCG_NEXT(gRandomLcgState);
+                        gRandomLcgState = randomState;
+                        if (((randomState >> 0x10) & ACTOR_400500_POSTURE_CHANGE_CHANCE_MASK) == 0) {
+                            if (!(work->posture & ACTOR_400500_POSTURE_ON_FLOOR)) {
+                                requestWork = task->work;
+                                nextState   = ACTOR_400500_STATE_DROP;
+                            } else {
+                                requestWork = task->work;
+                                nextState   = ACTOR_400500_STATE_JUMP;
+                            }
+                            requestWork->state    = nextState;
+                            requestWork->subState = ACTOR_400500_CRAWL_STEP_SELECT;
+                        }
+                    }
+                    _actor400500TickCrawl(task);
+                }
+            }
+            rootCoord->coord.t[2] = ACTOR_400500_CRAWL_LINE_Z;
+        }
+    }
+}
+
+/// Turns the X-route crawl toward -X, then restarts the crawl clip.
+///
+/// Requires live Stalker work and current target and slot results. Pending state
+/// changes, recoil and active turns take priority; a 4096-unit yaw uses the signed
+/// wrapped 12-bit difference to choose the next turn. Playback advances elsewhere.
+static void _actor400500TickCrawlTurnNegativeX(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* requestWork;
+    _Actor400500GrayStalkerWork* increasingTurnWork;
+    _Actor400500GrayStalkerWork* decreasingTurnWork;
+    s32                          knockdownTaken;
+    s32                          fallTaken;
+    s32                          yawHeading;
+
+    work = task->work;
+    // Consume preempting actions before changing the route or pinning its axis.
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if (knockdownTaken == 0) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, requestWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0) &&
+            ((_actor400500HandleHeavyHitReaction(task) << 0x10) == 0) &&
+            ((_actor400500TickTurn(task) << 0x10) == 0)) {
+            yawHeading = (u16)work->yaw;
+            if ((yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_NEGATIVE_X) {
+                _actor400500SetAnim(task, ACTOR_400500_ANIM_CRAWL, ACTOR_400500_CRAWL_RATE);
+                work->subState = ACTOR_400500_CRAWL_STEP_NEGATIVE_X;
+                return;
+            }
+            if (((ACTOR_400500_CRAWL_YAW_NEGATIVE_X - yawHeading) << 0x14) > 0) {
+                increasingTurnWork              = task->work;
+                increasingTurnWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                increasingTurnWork->turnStarted = 0;
+            } else {
+                decreasingTurnWork              = task->work;
+                decreasingTurnWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                decreasingTurnWork->turnStarted = 0;
+            }
+        }
+    }
+}
+
+/// Crawls toward -X on the fixed-Z route and reverses at the X end or target.
+///
+/// Requires live Stalker work/root and current target and slot results. State
+/// changes, recoil and active turns preempt movement. A distant target while an
+/// attack cools gives a 1/32 chance per eligible tick to change floor/ceiling
+/// posture. The caller advances ordinary animation playback.
+static void _actor400500TickCrawlNegativeX(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* requestWork;
+    GfxCoord*                    rootCoord;
+    s32                          knockdownTaken;
+    s32                          fallTaken;
+    s32                          yawHeading;
+    s32                          zone;
+    s32                          nextState;
+    u32                          randomState;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+    // Consume preempting actions before changing the route or pinning its axis.
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if (knockdownTaken == 0) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, requestWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0) &&
+            ((_actor400500HandleHeavyHitReaction(task) << 0x10) == 0) &&
+            ((_actor400500TickTurn(task) << 0x10) == 0)) {
+            yawHeading = (u16)work->yaw;
+            if ((yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) != ACTOR_400500_CRAWL_YAW_NEGATIVE_X) {
+                if (((ACTOR_400500_CRAWL_YAW_NEGATIVE_X - yawHeading) << 0x14) > 0) {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                } else {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                }
+                requestWork->turnStarted = 0;
+            } else {
+                zone = work->zone;
+                if (zone != ACTOR_400500_CRAWL_ZONE_X_SEGMENT) {
+                    if (zone == ACTOR_400500_CRAWL_ZONE_X_END) {
+                        work->subState = zone;
+                    }
+                } else if (work->attackCooling == 0) {
+                    if (work->toTarget.vx >= 0) {
+                        work->subState = ACTOR_400500_CRAWL_STEP_TURN_POSITIVE_X;
+                    }
+                } else if (work->toTarget.vx >= ACTOR_400500_POSTURE_CHANGE_TARGET_GAP) {
+                    randomState     = RANDOM_LCG_NEXT(gRandomLcgState);
+                    gRandomLcgState = randomState;
+                    if (((randomState >> 0x10) & ACTOR_400500_POSTURE_CHANGE_CHANCE_MASK) == 0) {
+                        if (!(work->posture & ACTOR_400500_POSTURE_ON_FLOOR)) {
+                            requestWork = task->work;
+                            nextState   = ACTOR_400500_STATE_DROP;
+                        } else {
+                            requestWork = task->work;
+                            nextState   = ACTOR_400500_STATE_JUMP;
+                        }
+                        requestWork->state    = nextState;
+                        requestWork->subState = ACTOR_400500_CRAWL_STEP_SELECT;
+                    }
+                }
+                _actor400500TickCrawl(task);
+            }
+            rootCoord->coord.t[2] = ACTOR_400500_CRAWL_LINE_Z;
+        }
+    }
+}
+
+/// Turns the X-route crawl toward +X, then restarts the crawl clip.
+///
+/// Requires live Stalker work and current target and slot results. Pending state
+/// changes, recoil and active turns take priority. At the X-end zone the target's
+/// Z side chooses the turn; elsewhere the wrapped 12-bit yaw difference does.
+static void _actor400500TickCrawlTurnPositiveX(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* requestWork;
+    s32                          knockdownTaken;
+    s32                          fallTaken;
+    s32                          yawHeading;
+
+    work = task->work;
+    // Consume preempting actions before changing the route or pinning its axis.
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if (knockdownTaken == 0) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, requestWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0) &&
+            ((_actor400500HandleHeavyHitReaction(task) << 0x10) == 0) &&
+            ((_actor400500TickTurn(task) << 0x10) == 0)) {
+            yawHeading = (u16)work->yaw;
+            if ((yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_POSITIVE_X) {
+                _actor400500SetAnim(task, ACTOR_400500_ANIM_CRAWL, ACTOR_400500_CRAWL_RATE);
+                work->subState = ACTOR_400500_CRAWL_STEP_POSITIVE_X;
+                return;
+            }
+            if ((s16)work->playerZone == ACTOR_400500_CRAWL_ZONE_X_END) {
+                if (work->toTarget.vz > 0) {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                } else {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                }
+            } else if (((ACTOR_400500_CRAWL_YAW_POSITIVE_X - yawHeading) << 0x14) > 0) {
+                requestWork              = task->work;
+                requestWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+            } else {
+                requestWork              = task->work;
+                requestWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+            }
+            requestWork->turnStarted = 0;
+        }
+    }
+}
+
+/// Chooses the corner's outgoing +Z or -X crawl from the player's zone.
+///
+/// Requires live Stalker work and current target and slot results. Player zones
+/// 2, 3 and 6 select +Z; all others select -X. State changes, recoil and active
+/// turns preempt routing. Reaching the chosen yaw restarts the crawl clip.
+static void _actor400500TickCrawlCornerChoice(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* requestWork;
+    s32                          knockdownTaken;
+    s32                          fallTaken;
+    s32                          yawHeading;
+
+    work = task->work;
+    // Consume preempting actions before changing the route or pinning its axis.
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if (knockdownTaken == 0) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, requestWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0) &&
+            ((_actor400500HandleHeavyHitReaction(task) << 0x10) == 0) &&
+            ((_actor400500TickTurn(task) << 0x10) == 0)) {
+            if (((u32)(work->playerZone - ACTOR_400500_CRAWL_ZONE_CORNER) < 2U) || ((s16)work->playerZone == ACTOR_400500_CRAWL_ZONE_Z_END)) {
+                yawHeading = (u16)work->yaw;
+                if ((yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_POSITIVE_Z) {
+                    requestWork              = task->work;
+                    requestWork->animRate    = ACTOR_400500_CRAWL_RATE;
+                    requestWork->animId      = ACTOR_400500_ANIM_CRAWL;
+                    requestWork->animRequest = ACTOR_400500_ANIM_REQUEST_RESET;
+                    work->subState           = ACTOR_400500_CRAWL_STEP_POSITIVE_Z;
+                    return;
+                }
+                if (((ACTOR_400500_CRAWL_YAW_POSITIVE_Z - yawHeading) << 0x14) > 0) {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                } else {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                }
+            } else {
+                yawHeading = (u16)work->yaw;
+                if ((yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_NEGATIVE_X) {
+                    requestWork              = task->work;
+                    requestWork->animRate    = ACTOR_400500_CRAWL_RATE;
+                    requestWork->animId      = ACTOR_400500_ANIM_CRAWL;
+                    requestWork->animRequest = ACTOR_400500_ANIM_REQUEST_RESET;
+                    work->subState           = ACTOR_400500_CRAWL_STEP_NEGATIVE_X;
+                    return;
+                }
+                if (((ACTOR_400500_CRAWL_YAW_NEGATIVE_X - yawHeading) << 0x14) > 0) {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                } else {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                }
+            }
+            requestWork->turnStarted = 0;
+        }
+    }
+}
+
+/// Crawls toward +Z on the fixed-X route and reverses at the Z end or target.
+///
+/// Requires live Stalker work/root and current target and slot results. Pending
+/// state changes, recoil and active turns preempt movement. The root stays on
+/// X = 16500; the caller advances ordinary animation playback.
+static void _actor400500TickCrawlPositiveZ(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* requestWork;
+    GfxCoord*                    rootCoord;
+    s32                          knockdownTaken;
+    s32                          fallTaken;
+    s32                          yawHeading;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+    // Consume preempting actions before changing the route or pinning its axis.
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if (knockdownTaken == 0) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, requestWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0) &&
+            ((_actor400500HandleHeavyHitReaction(task) << 0x10) == 0) &&
+            ((_actor400500TickTurn(task) << 0x10) == 0)) {
+            yawHeading = (u16)work->yaw;
+            if (yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) {
+                if (((ACTOR_400500_CRAWL_YAW_POSITIVE_Z - yawHeading) << 0x14) > 0) {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                } else {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                }
+                requestWork->turnStarted = 0;
+            } else {
+                if (work->zone != ACTOR_400500_CRAWL_ZONE_Z_SEGMENT) {
+                    if (work->zone == ACTOR_400500_CRAWL_ZONE_Z_END) {
+                        work->subState = ACTOR_400500_CRAWL_STEP_TURN_NEGATIVE_Z;
+                    }
+                } else if ((work->attackCooling == 0) && (work->toTarget.vz < 0)) {
+                    work->subState = ACTOR_400500_CRAWL_STEP_TURN_NEGATIVE_Z;
+                }
+                _actor400500TickCrawl(task);
+            }
+            rootCoord->coord.t[0] = ACTOR_400500_CRAWL_LINE_X;
+        }
+    }
+}
+
+/// Turns the Z-route crawl toward -Z, then restarts the crawl clip.
+///
+/// Requires live Stalker work and current target and slot results. Pending state
+/// changes, recoil and active turns take priority. At the Z-end zone the target's
+/// X side chooses the turn; elsewhere the wrapped 12-bit yaw difference does.
+static void _actor400500TickCrawlTurnNegativeZ(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* requestWork;
+    s32                          knockdownTaken;
+    s32                          fallTaken;
+    s32                          yawHeading;
+
+    work = task->work;
+    // Consume preempting actions before changing the route or pinning its axis.
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if (knockdownTaken == 0) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, requestWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0) &&
+            ((_actor400500HandleHeavyHitReaction(task) << 0x10) == 0) &&
+            ((_actor400500TickTurn(task) << 0x10) == 0)) {
+            yawHeading = (u16)work->yaw;
+            if ((yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_NEGATIVE_Z) {
+                _actor400500SetAnim(task, ACTOR_400500_ANIM_CRAWL, ACTOR_400500_CRAWL_RATE);
+                work->subState = ACTOR_400500_CRAWL_STEP_NEGATIVE_Z;
+                return;
+            }
+            if ((s16)work->playerZone == ACTOR_400500_CRAWL_ZONE_Z_END) {
+                if (work->toTarget.vx > 0) {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                } else {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                }
+            } else if (((ACTOR_400500_CRAWL_YAW_NEGATIVE_Z - yawHeading) << 0x14) > 0) {
+                requestWork              = task->work;
+                requestWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+            } else {
+                requestWork              = task->work;
+                requestWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+            }
+            requestWork->turnStarted = 0;
+        }
+    }
+}
+
+/// Crawls toward -Z, choosing an X-route turn at the corner or reversing at the target.
+///
+/// Requires live Stalker work/root and current target and slot results. Pending
+/// state changes, recoil and active turns preempt movement. The root stays on
+/// X = 16500; the caller advances ordinary animation playback.
+static void _actor400500TickCrawlNegativeZ(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* requestWork;
+    GfxCoord*                    rootCoord;
+    s32                          knockdownTaken;
+    s32                          fallTaken;
+    s32                          yawHeading;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+    // Consume preempting actions before changing the route or pinning its axis.
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if (knockdownTaken == 0) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, requestWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0) &&
+            ((_actor400500HandleHeavyHitReaction(task) << 0x10) == 0) &&
+            ((_actor400500TickTurn(task) << 0x10) == 0)) {
+            yawHeading = (u16)work->yaw;
+            if ((yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) != ACTOR_400500_CRAWL_YAW_NEGATIVE_Z) {
+                if (((ACTOR_400500_CRAWL_YAW_NEGATIVE_Z - yawHeading) << 0x14) > 0) {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                } else {
+                    requestWork              = task->work;
+                    requestWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                }
+                requestWork->turnStarted = 0;
+            } else {
+                switch (work->zone) {
+                    case ACTOR_400500_CRAWL_ZONE_CORNER:
+                        if (rootCoord->coord.t[2] < ACTOR_400500_CRAWL_LINE_Z) {
+                            work->subState = ACTOR_400500_CRAWL_STEP_CORNER_TURN_NEGATIVE_X;
+                        }
+                        break;
+                    case ACTOR_400500_CRAWL_ZONE_Z_SEGMENT:
+                        if ((work->attackCooling == 0) && (work->toTarget.vz > 0)) {
+                            work->subState = ACTOR_400500_CRAWL_STEP_TURN_POSITIVE_Z;
+                        }
+                        break;
+                }
+                _actor400500TickCrawl(task);
+            }
+            rootCoord->coord.t[0] = ACTOR_400500_CRAWL_LINE_X;
+        }
+    }
+}
+
+/// Turns from the Z-route corner toward -X, then restarts the X-route crawl.
+///
+/// Requires live Stalker work and current target and slot results. Pending state
+/// changes, recoil and active turns take priority. Yaw uses 4096 units per turn;
+/// the signed wrapped 12-bit difference chooses the next requested turn.
+static void _actor400500TickCrawlCornerTurnNegativeX(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* requestWork;
+    _Actor400500GrayStalkerWork* increasingTurnWork;
+    _Actor400500GrayStalkerWork* decreasingTurnWork;
+    s32                          knockdownTaken;
+    s32                          fallTaken;
+    s32                          yawHeading;
+
+    work = task->work;
+    // Consume preempting actions before changing the route or pinning its axis.
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if (knockdownTaken == 0) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, requestWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0) &&
+            ((_actor400500HandleHeavyHitReaction(task) << 0x10) == 0) &&
+            ((_actor400500TickTurn(task) << 0x10) == 0)) {
+            yawHeading = (u16)work->yaw;
+            if ((yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_NEGATIVE_X) {
+                _actor400500SetAnim(task, ACTOR_400500_ANIM_CRAWL, ACTOR_400500_CRAWL_RATE);
+                work->subState = ACTOR_400500_CRAWL_STEP_NEGATIVE_X;
+                return;
+            }
+            if (((ACTOR_400500_CRAWL_YAW_NEGATIVE_X - yawHeading) << 0x14) > 0) {
+                increasingTurnWork              = task->work;
+                increasingTurnWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                increasingTurnWork->turnStarted = 0;
+            } else {
+                decreasingTurnWork              = task->work;
+                decreasingTurnWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                decreasingTurnWork->turnStarted = 0;
+            }
+        }
+    }
+}
+
+/// Turns the Z-route crawl toward +Z, then restarts the crawl clip.
+///
+/// Requires live Stalker work and current target and slot results. Pending state
+/// changes, recoil and active turns take priority. Yaw uses 4096 units per turn;
+/// the signed wrapped 12-bit difference chooses the next requested turn.
+static void _actor400500TickCrawlTurnPositiveZ(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* requestWork;
+    _Actor400500GrayStalkerWork* increasingTurnWork;
+    _Actor400500GrayStalkerWork* decreasingTurnWork;
+    s32                          knockdownTaken;
+    s32                          fallTaken;
+    s32                          yawHeading;
+
+    work = task->work;
+    // Consume preempting actions before changing the route or pinning its axis.
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if (knockdownTaken == 0) {
+        ACTOR_400500_TAKE_CEILING_FALL(task, requestWork, fallTaken);
+        if ((fallTaken == 0) && ((_actor400500TryStartAttack(task) << 0x10) == 0) &&
+            ((_actor400500HandleHeavyHitReaction(task) << 0x10) == 0) &&
+            ((_actor400500TickTurn(task) << 0x10) == 0)) {
+            yawHeading = (u16)work->yaw;
+            if ((yawHeading & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_POSITIVE_Z) {
+                _actor400500SetAnim(task, ACTOR_400500_ANIM_CRAWL, ACTOR_400500_CRAWL_RATE);
+                work->subState = ACTOR_400500_CRAWL_STEP_POSITIVE_Z;
+                return;
+            }
+            if (((ACTOR_400500_CRAWL_YAW_POSITIVE_Z - yawHeading) << 0x14) > 0) {
+                increasingTurnWork              = task->work;
+                increasingTurnWork->turnRequest = ACTOR_400500_TURN_YAW_UP;
+                increasingTurnWork->turnStarted = 0;
+            } else {
+                decreasingTurnWork              = task->work;
+                decreasingTurnWork->turnRequest = ACTOR_400500_TURN_YAW_DOWN;
+                decreasingTurnWork->turnStarted = 0;
+            }
+        }
+    }
+}
+
+#undef ACTOR_400500_TAKE_CEILING_FALL
+
+/// Starts the ceiling grab with a smaller receiving body and a show request.
+///
+/// Requires initialized Stalker work and rig. Requests showing even during a
+/// hide cooldown, cuts to the grab clip at normal rate and advances it once.
+/// Clears the catch, reach-angle and tick state, then advances the grab sub-step.
+/// The receiving sphere radius is reduced from 608 to 304 part-local units.
+static void _actor400500StartGrab(Task* task)
+{
+    enum { ACTOR_400500_ANIM_GRAB        = 5,
+           ACTOR_400500_GRAB_BODY_RADIUS = 304 };
+    _Actor400500GrayStalkerWork* work;
+
+    work              = task->work;
+    work->body.radius = ACTOR_400500_GRAB_BODY_RADIUS;
+    _actor400500RequestCloakFadeIgnoringCooldown(task, ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW);
+    _actor400500SetAnim(task, ACTOR_400500_ANIM_GRAB, ANIMATION_RATE_ONE);
+    _actor400500TickAnim(task);
+    work->stateFrames   = 0;
+    work->playerCaught  = 0;
+    work->armReachAngle = 0;
+    work->subState      = work->subState + 1;
+}
+
+/// Requests a cloak fade when no matching fade is running and its cooldown is zero.
+///
+/// Requires a live Stalker work block. `cloakRequest` combines
+/// `ACTOR_400500_CLOAK_RUNNING` with `HIDE` or `SHOW`; the signed low byte is
+/// stored and the phase resets to zero. A matching running request keeps its
+/// progress. The cooldown gates both kinds of request; a blocked request is lost.
+static inline void _actor400500RequestCloakFade(Task* task, s32 cloakRequest)
+{
+    _Actor400500GrayStalkerWork* work;
+
+    work = (_Actor400500GrayStalkerWork*)task->work;
+    if (((work->cloakRequest >= 0) || ((work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != (cloakRequest & ACTOR_400500_CLOAK_KIND_MASK))) && (work->hideCooldown == 0)) {
+        work->cloakRequest = cloakRequest;
+        work->cloakPhase   = 0;
+    }
+}
+
+/// Pre-multiplies and normalizes a Q12 rotation using caller-owned matrix storage.
+///
+/// Requires separate live, word-aligned matrices; `rotation` is writable and
+/// `normalizedRotation` is caller-owned temporary storage. The GTE multiplies
+/// `parentRotation * rotation`, then normalization writes the nine signed Q12
+/// coefficients. The complete MATRIX copy also transfers the temporary's
+/// untouched translation/alignment bytes: only the resulting 3x3 is valid.
+/// Retains no pointer and clobbers GTE rotation/product registers.
+static inline void _actor400500PreMultiplyNormalizedRotation(const MATRIX* parentRotation, MATRIX* rotation, MATRIX* normalizedRotation)
+{
+    gte_SetRotMatrix(parentRotation);
+    MulRotMatrix(rotation);
+    MatrixNormal(rotation, normalizedRotation);
+    *rotation = *normalizedRotation;
+}
+
+/// Accumulates a coordinate's rotation into world space, excluding the view matrix.
+///
+/// Requires a live acyclic chain and a separate writable, word-aligned matrix.
+/// The local basis seeds the result unchanged; each intervening parent is
+/// normalized before multiplication, then the product is normalized as well.
+/// Coefficients are Q12. Returns 1 on reaching `gGfxViewCoord`, 0 at NULL,
+/// leaving the accumulated basis on either exit. Only the 3x3 is valid: a
+/// normalized whole-matrix copy leaves other bytes unspecified. Coordinates
+/// and cache stamps stay intact; GTE working registers change.
+static inline s32 _actor400500AccumulateWorldRotation(const GfxCoord* coord, MATRIX* worldRotation)
+{
+    MATRIX          normalizedRotation;
+    MATRIX          parentRotation;
+    const GfxCoord* ancestor;
+
+    ancestor       = coord->parent;
+    *worldRotation = coord->coord;
+    while (1) {
+        if (ancestor == NULL) {
+            return 0;
+        }
+        if (ancestor == &gGfxViewCoord) {
+            return 1;
+        }
+        parentRotation = ancestor->coord;
+        MatrixNormal(&parentRotation, &parentRotation);
+        _actor400500PreMultiplyNormalizedRotation(&parentRotation, worldRotation, &normalizedRotation);
+        ancestor = ancestor->parent;
+    }
+}
+
+/// Adds a world-space yaw to a model part and refreshes its composed transform.
+///
+/// `yawDelta` is narrowed to a signed angle in 4096 units per turn. Requires a
+/// writable part with a non-NULL parent and a live acyclic chain reaching the
+/// excluded view coordinate. Ancestor bases and products are normalized; the
+/// result replaces only the nine Q12 rotation coefficients, preserving local
+/// translation and Euler state. Requires the composed view and an initialized,
+/// word-aligned scratch stack with room for one MATRIX, released before return.
+/// Composition may update ancestor caches and clobbers GTE working registers.
+static inline void _actor400500TurnPartWorldYaw(GfxCoord* part, u16 yawDelta)
+{
+    MATRIX* worldRotation;
+
+    worldRotation = SCRATCH_STACK_RESERVE_BLOCK(MATRIX);
+    _actor400500AccumulateWorldRotation(part, worldRotation);
+    RotMatrixY((s16)(yawDelta), worldRotation);
+    _actor400500LocalizeWorldRotation(part, worldRotation);
+    memcpy(part->coord.m, worldRotation->m, sizeof(part->coord.m));
+    part->composeStamp = GRAPHICS_COORD_DIRTY;
+    actorRenderComposeCoord(part);
+    SCRATCH_STACK_RELEASE_BLOCK(MATRIX);
+}
+
+/// Returns world X/Z distance from `part` to player part 4, or 32767 without a player.
+///
+/// Requires live coordinate hierarchies under the composed view, an orthonormal
+/// view basis and initialized GTE/scratch facilities. Composes both parts and
+/// removes the view transform before measuring in game-coordinate units. Each
+/// separation component and the returned length narrow to signed 16 bits;
+/// there is no saturation. Y is ignored and no pointer is retained.
+static inline s16 _actor400500PlayerDistance(GfxCoord* part)
+{
+    enum { ACTOR_400500_NO_PLAYER_DISTANCE = 0x7FFF,
+           ACTOR_400500_PLAYER_GRAB_PART   = 4 };
+    MATRIX    playerWorld;
+    MATRIX    partWorld;
+    GfxCoord* playerCoords;
+    SVECTOR   separation;
+
+    if (gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER] == NULL) {
+        return ACTOR_400500_NO_PLAYER_DISTANCE;
+    }
+    playerCoords = gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER]->extra.tmd->coords;
+    actorRenderComposeCoord(&playerCoords[ACTOR_400500_PLAYER_GRAB_PART]);
+    actorRenderComposeCoord(part);
+    gfxMakeRelativeTransform(&gGfxViewCoord.workm, &playerCoords[ACTOR_400500_PLAYER_GRAB_PART].workm, &playerWorld);
+    gfxMakeRelativeTransform(&gGfxViewCoord.workm, &part->workm, &partWorld);
+    separation.vx = (u16)playerWorld.t[0] - (u16)partWorld.t[0];
+    separation.vz = (u16)playerWorld.t[2] - (u16)partWorld.t[2];
+    return SquareRoot0((separation.vx * separation.vx) + (separation.vz * separation.vz));
+}
+
+/// Queues a two-frame blend into a clip at normal playback speed.
+///
+/// Requires live Stalker work and `setIndex` within its loaded animation table.
+/// The index narrows to s16. Playback begins on the next animation tick; this
+/// request itself does not update poses or frame counters.
+static inline void _actor400500RequestAnimBlend(Task* task, s32 setIndex)
+{
+    enum { ACTOR_400500_QUICK_BLEND_FRAMES = 2 };
+    _Actor400500GrayStalkerWork* work;
+
+    work                  = task->work;
+    work->animBlendFrames = ACTOR_400500_QUICK_BLEND_FRAMES;
+    work->animRate        = ANIMATION_RATE_ONE;
+    work->animId          = setIndex;
+    work->animRequest     = ACTOR_400500_ANIM_REQUEST_BLEND;
+}
+
+/// Aims the grab arms, captures a nearby player and applies the timed grab attack.
+///
+/// Requires a live player, Stalker work, rig and arm chains. State ticks are
+/// counted at the caller's update rate; angles use 4096 units per turn and
+/// target offsets use game coordinates. Tick 7 installs the player's caught
+/// clip, ticks 7..10 ease placement and 11..30 snap it to the arm. Tick 31
+/// applies damage; a fatal reply retains scripted state 10 for the fatal clip.
+/// Playback completion restores crawling, the body radius and its cooldown.
+static void _actor400500TickGrab(Task* task)
+{
+    enum { ACTOR_400500_ATTACK_GRAB                        = 1,
+           ACTOR_400500_PART_RIGHT_ARM_AIM                 = 6,
+           ACTOR_400500_PART_LEFT_ARM_AIM                  = 9,
+           ACTOR_400500_GRAB_CATCH_TICK                    = 7,
+           ACTOR_400500_GRAB_EASE_TICKS                    = 4,
+           ACTOR_400500_GRAB_SNAP_START_TICK               = 11,
+           ACTOR_400500_GRAB_SNAP_TICKS                    = 20,
+           ACTOR_400500_GRAB_MISS_TICK                     = 14,
+           ACTOR_400500_GRAB_AIM_END_TICK                  = 15,
+           ACTOR_400500_GRAB_TARGET_HEIGHT                 = 1696,
+           ACTOR_400500_GRAB_DAMAGE_TICK                   = 31,
+           ACTOR_400500_GRAB_FIRST_SOUND_TICK              = 12,
+           ACTOR_400500_GRAB_SECOND_SOUND_TICK             = 30,
+           ACTOR_400500_GRAB_LAST_SOUND_TICK               = 42,
+           ACTOR_400500_PLAYER_FATAL_PLAYBACK_STATE        = 10,
+           ACTOR_400500_GRAB_BODY_RADIUS                   = 608,
+           ACTOR_400500_GRAB_DAMAGE_RUMBLE_TICKS           = 6,
+           ACTOR_400500_GRAB_DAMAGE_RUMBLE_START_INTENSITY = 255,
+           ACTOR_400500_GRAB_DAMAGE_RUMBLE_END_INTENSITY   = 128,
+           ACTOR_400500_GRAB_END_RUMBLE_TICKS              = 8,
+           ACTOR_400500_GRAB_END_RUMBLE_START_INTENSITY    = 192,
+           ACTOR_400500_GRAB_END_RUMBLE_END_INTENSITY      = 8 };
+    SVECTOR                      targetOffset;
+    SVECTOR                      yawRotatedTarget;
+    MATRIX                       yawRotation;
+    _Actor400500GrayStalkerWork* work;
+    GameActor*                   player;
+    const Enemy*                 enemy;
+    s16                          targetZ;
+    s32                          reachBearing;
+    s32                          animationEnded;
+
+    work              = task->work;
+    player            = gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER]->work;
+    enemy             = task->spawnArg2.pointer;
+    work->stateFrames = work->stateFrames + 1;
+    _actor400500TickAnim(task);
+    // Aim with a wrapped 12-bit difference, then ease the reach back to zero.
+    if ((s16)work->stateFrames < ACTOR_400500_GRAB_AIM_END_TICK) {
+        targetOffset.vx = (u16)work->toTarget.vx;
+        targetOffset.vy = 0;
+        targetZ         = (u16)work->toTarget.vz;
+        targetOffset.vz = targetZ;
+        gfxSetRotIdentity(&yawRotation);
+        RotMatrixY(work->yaw, &yawRotation);
+        ApplyMatrixSV(&yawRotation, &targetOffset, &yawRotatedTarget);
+        reachBearing         = ratan2(yawRotatedTarget.vx, work->toTarget.vy - ACTOR_400500_GRAB_TARGET_HEIGHT);
+        work->armReachAngle += ((-reachBearing - (u16)work->armReachAngle) << 20) >> 23;
+    } else {
+        work->armReachAngle += -((u16)work->armReachAngle << 20) >> 23;
+    }
+    if ((s16)work->stateFrames == ACTOR_400500_GRAB_CATCH_TICK) {
+        if (player->mode != GAME_ACTOR_MODE_SCRIPTED) {
+            if (_actor400500PlayerDistance(&task->extra.tmd->coords[ACTOR_400500_PART_RIGHT_ARM_TIP]) < ACTOR_400500_GRAB_RANGE) {
+                AnimationPlayRequest playerAnimation;
+
+                playerAnimation.source.sets          = _gActor400500PlayerAnimationSets;
+                playerAnimation.animationId          = ACTOR_400500_PLAYER_ANIM_CAUGHT;
+                playerAnimation.blend                = ANIMATION_BLEND_RESET;
+                playerAnimation.blendFrames          = 0;
+                playerAnimation.enableWorldCollision = ANIMATION_WORLD_COLLISION_DISABLE;
+                TASK_MESSAGE_DISPATCH_POINTER(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER), ANIMATION_MESSAGE_INSTALL_AND_PLAY, &playerAnimation, 0);
+                work->grabStep          = ACTOR_400500_GRAB_STEP_CAUGHT;
+                gAttachmentState.flags |= ATTACHMENT_FLAG_EVENT_LOCK;
+                work->playerCaught      = 1;
+            }
+        }
+    }
+    if (((s16)work->stateFrames == ACTOR_400500_GRAB_MISS_TICK) && (work->playerCaught == 0)) {
+        _actor400500RequestAnimBlend(task, ACTOR_400500_ANIM_GRAB_MISS);
+        work->stateFrames = 0;
+        _actor400500RequestCloakFade(task, ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_HIDE);
+        work->subState = work->subState + 1;
+    }
+    _actor400500TurnPartWorldYaw(&task->extra.tmd->coords[ACTOR_400500_PART_RIGHT_ARM_AIM], work->armReachAngle);
+    _actor400500TurnPartWorldYaw(&task->extra.tmd->coords[ACTOR_400500_PART_LEFT_ARM_AIM], work->armReachAngle);
+    // Unsigned subtraction keeps each placement window closed before its start.
+    if (((u32)(work->stateFrames - ACTOR_400500_GRAB_CATCH_TICK) < ACTOR_400500_GRAB_EASE_TICKS) && (work->playerCaught == 1)) {
+        _actor400500PositionGrabbedPlayer(task, ACTOR_400500_GRAB_POSITION_EASE);
+    }
+    if (((u32)(work->stateFrames - ACTOR_400500_GRAB_SNAP_START_TICK) < ACTOR_400500_GRAB_SNAP_TICKS) && (work->playerCaught == 1)) {
+        _actor400500PositionGrabbedPlayer(task, ACTOR_400500_GRAB_POSITION_SNAP);
+    }
+    if (((s16)work->stateFrames == ACTOR_400500_GRAB_FIRST_SOUND_TICK) && (work->playerCaught != 0)) {
+        _actor400500PlayPlacedSound(task, ACTOR_400500_SOUND_GRAB_FRAME_12);
+    }
+    if ((s16)work->stateFrames == ACTOR_400500_GRAB_SECOND_SOUND_TICK) {
+        _actor400500PlayPlacedSound(task, ACTOR_400500_SOUND_GRAB_FRAME_30);
+    }
+    if ((s16)work->stateFrames == ACTOR_400500_GRAB_LAST_SOUND_TICK) {
+        padScriptSpawnVariableMotorRamp(ACTOR_400500_GRAB_END_RUMBLE_TICKS, ACTOR_400500_GRAB_END_RUMBLE_START_INTENSITY, ACTOR_400500_GRAB_END_RUMBLE_END_INTENSITY);
+        _actor400500PlayPlacedSound(task, ACTOR_400500_SOUND_GRAB_FRAME_42);
+    }
+    if ((s16)work->stateFrames == ACTOR_400500_GRAB_DAMAGE_TICK) {
+        padScriptSpawnVariableMotorRamp(ACTOR_400500_GRAB_DAMAGE_RUMBLE_TICKS, ACTOR_400500_GRAB_DAMAGE_RUMBLE_START_INTENSITY, ACTOR_400500_GRAB_DAMAGE_RUMBLE_END_INTENSITY);
+        if (_damageApplyEnemyAttackToPlayer(enemy, ACTOR_400500_ATTACK_GRAB) != 0) {
+            // Keep child playback active at zero HP without the ordinary death-pose reset.
+            player->state    = ACTOR_400500_PLAYER_FATAL_PLAYBACK_STATE;
+            work->grabLanded = 1;
+        }
+    }
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+        work->attackCooldown = ACTOR_400500_ATTACK_COOLDOWN_TICKS;
+        work->body.radius    = ACTOR_400500_GRAB_BODY_RADIUS;
+    }
+}
+
+/// Retracts the grab reach and returns to crawling when its clip ends.
+///
+/// Requires initialized work, rig and arm-chain coordinates. Advances playback
+/// first, then eases the signed-halfword reach angle toward zero and applies it
+/// to parts 6 and 9. A slot-1 boundary, control jump or settled pose restores the
+/// 608-unit body radius, requests hiding when allowed and starts a 60-tick cooldown.
+static void _actor400500FinishGrabRecovery(Task* task)
+{
+    enum { ACTOR_400500_RESTORED_BODY_RADIUS = 608 };
+    _Actor400500GrayStalkerWork* work;
+    s32                          animationEnded;
+
+    work              = task->work;
+    work->stateFrames = work->stateFrames + 1;
+    _actor400500TickAnim(task);
+
+    work->armReachAngle += -(work->armReachAngle * 16) >> 7;
+    _actor400500TurnPartWorldYaw(&task->extra.tmd->coords[6], work->armReachAngle);
+    _actor400500TurnPartWorldYaw(&task->extra.tmd->coords[9], work->armReachAngle);
+
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        work->body.radius = ACTOR_400500_RESTORED_BODY_RADIUS;
+        _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+        _actor400500RequestCloakFade(task, ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_HIDE);
+        work->attackCooldown = ACTOR_400500_ATTACK_COOLDOWN_TICKS;
+    }
+}
+
+/// Indices of the Stalker's grab attack, separate from the captured player's playback phases.
+enum {
+    ACTOR_400500_GRAB_ATTACK_STEP_START         = 0,
+    ACTOR_400500_GRAB_ATTACK_STEP_ATTACK        = 1,
+    ACTOR_400500_GRAB_ATTACK_STEP_MISS_RECOVERY = 2
+};
+
+/// Grab attack handlers, indexed by `subState` in `ACTOR_400500_GRAB_ATTACK_STEP_*`.
+///
+/// Each step advances body playback itself. The miss path enters recovery;
+/// a completed successful grab returns directly to the living crawl state.
+static const TaskFuncTable3 _gActor400500GrabSteps = { {
+    [ACTOR_400500_GRAB_ATTACK_STEP_START]         = _actor400500StartGrab,
+    [ACTOR_400500_GRAB_ATTACK_STEP_ATTACK]        = _actor400500TickGrab,
+    [ACTOR_400500_GRAB_ATTACK_STEP_MISS_RECOVERY] = _actor400500FinishGrabRecovery,
+} };
+
+/// Ceiling right-arm strike handlers, indexed by `subState` (0 setup, 1 extend, 2 strike/return).
+static const TaskFuncTable3 _gActor400500CeilingStrikeSteps = { {
+    _actor400500StartCeilingArmStrike,
+    _actor400500ExtendCeilingStrikeArm,
+    _actor400500TickCeilingArmStrike,
+} };
+
+/// Lethal ceiling-strike fall handlers, indexed by `deathStep` (0 setup, 1 fall, 2 landing).
+///
+/// The final step releases the death hold without advancing beyond the table.
+/// Blast kills bypass this fall and release the hold immediately.
+static const TaskFuncTable3 _gActor400500CeilingStrikeDeathFallSteps = { {
+    _actor400500StartCeilingStrikeDeathFall,
+    _actor400500TickCeilingStrikeDeathFall,
+    _actor400500FinishCeilingStrikeDeathLanding,
+} };
+
+/// Dispatches the ceiling right-arm strike or its death-fall sequence.
+///
+/// Requires live work, enemy and rig. Living `subState` and dying `deathStep`
+/// each address three steps. A pending knockdown returns before playback;
+/// other living ticks handle heavy-hit recoil after the strike step. Death
+/// disables all arm contacts; a fatal blast releases the death hold immediately.
+/// Playback advances after either branch, including a fatal blast.
+static void _actor400500TickCeilingStrikeState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    TaskFuncTable3               strikeSteps;
+    TaskFuncTable3               deathSteps;
+
+    work        = task->work;
+    enemy       = task->spawnArg2.pointer;
+    strikeSteps = _gActor400500CeilingStrikeSteps;
+    deathSteps  = _gActor400500CeilingStrikeDeathFallSteps;
+    if (enemy->hp <= 0) {
+        if (work->lastHitReaction == ACTOR_400500_HIT_REACTION_BLAST) {
+            work->deathHeld = 0;
+        } else {
+            deathSteps.funcs[(s16)work->deathStep](task);
+        }
+        _actor400500DisableArmContacts(work);
+    } else {
+        if (_actor400500TakeKnockdown(task)) {
+            return;
+        }
+        strikeSteps.funcs[(s16)work->subState](task);
+        ((_Actor400500GrayStalkerWork*)task->work)->ceilingFallPending = 0;
+        _actor400500HandleHeavyHitReaction(task);
+    }
+    _actor400500TickAnim(task);
+}
+
+/// Times the ceiling strike's right-arm contacts and return to crawling.
+///
+/// Requires the live Stalker work, composed model root, enemy placement and
+/// right-arm child. Increments a wrapping halfword tick counter, sounds and
+/// enables the two attack spheres at tick 11, and retracts the arm from tick 18.
+/// Once fully retracted, hides the child and disables the spheres. An animation
+/// boundary returns to crawl, requests a hide when permitted and starts a
+/// 60-tick attack cooldown; the caller advances playback.
+static void _actor400500TickCeilingArmStrike(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    MATRIX                       unusedRotation; // Untouched storage retained in the handler's stack frame.
+    s32                          placedSoundId;
+    s32                          animationEnded;
+    u16                          strikeFrame;
+
+    work              = task->work;
+    strikeFrame       = work->stateFrames + 1;
+    work->stateFrames = strikeFrame;
+    // Contact activation precedes the timed retraction and animation completion.
+    if ((s16)strikeFrame == ACTOR_400500_CEILING_STRIKE_CONTACT_TICK) {
+        work->rightArmOuter.flags |= WORLD_COLLISION_BODY_PAIR_ENABLED;
+        work->rightArmInner.flags |= WORLD_COLLISION_BODY_PAIR_ENABLED;
+        placedSoundId              = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_ARM_STRIKE;
+        _actor400500EnqueueRootSound(task, placedSoundId);
+    }
+    if ((s16)work->stateFrames >= ACTOR_400500_CEILING_STRIKE_RETURN_TICK) {
+        if ((s16)work->armSwingAngle != 0) {
+            work->armSwingAngle = (u16)work->armSwingAngle - ACTOR_400500_ARM_RETURN_ANGLE_STEP;
+        } else {
+            ((_Actor400500GrayStalkerWork*)task->work)->armTasks[ACTOR_400500_ARM_RIGHT]->extra.tmd->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            work->rightArmOuter.flags                                                                     &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+            work->rightArmInner.flags                                                                     &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        }
+    }
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+        _actor400500RequestCloakFade(task, ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_HIDE);
+        work->attackCooldown = ACTOR_400500_ATTACK_COOLDOWN_TICKS;
+    }
+}
+
+/// Floor left-arm strike handlers, indexed by `subState` in 0..4.
+///
+/// Steps are setup, extend, strike/return, arm recovery and selection of crawl
+/// or a jump to the ceiling. The last step changes state instead of advancing.
+static const TaskFuncTable5 _gActor400500FloorStrikeSteps = { {
+    _actor400500StartFloorArmStrike,
+    _actor400500ExtendFloorStrikeArm,
+    _actor400500TickFloorArmStrike,
+    _actor400500RetractFloorStrikeArm,
+    _actor400500FinishFloorArmStrike,
+} };
+
+/// Dispatches the five-step floor left-arm strike and its hit reactions.
+///
+/// Requires live work, enemy and rig. A living pending knockdown returns before
+/// playback; death releases its hold and disables all arm contacts. Other ticks
+/// process heavy-hit recoil, advance playback and clear any ceiling-fall request.
+static void _actor400500TickFloorStrikeState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    TaskFuncTable5               strikeSteps;
+
+    work        = task->work;
+    enemy       = task->spawnArg2.pointer;
+    strikeSteps = _gActor400500FloorStrikeSteps;
+    if (enemy->hp > 0) {
+        if (_actor400500TakeKnockdown(task)) {
+            return;
+        }
+        strikeSteps.funcs[(s16)work->subState](task);
+    } else {
+        work->deathHeld = 0;
+        _actor400500DisableArmContacts(work);
+    }
+    _actor400500HandleHeavyHitReaction(task);
+    _actor400500TickAnim(task);
+    ((_Actor400500GrayStalkerWork*)task->work)->ceilingFallPending = 0;
+}
+
+/// Times the floor strike's left-arm contacts and advances to its recovery step.
+///
+/// Requires the live Stalker work, composed model root, enemy placement and
+/// left-arm child. Increments a wrapping halfword tick counter, sounds and
+/// enables the two attack spheres at tick 13, and retracts the arm from tick 16.
+/// Once fully retracted, hides the child and disables the spheres. An animation
+/// boundary advances the sub-state; the caller advances playback.
+static void _actor400500TickFloorArmStrike(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    MATRIX                       unusedRotation; // Untouched storage retained in the handler's stack frame.
+    s32                          placedSoundId;
+    s32                          animationEnded;
+    u16                          strikeFrame;
+
+    work              = task->work;
+    strikeFrame       = work->stateFrames + 1;
+    work->stateFrames = strikeFrame;
+    // Contact activation precedes the timed retraction and animation completion.
+    if ((s16)strikeFrame == ACTOR_400500_FLOOR_STRIKE_CONTACT_TICK) {
+        work->leftArmOuter.flags |= WORLD_COLLISION_BODY_PAIR_ENABLED;
+        work->leftArmInner.flags |= WORLD_COLLISION_BODY_PAIR_ENABLED;
+        placedSoundId             = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_ARM_STRIKE;
+        _actor400500EnqueueRootSound(task, placedSoundId);
+    }
+    if ((s16)work->stateFrames >= ACTOR_400500_FLOOR_STRIKE_RETURN_TICK) {
+        if ((s16)work->armSwingAngle != 0) {
+            work->armSwingAngle = (u16)work->armSwingAngle - ACTOR_400500_ARM_RETURN_ANGLE_STEP;
+        } else {
+            ((_Actor400500GrayStalkerWork*)task->work)->armTasks[ACTOR_400500_ARM_LEFT]->extra.tmd->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            work->leftArmOuter.flags                                                                     &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+            work->leftArmInner.flags                                                                     &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+        }
+    }
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        work->subState = work->subState + 1;
+    }
+}
+
+/// Retracts the left arm model during the floor strike's recovery.
+///
+/// Requires live Stalker work and the left-arm child. The swing angle wraps as
+/// a halfword, while the yaw helper narrows the negated subtraction to s16.
+/// Keeps the child visible until the stored angle is nonpositive, then hides
+/// it and advances the sub-state. The caller advances body animation.
+static void _actor400500RetractFloorStrikeArm(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Task*                        leftArmTask;
+    s32                          swingAngle;
+
+    work                          = task->work;
+    swingAngle                    = work->armSwingAngle - ACTOR_400500_ARM_RETURN_ANGLE_STEP;
+    work->armSwingAngle           = swingAngle;
+    leftArmTask                   = ((_Actor400500GrayStalkerWork*)task->work)->armTasks[ACTOR_400500_ARM_LEFT];
+    leftArmTask->extra.tmd->flags = 0;
+    _actor400500SetCoordYaw(leftArmTask->extra.tmd->coords, -swingAngle);
+    if ((s16)work->armSwingAngle <= 0) {
+        ((_Actor400500GrayStalkerWork*)task->work)->armTasks[ACTOR_400500_ARM_LEFT]->extra.tmd->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+        work->subState                                                                                = work->subState + 1;
+    }
+}
+
+/// Ends floor-strike recovery by choosing crawl or a jump back to the ceiling.
+///
+/// Requires live Stalker work and the latest slot results. At a boundary,
+/// requests a hide when allowed, starts the attack cooldown and advances the
+/// random generator once: one of four high-word values crawls, three jump.
+/// The chosen state's first step runs on a later tick.
+static void _actor400500FinishFloorArmStrike(Task* task)
+{
+    enum { ACTOR_400500_FLOOR_STRIKE_ROUTE_CHANCE_MASK = 3 }; // Crawl on one of four high-word values.
+    _Actor400500GrayStalkerWork* boundaryWork;
+    _Actor400500GrayStalkerWork* cloakWork;
+    s32                          animationEnded;
+    s32                          cloakRequest;
+    u32                          randomState;
+
+    boundaryWork   = task->work;
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        cloakWork = task->work;
+        if (((cloakWork->cloakRequest >= 0) || ((u8)cloakWork->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK)) && (cloakWork->hideCooldown == 0)) {
+            cloakRequest            = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_HIDE;
+            cloakWork->cloakRequest = cloakRequest;
+            cloakWork->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;
+        }
+        boundaryWork->attackCooldown = ACTOR_400500_ATTACK_COOLDOWN_TICKS;
+        randomState                  = RANDOM_LCG_NEXT(gRandomLcgState);
+        gRandomLcgState              = randomState;
+        if (!((randomState >> 16) & ACTOR_400500_FLOOR_STRIKE_ROUTE_CHANCE_MASK)) {
+            _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+            return;
+        }
+        _actor400500SetState(task, ACTOR_400500_STATE_JUMP, ACTOR_400500_POSTURE_CHANGE_STEP_START);
+    }
+}
+
+/// Ceiling-fall handlers, indexed by `subState` (0 setup, 1 fall, 2 landing, 3 recovery).
+static const TaskFuncTable4 _gActor400500CeilingFallSteps = { {
+    _actor400500StartCeilingFall,
+    _actor400500TickCeilingFall,
+    _actor400500FinishCeilingFallLanding,
+    _actor400500FinishCeilingFallRecovery,
+} };
+
+/// Dispatches the four-step ceiling fall onto the back and recovery.
+///
+/// Requires initialized work, enemy and rig. A fatal blast releases the death
+/// hold and disables arm contacts without advancing playback. Other ticks run
+/// the indexed fall step, advance playback and clear active hit/fall requests.
+/// Repository sources never set the fall-request byte: this living state has
+/// no proven source-side entry; external reachability remains unproven.
+static void _actor400500TickCeilingFallState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    TaskFuncTable4               fallSteps;
+    _Actor400500GrayStalkerWork* reactionWork;
+
+    work      = task->work;
+    enemy     = task->spawnArg2.pointer;
+    fallSteps = _gActor400500CeilingFallSteps;
+    if ((enemy->hp <= 0) && (work->lastHitReaction == ACTOR_400500_HIT_REACTION_BLAST)) {
+        work->deathHeld = 0;
+        _actor400500DisableArmContacts(work);
+        return;
+    }
+    fallSteps.funcs[(s16)work->subState](task);
+    _actor400500TickAnim(task);
+    reactionWork                     = task->work;
+    reactionWork->hitTaken           = 0;
+    reactionWork->hitReaction        = ACTOR_400500_HIT_REACTION_NONE;
+    reactionWork                     = task->work;
+    reactionWork->ceilingFallPending = 0;
+}
+
+/// Posture-dependent knockdown handlers, indexed by `subState` in 0..6.
+///
+/// Step 0 selects floor recoil/recovery (1..2) or ceiling recoil/fall/landing/
+/// recovery (3..6). Final recovery returns to the appropriate living crawl.
+static const TaskFuncTable7 _gActor400500KnockdownSteps = { {
+    _actor400500StartKnockdownRecoil,
+    _actor400500FinishFloorKnockdownRecoil,
+    _actor400500FinishFloorKnockdownRecovery,
+    _actor400500FinishCeilingKnockdownRecoil,
+    _actor400500TickKnockdownCeilingFall,
+    _actor400500FinishKnockdownCeilingLanding,
+    _actor400500FinishKnockdownCeilingRecovery,
+} };
+
+/// Dispatches the seven posture-specific knockdown and recovery steps.
+///
+/// Requires initialized work and rig, with `subState` in 0..6. The step runs
+/// before pending animation requests are applied and slots 1..17 advance.
+static void _actor400500TickKnockdownState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    TaskFuncTable7               recoilSteps;
+
+    work        = task->work;
+    recoilSteps = _gActor400500KnockdownSteps;
+    recoilSteps.funcs[(s16)work->subState](task);
+    _actor400500TickAnim(task);
+}
+
+/// Starts knockdown recoil for the current ceiling, upright or on-back posture.
+///
+/// Requires live Stalker work and both arm children. Requests a show and
+/// disables their drawing and contacts. Ceiling recoil holds death and enters
+/// the ceiling-fall branch; either floor posture enters the floor wait branch.
+/// Only animation requests are latched; the caller advances playback.
+static void _actor400500StartKnockdownRecoil(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          cloakRequest;
+    u16                          posture;
+    u8                           unusedStack[0x30]; // Unaccessed local storage; its original purpose is unproven.
+
+    work = task->work;
+    if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+        cloakRequest       = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+        work->cloakRequest = cloakRequest;
+        work->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;
+    }
+    ((_Actor400500GrayStalkerWork*)task->work)->armTasks[ACTOR_400500_ARM_RIGHT]->extra.tmd->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+    work->rightArmOuter.flags                                                                     &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    work->rightArmInner.flags                                                                     &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    ((_Actor400500GrayStalkerWork*)task->work)->armTasks[ACTOR_400500_ARM_LEFT]->extra.tmd->flags  = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+    work->leftArmOuter.flags                                                                      &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    posture                                                                                        = work->posture;
+    work->leftArmInner.flags                                                                      &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    if (!(posture & ACTOR_400500_POSTURE_ON_FLOOR)) {
+        work->deathHeld = 1;
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_UPRIGHT_RECOIL, ANIMATION_RATE_ONE);
+        work->subState = ACTOR_400500_RECOIL_STEP_CEILING_WAIT;
+    } else if (!(posture & ACTOR_400500_POSTURE_ON_BACK)) {
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_UPRIGHT_RECOIL, ANIMATION_RATE_ONE);
+        work->subState = ACTOR_400500_RECOIL_STEP_FLOOR_WAIT;
+    } else {
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_ON_BACK_RECOIL, ANIMATION_RATE_ONE);
+        work->subState = ACTOR_400500_RECOIL_STEP_FLOOR_WAIT;
+    }
+}
+
+/// Clears the current hit/recoil request and pending ceiling fall after a state step.
+///
+/// Requires live Stalker work. Keeps knockdown and the last hit's reaction
+/// available to their separate consumers. No animation or state is changed.
+static inline void _actor400500ClearHitAndFallRequests(Task* task)
+{
+    _Actor400500GrayStalkerWork* work = task->work;
+
+    work->hitTaken           = 0;
+    work->hitReaction        = ACTOR_400500_HIT_REACTION_NONE;
+    work                     = task->work;
+    work->ceilingFallPending = 0;
+}
+
+/// Advances the cloaked ambush, then consumes this frame's hit and fall requests.
+///
+/// Requires live Stalker work, enemy and an initialized rig. `subState` is 0 to start
+/// the ambush or 1 to wait for its trigger. The selected step runs before
+/// playback; pending knockdown wins over any state that step selected.
+static void _actor400500TickAmbushState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work            = task->work;
+    TaskFunc                     stepHandlers[2] = { _actor400500StartAmbush, _actor400500WaitAmbushTrigger };
+
+    stepHandlers[(s16)work->subState](task);
+    _actor400500TickAnim(task);
+    _actor400500ClearHitAndFallRequests(task);
+    _actor400500TakeKnockdown(task);
+}
+
+/// Activates the cloaked ambush on nearby target measurements or a damage tick.
+///
+/// Requires live Stalker work/enemy and composed root. Horizontal target
+/// range below 2500 game units takes priority: engages battle, sounds the
+/// placed cue, requests revealing and enters ceiling strike. Otherwise,
+/// hitTaken equal to 1 sounds and reveals into ordinary crawl. Reveal keeps
+/// an already running show and bypasses hide cooldown in both branches.
+static void _actor400500WaitAmbushTrigger(Task* task)
+{
+    enum { ACTOR_400500_AMBUSH_TRIGGER_RANGE = 2500 };
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* proximityCloakWork;
+    _Actor400500GrayStalkerWork* hitCloakWork;
+    s16                          hitTaken;
+    s32                          cloakRequest;
+
+    work = task->work;
+    // Proximity wins even when a damage tick is also pending.
+    if (work->targetDist < ACTOR_400500_AMBUSH_TRIGGER_RANGE) {
+        sceneEngageBattle(1);
+        _actor400500PlayPlacedSound(task, ACTOR_400500_SOUND_POSTURE_CHANGE);
+        proximityCloakWork = task->work;
+        if ((proximityCloakWork->cloakRequest >= 0) || (((u8)proximityCloakWork->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+            cloakRequest                     = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+            proximityCloakWork->cloakRequest = cloakRequest;
+            proximityCloakWork->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;
+        }
+        _actor400500SetState(task, ACTOR_400500_STATE_STRIKE_CEILING, 0);
+        return;
+    }
+    hitTaken = work->hitTaken;
+    if (hitTaken == 1) {
+        _actor400500PlayPlacedSound(task, ACTOR_400500_SOUND_POSTURE_CHANGE);
+        hitCloakWork = task->work;
+        if ((hitCloakWork->cloakRequest >= 0) || (((u8)hitCloakWork->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != hitTaken)) {
+            cloakRequest               = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+            hitCloakWork->cloakRequest = cloakRequest;
+            hitCloakWork->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;
+        }
+        _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+    }
+}
+
+/// Deliberate ceiling-to-floor drop handlers, indexed by `subState` (0 setup, 1 drop, 2 landing).
+static const TaskFuncTable3 _gActor400500DropSteps = { {
+    _actor400500StartDropFromCeiling,
+    _actor400500TickDropFromCeiling,
+    _actor400500FinishDropLanding,
+} };
+
+/// Dispatches the deliberate ceiling drop and its floor landing.
+///
+/// Requires live Stalker work, enemy and rig; `subState` indexes the three
+/// drop steps. Playback advances before dispatch except on the start step,
+/// whose request first plays next tick. Clears hit and ceiling-fall requests
+/// after dispatch; the landing step handles knockdown and the death hold.
+static void _actor400500TickDropState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    TaskFuncTable3               stepHandlers;
+
+    work         = task->work;
+    stepHandlers = _gActor400500DropSteps;
+    if ((s16)work->subState != ACTOR_400500_POSTURE_CHANGE_STEP_START) {
+        _actor400500TickAnim(task);
+    }
+    stepHandlers.funcs[(s16)work->subState](task);
+    _actor400500ClearHitAndFallRequests(task);
+}
+
+/// Rebuilds the drop landing's root basis from its normalized Euler angles.
+///
+/// Requires live Stalker work and the model root. Angles use 4096ths of a turn;
+/// the new basis has Q12 unit scale. Copies only its nine rotation coefficients,
+/// preserving translation, alignment bytes and the root's composition stamp.
+/// The caller marks the root dirty and refreshes it after applying the pose.
+static inline void _actor400500RebuildDropLandingRotation(Task* task)
+{
+    MATRIX                       rotation;
+    _Actor400500GrayStalkerWork* work = task->work;
+    GfxCoord*                    root = task->extra.tmd->coords;
+
+    work->pitch &= ACTOR_TRANSFORM_ANGLE_MASK;
+    work->yaw   &= ACTOR_TRANSFORM_ANGLE_MASK;
+    work->roll  &= ACTOR_TRANSFORM_ANGLE_MASK;
+    gfxSetRotIdentity(&rotation);
+    RotMatrixZ(work->roll, &rotation);
+    RotMatrixX(work->pitch, &rotation);
+    RotMatrixY(work->yaw, &rotation);
+    _actor400500CopyRotation(&rotation, &root->coord);
+}
+
+/// Drops from the ceiling while returning the body's world X/Z to the drop origin.
+///
+/// Requires live Stalker work, the 18-part model rooted directly beneath the
+/// composed view, and initialized animation. Samples part 3 for seven ticks;
+/// thereafter eases its signed-halfword anchor toward the saved drop position
+/// and moves the root around it. Acceleration and speed wrap as halfwords.
+/// On crossing the floor, resets pitch/roll, reverses yaw and starts the
+/// landing pose, advancing playback immediately before refreshing the root.
+static void _actor400500TickDropFromCeiling(Task* task)
+{
+    enum { ACTOR_400500_DROP_MOVE_TICK  = 8,
+           ACTOR_400500_DROP_PITCH_STEP = 128 };
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    s32                          anchorX;
+    s32                          anchorZ;
+    s32                          landingX;
+    s32                          landingZ;
+    u16                          accelerationBits;
+    u16                          speedBits;
+    u16                          pitch;
+    s32                          rootY;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+    // Sample the body before the downward motion begins.
+    if ((s16)++work->stateFrames < ACTOR_400500_DROP_MOVE_TICK) {
+        _actor400500ReadPartWorldXZ(task, ACTOR_400500_PART_BODY, &work->anchorPos);
+        return;
+    }
+
+    // Move the root around the body anchor as it eases toward the drop origin.
+    landingX           = work->dropStartX;
+    anchorX            = work->anchorPos.vx;
+    landingZ           = work->dropStartZ;
+    anchorZ            = work->anchorPos.vz;
+    work->anchorPos.vx = (u16)work->anchorPos.vx + ((landingX - anchorX) >> 2);
+    work->anchorPos.vz = (u16)work->anchorPos.vz + ((landingZ - anchorZ) >> 2);
+    _actor400500PinPartWorldXZ(task, ACTOR_400500_PART_BODY, &work->anchorPos);
+    accelerationBits      = (u16)work->moveAccel + 2;
+    speedBits             = (u16)work->moveSpeed + accelerationBits;
+    work->moveSpeed       = speedBits;
+    work->moveAccel       = accelerationBits;
+    rootY                 = rootCoord->coord.t[1] + (s16)speedBits;
+    rootCoord->coord.t[1] = rootY;
+    pitch                 = work->pitch;
+    if ((pitch & ACTOR_TRANSFORM_ANGLE_MASK) != ACTOR_TRANSFORM_ANGLE_HALF_TURN) {
+        work->pitch = pitch - ACTOR_400500_DROP_PITCH_STEP;
+    }
+
+    // Apply the landing pose now so the refreshed root uses it this tick.
+    if (rootCoord->coord.t[1] >= ACTOR_400500_FLOOR_Y + 1) {
+        rootY                 = ACTOR_400500_FLOOR_Y;
+        rootCoord->coord.t[0] = work->dropStartX;
+        rootCoord->coord.t[2] = work->dropStartZ;
+        rootCoord->coord.t[1] = rootY;
+        work->subState        = work->subState + 1;
+        rootCoord->coord.t[1] = rootY;
+        work->pitch           = 0;
+        work->roll            = 0;
+        work->yaw             = (u16)work->yaw + ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+        _actor400500RebuildDropLandingRotation(task);
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_POSTURE_SETTLE, ANIMATION_RATE_ONE);
+        _actor400500TickAnim(task);
+        rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+        actorRenderComposeCoord(rootCoord);
+        work->stateFrames = 0;
+    }
+}
+
+/// Finishes the deliberate drop's landing and returns to upright floor crawling.
+///
+/// Requires the live enemy/work, composed model root and latest slot results.
+/// Sounds on the first tick, consumes knockdown before testing the animation
+/// boundary, and sets the floor posture when crawling resumes. A dead enemy
+/// releases the death hold without a sound or state change.
+static void _actor400500FinishDropLanding(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    s32                          placedSoundId;
+    s32                          knockdownTaken;
+    s32                          animationEnded;
+
+    enemy = task->spawnArg2.pointer;
+    work  = task->work;
+    if (enemy->hp > 0) {
+        if ((s16)++work->stateFrames == 1) {
+            placedSoundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_DROP_LANDING;
+            _actor400500EnqueueRootSound(task, placedSoundId);
+        }
+        knockdownTaken = _actor400500TakeKnockdown(task);
+        if (knockdownTaken == 0) {
+            animationEnded = _actor400500HasAnimBoundary(task);
+            if (animationEnded) {
+                _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+                work->posture |= ACTOR_400500_POSTURE_ON_FLOOR;
+            }
+        }
+    } else {
+        work->deathHeld = 0;
+    }
+}
+
+/// Floor-to-ceiling jump handlers, indexed by `subState` (0 setup, 1 jump, 2 ceiling landing).
+static const TaskFuncTable3 _gActor400500JumpSteps = { {
+    _actor400500StartJumpToCeiling,
+    _actor400500TickJumpToCeiling,
+    _actor400500FinishJumpToCeiling,
+} };
+
+/// Dispatches the floor-to-ceiling jump and advances its requested pose.
+///
+/// Requires live Stalker work, enemy and rig; `subState` indexes the three
+/// jump steps. Playback advances after dispatch. Clears hit and ceiling-fall
+/// requests afterward; the jump's wind-up handles death and knockdown.
+static void _actor400500TickJumpState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    TaskFuncTable3               stepHandlers;
+
+    work         = task->work;
+    stepHandlers = _gActor400500JumpSteps;
+    stepHandlers.funcs[(s16)work->subState](task);
+    _actor400500TickAnim(task);
+    _actor400500ClearHitAndFallRequests(task);
+}
+
+/// Advances the floor-to-ceiling jump and starts its ceiling landing pose.
+///
+/// Requires live enemy/work and the model root. The first eight ticks permit
+/// death or knockdown to interrupt. Thereafter halfword acceleration/speed
+/// drive root Y while pitch approaches half a turn. Crossing the ceiling
+/// clamps Y, reverses yaw, restores the ceiling roll and sounds both contacts.
+/// The caller advances animation and the next step clears the floor posture.
+static void _actor400500TickJumpToCeiling(Task* task)
+{
+    enum { ACTOR_400500_JUMP_MOVE_TICK  = 9,
+           ACTOR_400500_JUMP_PITCH_STEP = 152 };
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* transitionWork;
+    GfxCoord*                    rootCoord;
+    Enemy*                       enemy;
+    u16                          accelerationBits;
+    u16                          speedBits;
+    s32                          rootY;
+    s16                          nextPitch;
+    s32                          firstPlacedSoundId;
+    s32                          secondPlacedSoundId;
+    rootCoord = task->extra.tmd->coords;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    // Only the wind-up can be interrupted; flight completes even after a kill.
+    if ((s16)++work->stateFrames < ACTOR_400500_JUMP_MOVE_TICK) {
+        if (enemy->hp <= 0) {
+            work->deathHeld = 0;
+            return;
+        }
+        transitionWork = task->work;
+        if (transitionWork->knockdownPending != 0) {
+            transitionWork->knockdownPending = 0;
+            _actor400500EnterState(task, ACTOR_400500_STATE_KNOCKDOWN);
+        }
+    } else {
+        accelerationBits      = (u16)work->moveAccel - 2;
+        speedBits             = (u16)work->moveSpeed + accelerationBits;
+        work->moveSpeed       = speedBits;
+        work->moveAccel       = accelerationBits;
+        rootY                 = rootCoord->coord.t[1] - (s16)speedBits;
+        rootCoord->coord.t[1] = rootY;
+        if (work->pitch < ACTOR_TRANSFORM_ANGLE_HALF_TURN) {
+            nextPitch   = (u16)work->pitch + ACTOR_400500_JUMP_PITCH_STEP;
+            work->pitch = nextPitch;
+            if (nextPitch >= ACTOR_TRANSFORM_ANGLE_HALF_TURN + 1) {
+                work->pitch = ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+            }
+        }
+        if (rootCoord->coord.t[1] < ACTOR_400500_CRAWL_CEILING_Y) {
+            rootCoord->coord.t[1] = ACTOR_400500_CRAWL_CEILING_Y;
+            work->subState        = work->subState + 1;
+            rootCoord->coord.t[1] = ACTOR_400500_CRAWL_CEILING_Y;
+            work->pitch           = 0;
+            work->roll            = ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+            work->yaw             = (u16)work->yaw + ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_POSTURE_SETTLE, ANIMATION_RATE_ONE);
+            firstPlacedSoundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_STEP_1;
+            _actor400500EnqueueRootSound(task, firstPlacedSoundId);
+            secondPlacedSoundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_STEP_2;
+            _actor400500EnqueueRootSound(task, secondPlacedSoundId);
+        }
+    }
+}
+
+/// Dispatches righting the Stalker from its on-back floor posture.
+///
+/// Requires live Stalker work, enemy and rig. `subState` is 0 to start the
+/// turn-over or 1 to finish it. Advances playback after dispatch and clears
+/// hit and ceiling-fall requests; the finishing step handles knockdown.
+static void _actor400500TickTurnOverState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work            = task->work;
+    TaskFunc                     stepHandlers[2] = { _actor400500StartTurnOver, _actor400500TickTurnOver };
+
+    stepHandlers[(s16)work->subState](task);
+    _actor400500TickAnim(task);
+    _actor400500ClearHitAndFallRequests(task);
+}
+
+/// Turn-over pivot coordinate and signed tick sentinel shared by its two steps.
+enum { ACTOR_400500_TURN_OVER_PIVOT_PART = 14,
+       ACTOR_400500_TURN_OVER_PIN_TICK   = -1 };
+
+/// Rebuilds the turn-over root's Q12 basis from normalized Z/X/Y Euler angles.
+///
+/// Requires live work/root. Angles use 4096ths of a turn; only nine rotation
+/// coefficients are copied. Translation, alignment bytes and cache stamps
+/// remain intact, so the caller dirties and composes the root after its pose.
+static inline void _actor400500RebuildTurnOverRotation(Task* task)
+{
+    MATRIX                       rotation;
+    _Actor400500GrayStalkerWork* work = task->work;
+    GfxCoord*                    root = task->extra.tmd->coords;
+
+    work->pitch &= ACTOR_TRANSFORM_ANGLE_MASK;
+    work->yaw   &= ACTOR_TRANSFORM_ANGLE_MASK;
+    work->roll  &= ACTOR_TRANSFORM_ANGLE_MASK;
+    gfxSetRotIdentity(&rotation);
+    RotMatrixZ(work->roll, &rotation);
+    RotMatrixX(work->pitch, &rotation);
+    RotMatrixY(work->yaw, &rotation);
+    _actor400500CopyRotation(&rotation, &root->coord);
+}
+
+/// Finishes the on-back turn-over pose and chooses the next living state.
+///
+/// Requires live work, enemy, initialized rig and an 18-part model beneath the
+/// composed view. A signed tick sentinel of -1 pins part 14 to the saved world
+/// X/Z anchor. At a slot-1 boundary, reverses yaw by half a turn and rebuilds
+/// the root basis. A living enemy clears ON_BACK and advances the hold pose,
+/// then consumes knockdown or chooses crawl/jump with equal high-word chances.
+/// A dead enemy releases its hold without clearing ON_BACK or advancing the rig.
+static void _actor400500TickTurnOver(Task* task)
+{
+    enum { ACTOR_400500_TURN_OVER_ROUTE_CHANCE_MASK = 1 };
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    Enemy*                       enemy;
+    s32                          animationEnded;
+    s32                          knockdownTaken;
+    s32                          pinSentinel;
+    u32                          randomState;
+
+    pinSentinel = ACTOR_400500_TURN_OVER_PIN_TICK;
+    rootCoord   = task->extra.tmd->coords;
+    work        = task->work;
+    enemy       = task->spawnArg2.pointer;
+    if ((s16)work->stateFrames == pinSentinel) {
+        // Hold the planted foot while the root turns around its world X/Z.
+        _actor400500PinPartWorldXZ(task, ACTOR_400500_TURN_OVER_PIVOT_PART, &work->anchorPos);
+    }
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        // Replace the flipped basis before applying the living or dying pose.
+        if (enemy->hp > 0) {
+            work->posture &= ~ACTOR_400500_POSTURE_ON_BACK;
+            work->yaw      = ((u16)work->yaw + ACTOR_TRANSFORM_ANGLE_HALF_TURN) & ACTOR_TRANSFORM_ANGLE_MASK;
+            _actor400500RebuildTurnOverRotation(task);
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_CEILING_HOLD, ANIMATION_RATE_ONE);
+            _actor400500TickAnim(task);
+            rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+            actorRenderComposeCoord(rootCoord);
+            knockdownTaken = _actor400500TakeKnockdown(task);
+            if (knockdownTaken == 0) {
+                randomState     = RANDOM_LCG_NEXT(gRandomLcgState);
+                gRandomLcgState = randomState;
+                if (((randomState >> 16) & ACTOR_400500_TURN_OVER_ROUTE_CHANCE_MASK) == 0) {
+                    _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+                    return;
+                }
+                _actor400500SetState(task, ACTOR_400500_STATE_JUMP, ACTOR_400500_POSTURE_CHANGE_STEP_START);
+            }
+        } else {
+            work->deathHeld = 0;
+            work->yaw       = ((u16)work->yaw + ACTOR_TRANSFORM_ANGLE_HALF_TURN) & ACTOR_TRANSFORM_ANGLE_MASK;
+            _actor400500RebuildTurnOverRotation(task);
+            rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+            actorRenderComposeCoord(rootCoord);
+        }
+    }
+}
+
+/// Status-held recoil handlers, indexed by `subState` in 0..6.
+///
+/// Step 0 selects floor recoil/recovery (1..2) or ceiling recoil/fall/landing/
+/// recovery (3..6). Floor recoil waits for status buildup to expire; ceiling
+/// recoil falls when its clip ends or the enemy dies.
+static const TaskFuncTable7 _gActor400500StatusHoldSteps = { {
+    _actor400500StartStatusHoldRecoil,
+    _actor400500FinishFloorStatusHoldRecoil,
+    _actor400500FinishFloorStatusHoldRecovery,
+    _actor400500FinishCeilingStatusHoldRecoil,
+    _actor400500TickStatusHoldCeilingFall,
+    _actor400500FinishStatusHoldCeilingLanding,
+    _actor400500FinishStatusHoldCeilingRecovery,
+} };
+
+/// Dispatches status-held recoil and its posture-dependent recovery.
+///
+/// Requires live Stalker work, enemy and rig; `subState` indexes the seven
+/// recoil/fall/recovery steps. Playback advances after dispatch. The steps
+/// consume status buildup, manage the death hold and select the next crawl.
+static void _actor400500TickStatusHoldState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    TaskFuncTable7               stepHandlers;
+
+    work         = task->work;
+    stepHandlers = _gActor400500StatusHoldSteps;
+    stepHandlers.funcs[(s16)work->subState](task);
+    _actor400500TickAnim(task);
+}
+
+/// Starts status-held recoil for the current ceiling, upright or on-back posture.
+///
+/// Requires live Stalker work and both arm children. Shows the body and disables
+/// arm drawing and contacts. The floor branch waits for status buildup to end;
+/// the ceiling branch holds death while its recoil proceeds into a fall.
+/// Only animation requests are latched; the caller advances playback.
+static void _actor400500StartStatusHoldRecoil(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          cloakRequest;
+    u16                          posture;
+    u8                           unusedStack[0x30]; // Unaccessed local storage; its original purpose is unproven.
+
+    work = task->work;
+    if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+        cloakRequest       = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+        work->cloakRequest = cloakRequest;
+        work->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;
+    }
+    ((_Actor400500GrayStalkerWork*)task->work)->armTasks[ACTOR_400500_ARM_RIGHT]->extra.tmd->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+    work->rightArmOuter.flags                                                                     &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    work->rightArmInner.flags                                                                     &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    ((_Actor400500GrayStalkerWork*)task->work)->armTasks[ACTOR_400500_ARM_LEFT]->extra.tmd->flags  = TMD_OBJECT_SKIP_ACTIVE_DRAW;
+    work->leftArmOuter.flags                                                                      &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    posture                                                                                        = work->posture;
+    work->leftArmInner.flags                                                                      &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ WORLD_COLLISION_BODY_PAIR_ENABLED);
+    if (!(posture & ACTOR_400500_POSTURE_ON_FLOOR)) {
+        work->deathHeld = 1;
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_UPRIGHT_RECOIL, ANIMATION_RATE_ONE);
+        work->subState = ACTOR_400500_RECOIL_STEP_CEILING_WAIT;
+    } else if (!(posture & ACTOR_400500_POSTURE_ON_BACK)) {
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_UPRIGHT_RECOIL, ANIMATION_RATE_ONE);
+        work->subState = ACTOR_400500_RECOIL_STEP_FLOOR_WAIT;
+    } else {
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_ON_BACK_RECOIL, ANIMATION_RATE_ONE);
+        work->subState = ACTOR_400500_RECOIL_STEP_FLOOR_WAIT;
+    }
+}
+
+/// Indices of the death sequence, separate from the living `ACTOR_400500_STATE_*` values.
+enum {
+    ACTOR_400500_DEATH_STEP_START          = 0,
+    ACTOR_400500_DEATH_STEP_POSE_WAIT      = 1,
+    ACTOR_400500_DEATH_STEP_PREPARE_SHRINK = 2,
+    ACTOR_400500_DEATH_STEP_REVEAL_DELAY   = 3,
+    ACTOR_400500_DEATH_STEP_SHRINK         = 4,
+    ACTOR_400500_DEATH_STEP_TEARDOWN       = 5,
+    ACTOR_400500_DEATH_STEP_HIDE_BODY      = 6,
+    ACTOR_400500_DEATH_STEP_BUFFER_DELAY   = 7,
+    ACTOR_400500_DEATH_STEP_FRAGMENTS      = 8,
+    ACTOR_400500_DEATH_STEP_BURST_TEARDOWN = 9
+};
+
+/// Gray Stalker death handlers, indexed by `state` in `ACTOR_400500_DEATH_STEP_*` (0..9).
+///
+/// Step 0 selects pose/shrink/teardown (1..5) or blast hide/fragments/teardown
+/// (6..9). Both terminal entries enter task teardown and reset its work state.
+static const TaskFuncTable10 _gActor400500DeathSteps = { {
+    [ACTOR_400500_DEATH_STEP_START]          = _actor400500StartDeath,
+    [ACTOR_400500_DEATH_STEP_POSE_WAIT]      = _actor400500WaitDeathAnimation,
+    [ACTOR_400500_DEATH_STEP_PREPARE_SHRINK] = _actor400500PrepareDeathShrink,
+    [ACTOR_400500_DEATH_STEP_REVEAL_DELAY]   = _actor400500WaitDeathShrinkDelay,
+    [ACTOR_400500_DEATH_STEP_SHRINK]         = _actor400500TickDeathShrink,
+    [ACTOR_400500_DEATH_STEP_TEARDOWN]       = _actor400500BeginTeardown,
+    [ACTOR_400500_DEATH_STEP_HIDE_BODY]      = _actor400500HideBurstBody,
+    [ACTOR_400500_DEATH_STEP_BUFFER_DELAY]   = _actor400500WaitBurstBufferDelay,
+    [ACTOR_400500_DEATH_STEP_FRAGMENTS]      = _actor400500ReleaseBurstBufferAndSpawnFragments,
+    [ACTOR_400500_DEATH_STEP_BURST_TEARDOWN] = _actor400500BeginBurstTeardown,
+} };
+
+/// Updates actor lighting at a cached coordinate position and applies the room's ambient tint.
+///
+/// Requires a live enemy/model with writable lighting matrices. Samples the
+/// cache exactly as stored; does not compose or convert `coord`.
+/// Ambient channels use Q12: grey 1/8 in rooms 1/3/5/6, otherwise green with
+/// red/blue 1/4. Borrows one VECTOR scratch block plus the lighting query's
+/// nested reservations, releasing it before return; changes GTE state.
+static inline void _actor400500UpdateColor(Task* task, const GfxCoord* coord, const TmdObject* model)
+{
+    enum { ACTOR_400500_AMBIENT_GREY           = ONE / 8,
+           ACTOR_400500_AMBIENT_GREEN_RED_BLUE = ONE / 4 };
+    VECTOR* position;
+    u8      room;
+
+    position = _actor400500PushCachedPosition(coord);
+    worldCoordUpdateActorColor(task->spawnArg2.pointer, position, 0, 0);
+    room = gGameSession->location.roomState;
+    if ((room == 1) || (room == 3) || (room == 5) || (room == 6)) {
+        worldCoordSetModelAmbientColor(model, ACTOR_400500_AMBIENT_GREY, ACTOR_400500_AMBIENT_GREY, ACTOR_400500_AMBIENT_GREY);
+    } else {
+        worldCoordSetModelAmbientColor(model, ACTOR_400500_AMBIENT_GREEN_RED_BLUE, ONE, ACTOR_400500_AMBIENT_GREEN_RED_BLUE);
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(VECTOR);
+}
+
+/// Dispatches the Stalker's death sequence and keeps its lighting and shadows current.
+///
+/// Requires live work/model and a death-state index 0..9. Hidden combat hides
+/// the body and returns; paused combat refreshes presentation without advancing
+/// the death state. Death callbacks retain work/model ownership for teardown.
+static void _actor400500TickDeathTask(Task* task)
+{
+    TmdObject*                   model;
+    _Actor400500GrayStalkerWork* work;
+    TaskFuncTable10              states;
+
+    model  = task->extra.tmd;
+    work   = task->work;
+    states = _gActor400500DeathSteps;
+    switch (gSceneCombatState.actorControl) {
+        case SCENE_COMBAT_ACTORS_HIDDEN:
+            model->flags |= TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            return;
+        case SCENE_COMBAT_ACTORS_RUNNING:
+            states.funcs[(s16)work->state](task);
+        case SCENE_COMBAT_ACTORS_PAUSED:
+            _actor400500UpdateColor(task, &task->extra.tmd->coords[1], task->extra.tmd);
+            if (work->shadowShade != 0) {
+                _actor400500DrawLimbShadows(task, ACTOR_400500_CRAWL_CEILING_Y, (u8)(work->shadowShade >> 2));
+                _actor400500DrawLimbShadows(task, ACTOR_400500_FLOOR_Y, (u8)work->shadowShade);
+            }
+            return;
+    }
+}
+
+/// Starts the death pose, releases battle participation and selects the death path.
+///
+/// Requires the live enemy, work and initialized rig. The current animation
+/// must index the 33-entry death-pose map (0..32); its mapped clip starts at
+/// normal rate and ticks immediately. Unlinks the target and all five bodies,
+/// clears borrowed hit records and records defeat. A blast skips the pose
+/// wait/shrink path and starts the body-hide/burst path instead.
+static void _actor400500StartDeath(Task* task)
+{
+    enum { ACTOR_400500_DEATH_STEP_HIDE_BODY = 6 };
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* transitionWork;
+    Enemy*                       enemy;
+    s32                          deathAnimId;
+
+    work              = task->work;
+    enemy             = task->spawnArg2.pointer;
+    deathAnimId       = _gActor400500DeathPoseByAnim[work->animId];
+    work->animRate    = ANIMATION_RATE_ONE;
+    work->animRequest = ACTOR_400500_ANIM_REQUEST_RESET;
+    work->animId      = deathAnimId;
+    _actor400500TickAnim(task);
+    // End target/contact participation and award the kill before choosing its death path.
+    worldTargetUnlinkNode(&enemy->node);
+    sceneReleaseBattleRefWithRewards(task, 0);
+    enemy->recs = 0;
+    worldCollisionUnlinkBody(&work->body);
+    worldCollisionUnlinkBody(&work->rightArmOuter);
+    worldCollisionUnlinkBody(&work->leftArmOuter);
+    worldCollisionUnlinkBody(&work->rightArmInner);
+    worldCollisionUnlinkBody(&work->leftArmInner);
+    gameFlagSetNibble(GAME_FLAG_GRAY_STALKER_DEFEATED, 1);
+    if (work->lastHitReaction == ACTOR_400500_HIT_REACTION_BLAST) {
+        transitionWork           = task->work;
+        transitionWork->state    = ACTOR_400500_DEATH_STEP_HIDE_BODY;
+        transitionWork->subState = 0;
+        return;
+    }
+    work->state = work->state + 1;
+}
+
+/// Advances the death pose until slot 1 reaches an animation boundary.
+///
+/// Requires live Stalker work and initialized playback. Advances slots 1..17
+/// before reading slot 1; a reached boundary, followed jump or settled pose
+/// advances the death state to shrink preparation.
+static void _actor400500WaitDeathAnimation(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          animationEnded;
+
+    work = task->work;
+    _actor400500TickAnim(task);
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        work->state = work->state + 1;
+    }
+}
+
+/// Shrinks the death pose vertically while fading it into the environment layer.
+///
+/// Requires the root matrix and Q12 scale saved by shrink preparation and its
+/// cleared tick counter. Each tick subtracts 48 from Y scale and reapplies the
+/// saved matrix; X/Z stay at Q12 unity. Tick 16 spawns corpse burn at the root,
+/// and tick 65 hides the body and advances to teardown. The burn controller
+/// uses placement copied at spawn; signed-halfword wrapping is retained.
+static void _actor400500TickDeathShrink(Task* task)
+{
+    enum { ACTOR_400500_DEATH_CLOAK_LEVEL = 255,
+           ACTOR_400500_DEATH_FADE_SHIFT  = 4,
+           ACTOR_400500_DEATH_SCALE_STEP  = 48,
+           ACTOR_400500_DEATH_BURN_TICK   = 16,
+           ACTOR_400500_DEATH_HIDE_TICK   = 65,
+           ACTOR_400500_DEATH_BURN_BURSTS = 5 };
+    _Actor400500GrayStalkerWork* work;
+    TmdObject*                   model;
+    GfxCoord*                    rootCoord;
+    VECTOR                       scale;
+    SVECTOR                      burnOffset;
+    u16                          elapsedTicks;
+
+    work      = task->work;
+    model     = task->extra.tmd;
+    rootCoord = model->coords;
+
+    work->cloakLevel          = (u16)work->cloakLevel + ((s16)(ACTOR_400500_DEATH_CLOAK_LEVEL - (u16)work->cloakLevel) >> ACTOR_400500_DEATH_FADE_SHIFT);
+    work->colorBlend          = (u16)work->colorBlend + ((s16) - (u16)work->colorBlend >> ACTOR_400500_DEATH_FADE_SHIFT);
+    work->shadowShade         = (u16)work->shadowShade + (-work->shadowShade >> ACTOR_400500_DEATH_FADE_SHIFT);
+    model->shading.colorBlend = work->colorBlend;
+    modelLightingSetLayerMaterials(work->cloakLevel);
+
+    // Rescale the saved pose each tick so shrink never compounds on the prior frame.
+    work->shrinkScaleY = (u16)work->shrinkScaleY - ACTOR_400500_DEATH_SCALE_STEP;
+    scale.vx           = ONE;
+    scale.vy           = work->shrinkScaleY;
+    scale.vz           = ONE;
+    rootCoord->coord   = work->savedRootMtx;
+    ScaleMatrix(&rootCoord->coord, &scale);
+    rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+
+    elapsedTicks      = work->stateFrames + 1;
+    work->stateFrames = elapsedTicks;
+    if ((s16)elapsedTicks == ACTOR_400500_DEATH_BURN_TICK) {
+        burnOffset.vx = 0;
+        burnOffset.vy = 0;
+        burnOffset.vz = 0;
+        effectSpawn(EFFECT_CORPSE_BURN, rootCoord, ACTOR_400500_DEATH_BURN_BURSTS, &burnOffset);
+    }
+    if ((s16)work->stateFrames >= ACTOR_400500_DEATH_HIDE_TICK) {
+        model->flags |= TMD_OBJECT_SKIP_ACTIVE_DRAW;
+        work->state   = work->state + 1;
+    }
+}
+
+/// Crawl-on-back route handlers, indexed by `subState` in 0..10.
+///
+/// Route slots parallel the ordinary crawl table, but heading changes enter
+/// turn-over rather than rotating in place. Heading checks resume a matching gait.
+static const TaskFuncTable11 _gActor400500FallenCrawlSteps = { {
+    _actor400500SelectFallenCrawlRoute,
+    _actor400500TickFallenCrawlPositiveX,
+    _actor400500CheckFallenCrawlNegativeXHeading,
+    _actor400500TickFallenCrawlFacingNegativeX,
+    _actor400500CheckFallenCrawlPositiveXHeading,
+    _actor400500TickFallenCrawlCornerChoice,
+    _actor400500TickFallenCrawlFacingPositiveZ,
+    _actor400500CheckFallenCrawlNegativeZHeading,
+    _actor400500TickFallenCrawlFacingNegativeZ,
+    _actor400500CheckFallenCrawlCornerNegativeXHeading,
+    _actor400500CheckFallenCrawlPositiveZHeading,
+} };
+
+/// Dispatches crawling on the back and requests cloaking when cooldown permits.
+///
+/// Requires live Stalker work, enemy and rig; `subState` indexes the eleven
+/// fallen-route steps. Playback advances before dispatch except at route
+/// selection. At nonpositive HP it releases the death hold instead of moving,
+/// then still attempts the cooldown-gated hide request.
+static void _actor400500TickFallenCrawlState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    TaskFuncTable11              stepHandlers;
+    Enemy*                       enemy;
+
+    work         = task->work;
+    enemy        = task->spawnArg2.pointer;
+    stepHandlers = _gActor400500FallenCrawlSteps;
+    if ((s16)work->subState != ACTOR_400500_FALLEN_CRAWL_STEP_SELECT) {
+        _actor400500TickAnim(task);
+    }
+    if (enemy->hp > 0) {
+        stepHandlers.funcs[(s16)work->subState](task);
+    } else {
+        work->deathHeld = 0;
+    }
+    _actor400500RequestCloakFade(task, ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_HIDE);
+}
+
+/// Chooses the first crawl-on-back route step from the actor's zone and target.
+///
+/// Requires live Stalker work, target/zone data and the 18-part model beneath
+/// the composed view. Knockdown and a nearby target's turn-over take priority.
+/// Otherwise restarts and ticks the fallen gait, selects a route, and samples
+/// the right-arm tip's world X/Z into signed halfwords without changing Y.
+/// An unrecognized zone resets the root position and yaw to the crawl origin.
+static void _actor400500SelectFallenCrawlRoute(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    s32                          knockdownTaken;
+    s32                          yawHeading;
+    u16                          playerZone;
+
+    work           = task->work;
+    yawHeading     = (u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK;
+    rootCoord      = task->extra.tmd->coords;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((_actor400500TryTurnOverNearTarget(task) << 0x10) == 0)) {
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_FALLEN_CRAWL, ANIMATION_RATE_ONE);
+        _actor400500TickAnim(task);
+        // Choose the route in the room axes before saving the planted arm tip.
+        switch ((s16)((u16)work->zone - ACTOR_400500_CRAWL_ZONE_X_SEGMENT)) {
+            case ACTOR_400500_CRAWL_ZONE_X_END - ACTOR_400500_CRAWL_ZONE_X_SEGMENT:
+                if (yawHeading != ACTOR_400500_CRAWL_YAW_POSITIVE_X) {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_TURN_POSITIVE_X;
+                } else {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_X;
+                }
+                break;
+            case ACTOR_400500_CRAWL_ZONE_X_SEGMENT - ACTOR_400500_CRAWL_ZONE_X_SEGMENT:
+                if (work->toTarget.vx >= 0) {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_X;
+                } else {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_X;
+                }
+                break;
+            case ACTOR_400500_CRAWL_ZONE_CORNER - ACTOR_400500_CRAWL_ZONE_X_SEGMENT:
+                playerZone = work->playerZone;
+                if ((u32)(playerZone - ACTOR_400500_CRAWL_ZONE_X_SEGMENT) < 2U) {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_X;
+                } else if (((s16)playerZone == ACTOR_400500_CRAWL_ZONE_X_END) || ((s16)work->playerZone == ACTOR_400500_CRAWL_ZONE_PATROL)) {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_X;
+                } else if (((s16)playerZone == ACTOR_400500_CRAWL_ZONE_Z_SEGMENT) && (yawHeading == ACTOR_400500_CRAWL_YAW_POSITIVE_Z)) {
+                    if (rootCoord->coord.t[0] >= ACTOR_400500_CRAWL_LINE_X) {
+                        work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_Z;
+                    } else {
+                        work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_X;
+                    }
+                } else {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_X;
+                }
+                break;
+            case ACTOR_400500_CRAWL_ZONE_Z_SEGMENT - ACTOR_400500_CRAWL_ZONE_X_SEGMENT:
+                if (work->toTarget.vz < 0) {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_Z;
+                } else {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_Z;
+                }
+                break;
+            case ACTOR_400500_CRAWL_ZONE_Z_END - ACTOR_400500_CRAWL_ZONE_X_SEGMENT:
+                if (yawHeading == ACTOR_400500_CRAWL_YAW_NEGATIVE_Z) {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_Z;
+                } else {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_TURN_NEGATIVE_Z;
+                }
+                break;
+            default:
+                rootCoord->coord.t[0] = ACTOR_400500_CRAWL_RESET_X;
+                rootCoord->coord.t[1] = ACTOR_400500_CRAWL_CEILING_Y;
+                rootCoord->coord.t[2] = ACTOR_400500_CRAWL_RESET_Z;
+                work->yaw             = ACTOR_400500_CRAWL_YAW_POSITIVE_X;
+                work->subState        = ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_X;
+                break;
+        }
+        _actor400500ReadPartWorldXZ(task, ACTOR_400500_PART_RIGHT_ARM_TIP, &work->anchorPos);
+    }
+}
+
+/// Follows the fallen crawl's positive-X segment or chooses its next transition.
+///
+/// Requires live Stalker work/root, zone/target data and current slot results.
+/// Knockdown, near-target turn-over and recoil preempt movement in that order.
+/// A wrong heading turns over; the corner selects a route from the player's
+/// zone, and a target far behind requests turn-over while still ticking gait.
+/// Every non-preempted path pins root Z to the crawl line.
+static void _actor400500TickFallenCrawlPositiveX(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    s32                          knockdownTaken;
+    s32                          actorZone;
+    u16                          playerZone;
+
+    work           = task->work;
+    rootCoord      = task->extra.tmd->coords;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((_actor400500TryTurnOverNearTarget(task) << 0x10) == 0) &&
+        ((_actor400500HandleFallenHitReaction(task) << 0x10) == 0)) {
+        if (((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK) != ACTOR_400500_CRAWL_YAW_POSITIVE_X) {
+            _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+        } else {
+            actorZone = work->zone;
+            if (actorZone != ACTOR_400500_CRAWL_ZONE_X_SEGMENT) {
+                if ((actorZone == ACTOR_400500_CRAWL_ZONE_CORNER) && (rootCoord->coord.t[0] >= ACTOR_400500_CRAWL_LINE_X + 1)) {
+                    playerZone = work->playerZone;
+                    if (((u32)(playerZone - ACTOR_400500_CRAWL_ZONE_CORNER) < 2U) || ((s16)playerZone == ACTOR_400500_CRAWL_ZONE_Z_END)) {
+                        work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_CORNER_CHOICE;
+                    } else {
+                        work->subState = actorZone;
+                    }
+                } else {
+                    _actor400500TickFallenCrawl(task);
+                }
+            } else {
+                if (work->toTarget.vx < -ACTOR_400500_FALLEN_TARGET_GAP + 1) {
+                    _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+                }
+                _actor400500TickFallenCrawl(task);
+            }
+        }
+        rootCoord->coord.t[2] = ACTOR_400500_CRAWL_LINE_Z;
+    }
+}
+
+/// Chooses a fallen crawl's corner exit when its heading is already suitable.
+///
+/// Requires live Stalker work and current target/zone/slot results. Knockdown,
+/// near-target turn-over and recoil preempt this choice in that order. Player
+/// zones 2, 3 or 6 select the positive-Z heading; the other zones select
+/// negative X. A matching heading requests the gait and enters that segment;
+/// any unsuitable heading enters turn-over instead.
+static void _actor400500TickFallenCrawlCornerChoice(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          knockdownTaken;
+    u16                          playerZone;
+
+    work           = task->work;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((_actor400500TryTurnOverNearTarget(task) << 0x10) == 0) &&
+        ((_actor400500HandleFallenHitReaction(task) << 0x10) == 0)) {
+        playerZone = work->playerZone;
+        if (((u32)(playerZone - ACTOR_400500_CRAWL_ZONE_CORNER) < 2U) || ((s16)playerZone == ACTOR_400500_CRAWL_ZONE_Z_END)) {
+            if (!((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK)) {
+                _actor400500SetAnim(task, ACTOR_400500_ANIM_FALLEN_CRAWL, ANIMATION_RATE_ONE);
+                work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_Z;
+                return;
+            }
+        } else if (((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_NEGATIVE_X) {
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_FALLEN_CRAWL, ANIMATION_RATE_ONE);
+            work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_X;
+            return;
+        }
+        _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+    }
+}
+
+/// Selects cloak hold and hide cooldown frame counts from the room and remaining HP.
+///
+/// Requires live Stalker work/enemy. Strict HP thresholds choose five bands:
+/// separately truncated half plus quarter, then quarter, eighth and sixteenth
+/// of maximum HP. Equality takes the lower-health band.
+/// Rooms 1, 3, 5 and 6 hold for 16..80 frames and reset cooldown to 0..256.
+/// Other rooms hold for 8192 frames and reset cooldown to 32..256. The hold
+/// phase ends after its count is exceeded; this call does not restart a fade
+/// or change the running cooldown. HP fractions retain signed shift behavior.
+static void _actor400500UpdateCloakTiming(Task* task)
+{
+    enum {
+        ACTOR_400500_HIDE_HOLD_STEP_FRAMES         = 16,
+        ACTOR_400500_HIDE_COOLDOWN_STEP_FRAMES     = 64,
+        ACTOR_400500_LONG_HIDE_HOLD_FRAMES         = 8192,
+        ACTOR_400500_LONG_HIDE_MIN_COOLDOWN_FRAMES = 32
+    };
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    u8                           room;
+
+    work  = task->work;
+    room  = gGameSession->location.roomState;
+    enemy = task->spawnArg2.pointer;
+    // Rooms 1, 3, 5 and 6 shorten the visible cloak hold as HP rises.
+    if ((room == 1) || (room == 3) || (room == 5) || (room == 6)) {
+        s16 hp;
+        s32 maxHpHighHalf;
+        s32 quarterHp;
+
+        hp            = enemy->hp;
+        maxHpHighHalf = enemy->hpMax << 0x10;
+        quarterHp     = maxHpHighHalf >> 0x12;
+        if ((quarterHp + (maxHpHighHalf >> 0x11)) < hp) {
+            work->hideHoldFrames    = ACTOR_400500_HIDE_HOLD_STEP_FRAMES;
+            work->hideCooldownReset = 0;
+            return;
+        }
+        if (quarterHp < hp) {
+            work->hideHoldFrames    = 2 * ACTOR_400500_HIDE_HOLD_STEP_FRAMES;
+            work->hideCooldownReset = ACTOR_400500_HIDE_COOLDOWN_STEP_FRAMES;
+            return;
+        }
+        if ((maxHpHighHalf >> 0x13) < hp) {
+            work->hideHoldFrames    = 3 * ACTOR_400500_HIDE_HOLD_STEP_FRAMES;
+            work->hideCooldownReset = 2 * ACTOR_400500_HIDE_COOLDOWN_STEP_FRAMES;
+            return;
+        }
+        if ((maxHpHighHalf >> 0x14) < hp) {
+            work->hideHoldFrames    = 4 * ACTOR_400500_HIDE_HOLD_STEP_FRAMES;
+            work->hideCooldownReset = 3 * ACTOR_400500_HIDE_COOLDOWN_STEP_FRAMES;
+            return;
+        }
+        work->hideHoldFrames    = 5 * ACTOR_400500_HIDE_HOLD_STEP_FRAMES;
+        work->hideCooldownReset = 4 * ACTOR_400500_HIDE_COOLDOWN_STEP_FRAMES;
+        return;
+    } else {
+        s16 hp;
+        s32 maxHpHighHalf;
+        s32 quarterHp;
+
+        hp            = enemy->hp;
+        maxHpHighHalf = enemy->hpMax << 0x10;
+        quarterHp     = maxHpHighHalf >> 0x12;
+        if ((quarterHp + (maxHpHighHalf >> 0x11)) < hp) {
+            work->hideHoldFrames    = ACTOR_400500_LONG_HIDE_HOLD_FRAMES;
+            work->hideCooldownReset = ACTOR_400500_LONG_HIDE_MIN_COOLDOWN_FRAMES;
+            return;
+        }
+        if (quarterHp < hp) {
+            work->hideHoldFrames    = ACTOR_400500_LONG_HIDE_HOLD_FRAMES;
+            work->hideCooldownReset = ACTOR_400500_HIDE_COOLDOWN_STEP_FRAMES;
+            return;
+        }
+        if ((maxHpHighHalf >> 0x13) < hp) {
+            work->hideHoldFrames    = ACTOR_400500_LONG_HIDE_HOLD_FRAMES;
+            work->hideCooldownReset = 2 * ACTOR_400500_HIDE_COOLDOWN_STEP_FRAMES;
+            return;
+        }
+        if ((maxHpHighHalf >> 0x14) < hp) {
+            work->hideHoldFrames    = ACTOR_400500_LONG_HIDE_HOLD_FRAMES;
+            work->hideCooldownReset = 3 * ACTOR_400500_HIDE_COOLDOWN_STEP_FRAMES;
+            return;
+        }
+        work->hideHoldFrames    = ACTOR_400500_LONG_HIDE_HOLD_FRAMES;
+        work->hideCooldownReset = 4 * ACTOR_400500_HIDE_COOLDOWN_STEP_FRAMES;
+    }
+}
+
+/// Room-command sequence handlers, indexed by `subState` in 0..4.
+///
+/// Command 1 starts setup; the remaining steps wait for command 2, crawl to the
+/// stop point, wait for command 3 and wait for command 4 before normal crawling.
+static const TaskFuncTable5 _gActor400500RoomSequenceSteps = { {
+    _actor400500StartRoomSequence,
+    _actor400500WaitRoomCrawlCommand,
+    _actor400500TickRoomSequenceCrawl,
+    _actor400500WaitRoomRevealCommand,
+    _actor400500WaitRoomReleaseCommand,
+} };
+
+/// Dispatches the room-command sequence and advances its requested pose.
+///
+/// Requires live Stalker work, enemy and rig; `subState` indexes its five steps.
+/// Commands 2, 3 and 4 release successive waits after command 1 starts the
+/// sequence. Playback advances after every step, including a command wait.
+static void _actor400500TickRoomSequenceState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    TaskFuncTable5               stepHandlers;
+
+    work         = task->work;
+    stepHandlers = _gActor400500RoomSequenceSteps;
+    stepHandlers.funcs[(s16)work->subState](task);
+    _actor400500TickAnim(task);
+}
+
+/// Converts a world rotation in place to the frame of a coordinate's parent.
+///
+/// Requires a non-NULL parent and a live acyclic chain, with a separate writable
+/// word-aligned Q12 rotation matrix. The immediate parent's basis is used as
+/// stored; each further ancestor and its product are normalized. Transposing
+/// the resulting basis gives the inverse when that basis is orthonormal.
+/// Returns 1 after the inverse multiply, 0 unchanged when the parent is the
+/// view or the chain ends before the view. Translation stays intact; the SDK
+/// multiply also writes matrix alignment bytes. GTE working registers change.
+static s32 _actor400500LocalizeWorldRotation(const GfxCoord* joint, MATRIX* worldRotation)
+{
+    /// Pre-multiplies and normalizes a Q12 basis using this function's matrix storage.
+    ///
+    /// Arguments must be side-effect-free, disjoint pointers to live word-aligned
+    /// matrices. Rotation is evaluated three times, normalized storage twice.
+    /// parentBasis is loaded into the GTE before MulRotMatrix replaces rotation
+    /// with parentBasis*rotation. MatrixNormal writes normalized's 3x3 basis;
+    /// the complete MATRIX copy leaves its translation and other bytes unspecified.
+    /// Only that basis may be consumed afterwards. No caller locals or scratch
+    /// allocation; clobbers GTE state. Undefined after this function.
+#define ACTOR_400500_PREMULTIPLY_NORMALIZED_ROTATION(parentBasis, rotation, normalized) \
+    do {                                                                                \
+        gte_SetRotMatrix(parentBasis);                                                  \
+        MulRotMatrix(rotation);                                                         \
+        MatrixNormal(rotation, normalized);                                             \
+        *(rotation) = *(normalized);                                                    \
+    } while (0)
+    MATRIX          parentWorldRotation;
+    MATRIX          parentRotation;
+    MATRIX          normalizedRotation;
+    MATRIX          inverseParentRotation;
+    const GfxCoord* ancestor;
+    const GfxCoord* viewCoord;
+    MATRIX*         parentRotationPtr;
+
+    ancestor = joint->parent;
+    if (ancestor == &gGfxViewCoord) {
+        return 0;
+    }
+    viewCoord           = &gGfxViewCoord;
+    parentRotationPtr   = &parentRotation;
+    parentWorldRotation = ancestor->coord;
+    while (1) {
+        ancestor = ancestor->parent;
+        if (ancestor == NULL) {
+            return 0;
+        }
+        if (ancestor == viewCoord) {
+            break;
+        }
+        parentRotation = ancestor->coord;
+        MatrixNormal(parentRotationPtr, parentRotationPtr);
+        ACTOR_400500_PREMULTIPLY_NORMALIZED_ROTATION(parentRotationPtr, &parentWorldRotation, &normalizedRotation);
+    }
+    // The inverse basis removes all ancestors below the excluded view node.
+    gte_TransposeMatrix(&parentWorldRotation, &inverseParentRotation);
+    gte_SetRotMatrix(&inverseParentRotation);
+    MulRotMatrix(worldRotation);
+    return 1;
+}
+#undef ACTOR_400500_PREMULTIPLY_NORMALIZED_ROTATION
+
+#include "../../shared/actor/coord_math_local_to_world.inc.c"
+
+/// Dispatches the grab's start, attack or missed-grab recovery and discards pending hit reactions.
+///
+/// Requires live work and a grab sub-state 0..2. The selected step owns animation
+/// ticking. Afterwards, clears hitTaken, its pending reaction and a ceiling-fall
+/// request; knockdown and the last hit's reaction remain available to later states.
+static void _actor400500TickGrabState(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* reactionWork;
+    TaskFuncTable3               steps;
+
+    work  = task->work;
+    steps = _gActor400500GrabSteps;
+    steps.funcs[(s16)work->subState](task);
+    reactionWork                     = task->work;
+    reactionWork->hitTaken           = 0;
+    reactionWork->hitReaction        = ACTOR_400500_HIT_REACTION_NONE;
+    reactionWork                     = task->work;
+    reactionWork->ceilingFallPending = 0;
+}
+
+/// Holds a non-blast ceiling-crawl death until the body falls and lands.
+///
+/// Requires live Stalker work. A blast or floor posture releases the hold
+/// immediately. Otherwise requests the ceiling hold pose, clears the fall's
+/// counters and vertical motion, and advances the three-step death cursor.
+/// The calling crawl state advances animation.
+static void _actor400500StartCrawlDeathFall(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+
+    work = task->work;
+    if (work->lastHitReaction == ACTOR_400500_HIT_REACTION_BLAST) {
+        work->deathHeld = 0;
+        return;
+    }
+    if (!(work->posture & ACTOR_400500_POSTURE_ON_FLOOR)) {
+        work->deathHeld = 1;
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_CEILING_HOLD, ANIMATION_RATE_ONE);
+        work->stateFrames  = 0;
+        work->playerCaught = 0;
+        work->moveAccel    = 0;
+        work->moveSpeed    = 0;
+        work->deathStep    = work->deathStep + 1;
+        return;
+    }
+    work->deathHeld = 0;
+}
+
+/// Falls from a lethal ceiling crawl and starts the death landing pose.
+///
+/// Requires live Stalker work/root with the death cursor on its fall step.
+/// Halfword acceleration/speed increase downward motion. Passing the body
+/// pivot height advances the cursor, requests landing, adds half a turn to
+/// roll and places the root at floor height. The caller advances animation.
+static void _actor400500TickCrawlDeathFall(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+
+    work                   = task->work;
+    rootCoord              = task->extra.tmd->coords;
+    work->moveAccel       += 2;
+    work->moveSpeed       += work->moveAccel;
+    rootCoord->coord.t[1] += work->moveSpeed;
+    if (rootCoord->coord.t[1] >= ACTOR_400500_FALL_PIVOT_Y + 1) {
+        rootCoord->coord.t[1] = ACTOR_400500_FALL_PIVOT_Y;
+        work->deathStep++;
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_FALL_LANDING, ANIMATION_RATE_ONE);
+        work->roll           += ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+        rootCoord->coord.t[1] = ACTOR_400500_FLOOR_Y;
+        work->stateFrames     = 0;
+    }
+}
+
+/// Sounds the lethal crawl's landing and releases its death hold at a boundary.
+///
+/// Requires live Stalker work/enemy, composed root and latest slot results.
+/// Sounds once while the reset state counter is zero, then increments that
+/// counter. A slot boundary, control jump or held boundary pose releases the
+/// hold so the task can enter its ordinary death sequence.
+static void _actor400500FinishCrawlDeathLanding(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          placedSoundId;
+    s32                          animationEnded;
+
+    work = task->work;
+    if ((s16)work->stateFrames == 0) {
+        placedSoundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_FALL_LANDING;
+        _actor400500EnqueueRootSound(task, placedSoundId);
+        work->stateFrames = work->stateFrames + 1;
+    }
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        work->deathHeld = 0;
+    }
+}
+
+/// Holds a ceiling-strike death and initializes its fall motion.
+///
+/// Requires live Stalker work and the ceiling-strike death cursor at step zero.
+/// Clears the frame counter, catch flag and halfword vertical motion, then
+/// advances the cursor. The strike state bypasses this sequence for blast kills.
+static void _actor400500StartCeilingStrikeDeathFall(Task* task)
+{
+    _Actor400500GrayStalkerWork* work = task->work;
+    work->deathHeld                   = 1;
+    work->stateFrames                 = 0;
+    work->playerCaught                = 0;
+    work->moveAccel                   = 0;
+    work->moveSpeed                   = 0;
+    work->deathStep                   = work->deathStep + 1;
+}
+
+/// Falls from a lethal ceiling strike and starts the death landing pose.
+///
+/// Requires live Stalker work/root with the strike death cursor on its fall step.
+/// Halfword acceleration/speed increase downward motion. Passing the body
+/// pivot height advances the cursor, requests landing, adds half a turn to
+/// roll and places the root at floor height. The caller advances animation.
+static void _actor400500TickCeilingStrikeDeathFall(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+
+    work                   = task->work;
+    rootCoord              = task->extra.tmd->coords;
+    work->moveAccel       += 2;
+    work->moveSpeed       += work->moveAccel;
+    rootCoord->coord.t[1] += work->moveSpeed;
+    if (rootCoord->coord.t[1] >= ACTOR_400500_FALL_PIVOT_Y + 1) {
+        rootCoord->coord.t[1] = ACTOR_400500_FALL_PIVOT_Y;
+        work->deathStep++;
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_FALL_LANDING, ANIMATION_RATE_ONE);
+        work->roll           += ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+        rootCoord->coord.t[1] = ACTOR_400500_FLOOR_Y;
+        work->stateFrames     = 0;
+    }
+}
+
+/// Sounds the lethal ceiling strike's landing and releases its death hold at a boundary.
+///
+/// Requires live Stalker work/enemy, a composed root and latest slot results.
+/// Sounds once while the signed-halfword state counter is zero, then advances
+/// that counter. A slot boundary, control jump or held boundary pose releases
+/// the hold so the task can enter its ordinary death sequence.
+static void _actor400500FinishCeilingStrikeDeathLanding(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          placedSoundId;
+    s32                          animationEnded;
+
+    work = task->work;
+    if ((s16)work->stateFrames == 0) {
+        placedSoundId = ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_FALL_LANDING;
+        _actor400500EnqueueRootSound(task, placedSoundId);
+        work->stateFrames = work->stateFrames + 1;
+    }
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        work->deathHeld = 0;
+    }
+}
+
+/// Shows the body and initializes the ceiling strike's right-arm extension.
+///
+/// Requires live Stalker work with ceiling-strike sub-state zero. Requests the
+/// ceiling hold clip at normal rate, clears the tick/catch/swing counters, and
+/// advances to extension. A running show fade keeps its progress; a new show
+/// bypasses the hide cooldown. The calling state advances animation.
+static void _actor400500StartCeilingArmStrike(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* cloakWork;
+    s32                          cloakRequest;
+
+    work           = task->work;
+    work->animRate = ANIMATION_RATE_ONE;
+    cloakWork      = task->work;
+    if ((cloakWork->cloakRequest >= 0) || (((u8)cloakWork->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+        cloakRequest            = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+        cloakWork->cloakRequest = cloakRequest;
+        cloakWork->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;
+    }
+    _actor400500SetAnim(task, ACTOR_400500_ANIM_CEILING_HOLD, ANIMATION_RATE_ONE);
+    work->stateFrames   = 0;
+    work->playerCaught  = 0;
+    work->armSwingAngle = 0;
+    work->subState      = work->subState + 1;
+}
+
+/// Swings the right-arm model out and starts the ceiling strike clip at its limit.
+///
+/// Requires live Stalker work and its right-arm TMD child. Adds 128 angle units
+/// per tick to the wrapping halfword and displays the arm at positive local yaw.
+/// A signed-halfword test at 512 units (one eighth turn) advances to the timed
+/// strike and clears its tick/catch counters. Playback and composition happen
+/// in the calling state/model update; the child remains borrowed.
+static void _actor400500ExtendCeilingStrikeArm(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* armWork;
+    Task*                        rightArmTask;
+    s32                          swingAngle;
+
+    work                           = task->work;
+    work->armSwingAngle            = work->armSwingAngle + ACTOR_400500_ARM_EXTEND_ANGLE_STEP;
+    work->stateFrames              = work->stateFrames + 1;
+    armWork                        = task->work;
+    rightArmTask                   = armWork->armTasks[ACTOR_400500_ARM_RIGHT];
+    swingAngle                     = work->armSwingAngle;
+    rightArmTask->extra.tmd->flags = 0;
+    _actor400500SetCoordYaw(rightArmTask->extra.tmd->coords, swingAngle);
+    if ((s16)work->armSwingAngle >= ACTOR_400500_ARM_STRIKE_SWING_ANGLE) {
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_CEILING_STRIKE, ANIMATION_RATE_ONE);
+        work->playerCaught = 0;
+        work->stateFrames  = 0;
+        work->subState     = work->subState + 1;
+    }
+}
+
+/// Shows the body and initializes the floor strike's left-arm extension.
+///
+/// Requires live Stalker work with floor-strike sub-state zero. Requests the
+/// hold clip at normal rate, clears the tick/catch/swing counters, and advances
+/// to extension. A running show fade keeps its progress; a new show bypasses
+/// the hide cooldown. The calling state advances animation.
+static void _actor400500StartFloorArmStrike(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          cloakRequest;
+
+    work = task->work;
+    if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+        cloakRequest       = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+        work->cloakRequest = cloakRequest;
+        work->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;
+    }
+    _actor400500SetAnim(task, ACTOR_400500_ANIM_CEILING_HOLD, ANIMATION_RATE_ONE);
+    work->stateFrames   = 0;
+    work->playerCaught  = 0;
+    work->armSwingAngle = 0;
+    work->subState      = work->subState + 1;
+}
+
+/// Swings the left-arm model out and starts the floor strike clip at its limit.
+///
+/// Requires live Stalker work and its left-arm TMD child. Adds 128 angle units
+/// per tick to the wrapping halfword and displays the arm at negative local yaw.
+/// A signed-halfword test at 512 units (one eighth turn) advances to the timed
+/// strike and clears its tick/catch counters. Playback and composition happen
+/// in the calling state/model update; the child remains borrowed.
+static void _actor400500ExtendFloorStrikeArm(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    _Actor400500GrayStalkerWork* armWork;
+    Task*                        leftArmTask;
+    s32                          swingAngle;
+
+    work                          = task->work;
+    work->armSwingAngle           = work->armSwingAngle + ACTOR_400500_ARM_EXTEND_ANGLE_STEP;
+    work->stateFrames             = work->stateFrames + 1;
+    armWork                       = task->work;
+    leftArmTask                   = armWork->armTasks[ACTOR_400500_ARM_LEFT];
+    swingAngle                    = work->armSwingAngle;
+    leftArmTask->extra.tmd->flags = 0;
+    _actor400500SetCoordYaw(leftArmTask->extra.tmd->coords, -swingAngle);
+    if ((s16)work->armSwingAngle >= ACTOR_400500_ARM_STRIKE_SWING_ANGLE) {
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_FLOOR_STRIKE, ANIMATION_RATE_ONE);
+        work->playerCaught = 0;
+        work->stateFrames  = 0;
+        work->subState     = work->subState + 1;
+    }
+}
+
+/// Shows the body and starts the ordinary ceiling fall with zero vertical motion.
+///
+/// Requires live Stalker work with fall sub-state zero. Requests the hold clip
+/// at normal rate, clears tick/catch and signed-halfword motion, then advances
+/// to falling. A running show fade keeps its progress; a new show bypasses the
+/// hide cooldown. The calling state advances animation.
+static void _actor400500StartCeilingFall(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          cloakRequest;
+
+    work = task->work;
+    if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+        cloakRequest       = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+        work->cloakRequest = cloakRequest;
+        work->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;
+    }
+    _actor400500SetAnim(task, ACTOR_400500_ANIM_CEILING_HOLD, ANIMATION_RATE_ONE);
+    work->stateFrames  = 0;
+    work->playerCaught = 0;
+    work->moveAccel    = 0;
+    work->moveSpeed    = 0;
+    work->subState     = work->subState + 1;
+}
+
+/// Integrates the ordinary ceiling fall and starts its landing pose.
+///
+/// Requires live Stalker work/root with the fall sub-state active. Acceleration
+/// and speed wrap as signed halfwords. Passing root Y -2200 advances the step,
+/// requests landing, reverses roll and places the root at Y -1000 in its parent
+/// frame. Sets the on-back bit; the floor bit is set only after recovery.
+/// The caller advances animation and rebuilds the root basis.
+static void _actor400500TickCeilingFall(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+
+    work                   = task->work;
+    rootCoord              = task->extra.tmd->coords;
+    work->moveAccel       += 2;
+    work->moveSpeed       += work->moveAccel;
+    rootCoord->coord.t[1] += work->moveSpeed;
+    if (rootCoord->coord.t[1] >= ACTOR_400500_FALL_PIVOT_Y + 1) {
+        // Switch from the ceiling pivot to the floor pose after crossing it.
+        rootCoord->coord.t[1] = ACTOR_400500_FALL_PIVOT_Y;
+        work->subState++;
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_FALL_LANDING, ANIMATION_RATE_ONE);
+        work->roll           += ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+        rootCoord->coord.t[1] = ACTOR_400500_FLOOR_Y;
+        work->stateFrames     = 0;
+        work->posture        |= ACTOR_400500_POSTURE_ON_BACK;
+    }
+}
+
+/// Sounds the ordinary fall's landing and starts recovery at an animation boundary.
+///
+/// Requires live Stalker work/enemy, composed root and latest slot results.
+/// Sounds once at signed-halfword counter zero, then advances that counter.
+/// A living enemy requests recovery and advances the sub-state; a dead enemy
+/// releases the death hold at the same boundary without requesting recovery.
+static void _actor400500FinishCeilingFallLanding(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    s32                          placedSoundId;
+    s32                          animationEnded;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if ((s16)work->stateFrames == 0) {
+        placedSoundId = ((enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_FALL_LANDING;
+        _actor400500EnqueueRootSound(task, placedSoundId);
+        work->stateFrames = work->stateFrames + 1;
+    }
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        if (enemy->hp > 0) {
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_FALL_RECOVERY, ANIMATION_RATE_ONE);
+            work->subState = work->subState + 1;
+        } else {
+            work->deathHeld = 0;
+        }
+    }
+}
+
+/// Ends ordinary fall recovery by entering fallen crawling and setting floor posture.
+///
+/// Requires live Stalker work/enemy and latest slot results. At a boundary, a
+/// living enemy enters fallen crawl at route selection, preserving the on-back
+/// bit. A dead enemy instead releases the death hold without changing state.
+static void _actor400500FinishCeilingFallRecovery(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    s32                          animationEnded;
+
+    work           = task->work;
+    enemy          = task->spawnArg2.pointer;
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        if (enemy->hp > 0) {
+            _actor400500SetState(task, ACTOR_400500_STATE_CRAWL_FALLEN, ACTOR_400500_FALLEN_CRAWL_STEP_SELECT);
+            work->posture = work->posture | ACTOR_400500_POSTURE_ON_FLOOR;
+            return;
+        }
+        work->deathHeld = 0;
+    }
+}
+
+/// Ends floor knockdown recoil and requests recovery for the current posture.
+///
+/// Requires live Stalker work/enemy and latest slot results. A living enemy
+/// waits for a boundary, requests upright or on-back recovery at normal rate,
+/// and selects the floor-recovery step. Death releases the hold immediately.
+static void _actor400500FinishFloorKnockdownRecoil(Task* task)
+{
+    enum { ACTOR_400500_KNOCKDOWN_STEP_FLOOR_RECOVERY = 2 };
+    Enemy*                       enemy;
+    _Actor400500GrayStalkerWork* work;
+    s32                          animationEnded;
+
+    enemy = task->spawnArg2.pointer;
+    work  = task->work;
+    if (enemy->hp > 0) {
+        animationEnded = _actor400500HasAnimBoundary(task);
+        if (animationEnded) {
+            if (!(work->posture & ACTOR_400500_POSTURE_ON_BACK)) {
+                _actor400500SetAnim(task, ACTOR_400500_ANIM_UPRIGHT_RECOVERY, ANIMATION_RATE_ONE);
+            } else {
+                _actor400500SetAnim(task, ACTOR_400500_ANIM_ON_BACK_RECOVERY, ANIMATION_RATE_ONE);
+            }
+            work->subState = ACTOR_400500_KNOCKDOWN_STEP_FLOOR_RECOVERY;
+        }
+    } else {
+        work->deathHeld = 0;
+    }
+}
+
+/// Ends floor knockdown recovery and resumes crawling for the current posture.
+///
+/// Requires live Stalker work/enemy and latest slot results. A living enemy
+/// clears pending knockdown at a boundary and enters ordinary or fallen crawl
+/// at route selection. Death releases the hold immediately, keeping the pending
+/// flag and the living state unchanged.
+static void _actor400500FinishFloorKnockdownRecovery(Task* task)
+{
+    Enemy*                       enemy;
+    _Actor400500GrayStalkerWork* work;
+    s32                          animationEnded;
+
+    enemy = task->spawnArg2.pointer;
+    work  = task->work;
+    if (enemy->hp > 0) {
+        animationEnded = _actor400500HasAnimBoundary(task);
+        if (animationEnded) {
+            work->knockdownPending = 0;
+            if (!(work->posture & ACTOR_400500_POSTURE_ON_BACK)) {
+                _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+            } else {
+                _actor400500SetState(task, ACTOR_400500_STATE_CRAWL_FALLEN, ACTOR_400500_FALLEN_CRAWL_STEP_SELECT);
+            }
+        }
+    } else {
+        work->deathHeld = 0;
+    }
+}
+
+/// Ends ceiling knockdown recoil and initializes the fall motion.
+///
+/// Requires live Stalker work/enemy and latest slot results. A living enemy
+/// waits for a boundary; death also starts the fall. Clears tick/catch and
+/// signed-halfword vertical motion before advancing the sub-state. It keeps
+/// the death hold set until landing completes.
+static void _actor400500FinishCeilingKnockdownRecoil(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    s32                          animationEnded;
+
+    work           = task->work;
+    enemy          = task->spawnArg2.pointer;
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded || (enemy->hp <= 0)) {
+        work->stateFrames  = 0;
+        work->playerCaught = 0;
+        work->moveAccel    = 0;
+        work->moveSpeed    = 0;
+        work->subState     = work->subState + 1;
+    }
+}
+
+/// Advances knockdown fall acceleration, speed and root height by one tick.
+///
+/// Both pointers borrow live callback storage. Motion narrows after each
+/// addition to a signed halfword; height uses the resulting signed speed in
+/// root-parent game coordinates. Retains neither pointer.
+static inline void _actor400500StepKnockdownFallMotion(_Actor400500GrayStalkerWork* work, GfxCoord* rootCoord)
+{
+    work->moveAccel       += 2;
+    work->moveSpeed       += work->moveAccel;
+    rootCoord->coord.t[1] += work->moveSpeed;
+}
+
+/// Integrates the knockdown ceiling fall and starts its landing pose.
+///
+/// Requires live Stalker work/root with the knockdown fall sub-state active.
+/// Acceleration and speed wrap as signed halfwords. Passing root Y -2200
+/// advances the step, requests landing, reverses roll and places the root at
+/// Y -1000 in its parent frame. Sets only the floor posture bit, preserving
+/// the on-back bit. The caller advances animation and rebuilds the root basis.
+static void _actor400500TickKnockdownCeilingFall(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+    _actor400500StepKnockdownFallMotion(work, rootCoord);
+    if (rootCoord->coord.t[1] >= ACTOR_400500_FALL_PIVOT_Y + 1) {
+        // Switch from the ceiling pivot to the floor pose after crossing it.
+        rootCoord->coord.t[1] = ACTOR_400500_FALL_PIVOT_Y;
+        work->subState++;
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_FALL_LANDING, ANIMATION_RATE_ONE);
+        work->roll           += ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+        rootCoord->coord.t[1] = ACTOR_400500_FLOOR_Y;
+        work->stateFrames     = 0;
+        work->posture        |= ACTOR_400500_POSTURE_ON_FLOOR;
+    }
+}
+
+/// Sounds the knockdown fall's landing and clears pending knockdown at a boundary.
+///
+/// Requires live Stalker work/enemy, composed root and latest slot results.
+/// Sounds once at signed-halfword counter zero, then advances that counter.
+/// At a boundary, a living enemy requests recovery and advances the sub-state;
+/// a dead enemy releases the death hold. Both clear pending knockdown.
+static void _actor400500FinishKnockdownCeilingLanding(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    s32                          placedSoundId;
+    s32                          animationEnded;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if ((s16)work->stateFrames == 0) {
+        placedSoundId = ((enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_FALL_LANDING;
+        _actor400500EnqueueRootSound(task, placedSoundId);
+        work->stateFrames = work->stateFrames + 1;
+    }
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        work->knockdownPending = 0;
+        if (enemy->hp > 0) {
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_FALL_RECOVERY, ANIMATION_RATE_ONE);
+            work->subState = work->subState + 1;
+        } else {
+            work->deathHeld = 0;
+        }
+    }
+}
+
+/// Ends knockdown ceiling-fall recovery by entering fallen crawling.
+///
+/// Requires live Stalker work and latest slot results. At a boundary, enters
+/// fallen crawl at route selection regardless of health, keeping posture and
+/// the death hold unchanged. The landing step already established floor posture.
+static void _actor400500FinishKnockdownCeilingRecovery(Task* task)
+{
+    s32 animationEnded;
+
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        _actor400500SetState(task, ACTOR_400500_STATE_CRAWL_FALLEN, ACTOR_400500_FALLEN_CRAWL_STEP_SELECT);
+    }
+}
+
+/// Starts the ambush wait and requests the ceiling-hold pose at normal rate.
+///
+/// Requires live Stalker work and rig. Requests hiding only when its cooldown
+/// permits, latches a cut to the hold clip and advances the ambush sub-step.
+/// The enclosing state handler applies that animation request.
+static void _actor400500StartAmbush(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+
+    work           = task->work;
+    work->animRate = ANIMATION_RATE_ONE;
+    _actor400500RequestCloakFade(task, ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_HIDE);
+    _actor400500SetAnim(task, ACTOR_400500_ANIM_CEILING_HOLD, ANIMATION_RATE_ONE);
+    work->subState = work->subState + 1;
+}
+
+/// Starts a deliberate ceiling drop and saves its landing X/Z.
+///
+/// Requires live Stalker work/enemy and a composed model root. Sounds the
+/// posture-change cue, requests the drop clip at normal speed, clears the
+/// catch/tick counters and starts halfword vertical motion with acceleration
+/// 128 and speed zero. Saved root-parent X/Z retain their low 16 bits; the
+/// next sub-state integrates the drop and returns to that position.
+static void _actor400500StartDropFromCeiling(Task* task)
+{
+    enum { ACTOR_400500_ANIM_DROP_START    = 32,
+           ACTOR_400500_DROP_INITIAL_ACCEL = 128 };
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    s32                          placedSoundId;
+    const Enemy*                 enemy;
+
+    rootCoord     = task->extra.tmd->coords;
+    enemy         = task->spawnArg2.pointer;
+    placedSoundId = ((enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_POSTURE_CHANGE;
+    work          = task->work;
+    _actor400500EnqueueRootSound(task, placedSoundId);
+    // Prepare the drop before capturing the root-parent landing position.
+    _actor400500SetAnim(task, ACTOR_400500_ANIM_DROP_START, ANIMATION_RATE_ONE);
+    work->stateFrames  = 0;
+    work->playerCaught = 0;
+    work->moveAccel    = ACTOR_400500_DROP_INITIAL_ACCEL;
+    work->moveSpeed    = 0;
+    work->stateFrames  = 0;
+    work->subState     = work->subState + 1;
+    work->dropStartX   = rootCoord->coord.t[0];
+    work->dropStartZ   = rootCoord->coord.t[2];
+}
+
+/// Starts the floor-to-ceiling jump's animation and upward motion.
+///
+/// Requires live Stalker work/enemy and a composed model root. Sounds the
+/// posture-change cue, requests the jump clip at normal speed, clears pitch
+/// and the catch/tick counters, and starts halfword motion with speed 300
+/// and acceleration zero. The next sub-state subtracts that speed from root Y.
+static void _actor400500StartJumpToCeiling(Task* task)
+{
+    enum { ACTOR_400500_ANIM_JUMP_START    = 21,
+           ACTOR_400500_JUMP_INITIAL_SPEED = 300 };
+    _Actor400500GrayStalkerWork* work;
+    s32                          placedSoundId;
+    const Enemy*                 enemy;
+
+    work          = task->work;
+    enemy         = task->spawnArg2.pointer;
+    placedSoundId = ((enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_POSTURE_CHANGE;
+    _actor400500EnqueueRootSound(task, placedSoundId);
+    // The jump integrator subtracts speed from root Y after the wind-up.
+    _actor400500SetAnim(task, ACTOR_400500_ANIM_JUMP_START, ANIMATION_RATE_ONE);
+    work->stateFrames  = 0;
+    work->playerCaught = 0;
+    work->moveAccel    = 0;
+    work->moveSpeed    = ACTOR_400500_JUMP_INITIAL_SPEED;
+    work->pitch        = 0;
+    work->subState     = work->subState + 1;
+}
+
+/// Returns to ceiling crawling when the jump's landing animation reaches a boundary.
+///
+/// Requires live Stalker work and current slot results. Enters crawl at route
+/// selection and clears only the floor posture bit; the preceding landing
+/// step has already restored the ceiling position and roll.
+static void _actor400500FinishJumpToCeiling(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          animationEnded;
+
+    work           = task->work;
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+        work->posture &= ~ACTOR_400500_POSTURE_ON_FLOOR;
+    }
+}
+
+/// Starts the turn-over clip and optionally saves its world-space foot pivot.
+///
+/// Requires live Stalker work and an 18-part model beneath the composed view.
+/// In the X-route zone facing either X direction, saves part 14's signed-low-
+/// halfword world X/Z and stores the -1 tick sentinel used by turn-over pinning.
+/// Otherwise starts at tick zero. Latches the clip at normal rate and advances
+/// the sub-step; the enclosing state handler applies the request.
+static void _actor400500StartTurnOver(Task* task)
+{
+    enum { ACTOR_400500_ANIM_TURN_OVER = 22 };
+    _Actor400500GrayStalkerWork* work;
+    s32                          yaw;
+    s32                          wrappedYaw;
+    s32                          pinSentinel;
+
+    work              = task->work;
+    yaw               = (u16)work->yaw;
+    work->stateFrames = 0;
+    _actor400500SetAnim(task, ACTOR_400500_ANIM_TURN_OVER, ANIMATION_RATE_ONE);
+    wrappedYaw = yaw & ACTOR_TRANSFORM_ANGLE_MASK;
+    if ((work->zone == ACTOR_400500_CRAWL_ZONE_X_SEGMENT) && ((wrappedYaw == ACTOR_400500_CRAWL_YAW_POSITIVE_X) || (wrappedYaw == ACTOR_400500_CRAWL_YAW_NEGATIVE_X))) {
+        pinSentinel       = ACTOR_400500_TURN_OVER_PIN_TICK;
+        work->stateFrames = pinSentinel;
+        _actor400500ReadPartWorldXZ(task, ACTOR_400500_TURN_OVER_PIVOT_PART, &work->anchorPos);
+    }
+    work->subState = work->subState + 1;
+}
+
+/// Resumes the fallen gait facing -X, or enters turn-over for an unsuitable heading.
+///
+/// Requires live Stalker work and current target/slot results. Knockdown,
+/// near-target turn-over and fallen recoil preempt the heading check in that
+/// order. A matching 4096-unit yaw restarts the fallen gait at normal speed
+/// and selects the negative-X segment; this step does not rotate the actor.
+static void _actor400500CheckFallenCrawlNegativeXHeading(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          knockdownTaken;
+
+    work           = task->work;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((s16)_actor400500TryTurnOverNearTarget(task) == 0) &&
+        ((s16)_actor400500HandleFallenHitReaction(task) == 0)) {
+        if (((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_NEGATIVE_X) {
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_FALLEN_CRAWL, ANIMATION_RATE_ONE);
+            work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_X;
+            return;
+        }
+        _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+    }
+}
+
+/// Runs the fallen gait facing -X and chooses its next transition.
+///
+/// Requires live Stalker work/root and current zone, target and slot results.
+/// Knockdown, near-target turn-over and recoil preempt movement in that order.
+/// A wrong heading enters turn-over. Zone 4 selects the positive-X heading
+/// check; target offset X at least +4000 in zone 1 enters turn-over while
+/// still ticking the gait. Every non-preempted path pins root Z to the crawl line.
+static void _actor400500TickFallenCrawlFacingNegativeX(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    s32                          knockdownTaken;
+    s32                          actorZone;
+
+    work           = task->work;
+    rootCoord      = task->extra.tmd->coords;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((s16)_actor400500TryTurnOverNearTarget(task) == 0) &&
+        ((s16)_actor400500HandleFallenHitReaction(task) == 0)) {
+        if (((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK) != ACTOR_400500_CRAWL_YAW_NEGATIVE_X) {
+            _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+        } else {
+            actorZone = work->zone;
+            if (actorZone != ACTOR_400500_CRAWL_ZONE_X_SEGMENT) {
+                if (actorZone == ACTOR_400500_CRAWL_ZONE_X_END) {
+                    work->subState = actorZone;
+                }
+            } else if (work->toTarget.vx >= ACTOR_400500_FALLEN_TARGET_GAP) {
+                _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+            }
+            // Finish this gait tick even when a different state or step was selected.
+            _actor400500TickFallenCrawl(task);
+        }
+        rootCoord->coord.t[2] = ACTOR_400500_CRAWL_LINE_Z;
+    }
+}
+
+/// Resumes the fallen gait facing +X, or enters turn-over for an unsuitable heading.
+///
+/// Requires live Stalker work and current target/slot results. Knockdown,
+/// near-target turn-over and fallen recoil preempt the heading check in that
+/// order. A matching 4096-unit yaw restarts the fallen gait at normal speed
+/// and selects the positive-X segment; this step does not rotate the actor.
+static void _actor400500CheckFallenCrawlPositiveXHeading(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          knockdownTaken;
+
+    work           = task->work;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((s16)_actor400500TryTurnOverNearTarget(task) == 0) &&
+        ((s16)_actor400500HandleFallenHitReaction(task) == 0)) {
+        if (((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_POSITIVE_X) {
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_FALLEN_CRAWL, ANIMATION_RATE_ONE);
+            work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_X;
+            return;
+        }
+        _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+    }
+}
+
+/// Runs the fallen gait facing +Z and selects the opposite-heading check.
+///
+/// Requires live Stalker work/root and current zone, target and slot results.
+/// Knockdown, near-target turn-over and recoil preempt movement in that order.
+/// A wrong heading enters turn-over. Zone 6, or target offset Z > 0 in zone 3,
+/// selects the negative-Z heading check while still ticking the gait.
+/// Every non-preempted path pins root X to the crawl line.
+static void _actor400500TickFallenCrawlFacingPositiveZ(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    s32                          knockdownTaken;
+
+    work           = task->work;
+    rootCoord      = task->extra.tmd->coords;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((s16)_actor400500TryTurnOverNearTarget(task) == 0) &&
+        ((s16)_actor400500HandleFallenHitReaction(task) == 0)) {
+        if (((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK) != ACTOR_400500_CRAWL_YAW_POSITIVE_Z) {
+            _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+        } else {
+            if (work->zone != ACTOR_400500_CRAWL_ZONE_Z_SEGMENT) {
+                if (work->zone == ACTOR_400500_CRAWL_ZONE_Z_END) {
+                    work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_TURN_NEGATIVE_Z;
+                }
+            } else if (work->toTarget.vz > 0) {
+                work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_TURN_NEGATIVE_Z;
+            }
+            // Finish this gait tick even when a different state or step was selected.
+            _actor400500TickFallenCrawl(task);
+        }
+        rootCoord->coord.t[0] = ACTOR_400500_CRAWL_LINE_X;
+    }
+}
+
+/// Resumes the fallen gait facing -Z, or enters turn-over for an unsuitable heading.
+///
+/// Requires live Stalker work and current target/slot results. Knockdown,
+/// near-target turn-over and fallen recoil preempt the heading check in that
+/// order. A matching 4096-unit yaw restarts the fallen gait at normal speed
+/// and selects the negative-Z segment; this step does not rotate the actor.
+static void _actor400500CheckFallenCrawlNegativeZHeading(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          knockdownTaken;
+
+    work           = task->work;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((s16)_actor400500TryTurnOverNearTarget(task) == 0) &&
+        ((s16)_actor400500HandleFallenHitReaction(task) == 0)) {
+        if (((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_NEGATIVE_Z) {
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_FALLEN_CRAWL, ANIMATION_RATE_ONE);
+            work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_Z;
+            return;
+        }
+        _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+    }
+}
+
+/// Runs the fallen gait facing -Z and selects a corner or opposite-heading check.
+///
+/// Requires live Stalker work/root and current zone, target and slot results.
+/// Knockdown, near-target turn-over and recoil preempt movement in that order.
+/// A wrong heading enters turn-over. Crossing the fixed-Z line in zone 2
+/// selects the corner's negative-X check; target offset Z < 0 in zone 3 selects
+/// the positive-Z check. Both still tick gait; non-preempted paths pin root X.
+static void _actor400500TickFallenCrawlFacingNegativeZ(Task* task)
+{
+    enum { ACTOR_400500_FALLEN_CRAWL_STEP_CORNER_TURN_NEGATIVE_X = 9,
+           ACTOR_400500_FALLEN_CRAWL_STEP_TURN_POSITIVE_Z        = 10 };
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+    s32                          knockdownTaken;
+
+    work           = task->work;
+    rootCoord      = task->extra.tmd->coords;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((s16)_actor400500TryTurnOverNearTarget(task) == 0) &&
+        ((s16)_actor400500HandleFallenHitReaction(task) == 0)) {
+        if (((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK) != ACTOR_400500_CRAWL_YAW_NEGATIVE_Z) {
+            _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+        } else {
+            switch (work->zone) {
+                case ACTOR_400500_CRAWL_ZONE_CORNER:
+                    if (rootCoord->coord.t[2] < ACTOR_400500_CRAWL_LINE_Z) {
+                        work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_CORNER_TURN_NEGATIVE_X;
+                    }
+                    break;
+                case ACTOR_400500_CRAWL_ZONE_Z_SEGMENT:
+                    if (work->toTarget.vz < 0) {
+                        work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_TURN_POSITIVE_Z;
+                    }
+                    break;
+            }
+            // Finish this gait tick even when a different state or step was selected.
+            _actor400500TickFallenCrawl(task);
+        }
+        rootCoord->coord.t[0] = ACTOR_400500_CRAWL_LINE_X;
+    }
+}
+
+/// Selects the fallen gait facing -X at the corner, or enters turn-over.
+///
+/// Requires live Stalker work and current target/slot results. Knockdown,
+/// near-target turn-over and fallen recoil preempt the heading check in that
+/// order. A matching 4096-unit yaw restarts the fallen gait at normal speed
+/// and selects the negative-X segment; this step does not rotate the actor.
+static void _actor400500CheckFallenCrawlCornerNegativeXHeading(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          knockdownTaken;
+
+    work           = task->work;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((s16)_actor400500TryTurnOverNearTarget(task) == 0) &&
+        ((s16)_actor400500HandleFallenHitReaction(task) == 0)) {
+        if (((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_NEGATIVE_X) {
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_FALLEN_CRAWL, ANIMATION_RATE_ONE);
+            work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_NEGATIVE_X;
+            return;
+        }
+        _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+    }
+}
+
+/// Resumes the fallen gait facing +Z, or enters turn-over for an unsuitable heading.
+///
+/// Requires live Stalker work and current target/slot results. Knockdown,
+/// near-target turn-over and fallen recoil preempt the heading check in that
+/// order. A matching 4096-unit yaw restarts the fallen gait at normal speed
+/// and selects the positive-Z segment; this step does not rotate the actor.
+static void _actor400500CheckFallenCrawlPositiveZHeading(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          knockdownTaken;
+
+    work           = task->work;
+    knockdownTaken = _actor400500TakeKnockdown(task);
+    if ((knockdownTaken == 0) && ((s16)_actor400500TryTurnOverNearTarget(task) == 0) &&
+        ((s16)_actor400500HandleFallenHitReaction(task) == 0)) {
+        if (((u16)work->yaw & ACTOR_TRANSFORM_ANGLE_MASK) == ACTOR_400500_CRAWL_YAW_POSITIVE_Z) {
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_FALLEN_CRAWL, ANIMATION_RATE_ONE);
+            work->subState = ACTOR_400500_FALLEN_CRAWL_STEP_POSITIVE_Z;
+            return;
+        }
+        _actor400500SetState(task, ACTOR_400500_STATE_TURN_OVER, ACTOR_400500_TURN_OVER_STEP_START);
+    }
+}
+
+/// Places the Stalker on the ceiling at the room-command sequence's starting point.
+///
+/// Requires live Stalker work and model root. Sets root-parent position to
+/// (16500, -4000, -10000), yaw to +Z and roll to half a 4096-unit turn.
+/// Requests the ceiling-hold clip at quarter speed, clears the tick counter
+/// and advances to the command-2 wait. Pitch and posture remain as supplied.
+static void _actor400500StartRoomSequence(Task* task)
+{
+    enum { ACTOR_400500_ROOM_SEQUENCE_START_Z = -10000 };
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+
+    work                  = task->work;
+    rootCoord             = task->extra.tmd->coords;
+    work->roll            = ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+    work->yaw             = ACTOR_400500_CRAWL_YAW_POSITIVE_Z;
+    rootCoord->coord.t[0] = ACTOR_400500_CRAWL_LINE_X;
+    rootCoord->coord.t[1] = ACTOR_400500_CRAWL_CEILING_Y;
+    rootCoord->coord.t[2] = ACTOR_400500_ROOM_SEQUENCE_START_Z;
+    work->stateFrames     = 0;
+    _actor400500SetAnim(task, ACTOR_400500_ANIM_CEILING_HOLD, ANIMATION_RATE_ONE / 4);
+    work->subState = work->subState + 1;
+}
+
+/// Requests a room-sequence reveal without waiting for the hide cooldown.
+///
+/// Requires live Stalker work. A running show retains its current phase;
+/// otherwise starts the show at its first ramp. Playback runs elsewhere.
+static inline void _actor400500RequestRoomSequenceShow(Task* task)
+{
+    _Actor400500GrayStalkerWork* work = task->work;
+    s32                          cloakRequest;
+
+    if ((work->cloakRequest >= 0) || (((u8)work->cloakRequest & ACTOR_400500_CLOAK_KIND_MASK) != ACTOR_400500_CLOAK_SHOW)) {
+        cloakRequest       = ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_SHOW;
+        work->cloakRequest = cloakRequest;
+        work->cloakPhase   = ACTOR_400500_CLOAK_PHASE_FIRST_RAMP;
+    }
+}
+
+/// Waits for room command 2 before revealing the Stalker and starting the slow crawl.
+///
+/// Requires live Stalker work. Sets the hide holding time to 600 ticks and
+/// requests a show without the hide cooldown gate, preserving a show already
+/// running. Clears the tick counter and advances to crawling; animation and
+/// cloak playback run in the calling frame update.
+static void _actor400500WaitRoomCrawlCommand(Task* task)
+{
+    enum { ACTOR_400500_ROOM_COMMAND_CRAWL         = 2,
+           ACTOR_400500_ROOM_CRAWL_HIDE_HOLD_TICKS = 600 };
+    _Actor400500GrayStalkerWork* work;
+
+    work = task->work;
+    if (work->roomCommand == ACTOR_400500_ROOM_COMMAND_CRAWL) {
+        work->hideHoldFrames = ACTOR_400500_ROOM_CRAWL_HIDE_HOLD_TICKS;
+        _actor400500RequestRoomSequenceShow(task);
+        work->stateFrames = 0;
+        work->subState    = work->subState + 1;
+    }
+}
+
+/// Requests a ten-frame blend from room-sequence crawling to the ceiling hold.
+///
+/// Requires live Stalker work and its loaded ceiling-hold animation set.
+/// The caller advances playback after the request, at normal speed.
+static inline void _actor400500BlendRoomSequenceHold(Task* task)
+{
+    enum { ACTOR_400500_ROOM_SEQUENCE_HOLD_BLEND_FRAMES = 10 };
+    _Actor400500GrayStalkerWork* work = task->work;
+
+    work->animBlendFrames = ACTOR_400500_ROOM_SEQUENCE_HOLD_BLEND_FRAMES;
+    work->animRate        = ANIMATION_RATE_ONE;
+    work->animId          = ACTOR_400500_ANIM_CEILING_HOLD;
+    work->animRequest     = ACTOR_400500_ANIM_REQUEST_BLEND;
+}
+
+/// Crawls the room sequence to its stop point, then blends into the ceiling hold.
+///
+/// Requires live Stalker work/root and current slot results for the 18-part
+/// model beneath the composed view. The signed-halfword first tick requests
+/// hide through the cooldown gate; rejection delays another attempt until
+/// counter wrap. The crawl retains its rate. Root-parent Z at least -8799 requests
+/// a ten-frame hold blend at normal speed and advances to the command-3 wait.
+static void _actor400500TickRoomSequenceCrawl(Task* task)
+{
+    enum { ACTOR_400500_ROOM_SEQUENCE_STOP_Z = -8799 };
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+    // The wrapping tick counter and cooldown gate this hide request.
+    if ((s16)++work->stateFrames == 1) {
+        _actor400500RequestCloakFade(task, ACTOR_400500_CLOAK_RUNNING | ACTOR_400500_CLOAK_HIDE);
+    }
+    _actor400500TickScriptedCrawl(task);
+    if (rootCoord->coord.t[2] >= ACTOR_400500_ROOM_SEQUENCE_STOP_Z) {
+        _actor400500BlendRoomSequenceHold(task);
+        work->subState = work->subState + 1;
+    }
+}
+
+/// Waits for room command 3 before revealing the Stalker for the sequence's final wait.
+///
+/// Requires live Stalker work. Clears the tick counter, changes the hide
+/// holding time to 16 ticks and requests a show without the hide cooldown
+/// gate, preserving a show already running. Advances to the command-4 wait;
+/// animation and cloak playback run in the calling frame update.
+static void _actor400500WaitRoomRevealCommand(Task* task)
+{
+    enum { ACTOR_400500_ROOM_COMMAND_REVEAL         = 3,
+           ACTOR_400500_ROOM_REVEAL_HIDE_HOLD_TICKS = 16 };
+    _Actor400500GrayStalkerWork* work;
+
+    work = task->work;
+    if (work->roomCommand == ACTOR_400500_ROOM_COMMAND_REVEAL) {
+        work->stateFrames    = 0;
+        work->hideHoldFrames = ACTOR_400500_ROOM_REVEAL_HIDE_HOLD_TICKS;
+        _actor400500RequestRoomSequenceShow(task);
+        work->subState = work->subState + 1;
+    }
+}
+
+/// Waits for command 4 to release the room sequence into ordinary crawling.
+///
+/// Requires live Stalker work/enemy and a composed root for the placed cue.
+/// The wrapping counter sounds on signed-halfword tick 30 before checking
+/// the command. Release clears commandActive and enters route selection;
+/// the command latch and animation remain as supplied.
+static void _actor400500WaitRoomReleaseCommand(Task* task)
+{
+    enum { ACTOR_400500_ROOM_COMMAND_RELEASE    = 4,
+           ACTOR_400500_ROOM_RELEASE_SOUND_TICK = 30 };
+    _Actor400500GrayStalkerWork* work;
+
+    work = task->work;
+    if ((s16)++work->stateFrames == ACTOR_400500_ROOM_RELEASE_SOUND_TICK) {
+        _actor400500PlayPlacedSound(task, ACTOR_400500_SOUND_POSTURE_CHANGE);
+    }
+    if (work->roomCommand == ACTOR_400500_ROOM_COMMAND_RELEASE) {
+        work->commandActive = 0;
+        _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+    }
+}
+
+/// Ends floor status-held recoil when the enemy's buildup drains.
+///
+/// Requires live Stalker work and enemy. Ticks buildup only while alive and
+/// requests posture-selected recovery at normal rate when it finishes.
+/// Death releases the hold immediately; this step does not wait for a clip boundary.
+static void _actor400500FinishFloorStatusHoldRecoil(Task* task)
+{
+    enum { ACTOR_400500_STATUS_HOLD_STEP_FLOOR_RECOVERY = 2 };
+    Enemy*                       enemy;
+    _Actor400500GrayStalkerWork* work;
+
+    enemy = task->spawnArg2.pointer;
+    work  = task->work;
+    if (enemy->hp > 0) {
+        if (damageTickEnemyBuildup(enemy) != 0) {
+            if (!(work->posture & ACTOR_400500_POSTURE_ON_BACK)) {
+                _actor400500SetAnim(task, ACTOR_400500_ANIM_UPRIGHT_RECOVERY, ANIMATION_RATE_ONE);
+            } else {
+                _actor400500SetAnim(task, ACTOR_400500_ANIM_ON_BACK_RECOVERY, ANIMATION_RATE_ONE);
+            }
+            work->subState = ACTOR_400500_STATUS_HOLD_STEP_FLOOR_RECOVERY;
+        }
+    } else {
+        work->deathHeld = 0;
+    }
+}
+
+/// Ends status-hold floor recovery and resumes posture-selected crawling.
+///
+/// Requires live Stalker work/enemy and latest slot results. While alive,
+/// a boundary clears pending knockdown and enters the selected crawl's first
+/// route step. Death instead releases the hold, retaining the pending flag.
+static void _actor400500FinishFloorStatusHoldRecovery(Task* task)
+{
+    Enemy*                       enemy;
+    _Actor400500GrayStalkerWork* work;
+    s32                          animationEnded;
+
+    enemy = task->spawnArg2.pointer;
+    work  = task->work;
+    if (enemy->hp > 0) {
+        animationEnded = _actor400500HasAnimBoundary(task);
+        if (animationEnded) {
+            work->knockdownPending = 0;
+            if (!(work->posture & ACTOR_400500_POSTURE_ON_BACK)) {
+                _actor400500SetState(task, ACTOR_400500_STATE_CRAWL, ACTOR_400500_CRAWL_STEP_SELECT);
+            } else {
+                _actor400500SetState(task, ACTOR_400500_STATE_CRAWL_FALLEN, ACTOR_400500_FALLEN_CRAWL_STEP_SELECT);
+            }
+        }
+    } else {
+        work->deathHeld = 0;
+    }
+}
+
+/// Ends ceiling status-held recoil and initializes its fall motion.
+///
+/// Requires live Stalker work/enemy and latest slot results. A clip boundary
+/// or death clears the tick/catch fields and signed-halfword vertical motion,
+/// then advances to falling. It leaves the death hold set through landing.
+static void _actor400500FinishCeilingStatusHoldRecoil(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    s32                          animationEnded;
+
+    work           = task->work;
+    enemy          = task->spawnArg2.pointer;
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded || (enemy->hp <= 0)) {
+        work->stateFrames  = 0;
+        work->playerCaught = 0;
+        work->moveAccel    = 0;
+        work->moveSpeed    = 0;
+        work->subState     = work->subState + 1;
+    }
+}
+
+/// Integrates one status-held fall tick in signed-halfword vertical motion.
+///
+/// Requires writable live work and root storage for this call. Acceleration
+/// gains two game-coordinate units per tick squared; acceleration and speed
+/// narrow to signed halfwords after each addition. The resulting signed speed
+/// advances the full-width root-parent Y without composing or dirtying the cache;
+/// the enclosing frame handler rebuilds it. No pointer is retained.
+static inline void _actor400500StepStatusHoldFallMotion(_Actor400500GrayStalkerWork* work, GfxCoord* rootCoord)
+{
+    work->moveAccel       += 2;
+    work->moveSpeed       += work->moveAccel;
+    rootCoord->coord.t[1] += work->moveSpeed;
+}
+
+/// Integrates the status-held ceiling fall and requests its landing pose.
+///
+/// Requires live Stalker work/root. Motion wraps as signed halfwords. Crossing
+/// root-parent Y -2200 advances the step, requests landing at normal rate,
+/// reverses roll and puts root Y at -1000. Sets ON_FLOOR while preserving
+/// ON_BACK; the caller advances animation and rebuilds the root basis.
+static void _actor400500TickStatusHoldCeilingFall(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    GfxCoord*                    rootCoord;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+    _actor400500StepStatusHoldFallMotion(work, rootCoord);
+    if (rootCoord->coord.t[1] >= ACTOR_400500_FALL_PIVOT_Y + 1) {
+        // Switch the ceiling pivot to the floor pose after crossing its height.
+        rootCoord->coord.t[1] = ACTOR_400500_FALL_PIVOT_Y;
+        work->subState++;
+        _actor400500SetAnim(task, ACTOR_400500_ANIM_FALL_LANDING, ANIMATION_RATE_ONE);
+        work->roll           += ACTOR_TRANSFORM_ANGLE_HALF_TURN;
+        rootCoord->coord.t[1] = ACTOR_400500_FLOOR_Y;
+        work->stateFrames     = 0;
+        work->posture        |= ACTOR_400500_POSTURE_ON_FLOOR;
+    }
+}
+
+/// Sounds the status-held fall landing and starts recovery at a boundary.
+///
+/// Requires live Stalker work/enemy, composed root and latest slot results.
+/// Signed-halfword counter zero sounds once and advances the counter. At a
+/// boundary, clears pending knockdown before testing health: a living enemy
+/// requests normal-rate recovery; a dead enemy releases the death hold.
+static void _actor400500FinishStatusHoldCeilingLanding(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Enemy*                       enemy;
+    s32                          placedSoundId;
+    s32                          animationEnded;
+
+    work  = task->work;
+    enemy = task->spawnArg2.pointer;
+    if ((s16)work->stateFrames == 0) {
+        placedSoundId = ((enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8) | ACTOR_400500_SOUND_FALL_LANDING;
+        _actor400500EnqueueRootSound(task, placedSoundId);
+        work->stateFrames = work->stateFrames + 1;
+    }
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        work->knockdownPending = 0;
+        if (enemy->hp > 0) {
+            _actor400500SetAnim(task, ACTOR_400500_ANIM_FALL_RECOVERY, ANIMATION_RATE_ONE);
+            work->subState = work->subState + 1;
+        } else {
+            work->deathHeld = 0;
+        }
+    }
+}
+
+/// Ends status-held ceiling-fall recovery by entering fallen crawling.
+///
+/// Requires live Stalker work and latest slot results. A boundary enters the
+/// first fallen-crawl route step regardless of health, preserving posture
+/// and the death hold.
+static void _actor400500FinishStatusHoldCeilingRecovery(Task* task)
+{
+    s32 animationEnded;
+
+    animationEnded = _actor400500HasAnimBoundary(task);
+    if (animationEnded) {
+        _actor400500SetState(task, ACTOR_400500_STATE_CRAWL_FALLEN, ACTOR_400500_FALLEN_CRAWL_STEP_SELECT);
+    }
+}
+
+/// Saves the root pose and starts the ordinary death shrink's reveal delay.
+///
+/// Requires live Stalker work, enemy and model root. Snapshots the complete
+/// root MATRIX, initializes Q12 Y scale to one, selects weighted actor colour
+/// and clears the wrapping tick counter before advancing the death state.
+/// The saved matrix remains owned by the work through the shrink.
+static void _actor400500PrepareDeathShrink(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    TmdObject*                   model;
+    GfxCoord*                    rootCoord;
+
+    model              = task->extra.tmd;
+    work               = task->work;
+    rootCoord          = model->coords;
+    work->shrinkScaleY = ONE;
+    work->savedRootMtx = rootCoord->coord;
+    worldCoordSetActorColorMode(task->spawnArg2.pointer, ENEMY_COLOR_WEIGHTED);
+    work->stateFrames = 0;
+    work->state       = work->state + 1;
+}
+
+/// Waits 24 ticks, restores the uncloaked shading and advances to death shrinking.
+///
+/// Requires live work/model and a counter cleared by shrink preparation.
+/// The counter wraps as u16 and compares as s16. On completion, publishes
+/// zero cloak material weight, full Q12 colour blend and full shadow shade,
+/// then clears the counter for the shrink. Playback is not advanced here.
+static void _actor400500WaitDeathShrinkDelay(Task* task)
+{
+    enum { ACTOR_400500_DEATH_SHRINK_DELAY_TICKS = 24,
+           ACTOR_400500_DEATH_SHADOW_FULL_SHADE  = 255 };
+    _Actor400500GrayStalkerWork* work;
+    TmdObject*                   model;
+    u16                          elapsedTicks;
+
+    work              = task->work;
+    model             = task->extra.tmd;
+    elapsedTicks      = work->stateFrames + 1;
+    work->stateFrames = elapsedTicks;
+    if ((s16)elapsedTicks >= ACTOR_400500_DEATH_SHRINK_DELAY_TICKS) {
+        work->cloakLevel  = 0;
+        work->colorBlend  = TMD_OBJECT_COLOR_BLEND_ONE;
+        work->shadowShade = ACTOR_400500_DEATH_SHADOW_FULL_SHADE;
+        modelLightingSetLayerMaterials(work->cloakLevel);
+        model->shading.colorBlend = work->colorBlend;
+        work->stateFrames         = 0;
+        work->state               = work->state + 1;
+    }
+}
+
+/// Hands an ordinary death to arm teardown and the final destruction delay.
+///
+/// Requires live Stalker work after the shrink hides its body. Selects task
+/// state 3 at its first teardown step and clears the unused sub-state; work,
+/// enemy and both arm handles remain live for the teardown callbacks.
+static void _actor400500BeginTeardown(Task* task)
+{
+    enum { ACTOR_400500_TASK_TEARDOWN           = 3,
+           ACTOR_400500_TEARDOWN_STEP_KILL_ARMS = 0 };
+    _Actor400500GrayStalkerWork* work = task->work;
+
+    task->state    = ACTOR_400500_TASK_TEARDOWN;
+    work->state    = ACTOR_400500_TEARDOWN_STEP_KILL_ARMS;
+    work->subState = 0;
+}
+
+/// Hides the blast-killed body and its shadows, then starts the buffer-release delay.
+///
+/// Requires the live death work/model after collision/target teardown. Leaves
+/// the model and primitive buffer allocated, clears the wrapping tick counter
+/// and advances the death step. Fragment spawning occurs after the delay.
+static void _actor400500HideBurstBody(Task* task)
+{
+    TmdObject*                   model;
+    _Actor400500GrayStalkerWork* work;
+
+    model             = task->extra.tmd;
+    work              = task->work;
+    model->flags     |= TMD_OBJECT_SKIP_ACTIVE_DRAW;
+    work->stateFrames = 0;
+    work->shadowShade = 0;
+    work->state       = work->state + 1;
+}
+
+/// Waits two death callbacks before advancing to primitive-buffer release and fragment spawning.
+///
+/// Requires live work and a counter cleared when the burst body was hidden.
+/// The u16 counter wraps, then its signed low halfword is compared. Advances
+/// only the death-step selector; allocation release belongs to the next step.
+static void _actor400500WaitBurstBufferDelay(Task* task)
+{
+    enum { ACTOR_400500_BURST_BUFFER_DELAY_TICKS = 2 };
+    _Actor400500GrayStalkerWork* work;
+    u16                          elapsedTicks;
+
+    work              = task->work;
+    elapsedTicks      = work->stateFrames + 1;
+    work->stateFrames = elapsedTicks;
+    if ((s16)elapsedTicks >= ACTOR_400500_BURST_BUFFER_DELAY_TICKS) {
+        work->state = work->state + 1;
+    }
+}
+
+/// Releases the burst body's primitive buffer and creates its independent death fragments.
+///
+/// Requires the hidden live body after the burst delay. Prevents automatic
+/// buffer reallocation before spawning effects, while retaining coordinates,
+/// texture placement and loaded resources for the fragments. Advances the
+/// death state only after all spawn attempts; work remains owned by the task.
+static void _actor400500ReleaseBurstBufferAndSpawnFragments(Task* task)
+{
+    TmdObject*                   model;
+    _Actor400500GrayStalkerWork* work;
+
+    model = task->extra.tmd;
+    work  = task->work;
+    tmdFreePrimitiveBuffer(model);
+    model->flags |= TMD_OBJECT_SKIP_AUTO_BUFFER;
+    _actor400500SpawnDeathFragments(task);
+    work->state = work->state + 1;
+}
+
+/// Hands a burst death to arm teardown and the final destruction delay.
+///
+/// Requires live work/enemy after primitive-buffer release and fragment spawn.
+/// Selects task state 3, teardown step 0 and clears sub-state; retained arm
+/// handles and work stay live for the teardown callbacks.
+static void _actor400500BeginBurstTeardown(Task* task)
+{
+    enum { ACTOR_400500_TASK_TEARDOWN           = 3,
+           ACTOR_400500_TEARDOWN_STEP_KILL_ARMS = 0 };
+    _Actor400500GrayStalkerWork* work = task->work;
+
+    task->state    = ACTOR_400500_TASK_TEARDOWN;
+    work->state    = ACTOR_400500_TEARDOWN_STEP_KILL_ARMS;
+    work->subState = 0;
+}
+
+/// Receives room commands that control the Gray Stalker's scripted sequence.
+///
+/// Borrows a live `ActorCommand` during `ACTOR_COMMAND_MESSAGE_APPLY` dispatch;
+/// context, messageId and unusedPayload are unread. Command 1 restarts the
+/// sequence at its first step with a 30-tick hide hold; 2 requests crawling,
+/// 3 requests revealing and 4 releases the sequence to normal crawling.
+/// Other commands leave the latch intact. No payload pointer is retained.
+/// The matching callback falls off its s32 body; callers must ignore its result.
+static s32 _actor400500ApplyRoomCommand(Task* task, s32 messageId, const ActorCommand* command, s32 unusedPayload)
+{
+    enum { ACTOR_400500_ROOM_COMMAND_START           = 1,
+           ACTOR_400500_ROOM_COMMAND_CRAWL           = 2,
+           ACTOR_400500_ROOM_COMMAND_REVEAL          = 3,
+           ACTOR_400500_ROOM_COMMAND_RELEASE         = 4,
+           ACTOR_400500_ROOM_COMMAND_HIDE_HOLD_TICKS = 30 };
+    _Actor400500GrayStalkerWork* work;
+    s32                          roomCommand;
+
+    work        = task->work;
+    roomCommand = command->command;
+    switch (roomCommand) {
+        case ACTOR_400500_ROOM_COMMAND_START:
+            work->commandActive  = roomCommand;
+            work->hideHoldFrames = ACTOR_400500_ROOM_COMMAND_HIDE_HOLD_TICKS;
+            work->roomCommand    = roomCommand;
+            _actor400500EnterState(task, ACTOR_400500_STATE_ROOM_SEQUENCE);
+            break;
+        case ACTOR_400500_ROOM_COMMAND_CRAWL:
+            work->roomCommand = roomCommand;
+            break;
+        case ACTOR_400500_ROOM_COMMAND_REVEAL:
+            work->roomCommand = roomCommand;
+            break;
+        case ACTOR_400500_ROOM_COMMAND_RELEASE:
+            work->roomCommand = roomCommand;
+            break;
+    }
+}
+
+/// Enters a living `ACTOR_400500_STATE_*` state at its first sub-state.
+///
+/// Requires the live Stalker's work. Resets only `subState`; timers, animation
+/// and the task's outer lifecycle state are retained for the new handler.
+static void _actor400500EnterState(Task* task, s16 state)
+{
+    _Actor400500GrayStalkerWork* work = (_Actor400500GrayStalkerWork*)task->work;
+
+    work->state    = state;
+    work->subState = 0;
+}
+
+/// Enters the turn-over state when the target is close and in the forward cone.
+///
+/// Returns 1 after entering `ACTOR_400500_STATE_TURN_OVER`, otherwise 0.
+/// Fallen-crawl callers supply the posture context; this test reads only the
+/// live work's target measurements, using the strike range and angle gate
+/// without an attack cooldown or player-zone restriction.
+static s32 _actor400500TryTurnOverNearTarget(Task* task)
+{
+    _Actor400500GrayStalkerWork* work = (_Actor400500GrayStalkerWork*)task->work;
+
+    if ((work->targetDist < (ACTOR_400500_STRIKE_RANGE - (work->playerLocalMove.vz * ACTOR_400500_TARGET_MOVE_RANGE_SCALE))) &&
+        ((u32)(work->targetBearing - ACTOR_400500_STRIKE_HALF_ANGLE) >= (ONE - 2 * ACTOR_400500_STRIKE_HALF_ANGLE + 1U))) {
+        work->state    = ACTOR_400500_STATE_TURN_OVER;
+        work->subState = 0;
+        return 1;
+    }
+    return 0;
+}
+
+/// Samples a part's world X/Z through the out-of-line placement entry.
+///
+/// Has the live model, composed view and coordinate-index contract of
+/// `_actor400500ReadPartWorldXZ`. Output X/Z retain signed low halfwords;
+/// Y stays untouched. The output is borrowed only during this call, and
+/// the sampled part is marked dirty after removing the view transform.
+static void _actor400500SamplePartWorldXZ(Task* task, s16 partIndex, SVECTOR3* worldPosition)
+{
+    _actor400500ReadPartWorldXZ(task, partIndex, worldPosition);
+}
+
+/// Restarts part slots 1..17 on the requested animation set.
+///
+/// Requires the live initialized rig and a loaded set at `animId`. Root slot 0
+/// is untouched. Each reset replaces the preceding rate assignment with
+/// `ANIMATION_RATE_ONE`; the tick driver reinstalls the requested signed low-byte
+/// rate before advancing poses. Records the set as applied; no pose is ticked here.
+static void _actor400500ResetAnimSlots(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          slotIndex;
+
+    work      = (_Actor400500GrayStalkerWork*)task->work;
+    slotIndex = 1;
+    do {
+        work->rig.slots[slotIndex].rate = work->animRate;
+        animationResetSlot(&work->rig.anim, slotIndex, work->animId);
+        slotIndex++;
+    } while (slotIndex < ARRAY_SIZE(work->rig.slots));
+    work->appliedAnim = work->animId;
+}
+
+/// Requests a cut to a loaded animation set without applying it yet.
+///
+/// Has the same live-work, set-index and sixteenth-frame rate contract as
+/// `_actor400500SetAnim`; turn handling uses this out-of-line entry.
+static void _actor400500RequestAnimReset(Task* task, s16 setIndex, s16 rateSixteenths)
+{
+    _actor400500SetAnim(task, setIndex, rateSixteenths);
+}
+
+/// Applies the requested rate and blends part slots into a changed animation set.
+///
+/// Requires the live initialized rig and a loaded set at `animId`. A repeated
+/// set changes only slots 1..17's signed low-byte rates and retains the pending
+/// blend duration. A changed set captures each slot's ticked pose and blends to
+/// track offset zero over `animBlendFrames` whole normal-rate frames, then clears
+/// that duration. Root slot 0 is untouched; the requested set becomes applied.
+static void _actor400500BlendAnimSlots(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    s32                          slotIndex;
+
+    work = (_Actor400500GrayStalkerWork*)task->work;
+    if (work->appliedAnim == work->animId) {
+        for (slotIndex = 1; slotIndex < ARRAY_SIZE(work->rig.slots); slotIndex++) {
+            work->rig.slots[slotIndex].rate = work->animRate;
+        }
+    } else {
+        for (slotIndex = 1; slotIndex < ARRAY_SIZE(work->rig.slots); slotIndex++) {
+            work->rig.slots[slotIndex].rate = work->animRate;
+            animationSeekSlotWithBlend(&work->rig.anim, slotIndex, work->animId, 0, work->animBlendFrames);
+        }
+        work->animBlendFrames = 0;
+    }
+    work->appliedAnim = work->animId;
+}
+
+/// Converts a whole-frame counter to the current playback rate with signed-halfword wrapping.
+///
+/// Requires the live Stalker's work. Returns zero at zero rate; otherwise divides
+/// `frames * 256` by the signed s16 rate, truncating toward zero, then shifts
+/// right by four (rounding negative results down) and keeps the signed low
+/// halfword. This preserves the two-stage rounding used by animation windows.
+static s16 _actor400500RescaleAnimFrames(Task* task, s16 frames)
+{
+    _Actor400500GrayStalkerWork* work;
+    s16                          rateSixteenths;
+
+    work           = (_Actor400500GrayStalkerWork*)task->work;
+    rateSixteenths = work->animRate;
+    if (rateSixteenths == 0) {
+        return 0;
+    }
+    return (s16)((frames * (ANIMATION_RATE_ONE * ANIMATION_RATE_ONE) / rateSixteenths) >> 4);
+}
+
+/// Returns the slot-1 boundary, control-jump or held-pose predicate used by turns.
+///
+/// Has the same initialized-rig contract as `_actor400500HasAnimBoundary` and
+/// leaves the latest slot flags intact.
+static s32 _actor400500CheckAnimBoundary(Task* task)
+{
+    return _actor400500HasAnimBoundary(task);
+}
+
+/// Copies nine rotation coefficients while preserving the destination's translation and alignment bytes.
+///
+/// Both matrices must be live for this call; the source is read-only. They may
+/// be the same complete matrix, otherwise their rotation storage must be disjoint.
+/// Coefficients retain their signed halfword representation (`ONE` is 1.0).
+/// Changes no coordinate cache stamp and retains neither pointer.
+static void _actor400500CopyRotation(const MATRIX* source, MATRIX* destination)
+{
+    gfxCopyRotation(destination, source);
+}
+
+/// Runs the Gray Stalker task's initialization, combat, death or teardown handler.
+///
+/// Task state must be 0..3. Initialization acquires work/model resources;
+/// subsequent states retain them until delayed teardown destroys the task.
+/// Dispatch copies the four callbacks by value and accesses nothing after
+/// the selected callback, which may end the task's lifetime.
+static void _actor400500Task(Task* task)
+{
+    TaskFuncTable4 states;
+
+    states = _gActor400500TaskStates;
+    states.funcs[task->state](task);
+}
+
+/// Runs the post-death arm cleanup or final enemy-destruction delay.
+///
+/// Requires live work/enemy in task state 3; work state must be 0 (kill arm
+/// tasks) or 1 (wait 301 callbacks, then destroy). Copies both callbacks to a
+/// local array and dispatches without a bounds check. The selected destruction
+/// callback may end the task/work lifetime; nothing is accessed afterwards.
+static void _actor400500TickTeardown(Task* task)
+{
+    enum { ACTOR_400500_TEARDOWN_STEP_COUNT = 2 };
+    _Actor400500GrayStalkerWork* work                                    = task->work;
+    TaskFunc                     steps[ACTOR_400500_TEARDOWN_STEP_COUNT] = {
+        _actor400500KillArmModels,
+        _actor400500WaitDestroyDelay,
+    };
+
+    steps[(s16)work->state](task);
+}
+
+/// Clears the active hit and its pending recoil code in a live Stalker work block.
+///
+/// The last hit's reaction remains available to death handling.
+static void _actor400500ClearHitReaction(Task* task)
+{
+    _Actor400500GrayStalkerWork* work = (_Actor400500GrayStalkerWork*)task->work;
+
+    work->hitTaken    = 0;
+    work->hitReaction = ACTOR_400500_HIT_REACTION_NONE;
+}
+
+/// Idle per-frame callback of the left arm's attached model task.
+///
+/// The parent Stalker drives rotation and visibility beneath body part 10,
+/// then kills this child during teardown. The task parameter is unused.
+static void _actor400500LeftArmTask(Task* task)
+{
+}
+
+/// Idle per-frame callback of the right arm's attached model task.
+///
+/// The parent Stalker drives rotation and visibility beneath body part 7,
+/// then kills this child during teardown. The task parameter is unused.
+static void _actor400500RightArmTask(Task* task)
+{
+}
+
+/// Kills both retained arm tasks and starts the post-death destruction delay.
+///
+/// Requires live work; each non-NULL arm handle must still refer to its child.
+/// Handles are retained after killing, so this teardown step must run once.
+/// Clears the halfword tick counter and advances the teardown state.
+static void _actor400500KillArmModels(Task* task)
+{
+    _Actor400500GrayStalkerWork* work;
+    Task*                        armTask;
+    s32                          armIndex;
+
+    work = task->work;
+    for (armIndex = 0; armIndex < ARRAY_SIZE(work->armTasks); armIndex++) {
+        armTask = work->armTasks[armIndex];
+        if (armTask != NULL) {
+            taskKill(armTask);
+        }
+    }
+    work->stateFrames = 0;
+    work->state       = work->state + 1;
+}
+
+/// Destroys the Stalker's enemy and task on the 301st delay callback.
+///
+/// Requires live work and enemy after the arm teardown. The stored counter wraps
+/// as u16 but the threshold compares its signed low halfword; entry starts at
+/// zero and ticks once per callback. Destruction ends the work/model lifetime.
+static void _actor400500WaitDestroyDelay(Task* task)
+{
+    enum { ACTOR_400500_DESTROY_DELAY_TICKS = 301 };
+    _Actor400500GrayStalkerWork* work;
+    u16                          elapsedTicks;
+
+    work              = task->work;
+    elapsedTicks      = work->stateFrames + 1;
+    work->stateFrames = elapsedTicks;
+    if ((s16)elapsedTicks >= ACTOR_400500_DESTROY_DELAY_TICKS) {
+        enemyDestroy(task->spawnArg2.pointer, task);
+    }
+}

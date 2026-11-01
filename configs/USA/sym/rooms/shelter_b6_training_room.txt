@@ -1,0 +1,160 @@
+// Overlay-local symbols for shelter_b6_training_room.
+_gShelterB6TrainingRoomDefeatDeparturePhase = 0x80185C58; // size:0x4 defined:True
+_gShelterB6TrainingRoomPlayerHeadAimTask = 0x80185C5C; // size:0x4 defined:True
+_gShelterB6TrainingRoomBeamColorRamp = 0x801843FC; // size:0x8 defined:True
+
+gShelterB6TrainingRoomAreaVariants = 0x801859DC; // size:0x68 defined:True
+gShelterB6TrainingRoomActionTriggers = 0x80185A44; // size:0x17C defined:True
+gShelterB6TrainingRoomAmbientByView = 0x80185BC0; // size:0x48 defined:True
+_gShelterB6TrainingRoomSurface1FootstepSounds = 0x80185C08; // size:0xC defined:True
+_gShelterB6TrainingRoomSurface2FootstepSounds = 0x80185C14; // size:0xC defined:True
+_gShelterB6TrainingRoomDefaultSurfaceProperties = 0x80185C20; // size:0x8 defined:True
+_gShelterB6TrainingRoomSurface1Properties = 0x80185C28; // size:0x8 defined:True
+_gShelterB6TrainingRoomSurface2Properties = 0x80185C30; // size:0x8 defined:True
+gShelterB6TrainingRoomSurfaceProperties = 0x80185C38; // size:0x20 defined:True
+gShelterB6TrainingRoomRingTexturePhases = 0x80185C60; // size:0x30 defined:True
+gShelterB6TrainingRoomSummonBeamOrigin = 0x80185C90; // size:0x4 defined:True
+gShelterB6TrainingRoomEnergyArcAnchor = 0x80185C94; // size:0x4 defined:True
+gMapNeoArkTrainingRoomDefaultPlacements = 0x8017C140; // absolute:True owner=map_neo_ark
+gShelterB6TrainingRoomViewMaps = 0x80184418; // size:0x4 defined:True
+gShelterB6TrainingRoomRoomViewCounts = 0x8018441C; // size:0x4 defined:True
+gShelterB6TrainingRoomWarpEntries = 0x80184420; // size:0x70 defined:True
+_gShelterB6TrainingRoomCollisionGridNormals = 0x80184490; // size:0x38 defined:True
+_gShelterB6TrainingRoomCollisionGridVerts = 0x801844C8; // size:0xB0 defined:True
+_gShelterB6TrainingRoomCollisionGridFaces = 0x80184578; // size:0xFC defined:True
+_gShelterB6TrainingRoomCollisionGridCells = 0x80184674; // size:0xA8 defined:True
+_gShelterB6TrainingRoomCollisionGridTable = 0x8018471C; // size:0x18 defined:True
+gShelterB6TrainingRoomCollisionGrid = 0x80184734; // size:0x24 defined:True
+gShelterB6TrainingRoomViewCameras = 0x80184758; // size:0x120 defined:True
+_gShelterB6TrainingRoomView1SpriteBatches = 0x80184878; // size:0x10 defined:True
+_gShelterB6TrainingRoomView2SpriteBatches = 0x80184888; // size:0x10 defined:True
+_gShelterB6TrainingRoomView3SpriteSources = 0x80184898; // size:0x230 defined:True
+_gShelterB6TrainingRoomView3SpriteBatches = 0x80184AC8; // size:0x20 defined:True
+_gShelterB6TrainingRoomView4SpriteBatches = 0x80184AE8; // size:0x10 defined:True
+_gShelterB6TrainingRoomView5SpriteBatches = 0x80184AF8; // size:0x10 defined:True
+_gShelterB6TrainingRoomView6SpriteBatches = 0x80184B08; // size:0x10 defined:True
+_gShelterB6TrainingRoomView7SpriteSources = 0x80184B18; // size:0x230 defined:True
+_gShelterB6TrainingRoomView7SpriteBatches = 0x80184D48; // size:0x20 defined:True
+_gShelterB6TrainingRoomView8SpriteBatches = 0x80184D68; // size:0x10 defined:True
+gShelterB6TrainingRoomSpriteViews = 0x80184D78; // size:0x60 defined:True
+_gShelterB6TrainingRoomPointLights = 0x80184DD8; // size:0x480 defined:True
+_gShelterB6TrainingRoomConeLights = 0x80185258; // size:0x510 defined:True
+gShelterB6TrainingRoomLights = 0x80185768; // size:0x18 defined:True
+gShelterB6TrainingRoomViewBoundaryTriggers = 0x80185780; // size:0x214 defined:True
+_gShelterB6TrainingRoomVariant1Resources = 0x80185994; // size:0x48 defined:True
+gViewIdentityMap = 0x8010CAF8; // absolute:True
+gActor105100TaskDescriptors = 0x80141464; // absolute:True owner=actor_105100
+gActor205200ControllerPartTasks = 0x8014CA60; // absolute:True owner=actor_205200
+gActor205200BodyTaskDesc = 0x801567C4; // absolute:True owner=actor_205200
+gActor350700MaskedEveReverseWalkTaskDesc = 0x80169D10; // absolute:True owner=actor_350700
+gActor350700KyleMadiganTaskDescriptors = 0x801708DC; // absolute:True owner=actor_350700
+_gShelterB6TrainingRoomEffectPositions = 0x80184334; // size:0xC8 defined:True
+_gShelterB6TrainingRoomBandShapes = 0x80184404; // size:0x14 defined:True
+gShelterB6TrainingRoomHitFlashGeneration = 0x80185C98; // size:0x2 defined:True
+gShelterB6TrainingRoomMessages = 0x80182AF4; // size:0x30 defined:True
+gShelterB6TrainingRoomControllerStopCommand = 0x80182B24; // size:0x4 defined:True
+_gShelterB6TrainingRoomAnimation05844Bank1 = 0x80182B28; // size:0x48 defined:True
+_gShelterB6TrainingRoomAnimation05844Bank4 = 0x80182B70; // size:0xB8 defined:True
+_gShelterB6TrainingRoomAnimation05844Records = 0x80182C28; // size:0x1B4 defined:True
+_gShelterB6TrainingRoomAnimation05844Indices = 0x80182DDC; // size:0x28 defined:True
+_gShelterB6TrainingRoomAnimation05844 = 0x80182E04; // size:0x28 defined:True
+_gShelterB6TrainingRoomAnimation05F74Bank1 = 0x80182E2C; // size:0x9C defined:True
+_gShelterB6TrainingRoomAnimation05F74Bank4 = 0x80182EC8; // size:0x2AC defined:True
+_gShelterB6TrainingRoomAnimation05F74Records = 0x80183174; // size:0x398 defined:True
+_gShelterB6TrainingRoomAnimation05F74Indices = 0x8018350C; // size:0x28 defined:True
+_gShelterB6TrainingRoomAnimation05F74 = 0x80183534; // size:0x28 defined:True
+_gShelterB6TrainingRoomAnimation061B8Bank1 = 0x8018355C; // size:0x24 defined:True
+_gShelterB6TrainingRoomAnimation061B8Bank4 = 0x80183580; // size:0x70 defined:True
+_gShelterB6TrainingRoomAnimation061B8Records = 0x801835F0; // size:0x160 defined:True
+_gShelterB6TrainingRoomAnimation061B8Indices = 0x80183750; // size:0x28 defined:True
+_gShelterB6TrainingRoomAnimation061B8 = 0x80183778; // size:0x28 defined:True
+_gShelterB6TrainingRoomAnimation063C0Bank1 = 0x801837A0; // size:0x18 defined:True
+_gShelterB6TrainingRoomAnimation063C0Bank4 = 0x801837B8; // size:0x74 defined:True
+_gShelterB6TrainingRoomAnimation063C0Records = 0x8018382C; // size:0x12C defined:True
+_gShelterB6TrainingRoomAnimation063C0Indices = 0x80183958; // size:0x28 defined:True
+_gShelterB6TrainingRoomAnimation063C0 = 0x80183980; // size:0x28 defined:True
+gShelterB6TrainingRoomPlayerHeadAimTaskDesc = 0x801839A8; // size:0xC defined:True
+_gShelterB6TrainingRoomDefeatPlayerAnimationSets = 0x801839B4; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatPlayerAnimationBankCopy = 0x801839C8; // size:0x8 defined:True
+D_shelter_b6_training_room_801839D0 = 0x801839D0; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatPlayerClip48Request = 0x801839E4; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatPlayerClip49Request = 0x801839F8; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatPlayerClip50Request = 0x80183A0C; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatPlayerClip51Request = 0x80183A20; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatPlayerInitialTransform = 0x80183A34; // size:0x18 defined:True
+_gShelterB6TrainingRoomDefeatPlayerFinalTransform = 0x80183A4C; // size:0x18 defined:True
+D_shelter_b6_training_room_80183A64 = 0x80183A64; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatKyleClip1Request = 0x80183A78; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatKyleClip2Request = 0x80183A8C; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatKyleClip3Request = 0x80183AA0; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatKyleClip4Request = 0x80183AB4; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatKyleClip5Request = 0x80183AC8; // size:0x14 defined:True
+_gShelterB6TrainingRoomDefeatKyleTransform = 0x80183ADC; // size:0x18 defined:True
+D_shelter_b6_training_room_80183AF4 = 0x80183AF4; // size:0x64 defined:True
+_gShelterB6TrainingRoomDefeatEveInitialTransform = 0x80183B58; // size:0x18 defined:True
+_gShelterB6TrainingRoomDefeatEveFirstWalkTarget = 0x80183B70; // size:0x18 defined:True
+_gShelterB6TrainingRoomDefeatEveExitWalkTarget = 0x80183B88; // size:0x18 defined:True
+_gShelterB6TrainingRoomUnreferencedCommand1A = 0x80183BA0; // size:0x4 defined:True
+_gShelterB6TrainingRoomDefeatEveWalkForwardCommand = 0x80183BA4; // size:0x4 defined:True
+_gShelterB6TrainingRoomDefeatEveFirstWalkAnimations = 0x80183BA8; // size:0x8 defined:True
+_gShelterB6TrainingRoomUnreferencedCommand1B = 0x80183BB0; // size:0x4 defined:True
+gShelterB6TrainingRoomDefeatScript = 0x80183BB4; // size:0x570 defined:True
+gShelterB6TrainingRoomDefeatSkipScript = 0x80184124; // size:0x150 defined:True
+gShelterB6TrainingRoomDepartureScript = 0x80184274; // size:0xA8 defined:True
+gShelterB6TrainingRoomMovieTasks = 0x8018431C; // size:0x18 defined:True
+
+shelterB6TrainingRoomDrawBodyGlow = 0x80181930; // type:func
+
+shelterB6TrainingRoomSpawnShieldArcs = 0x8018294C; // type:func
+
+shelterB6TrainingRoomSetPartDestroyedSprites = 0x80182A14; // type:func
+
+shelterB6TrainingRoomDrawSummonBeam = 0x8017FC40; // type:func
+
+_shelterB6TrainingRoomUpdateRoom = 0x8017D874; // type:func
+
+shelterB6TrainingRoomOrangeBurstTask = 0x8017EE70; // type:func
+
+shelterB6TrainingRoomSummonRingTask = 0x8017F8B8; // type:func
+
+shelterB6TrainingRoomChargeBurstTask = 0x80180DB4; // type:func
+
+shelterB6TrainingRoomRingBandTask = 0x801811AC; // type:func
+
+shelterB6TrainingRoomEnergyArcTask = 0x80181A3C; // type:func
+
+shelterB6TrainingRoomHitFlashTask = 0x8018245C; // type:func
+
+shelterB6TrainingRoomSinkingSpriteTask = 0x801825C0; // type:func
+
+shelterB6TrainingRoomDescendingSpriteTask = 0x801826E0; // type:func
+
+shelterB6TrainingRoomHealSpiralTask = 0x80182804; // type:func
+
+shelterB6TrainingRoomGlowTask = 0x8017DDE8; // type:func
+_roomVisualEffectsDrawHaloBurstGlow = 0x8017F014; // type:func
+_roomVisualEffectsDrawHaloBurstGroundQuad = 0x8017F540; // type:func
+_glowDrawCapsule = 0x8017E28C; // type:func
+glowDrawDisc = 0x8017EAD0; // type:func
+streamedScenePlayThenHold = 0x8017DBBC; // type:func
+spriteQuadDraw = 0x80181BAC; // type:func
+_shelterB6TrainingRoomDrawRingBand = 0x80181368; // type:func
+_shelterB6TrainingRoomDrawEnergyStrip = 0x80181fdc; // type:func
+_shelterB6TrainingRoomDrawGroundBeam = 0x80180530; // type:func
+_shelterB6TrainingRoomClearPlayerHeadAimTask = 0x8017dbb0; // type:func
+shelterB6TrainingRoomPlayerHeadAimTask = 0x8017d9c8; // type:func
+shelterB6TrainingRoomControlPlayerHeadAim = 0x8017d974; // type:func
+shelterB6TrainingRoomRefuseKeyItemUse = 0x8017d638; // type:func
+shelterB6TrainingRoomResolveRoomTransition = 0x8017d640; // type:func
+shelterB6TrainingRoomIgnoreRoomAction = 0x8017d75c; // type:func
+shelterB6TrainingRoomStartDefeatScene = 0x8017d764; // type:func
+_shelterB6TrainingRoomInitializeRoom = 0x8017d7d4; // type:func
+shelterB6TrainingRoomRoomTask = 0x8017d8e8; // type:func
+shelterB6TrainingRoomPrepareDefeatScene = 0x8017daf8; // type:func
+shelterB6TrainingRoomStopBattlePresentation = 0x8017db70; // type:func
+shelterB6TrainingRoomStartPlayerHeadAim = 0x8017d940; // type:func
+shelterB6TrainingRoomHandlePartCommand = 0x8017d684; // type:func
+shelterB6TrainingRoomStartMovie = 0x8017dac8; // type:func
+shelterB6TrainingRoomReloadNursery = 0x8017db28; // type:func
+shelterB6TrainingRoomStartMovieTask = 0x8017dd98; // type:func
+_gShelterB6TrainingRoomRoomTaskStates = 0x8017d5c4;

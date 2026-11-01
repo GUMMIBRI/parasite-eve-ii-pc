@@ -1,0 +1,1279 @@
+#include "rooms/neo_ark_bridge.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/inline_c.h>
+#include <psyq/libgs.h>
+
+#include "gte.h"
+#include "common.h"
+
+#include "actors/actor_00400.h"
+#include "actors/actor_01100.h"
+#include "actors/actor_02300.h"
+#include "actors/actor_03800.h"
+
+#include "gameplay/display.h"
+#include "gameplay/actor_render.h"
+#include "gameplay/area.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/effect_tasks.h"
+#include "gameplay/effects.h"
+#include "gameplay/hud_sprites.h"
+#include "gameplay/light.h"
+#include "gameplay/loading.h"
+#include "gameplay/room.h"
+#include "gameplay/room_effects.h"
+#include "gameplay/scene.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/coord.h"
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/random.h"
+#include "main/gfx.h"
+#include "main/mem.h"
+#include "main/scratch.h"
+#include "main/sound_ids.h"
+#include "main/sound_types.h"
+#include "main/task_types.h"
+#include "main/tmd_types.h"
+
+#include "mapui/map_neo_ark.h"
+
+#include "rooms/room_common.h"
+#include "../../shared/room/room_visual_effects.h"
+#include "../../shared/effects/water_effects.h"
+
+static void _waterDrawSpin(const GfxCoord* coord, s16 textureColumn, s16 radiusScale, s16 spinAngle);
+static void _waterDrawTile(const GfxCoord* coord, s16 frameIndex, s16 radiusScale);
+
+static void _neoArkBridgeDrawPulsingRedStar(const SVECTOR* worldPoint, s16 pulseRate, s16 radiusScale);
+
+/// World-coordinate centre of the pulsing red marker drawn in mapped views 5 and 6.
+static SVECTOR _gNeoArkBridgeRedMarkerCentre = { -6360, -1370, -18980, 0 };
+
+/// First world-coordinate smoke-puff spawn site, active in mapped views 5 and 6.
+///
+/// Spawning snapshots XYZ and retains this overlay-owned point in the effect work.
+static SVECTOR _gNeoArkBridgeFirstSmokeSpawnPoint = { 1000, -1800, -20900, 0 };
+
+/// Second world-coordinate smoke-puff spawn site, active in mapped views 5 and 6.
+///
+/// Spawning snapshots XYZ and retains this overlay-owned point in the effect work.
+static SVECTOR _gNeoArkBridgeSecondSmokeSpawnPoint = { 1000, -2100, -22600, 0 };
+
+#include "../../shared/room/room_visual_effects_trail_data.inc.c"
+
+u8* gNeoArkBridgeViewMaps[1] = {
+    gViewIdentityMap,
+};
+
+/// Authored logical-view search limit, independent of camera and sprite capacity.
+enum { NEO_ARK_BRIDGE_LOGICAL_VIEW_SEARCH_COUNT = 8 };
+
+ViewCount gNeoArkBridgeViewCounts[1] = { NEO_ARK_BRIDGE_LOGICAL_VIEW_SEARCH_COUNT };
+
+/// Bridge-bank passage cues and the room-local arrival views of its two endpoints.
+enum {
+    NEO_ARK_BRIDGE_ARRIVAL_SOUND         = SOUND_AREA(GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_BRIDGE, 2),
+    NEO_ARK_BRIDGE_DEPARTURE_SOUND       = SOUND_AREA(GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_BRIDGE, 1),
+    NEO_ARK_BRIDGE_PAVILION_ARRIVAL_VIEW = 2,
+    NEO_ARK_BRIDGE_GARDEN_ARRIVAL_VIEW   = 6,
+};
+
+DirectionWarpEntry gNeoArkBridgeWarpEntries[2] = {
+    {
+        .player         = { { .word = 2048 }, -3160, 0, 6368 },
+        .companion      = { { .word = 2048 }, -3160, 0, 6368 },
+        .arrivalSound   = NEO_ARK_BRIDGE_ARRIVAL_SOUND,
+        .departureSound = NEO_ARK_BRIDGE_DEPARTURE_SOUND,
+        .blockedSound   = DIRECTION_WARP_SOUND_NONE,
+        .initialView    = NEO_ARK_BRIDGE_PAVILION_ARRIVAL_VIEW,
+        .flags          = DIRECTION_WARP_FLAG_NONE,
+        .mapFlagId      = DIRECTION_WARP_MAP_FLAG_NONE,
+    },
+    {
+        .player         = { { .word = 0 }, -3160, 0, -11600 },
+        .companion      = { { .word = 0 }, -3160, 0, -11600 },
+        .arrivalSound   = NEO_ARK_BRIDGE_ARRIVAL_SOUND,
+        .departureSound = NEO_ARK_BRIDGE_DEPARTURE_SOUND,
+        .blockedSound   = DIRECTION_WARP_SOUND_NONE,
+        .initialView    = NEO_ARK_BRIDGE_GARDEN_ARRIVAL_VIEW,
+        .flags          = DIRECTION_WARP_FLAG_NONE,
+        .mapFlagId      = DIRECTION_WARP_MAP_FLAG_NONE,
+    },
+};
+
+s16 gNeoArkBridgeDiverWaterY = 300;
+
+/// Each patrol ring is indexed modulo eight by the Diver's waypoint cursor.
+enum { NEO_ARK_BRIDGE_DIVER_PATROL_WAYPOINT_COUNT = 8 };
+
+/// Diver patrol ring for selectors 0 and 3, with depths 1500 units below the water surface.
+///
+/// X/Z are room coordinates; Y is added to `gNeoArkBridgeDiverWaterY`.
+static SVECTOR _gNeoArkBridgeDiverPatrolWaypoints0[NEO_ARK_BRIDGE_DIVER_PATROL_WAYPOINT_COUNT] = {
+    { -5600, 1500, -5000, 0 },
+    { 0, 1500, -5500, 0 },
+    { -5500, 1500, -9300, 0 },
+    { 0, 1500, -9300, 0 },
+    { -5500, 1500, -5000, 0 },
+    { -7000, 1500, 1800, 0 },
+    { 0, 1500, 4000, 0 },
+    { 0, 1500, 2500, 0 },
+};
+
+/// Diver patrol ring for selector 1, with depths 3000 units below the water surface.
+///
+/// X/Z are room coordinates; Y is added to `gNeoArkBridgeDiverWaterY`.
+static SVECTOR _gNeoArkBridgeDiverPatrolWaypoints1[NEO_ARK_BRIDGE_DIVER_PATROL_WAYPOINT_COUNT] = {
+    { 2300, 3000, -9000, 0 },
+    { 3000, 3000, -7100, 0 },
+    { 0, 3000, -6500, 0 },
+    { -6000, 3000, -6000, 0 },
+    { 2000, 3000, -8000, 0 },
+    { -5600, 3000, -7100, 0 },
+    { 0, 3000, -6000, 0 },
+    { -5300, 3000, 2500, 0 },
+};
+
+/// Diver patrol ring for selector 2, with depths 4000 units below the water surface.
+///
+/// X/Z are room coordinates; Y is added to `gNeoArkBridgeDiverWaterY`.
+static SVECTOR _gNeoArkBridgeDiverPatrolWaypoints2[NEO_ARK_BRIDGE_DIVER_PATROL_WAYPOINT_COUNT] = {
+    { -7000, 4000, 5600, 0 },
+    { -8200, 4000, 9000, 0 },
+    { -6000, 4000, 2800, 0 },
+    { 0, 4000, 2100, 0 },
+    { -600, 4000, 5000, 0 },
+    { -7000, 4000, 6100, 0 },
+    { -7000, 4000, 10100, 0 },
+    { -5200, 4000, 4800, 0 },
+};
+
+SVECTOR* gNeoArkBridgeDiverPatrolRings[4] = {
+    _gNeoArkBridgeDiverPatrolWaypoints0,
+    _gNeoArkBridgeDiverPatrolWaypoints1,
+    _gNeoArkBridgeDiverPatrolWaypoints2,
+    _gNeoArkBridgeDiverPatrolWaypoints0,
+};
+
+/// Initial claim state and terminator for the room's writable Diver emergence spots.
+enum {
+    NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_FREE = 0,
+    NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_END  = -1,
+};
+
+SVECTOR gNeoArkBridgeDiverSurfaceSpots[9] = {
+    { 0, 0, 0, NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_FREE },
+    { -5000, 0, 5000, NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_FREE },
+    { 0, 0, 4400, NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_FREE },
+    { -5000, 0, 1600, NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_FREE },
+    { -5000, 0, -5400, NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_FREE },
+    { 0, 0, -6600, NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_FREE },
+    { 0, 0, -10000, NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_FREE },
+    { -5400, 0, -10000, NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_FREE },
+    { 0, 0, 0, NEO_ARK_BRIDGE_DIVER_SURFACE_SPOT_END },
+};
+
+/// Room-space face normals, with `ONE` (4096) representing unit length.
+static SVECTOR _gNeoArkBridgeCollisionGridNormals[] = {
+#include "assets/neo_ark_bridge_collision_05254_normals.inc"
+};
+
+/// Collision vertices in signed room-coordinate units.
+static SVECTOR _gNeoArkBridgeCollisionGridVerts[] = {
+#include "assets/neo_ark_bridge_collision_05254_verts.inc"
+};
+
+/// Indexed collision quads selecting the bridge's local surface policies.
+static WorldCollisionGridFace _gNeoArkBridgeCollisionGridFaces[] = {
+#include "assets/neo_ark_bridge_collision_05254_faces.inc"
+};
+
+/// Serialized face-index lists, ending at `WORLD_COLLISION_GRID_CELL_END`.
+///
+/// Retains the authored halfwords between lists; table entries select their starts.
+static s16 _gNeoArkBridgeCollisionGridCells[] = {
+#include "assets/neo_ark_bridge_collision_05254_cells.inc"
+};
+
+/// Supplies this grid's cell face-list addresses to its generated table.
+///
+/// `halfwordOffset` is an integer constant measured in `s16` elements of
+/// `_gNeoArkBridgeCollisionGridCells` and occurs once in the expansion.
+/// It must start a complete `WORLD_COLLISION_GRID_CELL_END`-terminated list
+/// within the pool. Returns a borrowed `s16*` valid while this overlay is loaded.
+/// Set `collisionSource.cell_face_list_macro` to this identifier; keep the
+/// binding through the table include, then undefine it.
+#define NEO_ARK_BRIDGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkBridgeCollisionGridCells[(halfwordOffset)])
+/// X-major 3-by-7 cell directory; NULL entries are empty cells.
+static s16* _gNeoArkBridgeCollisionGridTable[] = {
+#include "assets/neo_ark_bridge_collision_05254_table.inc"
+};
+#undef NEO_ARK_BRIDGE_CELL_FACE_LIST_AT_OFFSET
+
+WorldCollisionGrid gNeoArkBridgeCollisionGrid = {
+    .viewCoord   = NULL,
+    .normals     = _gNeoArkBridgeCollisionGridNormals,
+    .vertices    = _gNeoArkBridgeCollisionGridVerts,
+    .faces       = _gNeoArkBridgeCollisionGridFaces,
+    .cellFaceIds = _gNeoArkBridgeCollisionGridTable,
+    .xBias       = 5100,
+    .zBias       = 12200,
+    .cellCountX  = 3,
+    .cellCountZ  = 7,
+    .cellSize    = 4000,
+    .faceCount   = ARRAY_SIZE(_gNeoArkBridgeCollisionGridFaces),
+};
+
+ViewCamera gNeoArkBridgeViewCameras[NEO_ARK_BRIDGE_VIEW_RESOURCE_COUNT] = {
+    { { { { ONE, 0, 0 }, { 0, 0, -ONE }, { 0, ONE, 0 } }, { 2070, 30000, 2510 } }, 329 },
+    { { { { 4016, 0, -803 }, { -47, 4088, -239 }, { 801, 244, 4009 } }, { 3540, 984, -1480 } }, 257 },
+    { { { { 4067, 0, -478 }, { -134, 3931, -1142 }, { 459, 1150, 3904 } }, { 3409, 1865, 2359 } }, 257 },
+    { { { { -3827, 0, -1459 }, { -1009, 2958, 2646 }, { 1054, 2832, -2764 } }, { 3080, 3284, -1610 } }, 243 },
+    { { { { -4028, 0, -739 }, { -184, 3966, 1005 }, { 716, 1021, -3901 } }, { 3535, 1695, 590 } }, 257 },
+    { { { { -4031, 0, -725 }, { -51, 4085, 287 }, { 723, 291, -4020 } }, { 3470, 1000, 5440 } }, 257 },
+};
+
+/// View 1 keeps background strips and has no source range before the end marker.
+static SpriteBatch _gNeoArkBridgeView1SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// View 2's 34 depth-sorted texture rectangles, in pixels relative to the view centre.
+static SpriteSource _gNeoArkBridgeView2SpriteSources[] = {
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, -80, 16, 1450, { .fields = { 96, 48 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -88, 24, 1425, { .fields = { 112, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -40, 24, 1425, { .fields = { 32, 8 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -96, 32, 1375, { .fields = { 40, 16 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, -8, 32, 1375, { .fields = { 48, 24 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, -104, 40, 1125, { .fields = { 24, 32 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, 0, 40, 1125, { .fields = { 40, 40 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, 16, 16, 1342, { .fields = { 104, 48 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, -104, 48, 975, { .fields = { 24, 56 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, 0, 48, 975, { .fields = { 24, 64 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -112, 56, 900, { .fields = { 40, 72 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, -24, 56, 900, { .fields = { 48, 80 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 72, 8 } }, 56, 56, 900, { .fields = { 56, 88 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -120, 64, 800, { .fields = { 40, 96 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -32, 64, 800, { .fields = { 32, 104 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 64, 64, 800, { .fields = { 48, 112 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -128, 72, 725, { .fields = { 32, 120 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, -32, 72, 725, { .fields = { 24, 128 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, 72, 72, 725, { .fields = { 40, 136 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -128, 80, 675, { .fields = { 32, 144 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, -32, 80, 675, { .fields = { 24, 152 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, 72, 80, 675, { .fields = { 40, 160 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, -136, 88, 637, { .fields = { 24, 168 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -32, 88, 637, { .fields = { 16, 176 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 80, 88, 637, { .fields = { 48, 184 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -144, 96, 625, { .fields = { 16, 192 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -32, 96, 625, { .fields = { 16, 200 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 80, 96, 625, { .fields = { 48, 208 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, -144, 104, 625, { .fields = { 24, 216 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 120, 8 } }, -40, 104, 625, { .fields = { 8, 224 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 80, 104, 625, { .fields = { 48, 232 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 80, 112, 500, { .fields = { 48, 240 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 120, 8 } }, -40, 112, 500, { .fields = { 8, 248 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -152, 112, 500, { .fields = { 0, 0 } }, 128, 128, 128, 0 },
+};
+
+/// View 2 keeps background strips and draws its complete source array.
+static SpriteBatch _gNeoArkBridgeView2SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, ARRAY_SIZE(_gNeoArkBridgeView2SpriteSources), 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// View 3's 89 depth-sorted texture rectangles, selected by four contiguous ranges.
+static SpriteSource _gNeoArkBridgeView3SpriteSources[] = {
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, -112, 96, 561, { .fields = { 88, 80 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, -96, 96, 665, { .fields = { 88, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, -80, 80, 646, { .fields = { 120, 152 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 56 } }, -88, 40, 618, { .fields = { 120, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -96, 40, 621, { .fields = { 112, 40 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 16 } }, -152, -8, 550, { .fields = { 48, 32 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 16 } }, -160, 8, 550, { .fields = { 64, 80 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, -160, 24, 500, { .fields = { 64, 16 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 16 } }, -120, 8, 550, { .fields = { 64, 224 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 16 } }, -120, 24, 550, { .fields = { 56, 240 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 16 } }, -160, 40, 550, { .fields = { 48, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 16 } }, -120, 40, 550, { .fields = { 64, 48 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 16 } }, -160, 56, 550, { .fields = { 56, 64 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 16 } }, -112, 56, 550, { .fields = { 64, 152 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 16 } }, -112, 72, 550, { .fields = { 64, 104 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 16 } }, -112, 88, 550, { .fields = { 40, 168 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 16 } }, -104, 104, 550, { .fields = { 72, 120 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, -160, 72, 575, { .fields = { 64, 96 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 16 } }, -160, 80, 575, { .fields = { 56, 136 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 16 } }, -160, 96, 625, { .fields = { 64, 208 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, -160, 112, 625, { .fields = { 48, 200 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 48 } }, 48, -16, 1100, { .fields = { 112, 104 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 48 } }, 64, -16, 1000, { .fields = { 112, 56 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, 64, 32, 1000, { .fields = { 80, 192 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 72, 48, 1000, { .fields = { 96, 144 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 40 } }, 80, -8, 775, { .fields = { 112, 192 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, 80, 32, 775, { .fields = { 64, 184 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 40 } }, 80, 56, 775, { .fields = { 104, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 40 } }, 96, 0, 750, { .fields = { 96, 40 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 40 } }, 96, 40, 750, { .fields = { 104, 152 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 96, 80, 750, { .fields = { 80, 24 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 112, 0, 650, { .fields = { 56, 48 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 112, 24, 650, { .fields = { 88, 168 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 112, 48, 650, { .fields = { 96, 24 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, 112, 64, 650, { .fields = { 48, 80 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 112, 72, 650, { .fields = { 104, 80 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 32 } }, 128, 16, 650, { .fields = { 96, 112 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, 128, 56, 650, { .fields = { 72, 168 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, 128, 88, 650, { .fields = { 56, 120 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 136, 72, 650, { .fields = { 56, 16 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 32 } }, 144, 16, 650, { .fields = { 96, 192 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 144, 48, 650, { .fields = { 112, 232 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 32 } }, 144, 72, 650, { .fields = { 96, 224 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, -56, -32, 2375, { .fields = { 96, 104 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 8, -32, 2375, { .fields = { 104, 144 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -56, -24, 2250, { .fields = { 112, 88 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, -56, -16, 2125, { .fields = { 104, 96 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 56, 8 } }, -64, 0, 1650, { .fields = { 8, 104 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 56, 8 } }, -8, 0, 1650, { .fields = { 8, 112 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 56, 8 } }, -64, -8, 1875, { .fields = { 8, 152 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 8 } }, -8, -8, 1875, { .fields = { 16, 160 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 8 } }, -72, 8, 1475, { .fields = { 0, 184 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 8 } }, -8, 8, 1475, { .fields = { 0, 192 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 8 } }, -72, 16, 1350, { .fields = { 0, 208 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -8, 16, 1350, { .fields = { 120, 216 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, -72, 24, 1250, { .fields = { 120, 16 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -8, 24, 1250, { .fields = { 112, 224 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -80, 32, 1150, { .fields = { 112, 232 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, 0, 32, 1150, { .fields = { 112, 24 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -80, 40, 1100, { .fields = { 104, 48 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, 0, 40, 1100, { .fields = { 96, 56 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, -80, 48, 1000, { .fields = { 96, 64 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, 8, 48, 1000, { .fields = { 96, 72 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, -88, 56, 950, { .fields = { 96, 120 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 96, 8 } }, 0, 56, 950, { .fields = { 88, 144 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, -88, 64, 900, { .fields = { 96, 136 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, 0, 64, 900, { .fields = { 72, 0 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, -96, 72, 875, { .fields = { 120, 248 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -32, 72, 875, { .fields = { 112, 240 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, 40, 72, 875, { .fields = { 104, 8 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, -96, 80, 825, { .fields = { 112, 40 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -32, 80, 825, { .fields = { 104, 80 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, 40, 80, 825, { .fields = { 104, 32 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -96, 88, 775, { .fields = { 104, 200 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -24, 88, 775, { .fields = { 96, 168 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, 48, 88, 775, { .fields = { 104, 176 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 48, 8 } }, 112, 88, 775, { .fields = { 72, 16 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -96, 96, 725, { .fields = { 56, 184 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -24, 96, 725, { .fields = { 72, 160 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, 48, 96, 725, { .fields = { 72, 104 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 8 } }, 112, 96, 725, { .fields = { 8, 128 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -104, 104, 700, { .fields = { 64, 128 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -32, 104, 700, { .fields = { 64, 152 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, 40, 104, 700, { .fields = { 48, 24 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 56, 8 } }, 104, 104, 700, { .fields = { 72, 208 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -104, 112, 675, { .fields = { 64, 112 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -32, 112, 675, { .fields = { 48, 248 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, 40, 112, 675, { .fields = { 56, 216 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 56, 8 } }, 104, 112, 675, { .fields = { 72, 192 } }, 128, 128, 128, 0 },
+};
+
+/// View 3 keeps background strips and partitions all 89 source elements.
+///
+/// The two serialized bytes after each range's flags retain their unproven meaning.
+static SpriteBatch _gNeoArkBridgeView3SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 5, 0, 0, { 3, 0 } },
+    { 5, 16, 0, 0, { 0, 0 } },
+    { 21, 22, 0, 0, { 2, 0 } },
+    { 43, ARRAY_SIZE(_gNeoArkBridgeView3SpriteSources) - 43, 0, 0, { 1, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// View 4's 135 depth-sorted texture rectangles, selected by three contiguous ranges.
+static SpriteSource _gNeoArkBridgeView4SpriteSources[] = {
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, -128, 16, 974, { .fields = { 112, 40 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, -96, 112, 559, { .fields = { 112, 120 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, -48, 24, 625, { .fields = { 112, 208 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 48 } }, -48, 64, 794, { .fields = { 120, 208 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 56 } }, -56, 64, 684, { .fields = { 120, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 48 } }, -56, 16, 750, { .fields = { 112, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 48 } }, -64, 16, 851, { .fields = { 120, 112 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 56 } }, -64, 64, 675, { .fields = { 120, 56 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, -72, 80, 615, { .fields = { 104, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -80, 88, 599, { .fields = { 104, 40 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -88, 104, 568, { .fields = { 104, 160 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 48 } }, -72, 16, 909, { .fields = { 120, 160 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 16 } }, -96, 32, 955, { .fields = { 88, 128 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 16 } }, -128, 24, 988, { .fields = { 80, 144 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, -24, 16, 767, { .fields = { 112, 48 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, -32, 16, 750, { .fields = { 112, 168 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, -40, 16, 796, { .fields = { 112, 128 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, -40, 56, 844, { .fields = { 112, 88 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -32, 56, 867, { .fields = { 104, 72 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -24, 56, 891, { .fields = { 104, 104 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -32, 1187, { .fields = { 8, 88 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -24, 1211, { .fields = { 16, 88 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, -136, 40, 1158, { .fields = { 8, 64 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, 56, -120, 2500, { .fields = { 48, 232 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, 56, -112, 2375, { .fields = { 48, 8 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, 48, -104, 2150, { .fields = { 48, 160 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, 40, -96, 2000, { .fields = { 40, 176 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 8 } }, 0, -96, 1372, { .fields = { 104, 240 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 40, 8 } }, -8, -88, 1326, { .fields = { 64, 24 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 8 } }, 0, -80, 1371, { .fields = { 80, 184 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 40, 8 } }, -8, -72, 1390, { .fields = { 64, 192 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 40, 8 } }, -8, -64, 1424, { .fields = { 72, 224 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, 40, -88, 1900, { .fields = { 24, 40 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 96, 8 } }, 32, -80, 1850, { .fields = { 16, 120 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 96, 8 } }, 32, -72, 1750, { .fields = { 16, 128 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 96, 8 } }, 32, -64, 1650, { .fields = { 32, 112 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 56, 8 } }, -64, -64, 1448, { .fields = { 80, 56 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 56, 8 } }, -72, -56, 1525, { .fields = { 80, 64 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 48, 8 } }, -16, -56, 1525, { .fields = { 88, 88 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 96, 8 } }, 32, -56, 1625, { .fields = { 40, 48 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 96, 8 } }, 32, -48, 1600, { .fields = { 48, 200 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 56, 8 } }, -24, -48, 1600, { .fields = { 80, 16 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 48, 8 } }, -72, -48, 1600, { .fields = { 88, 32 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, -88, -40, 1560, { .fields = { 72, 208 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, -24, -40, 1525, { .fields = { 72, 248 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, 40, -40, 1550, { .fields = { 40, 80 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, 40, -32, 1469, { .fields = { 48, 168 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, -24, -32, 1613, { .fields = { 72, 96 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -96, -32, 1560, { .fields = { 64, 104 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -96, -24, 1517, { .fields = { 64, 152 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, -24, -24, 1467, { .fields = { 0, 192 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 88, 8 } }, 40, -24, 1467, { .fields = { 88, 8 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 72, 8 } }, 56, -16, 1433, { .fields = { 104, 160 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 80, 8 } }, -112, -16, 1483, { .fields = { 112, 152 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 88, 8 } }, -32, -16, 1465, { .fields = { 112, 248 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 80, 8 } }, -120, -8, 1427, { .fields = { 112, 24 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 88, 8 } }, -40, -8, 1395, { .fields = { 104, 104 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 80, 8 } }, 48, -8, 1379, { .fields = { 96, 168 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 80, 8 } }, 48, 0, 1373, { .fields = { 88, 80 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 88, 8 } }, -40, 0, 1347, { .fields = { 80, 176 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 88, 8 } }, -128, 0, 1427, { .fields = { 72, 112 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 80, 8 } }, -128, 8, 1347, { .fields = { 96, 200 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 88, 8 } }, -48, 8, 1333, { .fields = { 88, 232 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 88, 8 } }, 40, 8, 1317, { .fields = { 80, 48 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, 40, 16, 1283, { .fields = { 0, 136 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, -48, 16, 1267, { .fields = { 0, 144 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -128, 16, 1317, { .fields = { 8, 216 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -128, 24, 1267, { .fields = { 8, 88 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, -48, 24, 1277, { .fields = { 16, 240 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, 40, 24, 1229, { .fields = { 0, 0 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 96, 8 } }, 32, 32, 1201, { .fields = { 120, 32 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -48, 32, 1217, { .fields = { 0, 16 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 80, 8 } }, -128, 32, 1261, { .fields = { 120, 96 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 80, 8 } }, -128, 40, 1195, { .fields = { 120, 208 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 80, 8 } }, -48, 40, 1201, { .fields = { 120, 224 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 96, 8 } }, 32, 40, 1201, { .fields = { 104, 72 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -128, 48, 1074, { .fields = { 0, 56 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -48, 48, 1170, { .fields = { 0, 64 } }, 128, 128, 128, 0 },
+    { 141, 0x3FC0, { .fields = { 96, 8 } }, 32, 48, 1120, { .fields = { 112, 184 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 8 } }, -88, 56, 1046, { .fields = { 40, 72 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 72, 8 } }, -24, 56, 1174, { .fields = { 32, 80 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 48, 56, 1110, { .fields = { 24, 88 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -72, 64, 1140, { .fields = { 16, 64 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 112, 8 } }, 16, 64, 1108, { .fields = { 120, 40 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, -48, 72, 1067, { .fields = { 24, 48 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, 32, 72, 1079, { .fields = { 8, 56 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -56, 80, 1067, { .fields = { 16, 160 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, 32, 80, 1067, { .fields = { 8, 168 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, 32, 88, 1070, { .fields = { 8, 248 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -56, 88, 862, { .fields = { 16, 120 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -64, 96, 850, { .fields = { 8, 96 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, 32, 96, 1090, { .fields = { 8, 104 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, 24, 104, 1021, { .fields = { 0, 112 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -72, 104, 812, { .fields = { 8, 32 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -72, 112, 794, { .fields = { 16, 200 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, 24, 112, 790, { .fields = { 8, 208 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, 128, -64, 1078, { .fields = { 88, 216 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, 128, -56, 1100, { .fields = { 88, 192 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, 128, -48, 1129, { .fields = { 104, 248 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, 128, -40, 1154, { .fields = { 96, 176 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -64, -96, 1339, { .fields = { 96, 184 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, -64, -88, 1371, { .fields = { 80, 8 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, -64, -80, 1398, { .fields = { 80, 16 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -56, -72, 1439, { .fields = { 88, 24 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, 136, 64, 750, { .fields = { 80, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, 128, 72, 750, { .fields = { 80, 224 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, 128, 80, 750, { .fields = { 80, 232 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, 128, 88, 750, { .fields = { 80, 240 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, 128, 96, 750, { .fields = { 64, 176 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, 128, 104, 750, { .fields = { 0, 80 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 32, 8 } }, 128, 112, 750, { .fields = { 120, 8 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -160, -24, 867, { .fields = { 8, 48 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, -160, -16, 878, { .fields = { 16, 176 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, -160, -8, 879, { .fields = { 40, 176 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, -160, 0, 911, { .fields = { 8, 16 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, -152, 8, 938, { .fields = { 16, 72 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 8 } }, -152, 16, 962, { .fields = { 120, 120 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -144, 24, 1000, { .fields = { 0, 160 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -144, 32, 1193, { .fields = { 0, 176 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 8 } }, -128, -120, 2184, { .fields = { 72, 72 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, -160, -112, 2185, { .fields = { 88, 144 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 112, 8 } }, -160, -104, 2119, { .fields = { 104, 192 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 128, 8 } }, -160, -88, 1675, { .fields = { 88, 216 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 120, 8 } }, -160, -96, 1895, { .fields = { 88, 0 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 128, 8 } }, -160, -80, 1631, { .fields = { 88, 136 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 120, 8 } }, -160, -72, 1550, { .fields = { 104, 184 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 112, 8 } }, -160, -64, 1501, { .fields = { 104, 24 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, -160, -56, 1519, { .fields = { 112, 128 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 96, 8 } }, -160, -48, 1504, { .fields = { 112, 224 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, -160, -40, 1496, { .fields = { 120, 232 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, -160, -32, 1471, { .fields = { 0, 240 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 72, 8 } }, -160, -24, 1460, { .fields = { 8, 152 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 56, 8 } }, -160, -16, 1441, { .fields = { 24, 8 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, -160, -8, 1400, { .fields = { 40, 16 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -160, 0, 883, { .fields = { 64, 144 } }, 128, 128, 128, 0 },
+};
+
+/// View 4 keeps background strips and partitions all 135 source elements.
+static SpriteBatch _gNeoArkBridgeView4SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 20, 0, 0, { 1, 0 } },
+    { 20, 99, 0, 0, { 2, 0 } },
+    { 119, ARRAY_SIZE(_gNeoArkBridgeView4SpriteSources) - 119, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// View 5's 61 depth-sorted texture rectangles, selected by three contiguous ranges.
+static SpriteSource _gNeoArkBridgeView5SpriteSources[] = {
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, 112, 497, { .fields = { 104, 248 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 80, 96, 625, { .fields = { 96, 232 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 112 } }, 88, 8, 625, { .fields = { 112, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 120 } }, 96, 0, 625, { .fields = { 120, 120 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 120 } }, 104, 0, 625, { .fields = { 120, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 72 } }, 112, 0, 625, { .fields = { 88, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -160, 32, 750, { .fields = { 88, 128 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -160, 56, 750, { .fields = { 120, 240 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -152, 56, 750, { .fields = { 96, 208 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -152, 32, 750, { .fields = { 88, 112 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -160, 0, 750, { .fields = { 80, 144 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -152, -24, 750, { .fields = { 88, 96 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 104 } }, -144, -24, 750, { .fields = { 96, 104 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 104 } }, -136, -16, 750, { .fields = { 96, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 112 } }, -128, -16, 750, { .fields = { 104, 112 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 112 } }, -120, -16, 750, { .fields = { 104, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 112 } }, -112, -16, 750, { .fields = { 112, 112 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -104, -16, 750, { .fields = { 104, 224 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, -104, 24, 750, { .fields = { 72, 168 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -104, 64, 750, { .fields = { 112, 224 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -96, 64, 760, { .fields = { 88, 72 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 8 } }, 0, -32, 3000, { .fields = { 32, 216 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, -8, -24, 2750, { .fields = { 16, 160 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -16, -16, 2200, { .fields = { 8, 192 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, -32, -8, 1964, { .fields = { 120, 176 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 56, 8 } }, -40, 0, 1846, { .fields = { 40, 208 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 8 } }, 16, 0, 1846, { .fields = { 32, 152 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 8 } }, -48, 8, 1725, { .fields = { 32, 200 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 8 } }, 16, 8, 1725, { .fields = { 32, 240 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 8 } }, -56, 16, 1548, { .fields = { 32, 224 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 72, 8 } }, 8, 16, 1548, { .fields = { 24, 232 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 72, 8 } }, -64, 24, 1439, { .fields = { 24, 248 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 8, 24, 1439, { .fields = { 8, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 72, 8 } }, -72, 32, 1325, { .fields = { 16, 8 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, 0, 32, 1325, { .fields = { 0, 16 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, -88, 40, 1225, { .fields = { 8, 24 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 96, 8 } }, -8, 40, 1225, { .fields = { 120, 32 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -96, 48, 1125, { .fields = { 0, 40 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, -8, 48, 1125, { .fields = { 120, 184 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 96, 8 } }, -104, 56, 1075, { .fields = { 120, 88 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, -8, 56, 1075, { .fields = { 112, 136 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -104, 64, 1000, { .fields = { 0, 72 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 112, 8 } }, -16, 64, 1000, { .fields = { 104, 56 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, -160, 72, 875, { .fields = { 64, 80 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -104, 72, 875, { .fields = { 0, 64 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 120, 8 } }, -16, 72, 875, { .fields = { 96, 96 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, -160, 80, 812, { .fields = { 8, 104 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, -80, 80, 812, { .fields = { 112, 112 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 24, 80, 812, { .fields = { 8, 120 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, -160, 88, 725, { .fields = { 8, 128 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, -80, 88, 725, { .fields = { 88, 80 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 24, 88, 725, { .fields = { 0, 144 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -160, 96, 700, { .fields = { 80, 152 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, -80, 96, 700, { .fields = { 112, 48 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, 24, 96, 700, { .fields = { 88, 208 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -160, 104, 687, { .fields = { 120, 168 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, -80, 104, 687, { .fields = { 56, 200 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, 24, 104, 687, { .fields = { 80, 216 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -160, 112, 625, { .fields = { 80, 224 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, -80, 112, 625, { .fields = { 56, 240 } }, 128, 128, 128, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, 24, 112, 614, { .fields = { 64, 232 } }, 128, 128, 128, 0 },
+};
+
+/// View 5 keeps background strips and partitions all 61 source elements.
+static SpriteBatch _gNeoArkBridgeView5SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 6, 0, 0, { 1, 0 } },
+    { 6, 15, 0, 0, { 2, 0 } },
+    { 21, ARRAY_SIZE(_gNeoArkBridgeView5SpriteSources) - 21, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// View 6's 34 depth-sorted texture rectangles, in pixels relative to the view centre.
+static SpriteSource _gNeoArkBridgeView6SpriteSources[] = {
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -24, 8, 1625, { .fields = { 112, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, 64, 8, 1538, { .fields = { 112, 8 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 120, 8 } }, -40, 16, 1600, { .fields = { 8, 16 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, -64, 24, 1598, { .fields = { 48, 24 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 72, 8 } }, 16, 24, 1598, { .fields = { 56, 32 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -80, 32, 1610, { .fields = { 40, 40 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, 8, 32, 1610, { .fields = { 40, 48 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -96, 40, 1440, { .fields = { 32, 56 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, 0, 40, 1440, { .fields = { 24, 64 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -112, 48, 1253, { .fields = { 16, 72 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, 0, 48, 1253, { .fields = { 16, 80 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 120, 8 } }, -128, 56, 1110, { .fields = { 8, 88 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 120, 8 } }, -8, 56, 1110, { .fields = { 8, 96 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -144, 64, 1058, { .fields = { 32, 104 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, -48, 64, 1058, { .fields = { 40, 112 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 40, 64, 1058, { .fields = { 48, 120 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -160, 72, 942, { .fields = { 32, 128 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -64, 72, 942, { .fields = { 16, 136 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 80, 8 } }, 48, 72, 942, { .fields = { 48, 144 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -160, 80, 892, { .fields = { 32, 152 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -64, 80, 892, { .fields = { 16, 160 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 8 } }, 48, 80, 892, { .fields = { 40, 168 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, 48, 88, 829, { .fields = { 32, 176 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -160, 88, 829, { .fields = { 32, 184 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -64, 88, 829, { .fields = { 16, 192 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -160, 96, 779, { .fields = { 32, 200 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -64, 96, 779, { .fields = { 16, 208 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, 48, 96, 779, { .fields = { 32, 216 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -160, 104, 706, { .fields = { 32, 224 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -64, 104, 706, { .fields = { 16, 232 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, 48, 104, 706, { .fields = { 24, 240 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 96, 8 } }, -160, 112, 653, { .fields = { 32, 248 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 8 } }, -64, 112, 653, { .fields = { 0, 0 } }, 128, 128, 128, 0 },
+    { 143, 0x3FC0, { .fields = { 104, 8 } }, 48, 112, 653, { .fields = { 8, 8 } }, 128, 128, 128, 0 },
+};
+
+/// View 6 keeps background strips and draws its complete source array.
+static SpriteBatch _gNeoArkBridgeView6SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, ARRAY_SIZE(_gNeoArkBridgeView6SpriteSources), 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+SpriteView gNeoArkBridgeSpriteViews[NEO_ARK_BRIDGE_VIEW_RESOURCE_COUNT] = {
+    { { .empty = _gNeoArkBridgeView1SpriteBatches }, _gNeoArkBridgeView1SpriteBatches, NULL },
+    { { .elements = _gNeoArkBridgeView2SpriteSources }, _gNeoArkBridgeView2SpriteBatches, NULL },
+    { { .elements = _gNeoArkBridgeView3SpriteSources }, _gNeoArkBridgeView3SpriteBatches, NULL },
+    { { .elements = _gNeoArkBridgeView4SpriteSources }, _gNeoArkBridgeView4SpriteBatches, NULL },
+    { { .elements = _gNeoArkBridgeView5SpriteSources }, _gNeoArkBridgeView5SpriteBatches, NULL },
+    { { .elements = _gNeoArkBridgeView6SpriteSources }, _gNeoArkBridgeView6SpriteBatches, NULL },
+};
+
+/// Four all-view directional contributions; XYZ translation encodes each light direction.
+///
+/// RGB intensity uses 12 fractional bits; transforms and attenuation remain writable.
+static WorldCoordLight _gNeoArkBridgeDirectionalLights[] = {
+    { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 500, -1000, 0 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 1028, 1028, 1028 }, { 0, 0 } },
+    { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -500, -1000, 0 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 1232, 1232, 1232 }, { 0, 0 } },
+    { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, -1000, -500 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 1232, 1232, 1232 }, { 0, 0 } },
+    { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, -1000, 500 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 1232, 1232, 1232 }, { 0, 0 } },
+};
+
+WorldCoordRoomLights gNeoArkBridgeRoomLights = {
+    .directionalLightCount = ARRAY_SIZE(_gNeoArkBridgeDirectionalLights),
+    .directionalLights     = _gNeoArkBridgeDirectionalLights,
+    .pointLightCount       = 0,
+    .pointLights           = NULL,
+    .coneLightCount        = 0,
+    .coneLights            = NULL,
+};
+
+WorldCollisionTrigger gNeoArkBridgeViewBoundaryTriggers[8] = {
+    {
+        .origin       = { -3040, -993, 3552, 0 },
+        .vertices     = { { -3760, -1904, 0, 0 }, { 3760, -1904, 0, 0 }, { -3760, 1904, 0, 0 }, { 3760, 1904, 0, 0 } },
+        .normal       = { 0, 0, -4101, 0 },
+        .facingNormal = { 0, 0, ONE, 0 },
+        .radius       = 4190,
+        .parameter0   = 3,
+        .parameter1   = 2,
+        .flags        = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY,
+    },
+    {
+        .origin       = { -3169, -1057, 3392, 0 },
+        .vertices     = { { 3344, -1904, 0, 0 }, { -3344, -1904, 0, 0 }, { 3344, 1904, 0, 0 }, { -3344, 1904, 0, 0 } },
+        .normal       = { 0, 0, 4101, 0 },
+        .facingNormal = { 0, 0, ONE, 0 },
+        .radius       = 3840,
+        .parameter0   = 2,
+        .parameter1   = 3,
+        .flags        = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY,
+    },
+    {
+        .origin       = { -2912, -993, 64, 0 },
+        .vertices     = { { -3760, -1904, 0, 0 }, { 3760, -1904, 0, 0 }, { -3760, 1904, 0, 0 }, { 3760, 1904, 0, 0 } },
+        .normal       = { 0, 0, -4101, 0 },
+        .facingNormal = { 0, 0, ONE, 0 },
+        .radius       = 4190,
+        .parameter0   = 4,
+        .parameter1   = 3,
+        .flags        = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY,
+    },
+    {
+        .origin       = { -2977, -961, -96, 0 },
+        .vertices     = { { 3344, -1904, 0, 0 }, { -3344, -1904, 0, 0 }, { 3344, 1904, 0, 0 }, { -3344, 1904, 0, 0 } },
+        .normal       = { 0, 0, 4101, 0 },
+        .facingNormal = { 0, 0, ONE, 0 },
+        .radius       = 3840,
+        .parameter0   = 3,
+        .parameter1   = 4,
+        .flags        = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY,
+    },
+    {
+        .origin       = { -3264, -1089, -3264, 0 },
+        .vertices     = { { 3344, -1904, 0, 0 }, { -3344, -1904, 0, 0 }, { 3344, 1904, 0, 0 }, { -3344, 1904, 0, 0 } },
+        .normal       = { 0, 0, 4101, 0 },
+        .facingNormal = { 0, 0, ONE, 0 },
+        .radius       = 3840,
+        .parameter0   = 4,
+        .parameter1   = 5,
+        .flags        = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY,
+    },
+    {
+        .origin       = { -3137, -993, -3009, 0 },
+        .vertices     = { { -3760, -1904, 0, 0 }, { 3760, -1904, 0, 0 }, { -3760, 1904, 0, 0 }, { 3760, 1904, 0, 0 } },
+        .normal       = { 0, 0, -4101, 0 },
+        .facingNormal = { 0, 0, ONE, 0 },
+        .radius       = 4190,
+        .parameter0   = 5,
+        .parameter1   = 4,
+        .flags        = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY,
+    },
+    {
+        .origin       = { -2880, -800, -7552, 0 },
+        .vertices     = { { -3760, -1904, 0, 0 }, { 3760, -1904, 0, 0 }, { -3760, 1904, 0, 0 }, { 3760, 1904, 0, 0 } },
+        .normal       = { 0, 0, -4101, 0 },
+        .facingNormal = { 0, 0, ONE, 0 },
+        .radius       = 4190,
+        .parameter0   = 6,
+        .parameter1   = 5,
+        .flags        = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY,
+    },
+    {
+        .origin       = { -2880, -928, -7745, 0 },
+        .vertices     = { { 3344, -1904, 0, 0 }, { -3344, -1904, 0, 0 }, { 3344, 1904, 0, 0 }, { -3344, 1904, 0, 0 } },
+        .normal       = { 0, 0, 4101, 0 },
+        .facingNormal = { 0, 0, ONE, 0 },
+        .radius       = 3840,
+        .parameter0   = 5,
+        .parameter1   = 6,
+        .flags        = WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY | WORLD_COLLISION_TRIGGER_LAST,
+    },
+};
+
+/// Placement entry IDs and decimal file numbers used by the bridge's first three layouts.
+///
+/// Entry IDs match placement rows; file numbers select libraries through their group bases.
+enum {
+    NEO_ARK_BRIDGE_BOG_DIVER_ENTRY_ID         = 4,
+    NEO_ARK_BRIDGE_BLACK_BEETLE_ENTRY_ID      = 38,
+    NEO_ARK_BRIDGE_LARGE_MOSSBACK_ENTRY_ID    = 49,
+    NEO_ARK_BRIDGE_BOG_DIVER_FILE_NUMBER      = 4,
+    NEO_ARK_BRIDGE_BLACK_BEETLE_FILE_NUMBER   = 38,
+    NEO_ARK_BRIDGE_LARGE_MOSSBACK_FILE_NUMBER = 49,
+};
+
+/// Variant 1's Bog Diver file and task recipe, keyed by placement entry 4.
+///
+/// The three placements share this recipe; `AREA_PLACEMENT_END` terminates the list.
+static AreaResource _gNeoArkBridgeVariant1Resources[] = {
+    {
+        .entryId        = NEO_ARK_BRIDGE_BOG_DIVER_ENTRY_ID,
+        .fileNumber     = NEO_ARK_BRIDGE_BOG_DIVER_FILE_NUMBER,
+        .fileGroupIndex = LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR,
+        .taskIndex      = ACTOR_00400_BODY_TASK_INDEX,
+        .taskTable      = gActor100400Tasks,
+    },
+    { .entryId = AREA_PLACEMENT_END },
+};
+
+/// Variant 2's Bog Diver and Black Beetle file/task recipes, keyed by entries 4 and 38.
+///
+/// Two Diver and three Beetle placements borrow these recipes through the end marker.
+static AreaResource _gNeoArkBridgeVariant2Resources[] = {
+    {
+        .entryId        = NEO_ARK_BRIDGE_BOG_DIVER_ENTRY_ID,
+        .fileNumber     = NEO_ARK_BRIDGE_BOG_DIVER_FILE_NUMBER,
+        .fileGroupIndex = LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR,
+        .taskIndex      = ACTOR_00400_BODY_TASK_INDEX,
+        .taskTable      = gActor100400Tasks,
+    },
+    {
+        .entryId        = NEO_ARK_BRIDGE_BLACK_BEETLE_ENTRY_ID,
+        .fileNumber     = NEO_ARK_BRIDGE_BLACK_BEETLE_FILE_NUMBER,
+        .fileGroupIndex = AREA_RESOURCE_FILE_GROUP_BASE_20,
+        .taskIndex      = 0,
+        .taskTable      = &gActor203800BlackBeetleTaskDesc,
+    },
+    { .entryId = AREA_PLACEMENT_END },
+};
+
+/// Variant 3's Bog Diver and large Mossback file/task recipes, keyed by entries 4 and 49.
+///
+/// The extra file of entry 49 uses its placement's fileIdLow; the list ends at `AREA_PLACEMENT_END`.
+static AreaResource _gNeoArkBridgeVariant3Resources[] = {
+    {
+        .entryId        = NEO_ARK_BRIDGE_BOG_DIVER_ENTRY_ID,
+        .fileNumber     = NEO_ARK_BRIDGE_BOG_DIVER_FILE_NUMBER,
+        .fileGroupIndex = LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR,
+        .taskIndex      = ACTOR_00400_BODY_TASK_INDEX,
+        .taskTable      = gActor100400Tasks,
+    },
+    {
+        .entryId        = NEO_ARK_BRIDGE_LARGE_MOSSBACK_ENTRY_ID,
+        .fileNumber     = NEO_ARK_BRIDGE_LARGE_MOSSBACK_FILE_NUMBER,
+        .fileGroupIndex = AREA_RESOURCE_FILE_GROUP_BASE_20,
+        .taskIndex      = 0,
+        .taskTable      = gActor201100Tasks,
+    },
+    { .entryId = AREA_PLACEMENT_END },
+};
+
+/// Rook placement/file IDs and body descriptor indices used by the later variants.
+enum {
+    NEO_ARK_BRIDGE_ROOK_GOLEM_ENTRY_ID            = 23,
+    NEO_ARK_BRIDGE_ROOK_GOLEM_FILE_NUMBER         = 23,
+    NEO_ARK_BRIDGE_ROOK_GOLEM_BODY_TASK_INDEX     = 0,
+    NEO_ARK_BRIDGE_LARGE_MOSSBACK_BODY_TASK_INDEX = 0,
+};
+
+/// Variant 4's Bog Diver and large Mossback file/task recipes, keyed by entries 4 and 49.
+///
+/// Selects base files 100400 and 204900, using body descriptor 0 in each actor
+/// family. Two Diver placements share entry 4; `AREA_PLACEMENT_END` ends the list.
+static AreaResource _gNeoArkBridgeVariant4Resources[] = {
+    {
+        .entryId        = NEO_ARK_BRIDGE_BOG_DIVER_ENTRY_ID,
+        .fileNumber     = NEO_ARK_BRIDGE_BOG_DIVER_FILE_NUMBER,
+        .fileGroupIndex = LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR,
+        .taskIndex      = ACTOR_00400_BODY_TASK_INDEX,
+        .taskTable      = gActor100400Tasks,
+    },
+    {
+        .entryId        = NEO_ARK_BRIDGE_LARGE_MOSSBACK_ENTRY_ID,
+        .fileNumber     = NEO_ARK_BRIDGE_LARGE_MOSSBACK_FILE_NUMBER,
+        .fileGroupIndex = AREA_RESOURCE_FILE_GROUP_BASE_20,
+        .taskIndex      = NEO_ARK_BRIDGE_LARGE_MOSSBACK_BODY_TASK_INDEX,
+        .taskTable      = gActor201100Tasks,
+    },
+    { .entryId = AREA_PLACEMENT_END },
+};
+
+/// Variant 5's Bog Diver recipe, shared by its three wounded-Diver placements.
+///
+/// Entry 4 loads base file 100400 and spawns its body descriptor;
+/// `AREA_PLACEMENT_END` terminates the list.
+static AreaResource _gNeoArkBridgeVariant5Resources[] = {
+    {
+        .entryId        = NEO_ARK_BRIDGE_BOG_DIVER_ENTRY_ID,
+        .fileNumber     = NEO_ARK_BRIDGE_BOG_DIVER_FILE_NUMBER,
+        .fileGroupIndex = LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR,
+        .taskIndex      = ACTOR_00400_BODY_TASK_INDEX,
+        .taskTable      = gActor100400Tasks,
+    },
+    { .entryId = AREA_PLACEMENT_END },
+};
+
+/// Variant 11's Beam Sword Rook GOLEM recipe, shared by its two placements.
+///
+/// Entry 23 loads base file 102300 and spawns body descriptor 0;
+/// `AREA_PLACEMENT_END` terminates the list.
+static AreaResource _gNeoArkBridgeVariant11Resources[] = {
+    {
+        .entryId        = NEO_ARK_BRIDGE_ROOK_GOLEM_ENTRY_ID,
+        .fileNumber     = NEO_ARK_BRIDGE_ROOK_GOLEM_FILE_NUMBER,
+        .fileGroupIndex = LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR,
+        .taskIndex      = NEO_ARK_BRIDGE_ROOK_GOLEM_BODY_TASK_INDEX,
+        .taskTable      = gActor102300RookGolemTasks,
+    },
+    { .entryId = AREA_PLACEMENT_END },
+};
+
+/// Variant 12's Beam Sword Rook GOLEM recipe, shared by its two placements.
+///
+/// Entry 23 loads base file 102300 and spawns body descriptor 0;
+/// `AREA_PLACEMENT_END` terminates the list.
+static AreaResource _gNeoArkBridgeVariant12Resources[] = {
+    {
+        .entryId        = NEO_ARK_BRIDGE_ROOK_GOLEM_ENTRY_ID,
+        .fileNumber     = NEO_ARK_BRIDGE_ROOK_GOLEM_FILE_NUMBER,
+        .fileGroupIndex = LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR,
+        .taskIndex      = NEO_ARK_BRIDGE_ROOK_GOLEM_BODY_TASK_INDEX,
+        .taskTable      = gActor102300RookGolemTasks,
+    },
+    { .entryId = AREA_PLACEMENT_END },
+};
+
+AreaVariant gNeoArkBridgePlacementVariants[13] = {
+    [1]  = { .placements = gMapNeoArkBridgeVariant1Placements, .resources = _gNeoArkBridgeVariant1Resources },
+    [2]  = { .placements = gMapNeoArkBridgeVariant2Placements, .resources = _gNeoArkBridgeVariant2Resources },
+    [3]  = { .placements = gMapNeoArkBridgeVariant3Placements, .resources = _gNeoArkBridgeVariant3Resources },
+    [4]  = { .placements = gMapNeoArkBridgeVariant4Placements, .resources = _gNeoArkBridgeVariant4Resources },
+    [5]  = { .placements = gMapNeoArkBridgeVariant5Placements, .resources = _gNeoArkBridgeVariant5Resources },
+    [11] = { .placements = gMapNeoArkBridgeVariant11Placements, .resources = _gNeoArkBridgeVariant11Resources },
+    [12] = { .placements = gMapNeoArkBridgeVariant12Placements, .resources = _gNeoArkBridgeVariant12Resources },
+};
+
+/// Passage parameters pack the bridge departure slot above the destination arrival slot.
+enum {
+    NEO_ARK_BRIDGE_PAVILION_WARP_PAIR  = (1 << 4) | 2,
+    NEO_ARK_BRIDGE_GARDEN_WARP_PAIR    = (2 << 4) | 1,
+    NEO_ARK_BRIDGE_EXAMINE_CAP_COMMAND = 1,
+};
+
+WorldCollisionTrigger gNeoArkBridgeActionTriggers[3] = {
+    {
+        .origin       = { -3008, -48, 6640, 0 },
+        .vertices     = { { -1024, 0, -496, 0 }, { 1024, 0, -496, 0 }, { -1024, 0, 496, 0 }, { 1024, 0, 496, 0 } },
+        .normal       = { 0, 4097, 0, 0 },
+        .facingNormal = { 0, 0, -ONE, 0 },
+        .radius       = 1137,
+        .control      = WORLD_COLLISION_TRIGGER_ACTION_WARP,
+        .parameter0   = GAME_AREA_NEO_ARK_PAVILION,
+        .parameter1   = NEO_ARK_BRIDGE_PAVILION_WARP_PAIR,
+        .flags        = WORLD_COLLISION_TRIGGER_FACING_QUAD,
+    },
+    {
+        .origin       = { -3008, -48, -11584, 0 },
+        .vertices     = { { -1024, 0, -496, 0 }, { 1024, 0, -496, 0 }, { -1024, 0, 496, 0 }, { 1024, 0, 496, 0 } },
+        .normal       = { 0, 4097, 0, 0 },
+        .facingNormal = { 0, 0, ONE, 0 },
+        .radius       = 1137,
+        .control      = WORLD_COLLISION_TRIGGER_ACTION_WARP,
+        .parameter0   = GAME_AREA_NEO_ARK_GARDEN,
+        .parameter1   = NEO_ARK_BRIDGE_GARDEN_WARP_PAIR,
+        .flags        = WORLD_COLLISION_TRIGGER_FACING_QUAD,
+    },
+    {
+        .origin       = { -480, -64, -1472, 0 },
+        .vertices     = { { -544, 0, -1904, 0 }, { 544, 0, -1904, 0 }, { -544, 0, 1904, 0 }, { 544, 0, 1904, 0 } },
+        .normal       = { 0, 4099, 0, 0 },
+        .facingNormal = { -ONE, 0, 0, 0 },
+        .radius       = 1978,
+        .control      = WORLD_COLLISION_TRIGGER_ACTION_CAP,
+        .parameter0   = NEO_ARK_BRIDGE_EXAMINE_CAP_COMMAND,
+        .parameter1   = 0,
+        .flags        = WORLD_COLLISION_TRIGGER_FACING_QUAD | WORLD_COLLISION_TRIGGER_LAST,
+    },
+};
+
+/// Type-1 cue-2 request bases; cue 1 uses the next script entry.
+enum {
+    NEO_ARK_BRIDGE_SURFACE3_FOOTSTEP_WALK = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x0D,
+    NEO_ARK_BRIDGE_SURFACE3_FOOTSTEP_RUN  = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x0F,
+    NEO_ARK_BRIDGE_SURFACE4_FOOTSTEP_WALK = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x15,
+    NEO_ARK_BRIDGE_SURFACE4_FOOTSTEP_RUN  = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x17,
+};
+
+/// Surface class 3's walking, running and scripted-jump footstep pairs.
+///
+/// Walking and scripted jumps share their base; playback selects the loaded type-1 bank.
+static WorldCollisionFootstepSounds _gNeoArkBridgeSurface3FootstepSounds = {
+    .walk         = NEO_ARK_BRIDGE_SURFACE3_FOOTSTEP_WALK,
+    .run          = NEO_ARK_BRIDGE_SURFACE3_FOOTSTEP_RUN,
+    .scriptedJump = NEO_ARK_BRIDGE_SURFACE3_FOOTSTEP_WALK,
+};
+
+/// Surface class 4's walking, running and scripted-jump footstep pairs.
+///
+/// Walking and scripted jumps share their base; playback selects the loaded type-1 bank.
+static WorldCollisionFootstepSounds _gNeoArkBridgeSurface4FootstepSounds = {
+    .walk         = NEO_ARK_BRIDGE_SURFACE4_FOOTSTEP_WALK,
+    .run          = NEO_ARK_BRIDGE_SURFACE4_FOOTSTEP_RUN,
+    .scriptedJump = NEO_ARK_BRIDGE_SURFACE4_FOOTSTEP_WALK,
+};
+
+/// Classes 0, 2 and 5..7 block probes and allow weapon impacts and pushback, without cues.
+static WorldCollisionSurfaceProperties _gNeoArkBridgeSolidSurface = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = NULL,
+};
+
+/// Class 1 passes probes and suppresses weapon impacts, retaining pushback without cues.
+static WorldCollisionSurfaceProperties _gNeoArkBridgeProbePassSurface = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_PASS_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_IGNORE_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = NULL,
+};
+
+/// Class 3 blocks probes and allows weapon impacts, pushback and its footstep pairs.
+static WorldCollisionSurfaceProperties _gNeoArkBridgeSurface3Properties = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gNeoArkBridgeSurface3FootstepSounds,
+};
+
+/// Class 4 blocks probes and allows weapon impacts, pushback and its footstep pairs.
+static WorldCollisionSurfaceProperties _gNeoArkBridgeSurface4Properties = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gNeoArkBridgeSurface4FootstepSounds,
+};
+
+WorldCollisionSurfaceProperties* gNeoArkBridgeSurfaceProperties[NEO_ARK_BRIDGE_SURFACE_CLASS_COUNT] = {
+    &_gNeoArkBridgeSolidSurface,
+    &_gNeoArkBridgeProbePassSurface,
+    &_gNeoArkBridgeSolidSurface,
+    &_gNeoArkBridgeSurface3Properties,
+    &_gNeoArkBridgeSurface4Properties,
+    &_gNeoArkBridgeSolidSurface,
+    &_gNeoArkBridgeSolidSurface,
+    &_gNeoArkBridgeSolidSurface,
+};
+
+void neoArkBridgeAmbientEffectsTask(Task* task)
+{
+    enum {
+        NEO_ARK_BRIDGE_AMBIENT_INITIALIZE      = 0,
+        NEO_ARK_BRIDGE_AMBIENT_UPDATE          = 1,
+        NEO_ARK_BRIDGE_FIRST_AMBIENT_VIEW      = 5,
+        NEO_ARK_BRIDGE_AMBIENT_VIEW_END        = 7,
+        NEO_ARK_BRIDGE_MARKER_PULSE_ANGLE_STEP = 1536,
+        NEO_ARK_BRIDGE_MARKER_RADIUS_SCALE     = 192,
+        NEO_ARK_BRIDGE_SMOKE_CHANCE_MASK       = 3,
+        NEO_ARK_BRIDGE_SMOKE_JITTER_MASK       = 0x11FF,
+        NEO_ARK_BRIDGE_SMOKE_BASE_ARGUMENT     = (2 << 16) | (2 << 12) | 512,
+    };
+    s32 mappedViewIndex;
+    u32 spawnRollState;
+    u32 firstSmokeOptionsState;
+    u32 secondSmokeOptionsState;
+
+    /// Attempts one world-space smoke site with a one-in-four emission roll.
+    ///
+    /// rollState and optionsState are distinct writable u32 lvalues without
+    /// side effects, evaluated repeatedly. Advances the shared unsigned LCG once,
+    /// and once more on success; optionsState is written only on success.
+    /// Evaluates the borrowed SVECTOR* worldPoint once on success. Uses this
+    /// controller's smoke constants: size 512..1023, two/three ticks per texture
+    /// cell and drifting rise. Keep the room-owned point live for the puff.
+#define NEO_ARK_BRIDGE_TRY_SPAWN_AMBIENT_SMOKE(worldPoint, rollState, optionsState)                                                                            \
+    {                                                                                                                                                          \
+        (rollState)     = RANDOM_LCG_NEXT(gRandomLcgState);                                                                                                    \
+        gRandomLcgState = (rollState);                                                                                                                         \
+        if ((((rollState) >> 16) & NEO_ARK_BRIDGE_SMOKE_CHANCE_MASK) == 0) {                                                                                   \
+            (optionsState)  = RANDOM_LCG_NEXT(gRandomLcgState);                                                                                                \
+            gRandomLcgState = (optionsState);                                                                                                                  \
+            effectSpawn(EFFECT_SMOKE_PUFF, 0, (((optionsState) >> 16) & NEO_ARK_BRIDGE_SMOKE_JITTER_MASK) | NEO_ARK_BRIDGE_SMOKE_BASE_ARGUMENT, (worldPoint)); \
+        }                                                                                                                                                      \
+    }
+
+    switch (task->state) {
+        case NEO_ARK_BRIDGE_AMBIENT_INITIALIZE:
+            gRoomEffectFlashId       = EFFECT_NEO_ARK_BRIDGE_FLASH;
+            gRoomEffectTwinTrailId   = EFFECT_NEO_ARK_BRIDGE_TWIN_TRAIL;
+            gRoomEffectSparkBurstId  = EFFECT_NEO_ARK_BRIDGE_SPARK_BURST;
+            gRoomEffectWaterRippleId = EFFECT_NEO_ARK_BRIDGE_WATER_RIPPLE;
+            gRoomEffectWaterSprayId  = EFFECT_NEO_ARK_BRIDGE_WATER_SPRAY;
+            task->state              = NEO_ARK_BRIDGE_AMBIENT_UPDATE;
+            /* fallthrough */
+        case NEO_ARK_BRIDGE_AMBIENT_UPDATE:
+            mappedViewIndex = viewGetMappedIndex() & 0xFF;
+            if (mappedViewIndex < NEO_ARK_BRIDGE_AMBIENT_VIEW_END) {
+                if (mappedViewIndex >= NEO_ARK_BRIDGE_FIRST_AMBIENT_VIEW) {
+                    if (gRoomEffectState->effectControl == ROOM_EFFECT_CONTROL_RUNNING) {
+                        // Each site consumes its own roll and optional smoke-parameter roll.
+                        NEO_ARK_BRIDGE_TRY_SPAWN_AMBIENT_SMOKE(&_gNeoArkBridgeFirstSmokeSpawnPoint, spawnRollState, firstSmokeOptionsState);
+                        NEO_ARK_BRIDGE_TRY_SPAWN_AMBIENT_SMOKE(&_gNeoArkBridgeSecondSmokeSpawnPoint, spawnRollState, secondSmokeOptionsState);
+                    }
+                    _neoArkBridgeDrawPulsingRedStar(&_gNeoArkBridgeRedMarkerCentre, NEO_ARK_BRIDGE_MARKER_PULSE_ANGLE_STEP, NEO_ARK_BRIDGE_MARKER_RADIUS_SCALE);
+                }
+            }
+            break;
+    }
+}
+
+#undef NEO_ARK_BRIDGE_TRY_SPAWN_AMBIENT_SMOKE
+
+/// Reserves a red-centred, black-rimmed half of the marker's diamond.
+///
+/// Returns this frame's borrowed `POLY_G4`; `redIntensity` supplies its low
+/// byte. The caller supplies coordinates, ordering and blend state, and the
+/// frame packet arena must have room for the complete primitive.
+static inline POLY_G4* _neoArkBridgeAllocatePulsingStarHalf(s32 redIntensity)
+{
+    POLY_G4* diamondHalf;
+
+    diamondHalf    = gGpuPrimCursor;
+    gGpuPrimCursor = diamondHalf + 1;
+    setPolyG4(diamondHalf);
+    setRGB0(diamondHalf, 0, 0, 0);
+    setRGB1(diamondHalf, 0, 0, 0);
+    setRGB2(diamondHalf, redIntensity, 0, 0);
+    setRGB3(diamondHalf, 0, 0, 0);
+    return diamondHalf;
+}
+
+/// Reserves a ray with a red centre and black endpoints for this frame's marker.
+///
+/// Returns a borrowed `LINE_G3`, advancing the packet cursor by its full size.
+/// `redIntensity` supplies its low byte; coordinates, ordering and blend state
+/// remain for the caller. The frame packet arena must have room.
+static inline LINE_G3* _neoArkBridgeAllocatePulsingStarRay(s32 redIntensity)
+{
+    LINE_G3* ray;
+
+    ray            = gGpuPrimCursor;
+    gGpuPrimCursor = ray + 1;
+    setLineG3(ray);
+    setRGB0(ray, 0, 0, 0);
+    setRGB1(ray, redIntensity, 0, 0);
+    setRGB2(ray, 0, 0, 0);
+    return ray;
+}
+
+/// Draws a pulsing red diamond and two diagonal rays at a world-space marker.
+///
+/// Borrows `worldPoint` for this call, projecting it through the current view.
+/// `pulseRate` gives signed angle units per animation frame (4096 per turn);
+/// `radiusScale` gives a signed perspective half-extent, scaled by
+/// 32 / (SZ3 / 4) to screen pixels. Only depths of 17 or
+/// above draw. Colour pulses between 0 and 240; one ray extends twice as far
+/// as the diamond. Coordinate stores retain their low 16 bits.
+///
+/// Requires an initialized scratch stack with one `GlowCentreRadiusScratch`
+/// free, and frame packet space for two `POLY_G4` and two `LINE_G3` packets.
+/// The current depth ordering table must cover indices 0..1023. Scratch is
+/// released before return; frame packets remain live until GPU consumption.
+/// No pointer is retained and GTE state is overwritten.
+static void _neoArkBridgeDrawPulsingRedStar(const SVECTOR* worldPoint, s16 pulseRate, s16 radiusScale)
+{
+    enum {
+        NEO_ARK_BRIDGE_STAR_MIN_DEPTH     = 17,
+        NEO_ARK_BRIDGE_STAR_RADIUS_SCALE  = 32,
+        NEO_ARK_BRIDGE_STAR_PULSE_DIVISOR = 34,
+        NEO_ARK_BRIDGE_STAR_BASE_RED      = 0x78,
+    };
+
+    GlowCentreRadiusScratch* scratchEnd;
+    GlowCentreRadiusScratch* projection;
+    POLY_G4*                 diamondHalf;
+    LINE_G3*                 ray;
+    s32                      pulseSine;
+    s32                      redIntensity;
+    s32                      screenRadius;
+    s32                      partIndex;
+    s32                      xRadiusMultiple;
+    s32                      yRadiusMultiple;
+    s32                      verticalSide;
+    u16                      screenX;
+    u16                      screenY;
+
+    scratchEnd = *SCRATCH_STACK_CURSOR_SLOT;
+    projection = (*SCRATCH_STACK_CURSOR_SLOT = scratchEnd - 1);
+
+    // Project the centre; the depth threshold keeps the radius divisor positive.
+    gte_SetTransMatrix(&gGfxViewCoord.workm);
+    gte_SetRotMatrix(&gGfxViewCoord.workm);
+    gte_ldv0(worldPoint);
+    gte_rtps();
+    gte_stsxy(&(scratchEnd - 1)->sx);
+    gte_stszotz(&projection->otz);
+    if ((scratchEnd - 1)->otz >= NEO_ARK_BRIDGE_STAR_MIN_DEPTH) {
+        pulseSine          = rsin(gDisplayState.animFrame * pulseRate);
+        screenRadius       = (radiusScale * NEO_ARK_BRIDGE_STAR_RADIUS_SCALE) / (scratchEnd - 1)->otz;
+        partIndex          = 0;
+        redIntensity       = pulseSine / NEO_ARK_BRIDGE_STAR_PULSE_DIVISOR + NEO_ARK_BRIDGE_STAR_BASE_RED;
+        projection->radius = screenRadius;
+        // Two triangular halves fill the red-centred diamond.
+        do {
+            diamondHalf     = _neoArkBridgeAllocatePulsingStarHalf(redIntensity);
+            diamondHalf->x0 = projection->sx - (u16)projection->radius;
+            screenX         = projection->sx;
+            diamondHalf->x2 = screenX;
+            diamondHalf->x1 = screenX;
+            diamondHalf->x3 = projection->sx + (u16)projection->radius;
+            screenY         = projection->sy;
+            diamondHalf->y3 = screenY;
+            diamondHalf->y2 = screenY;
+            diamondHalf->y0 = screenY;
+            verticalSide    = partIndex * 2;
+            diamondHalf->y1 = (projection->sy - (u16)projection->radius) + (projection->radius * verticalSide);
+            addPrim(GPU_ORDERING_TABLE_ENTRY_AT_DEPTH(projection->otz),
+                    diamondHalf);
+            gpuSetPrimitiveBlendMode(diamondHalf, GPU_BLEND_ADD, projection->otz);
+            partIndex++;
+        } while (partIndex < 2);
+
+        // Both rays meet at the centre; the second has twice the first's reach.
+        partIndex = 0;
+        do {
+            ray             = _neoArkBridgeAllocatePulsingStarRay(redIntensity);
+            xRadiusMultiple = partIndex * 3 - 1;
+            yRadiusMultiple = partIndex + 1;
+            ray->x0         = projection->sx + (projection->radius * xRadiusMultiple);
+            ray->y0         = projection->sy - (projection->radius * yRadiusMultiple);
+            ray->x1         = projection->sx;
+            ray->y1         = projection->sy;
+            ray->x2         = projection->sx - (projection->radius * xRadiusMultiple);
+            ray->y2         = projection->sy + (projection->radius * yRadiusMultiple);
+            addPrim((&gGpuCurrentOt[((u32)projection->otz << gDisplayState.otDepthShift) >> 4 & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK >> 2)]),
+                    ray);
+            gpuSetPrimitiveBlendMode(ray, GPU_BLEND_ADD, projection->otz);
+            partIndex = yRadiusMultiple;
+        } while (partIndex < 2);
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(GlowCentreRadiusScratch);
+}
+
+#include "../../shared/effects/water_ripple_task.inc.c"
+
+void neoArkBridgeWaterRippleTask(Task* task)
+{
+    _waterRippleTask(task);
+}
+
+#include "../../shared/effects/water_splash.inc.c"
+
+#include "../../shared/effects/water_drift_task.inc.c"
+
+void neoArkBridgeWaterDriftTask(Task* task)
+{
+    _waterDriftTask(task);
+}
+
+#include "../../shared/effects/water_spin.inc.c"
+
+#include "../../shared/room/room_visual_effects.inc.c"
+
+#include "../../shared/room/room_visual_effects_flash_task.inc.c"
+
+void neoArkBridgeRoomVisualEffectsFlashTask(Task* task)
+{
+    _roomVisualEffectsFlashTask(task);
+}
+
+#include "../../shared/room/room_visual_effects_trails.inc.c"
+
+void neoArkBridgeRoomVisualEffectsTwinTrailTask(Task* task)
+{
+#include "../../shared/room/room_visual_effects_trail_task.inc.c"
+
+    void neoArkBridgeRoomVisualEffectsSparkBurstTask(Task * task)
+    {
+        _roomVisualEffectsSparkBurstTask(task);
+    }
+
+#include "../../shared/room/room_visual_effects_glow.inc.c"

@@ -1,0 +1,88 @@
+// Overlay-local symbols for shelter_b6_corridor.
+_gShelterB6CorridorWallLightEndpoints = 0x8017F834; // size:0x80 defined:True
+gShelterB6CorridorViewMaps = 0x8017F8B4; // size:0x4 defined:True
+gShelterB6CorridorViewCounts = 0x8017F8B8; // size:0x2 defined:True
+gShelterB6CorridorWarpEntries = 0x8017F8BC; // size:0x70 defined:True
+_gShelterB6CorridorCollisionGridNormals = 0x8017F92C; // size:0x30 defined:True
+_gShelterB6CorridorCollisionGridVerts = 0x8017F95C; // size:0x60 defined:True
+_gShelterB6CorridorCollisionGridFaces = 0x8017F9BC; // size:0x90 defined:True
+_gShelterB6CorridorCollisionGridCells = 0x8017FA4C; // size:0x38 defined:True
+_gShelterB6CorridorCollisionGridTable = 0x8017FA84; // size:0xC defined:True
+gShelterB6CorridorCollisionGrid = 0x8017FA90; // size:0x24 defined:True
+gShelterB6CorridorViewCameras = 0x8017FAB4; // size:0xB4 defined:True
+_gShelterB6CorridorView1SpriteBatches = 0x8017FB68; // size:0x10 defined:True
+_gShelterB6CorridorView2SpriteSources = 0x8017FB78; // size:0x2BC defined:True
+_gShelterB6CorridorView2SpriteBatches = 0x8017FE34; // size:0x20 defined:True
+_gShelterB6CorridorView3SpriteSources = 0x8017FE54; // size:0x1B8 defined:True
+_gShelterB6CorridorView3SpriteBatches = 0x8018000C; // size:0x20 defined:True
+_gShelterB6CorridorView4SpriteBatches = 0x8018002C; // size:0x10 defined:True
+_gShelterB6CorridorView5SpriteBatches = 0x8018003C; // size:0x10 defined:True
+gShelterB6CorridorSpriteViews = 0x8018004C; // size:0x3C defined:True
+_gShelterB6CorridorRoomPointLights = 0x80180088; // size:0x60 defined:True
+gShelterB6CorridorRoomLights = 0x801800E8; // size:0x18 defined:True
+gShelterB6CorridorViewBoundaryTriggers = 0x80180100; // size:0x1C8 defined:True
+_gShelterB6CorridorAreaResources = 0x801802C8; // size:0x3C defined:True
+gShelterB6CorridorAreaVariants = 0x80180304; // size:0x68 defined:True
+gShelterB6CorridorActionTriggers = 0x8018036C; // size:0x17C defined:True
+gShelterB6CorridorRoomAmbientByView = 0x801804E8; // size:0x30 defined:True
+_gShelterB6CorridorSurface1FootstepSounds = 0x80180518; // size:0xC defined:True
+_gShelterB6CorridorSurface2FootstepSounds = 0x80180524; // size:0xC defined:True
+_gShelterB6CorridorDefaultSurfaceProperties = 0x80180530; // size:0x8 defined:True
+_gShelterB6CorridorSurface1Properties = 0x80180538; // size:0x8 defined:True
+_gShelterB6CorridorSurface2Properties = 0x80180540; // size:0x8 defined:True
+gShelterB6CorridorSurfaceProperties = 0x80180548; // size:0x20 defined:True
+_gScreenWaveContext = 0x80180568; // size:0x4 defined:True
+_gScreenWaveColumnWaves = 0x8018056C; // size:0x50 defined:True
+gActor101100Tasks = 0x80147400; // absolute:True owner=actor_101100
+gActor205200ControllerPartTasks = 0x8014CA60; // absolute:True owner=actor_205200
+gActor205200BodyTaskDesc = 0x801567C4; // absolute:True owner=actor_205200
+gActor350500MaskedEveReverseWalkTaskDesc = 0x80168EA4; // absolute:True owner=actor_350500 shared=actors
+gMapNeoArkCorridorDefaultPlacements = 0x8017C0F0; // absolute:True owner=map_neo_ark
+_gShelterB6CorridorBattleEndSkipScript = 0x8017F684; // size:0x1B0 defined:True
+_gShelterB6CorridorBattleEndEveStartTransform = 0x8017F2F4; // size:0x18 defined:True
+_gShelterB6CorridorBattleEndEveBackingTarget = 0x8017F30C; // size:0x18 defined:True
+_gShelterB6CorridorBattleEndEveExitTarget = 0x8017F324; // size:0x18 defined:True
+_gShelterB6CorridorEveWalkBackwardCommand = 0x8017F33C; // size:0x4 defined:True
+_gShelterB6CorridorEveWalkForwardCommand = 0x8017F340; // size:0x4 defined:True
+_gShelterB6CorridorBattleEndEveWalkAnimations = 0x8017F344; // size:0x8 defined:True
+_gShelterB6CorridorStopEveControllerCommand = 0x8017F34C; // size:0x4 defined:True
+_gShelterB6CorridorDestroyEveBodyCommand = 0x8017F350; // size:0x4 defined:True
+_gShelterB6CorridorBattleEndScript = 0x8017F354; // size:0x330 defined:True
+_gScreenWaveRowWaves = 0x801805BC; // size:0xF0 defined:True
+gScreenWaveGrid = 0x801806AC; // size:0x4B04 defined:True
+_gShelterB6CorridorBattleEndPlayerAnimation = 0x8017F27C; // size:0x14 defined:True
+D_shelter_b6_corridor_8017F290 = 0x8017F290; // size:0x64 defined:True
+_gShelterB6CorridorScreenWaveTasks = 0x8017EF08; // size:0x18 defined:True
+_gScreenWaveAmplitude = 0x8017EF20; // size:0x4 defined:True
+_gShelterB6CorridorRoomMessages = 0x8017EF24; // size:0x30 defined:True
+_gShelterB6CorridorAnimation01C70Bank1 = 0x8017EF54; // size:0x48 defined:True
+_gShelterB6CorridorAnimation01C70Bank4 = 0x8017EF9C; // size:0xB8 defined:True
+_gShelterB6CorridorAnimation01C70Records = 0x8017F054; // size:0x1B4 defined:True
+_gShelterB6CorridorAnimation01C70Indices = 0x8017F208; // size:0x28 defined:True
+_gShelterB6CorridorAnimation01C70 = 0x8017F230; // size:0x28 defined:True
+_gShelterB6CorridorBattleEndAnimationSets = 0x8017F258; // size:0x8 defined:True
+_gShelterB6CorridorBattleEndAnimationBankCopy = 0x8017F260; // size:0x8 defined:True
+D_shelter_b6_corridor_8017F268 = 0x8017F268; // size:0x14 defined:True
+D_shelter_b6_corridor_801851B0 = 0x801851B0; // size:0x8 defined:True
+_gShelterB6CorridorPlayerHitGlowGeneration = 0x801851B8; // size:0x4 defined:True
+
+shelterB6CorridorDrawBodyGlow = 0x8017EBA4; // type:func
+
+shelterB6CorridorSetPartDestroyedSprites = 0x8017EE08; // type:func
+
+shelterB6CorridorDrawViewGlowsTask = 0x8017E238; // type:func
+
+shelterB6CorridorPlayerHitGlowTask = 0x8017ECA8; // type:func
+_glowDrawCapsule = 0x8017E360; // type:func
+_screenWaveGridTask = 0x8017D5D0; // type:func
+_shelterB6CorridorRejectKeyItemUse = 0x8017dea8; // type:func
+_shelterB6CorridorIgnoreRoomAction = 0x8017e020; // type:func
+_shelterB6CorridorInitRoom = 0x8017e064; // type:func
+_shelterB6CorridorSetImageMaskMode = 0x8017e12c; // type:func
+shelterB6CorridorRoomTask = 0x8017e144; // type:func
+_shelterB6CorridorFinishScriptedBattle = 0x8017e19c; // type:func
+_shelterB6CorridorLockAttachmentsAndCancelEffects = 0x8017e204; // type:func
+_shelterB6CorridorResolveRoomTransition = 0x8017deb0; // type:func
+_shelterB6CorridorHandlePartCommand = 0x8017df48; // type:func
+_shelterB6CorridorStartBattleEndScene = 0x8017e028; // type:func
+_gShelterB6CorridorRoomStates = 0x8017d5c4;

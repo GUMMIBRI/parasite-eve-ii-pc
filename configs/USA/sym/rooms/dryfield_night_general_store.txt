@@ -1,0 +1,100 @@
+// Overlay-local symbols for dryfield_night_general_store.
+_gRoomEventTaskDesc = 0x8017E78C; // size:0xC defined:True
+_gGeneralStoreTaskDescriptors = 0x8017E798; // size:0x24 defined:True
+_gDryfieldNightGeneralStoreMessageTable = 0x8017E7BC; // size:0x30 defined:True
+_gDryfieldNightGeneralStoreLightShaftPoints = 0x8017E7EC; // size:0x20 defined:True
+_gDryfieldNightGeneralStoreView12LightShaftPoints = 0x8017E80C; // size:0x10 defined:True
+_gDryfieldNightGeneralStoreView13LightShaftPoints = 0x8017E81C; // size:0x10 defined:True
+gDryfieldNightGeneralStoreRoomLighting = 0x8017E82C; // size:0x8 defined:True
+gDryfieldNightGeneralStoreRoomCollisionResources = 0x8017E834; // size:0x10 defined:True
+gDryfieldNightGeneralStoreViewMaps = 0x8017E844; // size:0x4 defined:True
+gDryfieldNightGeneralStoreViewCounts = 0x8017E848; // size:0x2 defined:True
+gDryfieldNightGeneralStoreWarpEntries = 0x8017E84C; // size:0xA8 defined:True
+_gDryfieldNightGeneralStoreCollisionGridNormals = 0x8017E8F4; // size:0x68 defined:True
+_gDryfieldNightGeneralStoreCollisionGridVerts = 0x8017E95C; // size:0x478 defined:True
+_gDryfieldNightGeneralStoreCollisionGridFaces = 0x8017EDD4; // size:0x420 defined:True
+_gDryfieldNightGeneralStoreCollisionGridCells = 0x8017F1F4; // size:0x26C defined:True
+_gDryfieldNightGeneralStoreCollisionGridTable = 0x8017F460; // size:0x24 defined:True
+_gDryfieldNightGeneralStoreCollisionGrid = 0x8017F484; // size:0x24 defined:True
+gDryfieldNightGeneralStoreViewCameras = 0x8017F4A8; // size:0x240 defined:True
+_gDryfieldNightGeneralStoreView1SpriteBatches = 0x8017F6E8; // size:0x10 defined:True
+_gDryfieldNightGeneralStoreView2SpriteSources = 0x8017F6F8; // size:0x7D0 defined:True
+_gDryfieldNightGeneralStoreView2SpriteBatches = 0x8017FEC8; // size:0x58 defined:True
+_gDryfieldNightGeneralStoreView3SpriteSources = 0x8017FF20; // size:0x834 defined:True
+_gDryfieldNightGeneralStoreView3SpriteBatches = 0x80180754; // size:0x38 defined:True
+_gDryfieldNightGeneralStoreView4SpriteSources = 0x8018078C; // size:0x6A4 defined:True
+_gDryfieldNightGeneralStoreView4SpriteBatches = 0x80180E30; // size:0x48 defined:True
+_gDryfieldNightGeneralStoreView5SpriteSources = 0x80180E78; // size:0x58C defined:True
+_gDryfieldNightGeneralStoreView5SpriteBatches = 0x80181404; // size:0x38 defined:True
+_gDryfieldNightGeneralStoreView6SpriteSources = 0x8018143C; // size:0x604 defined:True
+_gDryfieldNightGeneralStoreView6SpriteBatches = 0x80181A40; // size:0x28 defined:True
+_gDryfieldNightGeneralStoreView7SpriteSources = 0x80181A68; // size:0x604 defined:True
+_gDryfieldNightGeneralStoreView7SpriteBatches = 0x8018206C; // size:0x28 defined:True
+_gDryfieldNightGeneralStoreView8SpriteSources = 0x80182094; // size:0x7BC defined:True
+_gDryfieldNightGeneralStoreView8SpriteBatches = 0x80182850; // size:0x38 defined:True
+_gDryfieldNightGeneralStoreView9SpriteSources = 0x80182888; // size:0x730 defined:True
+_gDryfieldNightGeneralStoreView9SpriteBatches = 0x80182FB8; // size:0x30 defined:True
+_gDryfieldNightGeneralStoreView10SpriteSources = 0x80182FE8; // size:0x654 defined:True
+_gDryfieldNightGeneralStoreView10SpriteBatches = 0x8018363C; // size:0x30 defined:True
+_gDryfieldNightGeneralStoreView11SpriteSources = 0x8018366C; // size:0x3E8 defined:True
+_gDryfieldNightGeneralStoreView11SpriteBatches = 0x80183A54; // size:0x20 defined:True
+_gDryfieldNightGeneralStoreView12SpriteSources = 0x80183A74; // size:0x2A8 defined:True
+_gDryfieldNightGeneralStoreView12SpriteBatches = 0x80183D1C; // size:0x18 defined:True
+_gDryfieldNightGeneralStoreView13SpriteSources = 0x80183D34; // size:0x334 defined:True
+_gDryfieldNightGeneralStoreView13SpriteBatches = 0x80184068; // size:0x20 defined:True
+_gDryfieldNightGeneralStoreView14SpriteSources = 0x80184088; // size:0x1B8 defined:True
+_gDryfieldNightGeneralStoreView14SpriteBatches = 0x80184240; // size:0x18 defined:True
+_gDryfieldNightGeneralStoreView15SpriteBatches = 0x80184258; // size:0x10 defined:True
+_gDryfieldNightGeneralStoreView16SpriteBatches = 0x80184268; // size:0x10 defined:True
+gDryfieldNightGeneralStoreSpriteViews = 0x80184278; // size:0xC0 defined:True
+_gDryfieldNightGeneralStorePointLights = 0x80184338; // size:0x480 defined:True
+_gDryfieldNightGeneralStoreRoomLights = 0x801847B8; // size:0x18 defined:True
+_gDryfieldNightGeneralStoreViewBoundaryTriggers = 0x801847D0; // size:0x850 defined:True
+_gDryfieldNightGeneralStoreActionTriggers = 0x80185020; // size:0x5A4 defined:True
+_gDryfieldNightGeneralStoreSightOccluders = 0x801855C4; // size:0xF0 defined:True
+_gDryfieldNightGeneralStoreVariant1Resources = 0x801856B4; // size:0x18 defined:True
+_gDryfieldNightGeneralStoreVariant2Resources = 0x801856CC; // size:0x18 defined:True
+_gDryfieldNightGeneralStoreVariant3Resources = 0x801856E4; // size:0x24 defined:True
+_gDryfieldNightGeneralStoreVariant21Resources = 0x80185708; // size:0x24 defined:True
+gDryfieldNightGeneralStoreAreaVariants = 0x8018572C; // size:0xB0 defined:True
+_gDryfieldNightGeneralStoreAmbientByView = 0x801857DC; // size:0x88 defined:True
+_gDryfieldNightGeneralStoreDefaultFootstepSounds = 0x80185864; // size:0xC defined:True
+_gDryfieldNightGeneralStoreClass2FootstepSounds = 0x80185870; // size:0xC defined:True
+_gDryfieldNightGeneralStoreDefaultSurfaceProperties = 0x8018587C; // size:0x8 defined:True
+_gDryfieldNightGeneralStoreClass1SurfaceProperties = 0x80185884; // size:0x8 defined:True
+_gDryfieldNightGeneralStoreClass2SurfaceProperties = 0x8018588C; // size:0x8 defined:True
+gDryfieldNightGeneralStoreSurfacePropertiesByClass = 0x80185894; // size:0x20 defined:True
+gGeneralStoreUnderpassSavedView = 0x801858B4; // size:0x1 defined:True
+gGeneralStoreUnderpassFade = 0x801858B8; // size:0x4 defined:True
+gRoomEventMsg = 0x801858BC; // size:0x8 defined:True
+gViewIdentityMap = 0x8010CAF8; // absolute:True
+gActor00700RatTaskDesc = 0x80138C80; // absolute:True owner=actor_100700
+gActor00700MothTaskDesc = 0x801393C8; // absolute:True owner=actor_100700
+gActor101600ScavengerTaskDesc = 0x801445DC; // absolute:True owner=actor_101600
+gActor02500Tasks = 0x8014F9A8; // absolute:True owner=actor_202500
+gActor01600ScavengerTaskDesc = 0x8015C5DC; // absolute:True owner=actor_201600
+gMapDryfieldFullGeneralStoreVariant1Placements = 0x8017AEC8; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullGeneralStoreVariant2Placements = 0x8017AF18; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullGeneralStoreVariant3Placements = 0x8017AF58; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullGeneralStoreVariant21Placements = 0x8017AFE8; // absolute:True owner=map_dryfield_full
+gRoomEventActive = 0x801858C4; // size:0x1 defined:True
+gGeneralStoreUnderpassArrivalWarp = 0x801858C5; // size:0x1 defined:True
+gGeneralStoreUnderpassRoom = 0x801858C6; // size:0x1 defined:True
+D_dryfield_night_general_store_801858C7 = 0x801858C7; // size:0x1 defined:True
+gRoomEventReq = 0x801858C8; // size:0x14 defined:True
+
+dryfieldNightGeneralStoreDrawLightShaftsTask = 0x8017E6C8; // type:func
+_glowDrawShaft = 0x8017DEE0; // type:func
+_roomEventGate = 0x8017D630; // type:func
+roomEventTask = 0x8017D794; // type:func
+_roomVariantGeneralStoreMsg = 0x8017D904; // type:func
+_generalStoreUnderpassTransitionTask = 0x8017DAF0; // type:func
+_generalStoreToggleFlagTask = 0x8017DCA8; // type:func
+_generalStoreCommandMsg = 0x8017DD88; // type:func
+_generalStoreSoundMsg = 0x8017DDF0; // type:func
+_dryfieldNightGeneralStoreRejectKeyItem = 0x8017de24; // type:func
+_dryfieldNightGeneralStoreIgnoreRoomAction = 0x8017de2c; // type:func
+_dryfieldNightGeneralStoreRoomIdle = 0x8017de80; // type:func
+_dryfieldNightGeneralStoreInitializeRoomTask = 0x8017de34; // type:func
+dryfieldNightGeneralStoreRoomTask = 0x8017de88; // type:func
+_gDryfieldNightGeneralStoreRoomTaskStates = 0x8017d5f4;

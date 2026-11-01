@@ -1,0 +1,124 @@
+// Overlay-local symbols for dryfield_toilet.
+_gDryfieldToiletPrepareEncounterActorsCommand = 0x801802D4; // size:0x4 defined:True
+_gDryfieldToiletEventCollisionTemplateNormals = 0x801802D8; // size:0x8 defined:True
+_gDryfieldToiletEventCollisionTemplateVerts = 0x801802E0; // size:0x20 defined:True
+_gDryfieldToiletEventCollisionTemplateFaces = 0x80180300; // size:0xC defined:True
+_gDryfieldToiletEventCollisionTemplateCells = 0x8018030C; // size:0x4 defined:True
+_gDryfieldToiletEventCollisionTemplateTable = 0x80180310; // size:0x4 defined:True
+_gDryfieldToiletEventCollisionTemplate = 0x80180314; // size:0x24 defined:True
+_gDryfieldToiletRoomMessages = 0x801802A4; // size:0x30 defined:True
+_gRoomVisualEffectsGlowDiscShades = 0x80181120; // size:0xC defined:True
+gDryfieldToiletRoomCollisionResources = 0x8018112C; // size:0x10 defined:True
+gDryfieldToiletRoomViewMaps = 0x8018113C; // size:0x4 defined:True
+gDryfieldToiletRoomViewCounts = 0x80181140; // size:0x2 defined:True
+gDryfieldToiletRoomLighting = 0x80181144; // size:0x8 defined:True
+gDryfieldToiletWarpEntries = 0x8018114C; // size:0x38 defined:True
+_gDryfieldToiletRoomCollisionGridNormals = 0x80181184; // size:0x38 defined:True
+_gDryfieldToiletRoomCollisionGridVerts = 0x801811BC; // size:0x130 defined:True
+_gDryfieldToiletRoomCollisionGridFaces = 0x801812EC; // size:0xCC defined:True
+_gDryfieldToiletRoomCollisionGridCells = 0x801813B8; // size:0x44 defined:True
+_gDryfieldToiletRoomCollisionGridTable = 0x801813FC; // size:0x8 defined:True
+gViewIdentityMap = 0x8010CAF8; // absolute:True
+gDryfieldToiletRoomCollisionGrid = 0x80181404; // size:0x24 defined:True
+gDryfieldToiletViewCameras = 0x80181428; // size:0x18C defined:True
+_gDryfieldToiletView1SpriteBatches = 0x801815B4; // size:0x10 defined:True
+_gDryfieldToiletView2SpriteSources = 0x801815C4; // size:0x384 defined:True
+_gDryfieldToiletView2SpriteBatches = 0x80181948; // size:0x20 defined:True
+_gDryfieldToiletView3SpriteSources = 0x80181968; // size:0x3AC defined:True
+_gDryfieldToiletView3SpriteBatches = 0x80181D14; // size:0x18 defined:True
+_gDryfieldToiletView4SpriteSources = 0x80181D2C; // size:0x104 defined:True
+_gDryfieldToiletView4SpriteBatches = 0x80181E30; // size:0x18 defined:True
+_gDryfieldToiletView5SpriteSources = 0x80181E48; // size:0x30C defined:True
+_gDryfieldToiletView5SpriteBatches = 0x80182154; // size:0x30 defined:True
+_gDryfieldToiletView5DrawAreas = 0x80182184; // size:0x14 defined:True
+_gDryfieldToiletView6SpriteBatches = 0x80182198; // size:0x10 defined:True
+_gDryfieldToiletView7SpriteBatches = 0x801821A8; // size:0x10 defined:True
+_gDryfieldToiletView8SpriteBatches = 0x801821B8; // size:0x10 defined:True
+_gDryfieldToiletView9SpriteBatches = 0x801821C8; // size:0x10 defined:True
+_gDryfieldToiletView10SpriteBatches = 0x801821D8; // size:0x10 defined:True
+_gDryfieldToiletView11SpriteBatches = 0x801821E8; // size:0x10 defined:True
+gDryfieldToiletSpriteViews = 0x801821F8; // size:0x84 defined:True
+_gDryfieldToiletViewBoundaryTriggers = 0x8018227C; // size:0x1C8 defined:True
+_gDryfieldToiletActionTriggers = 0x80182444; // size:0x2AC defined:True
+_gDryfieldToiletSightOccluders = 0x801826F0; // size:0x3C defined:True
+_gDryfieldToiletPointLights = 0x8018272C; // size:0x180 defined:True
+_gDryfieldToiletRoomLights = 0x801828AC; // size:0x18 defined:True
+_gDryfieldToiletEncounterResources = 0x801828C4; // size:0x24 defined:True
+_gDryfieldToiletBoneSucklerResources = 0x801828E8; // size:0x18 defined:True
+_gDryfieldToiletAmoebaResources = 0x80182900; // size:0x18 defined:True
+gActor102400Tasks = 0x8013647C; // absolute:True owner=actor_102400
+gActor101200BoneSucklerTaskDesc = 0x80138E98; // absolute:True owner=actor_101200
+gActor401000StrangerTaskDesc = 0x80155004; // absolute:True owner=actor_401000
+gActor323300WomanStrangerTaskDescriptors = 0x8017255C; // absolute:True owner=actor_323300
+_gDryfieldToiletAnimation03054Bank1 = 0x80180338; // size:0x48 defined:True
+_gDryfieldToiletAnimation03054Bank4 = 0x80180380; // size:0xB8 defined:True
+_gDryfieldToiletAnimation03054Records = 0x80180438; // size:0x1B4 defined:True
+_gDryfieldToiletAnimation03054Indices = 0x801805EC; // size:0x28 defined:True
+gDryfieldToiletAnimation03054 = 0x80180614; // size:0x28 defined:True
+_gDryfieldToiletAnimation035A4Bank1 = 0x8018063C; // size:0x6C defined:True
+_gDryfieldToiletAnimation035A4Bank4 = 0x801806A8; // size:0x20C defined:True
+_gDryfieldToiletAnimation035A4Records = 0x801808B4; // size:0x288 defined:True
+_gDryfieldToiletAnimation035A4Indices = 0x80180B3C; // size:0x28 defined:True
+gDryfieldToiletAnimation035A4 = 0x80180B64; // size:0x28 defined:True
+gDryfieldToiletAreaVariants = 0x80182918; // size:0x68 defined:True
+gMapDryfieldToiletEncounterPlacements = 0x8017B2A4; // absolute:True owner=map_dryfield
+gMapDryfieldToiletBoneSucklerPlacements = 0x8017B2D4; // absolute:True owner=map_dryfield
+gMapDryfieldToiletAmoebaPlacements = 0x8017B354; // absolute:True owner=map_dryfield
+_gDryfieldToiletLesserStrangerMorphVertexDeltas = 0x80182980; // size:0xA28 defined:True
+_gDryfieldToiletLesserStrangerMorphTargetNormals = 0x801833A8; // size:0x3228 defined:True
+gDryfieldToiletLesserStrangerMorph = 0x801865D0; // size:0x18 defined:True
+_gDryfieldToiletFootstepSounds = 0x801865E8; // size:0xC defined:True
+_gDryfieldToiletSilentBlockingSurface = 0x801865F4; // size:0x8 defined:True
+_gDryfieldToiletFootstepBlockingSurface = 0x801865FC; // size:0x8 defined:True
+_gDryfieldToiletFootstepPassThroughSurface = 0x80186604; // size:0x8 defined:True
+gDryfieldToiletSurfaceClasses = 0x8018660C; // size:0x20 defined:True
+_gDryfieldToiletLesserStrangerMorphSavedVertices = 0x8018662C; // size:0xA30 defined:True
+_gDryfieldToiletLesserStrangerMorphSavedNormals = 0x8018705C; // size:0x3220 defined:True
+_gDryfieldToiletPlayerAnimationBankExtension = 0x80180B8C; // size:0x14 defined:True
+_gDryfieldToiletUnusedPlayerIdleAnimation = 0x80180BA0; // size:0x14 defined:True
+_gDryfieldToiletPlayerEventAnimation48 = 0x80180BB4; // size:0x14 defined:True
+_gDryfieldToiletPlayerEventAnimation49 = 0x80180BC8; // size:0x14 defined:True
+_gDryfieldToiletPlayerSkipAnimation9 = 0x80180BDC; // size:0x14 defined:True
+_gDryfieldToiletPlayerBattlePlacement = 0x80180BF0; // size:0x18 defined:True
+_gDryfieldToiletOddStrangerCommand1 = 0x80180C08; // size:0x4 defined:True
+_gDryfieldToiletOddStrangerAmbushCommand = 0x80180C0C; // size:0x4 defined:True
+_gDryfieldToiletSpawnLesserStrangerCommand = 0x80180C10; // size:0x4 defined:True
+_gDryfieldToiletReleaseLesserStrangerCommand = 0x80180C14; // size:0x4 defined:True
+_gDryfieldToiletUnusedWomanCommands = 0x80180C18; // size:0x8 defined:True
+_gDryfieldToiletUnusedActorPlacements = 0x80180C20; // size:0x30 defined:True
+_gDryfieldToiletEncounterSceneKey = 0x80180C50; // size:0x6 defined:True
+gDryfieldToiletEncounterScript = 0x80180C58; // size:0x2E8 defined:True
+gDryfieldToiletEncounterSkipScript = 0x80180F40; // size:0x1E0 defined:True
+
+dryfieldToiletJetPuffTask = 0x8017DEF4; // type:func
+
+dryfieldToiletConfigureEffectsTask = 0x8017E64C; // type:func
+
+dryfieldToiletRoomVisualEffectsGlowDiscTask = 0x8017E69C; // type:func
+
+dryfieldToiletFlyingSparkTask = 0x8017EBF4; // type:func
+
+dryfieldToiletFlyingOrangeBurstTask = 0x8017F854; // type:func
+
+dryfieldToiletSprayEmitterTask = 0x8017DCF0; // type:func
+_roomVisualEffectsDrawFlyingSpark = 0x8017EE18; // type:func
+_roomVisualEffectsDrawFlyingRing = 0x8017F09C; // type:func
+_roomVisualEffectsDrawFlyingDisc = 0x8017F4C0; // type:func
+_roomVisualEffectsDrawFlyingBurstGlow = 0x8017FA00; // type:func
+_roomVisualEffectsDrawFlyingBurstGroundQuad = 0x8017FF2C; // type:func
+_roomVariantParkingLotMsg = 0x8017D810; // type:func
+_toiletSoundMsg = 0x8017D884; // type:func
+_dryfieldToiletInitEventCollision = 0x8017d5e4; // type:func
+_dryfieldToiletRefuseKeyItemUse = 0x8017d8b8; // type:func
+_dryfieldToiletIgnoreRoomCommand = 0x8017d8c0; // type:func
+_dryfieldToiletHandleRoomAction = 0x8017d8c8; // type:func
+_dryfieldToiletInitRoom = 0x8017d940; // type:func
+_dryfieldToiletIdleRoom = 0x8017d9d4; // type:func
+dryfieldToiletRoomTask = 0x8017d9e4; // type:func
+dryfieldToiletMoveEventCollision = 0x8017da3c; // type:func
+dryfieldToiletStageSceneAudioStart = 0x8017dc50; // type:func
+dryfieldToiletStartScenePlayback = 0x8017dc70; // type:func
+dryfieldToiletFinishScene = 0x8017dc90; // type:func
+dryfieldToiletCancelScene = 0x8017dcb0; // type:func
+dryfieldToiletEngageBattle = 0x8017dcd0; // type:func
+_gDryfieldToiletRoomStates = 0x8017d5c4;

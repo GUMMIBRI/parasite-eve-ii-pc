@@ -1,0 +1,204 @@
+#ifndef INCLUDE_ROOMS_SHELTER_B1_CONTROL_ROOM_H
+#define INCLUDE_ROOMS_SHELTER_B1_CONTROL_ROOM_H
+
+#include "types.h"
+
+#include "gameplay/area.h"
+#include "gameplay/area_flags.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/task_types.h"
+
+/// Two bodyless priority-192 recipes for the freezer scene's control-room movie.
+///
+/// Slot 0 hands display ownership to slot 1, the streamed movie playback task,
+/// then retires. Actor event scripts spawn slot 0; the launcher spawns slot 1
+/// on the display list with zero payloads. There is no terminator. Keep this
+/// room and its movie resources loaded through playback and restoration.
+extern TaskDesc gShelterB1ControlRoomMovieTaskDescs[2];
+
+/// Saved control-room update applied when the freezer scene reloads the main corridor.
+///
+/// The sole update selects placement variant 12 in every save mode, removes
+/// saved enemy poses and clears the area's saved map mark. A second record
+/// carries AREA_APPLY_END. Applying borrows this list synchronously; keep the
+/// control room overlay loaded until it returns.
+extern const AreaApplyRec gShelterB1ControlRoomFreezerSceneAreaUpdates[2];
+
+/// Bodyless priority-112 recipe for the control room's player mirror task.
+///
+/// Gameplay spawns entry 0 with zero payloads for this area. The callback owns
+/// mirror work and a cloned player model; keep this room and player resources
+/// loaded until teardown. The descriptor itself owns no model or work.
+extern TaskDesc gShelterB1ControlRoomMirrorTaskDesc;
+
+/// Number of retained placement-variant slots, including absent slots.
+enum { SHELTER_B1_CONTROL_ROOM_AREA_VARIANT_COUNT = 22 };
+
+/// Shelter B1 control room placement/resource directory indexed by `GameLocationKey.variant`.
+///
+/// Variants 1, 2, 3, 11 and 13 publish layouts. Variants 2 and 3 retain
+/// separate placement and resource lists even though their contents agree.
+/// All other slots, including 0, are absent (NULL, NULL).
+/// Both lists belong to this room overlay. Keep it and any actors supplying
+/// task descriptors loaded through loading, spawning and model-flag updates.
+/// Selectors must be in 0..21; there is no terminator or bounds check.
+extern AreaVariant gShelterB1ControlRoomAreaVariants[SHELTER_B1_CONTROL_ROOM_AREA_VARIANT_COUNT];
+
+/// The control room's one-room directory of logical-view maps.
+///
+/// Room 1 borrows `gViewIdentityMap`: logical views 1..8 select the same
+/// 1-based camera, image and sprite indices. The directory has no terminator;
+/// keep the room and gameplay overlays loaded while borrowing it.
+extern u8* gShelterB1ControlRoomRoomViewMaps[1];
+
+/// Logical-view reverse-search limit for this area's sole room.
+///
+/// Room 1 searches 8 entries in its view map. Index zero corresponds to room ID 1.
+/// Counts are signed halfword element counts, independent of map capacity.
+/// The stage map borrows this array while the room overlay is loaded; there
+/// is no terminator.
+extern ViewCount gShelterB1ControlRoomRoomViewCounts[1];
+
+/// Three control-room warp endpoints.
+///
+/// Slots 1 and 2 face the Control Room Access Tunnel and Access Tunnel doors;
+/// slot 3 repeats slot 1's placement without sounds. All arrive in view 2.
+/// Index by 1-based warp ID minus one; there is no terminator. Placements
+/// use whole world units and yaw uses 4096 units per turn. The stage map
+/// borrows this array while the room overlay and its sound bank stay loaded.
+extern DirectionWarpEntry gShelterB1ControlRoomWarpEntries[3];
+
+/// The control room's walls, floors and raised walkway collision mesh.
+///
+/// Contains 29 faces and a 3-by-1 XZ cell index with 4000-unit square cells.
+/// Vertices are room coordinates; normals use 4096 for unit length. Activation
+/// binds the mutable grid to the view coordinate. Its private mesh pools and
+/// face-index lists stay live only while this room overlay is loaded.
+extern WorldCollisionGrid gShelterB1ControlRoomRoomCollision;
+
+/// Eight control-room cameras, indexed by the mapped view minus one.
+///
+/// Matrices contain world-to-camera Q12 rotations and negated world origins;
+/// projection distances are pixels. There is no terminator. Queued camera
+/// application borrows a record until dispatch, requiring the room to stay loaded.
+extern ViewCamera gShelterB1ControlRoomViewCameras[8];
+
+/// The control room's eight mapped-view sprite descriptors.
+///
+/// Indexed by mapped view minus one. Views 2..6 select 99, 43, 29, 21 and 22
+/// source rectangles; views 1, 7 and 8 retain empty batch-list addresses in
+/// their source slots. Every view keeps decoded image strips and uses no clip
+/// list. Descriptors and private mutable sources/batches borrow the room's lifetime.
+extern SpriteView gShelterB1ControlRoomSpriteViews[8];
+
+/// The control room's two authored point lights, with no directional or cone lights.
+///
+/// Both contribute in every logical view. Coordinate updates and lighting queries
+/// mutate their private transforms and attenuation; the collection and light
+/// storage must remain loaded while used. Position and radii use world units,
+/// and RGB intensities use 4096 for full strength.
+extern WorldCoordRoomLights gShelterB1ControlRoomRoomLights;
+
+/// Directed view boundaries for logical views 2<->3, 3<->6.
+///
+/// All 4 records are live; the final one carries LAST, with no dummy
+/// terminator. Room binding supplies the current view coordinate and enables
+/// the quads. Origins, corner offsets and radii use room game units; normals
+/// use 4096 per unit. Keep this mutable storage loaded until its list is cleared.
+extern WorldCollisionTrigger gShelterB1ControlRoomViewBoundaryTriggers[4];
+
+/// Interaction and transition quads for this room.
+///
+/// Two doors lead to the Control Room Access Tunnel and Access Tunnel.
+/// Two stair quads use surface class 2, three steps and yaw 3072/1024; the
+/// first selects descent. CAP selectors 3..5 and 9 route to the room handler.
+///
+/// All 8 records are live; the final one carries LAST, with no dummy
+/// terminator. Room binding supplies the current view coordinate and enables
+/// the quads. Origins, corner offsets and radii use room game units; normals
+/// use 4096 per unit. Keep this mutable storage loaded until its list is cleared.
+extern WorldCollisionTrigger gShelterB1ControlRoomActionTriggers[8];
+
+/// The control room's ambient-light minima: a count header and eight view colours.
+///
+/// Entry zero holds the count; logical views 1..8 index the colour entries
+/// directly. RGB minima use 16 units per 8-bit colour level. Lighting reads
+/// these records while the room overlay is loaded; views above the count use
+/// gameplay's default ambient minima.
+extern WorldCoordRoomAmbientEntry gShelterB1ControlRoomAmbientByView[9];
+
+/// Collision policies and footstep cues for the control room's surface classes 0..7.
+///
+/// All classes block probes, permit weapon impacts and apply pushback. Class 1
+/// selects the main-floor cues; class 2 selects raised-floor and stair cues.
+/// Classes 0 and 3..7 share the silent policy. There is no terminator; the
+/// directory, private records and cue bases stay live with this room overlay.
+extern WorldCollisionSurfaceProperties* gShelterB1ControlRoomSurfacePropertiesByClass[8];
+
+/// Runs the control room's message receiver and entry-scene setup.
+///
+/// Requires a live task with state 0 (register handlers and optional layout-11
+/// scene), 1 (idle), or 2 (kill). Keep the room and Shelter map overlays loaded
+/// while the receiver and its borrowed message table remain available.
+/// The receiver allocates no work; scene tasks own their own resources.
+void shelterB1ControlRoomRoomTask(Task* task);
+
+/// Draws the control room's fixed glows for the current mapped camera view.
+///
+/// On state 0, installs this room's glow-disc, flying-spark and orange-burst
+/// effect IDs, sets state 1 and draws in the same tick. Mapped views 2 and 3
+/// draw six capsules and an orange disc; view 3 adds four blue discs. Views 4
+/// and 6 draw three and four blue discs respectively; other views draw none.
+/// Requires the room overlay and view mapping to remain loaded, the current
+/// view matrix composed, and the frame's scratch stack and GPU arena ready.
+/// Uses only `task->state`; keeps running until its owner removes the task.
+void shelterB1ControlRoomDrawGlowsTask(Task* task);
+
+/// Runs the control room's attached charge disc, player-joint sparks and release ring.
+///
+/// Requires a coordinate body and counted `EffectWork` initialized by
+/// `effectSpawn` in `spawnArg2.pointer`, with age, brightness, radius and ring
+/// growth initially zero. `spawnArg1.value` selects tint 0 or 1.
+/// Start in `ROOM_VISUAL_EFFECTS_GLOW_DISC_ATTACH`; the owner can request
+/// FLICKER, RELEASE or CANCEL through the corresponding state constants.
+/// Borrows the work's parent coordinate and saved local offset. Growth emits
+/// flying sparks from live player model parts 3..18 and adopts them for teardown;
+/// the flying-spark selector must be installed. Nonzero room effect control
+/// pauses updates; values at least 4 cancel. Release/cancel frees work and child
+/// tasks. Keep the anchor, player, effect controller and room overlay live.
+void shelterB1ControlRoomRoomVisualEffectsGlowDiscTask(Task* task);
+
+/// Runs the control room's animated spark toward its initial target position.
+///
+/// Requires live `gRoomEffectState`, a counted effect task with a coordinate
+/// body, initial state zero, and owned `EffectWork` in `spawnArg2.pointer` with
+/// age and frame index zero.
+/// `spawnArg1.pointer` borrows a target `GfxCoord` through the first running
+/// update; both cached matrices must be current in the same view space.
+/// That update fixes a parent-space step at 204/4096 of the initial separation,
+/// with signed 16-bit narrowing before scaling. Later running updates move by
+/// that step and draw on odd ages; age 20 releases the work and tears down the
+/// task. Room effect control 1..3 pauses; 4 or above cancels. The target is not
+/// sampled again. The control room overlay must remain loaded while dispatched.
+void shelterB1ControlRoomRoomVisualEffectsFlyingSparkTask(Task* task);
+
+/// Runs the control room's orange burst with an expanding glow and fading ring.
+///
+/// Requires live `gRoomEffectState`, a counted effect task with a coordinate
+/// body, initial state zero, and owned `EffectWork` in `spawnArg2.pointer`;
+/// `spawnArg1` is ignored.
+/// Running updates compose the coordinate, grow the disc and layered glow,
+/// and fade the ring before fading the disc. A successful ground projection
+/// adds a ground quad; the glow refreshes a flickering orange point light even
+/// when off screen. Room effect control 1..3
+/// pauses; 4 or above cancels. Cancellation or completed fading releases the
+/// work and tears down the task; callers must not retain released pointers.
+/// The control room overlay must remain loaded while dispatched.
+void shelterB1ControlRoomRoomVisualEffectsFlyingOrangeBurstTask(Task* task);
+
+#endif // INCLUDE_ROOMS_SHELTER_B1_CONTROL_ROOM_H

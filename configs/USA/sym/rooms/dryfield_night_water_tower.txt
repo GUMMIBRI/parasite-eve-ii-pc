@@ -1,0 +1,78 @@
+// Overlay-local symbols for dryfield_night_water_tower.
+_gRoomEventMsg = 0x80182C50; // size:0x8 defined:True
+_gDryfieldNightWaterTowerDoubleFlarePoint = 0x8017E744; // size:0x8 defined:True
+gDryfieldNightWaterTowerRoomLighting = 0x8017E74C; // size:0x8 defined:True
+gDryfieldNightWaterTowerCollisionRooms = 0x8017E754; // size:0x10 defined:True
+gDryfieldNightWaterTowerViewMaps = 0x8017E764; // size:0x4 defined:True
+gDryfieldNightWaterTowerViewCounts = 0x8017E768; // size:0x2 defined:True
+gDryfieldNightWaterTowerWarpEntries = 0x8017E76C; // size:0xE0 defined:True
+_gDryfieldNightWaterTowerCollisionGridNormals = 0x8017E84C; // size:0xC8 defined:True
+_gDryfieldNightWaterTowerCollisionGridVerts = 0x8017E914; // size:0x4F8 defined:True
+_gDryfieldNightWaterTowerCollisionGridFaces = 0x8017EE0C; // size:0x33C defined:True
+_gDryfieldNightWaterTowerCollisionGridCells = 0x8017F148; // size:0x26C defined:True
+_gDryfieldNightWaterTowerCollisionGridTable = 0x8017F3B4; // size:0x40 defined:True
+_gDryfieldNightWaterTowerCollisionGrid = 0x8017F3F4; // size:0x24 defined:True
+gDryfieldNightWaterTowerViewCameras = 0x8017F418; // size:0x168 defined:True
+_gDryfieldNightWaterTowerView1SpriteBatches = 0x8017F580; // size:0x10 defined:True
+_gDryfieldNightWaterTowerView2SpriteSources = 0x8017F590; // size:0x488 defined:True
+_gDryfieldNightWaterTowerView2SpriteBatches = 0x8017FA18; // size:0x30 defined:True
+_gDryfieldNightWaterTowerView3SpriteSources = 0x8017FA48; // size:0x3C0 defined:True
+_gDryfieldNightWaterTowerView3SpriteBatches = 0x8017FE08; // size:0x28 defined:True
+_gDryfieldNightWaterTowerView4SpriteSources = 0x8017FE30; // size:0x6E0 defined:True
+_gDryfieldNightWaterTowerView4SpriteBatches = 0x80180510; // size:0x48 defined:True
+_gDryfieldNightWaterTowerView5SpriteSources = 0x80180558; // size:0x460 defined:True
+_gDryfieldNightWaterTowerView5SpriteBatches = 0x801809B8; // size:0x30 defined:True
+_gDryfieldNightWaterTowerView6SpriteSources = 0x801809E8; // size:0x690 defined:True
+_gDryfieldNightWaterTowerView6SpriteBatches = 0x80181078; // size:0x48 defined:True
+_gDryfieldNightWaterTowerView7SpriteSources = 0x801810C0; // size:0x564 defined:True
+_gDryfieldNightWaterTowerView7SpriteBatches = 0x80181624; // size:0x48 defined:True
+_gDryfieldNightWaterTowerView8SpriteSources = 0x8018166C; // size:0x7BC defined:True
+_gDryfieldNightWaterTowerView8SpriteBatches = 0x80181E28; // size:0x58 defined:True
+_gDryfieldNightWaterTowerView9SpriteBatches = 0x80181E80; // size:0x10 defined:True
+_gDryfieldNightWaterTowerView10SpriteSources = 0x80181E90; // size:0x190 defined:True
+_gDryfieldNightWaterTowerView10SpriteBatches = 0x80182020; // size:0x20 defined:True
+gDryfieldNightWaterTowerSpriteViews = 0x80182040; // size:0x78 defined:True
+_gDryfieldNightWaterTowerDirectionalLights = 0x801820B8; // size:0x160 defined:True
+_gDryfieldNightWaterTowerPointLights = 0x80182218; // size:0x1E0 defined:True
+_gDryfieldNightWaterTowerRoomLights = 0x801823F8; // size:0x18 defined:True
+_gDryfieldNightWaterTowerViewBoundaryTriggers = 0x80182410; // size:0x428 defined:True
+_gDryfieldNightWaterTowerActionTriggers = 0x80182838; // size:0x2AC defined:True
+_gDryfieldNightWaterTowerVariant1Resources = 0x80182AE4; // size:0x24 defined:True
+_gDryfieldNightWaterTowerVariant2Resources = 0x80182B08; // size:0x18 defined:True
+_gDryfieldNightWaterTowerVariant11Resources = 0x80182B20; // size:0x18 defined:True
+_gDryfieldNightWaterTowerVariant21Resources = 0x80182B38; // size:0x24 defined:True
+gDryfieldNightWaterTowerAreaVariants = 0x80182B5C; // size:0xB0 defined:True
+_gDryfieldNightWaterTowerFootstepSounds = 0x80182C0C; // size:0xC defined:True
+_gDryfieldNightWaterTowerSurfaceClass0Properties = 0x80182C18; // size:0x8 defined:True
+_gDryfieldNightWaterTowerSurfaceClass1Properties = 0x80182C20; // size:0x8 defined:True
+_gDryfieldNightWaterTowerSurfaceClass2Properties = 0x80182C28; // size:0x8 defined:True
+gDryfieldNightWaterTowerSurfacePropertiesByClass = 0x80182C30; // size:0x20 defined:True
+gActor04400MadChaserTaskDescs = 0x80142604; // absolute:True owner=actor_104400
+gActor101600ScavengerTaskDesc = 0x801445DC; // absolute:True owner=actor_101600
+gActor400600ZebraStalkerTaskDesc = 0x80151B10; // absolute:True owner=actor_400600
+gActor300700MothTaskDesc = 0x80165B88; // absolute:True owner=actor_300700
+gActor02500Tasks = 0x801679A8; // absolute:True owner=actor_302500
+gMapDryfieldFullWaterTowerVariant1Placements = 0x8017C0B8; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullWaterTowerVariant2Placements = 0x8017C158; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullWaterTowerVariant11Placements = 0x8017C198; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullWaterTowerVariant21Placements = 0x8017C1B8; // absolute:True owner=map_dryfield_full
+_gDryfieldNightWaterTowerGlowPoints = 0x8017E71C; // size:0x28 defined:True
+gRoomEventActive = 0x80182C58; // size:0x4 defined:True
+gRoomEventReq = 0x80182C5C; // size:0x14 defined:True
+gRoomEventTaskDesc = 0x8017E6E0; // size:0xC defined:True
+gDryfieldNightWaterTowerRoomMessages = 0x8017E6EC; // size:0x30 defined:True
+
+dryfieldNightWaterTowerDrawGlowsTask = 0x8017DB80; // type:func
+_glowDrawShaft = 0x8017DC70; // type:func
+_roomEventGate = 0x8017D60C; // type:func
+roomEventTask = 0x8017D770; // type:func
+_glowDrawFlare = 0x8017E458; // type:func
+roomVariantWaterTowerMsg = 0x8017D8E0; // type:func
+waterTowerSoundMsg = 0x8017DA4C; // type:func
+dryfieldNightWaterTowerRejectKeyItemUse = 0x8017da9c; // type:func
+dryfieldNightWaterTowerIgnoreActionMessage = 0x8017dad4; // type:func
+_dryfieldNightWaterTowerInitializeRoomTask = 0x8017dadc; // type:func
+_dryfieldNightWaterTowerIdleRoomTask = 0x8017db20; // type:func
+dryfieldNightWaterTowerRoomTask = 0x8017db28; // type:func
+dryfieldNightWaterTowerCommandMessage = 0x8017daa4; // type:func
+_gDryfieldNightWaterTowerRoomStates = 0x8017d5dc;

@@ -1,0 +1,71 @@
+#include "main/random.h"
+
+/* Part of the paced walk library; see paced_walk.h. */
+
+/* ACTOR_RENDER_DRAW_WALKER_GROUND_SHADOW is an object-like binding to a
+ * declared static void(Task*) drawer. The call evaluates task once. */
+#ifndef ACTOR_RENDER_DRAW_WALKER_GROUND_SHADOW
+#error "Bind ACTOR_RENDER_DRAW_WALKER_GROUND_SHADOW before including this fragment"
+#endif
+
+/// Samples a paced walker's three lights at its composed root, with Y lowered by 800.
+///
+/// Requires a live model with writable lighting matrices and an acyclic root
+/// hierarchy. The sample keeps the full composition frame, including the view
+/// when it is an ancestor. Reads twelve sample bytes synchronously and retains
+/// no pointer. Requires initialized room lights, composition and scratch/GTE
+/// state, with input and output storage disjoint from the scratch stack.
+static inline void _actorRenderLightPacedWalkerRoot(const TmdObject* model, GfxCoord* rootCoord)
+{
+    enum { PACED_WALK_LIGHT_SAMPLE_Y_OFFSET = 800,
+           PACED_WALK_LIGHT_COUNT           = 3 };
+    VECTOR3 lightingSample;
+    actorRenderComposeCoord(rootCoord);
+    lightingSample.vx = rootCoord->workm.t[0];
+    lightingSample.vy = rootCoord->workm.t[1] - PACED_WALK_LIGHT_SAMPLE_Y_OFFSET;
+    lightingSample.vz = rootCoord->workm.t[2];
+    worldCoordSetModelLighting(model, &lightingSample, 0, PACED_WALK_LIGHT_COUNT);
+}
+
+/// Lights and updates a paced walker, draws its shadow and emits scripted smoke.
+///
+/// Requires the spawned model/work/rig and live carrier bindings. Chooses one
+/// of eleven effect parts with rand() on every call, including hidden frames.
+/// Samples the composed root's full-chain XYZ with Y minus 800, preserving
+/// that composition frame, before movement/animation. Shadow follows update.
+/// A shown, buffered smoking model emits on odd killCountdown values and then
+/// increments that counter; each puff consumes two shared LCG draws. All sample
+/// storage is borrowed only during the synchronous call; enemy is unused.
+static void _pacedWalkFrame(Enemy* unusedEnemy, Task* task)
+{
+    enum {
+        PACED_WALK_EFFECT_PART_COUNT = 11,
+        PACED_WALK_SMOKE_LOW_MASK    = 0x10FF,
+        PACED_WALK_SMOKE_HIGH_BASE   = 0x800231C0
+    };
+    TmdObject*     model;
+    GfxCoord*      rootCoord;
+    GfxCoord*      smokePart;
+    PacedWalkWork* work;
+    u32            smokeLowBits;
+    u32            smokeHighBits;
+
+    model     = task->extra.tmd;
+    rootCoord = model->coords;
+    smokePart = &task->extra.tmd->coords[_gPacedWalkSmokePartIndices[(rand() * PACED_WALK_EFFECT_PART_COUNT) >> 15]];
+    work      = task->work;
+    // Sample lighting before the update; the shadow uses its resulting root cache.
+    _actorRenderLightPacedWalkerRoot(model, rootCoord);
+    PACED_WALK_UPDATE(task);
+    ACTOR_RENDER_DRAW_WALKER_GROUND_SHADOW(task);
+    if (work->smoking != 0 && !(model->flags & TMD_OBJECT_SKIP_ACTIVE_DRAW) && model->buffer != NULL) {
+        if (task->killCountdown & 1) {
+            RANDOM_LCG_ADVANCE();
+            smokeLowBits = RANDOM_LCG_DRAW() & PACED_WALK_SMOKE_LOW_MASK;
+            RANDOM_LCG_ADVANCE();
+            smokeHighBits = ((RANDOM_LCG_DRAW() & 1) << 30) + PACED_WALK_SMOKE_HIGH_BASE;
+            effectSpawn(EFFECT_SMOKE_PUFF, smokePart, smokeLowBits + smokeHighBits, NULL);
+        }
+        task->killCountdown++;
+    }
+}

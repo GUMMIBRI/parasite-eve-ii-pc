@@ -1,0 +1,1327 @@
+#include "gameplay/scene_combat.h"
+#include "gameplay/world_collision.h"
+
+#include <psyq/libgte.h>
+#include <psyq/inline_c.h>
+
+#include "common.h"
+#include "gte.h"
+
+#include "gameplay/actor.h"
+#include "gameplay/collision.h"
+#include "collision.h"
+#include "gameplay/enemy.h"
+#include "gameplay/geometry.h"
+#include "gameplay/hud_sprites.h"
+#include "gameplay/loading.h"
+#include "gameplay/room.h"
+
+#include "gameplay/damage.h"
+#include "main/mc.h"
+#include "main/mem.h"
+#include "main/scratch.h"
+#include "main/session.h"
+#include "main/task_types.h"
+
+/// Scratch-stack workspace for finding the contact nearest a capsule body's second endpoint.
+///
+/// The endpoint is the capsule's `ends[1]` offset plus the body's position,
+/// each component truncated to a signed halfword, in the body's own frame and
+/// in game-coordinate units. The body's cached transform rotates it and the
+/// transform's translation places it in the world. The vector that held the
+/// rotated endpoint then takes, for each contact measured, that contact's
+/// point minus the placed endpoint; the length of that difference is the
+/// distance compared. The block is reserved uninitialized for one search and
+/// released before it returns. The SDK vectors' fourth components are never
+/// written, and nothing uses them.
+typedef struct {
+    union {
+        VECTOR rotatedEndpoint; // Local endpoint after the body's rotation, before its translation
+        VECTOR contactDelta;    // Contact point minus the placed endpoint, for the entry being measured
+    } work;
+    VECTOR  worldEndpoint;      // Endpoint 1 placed in the world: rotated, then translated
+    SVECTOR localEndpoint;      // Endpoint 1 in the body's frame: capsule offset plus the body's position
+} _WorldCollisionNearestContactScratch;
+STATIC_ASSERT_SIZEOF(_WorldCollisionNearestContactScratch, 0x28);
+
+/// X or Z product of two 4096-unit normals below which they count as opposed.
+///
+/// The value is minus half of one squared unit. A more negative product on
+/// either axis selects the opposed-push result. The correction is still stored.
+enum { WORLD_COLLISION_OPPOSED_NORMAL_PRODUCT = -0x800000 };
+
+/// Shift from a 12-bit normal-times-distance product to a 16.16 correction.
+enum { WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT = 4 };
+
+/// Packed grid-key fields used by the pushback resolvers; normals have twelve fractional bits.
+enum {
+    WORLD_COLLISION_PUSHBACK_SURFACE_CLASS_MASK   = 7,
+    WORLD_COLLISION_PUSHBACK_RESPONSE_MASK        = 0xF00,
+    WORLD_COLLISION_PUSHBACK_RESPONSE_SHIFT       = 8,
+    WORLD_COLLISION_PUSHBACK_NORMAL_FRACTION_BITS = 12
+};
+
+/// Scratch-stack workspace for resolving grid contacts into one pushback step.
+///
+/// The block is reserved uninitialized for that resolution and released before
+/// it returns. Only occupied grid contacts on surfaces that apply pushback are
+/// accumulated. `nonFloorSum` totals `normal * distance` for contacts whose
+/// normal is not a floor. `floorSum` totals the vertical part of the floor
+/// contacts, clearing X and Z on every one of them, and `floorCount` is how
+/// many entered that sum so it can be averaged in. `opposedProduct` holds the
+/// latest pairwise X and Z products of the non-floor normals; its Y is unused.
+/// Distances are world-coordinate units, so each product has twelve fractional
+/// bits before `WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT`.
+typedef struct {
+    VECTOR nonFloorSum;    // Sum of normal*distance for pushback contacts that are not floors
+    VECTOR floorSum;       // Floor contacts: Y sums normal.vy*distance; X and Z are cleared each contact
+    VECTOR opposedProduct; // Latest pairwise X and Z products of non-floor normals; Y is unused
+    s32    floorCount;     // Floor contacts included in floorSum; zero skips the average
+} _WorldCollisionPushbackScratch;
+STATIC_ASSERT_SIZEOF(_WorldCollisionPushbackScratch, 0x34);
+
+/// Slots of `_WorldCollisionResponsePushbackScratch.corrections`.
+///
+/// A slot's index is the response value a grid contact carries in bits 8..11
+/// of its key, so that value selects both how the contact is resolved and the
+/// slot that receives it.
+enum {
+    WORLD_COLLISION_RESPONSE_PUSHBACK_OVERLAP = 0, // Ordinary overlap: pushed out along the face normal
+    WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR   = 1, // Floor query: lifted by the distance to the floor
+    WORLD_COLLISION_RESPONSE_PUSHBACK_EDGE    = 2, // Edge overlap: slid horizontally off the nearest edge
+    WORLD_COLLISION_RESPONSE_PUSHBACK_COUNT   = 3
+};
+
+/// Scratch-stack workspace for resolving grid contacts by their response value.
+///
+/// The block is reserved for that resolution and released before it returns.
+/// Only occupied grid contacts on surfaces that apply pushback contribute.
+/// `corrections` is cleared on entry and holds one candidate correction for
+/// each response value: the overlap slot sums `normal * distance` over every
+/// ordinary contact, the floor slot keeps the last floor contact's lift
+/// `-(distance << 12)` in Y, and the edge slot keeps the X and Z of
+/// `normal * distance` for the edge contact with the smallest distance among
+/// those whose normal is horizontal. The result is overlap plus floor when
+/// any ordinary contact contributed, and floor plus edge otherwise.
+///
+/// `opposedProduct` is left unset on entry and holds the latest pairwise X
+/// and Z products of the ordinary contacts' normals; its Y is unused.
+/// Distances are world-coordinate units and normals use 4096 for one unit, so
+/// every correction has twelve fractional bits before
+/// `WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT`.
+typedef struct {
+    VECTOR corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_COUNT]; // Candidate correction per response value; see the slot enum
+    VECTOR opposedProduct;                                       // Latest pairwise X and Z products of ordinary-contact normals; Y is unused
+} _WorldCollisionResponsePushbackScratch;
+STATIC_ASSERT_SIZEOF(_WorldCollisionResponsePushbackScratch, 0x40);
+
+/// Temporary vectors for placing a body's floor-query segment and finding its direction.
+///
+/// The local endpoints lie on the body's Y axis through the local origin, so
+/// their X and Z are zero. Endpoint 0's Y is the body's position plus its
+/// radius and endpoint 1's is the position minus that radius, each truncated
+/// to a signed 16-bit component. The radius is the floor-query half-height,
+/// in game units. The body's cached transform rotates an endpoint; the
+/// caller's endpoint is that result plus the translation. The same vector
+/// then holds endpoint 0 minus endpoint 1 for normalization. The block lives
+/// on the scratch stack for that calculation. The SDK vectors' fourth
+/// components are unused and left uninitialized.
+typedef struct {
+    union {
+        VECTOR rotatedEndpoint; // Local endpoint after the body's rotation, before its translation
+        VECTOR segmentDelta;    // Placed endpoint 0 minus endpoint 1, before normalization
+    } work;
+    SVECTOR localEndpoints[2];  // Body-frame ends: [0] position Y plus the half-height, [1] minus it
+} _WorldCollisionFloorSegmentScratch;
+STATIC_ASSERT_SIZEOF(_WorldCollisionFloorSegmentScratch, 0x20);
+
+/// Scratch-stack workspace for building the rotation that faces along a direction.
+///
+/// The rotation is the product Ry(yaw) * Rx(-pitch) * Rz(roll), whose third
+/// column - the local Z axis - is the normalized direction. Yaw is the
+/// direction's heading about Y, measured from +Z toward +X, and pitch its
+/// elevation above the XZ plane; the caller supplies the roll. Angles count
+/// 4096 units per turn and matrix elements use `ONE` (4096) for 1.0.
+///
+/// The block is reserved uninitialized for one conversion and released before
+/// it returns. Only the nine rotation elements of each matrix are used; their
+/// translations and the vector's fourth halfword are never written.
+typedef struct {
+    union {
+        SVECTOR direction; // Unit direction, `ONE` for 1.0, from which yaw and pitch are measured
+        SVECTOR angles;    // Single-axis Euler angles for the next factor: yaw in Y, minus pitch in X, roll in Z
+    } work;
+    MATRIX rotation;       // Accumulated product: Ry(yaw), then Ry(yaw) * Rx(-pitch)
+    MATRIX axisRotation;   // Factor right-multiplied next: Rx(-pitch), then Rz(roll)
+    s16    pitch;          // Elevation of the direction above the XZ plane, 0..0xFFF
+    s16    yaw;            // Heading of the direction about Y, 0..0xFFF
+} _GfxDirectionRotationScratch;
+STATIC_ASSERT_SIZEOF(_GfxDirectionRotationScratch, 0x4C);
+
+/// The SDK natural logarithm uses twelve fractional bits; ln(2) is 2839 at that scale.
+enum {
+    WORLD_COLLISION_SURFACE_LOG_FRACTION_BITS = 12,
+    WORLD_COLLISION_SURFACE_LOG_TWO           = 2839
+};
+
+/* Define BSS before API headers to preserve first-declaration order. */
+WorldCollisionTrigger* gWorldCollisionActionTriggerListHead;
+
+WorldCollisionBody* gWorldCollisionPlayerBodyListHead;
+
+WorldCollisionBody* gWorldCollisionPlayerAttackListHead;
+
+WorldCollisionBody* gWorldCollisionEnemyBodyListHead;
+
+WorldCollisionBody* gWorldCollisionEnemyAttackListHead;
+
+WorldCollisionBody* gWorldCollisionPropListHead;
+
+/// Retained body-list slot 5, with no current insertion caller or collision pass.
+///
+/// Reset clears the head and the selector table preserves its slot/address.
+/// The intended entity role is unproven; no storage is owned through this head.
+WorldCollisionBody* _gWorldCollisionBodyList5Head;
+
+WorldCollisionBody* gWorldCollisionBodyList6Head;
+
+WorldCollisionBody* gWorldCollisionGridOnlyListHead;
+
+WorldCollisionBody* gWorldCollisionBlastListHead;
+
+#include "world_collision.h"
+#include "attachments.h"
+
+/// Writes the X/Z products of two contact normals and marks an opposed result.
+///
+/// Used inside the resolvers' retained pair loops. `contactsArg` is evaluated
+/// four times and each index twice; `productsArg` is a writable VECTOR
+/// lvalue evaluated for each store and test. `resultArg` is assigned only on
+/// opposition. Arguments must be live, disjoint and free of side effects;
+/// each index must select a readable contact. Normals use 4096 per unit, so
+/// the signed products are Q24: either X or Z below minus half a squared unit
+/// marks opposition; equality does not. This is an axis test, not a dot product.
+/// Captures no caller locals and leaves Y/pad and a non-opposed result alone.
+/// Expands to a block plus the call site's semicolon; use only as a standalone
+/// statement inside braces, never as an unbraced if/else body.
+#define WORLD_COLLISION_CHECK_OPPOSED_NORMALS(contactsArg, firstIndexArg, secondIndexArg, productsArg, resultArg)                     \
+    {                                                                                                                                 \
+        (productsArg).vx = (contactsArg)[firstIndexArg].response.direction.vx * (contactsArg)[secondIndexArg].response.direction.vx;  \
+        (productsArg).vz = (contactsArg)[firstIndexArg].response.direction.vz * (contactsArg)[secondIndexArg].response.direction.vz;  \
+        if ((productsArg).vx < WORLD_COLLISION_OPPOSED_NORMAL_PRODUCT || (productsArg).vz < WORLD_COLLISION_OPPOSED_NORMAL_PRODUCT) { \
+            (resultArg) = WORLD_COLLISION_PUSHBACK_OPPOSED;                                                                           \
+        }                                                                                                                             \
+    }
+
+/// Selects the writable first-link address for each collision-body group, 0..8.
+///
+/// Entries are addresses of separate borrowed list heads, not body records.
+/// Linking appends through the selected link; each body's prev then names
+/// either that head or its predecessor's next link. No body storage is owned.
+static WorldCollisionBody** _gWorldCollisionBodyListHeads[] = {
+    &gWorldCollisionPlayerBodyListHead,
+    &gWorldCollisionPlayerAttackListHead,
+    &gWorldCollisionEnemyBodyListHead,
+    &gWorldCollisionEnemyAttackListHead,
+    &gWorldCollisionPropListHead,
+    &_gWorldCollisionBodyList5Head,
+    &gWorldCollisionBodyList6Head,
+    &gWorldCollisionGridOnlyListHead,
+    &gWorldCollisionBlastListHead,
+};
+/// Writable list-head addresses selected by trigger group (0 action, 1 view boundary).
+///
+/// Linking and clearing update the selected head, not this table. Heads and
+/// trigger records remain owned by their collision/room lifetimes.
+static WorldCollisionTrigger** _gWorldCollisionTriggerListHeads[2] = {
+    &gWorldCollisionActionTriggerListHead,
+    &gWorldCollisionViewBoundaryListHead,
+};
+/// Address of the borrowed sight-occluder list's writable first link, at index zero.
+///
+/// Link and clear operations mutate the head through this table. Occluders
+/// remain owned by their room/model resources; this table owns no records.
+static WorldCollisionOccluder** _gWorldCollisionOccluderListHeads[1] = {
+    &gWorldCollisionOccluderListHead,
+};
+
+void worldCollisionResetListsAndGrid(void)
+{
+    gWorldCollisionPlayerBodyListHead       = NULL;
+    gWorldCollisionPlayerAttackListHead     = NULL;
+    gWorldCollisionEnemyBodyListHead        = NULL;
+    gWorldCollisionEnemyAttackListHead      = NULL;
+    gWorldCollisionPropListHead             = NULL;
+    _gWorldCollisionBodyList5Head           = NULL;
+    gWorldCollisionBodyList6Head            = NULL;
+    gWorldCollisionGridOnlyListHead         = NULL;
+    gWorldCollisionBlastListHead            = NULL;
+    gWorldCollisionActiveGrid               = NULL;
+    gWorldCollisionActionTriggerListHead    = NULL;
+    gWorldCollisionViewBoundaryListHead     = NULL;
+    gWorldCollisionOccluderListHead         = NULL;
+    gWorldCollisionActionHitClearingEnabled = 0;
+}
+
+s32 worldCollisionSegmentOccluded(const SVECTOR* segmentStart, const SVECTOR* segmentEnd)
+{
+    VECTOR*                 direction;
+    WorldCollisionOccluder* occluder;
+    s32                     occluded;
+
+    occluded      = 0;
+    occluder      = gWorldCollisionOccluderListHead;
+    direction     = SCRATCH_STACK_RESERVE_BLOCK(VECTOR);
+    direction->vx = segmentEnd->vx - segmentStart->vx;
+    direction->vy = segmentEnd->vy - segmentStart->vy;
+    direction->vz = segmentEnd->vz - segmentStart->vz;
+    VectorNormal(direction, direction);
+    for (; occluder != NULL; occluder = occluder->next) {
+        if (occluder->flags & WORLD_COLLISION_OCCLUDER_ENABLED) {
+            occluded = worldCollisionTestOccluderSegment(occluder, segmentStart, segmentEnd, direction);
+            if (occluded == 1) {
+                break;
+            }
+        }
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(VECTOR);
+    return occluded;
+}
+
+/// Dispatches one body-kind rule with its prescribed argument order.
+///
+/// `rule` must select an installed handler slot 0..4 matching the bodies'
+/// initialized shapes. Any nonzero swap flag exchanges the arguments. Bodies
+/// are borrowed and writable for contact recording; handlers must preserve
+/// their live lists' links. Passes the u16 slot as the handler's s32 third
+/// argument and ignores its return value. Retains no pointers.
+static inline void _worldCollisionDispatchBodyPair(const WorldCollisionPairRule* rule, WorldCollisionBody* firstBody, WorldCollisionBody* secondBody)
+{
+    u16 swapBodies;
+    u16 handlerIndex;
+
+    swapBodies   = rule->swapBodies;
+    handlerIndex = rule->handlerIndex;
+    if (swapBodies == false) {
+        gWorldCollisionPairHandlers[handlerIndex](firstBody, secondBody, handlerIndex);
+    } else {
+        gWorldCollisionPairHandlers[handlerIndex](secondBody, firstBody, handlerIndex);
+    }
+}
+
+void worldCollisionCollideBodyLists(WorldCollisionBody* firstList, WorldCollisionBody* secondList)
+{
+    WorldCollisionBody*           secondBody;
+    const WorldCollisionPairRule* rule;
+    s32                           rowOffsetBytes;
+    s32                           ruleOffsetBytes;
+    u16                           firstBodyFlags;
+    u8                            firstKindIndex;
+    u8                            secondKindIndex;
+
+    for (; firstList != NULL; firstList = firstList->next) {
+        firstBodyFlags = firstList->flags;
+        if (firstBodyFlags & WORLD_COLLISION_BODY_PAIR_ENABLED) {
+            firstKindIndex = (firstList->flags & WORLD_COLLISION_BODY_KIND_MASK) - WORLD_COLLISION_BODY_SPHERE;
+            secondBody     = secondList;
+            if (secondBody != NULL) {
+                rowOffsetBytes = firstKindIndex * (s32)sizeof(gWorldCollisionPairRules[0]);
+                for (; secondBody != NULL; secondBody = secondBody->next) {
+                    if (secondBody->flags & WORLD_COLLISION_BODY_PAIR_ENABLED) {
+                        secondKindIndex = (secondBody->flags & WORLD_COLLISION_BODY_KIND_MASK) - WORLD_COLLISION_BODY_SPHERE;
+                        ruleOffsetBytes = secondKindIndex * (s32)sizeof(WorldCollisionPairRule) + rowOffsetBytes;
+                        // Complete the byte offset before adding the matrix base.
+                        rule = (const WorldCollisionPairRule*)((const u8*)&gWorldCollisionPairRules + ruleOffsetBytes);
+                        _worldCollisionDispatchBodyPair(rule, firstList, secondBody);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void worldCollisionCollideBodyListGrid(const WorldCollisionBody* body)
+{
+    u16 bodyFlags;
+
+    if (gWorldCollisionActiveGrid != 0) {
+        for (; body != NULL; body = body->next) {
+            bodyFlags = body->flags;
+            if (bodyFlags & WORLD_COLLISION_BODY_GRID_ENABLED) {
+                switch (bodyFlags & WORLD_COLLISION_BODY_KIND_MASK) {
+                    case WORLD_COLLISION_BODY_NONE:
+                        break;
+                    case WORLD_COLLISION_BODY_SPHERE:
+                        worldCollisionCollideSphereGrid(body);
+                        break;
+                    case WORLD_COLLISION_BODY_CONTACT_PROXY:
+                        break;
+                    case WORLD_COLLISION_BODY_CAPSULE:
+                        worldCollisionCollideCapsuleGrid(body);
+                        break;
+                    case WORLD_COLLISION_BODY_MOTION_SPHERE:
+                        // Floor contact zero must precede motion-filtered overlaps.
+                        if (body->flags & WORLD_COLLISION_BODY_FLOOR_QUERY) {
+                            worldCollisionQueryMotionSphereFloor(body);
+                        }
+                        worldCollisionCollideMotionSphereGrid(body);
+                        break;
+                }
+            }
+        }
+    }
+}
+
+void worldCollisionScanActionTriggers(const WorldCollisionBody* body, s32 flagsMask, s32 flagsMatch)
+{
+    WorldCollisionTrigger* trigger;
+
+    // This cursor is shared across the body walk, so only the first match tests it.
+    trigger = gWorldCollisionActionTriggerListHead;
+    for (; body != NULL; body = body->next) {
+        if ((body->flags & flagsMask) == (u16)flagsMatch) {
+            for (; trigger != NULL; trigger = trigger->next) {
+                if (trigger->flags & WORLD_COLLISION_TRIGGER_ENABLED) {
+                    worldCollisionTestActionTriggerSphere(body, trigger);
+                }
+            }
+        }
+    }
+}
+
+void worldCollisionScanViewBoundaries(WorldCollisionBody* body, s32 flagsMask, s32 flagsMatch)
+{
+    WorldCollisionTrigger* boundary;
+    GameActor*             playerActor;
+    s32                    playerSlot;
+    s32                    bodyFlagsMask;
+    u16                    bodyFlagsMatch;
+
+    boundary       = gWorldCollisionViewBoundaryListHead;
+    playerSlot     = GAME_TASK_SLOT_PLAYER;
+    bodyFlagsMask  = flagsMask;
+    bodyFlagsMatch = flagsMatch;
+    playerActor    = gameGetTaskSlot(playerSlot)->work;
+    for (; body != NULL; body = body->next) {
+        if ((body->flags & bodyFlagsMask) == bodyFlagsMatch) {
+            for (; boundary != NULL; boundary = boundary->next) {
+                if (boundary->flags & WORLD_COLLISION_TRIGGER_ENABLED) {
+                    worldCollisionTestViewBoundarySphere(body, boundary, &playerActor->previousPosition);
+                }
+            }
+        }
+    }
+}
+
+s32 worldCollisionPairNop(WorldCollisionBody* firstBody, WorldCollisionBody* secondBody, s32 handlerIndex)
+{
+    return 0;
+}
+
+void worldCollisionViewToCell(const VECTOR* viewPosition, SVECTOR* cellOut)
+{
+    VECTOR*             roomPosition;
+    WorldCollisionGrid* grid;
+    s32                 biasedCoordinate;
+
+    roomPosition = SCRATCH_STACK_RESERVE_BLOCK(VECTOR);
+    // Recover room XZ coordinates; the SDK reads XYZ despite its mutable input type.
+    ApplyTransposeMatrixLV(&gWorldCollisionActiveGrid->viewCoord->workm, (VECTOR*)viewPosition, roomPosition);
+    grid             = gWorldCollisionActiveGrid;
+    biasedCoordinate = roomPosition->vx + grid->xBias - grid->viewCoord->coord.t[0];
+    if (biasedCoordinate >= 0) {
+        cellOut->vx = biasedCoordinate / grid->cellSize;
+    } else {
+        cellOut->vx = WORLD_COLLISION_GRID_INVALID_CELL;
+    }
+    grid             = gWorldCollisionActiveGrid;
+    cellOut->vy      = 0;
+    biasedCoordinate = roomPosition->vz + grid->zBias - grid->viewCoord->coord.t[2];
+    if (biasedCoordinate >= 0) {
+        cellOut->vz = biasedCoordinate / grid->cellSize;
+    } else {
+        cellOut->vz = WORLD_COLLISION_GRID_INVALID_CELL;
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(VECTOR);
+}
+
+void worldCollisionGetBodyComposedPosition(const WorldCollisionBody* body, VECTOR* position)
+{
+    // Only XYZ is accessed; the remainder of the original reservation is unproven.
+    enum { WORLD_COLLISION_BODY_POSITION_SCRATCH_BYTES = 0x30 };
+    VECTOR3* rotatedOffset;
+
+    rotatedOffset = SCRATCH_STACK_RESERVE_BYTES(WORLD_COLLISION_BODY_POSITION_SCRATCH_BYTES);
+    gte_SetRotMatrix(&body->coord->workm);
+    gte_ldv0(&body->pos);
+    gte_rtv0();
+    gte_stlvnl(rotatedOffset);
+    position->vx = body->coord->workm.t[0] + rotatedOffset->vx;
+    position->vy = body->coord->workm.t[1] + rotatedOffset->vy;
+    position->vz = body->coord->workm.t[2] + rotatedOffset->vz;
+    SCRATCH_STACK_RELEASE_BYTES(WORLD_COLLISION_BODY_POSITION_SCRATCH_BYTES);
+}
+
+void worldCollisionPlaceFloorSegment(const WorldCollisionBody* body, VECTOR endpoints[2], SVECTOR* direction)
+{
+    _WorldCollisionFloorSegmentScratch* scratch;
+    s32                                 endpointIndex;
+
+    scratch = SCRATCH_STACK_RESERVE_BLOCK(_WorldCollisionFloorSegmentScratch);
+    // Local Y segment through the origin: X and Z stay zero, one half-height either side of the body's Y.
+    scratch->localEndpoints[0].vx = 0;
+    scratch->localEndpoints[0].vy = (u16)body->pos.vy + body->radius;
+    scratch->localEndpoints[0].vz = 0;
+    scratch->localEndpoints[1].vx = 0;
+    scratch->localEndpoints[1].vy = (u16)body->pos.vy - body->radius;
+    scratch->localEndpoints[1].vz = 0;
+    gte_SetRotMatrix(&body->coord->workm);
+    for (endpointIndex = 0; endpointIndex < ARRAY_SIZE(scratch->localEndpoints); endpointIndex++) {
+        gte_ldv0(&scratch->localEndpoints[endpointIndex]);
+        gte_rtv0();
+        gte_stlvnl(&scratch->work.rotatedEndpoint);
+        endpoints[endpointIndex].vx = scratch->work.rotatedEndpoint.vx + body->coord->workm.t[0];
+        endpoints[endpointIndex].vy = scratch->work.rotatedEndpoint.vy + body->coord->workm.t[1];
+        endpoints[endpointIndex].vz = scratch->work.rotatedEndpoint.vz + body->coord->workm.t[2];
+    }
+    scratch->work.segmentDelta.vx = endpoints[0].vx - endpoints[1].vx;
+    scratch->work.segmentDelta.vy = endpoints[0].vy - endpoints[1].vy;
+    scratch->work.segmentDelta.vz = endpoints[0].vz - endpoints[1].vz;
+    VectorNormalS(&scratch->work.segmentDelta, direction);
+    SCRATCH_STACK_RELEASE_BLOCK(_WorldCollisionFloorSegmentScratch);
+}
+
+void worldCollisionClearActionHits(void)
+{
+    WorldCollisionTrigger* trigger;
+
+    for (trigger = gWorldCollisionActionTriggerListHead; trigger != NULL; trigger = trigger->next) {
+        if (trigger->hit != 0) {
+            trigger->hit = 0;
+        }
+    }
+}
+
+/// Converts room-space XZ in game units to signed grid-cell indices.
+///
+/// Requires a live active grid with positive cellSize. Each biased negative
+/// axis becomes WORLD_COLLISION_GRID_INVALID_CELL; other axes divide by
+/// cellSize and narrow to signed halfwords, without an upper-bound check.
+/// Writes zero to Y, reads no input Y and retains no pointers. Input and
+/// writable output must be disjoint. No coordinate transform is performed.
+static void _worldCollisionRoomToCell(const VECTOR3* roomPosition, SVECTOR3* cellOut)
+{
+    s32                       biasedAxis;
+    const WorldCollisionGrid* grid;
+
+    grid       = gWorldCollisionActiveGrid;
+    biasedAxis = roomPosition->vx + grid->xBias;
+    if (biasedAxis >= 0) {
+        cellOut->vx = biasedAxis / grid->cellSize;
+    } else {
+        cellOut->vx = WORLD_COLLISION_GRID_INVALID_CELL;
+    }
+    grid        = gWorldCollisionActiveGrid;
+    cellOut->vy = 0;
+    biasedAxis  = roomPosition->vz + grid->zBias;
+    if (biasedAxis >= 0) {
+        cellOut->vz = biasedAxis / grid->cellSize;
+    } else {
+        cellOut->vz = WORLD_COLLISION_GRID_INVALID_CELL;
+    }
+}
+
+s32 worldCollisionResolvePushback(const WorldCollisionContact* contacts, WorldCollisionDelta* delta, s32 contactCount, s32* surfaceMaskOut)
+{
+    _WorldCollisionPushbackScratch* scratch;
+    const WorldCollisionContact*    contact;
+    s32                             contactIndex;
+    s32                             otherIndex;
+    s32                             nonFloorCount;
+    s32                             surfaceMask;
+    s32                             result;
+
+    nonFloorCount = 0;
+    result        = WORLD_COLLISION_PUSHBACK_NO_GRID_HIT;
+    surfaceMask   = 0;
+    /* `nonFloorIndices` is a VLA, so its alloca has to be emitted after the three
+     * initializations above; the inner block is what pins that order. */
+    {
+        s16 nonFloorIndices[contactCount];
+
+        if (contactCount == 0) {
+            return nonFloorCount;
+        }
+
+        scratch = SCRATCH_STACK_RESERVE_BLOCK(_WorldCollisionPushbackScratch);
+
+        scratch->nonFloorSum.vx = 0;
+        scratch->nonFloorSum.vy = 0;
+        scratch->nonFloorSum.vz = 0;
+        scratch->floorSum.vx    = 0;
+        scratch->floorSum.vy    = 0;
+        scratch->floorSum.vz    = 0;
+        scratch->floorCount     = 0;
+
+        // Separate floor contacts from the rest of the pushback.
+        for (contactIndex = 0; contactIndex < contactCount; contactIndex++) {
+            contact = &contacts[contactIndex];
+            if ((contact->flags & WORLD_COLLISION_CONTACT_OCCUPIED) && (contact->key.value & WORLD_COLLISION_CONTACT_KIND_MASK) == WORLD_COLLISION_CONTACT_GRID) {
+                surfaceMask |= 1 << contact->key.value;
+                if (gWorldCollisionSurfacePushbackSuppression[contact->key.value & WORLD_COLLISION_PUSHBACK_SURFACE_CLASS_MASK] == WORLD_COLLISION_SURFACE_APPLY_PUSHBACK) {
+                    if (contact->response.direction.vy >= WORLD_COLLISION_FLOOR_NORMAL_Y) {
+                        scratch->nonFloorSum.vx         += contact->response.direction.vx * contact->distance;
+                        scratch->nonFloorSum.vy         += contact->response.direction.vy * contact->distance;
+                        scratch->nonFloorSum.vz         += contact->response.direction.vz * contact->distance;
+                        nonFloorIndices[nonFloorCount++] = contactIndex;
+                    } else {
+                        scratch->floorSum.vx  = 0;
+                        scratch->floorSum.vy += contact->response.direction.vy * contact->distance;
+                        scratch->floorSum.vz  = 0;
+                        scratch->floorCount++;
+                    }
+                }
+                result = WORLD_COLLISION_PUSHBACK_GRID_HIT;
+            }
+        }
+
+        if (surfaceMaskOut != NULL) {
+            *surfaceMaskOut = surfaceMask;
+        }
+
+        // Record when two non-floor normals oppose on X or Z.
+        for (contactIndex = 0; contactIndex < nonFloorCount; contactIndex++) {
+            for (otherIndex = 1; otherIndex < nonFloorCount; otherIndex++) {
+                WORLD_COLLISION_CHECK_OPPOSED_NORMALS(contacts, nonFloorIndices[contactIndex], nonFloorIndices[otherIndex], scratch->opposedProduct, result);
+            }
+        }
+
+        // Convert the 12-bit products to a 16.16 correction, averaging the floors.
+        delta->fixed.vx.word = scratch->nonFloorSum.vx << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+        delta->fixed.vy.word = scratch->nonFloorSum.vy << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+        delta->fixed.vz.word = scratch->nonFloorSum.vz << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+        if (scratch->floorCount != 0) {
+            delta->fixed.vx.word += (scratch->floorSum.vx / scratch->floorCount) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+            delta->fixed.vy.word += (scratch->floorSum.vy / scratch->floorCount) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+            delta->fixed.vz.word += (scratch->floorSum.vz / scratch->floorCount) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+        }
+
+        SCRATCH_STACK_RELEASE_BLOCK(_WorldCollisionPushbackScratch);
+        return result;
+    }
+}
+
+s32 worldCollisionResolveResponsePushback(const WorldCollisionContact* contacts, WorldCollisionDelta* delta, s32 contactCount, s32* surfaceMaskOut)
+{
+    enum { WORLD_COLLISION_RESPONSE_CONTACT_CAPACITY = 32,
+           WORLD_COLLISION_EDGE_DISTANCE_NONE        = 0 };
+    _WorldCollisionResponsePushbackScratch* scratch;
+    const WorldCollisionContact*            contact;
+    s32                                     contactIndex;
+    s32                                     otherIndex;
+    s32                                     overlapCount;
+    s32                                     surfaceMask;
+    s32                                     result;
+    s32                                     nearestEdgeDistance;
+    u8                                      overlapIndices[WORLD_COLLISION_RESPONSE_CONTACT_CAPACITY];
+
+    result              = WORLD_COLLISION_PUSHBACK_NO_GRID_HIT;
+    overlapCount        = 0;
+    surfaceMask         = 0;
+    nearestEdgeDistance = WORLD_COLLISION_EDGE_DISTANCE_NONE;
+    if (contactCount == 0) {
+        return result;
+    }
+
+    scratch = SCRATCH_STACK_RESERVE_BLOCK(_WorldCollisionResponsePushbackScratch);
+
+    // The opposed product needs no clearing: it is written before each test.
+    for (contactIndex = 0; contactIndex < WORLD_COLLISION_RESPONSE_PUSHBACK_COUNT; contactIndex++) {
+        scratch->corrections[contactIndex].vx = 0;
+        scratch->corrections[contactIndex].vy = 0;
+        scratch->corrections[contactIndex].vz = 0;
+    }
+
+    // File each grid contact's correction under its response value.
+    for (contactIndex = 0; contactIndex < contactCount; contactIndex++) {
+        contact = &contacts[contactIndex];
+        if ((contact->flags & WORLD_COLLISION_CONTACT_OCCUPIED) && (contact->key.value & WORLD_COLLISION_CONTACT_KIND_MASK) == WORLD_COLLISION_CONTACT_GRID) {
+            surfaceMask |= 1 << contact->key.value;
+            if (gWorldCollisionSurfacePushbackSuppression[contact->key.value & WORLD_COLLISION_PUSHBACK_SURFACE_CLASS_MASK] == WORLD_COLLISION_SURFACE_APPLY_PUSHBACK) {
+                switch ((u32)(contact->key.value & WORLD_COLLISION_PUSHBACK_RESPONSE_MASK) >> WORLD_COLLISION_PUSHBACK_RESPONSE_SHIFT) {
+                    case WORLD_COLLISION_RESPONSE_PUSHBACK_OVERLAP:
+                        scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_OVERLAP].vx += contact->distance * contact->response.direction.vx;
+                        scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_OVERLAP].vy += contact->distance * contact->response.direction.vy;
+                        scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_OVERLAP].vz += contact->distance * contact->response.direction.vz;
+                        overlapIndices[overlapCount++]                                      = contactIndex;
+                        break;
+                    case WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR:
+                        scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR].vx = 0;
+                        scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR].vy = -(contact->distance << WORLD_COLLISION_PUSHBACK_NORMAL_FRACTION_BITS);
+                        scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR].vz = 0;
+                        break;
+                    case WORLD_COLLISION_RESPONSE_PUSHBACK_EDGE:
+                        if (contact->response.direction.vy == 0 && ((s16)nearestEdgeDistance == WORLD_COLLISION_EDGE_DISTANCE_NONE || contact->distance < (s16)nearestEdgeDistance)) {
+                            scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_EDGE].vx = contact->distance * contact->response.direction.vx;
+                            scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_EDGE].vy = 0;
+                            scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_EDGE].vz = contact->distance * contact->response.direction.vz;
+                            nearestEdgeDistance                                             = (u16)contact->distance;
+                        }
+                        break;
+                }
+            }
+            result = WORLD_COLLISION_PUSHBACK_GRID_HIT;
+        }
+    }
+
+    // Record when two ordinary-contact normals oppose on X or Z.
+    for (contactIndex = 0; contactIndex < overlapCount; contactIndex++) {
+        for (otherIndex = 1; otherIndex < overlapCount; otherIndex++) {
+            WORLD_COLLISION_CHECK_OPPOSED_NORMALS(contacts, overlapIndices[contactIndex], overlapIndices[otherIndex], scratch->opposedProduct, result);
+        }
+    }
+
+    if (surfaceMaskOut != NULL) {
+        *surfaceMaskOut = surfaceMask;
+    }
+
+    // Convert the 12-bit products to a 16.16 correction; the edge slide applies only without an ordinary overlap.
+    if (overlapCount != 0) {
+        delta->fixed.vx.word = (scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_OVERLAP].vx + scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR].vx) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+        delta->fixed.vy.word = (scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_OVERLAP].vy + scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR].vy) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+        delta->fixed.vz.word = (scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_OVERLAP].vz + scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR].vz) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+    } else {
+        delta->fixed.vx.word = (scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR].vx + scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_EDGE].vx) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+        delta->fixed.vy.word = (scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR].vy + scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_EDGE].vy) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+        delta->fixed.vz.word = (scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_FLOOR].vz + scratch->corrections[WORLD_COLLISION_RESPONSE_PUSHBACK_EDGE].vz) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+    }
+
+    SCRATCH_STACK_RELEASE_BLOCK(_WorldCollisionResponsePushbackScratch);
+    return result;
+}
+
+#undef WORLD_COLLISION_CHECK_OPPOSED_NORMALS
+
+/// Places a capsule's second endpoint in its body's cached composition frame.
+///
+/// The body requires a live, composed coordinate; its frame can be view space.
+/// Adds the endpoint offset to the body's position with signed-halfword wrapping
+/// before rotation and translation. Writes XYZ only; vector pad components are
+/// untouched. The caller owns the reserved scratch block, clear of the body and
+/// capsule. Replaces the GTE rotation and arithmetic state and retains no pointers.
+static inline void _worldCollisionPlaceCapsuleSecondEndpoint(const WorldCollisionBody*             body,
+                                                             const WorldCollisionCapsule*          capsule,
+                                                             _WorldCollisionNearestContactScratch* scratch)
+{
+    gte_SetRotMatrix(&body->coord->workm);
+    scratch->localEndpoint.vx = (u16)capsule->ends[1].vx + (u16)body->pos.vx;
+    scratch->localEndpoint.vy = (u16)capsule->ends[1].vy + (u16)body->pos.vy;
+    scratch->localEndpoint.vz = (u16)capsule->ends[1].vz + (u16)body->pos.vz;
+    gte_ldv0(&scratch->localEndpoint);
+    gte_rtv0();
+    gte_stlvnl(&scratch->work.rotatedEndpoint);
+    scratch->worldEndpoint.vx = scratch->work.rotatedEndpoint.vx + body->coord->workm.t[0];
+    scratch->worldEndpoint.vy = scratch->work.rotatedEndpoint.vy + body->coord->workm.t[1];
+    scratch->worldEndpoint.vz = scratch->work.rotatedEndpoint.vz + body->coord->workm.t[2];
+}
+
+/// Returns the occupied contact nearest a capsule's second endpoint, as a one-based index, or 0.
+///
+/// `body` must be a capsule with a live cached world transform and a readable,
+/// non-NULL contact table ending in `WORLD_COLLISION_CONTACT_LAST`. The final
+/// entry is included, holes are allowed and equal distances retain the first
+/// match. `contactKind` is a packed-key category already shifted into the high
+/// halfword, with zero in the low halfword. Distances use game-coordinate units;
+/// the local endpoint sum truncates to signed halfwords before world placement.
+/// The body and table are unchanged. Uses a temporary scratch-stack block and
+/// changes GTE state; no pointer is retained.
+static s32 _worldCollisionFindNearestCapsuleEndContactIndex(const WorldCollisionBody* body, s32 contactKind)
+{
+    // The unsigned all-ones value is above every candidate distance.
+    enum { WORLD_COLLISION_NEAREST_DISTANCE_NONE = -1 };
+    _WorldCollisionNearestContactScratch* scratch;
+    const WorldCollisionCapsule*          capsule;
+    const WorldCollisionContact*          contact;
+    u32                                   nearestDistance;
+    s32                                   contactIndex;
+    s32                                   nearestContactIndex;
+    s32                                   deltaX;
+    s32                                   deltaY;
+    s32                                   deltaZ;
+    u32                                   distance;
+
+    nearestDistance     = WORLD_COLLISION_NEAREST_DISTANCE_NONE;
+    contactIndex        = 0;
+    nearestContactIndex = contactIndex;
+    capsule             = body->context.capsule;
+    scratch             = SCRATCH_STACK_RESERVE_BLOCK(_WorldCollisionNearestContactScratch);
+    contact             = capsule->contacts;
+    // Place the capsule's second endpoint in the world: rotate it, then add the translation.
+    _worldCollisionPlaceCapsuleSecondEndpoint(body, capsule, scratch);
+
+    // Measure every occupied contact of the requested kind from that endpoint.
+    for (;;) {
+        if ((contact->flags & WORLD_COLLISION_CONTACT_OCCUPIED) && ((contact->key.value & WORLD_COLLISION_CONTACT_KIND_MASK) == contactKind)) {
+            deltaX                        = contact->point.vx - scratch->worldEndpoint.vx;
+            scratch->work.contactDelta.vx = deltaX;
+            deltaY                        = contact->point.vy - scratch->worldEndpoint.vy;
+            scratch->work.contactDelta.vy = deltaY;
+            deltaZ                        = contact->point.vz - scratch->worldEndpoint.vz;
+            scratch->work.contactDelta.vz = deltaZ;
+            distance                      = SquareRoot0((deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ));
+            if (distance < nearestDistance) {
+                nearestDistance     = distance;
+                nearestContactIndex = contactIndex + 1;
+            }
+        }
+        if (contact->flags & WORLD_COLLISION_CONTACT_LAST) {
+            break;
+        }
+        contact++;
+        contactIndex++;
+    }
+
+    SCRATCH_STACK_RELEASE_BLOCK(_WorldCollisionNearestContactScratch);
+    return nearestContactIndex;
+}
+
+/// Appends a borrowed collision body in insertion order and records its incoming link.
+///
+/// `listHead` must address a live, writable head slot for an acyclic list;
+/// `body` must be non-NULL and absent from every list. The incoming link is
+/// the head slot for an empty list, or the previous tail's `next` otherwise.
+/// The head slot must remain alive while the list is nonempty, and each body
+/// until it is unlinked. The body becomes the new tail; its shape, contacts
+/// and flags are unchanged. The caller is responsible for validating the
+/// shape kind and setting the LINKED flag.
+static inline void _worldCollisionAppendBody(WorldCollisionBody** listHead, WorldCollisionBody* body)
+{
+    WorldCollisionBody*       tail;
+    WorldCollisionBody* const first = *listHead;
+
+    if (first != NULL) {
+        tail = first;
+        while (tail->next != NULL) {
+            tail = tail->next;
+        }
+        tail->next = body;
+        body->prev = &tail->next;
+    } else {
+        *listHead  = body;
+        body->prev = listHead;
+    }
+    body->next = NULL;
+}
+
+void worldCollisionLinkBody(s32 listIndex, WorldCollisionBody* body)
+{
+    u16                  flags;
+    WorldCollisionBody** head;
+
+    head  = _gWorldCollisionBodyListHeads[listIndex];
+    flags = body->flags;
+    if (!(flags & WORLD_COLLISION_BODY_LINKED)) {
+        if ((flags & WORLD_COLLISION_BODY_KIND_MASK) <= WORLD_COLLISION_BODY_MOTION_SPHERE) {
+            body->flags = flags | WORLD_COLLISION_BODY_LINKED;
+            _worldCollisionAppendBody(head, body);
+        }
+    }
+}
+
+void worldCollisionUnlinkBody(WorldCollisionBody* body)
+{
+    u16                  flags;
+    WorldCollisionBody*  next;
+    WorldCollisionBody** previousLink;
+
+    flags = body->flags;
+    if (flags & WORLD_COLLISION_BODY_LINKED) {
+        next         = body->next;
+        body->flags  = flags & WORLD_COLLISION_BODY_KIND_MASK;
+        previousLink = body->prev;
+        if (next != NULL) {
+            *previousLink = next;
+            next->prev    = body->prev;
+            body->next    = NULL;
+        } else {
+            *previousLink = NULL;
+        }
+        body->prev = NULL;
+    }
+}
+
+/// Appends a trigger in insertion order and binds its incoming pointer slot.
+///
+/// The node must be absent from the live acyclic list and every other list.
+/// Borrows it and the writable head slot until unlinking. At an empty head,
+/// prevLink points to that slot; otherwise it points to the old tail's next.
+/// Overwrites next with NULL; flags, geometry and hit state are untouched.
+static inline void _worldCollisionAppendTrigger(WorldCollisionTrigger** listHead, WorldCollisionTrigger* trigger)
+{
+    WorldCollisionTrigger* first;
+
+    first = *listHead;
+    if (first != NULL) {
+        WorldCollisionTrigger* tail = first;
+
+        while (tail->next != NULL) {
+            tail = tail->next;
+        }
+        tail->next        = trigger;
+        trigger->prevLink = &tail->next;
+    } else {
+        *listHead         = trigger;
+        trigger->prevLink = listHead;
+    }
+    trigger->next = NULL;
+}
+
+void worldCollisionLinkTrigger(s32 listIndex, WorldCollisionTrigger* trigger)
+{
+    u8                      flags;
+    WorldCollisionTrigger** listHead;
+
+    listHead = _gWorldCollisionTriggerListHeads[listIndex];
+    flags    = trigger->flags;
+    if (!(flags & WORLD_COLLISION_TRIGGER_LINKED)) {
+        trigger->flags = flags | WORLD_COLLISION_TRIGGER_LINKED;
+        _worldCollisionAppendTrigger(listHead, trigger);
+    }
+}
+
+/// Removes a trigger through its incoming slot and repairs the successor's backlink.
+///
+/// `next` must equal trigger->next, and prevLink must point to the live slot
+/// containing trigger. Clears both departing links; a NULL next is already
+/// cleared and needs no write. Flags, geometry and hit state remain intact.
+/// Frees nothing; the caller controls list membership flags and storage lifetime.
+static inline void _worldCollisionSpliceOutTrigger(WorldCollisionTrigger* trigger, WorldCollisionTrigger* next)
+{
+    WorldCollisionTrigger** previousLink;
+
+    previousLink = trigger->prevLink;
+    if (next != NULL) {
+        *previousLink  = next;
+        next->prevLink = trigger->prevLink;
+        trigger->next  = NULL;
+    } else {
+        *previousLink = NULL;
+    }
+    trigger->prevLink = NULL;
+}
+
+void worldCollisionUnlinkTrigger(s32 unusedListIndex, WorldCollisionTrigger* trigger)
+{
+    u8                     flags;
+    WorldCollisionTrigger* next;
+
+    flags = trigger->flags;
+    if (flags & WORLD_COLLISION_TRIGGER_LINKED) {
+        next           = trigger->next;
+        trigger->flags = flags & WORLD_COLLISION_TRIGGER_PERSISTENT_FLAGS;
+        _worldCollisionSpliceOutTrigger(trigger, next);
+    }
+}
+
+void worldCollisionClearTriggerList(s32 listIndex)
+{
+    enum { WORLD_COLLISION_TRIGGER_TRANSIENT_FLAGS = 0xFF ^ WORLD_COLLISION_TRIGGER_PERSISTENT_FLAGS };
+    WorldCollisionTrigger** listHead;
+    WorldCollisionTrigger*  trigger;
+    WorldCollisionTrigger*  next;
+    WorldCollisionTrigger*  first;
+    s32                     flags;
+
+    listHead = _gWorldCollisionTriggerListHeads[listIndex];
+    first    = *listHead;
+    if (first != NULL) {
+        trigger   = first;
+        *listHead = NULL;
+        for (;;) {
+            flags             = trigger->flags;
+            next              = trigger->next;
+            trigger->prevLink = NULL;
+            flags            &= ~WORLD_COLLISION_TRIGGER_TRANSIENT_FLAGS;
+            trigger->flags    = flags;
+            if (next != NULL) {
+                trigger->next = NULL;
+                trigger       = next;
+            } else {
+                break;
+            }
+        }
+    }
+}
+
+/// Appends an occluder in insertion order and binds its incoming pointer slot.
+///
+/// The node must be absent from the live acyclic list and every other list.
+/// Borrows it and the writable head slot until unlinking. At an empty head,
+/// prevLink points to that slot; otherwise it points to the old tail's next.
+/// Overwrites next with NULL; flags and geometry are untouched.
+static inline void _worldCollisionAppendOccluder(WorldCollisionOccluder** listHead, WorldCollisionOccluder* occluder)
+{
+    WorldCollisionOccluder* first;
+
+    first = *listHead;
+    if (first != NULL) {
+        WorldCollisionOccluder* tail = first;
+
+        while (tail->next != NULL) {
+            tail = tail->next;
+        }
+        tail->next         = occluder;
+        occluder->prevLink = &tail->next;
+    } else {
+        *listHead          = occluder;
+        occluder->prevLink = listHead;
+    }
+    occluder->next = NULL;
+}
+
+void worldCollisionLinkOccluder(s32 listIndex, WorldCollisionOccluder* occluder)
+{
+    u8                       flags;
+    WorldCollisionOccluder** listHead;
+
+    listHead = _gWorldCollisionOccluderListHeads[listIndex];
+    flags    = occluder->flags;
+    if (!(flags & WORLD_COLLISION_OCCLUDER_LINKED)) {
+        occluder->flags = flags | WORLD_COLLISION_OCCLUDER_LINKED;
+        _worldCollisionAppendOccluder(listHead, occluder);
+    }
+}
+
+/// Repairs a live occluder's incoming slot and successor, then clears its links.
+///
+/// successor must equal occluder->next; the live acyclic list's prevLink points
+/// to the writable slot containing occluder. A successor inherits that slot.
+/// Flags and geometry are untouched; storage remains owned by the caller.
+static inline void _worldCollisionSpliceOutOccluder(WorldCollisionOccluder* occluder, WorldCollisionOccluder* successor)
+{
+    WorldCollisionOccluder** previousLink;
+
+    previousLink = occluder->prevLink;
+    if (successor != NULL) {
+        *previousLink       = successor;
+        successor->prevLink = occluder->prevLink;
+        occluder->next      = NULL;
+    } else {
+        *previousLink = NULL;
+    }
+    occluder->prevLink = NULL;
+}
+
+/// Unlinks a borrowed sight occluder and clears its transient flag bits.
+///
+/// The non-NULL record must have valid list links when LINKED is set. Retains
+/// the low three flag bits and resource LAST marker; geometry survives.
+/// An unlinked record is unchanged. Frees nothing and ignores unusedListIndex.
+static void _worldCollisionUnlinkOccluder(s32 unusedListIndex, WorldCollisionOccluder* occluder)
+{
+    u8                      flags;
+    WorldCollisionOccluder* next;
+
+    flags = occluder->flags;
+    if (flags & WORLD_COLLISION_OCCLUDER_LINKED) {
+        next            = occluder->next;
+        occluder->flags = flags & WORLD_COLLISION_OCCLUDER_PERSISTENT_FLAGS;
+        _worldCollisionSpliceOutOccluder(occluder, next);
+    }
+}
+
+void worldCollisionClearOccluderList(s32 listIndex)
+{
+    enum { WORLD_COLLISION_OCCLUDER_TRANSIENT_FLAGS = 0xFF ^ WORLD_COLLISION_OCCLUDER_PERSISTENT_FLAGS };
+    WorldCollisionOccluder** listHead;
+    WorldCollisionOccluder*  occluder;
+    WorldCollisionOccluder*  next;
+    WorldCollisionOccluder*  first;
+    s32                      flags;
+
+    listHead = _gWorldCollisionOccluderListHeads[listIndex];
+    first    = *listHead;
+    if (first != NULL) {
+        occluder  = first;
+        *listHead = NULL;
+        for (;;) {
+            flags              = occluder->flags;
+            next               = occluder->next;
+            occluder->prevLink = NULL;
+            flags             &= ~WORLD_COLLISION_OCCLUDER_TRANSIENT_FLAGS;
+            occluder->flags    = flags;
+            if (next != NULL) {
+                occluder->next = NULL;
+                occluder       = next;
+            } else {
+                break;
+            }
+        }
+    }
+}
+
+void worldCollisionInitContacts(WorldCollisionContact* contacts, s32 count, s32 unused)
+{
+    memFillBytes(contacts, 0, count * sizeof(*contacts));
+    contacts[count - 1].flags = WORLD_COLLISION_CONTACT_LAST;
+}
+
+void worldCollisionLoadSurfacePushbackFlags(void)
+{
+    s32                               surfaceClass;
+    GameSession*                      session;
+    WorldCollisionSurfaceProperties** surfaceProperties;
+
+    for (surfaceClass = ARRAY_SIZE(gWorldCollisionSurfacePushbackSuppression) - 1; surfaceClass >= 0; surfaceClass--) {
+        gWorldCollisionSurfacePushbackSuppression[surfaceClass] = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK;
+    }
+
+    session           = gGameSession;
+    surfaceProperties = gWorldCollisionSurfacePropertiesTables[session->location.stage - 1][session->location.area - 1];
+    for (surfaceClass = 0; surfaceClass < ARRAY_SIZE(gWorldCollisionSurfacePushbackSuppression); surfaceClass++) {
+        gWorldCollisionSurfacePushbackSuppression[surfaceClass] = surfaceProperties[surfaceClass]->suppressPushback;
+    }
+}
+
+s32 worldCollisionFindContactIndex(const WorldCollisionContact* contacts, s32 searchKey)
+{
+    s32 matchedIndex;
+    s32 contactIndex;
+
+    matchedIndex = 0;
+    for (contactIndex = 1;; contactIndex++) {
+        if (contacts->flags & WORLD_COLLISION_CONTACT_OCCUPIED) {
+            if (searchKey == WORLD_COLLISION_FIND_ANY_KEY) {
+                return 1;
+            }
+            if (contacts->key.value == searchKey) {
+                matchedIndex = contactIndex;
+            }
+        }
+        if ((contacts++)->flags & WORLD_COLLISION_CONTACT_LAST) {
+            break;
+        }
+    }
+    return matchedIndex;
+}
+
+s32 worldCollisionCountContactsByKind(const WorldCollisionContact* contacts, s32 contactKind)
+{
+    s32 count;
+
+    count = 0;
+    do {
+        if ((contacts->flags & WORLD_COLLISION_CONTACT_OCCUPIED) && ((contacts->key.value & WORLD_COLLISION_CONTACT_KIND_MASK) == contactKind)) {
+            count += 1;
+        }
+    } while (!((contacts++)->flags & WORLD_COLLISION_CONTACT_LAST));
+    return count;
+}
+
+void worldCollisionClearContacts(WorldCollisionContact* contacts)
+{
+    for (;;) {
+        if (contacts->flags & WORLD_COLLISION_CONTACT_OCCUPIED) {
+            contacts->flags                &= WORLD_COLLISION_CONTACT_LAST;
+            contacts->distance              = 0;
+            contacts->key.value             = 0;
+            contacts->point.vx              = 0;
+            contacts->point.vy              = 0;
+            contacts->point.vz              = 0;
+            contacts->response.direction.vx = 0;
+            contacts->response.direction.vy = 0;
+            contacts->response.direction.vz = 0;
+        }
+        if (contacts->flags & WORLD_COLLISION_CONTACT_LAST) {
+            break;
+        }
+        contacts++;
+    }
+}
+
+s32 worldCollisionSurfaceClassFromMask(const u8* mask)
+{
+    s32 fixedMask;
+    s32 surfaceClass;
+
+    fixedMask = *mask << WORLD_COLLISION_SURFACE_LOG_FRACTION_BITS;
+    if (fixedMask != 0) {
+        surfaceClass = cln(fixedMask) / WORLD_COLLISION_SURFACE_LOG_TWO;
+    } else {
+        surfaceClass = 0;
+    }
+    return surfaceClass;
+}
+
+s32 worldCollisionSurfaceClassFromKey(s32 key)
+{
+    // Only the first stack word is written; the second word's role is unproven.
+    s32 storedMask[2];
+    s32 classMask;
+    s32 fixedMask;
+    s32 surfaceClass;
+
+    // Packed category and response bits do not participate in the target's variable shift.
+    classMask     = 1U << key;
+    storedMask[0] = classMask;
+    fixedMask     = (u8)classMask << WORLD_COLLISION_SURFACE_LOG_FRACTION_BITS;
+    if (fixedMask != 0) {
+        surfaceClass = cln(fixedMask) / WORLD_COLLISION_SURFACE_LOG_TWO;
+    } else {
+        surfaceClass = 0;
+    }
+    return surfaceClass;
+}
+
+void worldCollisionConsumeViewBoundaryHits(void)
+{
+    WorldCollisionTrigger* boundary;
+
+    for (boundary = gWorldCollisionViewBoundaryListHead; boundary != NULL; boundary = boundary->next) {
+        if (boundary->hit != 0) {
+            boundary->hit = 0;
+            if (gGameSession->location.view == boundary->parameter0) {
+                gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view = boundary->parameter1;
+            }
+        }
+    }
+}
+
+s32 worldCollisionReadActionHit(u16* controlOut, u8* parameter0Out, u8* parameter1Out)
+{
+    WorldCollisionTrigger* trigger;
+
+    for (trigger = gWorldCollisionActionTriggerListHead; trigger != NULL; trigger = trigger->next) {
+        if (trigger->hit != 0) {
+            gWorldCollisionActionHitClearingEnabled = 1;
+            *controlOut                             = trigger->control;
+            *parameter0Out                          = trigger->parameter0;
+            *parameter1Out                          = trigger->parameter1;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/// Writes a Parasite Energy attack into one enemy contact slot.
+///
+/// `contact` must be non-NULL writable storage in the target's initialized
+/// contact table; either an empty or an occupied slot may be supplied.
+/// `attackKey` is the complete packed attack identity and is copied unchanged.
+/// Distance and the point/response XYZ components are zero because targeting
+/// supplies no collision geometry. Existing flags, including LAST and body-index
+/// bits, and both vector pad halfwords survive. OCCUPIED is set after writing
+/// the payload. The caller selects the slot and counts the target; no pointer
+/// is retained.
+static inline void _attachmentWriteTargetContact(WorldCollisionContact* contact, s32 attackKey)
+{
+    contact->key.value             = attackKey;
+    contact->distance              = 0;
+    contact->point.vx              = 0;
+    contact->point.vy              = 0;
+    contact->point.vz              = 0;
+    contact->response.direction.vx = 0;
+    contact->response.direction.vy = 0;
+    contact->response.direction.vz = 0;
+    contact->flags                |= WORLD_COLLISION_CONTACT_OCCUPIED;
+}
+
+void attachmentAddTargetContact(const Enemy* enemy, s32 attackKey)
+{
+    WorldCollisionContact* contact;
+    WorldCollisionContact* contacts;
+    s32                    occupied;
+    SceneCombatState*      combat;
+
+    contacts = enemy->recs;
+    if (contacts != NULL) {
+        contact  = contacts;
+        occupied = WORLD_COLLISION_CONTACT_OCCUPIED;
+        // A full table replaces its final entry, so every selected target receives the attack.
+        while (1) {
+            // Read the aligned flags/distance word; only the low flag bits participate.
+            if ((*(const s32*)&contact->flags & (WORLD_COLLISION_CONTACT_OCCUPIED | WORLD_COLLISION_CONTACT_LAST)) != occupied) {
+                break;
+            }
+            contact++;
+        }
+        _attachmentWriteTargetContact(contact, attackKey);
+        combat = &gSceneCombatState;
+        combat->peTargetCount++;
+    }
+}
+
+/// Multiplies direction-facing rotations with the GTE, leaving translation and padding untouched.
+///
+/// Inputs use ONE (4096) for 1.0. Each column product is shifted by twelve bits
+/// and saturated to signed halfwords by the GTE. Matrices must be word-aligned;
+/// `out` may equal either input, otherwise it must be disjoint from both.
+/// Loading the complete left rotation before writing any column makes that
+/// in-place composition safe. Changes GTE rotation and arithmetic state and
+/// retains no pointers.
+static inline void _gfxMultiplyDirectionRotations(const MATRIX* left, const MATRIX* right, MATRIX* out)
+{
+    gte_SetRotMatrix(left);
+    gte_ldclmv(&right->m[0][0]);
+    gte_rtir();
+    gte_stclmv(&out->m[0][0]);
+    gte_ldclmv(&right->m[0][1]);
+    gte_rtir();
+    gte_stclmv(&out->m[0][1]);
+    gte_ldclmv(&right->m[0][2]);
+    gte_rtir();
+    gte_stclmv(&out->m[0][2]);
+}
+
+void gfxBuildDirectionRotation(const VECTOR* direction, MATRIX* out, s32 roll)
+{
+    enum {
+        GRAPHICS_DIRECTION_ANGLE_MASK    = ONE - 1,
+        GRAPHICS_DIRECTION_FRACTION_BITS = 12
+    };
+    _GfxDirectionRotationScratch* scratch;
+    MATRIX*                       rotation;
+    MATRIX*                       axisRotation;
+    s32                           yawSine;
+    s32                           yaw;
+    s32                           pitch;
+
+    scratch = SCRATCH_STACK_RESERVE_BLOCK(_GfxDirectionRotationScratch);
+    // The SDK's unqualified normalization input is only read.
+    VectorNormalS((VECTOR*)direction, &scratch->work.direction);
+
+    // Measure the heading, then the elevation against the horizontal length.
+    rotation     = &scratch->rotation;
+    yaw          = ratan2(scratch->work.direction.vx, scratch->work.direction.vz) & GRAPHICS_DIRECTION_ANGLE_MASK;
+    scratch->yaw = yaw;
+    yawSine      = rsin(yaw);
+    scratch->pitch =
+        ratan2(scratch->work.direction.vy,
+               (scratch->work.direction.vx * yawSine + scratch->work.direction.vz * rcos(scratch->yaw)) >> GRAPHICS_DIRECTION_FRACTION_BITS) &
+        GRAPHICS_DIRECTION_ANGLE_MASK;
+
+    scratch->work.angles.vx = 0;
+    scratch->work.angles.vz = 0;
+    scratch->work.angles.vy = scratch->yaw;
+    RotMatrix(&scratch->work.angles, rotation);
+
+    axisRotation            = &scratch->axisRotation;
+    pitch                   = scratch->pitch;
+    scratch->work.angles.vx = -pitch;
+    scratch->work.angles.vy = 0;
+    scratch->work.angles.vz = 0;
+    RotMatrix(&scratch->work.angles, axisRotation);
+
+    // Compose yaw and negative pitch before applying the caller's roll.
+    _gfxMultiplyDirectionRotations(rotation, axisRotation, rotation);
+
+    scratch->work.angles.vx = 0;
+    scratch->work.angles.vy = 0;
+    scratch->work.angles.vz = roll;
+    RotMatrix(&scratch->work.angles, axisRotation);
+
+    // The caller's rotation is that product times Rz(roll); its translation is untouched.
+    _gfxMultiplyDirectionRotations(rotation, axisRotation, out);
+
+    SCRATCH_STACK_RELEASE_BLOCK(_GfxDirectionRotationScratch);
+}

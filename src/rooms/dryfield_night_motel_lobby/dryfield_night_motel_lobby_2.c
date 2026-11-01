@@ -1,0 +1,1376 @@
+#include "types.h"
+
+#include "main/task_types.h"
+#include "../../shared/room/action_prompt.h"
+#include "../../shared/effects/glow_draw.h"
+#include "../../shared/room/room_cutscene.h"
+
+/* GCC orders BSS by first declaration; keep this prologue before the API headers. */
+Task* gRoomCutsceneSoundTask;
+
+s32 gDryfieldNightMotelLobbyPreviousMasterkeyCollected;
+
+enum { DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_COUNT = 7 };
+
+/// The cash register's seven display slots, newest/rightmost at index zero.
+///
+/// Slots hold decimal digits 0..9 or the empty marker 10. Entry initialization
+/// fills every slot with that marker; a clear leaves an uncounted zero in slot
+/// zero. Retained writable storage belongs to the loaded lobby overlay.
+u8 _gDryfieldNightMotelLobbyCashRegisterDigits[DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_COUNT];
+
+#include "rooms/dryfield_night_motel_lobby.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/inline_c.h>
+
+#include "common.h"
+#include "gte.h"
+
+#include "dryfield_night_motel_lobby_private.h"
+
+#include "gameplay/action_prompt.h"
+#include "gameplay/area.h"
+#include "gameplay/area_flags.h"
+#include "gameplay/area_transitions.h"
+#include "gameplay/captions.h"
+#include "gameplay/actor_presentation.h"
+#include "gameplay/player_actor.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/direction_input.h"
+#include "gameplay/item_menu.h"
+#include "gameplay/light.h"
+#include "gameplay/room.h"
+#include "gameplay/room_effects.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/coord.h"
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/gameflag.h"
+#include "main/gfx.h"
+#include "main/mc.h"
+#include "main/mc_types.h"
+#include "main/mem.h"
+#include "main/pad.h"
+#include "main/pad_types.h"
+#include "main/scratch.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/sound.h"
+#include "main/task.h"
+
+#include "overlay.h"
+
+#include "rooms/room.h"
+
+#include "rooms/room_common.h"
+
+static s16  _dryfieldNightMotelLobbyCashRegisterHasValidCode(void);
+static void _actionPromptResetDefault(Task* task);
+static void _dryfieldNightMotelLobbyDrawFlare(const SVECTOR* worldPoint, s32 textureIndex, s32 radiusScale);
+
+/// Cash-register empty marker, glyph extent in texels/pixels, and display placement.
+enum {
+    DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY      = 10,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE       = 24,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_RIGHT_X  = 60,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_TOP_Y    = -96,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_OT_INDEX = 10,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_TPAGE    = 0xE,    // 4-bit texture page at VRAM (896, 0)
+    DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_CLUT     = 0x4000, // Palette at VRAM (0, 256)
+};
+
+static void _dryfieldNightMotelLobbyCashRegisterInitialize(Task* task);
+static void _dryfieldNightMotelLobbyCashRegisterArmCursor(Task* task);
+static void _dryfieldNightMotelLobbyCashRegisterOpenPrompt(Task* task);
+static void _dryfieldNightMotelLobbyCashRegisterAnswerPrompt(Task* task);
+static void _actionPromptEventEnd(Task* eventTask);
+static void _dryfieldNightMotelLobbyCashRegisterAcceptCode(Task* task);
+static void _dryfieldNightMotelLobbyCashRegisterPlayAcceptSound(Task* task);
+static void _dryfieldNightMotelLobbyCashRegisterStartCompletionCap(Task* task);
+static void _dryfieldNightMotelLobbyCashRegisterExitDelay(Task* task);
+static void _dryfieldNightMotelLobbyCashRegisterFinish(Task* task);
+
+/// Cash-register controller handlers indexed by the shared state constants.
+///
+/// Cancellation restores play immediately; accepted entry commits saved-area
+/// changes, requests sound and CAP playback, then restores play after one tick.
+/// The dispatcher copies all eleven callback pointers before selecting one.
+static const TaskFuncTable11 _gDryfieldNightMotelLobbyCashRegisterStates = {
+    {
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_INITIALIZE]           = _dryfieldNightMotelLobbyCashRegisterInitialize,
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_ARM_CURSOR]           = _dryfieldNightMotelLobbyCashRegisterArmCursor,
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_SCAN]                 = dryfieldNightMotelLobbyCashRegisterScanTask,
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_OPEN_PROMPT]          = _dryfieldNightMotelLobbyCashRegisterOpenPrompt,
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_ANSWER_PROMPT]        = _dryfieldNightMotelLobbyCashRegisterAnswerPrompt,
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_CANCEL]               = _actionPromptEventEnd,
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_ACCEPT_CODE]          = _dryfieldNightMotelLobbyCashRegisterAcceptCode,
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_PLAY_ACCEPT_SOUND]    = _dryfieldNightMotelLobbyCashRegisterPlayAcceptSound,
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_START_COMPLETION_CAP] = _dryfieldNightMotelLobbyCashRegisterStartCompletionCap,
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_EXIT_DELAY]           = _dryfieldNightMotelLobbyCashRegisterExitDelay,
+        [DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_FINISH]               = _dryfieldNightMotelLobbyCashRegisterFinish,
+    },
+};
+
+static WorldCollisionGrid         _gDryfieldNightMotelLobbyCollisionGrid;
+static WorldCollisionTrigger      _gDryfieldNightMotelLobbyViewBoundaryTriggers[4];
+static WorldCollisionTrigger      _gDryfieldNightMotelLobbyActionTriggers[8];
+static WorldCoordRoomAmbientEntry _gDryfieldNightMotelLobbyRoomAmbientTable[8];
+static WorldCoordRoomLights       _gDryfieldNightMotelLobbyRoomLights;
+
+static void _dryfieldNightMotelLobbyCashRegisterCursorTask(Task* task);
+static void _dryfieldNightMotelLobbyCashRegisterTask(Task* task);
+
+/// First command-menu row of the register's keys.
+enum {
+    DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE = 0,
+};
+
+/// Bodyless cursor-child recipe for the cash-register interaction.
+///
+/// Spawn index zero with spawnArg1.value 1 to move port 0 after resetting
+/// both ports. The controller retains and kills the independent child;
+/// its callbacks and cursor graphics require the lobby and gameplay to stay loaded.
+static TaskDesc _gDryfieldNightMotelLobbyCashRegisterCursorTaskDesc = {
+    .header   = { .fields = { TASK_BODY_NONE, TASK_PRIORITY_CONTROL } },
+    .callback = _dryfieldNightMotelLobbyCashRegisterCursorTask,
+    .data     = { .value = 0 },
+};
+
+ActionPromptHotspot gDryfieldNightMotelLobbyCashRegisterHotspots[15] = {
+    { -48, -62, 20, 22, 7, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { -20, -62, 20, 22, 8, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { 8, -62, 20, 22, 9, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { -48, -34, 20, 22, 4, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { -20, -34, 20, 22, 5, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { 8, -34, 20, 22, 6, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { -48, -6, 20, 22, 1, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { -20, -6, 20, 22, 2, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { 8, -6, 20, 22, 3, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { -48, 22, 20, 22, 0, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { -20, 22, 20, 22, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_KEY_DOUBLE_ZERO, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { 8, 22, 20, 22, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_KEY_HASH, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { -20, 50, 50, 22, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_KEY_CLEAR, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { 42, 50, 50, 22, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_KEY_TOTAL, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_PROMPT_EXAMINE, 0 },
+    { 0, 0, 0, 0, ACTION_PROMPT_HOTSPOT_END, 0, 0 },
+};
+
+TaskDesc gDryfieldNightMotelLobbyCashRegisterTaskDesc = {
+    .header   = { .fields = { TASK_BODY_NONE, TASK_PRIORITY_CONTROL } },
+    .callback = _dryfieldNightMotelLobbyCashRegisterTask,
+    .data     = { .value = 0 },
+};
+
+/// Five world-space centres for the lobby's projected light glows and flares.
+///
+/// XYZ are signed game-coordinate units. Index zero supplies the cyan diamond
+/// or disc; index one uses flare texture column two, and indices 2..4 use
+/// column one. Drawers borrow these positions while the overlay is loaded.
+static SVECTOR _gDryfieldNightMotelLobbyGlowCenters[] = {
+    { 4430, -1130, 2380, 0 },
+    { 3880, -1280, 2740, 0 },
+    { 4500, -2570, 1500, 0 },
+    { 1500, -2570, 1500, 0 },
+    { 1500, -2570, 4500, 0 },
+};
+
+WorldCollisionRoomResources gDryfieldNightMotelLobbyRoomCollisionResources[1] = {
+    {
+        .grid                 = &_gDryfieldNightMotelLobbyCollisionGrid,
+        .viewBoundaryTriggers = _gDryfieldNightMotelLobbyViewBoundaryTriggers,
+        .actionTriggers       = _gDryfieldNightMotelLobbyActionTriggers,
+        .occluders            = NULL,
+    },
+};
+
+WorldCoordRoomLighting gDryfieldNightMotelLobbyRoomLighting[1] = {
+    { &_gDryfieldNightMotelLobbyRoomLights, _gDryfieldNightMotelLobbyRoomAmbientTable },
+};
+
+u8* gDryfieldNightMotelLobbyViewMaps[1] = {
+    gViewIdentityMap,
+};
+
+ViewCount gDryfieldNightMotelLobbyViewCounts[1] = { 7 };
+
+/// The door endpoint's sound scripts, initial view and optional map-marker nibble.
+enum {
+    DRYFIELD_NIGHT_MOTEL_LOBBY_WARP_ARRIVAL_SOUND_ENTRY   = 2,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_WARP_DEPARTURE_SOUND_ENTRY = 1,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_WARP_INITIAL_VIEW          = 2,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_WARP_MAP_FLAG              = 481,
+};
+
+DirectionWarpEntry gDryfieldNightMotelLobbyWarpEntries[1] = {
+    {
+        .player         = { { .word = 0 }, 2940, 0, 316 },
+        .unknown_10     = { 0, 0, 0, 0 },
+        .companion      = { { .word = 0 }, 2940, 0, 316 },
+        .unknown_24     = { 0, 0, 0, 0 },
+        .arrivalSound   = SOUND_AREA(GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_MOTEL_LOBBY, DRYFIELD_NIGHT_MOTEL_LOBBY_WARP_ARRIVAL_SOUND_ENTRY),
+        .departureSound = SOUND_AREA(GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_MOTEL_LOBBY, DRYFIELD_NIGHT_MOTEL_LOBBY_WARP_DEPARTURE_SOUND_ENTRY),
+        .blockedSound   = DIRECTION_WARP_SOUND_NONE,
+        .initialView    = DRYFIELD_NIGHT_MOTEL_LOBBY_WARP_INITIAL_VIEW,
+        .flags          = DIRECTION_WARP_FLAG_NONE,
+        .mapFlagId      = DRYFIELD_NIGHT_MOTEL_LOBBY_WARP_MAP_FLAG,
+    },
+};
+
+/// Dimensions of the lobby mesh's X-major spatial index, in room-coordinate units.
+enum {
+    DRYFIELD_NIGHT_MOTEL_LOBBY_COLLISION_GRID_CELLS_X   = 2,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_COLLISION_GRID_CELLS_Z   = 2,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_COLLISION_GRID_CELL_SIZE = 4000,
+};
+
+/// Room-space face normals, using 4096 for unit length.
+static SVECTOR _gDryfieldNightMotelLobbyCollisionGridNormals[] = {
+#include "assets/dryfield_night_motel_lobby_collision_057F4_normals.inc"
+};
+
+/// Room-space vertex pool in signed game-coordinate units.
+static SVECTOR _gDryfieldNightMotelLobbyCollisionGridVerts[] = {
+#include "assets/dryfield_night_motel_lobby_collision_057F4_verts.inc"
+};
+
+/// Indexed triangles and quads selecting lobby surface classes 0..2.
+static WorldCollisionGridFace _gDryfieldNightMotelLobbyCollisionGridFaces[] = {
+#include "assets/dryfield_night_motel_lobby_collision_057F4_faces.inc"
+};
+
+/// Four concatenated signed face-index lists, each ended by -1.
+static s16 _gDryfieldNightMotelLobbyCollisionGridCells[] = {
+#include "assets/dryfield_night_motel_lobby_collision_057F4_cells.inc"
+};
+
+// The generated table supplies constant halfword offsets into the cell-list pool.
+/// Supplies this grid's cell face-list addresses to its generated table.
+///
+/// Captures `_gDryfieldNightMotelLobbyCollisionGridCells`.
+/// `halfwordOffset` is a constant s16-element offset in 0..99 to a list's
+/// first entry, evaluated once; the list ends at WORLD_COLLISION_GRID_CELL_END.
+/// Returns a borrowed s16* without modifying the pool. `cell_face_list_macro`
+/// selects this binding for the table include; it is undefined afterwards.
+#define DRYFIELD_NIGHT_MOTEL_LOBBY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMotelLobbyCollisionGridCells[(halfwordOffset)])
+/// X-major cell pointers, with Z as the inner index.
+static s16* _gDryfieldNightMotelLobbyCollisionGridTable[DRYFIELD_NIGHT_MOTEL_LOBBY_COLLISION_GRID_CELLS_X * DRYFIELD_NIGHT_MOTEL_LOBBY_COLLISION_GRID_CELLS_Z] = {
+#include "assets/dryfield_night_motel_lobby_collision_057F4_table.inc"
+};
+#undef DRYFIELD_NIGHT_MOTEL_LOBBY_CELL_FACE_LIST_AT_OFFSET
+
+/// Full collision mesh for the nighttime motel lobby's sole room.
+///
+/// Contains 33 faces, 53 vertices, nine normals and a 2-by-2 XZ cell index.
+/// Coordinates and 4000-unit cells use integer room units; normals use 4096
+/// per unit. Activation binds the view coordinate. The descriptor and pools
+/// remain writable and owned by the loaded lobby while this mesh is active.
+static WorldCollisionGrid _gDryfieldNightMotelLobbyCollisionGrid = {
+    .viewCoord   = NULL,
+    .normals     = _gDryfieldNightMotelLobbyCollisionGridNormals,
+    .vertices    = _gDryfieldNightMotelLobbyCollisionGridVerts,
+    .faces       = _gDryfieldNightMotelLobbyCollisionGridFaces,
+    .cellFaceIds = _gDryfieldNightMotelLobbyCollisionGridTable,
+    .xBias       = 0,
+    .zBias       = 0,
+    .cellCountX  = DRYFIELD_NIGHT_MOTEL_LOBBY_COLLISION_GRID_CELLS_X,
+    .cellCountZ  = DRYFIELD_NIGHT_MOTEL_LOBBY_COLLISION_GRID_CELLS_Z,
+    .cellSize    = DRYFIELD_NIGHT_MOTEL_LOBBY_COLLISION_GRID_CELL_SIZE,
+    .faceCount   = ARRAY_SIZE(_gDryfieldNightMotelLobbyCollisionGridFaces),
+};
+
+ViewCamera gDryfieldNightMotelLobbyViewCameras[8] = {
+    { { { { ONE, 0, 0 }, { 0, 0, -ONE }, { 0, ONE, 0 } }, { -3000, 25000, -3000 } }, 680 },
+    { { { { -3992, 0, -915 }, { -291, 3882, 1272 }, { 867, 1305, -3784 } }, { -1790, 2360, -5690 } }, 230 },
+    { { { { 4037, 0, -691 }, { -204, 3912, -1195 }, { 660, 1212, 3856 } }, { -1790, 2360, -340 } }, 230 },
+    { { { { 3142, 0, -2627 }, { -1618, 3226, -1936 }, { 2069, 2523, 2475 } }, { -3510, 2960, -1660 } }, 230 },
+    { { { { -3408, 0, 2272 }, { 1819, 2454, 2728 }, { -1361, 3279, -2041 } }, { -4640, 1620, -2570 } }, 289 },
+    { { { { 0, 0, 4095 }, { 4045, 643, 0 }, { -643, 4045, 0 } }, { -4105, 1572, -4340 } }, 541 },
+    { { { { 2330, 0, 3368 }, { 2690, 2464, -1861 }, { -2026, 3271, 1402 } }, { -4571, 1891, -3974 } }, 541 },
+    { { { { 2330, 0, 3368 }, { 2690, 2464, -1861 }, { -2026, 3271, 1402 } }, { -4592, 2112, -3856 } }, 541 },
+};
+
+/// Empty sprite list for mapped view 1, retaining the decoded background image.
+///
+/// The zero-count first record selects image strips; the next ends the list.
+/// The source slot retains this list's address without dereferencing it as sprites.
+static SpriteBatch _gDryfieldNightMotelLobbyView1SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Texture placement and neutral colour modulation shared by the lobby's view sprites.
+enum {
+    DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE             = 0x8F,   // 8-bit texture page at VRAM (960, 0)
+    DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT              = 0x3FC0, // Palette at VRAM (0, 255)
+    DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR     = 128,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_VIEW_2_FIRST_BATCH_COUNT = 18,
+};
+
+/// Fifty texture rectangles and sorting depths for mapped view 2.
+///
+/// Positions and extents are pixels relative to the view centre; UVs are
+/// texels. The two nonempty batches partition these mutable room sources.
+static SpriteSource _gDryfieldNightMotelLobbyView2SpriteSources[] = {
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -152, -24, 1089, { .fields = { 80, 176 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -160, 32, 1167, { .fields = { 80, 152 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, -64, -8, 1050, { .fields = { 96, 240 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, -72, -8, 1050, { .fields = { 88, 32 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -88, -8, 1050, { .fields = { 96, 128 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 8 } }, -104, -16, 1023, { .fields = { 72, 168 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -104, -8, 950, { .fields = { 96, 112 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -120, -8, 1014, { .fields = { 88, 176 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 8 } }, -120, 8, 1107, { .fields = { 72, 160 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -136, -8, 1014, { .fields = { 88, 160 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -136, 8, 1125, { .fields = { 72, 80 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -152, -16, 1129, { .fields = { 72, 64 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -152, 0, 1146, { .fields = { 72, 96 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -152, 16, 1179, { .fields = { 80, 112 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, -160, -32, 1079, { .fields = { 88, 96 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, -160, -16, 1090, { .fields = { 88, 80 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, -160, 0, 1163, { .fields = { 88, 240 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, -160, 16, 1175, { .fields = { 88, 144 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -152, 24, 740, { .fields = { 80, 144 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -64, 48, 1137, { .fields = { 96, 80 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, -72, 0, 1050, { .fields = { 88, 128 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, -72, 16, 1087, { .fields = { 120, 184 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, -72, 40, 1112, { .fields = { 120, 160 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, -80, 0, 1050, { .fields = { 120, 232 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, -80, 24, 1087, { .fields = { 120, 208 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, -80, 48, 1087, { .fields = { 120, 64 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -96, 0, 1000, { .fields = { 112, 88 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -96, 24, 1000, { .fields = { 112, 136 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -96, 48, 1025, { .fields = { 112, 112 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -96, 72, 1025, { .fields = { 72, 128 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -112, 0, 920, { .fields = { 72, 32 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -112, 64, 937, { .fields = { 96, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -112, 88, 937, { .fields = { 104, 232 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -128, 8, 842, { .fields = { 80, 48 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -128, 24, 825, { .fields = { 88, 64 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -128, 40, 837, { .fields = { 96, 88 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -128, 64, 862, { .fields = { 96, 24 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 32 } }, -128, 88, 862, { .fields = { 112, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -144, 16, 763, { .fields = { 96, 144 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -144, 32, 750, { .fields = { 96, 48 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -144, 48, 775, { .fields = { 104, 160 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -144, 72, 775, { .fields = { 104, 64 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -144, 96, 775, { .fields = { 104, 208 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -160, 32, 725, { .fields = { 80, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -160, 48, 725, { .fields = { 80, 16 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -160, 64, 725, { .fields = { 104, 184 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 32 } }, -160, 88, 725, { .fields = { 112, 32 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -112, 16, 876, { .fields = { 88, 192 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -112, 32, 906, { .fields = { 88, 208 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -112, 48, 912, { .fields = { 88, 224 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+};
+
+/// Mapped view 2's background selector, two source ranges and terminal record.
+///
+/// The ranges cover all fifty sources without overlap. The first range retains
+/// a value of one in serialized byte 6; that byte's role is unproven.
+static SpriteBatch _gDryfieldNightMotelLobbyView2SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, DRYFIELD_NIGHT_MOTEL_LOBBY_VIEW_2_FIRST_BATCH_COUNT, 0, 0, { 1, 0 } },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_VIEW_2_FIRST_BATCH_COUNT, ARRAY_SIZE(_gDryfieldNightMotelLobbyView2SpriteSources) - DRYFIELD_NIGHT_MOTEL_LOBBY_VIEW_2_FIRST_BATCH_COUNT, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Fifty-two texture rectangles and sorting depths for mapped view 3.
+///
+/// Positions and extents are view-centred pixels; UVs are texels. One batch
+/// selects the complete mutable source array while the lobby is loaded.
+static SpriteSource _gDryfieldNightMotelLobbyView3SpriteSources[] = {
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 80, -16, 1103, { .fields = { 120, 248 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 80, 0, 986, { .fields = { 96, 224 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 104, 0, 994, { .fields = { 96, 232 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 48, 24, 1414, { .fields = { 96, 240 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 48, 32, 1310, { .fields = { 96, 248 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 56, 40, 1230, { .fields = { 88, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 64, 48, 1150, { .fields = { 88, 8 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 136, 48, 687, { .fields = { 88, 16 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 152, 56, 650, { .fields = { 88, 24 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 72, 64, 1041, { .fields = { 88, 48 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 80, 72, 976, { .fields = { 88, 72 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 88, 80, 925, { .fields = { 88, 88 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 112, 104, 791, { .fields = { 88, 80 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 120, 112, 753, { .fields = { 88, 64 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 144, 112, 700, { .fields = { 88, 56 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, 64, -24, 1130, { .fields = { 104, 160 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, 48, -16, 1237, { .fields = { 96, 16 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, 72, -16, 1066, { .fields = { 104, 136 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 8 } }, 80, -8, 1052, { .fields = { 88, 168 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, 56, 0, 1240, { .fields = { 112, 232 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, 64, 0, 1146, { .fields = { 104, 208 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 8 } }, 88, 0, 1033, { .fields = { 88, 152 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 56 } }, 72, 8, 1076, { .fields = { 112, 176 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 8 } }, 80, 8, 1000, { .fields = { 88, 144 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 24, 8 } }, 96, 8, 922, { .fields = { 80, 128 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 24, 16 } }, 120, 8, 750, { .fields = { 80, 32 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 56 } }, 80, 16, 1008, { .fields = { 112, 120 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 64 } }, 88, 16, 946, { .fields = { 112, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 24, 8 } }, 96, 16, 875, { .fields = { 80, 136 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, 56, 24, 1253, { .fields = { 96, 48 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, 64, 24, 1159, { .fields = { 104, 184 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 40 } }, 96, 24, 889, { .fields = { 104, 96 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 72 } }, 104, 32, 846, { .fields = { 120, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 24 } }, 112, 40, 797, { .fields = { 104, 232 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 56 } }, 120, 40, 775, { .fields = { 104, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 72 } }, 128, 48, 750, { .fields = { 120, 72 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 8 } }, 144, 48, 675, { .fields = { 88, 160 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 64 } }, 136, 56, 725, { .fields = { 120, 144 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 56 } }, 144, 56, 700, { .fields = { 112, 64 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, 96, 64, 898, { .fields = { 96, 80 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 40 } }, 112, 64, 806, { .fields = { 104, 56 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, 152, 64, 662, { .fields = { 96, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, 96, 80, 891, { .fields = { 96, 96 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 40 } }, 152, 80, 675, { .fields = { 120, 208 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, 120, 96, 770, { .fields = { 96, 64 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, 56, -16, 1226, { .fields = { 96, 112 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 24, 8 } }, 104, 24, 825, { .fields = { 80, 176 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 24, 8 } }, 128, 24, 750, { .fields = { 80, 184 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 8 } }, 128, 40, 725, { .fields = { 88, 192 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 8 } }, 144, 40, 712, { .fields = { 88, 200 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 24, 8 } }, 112, 32, 750, { .fields = { 80, 208 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 24, 8 } }, 136, 32, 737, { .fields = { 80, 216 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+};
+
+/// Mapped view 3's decoded-background selector and complete sprite range.
+///
+/// A zero-count first record retains image strips; the terminal record follows
+/// the batch covering all fifty-two sources.
+static SpriteBatch _gDryfieldNightMotelLobbyView3SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, ARRAY_SIZE(_gDryfieldNightMotelLobbyView3SpriteSources), 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Seventy-one texture rectangles and sorting depths for mapped view 4.
+///
+/// Positions and extents are view-centred pixels; UVs are texels. One batch
+/// selects the complete mutable source array while the lobby is loaded.
+static SpriteSource _gDryfieldNightMotelLobbyView4SpriteSources[] = {
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -136, -8, 837, { .fields = { 104, 32 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -128, -8, 818, { .fields = { 88, 24 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 120, 0, 593, { .fields = { 80, 72 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -128, 8, 887, { .fields = { 72, 248 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -72, 8, 687, { .fields = { 64, 248 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -56, 24, 637, { .fields = { 56, 248 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 144, 32, 750, { .fields = { 56, 16 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -40, 40, 600, { .fields = { 48, 64 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 56, 40, 500, { .fields = { 48, 152 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, -24, 56, 550, { .fields = { 48, 160 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 8 } }, 24, 64, 525, { .fields = { 48, 216 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -104, -24, 775, { .fields = { 48, 200 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -120, -24, 837, { .fields = { 48, 184 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -136, -24, 837, { .fields = { 48, 168 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -88, -8, 725, { .fields = { 48, 136 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -88, 8, 712, { .fields = { 48, 120 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -88, 24, 680, { .fields = { 96, 200 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -88, 48, 860, { .fields = { 96, 224 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -104, -8, 775, { .fields = { 48, 72 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -104, 8, 850, { .fields = { 80, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -104, 32, 957, { .fields = { 56, 152 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -120, -8, 837, { .fields = { 56, 56 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -72, 16, 650, { .fields = { 56, 40 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -72, 32, 655, { .fields = { 56, 24 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -72, 48, 602, { .fields = { 88, 32 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -72, 72, 775, { .fields = { 64, 184 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -72, 88, 781, { .fields = { 64, 168 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -72, 104, 782, { .fields = { 64, 136 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -56, 32, 612, { .fields = { 64, 120 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -40, 48, 575, { .fields = { 64, 104 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -40, 64, 569, { .fields = { 64, 88 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -24, 64, 537, { .fields = { 64, 72 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, 16, 72, 512, { .fields = { 112, 240 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, 32, 56, 487, { .fields = { 48, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, 32, 72, 525, { .fields = { 48, 104 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 32 } }, 32, 88, 518, { .fields = { 112, 112 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, 48, 48, 487, { .fields = { 48, 88 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 48, 64, 550, { .fields = { 72, 48 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, 64, 32, 500, { .fields = { 64, 216 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 64, 48, 550, { .fields = { 80, 104 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 64, 72, 650, { .fields = { 64, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 64, 96, 750, { .fields = { 80, 128 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 80, 40, 600, { .fields = { 80, 80 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 80, 64, 700, { .fields = { 80, 152 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -104, 48, 942, { .fields = { 80, 176 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, -112, 32, 962, { .fields = { 72, 152 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -88, 72, 853, { .fields = { 72, 24 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 32 } }, 80, 88, 793, { .fields = { 112, 80 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, 0, 80, 500, { .fields = { 64, 200 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 0, 96, 503, { .fields = { 96, 80 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -16, 80, 512, { .fields = { 64, 232 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, -16, 96, 503, { .fields = { 96, 128 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 80, 16, 525, { .fields = { 88, 56 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 32 } }, 16, 88, 518, { .fields = { 96, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 24, 40 } }, -40, 80, 534, { .fields = { 104, 40 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 40 } }, -56, 80, 716, { .fields = { 112, 0 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 32 } }, -56, 48, 606, { .fields = { 112, 176 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 32 } }, 48, 88, 518, { .fields = { 112, 208 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 96, 8, 550, { .fields = { 96, 104 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 96, 32, 650, { .fields = { 80, 224 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 96, 56, 825, { .fields = { 80, 200 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 96, 80, 825, { .fields = { 96, 176 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 24 } }, 112, 8, 675, { .fields = { 96, 152 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 32 } }, 112, 32, 800, { .fields = { 112, 144 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, 112, 64, 825, { .fields = { 56, 216 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 8, 16 } }, 128, 8, 750, { .fields = { 56, 232 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, 128, 24, 825, { .fields = { 40, 16 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, 128, 40, 825, { .fields = { 40, 32 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 8 } }, -136, 0, 887, { .fields = { 96, 248 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 8 } }, -120, 8, 900, { .fields = { 80, 248 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+    { DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_TPAGE, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_CLUT, { .fields = { 16, 16 } }, -120, 16, 975, { .fields = { 40, 48 } }, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, DRYFIELD_NIGHT_MOTEL_LOBBY_SPRITE_NEUTRAL_COLOR, 0 },
+};
+
+/// Mapped view 4's decoded-background selector and complete sprite range.
+///
+/// A zero-count first record retains image strips; the terminal record follows
+/// the batch covering all seventy-one sources.
+static SpriteBatch _gDryfieldNightMotelLobbyView4SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, ARRAY_SIZE(_gDryfieldNightMotelLobbyView4SpriteSources), 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Empty sprite list for mapped view 5, retaining the decoded background image.
+///
+/// The zero-count first record selects image strips; the next ends the list.
+/// The source slot retains this list's address without dereferencing it as sprites.
+static SpriteBatch _gDryfieldNightMotelLobbyView5SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Empty sprite list for mapped view 6, retaining the decoded background image.
+///
+/// The zero-count first record selects image strips; the next ends the list.
+/// The source slot retains this list's address without dereferencing it as sprites.
+static SpriteBatch _gDryfieldNightMotelLobbyView6SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Empty sprite list for mapped view 7, retaining the decoded background image.
+///
+/// The zero-count first record selects image strips; the next ends the list.
+/// The source slot retains this list's address without dereferencing it as sprites.
+static SpriteBatch _gDryfieldNightMotelLobbyView7SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Empty sprite list for mapped view 8, retaining the decoded background image.
+///
+/// The zero-count first record selects image strips; the next ends the list.
+/// The source slot retains this list's address without dereferencing it as sprites.
+static SpriteBatch _gDryfieldNightMotelLobbyView8SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+SpriteView gDryfieldNightMotelLobbySpriteViews[8] = {
+    { { .empty = _gDryfieldNightMotelLobbyView1SpriteBatches }, _gDryfieldNightMotelLobbyView1SpriteBatches, NULL },
+    { { .elements = _gDryfieldNightMotelLobbyView2SpriteSources }, _gDryfieldNightMotelLobbyView2SpriteBatches, NULL },
+    { { .elements = _gDryfieldNightMotelLobbyView3SpriteSources }, _gDryfieldNightMotelLobbyView3SpriteBatches, NULL },
+    { { .elements = _gDryfieldNightMotelLobbyView4SpriteSources }, _gDryfieldNightMotelLobbyView4SpriteBatches, NULL },
+    { { .empty = _gDryfieldNightMotelLobbyView5SpriteBatches }, _gDryfieldNightMotelLobbyView5SpriteBatches, NULL },
+    { { .empty = _gDryfieldNightMotelLobbyView6SpriteBatches }, _gDryfieldNightMotelLobbyView6SpriteBatches, NULL },
+    { { .empty = _gDryfieldNightMotelLobbyView7SpriteBatches }, _gDryfieldNightMotelLobbyView7SpriteBatches, NULL },
+    { { .empty = _gDryfieldNightMotelLobbyView8SpriteBatches }, _gDryfieldNightMotelLobbyView8SpriteBatches, NULL },
+};
+
+/// Seven authored point lights contributing in every view of the nighttime motel lobby.
+///
+/// Positions and falloff radii use integer world units; RGB intensities have
+/// 12 fractional bits (`ONE` is full intensity). The loaded room overlay owns
+/// these writable records: coordinate updates parent and compose their
+/// transforms, and lighting queries overwrite attenuation. Borrowed pointers
+/// must not survive unloading the overlay.
+static WorldCoordPointLight _gDryfieldNightMotelLobbyPointLights[] = {
+    {
+        .head = {
+            .transform = {
+                .lighting = {
+                    .composeStamp = GRAPHICS_COORD_DIRTY,
+                    .local        = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, .t = { 1500, -2100, 1500 } },
+                    .composed     = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } } },
+                    .viewId       = WORLD_COORDINATE_LIGHT_ALL_VIEWS,
+                },
+            },
+            .color = { 3276, 2949, 2457 },
+        },
+        .inner = 1500,
+        .outer = 3000,
+    },
+    {
+        .head = {
+            .transform = {
+                .lighting = {
+                    .composeStamp = GRAPHICS_COORD_DIRTY,
+                    .local        = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, .t = { 4500, -2100, 1500 } },
+                    .composed     = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } } },
+                    .viewId       = WORLD_COORDINATE_LIGHT_ALL_VIEWS,
+                },
+            },
+            .color = { 3600, 3314, 2501 },
+        },
+        .inner = 1500,
+        .outer = 3000,
+    },
+    {
+        .head = {
+            .transform = {
+                .lighting = {
+                    .composeStamp = GRAPHICS_COORD_DIRTY,
+                    .local        = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, .t = { 1500, -2100, 4500 } },
+                    .composed     = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } } },
+                    .viewId       = WORLD_COORDINATE_LIGHT_ALL_VIEWS,
+                },
+            },
+            .color = { 3276, 2949, 2457 },
+        },
+        .inner = 1500,
+        .outer = 3000,
+    },
+    {
+        .head = {
+            .transform = {
+                .lighting = {
+                    .composeStamp = GRAPHICS_COORD_DIRTY,
+                    .local        = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, .t = { 3885, -1300, 2740 } },
+                    .composed     = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } } },
+                    .viewId       = WORLD_COORDINATE_LIGHT_ALL_VIEWS,
+                },
+            },
+            .color = { 3686, 3604, 3276 },
+        },
+        .inner = 500,
+        .outer = 1000,
+    },
+    {
+        .head = {
+            .transform = {
+                .lighting = {
+                    .composeStamp = GRAPHICS_COORD_DIRTY,
+                    .local        = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, .t = { 85, -2050, 1040 } },
+                    .composed     = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } } },
+                    .viewId       = WORLD_COORDINATE_LIGHT_ALL_VIEWS,
+                },
+            },
+            .color = { 3276, 2949, 2457 },
+        },
+        .inner = 750,
+        .outer = 1000,
+    },
+    {
+        .head = {
+            .transform = {
+                .lighting = {
+                    .composeStamp = GRAPHICS_COORD_DIRTY,
+                    .local        = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, .t = { 85, -2050, 4920 } },
+                    .composed     = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } } },
+                    .viewId       = WORLD_COORDINATE_LIGHT_ALL_VIEWS,
+                },
+            },
+            .color = { 3276, 2949, 2457 },
+        },
+        .inner = 750,
+        .outer = 1000,
+    },
+    {
+        .head = {
+            .transform = {
+                .lighting = {
+                    .composeStamp = GRAPHICS_COORD_DIRTY,
+                    .local        = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, .t = { 4500, -2100, 4500 } },
+                    .composed     = { .m = { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } } },
+                    .viewId       = WORLD_COORDINATE_LIGHT_ALL_VIEWS,
+                },
+            },
+            .color = { 409, 696, 860 },
+        },
+        .inner = 100,
+        .outer = 1500,
+    },
+};
+
+/// The lobby's model-shading light collection, with seven point lights.
+///
+/// Directional and cone arrays are absent. Coordinate and attenuation updates
+/// mutate the borrowed point lights; all storage must remain in the loaded overlay.
+static WorldCoordRoomLights _gDryfieldNightMotelLobbyRoomLights = {
+    .pointLightCount = ARRAY_SIZE(_gDryfieldNightMotelLobbyPointLights),
+    .pointLights     = _gDryfieldNightMotelLobbyPointLights,
+};
+
+/// Directed view changes between lobby views 2 and 3, and between views 3 and 4.
+///
+/// The final boundary carries LAST and is linked with the other three.
+/// Setup mutates links, coordinates and enable bits; contact scans latch hits.
+/// Positions and radii use room units, normals use 4096 per unit. Keep the
+/// writable array loaded until all view boundaries are unlinked.
+static WorldCollisionTrigger _gDryfieldNightMotelLobbyViewBoundaryTriggers[4] = {
+    { NULL, NULL, NULL, { 2241, -896, 3011, 0 }, { { -1888, 1024, 0, 0 }, { 1888, 1024, 0, 0 }, { -1888, -1024, 0, 0 }, { 1888, -1024, 0, 0 } }, { 0, 0, 4100, 0 }, { 0, 0, ONE, 0 }, 2141, 0, 3, 2, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { 2144, -864, 3392, 0 }, { { 1888, 1024, 0, 0 }, { -1888, 1024, 0, 0 }, { 1888, -1024, 0, 0 }, { -1888, -1024, 0, 0 } }, { 0, 0, -4101, 0 }, { 0, 0, ONE, 0 }, 2141, 0, 2, 3, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { 4000, -896, 5264, 0 }, { { 0, 1024, 848, 0 }, { 0, 1024, -848, 0 }, { 0, -1024, 848, 0 }, { 0, -1024, -848, 0 } }, { 4102, 0, 0, 0 }, { 0, 0, ONE, 0 }, 1324, 0, 4, 3, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { 4095, -896, 5248, 0 }, { { 2, 1024, -848, 0 }, { -1, 1024, 848, 0 }, { 2, -1024, -848, 0 }, { -1, -1024, 848, 0 } }, { -4103, 0, -10, 0 }, { 0, 0, ONE, 0 }, 1324, 0, 3, 4, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY | WORLD_COLLISION_TRIGGER_LAST, 0 },
+};
+
+/// Door warp slots (departure 1, parking-lot arrival 2) and room interaction selectors.
+enum {
+    DRYFIELD_NIGHT_MOTEL_LOBBY_PARKING_LOT_WARP_SLOTS = (1 << 4) | 2,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_ACTION   = 1,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_VISIT_COMMAND          = 3,
+};
+
+/// Eight lobby interaction quads, including the door and cash register.
+///
+/// Entry zero warps to the parking lot. Five entries request CAP commands
+/// 1, 2, 4, 5 and 6; another sends visit command 3 to the room receiver.
+/// The last sends cash-register action 1 and carries LAST, so it is linked
+/// before setup stops. Positions/radii use room units and normals use 4096
+/// per unit. The loaded overlay owns the mutable links, enable bits and hits.
+static WorldCollisionTrigger _gDryfieldNightMotelLobbyActionTriggers[8] = {
+    { NULL, NULL, NULL, { 2992, -48, 320, 0 }, { { -848, 0, -256, 0 }, { 848, 0, -256, 0 }, { -848, 0, 256, 0 }, { 848, 0, 256, 0 } }, { 0, 4102, 0, 0 }, { 0, 0, ONE, 0 }, 884, WORLD_COLLISION_TRIGGER_ACTION_WARP, GAME_AREA_DRYFIELD_NIGHT_PARKING_LOT, DRYFIELD_NIGHT_MOTEL_LOBBY_PARKING_LOT_WARP_SLOTS, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 5872, -64, 3104, 0 }, { { -320, 0, -416, 0 }, { 320, 0, -416, 0 }, { -320, 0, 416, 0 }, { 320, 0, 416, 0 } }, { 0, ONE, 0, 0 }, { -4091, 0, 201, 0 }, 523, WORLD_COLLISION_TRIGGER_ACTION_CAP, 5, 0, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 4656, -64, 2280, 0 }, { { -1200, 0, -744, 0 }, { 816, 0, -712, 0 }, { -432, 0, 728, 0 }, { 816, 0, 728, 0 } }, { 0, 4108, 0, 0 }, { 0, 0, ONE, 0 }, 1408, WORLD_COLLISION_TRIGGER_ACTION_CAP, DRYFIELD_NIGHT_MOTEL_LOBBY_VISIT_COMMAND, WORLD_COLLISION_TRIGGER_CAP_ROOM_MESSAGE, WORLD_COLLISION_TRIGGER_NEAR_OR_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 4016, -64, 3504, 0 }, { { -816, 0, -464, 0 }, { 816, 0, -464, 0 }, { -816, 0, 464, 0 }, { 816, 0, 464, 0 } }, { 0, 4110, 0, 0 }, { 0, 0, ONE, 0 }, 938, WORLD_COLLISION_TRIGGER_ACTION_CAP, 4, 0, WORLD_COLLISION_TRIGGER_NEAR_OR_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 5808, -64, 976, 0 }, { { -320, 0, -880, 0 }, { 320, 0, -880, 0 }, { -320, 0, 880, 0 }, { 320, 0, 880, 0 } }, { 0, 4119, 0, 0 }, { -ONE, 0, 0, 0 }, 936, WORLD_COLLISION_TRIGGER_ACTION_CAP, 6, 0, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 5312, -64, 4928, 0 }, { { -320, 0, -624, 0 }, { 320, 0, -624, 0 }, { -320, 0, 624, 0 }, { 320, 0, 624, 0 } }, { 0, 4102, 0, 0 }, { -ONE, 0, 0, 0 }, 701, WORLD_COLLISION_TRIGGER_ACTION_CAP, 2, 0, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 5888, -64, 3984, 0 }, { { -320, 0, -416, 0 }, { 320, 0, -416, 0 }, { -320, 0, 416, 0 }, { 320, 0, 416, 0 } }, { 0, ONE, 0, 0 }, { -ONE, 0, 0, 0 }, 523, WORLD_COLLISION_TRIGGER_ACTION_CAP, 1, 0, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 4497, -64, 4464, 0 }, { { -608, 0, -496, 0 }, { 608, 0, -496, 0 }, { -608, 0, 496, 0 }, { 608, 0, 496, 0 } }, { 0, 4105, 0, 0 }, { 4091, 0, -201, 0 }, 783, WORLD_COLLISION_TRIGGER_ACTION_ROOM, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_ACTION, 0, WORLD_COLLISION_TRIGGER_FACING_QUAD | WORLD_COLLISION_TRIGGER_LAST, 0 },
+};
+
+AreaVariant gDryfieldNightMotelLobbyAreaVariants[11] = { 0 };
+
+/// Minimum model ambient colours for logical lobby views 1..7.
+///
+/// Entry zero counts the seven following entries. RGB uses 16 units per 8-bit
+/// colour level; luma retains the authored brightness. Queries read this room
+/// storage and use the default ambient minima for higher views.
+static WorldCoordRoomAmbientEntry _gDryfieldNightMotelLobbyRoomAmbientTable[8] = {
+    { .viewCount = ARRAY_SIZE(_gDryfieldNightMotelLobbyRoomAmbientTable) - 1 },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 287, 398, 383, 354 } },
+    { .color = { 516, 781, 953, 703 } },
+    { .color = { 459, 656, 722, 590 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+};
+
+/// Cue-2 footstep requests in the loaded type-1 bank, before paired-cue offsets.
+enum {
+    DRYFIELD_NIGHT_MOTEL_LOBBY_DEFAULT_WALK_SOUND   = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x2D,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_DEFAULT_RUN_SOUND    = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x2F,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_SURFACE_2_WALK_SOUND = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x3D,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_SURFACE_2_RUN_SOUND  = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x3F,
+};
+
+/// Footstep cue bases for lobby surface classes 0, 1 and 3..7.
+///
+/// Walking and scripted jumps share one base; running uses another. Cue 1 adds
+/// one, and companion playback adds 100. Surface records borrow this room storage.
+static WorldCollisionFootstepSounds _gDryfieldNightMotelLobbyDefaultFootstepSounds = {
+    .walk         = DRYFIELD_NIGHT_MOTEL_LOBBY_DEFAULT_WALK_SOUND,
+    .run          = DRYFIELD_NIGHT_MOTEL_LOBBY_DEFAULT_RUN_SOUND,
+    .scriptedJump = DRYFIELD_NIGHT_MOTEL_LOBBY_DEFAULT_WALK_SOUND,
+};
+
+/// Footstep cue bases for lobby surface class 2.
+///
+/// Walking and scripted jumps share one base; running uses another. Cue 1 adds
+/// one, and companion playback adds 100. Surface records borrow this room storage.
+static WorldCollisionFootstepSounds _gDryfieldNightMotelLobbySurface2FootstepSounds = {
+    .walk         = DRYFIELD_NIGHT_MOTEL_LOBBY_SURFACE_2_WALK_SOUND,
+    .run          = DRYFIELD_NIGHT_MOTEL_LOBBY_SURFACE_2_RUN_SOUND,
+    .scriptedJump = DRYFIELD_NIGHT_MOTEL_LOBBY_SURFACE_2_WALK_SOUND,
+};
+
+/// Collision policy for lobby surface classes 0 and 3..7.
+///
+/// Blocks probes, permits weapon impacts and applies pushback. Footstep cues
+/// borrow the default lobby set; the first byte's role remains unproven.
+static WorldCollisionSurfaceProperties _gDryfieldNightMotelLobbyDefaultSurfaceProperties = {
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gDryfieldNightMotelLobbyDefaultFootstepSounds,
+};
+
+/// Collision policy for lobby surface class 1.
+///
+/// Blocks probes, permits weapon impacts and applies pushback. This distinct
+/// record shares the default footstep set; the first byte's role is unproven.
+static WorldCollisionSurfaceProperties _gDryfieldNightMotelLobbySurface1Properties = {
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gDryfieldNightMotelLobbyDefaultFootstepSounds,
+};
+
+/// Collision policy and alternate footstep set for lobby surface class 2.
+///
+/// Blocks probes, permits weapon impacts and applies pushback. The first byte's
+/// role is unproven; the record and its cues belong to the loaded lobby overlay.
+static WorldCollisionSurfaceProperties _gDryfieldNightMotelLobbySurface2Properties = {
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gDryfieldNightMotelLobbySurface2FootstepSounds,
+};
+
+WorldCollisionSurfaceProperties* gDryfieldNightMotelLobbySurfacePropertyTable[8] = {
+    &_gDryfieldNightMotelLobbyDefaultSurfaceProperties,
+    &_gDryfieldNightMotelLobbySurface1Properties,
+    &_gDryfieldNightMotelLobbySurface2Properties,
+    &_gDryfieldNightMotelLobbyDefaultSurfaceProperties,
+    &_gDryfieldNightMotelLobbyDefaultSurfaceProperties,
+    &_gDryfieldNightMotelLobbyDefaultSurfaceProperties,
+    &_gDryfieldNightMotelLobbyDefaultSurfaceProperties,
+    &_gDryfieldNightMotelLobbyDefaultSurfaceProperties,
+};
+
+/// Map-mark policy bits used by the register's saved-area updates.
+enum {
+    DRYFIELD_NIGHT_MOTEL_LOBBY_AREA_MARK_CLEAR = 0,
+    DRYFIELD_NIGHT_MOTEL_LOBBY_AREA_MARK_SET   = 1,
+};
+
+/// Seven saved-area updates committed when the cash-register code is accepted.
+///
+/// Resets enemy poses and selects placement variants in six night Dryfield
+/// areas, clearing the gas-station map mark and setting the others. Junk-yard
+/// variant 4 is for normal/replay and Scavenger, variant 7 for Bounty and
+/// Nightmare. The final stage byte ends the list; it is read synchronously.
+static AreaApplyRec _gDryfieldNightMotelLobbyCashRegisterAreaUpdates[8] = {
+    { GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_GAS_STATION, 2, AREA_APPLY_MODE_ALWAYS | DRYFIELD_NIGHT_MOTEL_LOBBY_AREA_MARK_CLEAR },
+    { GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_GENERAL_STORE, 2, AREA_APPLY_MODE_ALWAYS | DRYFIELD_NIGHT_MOTEL_LOBBY_AREA_MARK_SET },
+    { GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_BACK_STREET, 4, AREA_APPLY_MODE_ALWAYS | DRYFIELD_NIGHT_MOTEL_LOBBY_AREA_MARK_SET },
+    { GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_DILAPIDATED_HOUSE, 4, AREA_APPLY_MODE_ALWAYS | DRYFIELD_NIGHT_MOTEL_LOBBY_AREA_MARK_SET },
+    { GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_JUNK_YARD, 4, AREA_APPLY_MODE_REPLAY_SCAVENGER | DRYFIELD_NIGHT_MOTEL_LOBBY_AREA_MARK_SET },
+    { GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_JUNK_YARD, 7, AREA_APPLY_MODE_BOUNTY_NIGHTMARE | DRYFIELD_NIGHT_MOTEL_LOBBY_AREA_MARK_SET },
+    { GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_MOTEL_BALCONY, 3, AREA_APPLY_MODE_ALWAYS | DRYFIELD_NIGHT_MOTEL_LOBBY_AREA_MARK_SET },
+    { AREA_APPLY_END, 0, 0, 0 },
+};
+
+Task* gDryfieldNightMotelLobbyCashRegisterTask = NULL;
+
+RoomCutsceneRec gDryfieldNightMotelLobbyRevisitCutscene;
+
+static void _glowDrawDiamond(const SVECTOR* worldPoint, s32 pulseRate, s32 radiusScale);
+static void _glowDrawPulsingDisc(const SVECTOR* worldPoint, s32 pulseRate, s32 radiusScale);
+
+/// Sets a cash-register quad's texture coordinates for one display slot.
+///
+/// Borrows a writable `glyph`; `digit` is 0..9 or
+/// `DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY` (10).
+/// Digits select 24-texel columns in the first row; empty selects the first
+/// column in the second row. Only UV coordinates change; the caller supplies
+/// the texture page, palette, screen bounds and packet header.
+static inline void _dryfieldNightMotelLobbySetCashRegisterGlyph(POLY_FT4* glyph, u8 digit)
+{
+    u8 textureU;
+
+    if (digit == DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY) {
+        glyph->u0 = 0;
+        glyph->v0 = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+        glyph->u1 = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+        glyph->v1 = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+        glyph->u2 = 0;
+        glyph->v2 = 2 * DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+        glyph->u3 = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+        glyph->v3 = 2 * DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+    } else {
+        textureU  = digit * DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+        glyph->u0 = textureU;
+        glyph->v0 = 0;
+        glyph->u1 = textureU + DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+        glyph->v1 = 0;
+        glyph->u2 = textureU;
+        glyph->v2 = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+        glyph->u3 = textureU + DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+        glyph->v3 = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+    }
+}
+
+void dryfieldNightMotelLobbyDrawCashRegisterDisplay(Task* task)
+{
+    DryfieldNightMotelLobbyCashRegisterWork* work = task->work;
+    POLY_FT4*                                glyph;
+    s32                                      slotIndex;
+    u8                                       digit;
+
+    // Closed entry leaves every slot empty, even on a frame that skips drawing.
+    if (work->entryOpen == 0) {
+        for (slotIndex = 0; slotIndex < (s32)ARRAY_SIZE(_gDryfieldNightMotelLobbyCashRegisterDigits); slotIndex++) {
+            _gDryfieldNightMotelLobbyCashRegisterDigits[slotIndex] = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY;
+        }
+    }
+    if (work->entryCleared == 0) {
+        // Newest digits occupy the right-hand slot; each packet is 24 pixels square.
+        for (slotIndex = 0; slotIndex < (s32)ARRAY_SIZE(_gDryfieldNightMotelLobbyCashRegisterDigits); slotIndex++) {
+            digit          = _gDryfieldNightMotelLobbyCashRegisterDigits[slotIndex];
+            glyph          = gGpuPrimCursor;
+            gGpuPrimCursor = glyph + 1;
+            setPolyFT4(glyph);
+            _dryfieldNightMotelLobbySetCashRegisterGlyph(glyph, digit);
+            setShadeTex(glyph, 1);
+            glyph->tpage = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_TPAGE;
+            glyph->clut  = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_CLUT;
+            glyph->x0    = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_RIGHT_X - slotIndex * DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+            glyph->y0    = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_TOP_Y;
+            glyph->x1    = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_RIGHT_X + DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE - slotIndex * DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+            glyph->y1    = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_TOP_Y;
+            glyph->x2    = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_RIGHT_X - slotIndex * DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+            glyph->y2    = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_TOP_Y + DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+            glyph->x3    = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_RIGHT_X + DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE - slotIndex * DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+            glyph->y3    = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_TOP_Y + DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_GLYPH_SIZE;
+            addPrim(&gGpuCurrentOt[DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DISPLAY_OT_INDEX], glyph);
+        }
+    } else {
+        // A clear leaves a lone zero for the next frame and emits no glyph packets.
+        _gDryfieldNightMotelLobbyCashRegisterDigits[0] = 0;
+    }
+}
+
+/// Inserts a decimal digit at the right of the seven-slot register display.
+///
+/// `digit` must be 0..9; it narrows to the stored byte at index 0. Moves older
+/// slots left and discards index 6, including empty-slot markers. No capacity
+/// or leading-zero check occurs here: the caller checks those and updates its
+/// entered-digit count. The display array is retained room storage.
+static inline void _dryfieldNightMotelLobbyCashRegisterShiftDigit(s16 digit)
+{
+    _gDryfieldNightMotelLobbyCashRegisterDigits[6] = _gDryfieldNightMotelLobbyCashRegisterDigits[5];
+    _gDryfieldNightMotelLobbyCashRegisterDigits[5] = _gDryfieldNightMotelLobbyCashRegisterDigits[4];
+    _gDryfieldNightMotelLobbyCashRegisterDigits[4] = _gDryfieldNightMotelLobbyCashRegisterDigits[3];
+    _gDryfieldNightMotelLobbyCashRegisterDigits[3] = _gDryfieldNightMotelLobbyCashRegisterDigits[2];
+    _gDryfieldNightMotelLobbyCashRegisterDigits[2] = _gDryfieldNightMotelLobbyCashRegisterDigits[1];
+    _gDryfieldNightMotelLobbyCashRegisterDigits[1] = _gDryfieldNightMotelLobbyCashRegisterDigits[0];
+    _gDryfieldNightMotelLobbyCashRegisterDigits[0] = digit;
+}
+
+void dryfieldNightMotelLobbyPressCashRegisterKey(Task* task, s16 keyId)
+{
+    DryfieldNightMotelLobbyCashRegisterWork* work = task->work;
+    s32                                      slotIndex;
+
+    // A clear's displayed zero is a placeholder and is not counted as an entered digit.
+    switch (keyId) {
+        case 0:
+            sndEvtRequestScriptStart(SOUND_NIGHT_MOTEL_LOBBY_KEYPAD_PRESS, 0, 0);
+            if (work->digitCount < (s32)ARRAY_SIZE(_gDryfieldNightMotelLobbyCashRegisterDigits)) {
+                if (_gDryfieldNightMotelLobbyCashRegisterDigits[0] != 0 || _gDryfieldNightMotelLobbyCashRegisterDigits[1] != DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY) {
+                    _dryfieldNightMotelLobbyCashRegisterShiftDigit(keyId);
+                    work->digitCount++;
+                }
+            }
+            break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+            sndEvtRequestScriptStart(SOUND_NIGHT_MOTEL_LOBBY_KEYPAD_PRESS, 0, 0);
+            if (work->digitCount < (s32)ARRAY_SIZE(_gDryfieldNightMotelLobbyCashRegisterDigits)) {
+                // Discard the uncounted placeholder before shifting the entered digits.
+                _gDryfieldNightMotelLobbyCashRegisterDigits[work->digitCount] = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY;
+                _dryfieldNightMotelLobbyCashRegisterShiftDigit(keyId);
+                work->digitCount++;
+            }
+            break;
+        case DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_KEY_DOUBLE_ZERO:
+            sndEvtRequestScriptStart(SOUND_NIGHT_MOTEL_LOBBY_KEYPAD_PRESS, 0, 0);
+            if (work->digitCount < (s32)ARRAY_SIZE(_gDryfieldNightMotelLobbyCashRegisterDigits)) {
+                if (_gDryfieldNightMotelLobbyCashRegisterDigits[0] != 0 || _gDryfieldNightMotelLobbyCashRegisterDigits[1] != DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY) {
+                    _dryfieldNightMotelLobbyCashRegisterShiftDigit(0);
+                    work->digitCount++;
+                    if (work->digitCount < (s32)ARRAY_SIZE(_gDryfieldNightMotelLobbyCashRegisterDigits)) {
+                        _dryfieldNightMotelLobbyCashRegisterShiftDigit(0);
+                        work->digitCount++;
+                    }
+                }
+            }
+            break;
+        case DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_KEY_HASH:
+            sndEvtRequestScriptStart(SOUND_NIGHT_MOTEL_LOBBY_KEYPAD_PRESS, 0, 0);
+            work->digitCount   = 0;
+            work->entryCleared = true;
+            for (slotIndex = 0; slotIndex < (s32)ARRAY_SIZE(_gDryfieldNightMotelLobbyCashRegisterDigits); slotIndex++) {
+                _gDryfieldNightMotelLobbyCashRegisterDigits[slotIndex] = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY;
+            }
+            break;
+        case DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_KEY_CLEAR:
+            sndEvtRequestScriptStart(SOUND_NIGHT_MOTEL_LOBBY_KEYPAD_PRESS, 0, 0);
+            work->digitCount   = 0;
+            work->entryCleared = true;
+            for (slotIndex = 0; slotIndex < (s32)ARRAY_SIZE(_gDryfieldNightMotelLobbyCashRegisterDigits); slotIndex++) {
+                _gDryfieldNightMotelLobbyCashRegisterDigits[slotIndex] = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY;
+            }
+            break;
+        case DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_KEY_TOTAL:
+            if (_dryfieldNightMotelLobbyCashRegisterHasValidCode() != 0) {
+                work->codeAccepted = true;
+            } else {
+                sndEvtRequestScriptStart(SOUND_NIGHT_MOTEL_LOBBY_KEYPAD_ERROR, 0, 0);
+            }
+            break;
+    }
+}
+
+/// Returns 1 only when the display reads exactly 3033, otherwise 0.
+///
+/// Reads the seven live slots, newest first at index 0. The three older slots
+/// must be empty. This checks display contents independently of the work block
+/// and neither clears digits nor plays sounds. The halfword result is Boolean.
+static s16 _dryfieldNightMotelLobbyCashRegisterHasValidCode(void)
+{
+    enum { DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_CODE_REPEATED_DIGIT = 3 };
+    const u8* digits = _gDryfieldNightMotelLobbyCashRegisterDigits;
+
+    if (digits[6] != DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY) {
+        return 0;
+    }
+    if (digits[5] != digits[6]) {
+        return 0;
+    }
+    if (digits[4] != digits[5]) {
+        return 0;
+    }
+    if (digits[3] != DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_CODE_REPEATED_DIGIT) {
+        return 0;
+    }
+    if (digits[2] != 0) {
+        return 0;
+    }
+    // Reuse the checked older digit for the repeated 3 in the code.
+    if (digits[1] != digits[3]) {
+        return 0;
+    }
+    return digits[0] == DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_CODE_REPEATED_DIGIT;
+}
+
+#include "../../shared/room/action_prompt_move_cursors.inc.c"
+
+#include "../../shared/room/action_prompt_draw_cursor.inc.c"
+
+/// Updates the cash register's action cursor through reset and motion states.
+///
+/// Requires a live task with state 0 (reset both ports) or 1 (update motion).
+/// The register spawns it with `spawnArg1.value` 1, selecting port 0 for motion.
+/// No work block is used. The cash-register event retains and kills this child.
+static void _dryfieldNightMotelLobbyCashRegisterCursorTask(Task* task)
+{
+    TaskFunc states[] = { _actionPromptResetDefault, _actionPromptMoveCursorsDefault };
+
+    states[task->state](task);
+}
+
+/// Runs one state of the lobby's cash-register interaction.
+///
+/// Requires the loaded lobby and a state in 0..10: allocate, arm cursor, scan,
+/// open prompt, answer prompt, cancel, accept code, accept sound, completion
+/// CAP, one-tick delay, restore play. State 0 allocates zeroed task-owned work
+/// and a cursor child; states 2..4 draw the digit display. Cancellation and
+/// completion release the interaction's holds and cursor, then suspend the
+/// event for its polling owner to release the task and work.
+static void _dryfieldNightMotelLobbyCashRegisterTask(Task* task)
+{
+    TaskFuncTable11 states;
+
+    states = _gDryfieldNightMotelLobbyCashRegisterStates;
+    states.funcs[task->state](task);
+}
+
+#include "../../shared/room/action_prompt_hit_test.inc.c"
+
+/// Clears keypad hit latches and fills every cash-register digit with the empty marker.
+///
+/// Requires the writable room hotspot run through `ACTION_PROMPT_HOTSPOT_END`
+/// and all seven digit slots. The sentinel is untouched; every digit becomes
+/// `DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY` (10).
+static inline void _dryfieldNightMotelLobbyResetCashRegisterInput(void)
+{
+    ActionPromptHotspot* hotspot;
+    u8*                  digit;
+    u8                   emptyDigit;
+    s32                  digitIndex;
+
+    for (hotspot = gDryfieldNightMotelLobbyCashRegisterHotspots; hotspot->id != ACTION_PROMPT_HOTSPOT_END; hotspot++) {
+        hotspot->hit = 0;
+    }
+    // Fill backwards with a byte value and a separately initialized signed index.
+    emptyDigit = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_DIGIT_EMPTY;
+    digitIndex = (s32)ARRAY_SIZE(_gDryfieldNightMotelLobbyCashRegisterDigits) - 1;
+    digit      = &_gDryfieldNightMotelLobbyCashRegisterDigits[digitIndex];
+    for (; digitIndex >= 0; digitIndex--) {
+        *digit-- = emptyDigit;
+    }
+}
+
+/// Initializes the cash-register interaction, its cursor and empty digit display.
+///
+/// State 0 owns zeroed work and retains an independent cursor child. Allocation
+/// failure kills the controller; cursor-spawn failure is left unchecked.
+/// Selects saved view 6, clears all keypad hits and seven digits, then holds
+/// normal play and HUD drawing until cancellation or completion. The overlay
+/// and cursor resources must remain loaded through that interaction.
+static void _dryfieldNightMotelLobbyCashRegisterInitialize(Task* task)
+{
+    enum { DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_VIEW          = 6,
+           DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_CURSOR_PORT_0 = 1 };
+
+    DryfieldNightMotelLobbyCashRegisterWork* work;
+
+    work = memCalloc(sizeof(*work), 0);
+    if (work == NULL) {
+        taskKill(task);
+        return;
+    }
+    task->spawnArg2.pointer                                = taskSpawnFromTable(&_gDryfieldNightMotelLobbyCashRegisterCursorTaskDesc, 0, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_CURSOR_PORT_0, NULL);
+    task->work                                             = work;
+    gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_VIEW;
+    task->state++;
+    displayAcquireMenuHold();
+    _dryfieldNightMotelLobbyResetCashRegisterInput();
+    gGameSession->cutsceneHold = 1;
+    gGameSession->hideHud      = 1;
+    gGameSession->eventState   = 1;
+}
+
+/// Arms port 0's cash-register cursor and advances to keypad scanning.
+///
+/// Requires the cursor child's reset state to have run. Selects idle drawing
+/// and aiming speed, and resets the published position to the screen center.
+/// Fixed-point motion and press timers retain the values set by the child.
+static void _dryfieldNightMotelLobbyCashRegisterArmCursor(Task* task)
+{
+    ActionPrompt* prompt = gActionPromptSlots;
+
+    prompt->cursorSpeed = ACTION_PROMPT_SPEED_AIM;
+    prompt->mode        = ACTION_PROMPT_MODE_NORMAL;
+    prompt->screen.xy.x = 0;
+    prompt->screen.xy.y = 0;
+    task->state         = task->state + 1;
+}
+
+/// Opens the cash register's hotspot command menu at port 0's cursor position.
+///
+/// Borrows live cash-register work; `promptKind` selects the menu's first row
+/// (0 Examine, 1 Push). Draws the digit display before hiding and stopping the
+/// cursor, then advances to the answer state. Coordinates are screen-center
+/// pixels. The cursor child remains live while the command menu is open.
+static void _dryfieldNightMotelLobbyCashRegisterOpenPrompt(Task* task)
+{
+    ActionPrompt*                            prompt = gActionPromptSlots;
+    DryfieldNightMotelLobbyCashRegisterWork* work   = task->work;
+
+    dryfieldNightMotelLobbyDrawCashRegisterDisplay(task);
+    prompt->mode        = ACTION_PROMPT_MODE_HIDDEN;
+    prompt->cursorSpeed = ACTION_PROMPT_SPEED_STOPPED;
+    itemMenuOpenHotspotCommands(prompt->screen.xy.x, prompt->screen.xy.y, work->promptKind);
+    task->state = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_ANSWER_PROMPT;
+}
+
+/// Returns from the cash-register command menu to keypad scanning.
+///
+/// Requires live cash-register work and port 0's cursor. Draws the display first,
+/// then hides and stops the cursor. A confirmed action latches examination and
+/// starts CAP slot 9; either answer returns to scan state 2 on this tick.
+static void _dryfieldNightMotelLobbyCashRegisterAnswerPrompt(Task* task)
+{
+    enum { EXAMINED_CAP_SLOT = 9 };
+    ActionPrompt*                            prompt = gActionPromptSlots;
+    DryfieldNightMotelLobbyCashRegisterWork* work   = task->work;
+
+    dryfieldNightMotelLobbyDrawCashRegisterDisplay(task);
+    prompt->mode        = ACTION_PROMPT_MODE_HIDDEN;
+    prompt->cursorSpeed = ACTION_PROMPT_SPEED_STOPPED;
+    if (itemMenuIsHotspotActionConfirmed() != 0) {
+        work->examined = true;
+        capStartSequenceSlot(EXAMINED_CAP_SLOT, 0, 0);
+    }
+    task->state = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_STATE_SCAN;
+}
+
+#include "../../shared/room/action_prompt_event_end.inc.c"
+
+/// Commits the accepted cash-register code and starts the completion sequence.
+///
+/// Applies the lobby's saved-area updates, keeps ordinary direction handling
+/// blocked, destroys the cursor retained in `task->spawnArg2.pointer`, and
+/// latches the one-time lobby event flag. The event task and work remain live
+/// for the following sound, CAP and restoration states.
+static void _dryfieldNightMotelLobbyCashRegisterAcceptCode(Task* task)
+{
+    enum { DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_EVENT_ACTIVE = 1 };
+
+    areaApplySavedUpdates(_gDryfieldNightMotelLobbyCashRegisterAreaUpdates);
+    gGameSession->eventState = DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_EVENT_ACTIVE;
+    taskKill(task->spawnArg2.pointer);
+    gameFlagSetNibble(GAME_FLAG_NIGHT_MOTEL_LOBBY_EVENT_SEEN, true);
+    task->state = task->state + 1;
+}
+
+/// Requests the cash-register acceptance sound and advances to the CAP state.
+///
+/// Requires a live event task and the lobby's stage sound bank. The request is
+/// asynchronous; this callback does not wait for sound playback to complete.
+static void _dryfieldNightMotelLobbyCashRegisterPlayAcceptSound(Task* task)
+{
+    sndEvtRequestScriptStart(SOUND_NIGHT_MOTEL_LOBBY_KEYPAD_ACCEPT, 0, 0);
+    task->state = task->state + 1;
+}
+
+/// Requests the accepted cash-register code's completion CAP command.
+///
+/// Runs in state 8 after area changes and acceptance sound were requested.
+/// Starts command 8 with transition handling, then advances to the single-tick
+/// exit delay; this callback does not wait for CAP playback to finish.
+static void _dryfieldNightMotelLobbyCashRegisterStartCompletionCap(Task* task)
+{
+    enum { COMPLETION_CAP_COMMAND = 8 };
+    capRunCommandWithTransition(COMPLETION_CAP_COMMAND);
+    task->state = task->state + 1;
+}
+
+/// Advances the cash-register task through one idle update before restoring play.
+///
+/// Called in state 9 after the completion CAP command request; state 10
+/// restores player control, the HUD and the normal lobby view on the next update.
+static void _dryfieldNightMotelLobbyCashRegisterExitDelay(Task* task)
+{
+    task->state = task->state + 1;
+}
+
+/// Restores play after code acceptance and hands event teardown to its owner.
+///
+/// Requires the event's menu hold and live player/model/session/save state.
+/// The acceptance state already destroyed the cursor. Restores player control,
+/// automatic drawing, HUD and saved view 4, then suspends the event with result
+/// 0 for its polling owner. No cursor kill or reentry-delay write is needed.
+static void _dryfieldNightMotelLobbyCashRegisterFinish(Task* task)
+{
+    enum { DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_END_RESULT = 0 };
+
+    _actionPromptRestoreEventPlay();
+    taskRequestKill(task, DRYFIELD_NIGHT_MOTEL_LOBBY_CASH_REGISTER_END_RESULT);
+}
+
+#include "../../shared/room/action_prompt_reset.inc.c"
+
+void dryfieldNightMotelLobbyDrawGlowsTask(Task* unusedTask)
+{
+    enum {
+        DRYFIELD_NIGHT_MOTEL_LOBBY_GLOW_PULSE_RATE = 0x60, // Angle units per animation frame (4096 per turn)
+        // Perspective radii are scale * 32 (diamond), 64 (disc outer radius), or 39 (flare), divided by camera Z / 4.
+        DRYFIELD_NIGHT_MOTEL_LOBBY_DIAMOND_RADIUS_SCALE = 0x60,
+        DRYFIELD_NIGHT_MOTEL_LOBBY_DISC_RADIUS_SCALE    = 0x30,
+        DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_RADIUS_SCALE   = 0x300,
+        // Each column index also selects its palette on the glow flare texture page.
+        DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_COLUMN_1 = 1,
+        DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_COLUMN_2 = 2,
+    };
+
+    // Select lights by logical view, before camera/image remapping.
+    switch (gGameSession->location.view) {
+        case 2:
+            _glowDrawDiamond(&_gDryfieldNightMotelLobbyGlowCenters[0], DRYFIELD_NIGHT_MOTEL_LOBBY_GLOW_PULSE_RATE, DRYFIELD_NIGHT_MOTEL_LOBBY_DIAMOND_RADIUS_SCALE);
+            _dryfieldNightMotelLobbyDrawFlare(&_gDryfieldNightMotelLobbyGlowCenters[1], DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_COLUMN_2, DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_RADIUS_SCALE);
+            _dryfieldNightMotelLobbyDrawFlare(&_gDryfieldNightMotelLobbyGlowCenters[2], DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_COLUMN_1, DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_RADIUS_SCALE);
+            _dryfieldNightMotelLobbyDrawFlare(&_gDryfieldNightMotelLobbyGlowCenters[3], DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_COLUMN_1, DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_RADIUS_SCALE);
+            break;
+        case 3:
+            _dryfieldNightMotelLobbyDrawFlare(&_gDryfieldNightMotelLobbyGlowCenters[1], DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_COLUMN_2, DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_RADIUS_SCALE);
+            _dryfieldNightMotelLobbyDrawFlare(&_gDryfieldNightMotelLobbyGlowCenters[4], DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_COLUMN_1, DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_RADIUS_SCALE);
+            break;
+        case 4:
+            _glowDrawDiamond(&_gDryfieldNightMotelLobbyGlowCenters[0], DRYFIELD_NIGHT_MOTEL_LOBBY_GLOW_PULSE_RATE, DRYFIELD_NIGHT_MOTEL_LOBBY_DIAMOND_RADIUS_SCALE);
+            _dryfieldNightMotelLobbyDrawFlare(&_gDryfieldNightMotelLobbyGlowCenters[1], DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_COLUMN_2, DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_RADIUS_SCALE);
+            break;
+        case 5:
+            _glowDrawPulsingDisc(&_gDryfieldNightMotelLobbyGlowCenters[0], DRYFIELD_NIGHT_MOTEL_LOBBY_GLOW_PULSE_RATE, DRYFIELD_NIGHT_MOTEL_LOBBY_DISC_RADIUS_SCALE);
+            break;
+    }
+}
+
+#include "../../shared/effects/glow_draw_diamond.inc.c"
+
+#include "../../shared/effects/glow_draw_pulsing_disc.inc.c"
+
+/// Sets a lobby flare quad's square around its projected light centre.
+///
+/// Borrows the writable `flare` packet and read-only `projection` for this call.
+/// `sx`, `sy` and `radius` are pixels; radius is the square's half-extent.
+/// Vertices 0, 1, 2 and 3 become top-left, top-right, bottom-left and bottom-right,
+/// with coordinates wrapping to the packet's signed 16 bits.
+/// The caller supplies the accepted projection, header, texture, colour and linkage.
+static inline void _dryfieldNightMotelLobbySetFlareBounds(POLY_FT4* flare, const GlowCentreScratch* projection)
+{
+    flare->x0 = flare->x2 = projection->sx - projection->radius;
+    flare->x1 = flare->x3 = projection->sx + projection->radius;
+    flare->y0 = flare->y1 = projection->sy - projection->radius;
+    flare->y2 = flare->y3 = projection->sy + projection->radius;
+}
+
+/// Draws a flickering textured flare at a lobby light's world position.
+///
+/// Borrows `worldPoint` during the call and queues one semitransparent quad in
+/// the current frame, with RGB intensity 32 or 48 on alternating frames.
+/// `textureIndex` uses its signed low halfword for a 40-texel column and its
+/// low six bits for the palette offset; lobby callers select columns 1 and 2.
+/// The signed low halfword of `radiusScale` gives a pixel half-extent of
+/// `radiusScale * 39 / depth`, where depth is camera Z / 4 and must be nonzero.
+/// The view, packet arena and depth ordering table must be ready for drawing.
+///
+/// Requires 32 free scratch bytes, uses the lower 16 for the projection and
+/// releases those 16 on either path. The upper 16 remain reserved until the
+/// frame's scratch reset; their role is unproven.
+static void _dryfieldNightMotelLobbyDrawFlare(const SVECTOR* worldPoint, s32 textureIndex, s32 radiusScale)
+{
+    enum { DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_RETAINED_SCRATCH_BYTES = 0x10 };
+    GlowCentreScratch* projection;
+    POLY_FT4*          flare;
+    s32                columnIndex;
+    s32                intensity;
+
+    projection = SCRATCH_STACK_RESERVE_BYTES(sizeof(*projection) + DRYFIELD_NIGHT_MOTEL_LOBBY_FLARE_RETAINED_SCRATCH_BYTES);
+
+    // Reject projection errors before reserving a GPU packet.
+    gte_SetTransMatrix(&gGfxViewCoord.workm);
+    gte_SetRotMatrix(&gGfxViewCoord.workm);
+    gte_ldv0(worldPoint);
+    gte_rtps();
+    gte_stsxy(&projection->sx);
+    gte_stflg(&projection->flag);
+    if (projection->flag >= 0) {
+        gte_stszotz(&projection->otz);
+        flare          = gGpuPrimCursor;
+        gGpuPrimCursor = flare + 1;
+        setPolyFT4(flare);
+        columnIndex  = (s16)textureIndex;
+        intensity    = (((u8)gDisplayState.animFrame & 1) * (1 << GLOW_BRIGHT_FLICKER_SHIFT)) + GLOW_FLICKER_BASE_INTENSITY;
+        flare->tpage = GLOW_FLARE_TEXTURE_PAGE;
+        flare->clut  = (columnIndex & GLOW_FLARE_PALETTE_OFFSET_MASK) | GLOW_FLARE_PALETTE_BASE;
+        setUVWH(flare, columnIndex * GLOW_FLARE_CELL_STRIDE, 0, GLOW_FLARE_CELL_LAST_TEXEL, GLOW_FLARE_CELL_LAST_TEXEL);
+        setRGB0(flare, intensity, intensity, intensity);
+        setSemiTrans(flare, 1);
+
+        // Perspective-size the square and sort it at the light's projected depth.
+        projection->radius = ((s16)radiusScale * GLOW_FLARE_CELL_LAST_TEXEL) / projection->otz;
+        _dryfieldNightMotelLobbySetFlareBounds(flare, projection);
+        addPrim(GPU_ORDERING_TABLE_ENTRY_AT_DEPTH(projection->otz),
+                flare);
+    }
+    // Preserve the extra reservation above the projection, including on rejection.
+    SCRATCH_STACK_RELEASE_BLOCK(GlowCentreScratch);
+}

@@ -1,0 +1,18 @@
+// Overlay-local symbols for mappic_s2_02 (file 30202).
+gMappicS202WarehouseShape = 0x8012f2a8;
+gMappicS202MotelRoom1Shape = 0x8012f3e4;
+gMappicS202MotelRoom2Shape = 0x8012f474;
+gMappicS202MotelRoom3Shape = 0x8012f504;
+gMappicS202MotelRoom4Shape = 0x8012f594;
+gMappicS202ParkingLotShape = 0x8012f694;
+gMappicS202ToiletShape = 0x8012f724;
+gMappicS202MotelLobbyShape = 0x8012f7b4;
+gMappicS202SaloonGRShape = 0x8012f894;
+gMappicS202GRKitchenShape = 0x8012f924;
+gMappicS202WaterTowerShape = 0x8012f9d0;
+gMappicS202BreezewayShape = 0x8012fa7c;
+gMappicS202FactoryShape = 0x8012fb0c;
+gMappicS202GarageShape = 0x8012fb9c;
+gMappicS202DrivewayShape = 0x8012fc64;
+gMappicS202JunkYardShape = 0x8012fd60;
+gMappicS202TrailerCoachShape = 0x8012fdf0;

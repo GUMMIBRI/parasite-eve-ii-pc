@@ -1,0 +1,238 @@
+#include "rooms/mine_secret_passage.h"
+
+#include "types.h"
+
+#include "mine_secret_passage_private.h"
+
+#include "gameplay/companion_load.h"
+#include "gameplay/captions.h"
+#include "gameplay/actor_presentation.h"
+#include "gameplay/direction.h"
+#include "gameplay/display.h"
+#include "gameplay/hud_sprites.h"
+#include "gameplay/message.h"
+#include "gameplay/scene_combat.h"
+
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/gameflag.h"
+#include "main/mc.h"
+#include "main/mc_types.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/sound.h"
+#include "main/stage.h"
+#include "main/task.h"
+#include "main/task_types.h"
+
+#include "mapui/map_shelter.h"
+
+#include "rooms/room_common.h"
+
+#include "../../shared/room/room_variants.h"
+
+/// Destination location cell retained while the player confirms passage departure.
+///
+/// Only room, area and warp are latched and committed; area narrows to a byte.
+/// Other bytes are untouched and are not a complete destination key. A later
+/// executable request replaces these selectors; there is no queue. The eight-byte
+/// cell retains its original two-byte alignment and lives with the room overlay.
+static GameLocationKey _gMineSecretPassageStagedDestination __attribute__((aligned(2)));
+
+static void _mineSecretPassageInitRoomTask(Task* task);
+static void _mineSecretPassageTryIntroEvent(Task* task);
+static void _mineSecretPassageIdleRoomTask(Task* unusedTask);
+
+/// Passage room callbacks: 0 register/music, 1 attempt the intro, 2 idle, 3 release.
+///
+/// The intro state consumes its one-shot gate even if playback cannot start.
+/// Dispatch copies four pointers and requires Task::state in 0..3 without a
+/// bounds check or terminator; callbacks borrow the loaded room through exit.
+static const TaskFuncTable4 _gMineSecretPassageRoomTaskStates = {
+    { _mineSecretPassageInitRoomTask, _mineSecretPassageTryIntroEvent,
+      _mineSecretPassageIdleRoomTask, taskKill },
+};
+
+/// Starts the persistent subtractive departure fade and exit-transit sound.
+///
+/// Borrows the room's writable fade record through departure. Its thirty-frame
+/// ramp darkens to black and holds until the reload tears down the fade task;
+/// this path never requests a return ramp. Only one departure may use the
+/// record at a time. Fade-task and sound-queue failures are ignored.
+static inline void _mineSecretPassageStartDepartureFade(void)
+{
+    enum {
+        MINE_SECRET_PASSAGE_DEPARTURE_FADE_FRAMES = 30,
+        MINE_SECRET_PASSAGE_FADE_TASK_BANK        = 1,
+        MINE_SECRET_PASSAGE_FADE_TASK_SLOT        = 0x31
+    };
+
+    gMineSecretPassageDepartureFade.fade.blend      = SCREEN_FADE_SUBTRACT;
+    gMineSecretPassageDepartureFade.fade.phase      = SCREEN_FADE_RUNNING;
+    gMineSecretPassageDepartureFade.fade.rampFrames = MINE_SECRET_PASSAGE_DEPARTURE_FADE_FRAMES;
+    taskSpawn(MINE_SECRET_PASSAGE_FADE_TASK_BANK, MINE_SECRET_PASSAGE_FADE_TASK_SLOT, 0, &gMineSecretPassageDepartureFade.fade);
+    sndEvtRequestScriptStart(SOUND_MINE_SECRET_PASSAGE_EXIT_TRANSIT, 0, 0);
+}
+
+void mineSecretPassageDepartureTask(Task* task)
+{
+    enum {
+        MINE_SECRET_PASSAGE_DEPARTURE_PROMPT       = 0,
+        MINE_SECRET_PASSAGE_DEPARTURE_WAIT_PROMPT  = 1,
+        MINE_SECRET_PASSAGE_DEPARTURE_CONFIRM      = 2,
+        MINE_SECRET_PASSAGE_DEPARTURE_WAIT_ESCAPE  = 3,
+        MINE_SECRET_PASSAGE_DEPARTURE_FADE         = 4,
+        MINE_SECRET_PASSAGE_DEPARTURE_WAIT_SOUND   = 5,
+        MINE_SECRET_PASSAGE_DEPARTURE_RELOAD       = 6,
+        MINE_SECRET_PASSAGE_DEPARTURE_COMMAND      = 2,
+        MINE_SECRET_PASSAGE_DEPARTURE_CONFIRM_KEY  = 10,
+        MINE_SECRET_PASSAGE_DEPARTURE_ESCAPE_DELAY = 3,
+        MINE_SECRET_PASSAGE_RELOAD_SPRITE_VARIANT  = 1
+    };
+    s16 ticksLeft;
+
+    switch (task->state) {
+        case MINE_SECRET_PASSAGE_DEPARTURE_PROMPT:
+            capRunCommand(MINE_SECRET_PASSAGE_DEPARTURE_COMMAND, CAP_PLAYBACK_IN_PLACE);
+            task->state++;
+            break;
+        case MINE_SECRET_PASSAGE_DEPARTURE_WAIT_PROMPT:
+            if (capIsBusy() != 0) {
+                break;
+            }
+            gSceneCombatState.actorControl = SCENE_COMBAT_ACTORS_RUNNING;
+            task->state++;
+            break;
+        case MINE_SECRET_PASSAGE_DEPARTURE_CONFIRM:
+            if (capGetVariantKey() != MINE_SECRET_PASSAGE_DEPARTURE_CONFIRM_KEY) {
+                taskKill(task);
+                playerActorSetScriptedControl(GAME_ACTOR_SCRIPTED_CONTROL_RESUME);
+                gSceneCombatState.actorControl = SCENE_COMBAT_ACTORS_RUNNING;
+                break;
+            }
+            gSceneCombatState.actorControl = SCENE_COMBAT_ACTORS_PAUSED;
+            task->killCountdown            = MINE_SECRET_PASSAGE_DEPARTURE_ESCAPE_DELAY;
+            task->state++;
+            break;
+        case MINE_SECRET_PASSAGE_DEPARTURE_WAIT_ESCAPE:
+            ticksLeft           = (u16)task->killCountdown - 1;
+            task->killCountdown = ticksLeft;
+            if (ticksLeft != 0) {
+                break;
+            }
+            sceneQueueBattleEscapeResult();
+            task->state++;
+            break;
+        case MINE_SECRET_PASSAGE_DEPARTURE_FADE:
+            _mineSecretPassageStartDepartureFade();
+            task->state++;
+            break;
+        case MINE_SECRET_PASSAGE_DEPARTURE_WAIT_SOUND:
+            if (sndScriptHasActiveId(SOUND_MINE_SECRET_PASSAGE_EXIT_TRANSIT) != 0) {
+                break;
+            }
+            task->state++;
+            break;
+        case MINE_SECRET_PASSAGE_DEPARTURE_RELOAD:
+            // Commit the staged destination only after the exit-transit sound ends.
+            sndEvtRequestScriptStop(SOUND_BANK_TYPE_ALL_NON_AMBIENT, SOUND_SCRIPT_STOP_NO_FADE);
+            gDisplayState.spriteVariant                                 = MINE_SECRET_PASSAGE_RELOAD_SPRITE_VARIANT;
+            gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.area      = _gMineSecretPassageStagedDestination.area;
+            gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.warp      = _gMineSecretPassageStagedDestination.warp;
+            gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.roomState = _gMineSecretPassageStagedDestination.roomState;
+            taskSpawn(GAME_FLOW_RELOAD_TASK_BANK, GAME_FLOW_RELOAD_TASK_SLOT, GAME_FLOW_RELOAD_SKIP_BATTLE_ESCAPE, 0);
+            taskKill(task);
+            break;
+    }
+}
+
+s32 mineSecretPassageRejectKeyItem(Task* task, s32 messageId, s32 itemId, s32 unusedArg)
+{
+    return ROOM_KEY_ITEM_USE_REFUSED;
+}
+
+s32 mineSecretPassageResolveRoomTransition(Task* task, s32 messageId, RoomEventMsg* request, RoomEventMsg* reply)
+{
+    *reply = *request;
+    mapShelterRoomVariantResolve(request, reply);
+    if (request->areaId == GAME_AREA_SHELTER_B1_ELEVATOR_HALL) {
+        if (request->queryOnly == ROOM_EVENT_EXECUTE) {
+            // Latch the resolved destination for the asynchronous confirmation task.
+            _gMineSecretPassageStagedDestination.area      = (u8)reply->areaId;
+            _gMineSecretPassageStagedDestination.warp      = reply->warp;
+            _gMineSecretPassageStagedDestination.roomState = reply->roomState;
+            playerActorSetScriptedControl(GAME_ACTOR_SCRIPTED_CONTROL_HOLD);
+            taskSpawnFromTable(&gMineSecretPassageDepartureTaskDesc, 0, 0, 0);
+        }
+        return ROOM_VARIANT_TRANSITION_HANDLED;
+    }
+    return ROOM_VARIANT_TRANSITION_DIRECT;
+}
+
+s32 mineSecretPassageIgnoreCommand(Task* task, s32 messageId, s32 commandId, s32 commandArg)
+{
+    return 0;
+}
+
+s32 mineSecretPassageIgnoreAction(Task* task, s32 messageId, const DirectionActionRequest* request, s32 unusedArg)
+{
+    return 0;
+}
+
+s32 mineSecretPassageHandleSoundMessage(Task* task, s32 messageId, s32 cueId, s32 unusedArg)
+{
+    enum { MINE_SECRET_PASSAGE_SOUND_CUE_CONFIRM = 3 };
+
+    if (cueId == MINE_SECRET_PASSAGE_SOUND_CUE_CONFIRM) {
+        sndEvtRequestScriptStart(SOUND_SYSTEM_CONFIRM, 0, 0);
+    }
+    return 0;
+}
+
+/// Registers the passage's room task and selects its countdown-music entry.
+///
+/// State 0 borrows the loaded room message table and publishes the live task
+/// in `GAME_TASK_SLOT_ROOM`, then advances to the one-shot event state.
+/// The stage music task later uses entry 1 of the Shelter countdown table.
+static void _mineSecretPassageInitRoomTask(Task* task)
+{
+    enum { MINE_SECRET_PASSAGE_COUNTDOWN_MUSIC_ENTRY = 1 };
+
+    task->msgTable = gMineSecretPassageRoomMessages;
+    gameSetTaskSlot(task, GAME_TASK_SLOT_ROOM);
+    task->state++;
+    gStageCountdownMusicEntry = MINE_SECRET_PASSAGE_COUNTDOWN_MUSIC_ENTRY;
+}
+
+/// Attempts the passage's one-time CAP event and advances to idle.
+///
+/// State 1 marks an unseen event before requesting command 3 with actors paused.
+/// Busy CAP playback or allocation failure still consumes the attempt; this
+/// state does not wait or retry. The loaded command's resources must stay live
+/// through any playback it starts.
+static void _mineSecretPassageTryIntroEvent(Task* task)
+{
+    enum {
+        MINE_SECRET_PASSAGE_INTRO_UNSEEN  = 0,
+        MINE_SECRET_PASSAGE_INTRO_SEEN    = 1,
+        MINE_SECRET_PASSAGE_INTRO_COMMAND = 3,
+    };
+
+    // Consume the one-shot gate before the idle-only spawn attempt.
+    if (gameFlagGetNibble(GAME_FLAG_MINE_SECRET_PASSAGE_INTRO_SEEN) == MINE_SECRET_PASSAGE_INTRO_UNSEEN) {
+        gameFlagSetNibble(GAME_FLAG_MINE_SECRET_PASSAGE_INTRO_SEEN, MINE_SECRET_PASSAGE_INTRO_SEEN);
+        capSpawnEventIfIdle(MINE_SECRET_PASSAGE_INTRO_COMMAND, CAP_EVENT_PAUSE_ACTORS);
+    }
+    task->state++;
+}
+
+/// Keeps the registered room task alive in state 2 without changing it.
+static void _mineSecretPassageIdleRoomTask(Task* unusedTask)
+{
+}
+
+void mineSecretPassageRoomTask(Task* task)
+{
+    TaskFuncTable4 stateHandlers = _gMineSecretPassageRoomTaskStates;
+    stateHandlers.funcs[task->state](task);
+}

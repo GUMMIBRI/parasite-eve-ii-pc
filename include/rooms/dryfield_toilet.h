@@ -1,0 +1,172 @@
+#ifndef INCLUDE_ROOMS_DRYFIELD_TOILET_H
+#define INCLUDE_ROOMS_DRYFIELD_TOILET_H
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+
+#include "common.h"
+#include "overlay.h"
+
+#include "gameplay/area.h"
+#include "gameplay/direction.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/task_types.h"
+
+/// Room-owned Lesser Stranger deformation for the toilet transformation event.
+///
+/// Covers all 325 vertices and 1604 normals of the actor's body, starting at
+/// vertex zero. The actor snapshots its rest XYZ into this record's shared
+/// buffers before blending; only one live rest snapshot is supported. The
+/// room overlay, record and buffers must stay loaded throughout the actor's
+/// transformation. The visual identity of the full-morph shape is unproven.
+extern ModelMorph gDryfieldToiletLesserStrangerMorph;
+
+/// Number of retained placement-variant slots, including absent slots.
+enum { DRYFIELD_TOILET_AREA_VARIANT_COUNT = 13 };
+
+/// Actor placements and loading/spawn recipes indexed by `GameLocationKey.variant`.
+///
+/// Slots 1, 2, 7 are present; every other slot is absent (NULL, NULL).
+/// Supply an index in 0..12; this directory has no terminator or bounds check.
+/// The placement selector is independent of room and view selectors.
+/// Placements belong to the stage map, recipes to this room. Keep both overlays
+/// loaded while loading or using either table. Referenced actor overlays must
+/// be loaded for spawning and model-policy updates.
+extern AreaVariant gDryfieldToiletAreaVariants[DRYFIELD_TOILET_AREA_VARIANT_COUNT];
+
+/// Collision resources for the toilet's single room, indexed by room minus one.
+///
+/// Borrows the mutable room grid, six view boundaries, nine action triggers
+/// and one sight occluder. The room overlay must stay loaded while the grid
+/// is active and until all linked triggers and occluders have been removed.
+extern WorldCollisionRoomResources gDryfieldToiletRoomCollisionResources[1];
+
+/// Logical-view map for the toilet's single room, indexed by room - 1.
+///
+/// Borrows gameplay's identity map: logical views 1..11 select the same
+/// 1-based camera, image and sprite indices. Keep the room directory and
+/// gameplay map loaded while using the stage map's borrowed pointer.
+extern u8* gDryfieldToiletRoomViewMaps[1];
+
+/// Logical-view count for the toilet's single room, indexed by room minus one.
+///
+/// Eleven entries of the borrowed identity map cover logical views 1..11.
+/// The count and its map remain valid only while their overlays are loaded.
+extern ViewCount gDryfieldToiletRoomViewCounts[1];
+
+/// Lighting for the toilet's single room, indexed by room - 1.
+///
+/// Uses four point lights and the default per-view ambient minima. The room
+/// owns the collection and mutable light coordinates for its loaded lifetime.
+extern WorldCoordRoomLighting gDryfieldToiletRoomLighting[1];
+
+/// The toilet door's sole departure and arrival descriptor, warp slot 1.
+///
+/// Both actors arrive at (-1660, 0, 1653), facing yaw 2048, in room view 2.
+/// Uses toilet-bank arrival/departure sounds and map flag 480, with no blocked
+/// sound or special warp flags. Keep the room overlay loaded through lookup;
+/// the transition copies the complete descriptor before using its placements.
+extern DirectionWarpEntry gDryfieldToiletWarpEntries[1];
+
+/// Cameras for the toilet's mapped views 1..11, stored at index minus one.
+///
+/// Rotations use Q12 coefficients, translations world-coordinate units and
+/// projection distances pixels. A queued camera application borrows its
+/// selected record until dispatch; keep this room overlay loaded until then.
+extern ViewCamera gDryfieldToiletViewCameras[11];
+
+/// Sprite and clipping descriptors for the toilet's mapped views 1..11.
+///
+/// Indexed by mapped view minus one. Views 2..5 have depth-sorted source
+/// sprites; view 5 also clips the scene before its restore depth. Other views
+/// keep decoded image strips and select no source sprites. The descriptors
+/// borrow mutable room-owned lists that stay valid while this overlay is loaded.
+extern SpriteView gDryfieldToiletSpriteViews[11];
+
+/// Collision policies and footstep cues for the toilet's surface classes 0..7.
+///
+/// Class 1 blocks probes and permits weapon impacts; class 2 passes probes
+/// and suppresses weapon impacts. Both supply footstep cues. Other classes
+/// block probes and permit impacts without cues. Every class applies pushback.
+/// These borrowed room-owned records stay valid only while the overlay is loaded.
+extern WorldCollisionSurfaceProperties* gDryfieldToiletSurfaceClasses[8];
+
+/// Draws a randomly rotated six-frame puff, then advances its optional falling motion.
+///
+/// `spawnArg2.pointer` owns an `EffectWork`; the extra body supplies its coordinate.
+/// `spawnArg1.value` packs world-size in bits 0..11 and ticks per texture frame
+/// in bits 12..15 (0 means 1; valid nonzero periods are 1..7). Bit 20 replaces
+/// `move` with random components in [-16, 15]; bit 24 scales `move` by size/1024.
+/// Rotation and motion are initialized only at projected depth SZ3/4 >= 17.
+/// Drawing continues while actors are paused; motion and age pause. Cancellation
+/// or six completed texture frames release the work and task. An initially
+/// hidden puff retains its zero period and expires on its first unpaused tick.
+/// Requires an initialized scratch stack and one `POLY_FT4` in the frame arena;
+/// even a clipped puff consumes its packet, which lives until GPU completion.
+void dryfieldToiletJetPuffTask(Task* task);
+
+/// Registers this room's glow-disc, flying-spark and orange-burst effect IDs once.
+///
+/// Bank-6 slot 0xCE changes state 0 to 1; later ticks leave the registrations
+/// alone. The callback leaves the task alive after registration.
+void dryfieldToiletConfigureEffectsTask(Task* task);
+
+/// Runs this room's attached charge disc, incoming sparks and fading release ring.
+///
+/// `spawnArg1.value` selects tint 0 or 1; `spawnArg2.pointer` owns a zeroed
+/// `EffectWork`. The coordinate body attaches to its copied local offset; keep
+/// the borrowed parent and its ancestors live. Growth adopts flying sparks
+/// from player model parts 3..18, so the player and registered spark callback
+/// must be available. The owner may request `ROOM_VISUAL_EFFECTS_GLOW_DISC_*`
+/// flicker, release or cancel states. Nonzero room control pauses below four and cancels
+/// at four or above; cancellation and completed release free the work and task,
+/// including adopted sparks. The overlay must stay loaded throughout.
+void dryfieldToiletRoomVisualEffectsGlowDiscTask(Task* task);
+
+/// Runs the room's spark toward a target's initial position for twenty active ticks.
+///
+/// `spawnArg1.pointer` borrows a composed `GfxCoord` for the first active tick;
+/// `spawnArg2.pointer` owns an `EffectWork`. The task's composed coordinate fixes
+/// a step of 204/4096 of the initial separation, with 16-bit intermediate
+/// components; later ticks use that step without resampling the target. The
+/// spark draws on odd ages after initialization. Room effect control pauses
+/// at nonzero and cancels at four or above; expiry and cancellation release it.
+void dryfieldToiletFlyingSparkTask(Task* task);
+
+/// Runs the room's expanding orange disc and glow behind a fading outer ring.
+///
+/// `spawnArg2.pointer` owns an `EffectWork`; the extra body supplies its coordinate.
+/// Each active tick grows the glow by 16 world units. The ring fades first,
+/// then the central brightness falls until the work and task are released.
+/// Room effect control pauses at nonzero and cancels at four or above.
+void dryfieldToiletFlyingOrangeBurstTask(Task* task);
+
+/// Emits one falling jet puff per active tick from an attached coordinate.
+///
+/// The low signed halfword of `spawnArg1.value` is the lifetime in active ticks
+/// (the actor supplies 10); nonpositive lifetimes still emit once before expiry.
+/// `spawnArg2.pointer` owns a zeroed `EffectWork`. The coordinate
+/// body attaches to the work's borrowed parent and copied local offset on the
+/// first active tick. The offset also gives the Q12-normalized direction; a
+/// zero offset chooses random components in [-2048, 2047] for that direction.
+/// Each puff starts at size 384 with a one-tick texture period,
+/// then receives velocity `(48 - age) * direction / 4096` if spawning succeeds.
+/// The puff applies those components in view-parent axes without rotating them.
+/// The packed puff argument also carries bit 16, which this puff never reads.
+/// Actor pause freezes attachment, emission and age; room cancellation or expiry
+/// releases this task and work. Emitted puffs remain independent. Keep the
+/// parent coordinate and its ancestors live until this emitter is released.
+void dryfieldToiletSprayEmitterTask(Task* task);
+
+/// Runs the Dryfield toilet room task's entry, idle or teardown state.
+///
+/// The stage map spawns this task for area 16. Requires state 0..2: entry
+/// installs the room message table and claims `GAME_TASK_SLOT_ROOM`, idle
+/// keeps receiving messages, and state 2 releases the task. Keep this room
+/// overlay loaded throughout dispatch and while the task can receive messages.
+void dryfieldToiletRoomTask(Task* task);
+
+#endif // INCLUDE_ROOMS_DRYFIELD_TOILET_H

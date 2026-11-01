@@ -1,0 +1,499 @@
+// Overlay-local symbols for map_neo_ark (file 900005).
+// Its tables are C; what they point at outside the package is named here:
+// room records, task entries and models in the Neo Ark and Shelter room
+// packages, and marker models in the map pictures. Each lives in a package
+// loaded at a slot of its own, so each is absolute.
+shelter1fParkingGarageRoomTask = 0x8017DF14; // type:func absolute:True owner=shelter_1f_parking_garage shared=rooms
+gShelter1fParkingGarageCollisionRooms = 0x80180C64; // absolute:True owner=shelter_1f_parking_garage
+gShelter1fParkingGarageRoomLighting = 0x80180C74; // absolute:True owner=shelter_1f_parking_garage
+gShelter1fParkingGarageViewMaps = 0x80180C7C; // absolute:True owner=shelter_1f_parking_garage
+gShelter1fParkingGarageViewCounts = 0x80180C80; // absolute:True owner=shelter_1f_parking_garage
+gShelter1fParkingGarageWarps = 0x80180C84; // absolute:True owner=shelter_1f_parking_garage
+gShelter1fParkingGarageViewCameras = 0x8018100C; // absolute:True owner=shelter_1f_parking_garage
+gShelter1fParkingGarageSpriteViews = 0x80181430; // absolute:True owner=shelter_1f_parking_garage
+gShelter1fParkingGarageSurfaceProperties = 0x80181954; // absolute:True owner=shelter_1f_parking_garage
+shelter1fVehicularAirlockUpdatePlacedModelVisibilityTask = 0x8017D5E4; // type:func absolute:True owner=shelter_1f_vehicular_airlock shared=rooms
+shelter1fVehicularAirlockRoomTask = 0x8017DA48; // type:func absolute:True owner=shelter_1f_vehicular_airlock shared=rooms
+gShelter1fVehicularAirlockModel03A58 = 0x80182004; // absolute:True owner=shelter_1f_vehicular_airlock
+gShelter1fVehicularAirlockCollisionResources = 0x801820FC; // absolute:True owner=shelter_1f_vehicular_airlock
+gShelter1fVehicularAirlockRoomLighting = 0x8018210C; // absolute:True owner=shelter_1f_vehicular_airlock shared=rooms
+gShelter1fVehicularAirlockViewMaps = 0x80182114; // absolute:True owner=shelter_1f_vehicular_airlock
+gShelter1fVehicularAirlockViewCounts = 0x80182118; // absolute:True owner=shelter_1f_vehicular_airlock
+gShelter1fVehicularAirlockWarpEntries = 0x8018211C; // absolute:True owner=shelter_1f_vehicular_airlock shared=rooms
+gShelter1fVehicularAirlockViewCameras = 0x8018245C; // absolute:True owner=shelter_1f_vehicular_airlock
+gShelter1fVehicularAirlockSpriteViews = 0x801824F8; // absolute:True owner=shelter_1f_vehicular_airlock
+gShelter1fVehicularAirlockSurfaceProperties = 0x80182A80; // absolute:True owner=shelter_1f_vehicular_airlock
+shelter1fBulwarkRoomTask = 0x8017DC20; // type:func absolute:True owner=shelter_1f_bulwark shared=rooms
+gShelter1fBulwarkCollisionResources = 0x801803B0; // absolute:True owner=shelter_1f_bulwark
+gShelter1fBulwarkRoomLighting = 0x801803C0; // absolute:True owner=shelter_1f_bulwark
+gShelter1fBulwarkRoomViewMaps = 0x801803C8; // absolute:True owner=shelter_1f_bulwark shared=rooms
+gShelter1fBulwarkRoomViewCounts = 0x801803CC; // absolute:True owner=shelter_1f_bulwark shared=rooms
+gShelter1fBulwarkWarpEntries = 0x801803D0; // absolute:True owner=shelter_1f_bulwark
+gShelter1fBulwarkCameras = 0x8018066C; // absolute:True owner=shelter_1f_bulwark
+gShelter1fBulwarkSpriteViews = 0x801807B0; // absolute:True owner=shelter_1f_bulwark
+gShelter1fBulwarkSurfaceProperties = 0x80180E9C; // absolute:True owner=shelter_1f_bulwark
+shelter1fHeliportRoomTask = 0x80180768; // type:func absolute:True owner=shelter_1f_heliport
+gShelter1fHeliportCollisionResources = 0x801812D0; // absolute:True owner=shelter_1f_heliport
+gShelter1fHeliportRoomLighting = 0x801812E0; // absolute:True owner=shelter_1f_heliport
+gShelter1fHeliportViewMaps = 0x801812E8; // absolute:True owner=shelter_1f_heliport
+gShelter1fHeliportViewCounts = 0x801812EC; // absolute:True owner=shelter_1f_heliport
+gShelter1fHeliportWarpEntries = 0x801812F0; // absolute:True owner=shelter_1f_heliport
+gShelter1fHeliportViewCameras = 0x80181998; // absolute:True owner=shelter_1f_heliport shared=rooms
+gShelter1fHeliportSpriteViews = 0x80181EC0; // absolute:True owner=shelter_1f_heliport
+gShelter1fHeliportSurfacePropertiesByClass = 0x80182C78; // absolute:True owner=shelter_1f_heliport shared=rooms
+shelter1fAirlockRoomTask = 0x8017D678; // type:func absolute:True owner=shelter_1f_airlock shared=rooms
+gShelter1fAirlockRoomCollisionResources = 0x8017E59C; // absolute:True owner=shelter_1f_airlock
+gShelter1fAirlockRoomLighting = 0x8017E5AC; // absolute:True owner=shelter_1f_airlock
+gShelter1fAirlockViewMaps = 0x8017E5B4; // absolute:True owner=shelter_1f_airlock
+gShelter1fAirlockViewCounts = 0x8017E5B8; // absolute:True owner=shelter_1f_airlock
+gShelter1fAirlockWarpEntries = 0x8017E5BC; // absolute:True owner=shelter_1f_airlock shared=rooms
+gShelter1fAirlockViewCameras = 0x8017E85C; // absolute:True owner=shelter_1f_airlock
+gShelter1fAirlockSpriteViews = 0x8017F07C; // absolute:True owner=shelter_1f_airlock
+gShelter1fAirlockSurfaceProperties = 0x8017F84C; // absolute:True owner=shelter_1f_airlock shared=rooms
+shelter1fGuardroomRoomTask = 0x8017D880; // type:func absolute:True owner=shelter_1f_guardroom
+gShelter1fGuardroomRoomCollisionResources = 0x8017DA78; // absolute:True owner=shelter_1f_guardroom shared=rooms
+gShelter1fGuardroomRoomLighting = 0x8017DA88; // absolute:True owner=shelter_1f_guardroom
+gShelter1fGuardroomViewMaps = 0x8017DA90; // absolute:True owner=shelter_1f_guardroom shared=rooms
+gShelter1fGuardroomRoomViewCounts = 0x8017DA94; // absolute:True owner=shelter_1f_guardroom
+gShelter1fGuardroomWarpEntries = 0x8017DA98; // absolute:True owner=shelter_1f_guardroom shared=rooms
+gShelter1fGuardroomViewCameras = 0x8017DC14; // absolute:True owner=shelter_1f_guardroom
+gShelter1fGuardroomSpriteViews = 0x8017DCE0; // absolute:True owner=shelter_1f_guardroom
+gShelter1fGuardroomSurfaceProperties = 0x8017DFF4; // absolute:True owner=shelter_1f_guardroom
+neoArkObservatoryRoomTask = 0x8017FDDC; // type:func absolute:True owner=neo_ark_observatory shared=rooms
+gNeoArkObservatoryRoomCollisionResources = 0x80181594; // absolute:True owner=neo_ark_observatory
+gNeoArkObservatoryRoomLighting = 0x801815B4; // absolute:True owner=neo_ark_observatory
+gNeoArkObservatoryViewMaps = 0x801815DC; // absolute:True owner=neo_ark_observatory
+gNeoArkObservatoryViewCounts = 0x801815E4; // absolute:True owner=neo_ark_observatory
+gNeoArkObservatoryWarpEntries = 0x801815E8; // absolute:True owner=neo_ark_observatory shared=rooms
+gNeoArkObservatoryViewCameras = 0x80181FC8; // absolute:True owner=neo_ark_observatory
+gNeoArkObservatorySpriteViews = 0x801860E8; // absolute:True owner=neo_ark_observatory
+gNeoArkObservatorySurfaceProperties = 0x80187A08; // absolute:True owner=neo_ark_observatory
+neoArkEveAccessTunnelRoomTask = 0x8017E038; // type:func absolute:True owner=neo_ark_eve_access_tunnel
+gNeoArkEveAccessTunnelCollisionRooms = 0x8017EB78; // absolute:True owner=neo_ark_eve_access_tunnel shared=rooms
+gNeoArkEveAccessTunnelRoomLighting = 0x8017EB88; // absolute:True owner=neo_ark_eve_access_tunnel shared=rooms
+gNeoArkEveAccessTunnelViewMaps = 0x8017EB90; // absolute:True owner=neo_ark_eve_access_tunnel
+gNeoArkEveAccessTunnelViewCounts = 0x8017EB94; // absolute:True owner=neo_ark_eve_access_tunnel
+gNeoArkEveAccessTunnelWarpEntries = 0x8017EB98; // absolute:True owner=neo_ark_eve_access_tunnel
+gNeoArkEveAccessTunnelViewCameras = 0x8017F080; // absolute:True owner=neo_ark_eve_access_tunnel
+gNeoArkEveAccessTunnelSpriteViews = 0x801800A0; // absolute:True owner=neo_ark_eve_access_tunnel shared=rooms
+gNeoArkEveAccessTunnelSurfaceProperties = 0x80180780; // absolute:True owner=neo_ark_eve_access_tunnel shared=rooms
+neoArkEveElevatorRoomTask = 0x8017D6C4; // type:func absolute:True owner=neo_ark_eve_elevator shared=rooms
+gNeoArkEveElevatorCollisionRooms = 0x8017D74C; // absolute:True owner=neo_ark_eve_elevator
+gNeoArkEveElevatorRoomLighting = 0x8017D75C; // absolute:True owner=neo_ark_eve_elevator
+gNeoArkEveElevatorViewMaps = 0x8017D764; // absolute:True owner=neo_ark_eve_elevator
+gNeoArkEveElevatorViewCounts = 0x8017D768; // absolute:True owner=neo_ark_eve_elevator
+gNeoArkEveElevatorWarpEntries = 0x8017D76C; // absolute:True owner=neo_ark_eve_elevator
+gNeoArkEveElevatorViewCameras = 0x8017DA50; // absolute:True owner=neo_ark_eve_elevator
+gNeoArkEveElevatorSpriteViews = 0x8017DB20; // absolute:True owner=neo_ark_eve_elevator
+gNeoArkEveElevatorSurfaceProperties = 0x8017DC30; // absolute:True owner=neo_ark_eve_elevator
+neoArkNorthPromenadeRoomTask = 0x8017D6C8; // type:func absolute:True owner=neo_ark_north_promenade
+gNeoArkNorthPromenadeRoomCollisionResources = 0x80181DB4; // absolute:True owner=neo_ark_north_promenade
+gNeoArkNorthPromenadeRoomLighting = 0x80181DC4; // absolute:True owner=neo_ark_north_promenade shared=rooms
+gNeoArkNorthPromenadeViewMaps = 0x80181DCC; // absolute:True owner=neo_ark_north_promenade shared=rooms
+gNeoArkNorthPromenadeViewCounts = 0x80181DD0; // absolute:True owner=neo_ark_north_promenade
+gNeoArkNorthPromenadeWarpEntries = 0x80181DD4; // absolute:True owner=neo_ark_north_promenade shared=rooms
+gNeoArkNorthPromenadeViewCameras = 0x80182410; // absolute:True owner=neo_ark_north_promenade shared=rooms
+gNeoArkNorthPromenadeSpriteViews = 0x80182CA4; // absolute:True owner=neo_ark_north_promenade
+gNeoArkNorthPromenadeSurfaceProperties = 0x801832EC; // absolute:True owner=neo_ark_north_promenade
+neoArkForestZoneRoomTask = 0x8017DBBC; // type:func absolute:True owner=neo_ark_forest_zone shared=rooms
+gNeoArkForestZoneRoomCollisionResources = 0x801820A4; // absolute:True owner=neo_ark_forest_zone
+gNeoArkForestZoneRoomLighting = 0x801820B4; // absolute:True owner=neo_ark_forest_zone
+gNeoArkForestZoneViewMaps = 0x801820BC; // absolute:True owner=neo_ark_forest_zone shared=rooms
+gNeoArkForestZoneViewCounts = 0x801820C0; // absolute:True owner=neo_ark_forest_zone
+gNeoArkForestZoneWarpEntries = 0x801820C4; // absolute:True owner=neo_ark_forest_zone
+gNeoArkForestZoneViewCameras = 0x80182298; // absolute:True owner=neo_ark_forest_zone
+gNeoArkForestZoneSpriteViews = 0x80182594; // absolute:True owner=neo_ark_forest_zone
+gNeoArkForestZoneSurfaceProperties = 0x80182CE4; // absolute:True owner=neo_ark_forest_zone
+neoArkSubmarineTunnelRoomTask = 0x8017F434; // type:func absolute:True owner=neo_ark_submarine_tunnel shared=rooms
+gNeoArkSubmarineTunnelRoomLighting = 0x80181E00; // absolute:True owner=neo_ark_submarine_tunnel
+gNeoArkSubmarineTunnelRoomCollisionResources = 0x80181E08; // absolute:True owner=neo_ark_submarine_tunnel
+gNeoArkSubmarineTunnelViewMaps = 0x80181E18; // absolute:True owner=neo_ark_submarine_tunnel
+gNeoArkSubmarineTunnelViewCounts = 0x80181E1C; // absolute:True owner=neo_ark_submarine_tunnel
+gNeoArkSubmarineTunnelWarpEntries = 0x80181E20; // absolute:True owner=neo_ark_submarine_tunnel
+gNeoArkSubmarineTunnelViewCameras = 0x80182500; // absolute:True owner=neo_ark_submarine_tunnel
+gNeoArkSubmarineTunnelSpriteViews = 0x80186B78; // absolute:True owner=neo_ark_submarine_tunnel
+gNeoArkSubmarineTunnelSurfaceProperties = 0x801878EC; // absolute:True owner=neo_ark_submarine_tunnel
+neoArkPavilionRoomTask = 0x8017EBF4; // type:func absolute:True owner=neo_ark_pavilion shared=rooms
+gNeoArkPavilionRoomCollisionResources = 0x801838B4; // absolute:True owner=neo_ark_pavilion shared=rooms
+gNeoArkPavilionRoomLighting = 0x801838D4; // absolute:True owner=neo_ark_pavilion shared=rooms
+gNeoArkPavilionViewMaps = 0x801838EC; // absolute:True owner=neo_ark_pavilion
+gNeoArkPavilionViewCounts = 0x801838F4; // absolute:True owner=neo_ark_pavilion
+gNeoArkPavilionWarpEntries = 0x801838F8; // absolute:True owner=neo_ark_pavilion shared=rooms
+gNeoArkPavilionViewCameras = 0x80184208; // absolute:True owner=neo_ark_pavilion
+gNeoArkPavilionSpriteViews = 0x801873B8; // absolute:True owner=neo_ark_pavilion
+gNeoArkPavilionSurfaceProperties = 0x801879EC; // absolute:True owner=neo_ark_pavilion
+neoArkIslandRoomTask = 0x8017EB10; // type:func absolute:True owner=neo_ark_island
+gNeoArkIslandRoomCollisionResources = 0x80181B94; // absolute:True owner=neo_ark_island
+gNeoArkIslandRoomLighting = 0x80181BA4; // absolute:True owner=neo_ark_island
+gNeoArkIslandViewMaps = 0x80181BAC; // absolute:True owner=neo_ark_island
+gNeoArkIslandViewCounts = 0x80181BB0; // absolute:True owner=neo_ark_island shared=rooms
+gNeoArkIslandWarpEntries = 0x80181BB4; // absolute:True owner=neo_ark_island
+gNeoArkIslandViewCameras = 0x801826EC; // absolute:True owner=neo_ark_island
+gNeoArkIslandSpriteViews = 0x80183B14; // absolute:True owner=neo_ark_island
+gNeoArkIslandSurfaceProperties = 0x80183FE8; // absolute:True owner=neo_ark_island
+neoArkGardenRoomTask = 0x8017EA44; // type:func absolute:True owner=neo_ark_garden
+gNeoArkGardenCollisionRooms = 0x8018140C; // absolute:True owner=neo_ark_garden
+gNeoArkGardenRoomLighting = 0x8018141C; // absolute:True owner=neo_ark_garden
+gNeoArkGardenViewMaps = 0x80181424; // absolute:True owner=neo_ark_garden
+gNeoArkGardenViewCounts = 0x80181428; // absolute:True owner=neo_ark_garden shared=rooms
+gNeoArkGardenWarpEntries = 0x8018142C; // absolute:True owner=neo_ark_garden
+gNeoArkGardenViewCameras = 0x801816E8; // absolute:True owner=neo_ark_garden
+gNeoArkGardenSpriteViews = 0x80182540; // absolute:True owner=neo_ark_garden shared=rooms
+gNeoArkGardenSurfacePropertiesByClass = 0x80182BD8; // absolute:True owner=neo_ark_garden
+neoArkPowerPlant2RoomTask = 0x8017D854; // type:func absolute:True owner=neo_ark_power_plant_2
+gNeoArkPowerPlant2CollisionRooms = 0x80180690; // absolute:True owner=neo_ark_power_plant_2
+gNeoArkPowerPlant2RoomLighting = 0x801806A0; // absolute:True owner=neo_ark_power_plant_2
+gNeoArkPowerPlant2ViewMaps = 0x801806A8; // absolute:True owner=neo_ark_power_plant_2
+gNeoArkPowerPlant2ViewCounts = 0x801806AC; // absolute:True owner=neo_ark_power_plant_2 shared=rooms
+gNeoArkPowerPlant2WarpEntries = 0x801806B0; // absolute:True owner=neo_ark_power_plant_2
+gNeoArkPowerPlant2ViewCameras = 0x80180DE8; // absolute:True owner=neo_ark_power_plant_2
+gNeoArkPowerPlant2SpriteViews = 0x8018205C; // absolute:True owner=neo_ark_power_plant_2
+gNeoArkPowerPlant2SurfaceProperties = 0x80182F50; // absolute:True owner=neo_ark_power_plant_2
+neoArkPowerPlant1RoomTask = 0x8017D9C0; // type:func absolute:True owner=neo_ark_power_plant_1
+gNeoArkPowerPlant1CollisionRooms = 0x8017F1C8; // absolute:True owner=neo_ark_power_plant_1
+gNeoArkPowerPlant1RoomLighting = 0x8017F1D8; // absolute:True owner=neo_ark_power_plant_1
+gNeoArkPowerPlant1ViewMaps = 0x8017F1E0; // absolute:True owner=neo_ark_power_plant_1
+gNeoArkPowerPlant1ViewCounts = 0x8017F1E4; // absolute:True owner=neo_ark_power_plant_1
+gNeoArkPowerPlant1WarpEntries = 0x8017F1E8; // absolute:True owner=neo_ark_power_plant_1
+gNeoArkPowerPlant1ViewCameras = 0x801800B4; // absolute:True owner=neo_ark_power_plant_1
+gNeoArkPowerPlant1SpriteViews = 0x801814F0; // absolute:True owner=neo_ark_power_plant_1
+gNeoArkPowerPlant1SurfacePropertiesByClass = 0x80181BE0; // absolute:True owner=neo_ark_power_plant_1
+neoArkSavannaZoneRoomTask = 0x8017D954; // type:func absolute:True owner=neo_ark_savanna_zone
+gNeoArkSavannaZoneRoomCollisionResources = 0x8017F9E4; // absolute:True owner=neo_ark_savanna_zone
+gNeoArkSavannaZoneRoomLighting = 0x8017F9F4; // absolute:True owner=neo_ark_savanna_zone
+gNeoArkSavannaZoneViewMaps = 0x8017F9FC; // absolute:True owner=neo_ark_savanna_zone
+gNeoArkSavannaZoneViewCounts = 0x8017FA00; // absolute:True owner=neo_ark_savanna_zone
+gNeoArkSavannaZoneWarpEntries = 0x8017FA04; // absolute:True owner=neo_ark_savanna_zone
+gNeoArkSavannaZoneViewCameras = 0x8017FBF4; // absolute:True owner=neo_ark_savanna_zone
+gNeoArkSavannaZoneSpriteViews = 0x801803F4; // absolute:True owner=neo_ark_savanna_zone shared=rooms
+gNeoArkSavannaZoneSurfaceProperties = 0x80180968; // absolute:True owner=neo_ark_savanna_zone
+neoArkSouthPromenadeRoomTask = 0x8017D678; // type:func absolute:True owner=neo_ark_south_promenade shared=rooms
+gNeoArkSouthPromenadeRoomLighting = 0x8017F6EC; // absolute:True owner=neo_ark_south_promenade
+gNeoArkSouthPromenadeCollisionResources = 0x8017F6F4; // absolute:True owner=neo_ark_south_promenade shared=rooms
+gNeoArkSouthPromenadeViewMaps = 0x8017F704; // absolute:True owner=neo_ark_south_promenade shared=rooms
+gNeoArkSouthPromenadeViewCounts = 0x8017F708; // absolute:True owner=neo_ark_south_promenade shared=rooms
+gNeoArkSouthPromenadeWarpEntries = 0x8017F70C; // absolute:True owner=neo_ark_south_promenade
+gNeoArkSouthPromenadeViewCameras = 0x8017FDB0; // absolute:True owner=neo_ark_south_promenade
+gNeoArkSouthPromenadeSpriteViews = 0x801803E4; // absolute:True owner=neo_ark_south_promenade shared=rooms
+gNeoArkSouthPromenadeSurfaceProperties = 0x801809AC; // absolute:True owner=neo_ark_south_promenade
+neoArkAltarRoomTask = 0x8017D9E8; // type:func absolute:True owner=neo_ark_altar shared=rooms
+gNeoArkAltarRoomCollisionResources = 0x8017F094; // absolute:True owner=neo_ark_altar
+gNeoArkAltarRoomLighting = 0x8017F0C4; // absolute:True owner=neo_ark_altar
+gNeoArkAltarViewMaps = 0x8017F0EC; // absolute:True owner=neo_ark_altar
+gNeoArkAltarViewCounts = 0x8017F0F8; // absolute:True owner=neo_ark_altar
+gNeoArkAltarWarpEntries = 0x8017F0FC; // absolute:True owner=neo_ark_altar
+gNeoArkAltarViewCameras = 0x8017F5A0; // absolute:True owner=neo_ark_altar
+gNeoArkAltarSpriteViews = 0x8017FE38; // absolute:True owner=neo_ark_altar shared=rooms
+gNeoArkAltarSurfaceProperties = 0x8018005C; // absolute:True owner=neo_ark_altar
+neoArkShrineRoomTask = 0x8017D948; // type:func absolute:True owner=neo_ark_shrine shared=rooms
+gNeoArkShrineCollisionRooms = 0x80182724; // absolute:True owner=neo_ark_shrine
+gNeoArkShrineRoomLighting = 0x80182784; // absolute:True owner=neo_ark_shrine
+gNeoArkShrineViewMaps = 0x801827F0; // absolute:True owner=neo_ark_shrine
+gNeoArkShrineViewCounts = 0x80182808; // absolute:True owner=neo_ark_shrine
+gNeoArkShrineWarpEntries = 0x80182814; // absolute:True owner=neo_ark_shrine shared=rooms
+gNeoArkShrineViewCameras = 0x801836BC; // absolute:True owner=neo_ark_shrine
+gNeoArkShrineSpriteViews = 0x80185280; // absolute:True owner=neo_ark_shrine
+gNeoArkShrineSurfaceProperties = 0x80186844; // absolute:True owner=neo_ark_shrine
+shelterB6NurseryRoomTask = 0x8017FF9C; // type:func absolute:True owner=shelter_b6_nursery
+gShelterB6NurseryViewMaps = 0x80185304; // absolute:True owner=shelter_b6_nursery
+gShelterB6NurseryViewCounts = 0x80185308; // absolute:True owner=shelter_b6_nursery
+gShelterB6NurseryWarpEntries = 0x8018530C; // absolute:True owner=shelter_b6_nursery
+gShelterB6NurseryCollisionGrid = 0x801858A0; // absolute:True owner=shelter_b6_nursery
+gShelterB6NurseryViewCameras = 0x801858C4; // absolute:True owner=shelter_b6_nursery shared=rooms
+gShelterB6NurserySpriteViews = 0x80186FD0; // absolute:True owner=shelter_b6_nursery
+gShelterB6NurseryRoomLights = 0x80187294; // absolute:True owner=shelter_b6_nursery shared=rooms
+gShelterB6NurseryViewBoundaryTriggers = 0x801872AC; // absolute:True owner=shelter_b6_nursery
+gShelterB6NurseryActionTriggers = 0x8018750C; // absolute:True owner=shelter_b6_nursery
+gShelterB6NurseryAmbientByView = 0x8018789C; // absolute:True owner=shelter_b6_nursery
+gShelterB6NurserySurfaceProperties = 0x80187958; // absolute:True owner=shelter_b6_nursery
+shelterB6GrowthRoomTask = 0x8017D7D4; // type:func absolute:True owner=shelter_b6_growth_room shared=rooms
+gShelterB6GrowthRoomViewMaps = 0x8017F378; // absolute:True owner=shelter_b6_growth_room
+gShelterB6GrowthRoomViewCounts = 0x8017F37C; // absolute:True owner=shelter_b6_growth_room
+gShelterB6GrowthRoomWarpEntries = 0x8017F380; // absolute:True owner=shelter_b6_growth_room
+gShelterB6GrowthRoomCollisionGrid = 0x8017FAF0; // absolute:True owner=shelter_b6_growth_room
+gShelterB6GrowthRoomViewCameras = 0x8017FB14; // absolute:True owner=shelter_b6_growth_room
+gShelterB6GrowthRoomSpriteViews = 0x8017FEB8; // absolute:True owner=shelter_b6_growth_room
+gShelterB6GrowthRoomLights = 0x8017FF78; // absolute:True owner=shelter_b6_growth_room
+gShelterB6GrowthRoomViewBoundaryTriggers = 0x8017FF90; // absolute:True owner=shelter_b6_growth_room shared=rooms
+gShelterB6GrowthRoomActionTriggers = 0x801803A0; // absolute:True owner=shelter_b6_growth_room shared=rooms
+gShelterB6GrowthRoomAmbientByView = 0x80180730; // absolute:True owner=shelter_b6_growth_room
+gShelterB6GrowthRoomSurfaceProperties = 0x801807A8; // absolute:True owner=shelter_b6_growth_room shared=rooms
+shelterB6CorridorRoomTask = 0x8017E144; // type:func absolute:True owner=shelter_b6_corridor
+gShelterB6CorridorViewMaps = 0x8017F8B4; // absolute:True owner=shelter_b6_corridor
+gShelterB6CorridorViewCounts = 0x8017F8B8; // absolute:True owner=shelter_b6_corridor
+gShelterB6CorridorWarpEntries = 0x8017F8BC; // absolute:True owner=shelter_b6_corridor
+gShelterB6CorridorCollisionGrid = 0x8017FA90; // absolute:True owner=shelter_b6_corridor
+gShelterB6CorridorViewCameras = 0x8017FAB4; // absolute:True owner=shelter_b6_corridor
+gShelterB6CorridorSpriteViews = 0x8018004C; // absolute:True owner=shelter_b6_corridor shared=rooms
+gShelterB6CorridorRoomLights = 0x801800E8; // absolute:True owner=shelter_b6_corridor
+gShelterB6CorridorViewBoundaryTriggers = 0x80180100; // absolute:True owner=shelter_b6_corridor
+gShelterB6CorridorActionTriggers = 0x8018036C; // absolute:True owner=shelter_b6_corridor
+gShelterB6CorridorRoomAmbientByView = 0x801804E8; // absolute:True owner=shelter_b6_corridor
+gShelterB6CorridorSurfaceProperties = 0x80180548; // absolute:True owner=shelter_b6_corridor
+shelterB6TrainingRoomRoomTask = 0x8017D8E8; // type:func absolute:True owner=shelter_b6_training_room shared=rooms
+gShelterB6TrainingRoomViewMaps = 0x80184418; // absolute:True owner=shelter_b6_training_room
+gShelterB6TrainingRoomRoomViewCounts = 0x8018441C; // absolute:True owner=shelter_b6_training_room
+gShelterB6TrainingRoomWarpEntries = 0x80184420; // absolute:True owner=shelter_b6_training_room
+gShelterB6TrainingRoomCollisionGrid = 0x80184734; // absolute:True owner=shelter_b6_training_room shared=rooms
+gShelterB6TrainingRoomViewCameras = 0x80184758; // absolute:True owner=shelter_b6_training_room
+gShelterB6TrainingRoomSpriteViews = 0x80184D78; // absolute:True owner=shelter_b6_training_room
+gShelterB6TrainingRoomLights = 0x80185768; // absolute:True owner=shelter_b6_training_room
+gShelterB6TrainingRoomViewBoundaryTriggers = 0x80185780; // absolute:True owner=shelter_b6_training_room
+gShelterB6TrainingRoomActionTriggers = 0x80185A44; // absolute:True owner=shelter_b6_training_room
+gShelterB6TrainingRoomAmbientByView = 0x80185BC0; // absolute:True owner=shelter_b6_training_room
+gShelterB6TrainingRoomSurfaceProperties = 0x80185C38; // absolute:True owner=shelter_b6_training_room
+neoArkR26RoomTask = 0x8017D720; // type:func absolute:True owner=neo_ark_r26 shared=rooms
+gNeoArkR26CollisionRooms = 0x8017E0CC; // absolute:True owner=neo_ark_r26 shared=rooms
+gNeoArkR26RoomLighting = 0x8017E0DC; // absolute:True owner=neo_ark_r26 shared=rooms
+gNeoArkR26ViewMaps = 0x8017E0E4; // absolute:True owner=neo_ark_r26 shared=rooms
+gNeoArkR26ViewCounts = 0x8017E0E8; // absolute:True owner=neo_ark_r26
+gNeoArkR26Warps = 0x8017E0EC; // absolute:True owner=neo_ark_r26 shared=rooms
+gNeoArkR26ViewCameras = 0x8017E1C0; // absolute:True owner=neo_ark_r26
+gNeoArkR26SpriteViews = 0x8017E898; // absolute:True owner=neo_ark_r26
+gNeoArkR26SurfaceProperties = 0x8017EA30; // absolute:True owner=neo_ark_r26
+neoArkBridgeRoomTask = 0x8017E8FC; // type:func absolute:True owner=neo_ark_bridge
+gNeoArkBridgeViewMaps = 0x80181F80; // absolute:True owner=neo_ark_bridge
+gNeoArkBridgeViewCounts = 0x80181F84; // absolute:True owner=neo_ark_bridge
+gNeoArkBridgeWarpEntries = 0x80181F88; // absolute:True owner=neo_ark_bridge
+gNeoArkBridgeCollisionGrid = 0x80182814; // absolute:True owner=neo_ark_bridge shared=rooms
+gNeoArkBridgeViewCameras = 0x80182838; // absolute:True owner=neo_ark_bridge
+gNeoArkBridgeSpriteViews = 0x80184564; // absolute:True owner=neo_ark_bridge shared=rooms
+gNeoArkBridgeRoomLights = 0x8018470C; // absolute:True owner=neo_ark_bridge
+gNeoArkBridgeViewBoundaryTriggers = 0x80184724; // absolute:True owner=neo_ark_bridge
+gNeoArkBridgeActionTriggers = 0x80184AB8; // absolute:True owner=neo_ark_bridge
+gNeoArkBridgeSurfaceProperties = 0x80184BD4; // absolute:True owner=neo_ark_bridge
+shelter1fTentRoomTask = 0x8017FDB8; // type:func absolute:True owner=shelter_1f_tent
+gShelter1fTentViewMaps = 0x80181D44; // absolute:True owner=shelter_1f_tent
+gShelter1fTentRoomViewCounts = 0x80181D48; // absolute:True owner=shelter_1f_tent
+gShelter1fTentWarpEntries = 0x80181D4C; // absolute:True owner=shelter_1f_tent
+gShelter1fTentCollisionGrid = 0x801822F0; // absolute:True owner=shelter_1f_tent shared=rooms
+gShelter1fTentViewCameras = 0x80182314; // absolute:True owner=shelter_1f_tent
+gShelter1fTentSpriteViews = 0x801838E4; // absolute:True owner=shelter_1f_tent shared=rooms
+gShelter1fTentRoomLights = 0x80183A7C; // absolute:True owner=shelter_1f_tent
+gShelter1fTentViewBoundaryTriggers = 0x80183A94; // absolute:True owner=shelter_1f_tent
+gShelter1fTentActionTriggers = 0x80183CF4; // absolute:True owner=shelter_1f_tent
+gShelter1fTentSurfacePropertiesByClass = 0x801842B4; // absolute:True owner=shelter_1f_tent
+neoArkWoodlandPathRoomTask = 0x8017E9B0; // type:func absolute:True owner=neo_ark_woodland_path
+gNeoArkWoodlandPathViewMaps = 0x80181694; // absolute:True owner=neo_ark_woodland_path
+gNeoArkWoodlandPathViewCounts = 0x80181698; // absolute:True owner=neo_ark_woodland_path
+gNeoArkWoodlandPathWarpEntries = 0x8018169C; // absolute:True owner=neo_ark_woodland_path
+gNeoArkWoodlandPathCollisionGrid = 0x80181D5C; // absolute:True owner=neo_ark_woodland_path
+gNeoArkWoodlandPathViewCameras = 0x80181D80; // absolute:True owner=neo_ark_woodland_path
+gNeoArkWoodlandPathSpriteViews = 0x80183C6C; // absolute:True owner=neo_ark_woodland_path shared=rooms
+gNeoArkWoodlandPathRoomLights = 0x80183F84; // absolute:True owner=neo_ark_woodland_path shared=rooms
+gNeoArkWoodlandPathViewBoundaryTriggers = 0x80183F9C; // absolute:True owner=neo_ark_woodland_path shared=rooms
+gNeoArkWoodlandPathActionTriggers = 0x8018445C; // absolute:True owner=neo_ark_woodland_path
+gNeoArkWoodlandPathRoomAmbientByView = 0x8018477C; // absolute:True owner=neo_ark_woodland_path shared=rooms
+gNeoArkWoodlandPathSightOccluders = 0x801847D4; // absolute:True owner=neo_ark_woodland_path
+gNeoArkWoodlandPathSurfaceProperties = 0x80184910; // absolute:True owner=neo_ark_woodland_path
+neoArkSubmarineGalleryMessageTask = 0x8017EBCC; // type:func absolute:True owner=neo_ark_submarine_gallery
+gNeoArkSubmarineGalleryViewMaps = 0x80181A08; // absolute:True owner=neo_ark_submarine_gallery
+gNeoArkSubmarineGalleryViewCounts = 0x80181A0C; // absolute:True owner=neo_ark_submarine_gallery
+gNeoArkSubmarineGalleryWarpEntries = 0x80181A10; // absolute:True owner=neo_ark_submarine_gallery
+gNeoArkSubmarineGalleryCollisionGrid = 0x8018239C; // absolute:True owner=neo_ark_submarine_gallery
+gNeoArkSubmarineGalleryViewCameras = 0x801823C0; // absolute:True owner=neo_ark_submarine_gallery
+gNeoArkSubmarineGallerySpriteViews = 0x80184D10; // absolute:True owner=neo_ark_submarine_gallery shared=rooms
+gNeoArkSubmarineGalleryRoomLights = 0x80185284; // absolute:True owner=neo_ark_submarine_gallery
+gNeoArkSubmarineGalleryViewBoundaryTriggers = 0x8018529C; // absolute:True owner=neo_ark_submarine_gallery
+gNeoArkSubmarineGalleryActionTriggers = 0x801854FC; // absolute:True owner=neo_ark_submarine_gallery
+gNeoArkSubmarineGallerySurfacePropertiesByClass = 0x801858EC; // absolute:True owner=neo_ark_submarine_gallery
+neoArkR31RoomTask = 0x8017D990; // type:func absolute:True owner=neo_ark_r31 shared=rooms
+gNeoArkR31ViewMaps = 0x8017DA1C; // absolute:True owner=neo_ark_r31
+gNeoArkR31ViewCounts = 0x8017DA20; // absolute:True owner=neo_ark_r31
+gNeoArkR31WarpEntries = 0x8017DA24; // absolute:True owner=neo_ark_r31
+gNeoArkR31ViewCameras = 0x8017DA5C; // absolute:True owner=neo_ark_r31 shared=rooms
+gNeoArkR31SpriteViews = 0x8017DAF8; // absolute:True owner=neo_ark_r31
+gNeoArkR31RoomLights = 0x8017DB7C; // absolute:True owner=neo_ark_r31
+gNeoArkR31SurfacePropertiesByClass = 0x8017DC34; // absolute:True owner=neo_ark_r31
+neoArkPyramidRoomTask = 0x8017DB98; // type:func absolute:True owner=neo_ark_pyramid
+gNeoArkPyramidRoomCollisionResources = 0x8017FC28; // absolute:True owner=neo_ark_pyramid
+gNeoArkPyramidRoomLighting = 0x8017FC48; // absolute:True owner=neo_ark_pyramid
+gNeoArkPyramidViewMaps = 0x8017FC60; // absolute:True owner=neo_ark_pyramid
+gNeoArkPyramidViewCounts = 0x8017FC68; // absolute:True owner=neo_ark_pyramid
+gNeoArkPyramidWarpEntries = 0x8017FC6C; // absolute:True owner=neo_ark_pyramid
+gNeoArkPyramidViewCameras = 0x801802E8; // absolute:True owner=neo_ark_pyramid
+gNeoArkPyramidSpriteViews = 0x80180E18; // absolute:True owner=neo_ark_pyramid
+gNeoArkPyramidSurfaceProperties = 0x80181884; // absolute:True owner=neo_ark_pyramid shared=rooms
+neoArkSubstationRoomTask = 0x8017D81C; // type:func absolute:True owner=neo_ark_substation
+gNeoArkSubstationRoomCollisionResources = 0x8017E3F0; // absolute:True owner=neo_ark_substation
+gNeoArkSubstationRoomLighting = 0x8017E400; // absolute:True owner=neo_ark_substation
+gNeoArkSubstationViewMaps = 0x8017E408; // absolute:True owner=neo_ark_substation
+gNeoArkSubstationRoomViewCounts = 0x8017E40C; // absolute:True owner=neo_ark_substation
+gNeoArkSubstationWarpEntries = 0x8017E410; // absolute:True owner=neo_ark_substation
+gNeoArkSubstationViewCameras = 0x8017E8C8; // absolute:True owner=neo_ark_substation
+gNeoArkSubstationSpriteViews = 0x8017F584; // absolute:True owner=neo_ark_substation
+gNeoArkSubstationSurfaceProperties = 0x80180328; // absolute:True owner=neo_ark_substation
+gMappicS500ObservatoryShape = 0x8012F04C; // absolute:True owner=mappic_s5_00 shared=mappic
+gMappicS500EveAccessTunnelShape = 0x8012F0DC; // absolute:True owner=mappic_s5_00 shared=mappic
+gMappicS500NorthPromenadeShape = 0x8012F218; // absolute:True owner=mappic_s5_00 shared=mappic
+gMappicS500ForestZoneShape = 0x8012F2A8; // absolute:True owner=mappic_s5_00 shared=mappic
+gMappicS500SubmarineTunnelShape = 0x8012F338; // absolute:True owner=mappic_s5_00
+gMappicS500PavilionShape = 0x8012F3C8; // absolute:True owner=mappic_s5_00
+gMappicS500IslandShape = 0x8012F490; // absolute:True owner=mappic_s5_00
+gMappicS500GardenShape = 0x8012F58C; // absolute:True owner=mappic_s5_00
+gMappicS500PowerPlantsShape = 0x8012F61C; // absolute:True owner=mappic_s5_00
+gMappicS500SavannaZoneShape = 0x8012F6AC; // absolute:True owner=mappic_s5_00 shared=mappic
+gMappicS500SouthPromenadeShape = 0x8012F7E8; // absolute:True owner=mappic_s5_00
+gMappicS500AltarShape = 0x8012F878; // absolute:True owner=mappic_s5_00
+gMappicS500ShrineShape = 0x8012F9D4; // absolute:True owner=mappic_s5_00
+gMappicS500WoodlandPathShape = 0x8012FAD4; // absolute:True owner=mappic_s5_00
+gMappicS500BridgeShape = 0x8012FBB4; // absolute:True owner=mappic_s5_00 shared=mappic
+gMappicS500IslandAltarVariantShape = 0x8012FCB8; // absolute:True owner=mappic_s5_00
+gMappicS500BridgeAltarVariantShape = 0x8012FD84; // absolute:True owner=mappic_s5_00
+gMappicS500PyramidShape = 0x8012FE4C; // absolute:True owner=mappic_s5_00
+gMappicS502NurseryShape = 0x8012F044; // absolute:True owner=mappic_s5_02
+gMappicS502GrowthRoomShape = 0x8012F124; // absolute:True owner=mappic_s5_02
+gMappicS502EveElevatorCorridorShape = 0x8012F224; // absolute:True owner=mappic_s5_02 shared=mappic
+gMappicS502TrainingRoomShape = 0x8012F2B4; // absolute:True owner=mappic_s5_02
+gMappicS503ParkingGarageShape = 0x8012EFA0; // absolute:True owner=mappic_s5_03 shared=mappic
+gMappicS503VehicularAirlockShape = 0x8012F030; // absolute:True owner=mappic_s5_03 shared=mappic
+gMappicS503BulwarkShape = 0x8012F110; // absolute:True owner=mappic_s5_03
+gMappicS503HeliportShape = 0x8012F1F0; // absolute:True owner=mappic_s5_03
+gMappicS503AirlockShape = 0x8012F2B8; // absolute:True owner=mappic_s5_03
+gMappicS503GuardroomShape = 0x8012F348; // absolute:True owner=mappic_s5_03
+
+mapNeoArkResolveRoomVariant = 0x80179B14; // type:func
+mapNeoArkSetupMovieBuffers = 0x801799bc; // type:func
+mapNeoArkUpdateMusicVolume = 0x80179be4; // type:func
+gMapNeoArkImageSlotsByArea = 0x80179db8;
+gMapNeoArkMovieWorkspaceBytesByArea = 0x80179ec8;
+_gMapNeoArkEmptyObjectSpawns = 0x8017a6ac;
+_gMapNeoArkVehicularAirlockObjectSpawns = 0x8017a6bc;
+_gMapNeoArkHeliportObjectSpawns = 0x8017a6dc;
+gMapNeoArkObjectRooms = 0x8017a6ec;
+gMapNeoArkCompanionDistressTicks = 0x8017a99c;
+_gMapNeoArkNurseryRoomLighting = 0x8017a9b4;
+_gMapNeoArkGrowthRoomLighting = 0x8017a9bc;
+_gMapNeoArkCorridorRoomLighting = 0x8017a9c4;
+_gMapNeoArkTrainingRoomLighting = 0x8017a9cc;
+_gMapNeoArkBridgeRoomLighting = 0x8017a9d4;
+_gMapNeoArkTentRoomLighting = 0x8017a9dc;
+_gMapNeoArkWoodlandPathRoomLighting = 0x8017a9e4;
+_gMapNeoArkSubmarineGalleryRoomLighting = 0x8017a9ec;
+_gMapNeoArkR31RoomLighting = 0x8017a9f4;
+gMapNeoArkRoomLightingTables = 0x8017a9fc;
+_gMapNeoArkAreaViewMaps = 0x8017ad2c;
+gMapNeoArkViewIndexTable = 0x8017adb0;
+gMapNeoArkSurfacePropertiesByArea = 0x8017ae3c;
+gMapNeoArkParkingGarageDefaultPlacements = 0x8017aec0;
+gMapNeoArkVehicularAirlockDefaultPlacements = 0x8017aed0;
+gMapNeoArkBulwarkDefaultPlacements = 0x8017af00;
+_gMapNeoArkVehicularAirlockObjectPlaces = 0x8017c790;
+_gMapNeoArkHeliportObjectPlaces = 0x8017c7b0;
+_gMapNeoArkIslandObjectPlaces = 0x8017c890;
+_gMapNeoArkNurseryObjectPlaces = 0x8017c8b0;
+_gMapNeoArkGrowthRoomObjectPlaces = 0x8017c8d0;
+_gMapNeoArkCorridorObjectPlaces = 0x8017c910;
+_gMapNeoArkTentObjectPlaces = 0x8017c930;
+_gMapNeoArkSubmarineGalleryObjectPlaces = 0x8017c970;
+_gMapNeoArkSubstationObjectPlaces = 0x8017c990;
+gMapNeoArkShrineVariant11Placements = 0x8017c070;
+gMapNeoArkNurseryDefaultPlacements = 0x8017c090;
+gMapNeoArkGrowthRoomDefaultPlacements = 0x8017c0e0;
+gMapNeoArkCorridorDefaultPlacements = 0x8017c0f0;
+gMapNeoArkTrainingRoomDefaultPlacements = 0x8017c140;
+gMapNeoArkBridgeVariant1Placements = 0x8017c1d0;
+gMapNeoArkBridgeVariant2Placements = 0x8017c210;
+gMapNeoArkBridgeVariant3Placements = 0x8017c270;
+gMapNeoArkBridgeVariant4Placements = 0x8017c2a0;
+gMapNeoArkBridgeVariant5Placements = 0x8017c2e0;
+gMapNeoArkBridgeVariant11Placements = 0x8017c320;
+gMapNeoArkBridgeVariant12Placements = 0x8017c350;
+gMapNeoArkTentDefaultPlacements = 0x8017c380;
+gMapNeoArkWoodlandPathVariant1Placements = 0x8017c3c0;
+gMapNeoArkWoodlandPathVariant2Placements = 0x8017c3f0;
+gMapNeoArkWoodlandPathVariant3Placements = 0x8017c420;
+gMapNeoArkWoodlandPathVariant4Placements = 0x8017c450;
+gMapNeoArkSubmarineGalleryVariant1Placements = 0x8017c4a0;
+gMapNeoArkSubmarineGalleryVariant2Placements = 0x8017c4d0;
+gMapNeoArkSubmarineGalleryVariant3Placements = 0x8017c510;
+gMapNeoArkSubmarineGalleryVariant11Placements = 0x8017c530;
+gMapNeoArkR31DefaultPlacements = 0x8017c550;
+gMapNeoArkPyramidVariant1Placements = 0x8017c580;
+gMapNeoArkPyramidVariant2Placements = 0x8017c620;
+gMapNeoArkPyramidVariant3Placements = 0x8017c690;
+gMapNeoArkPyramidVariant4Placements = 0x8017c720;
+gMapNeoArkPyramidVariant11Placements = 0x8017c760;
+_gMapNeoArkAreaSpriteViews = 0x8017adb4;
+gMapNeoArkSpriteAreaTable = 0x8017ae38;
+gMapNeoArkHeliportVariant1Placements = 0x8017af30;
+gMapNeoArkHeliportVariant2Placements = 0x8017af80;
+gMapNeoArkAirlockKnightPlacements = 0x8017afd0;
+gMapNeoArkAirlockBishopPlacements = 0x8017aff0;
+gMapNeoArkObservatoryDefaultPlacements = 0x8017b010;
+gMapNeoArkEveAccessTunnelDefaultPlacements = 0x8017b030;
+gMapNeoArkEveAccessTunnelEncounterPlacements = 0x8017b080;
+gMapNeoArkNorthPromenadeVariant2Placements = 0x8017b0f0;
+gMapNeoArkNorthPromenadeVariant3Placements = 0x8017b120;
+gMapNeoArkNorthPromenadeVariant11Placements = 0x8017b160;
+gMapNeoArkForestZoneVariant1Placements = 0x8017b190;
+gMapNeoArkForestZoneVariant2Placements = 0x8017b1c0;
+gMapNeoArkForestZoneVariant3And4Placements = 0x8017b1f0;
+gMapNeoArkForestZoneVariant5Placements = 0x8017b2c0;
+gMapNeoArkForestZoneVariant11Placements = 0x8017b300;
+gMapNeoArkSubmarineTunnelVariant1Placements = 0x8017b330;
+gMapNeoArkSubmarineTunnelVariant2Placements = 0x8017b360;
+gMapNeoArkSubmarineTunnelVariant3Placements = 0x8017b390;
+gMapNeoArkSubmarineTunnelVariant4Placements = 0x8017b3c0;
+gMapNeoArkPavilionVariant1Placements = 0x8017b3d0;
+gMapNeoArkPavilionVariant2Placements = 0x8017b410;
+gMapNeoArkPavilionVariant3Placements = 0x8017b470;
+gMapNeoArkPavilionVariant4Placements = 0x8017b4b0;
+gMapNeoArkPavilionVariant5Placements = 0x8017b4e0;
+gMapNeoArkPavilionVariant11Placements = 0x8017b530;
+gMapNeoArkIslandVariant1Placements = 0x8017b550;
+gMapNeoArkIslandVariant2Placements = 0x8017b590;
+gMapNeoArkIslandVariant3Placements = 0x8017b5c0;
+gMapNeoArkIslandVariant4Placements = 0x8017b600;
+_gMapNeoArkAreaCameras = 0x8017aca4;
+gMapNeoArkIslandVariant11Placements = 0x8017b610;
+gMapNeoArkGardenVariant1Placements = 0x8017b630;
+gMapNeoArkGardenVariant2Placements = 0x8017b6e0;
+gMapNeoArkGardenVariant3Placements = 0x8017b700;
+gMapNeoArkGardenVariant4Placements = 0x8017b780;
+gMapNeoArkPowerPlant2Variant1Placements = 0x8017b7d0;
+gMapNeoArkPowerPlant2Variant11Placements = 0x8017b850;
+gMapNeoArkPowerPlant2Variant17Placements = 0x8017b8b0;
+gMapNeoArkPowerPlant1Variant1Placements = 0x8017b8d0;
+gMapNeoArkPowerPlant1Variant2Placements = 0x8017b950;
+gMapNeoArkPowerPlant1Variant3Placements = 0x8017b9e0;
+gMapNeoArkPowerPlant1Variant4Placements = 0x8017ba60;
+gMapNeoArkPowerPlant1Variant11Placements = 0x8017bb00;
+gMapNeoArkSavannaZoneVariant1Placements = 0x8017bb70;
+gMapNeoArkSavannaZoneVariant2Placements = 0x8017bbf0;
+gMapNeoArkSavannaZoneVariant3Placements = 0x8017bc70;
+gMapNeoArkSavannaZoneVariant4Placements = 0x8017bce0;
+gMapNeoArkSavannaZoneVariant5Placements = 0x8017bd50;
+gMapNeoArkSavannaZoneVariant11Placements = 0x8017bd80;
+gMapNeoArkSouthPromenadeVariant2Placements = 0x8017bdb0;
+gMapNeoArkSouthPromenadeVariant3Placements = 0x8017bdc0;
+gMapNeoArkSouthPromenadeVariant4Placements = 0x8017bdd0;
+gMapNeoArkSouthPromenadeVariant5Placements = 0x8017be40;
+gMapNeoArkSouthPromenadeVariant11Placements = 0x8017be70;
+gMapNeoArkShrineVariant1Placements = 0x8017beb0;
+gMapNeoArkShrineVariant2Placements = 0x8017bef0;
+gMapNeoArkShrineVariant3Placements = 0x8017bf40;
+gMapNeoArkShrineVariant4Placements = 0x8017bf90;
+gMapNeoArkShrineVariant5Placements = 0x8017c020;
+gMapNeoArkShrineVariant7Placements = 0x8017c050;
+_gMapNeoArkAreaViewCounts = 0x8017ab04;
+_gMapNeoArkNurseryCollisionRooms = 0x8017ab8c;
+_gMapNeoArkGrowthRoomCollisionRooms = 0x8017ab9c;
+_gMapNeoArkCorridorCollisionRooms = 0x8017abac;
+_gMapNeoArkBridgeCollisionRooms = 0x8017abcc;
+_gMapNeoArkWoodlandPathCollisionRooms = 0x8017abec;
+_gMapNeoArkSubmarineGalleryCollisionRooms = 0x8017abfc;
+_gMapNeoArkR31CollisionRooms = 0x8017ac0c;
+_gMapNeoArkUnreferencedSceneActorPlacements = 0x8017c1a0;
+gMapNeoArkAreaShapes = 0x8017A110;
+gMapNeoArkMarkers = 0x8017A230;
+gMapNeoArkAreaNames = 0x8017A28C;
+gMapNeoArkRoomTaskDescriptors = 0x8017A804;
+gMapNeoArkMarkerFlags = 0x8017A9A0;
+gMapNeoArkViewCountTable = 0x8017AB88;
+gMapNeoArkBattleRewards = 0x8017C9B0;
+gMapNeoArkHardBattleRewards = 0x8017CB0C;
+_gMapNeoArkTrainingRoomCollisionRooms = 0x8017abbc;
+_gMapNeoArkTentCollisionRooms = 0x8017abdc;
+_gMapNeoArkWorldCollisionAreaRooms = 0x8017ac1c;
+gMapNeoArkAreaWarpEntries = 0x8017aa80;

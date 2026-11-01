@@ -1,0 +1,70 @@
+// Overlay-local symbols for dryfield_night_cellar.
+_gDryfieldNightCellarView2GlowWorldPoints = 0x8017DAD0; // size:0x10 defined:True
+_gDryfieldNightCellarView3GlowWorldPoints = 0x8017DAE0; // size:0x10 defined:True
+_gDryfieldNightCellarMessageTable = 0x8017DAA8; // size:0x28 defined:True
+gDryfieldNightCellarRoomLighting = 0x8017DAF0; // size:0x10 defined:True
+gDryfieldNightCellarRoomCollisionResources = 0x8017DB00; // size:0x20 defined:True
+_gDryfieldNightCellarRoom2ViewMap = 0x8017DB20; // size:0x8 defined:True
+gDryfieldNightCellarViewMaps = 0x8017DB28; // size:0x8 defined:True
+gDryfieldNightCellarViewCounts = 0x8017DB30; // size:0x4 defined:True
+gDryfieldNightCellarWarpEntries = 0x8017DB34; // size:0x38 defined:True
+_gDryfieldNightCellarCollisionGridNormals = 0x8017DB6C; // size:0x38 defined:True
+_gDryfieldNightCellarCollisionGridVerts = 0x8017DBA4; // size:0x138 defined:True
+_gDryfieldNightCellarCollisionGridFaces = 0x8017DCDC; // size:0xF0 defined:True
+_gDryfieldNightCellarCollisionGridCells = 0x8017DDCC; // size:0x7C defined:True
+_gDryfieldNightCellarCollisionGridTable = 0x8017DE48; // size:0x18 defined:True
+_gDryfieldNightCellarCollisionGrid = 0x8017DE60; // size:0x24 defined:True
+gDryfieldNightCellarViewCameras = 0x8017DE84; // size:0x18C defined:True
+_gDryfieldNightCellarView1SpriteBatches = 0x8017E010; // size:0x10 defined:True
+_gDryfieldNightCellarView2SpriteSources = 0x8017E020; // size:0x488 defined:True
+_gDryfieldNightCellarView2SpriteBatches = 0x8017E4A8; // size:0x38 defined:True
+_gDryfieldNightCellarView3SpriteSources = 0x8017E4E0; // size:0x3D4 defined:True
+_gDryfieldNightCellarView3SpriteBatches = 0x8017E8B4; // size:0x38 defined:True
+_gDryfieldNightCellarView4SpriteSources = 0x8017E8EC; // size:0x294 defined:True
+_gDryfieldNightCellarView4SpriteBatches = 0x8017EB80; // size:0x20 defined:True
+_gDryfieldNightCellarView5SpriteSources = 0x8017EBA0; // size:0x1A4 defined:True
+_gDryfieldNightCellarView5SpriteBatches = 0x8017ED44; // size:0x18 defined:True
+_gDryfieldNightCellarView6SpriteBatches = 0x8017ED5C; // size:0x10 defined:True
+_gDryfieldNightCellarView7SpriteSources = 0x8017ED6C; // size:0x488 defined:True
+_gDryfieldNightCellarView7SpriteBatches = 0x8017F1F4; // size:0x38 defined:True
+_gDryfieldNightCellarView8SpriteSources = 0x8017F22C; // size:0x3D4 defined:True
+_gDryfieldNightCellarView8SpriteBatches = 0x8017F600; // size:0x38 defined:True
+_gDryfieldNightCellarView9SpriteSources = 0x8017F638; // size:0x294 defined:True
+_gDryfieldNightCellarView9SpriteBatches = 0x8017F8CC; // size:0x20 defined:True
+_gDryfieldNightCellarView10SpriteSources = 0x8017F8EC; // size:0x1A4 defined:True
+_gDryfieldNightCellarView10SpriteBatches = 0x8017FA90; // size:0x18 defined:True
+_gDryfieldNightCellarView11SpriteBatches = 0x8017FAA8; // size:0x10 defined:True
+gDryfieldNightCellarSpriteViews = 0x8017FAB8; // size:0x84 defined:True
+_gDryfieldNightCellarViewBoundaryTriggers = 0x8017FB3C; // size:0x1C8 defined:True
+_gDryfieldNightCellarRoom1ActionTriggers = 0x8017FD04; // size:0x2F8 defined:True
+_gDryfieldNightCellarRoom2ActionTriggers = 0x8017FFFC; // size:0x2F8 defined:True
+_gDryfieldNightCellarSightOccluder = 0x801802F4; // size:0x3C defined:True
+_gDryfieldNightCellarRoom1PointLights = 0x80180330; // size:0x1E0 defined:True
+_gDryfieldNightCellarRoom1Lights = 0x80180510; // size:0x18 defined:True
+_gDryfieldNightCellarRoom2PointLights = 0x80180528; // size:0x1E0 defined:True
+_gDryfieldNightCellarRoom2Lights = 0x80180708; // size:0x18 defined:True
+_gDryfieldNightCellarVariant1Resources = 0x80180720; // size:0x18 defined:True
+_gDryfieldNightCellarVariant3Resources = 0x80180738; // size:0x24 defined:True
+_gDryfieldNightCellarVariant11Resources = 0x8018075C; // size:0x24 defined:True
+gDryfieldNightCellarAreaVariants = 0x80180780; // size:0x60 defined:True
+_gDryfieldNightCellarFootstepSounds = 0x801807E0; // size:0xC defined:True
+_gDryfieldNightCellarSurfaceProperties = 0x801807EC; // size:0x8 defined:True
+gDryfieldNightCellarSurfacePropertiesByClass = 0x801807F4; // size:0x20 defined:True
+gActor103700BatTaskDesc = 0x80139DAC; // absolute:True owner=actor_103700
+gActor101600ScavengerTaskDesc = 0x801445DC; // absolute:True owner=actor_101600
+gActor200700RatTaskDesc = 0x80150C80; // absolute:True owner=actor_200700
+gActor203700BatTaskDesc = 0x80151DAC; // absolute:True owner=actor_203700
+gMapDryfieldFullCellarVariant1Placements = 0x8017CD88; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullCellarVariant3Placements = 0x8017CDE8; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullCellarVariant11Placements = 0x8017CEA8; // absolute:True owner=map_dryfield_full
+
+dryfieldNightCellarDrawGlowsTask = 0x8017DA28; // type:func
+_glowDrawFlare = 0x8017D7A0; // type:func
+_cellarHandleCommand = 0x8017D5D0; // type:func
+_roomVariantResolveCellar = 0x8017D634; // type:func
+_dryfieldNightCellarRejectKeyItem = 0x8017d62c; // type:func
+_dryfieldNightCellarIgnoreActionMessage = 0x8017d6f4; // type:func
+_dryfieldNightCellarIdle = 0x8017d740; // type:func
+_dryfieldNightCellarInitRoomTask = 0x8017d6fc; // type:func
+dryfieldNightCellarRoomTask = 0x8017d748; // type:func
+_gDryfieldNightCellarRoomTaskStates = 0x8017d5c4;

@@ -1,0 +1,91 @@
+#include "loading.h"
+
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+
+#include "types.h"
+
+#include "gameplay/loading.h"
+#include "gameplay/view.h"
+
+#include "main/areas.h"
+#include "main/fs.h"
+#include "main/mem.h"
+#include "main/task_types.h"
+
+#include "stages/akropolis/stage.h"
+
+#include "mapui/map_dryfield.h"
+
+#include "mapui/map_dryfield_full.h"
+
+#include "mapui/map_neo_ark.h"
+
+#include "mapui/map_shelter.h"
+
+DR_STP gLoadingViewMaskResetCommand;
+
+ViewCameraTable* gViewCameraTables[5] = {
+    [GAME_STAGE_AKROPOLIS - 1]       = &gAkropolisStageViewCameraTable,
+    [GAME_STAGE_DRYFIELD - 1]        = &gMapDryfieldViewCameraTable,
+    [GAME_STAGE_DRYFIELD_NIGHT - 1]  = &gMapDryfieldFullViewCameraTable,
+    [GAME_STAGE_MINE_SHELTER - 1]    = &gMapShelterViewCameraTable,
+    [GAME_STAGE_SHELTER_NEO_ARK - 1] = &gMapNeoArkViewCameraTable,
+};
+
+/// Uploads the current mapped view's retained image, retrying every incomplete result.
+///
+/// The mapped one-based view is narrowed to u8, then compared with each of the
+/// fifty directory slots after subtracting one as signed int. Zero or an index
+/// beyond the directory matches nothing. Kind is tested before the slot index.
+/// Borrows the selected loaded payload until `fsUploadImageChunk` completes;
+/// both `FILE_SYSTEM_IMAGE_UPLOAD_RETRY` and `FILE_SYSTEM_IMAGE_UPLOAD_TIMER_FAILED`
+/// are retried. Requires that uploader's live image, GPU, scratch-stack and
+/// timer state. No match leaves VRAM intact.
+static inline void _loadingUploadCurrentViewImage(void)
+{
+    enum { LOADING_VIEW_IMAGE_IGNORE_GPU_TIME_LIMIT = 1 };
+    u8 mappedViewIndex;
+    u8 resourceSlotIndex;
+
+    mappedViewIndex = viewGetMappedIndex();
+    for (resourceSlotIndex = 0; resourceSlotIndex < ARRAY_SIZE(gFsResourceSlots); resourceSlotIndex++) {
+        if (gFsResourceSlots[resourceSlotIndex].kind == FILE_SYSTEM_RESOURCE_IMAGE) {
+            if (mappedViewIndex - 1 == resourceSlotIndex) {
+                while (fsUploadImageChunk(gFsResourceSlots[resourceSlotIndex].data, LOADING_VIEW_IMAGE_IGNORE_GPU_TIME_LIMIT) != FILE_SYSTEM_IMAGE_UPLOAD_COMPLETE) {
+                }
+                break;
+            }
+        }
+    }
+}
+
+void loadingUploadViewImageTask(Task* viewLoadTask)
+{
+    enum { LOADING_VIEW_IMAGE_FINISH_READY = -1 };
+    CdCmdQueue* queue;
+    u8          commandArgs[sizeof(queue->replacementEntry.args.bytes)];
+
+    queue = &gCdCmdQueue;
+    if (cdCmdIsIdle()) {
+        memFillBytes(&queue->activeRequest, 0, sizeof(queue->activeRequest));
+        _loadingUploadCurrentViewImage();
+        cdCmdSelectMovieWorkspace();
+        if (gLoadingViewMovieSlot >= 0) {
+            viewLoadTask->state++;
+            // The command packer copies all four bytes; only the slot is written.
+            commandArgs[0] = (u8)gLoadingViewMovieSlot;
+            cdCmdStageReplacement(CD_COMMAND_PLAY_STREAM, 0, commandArgs);
+            cdCmdCommitReplacement();
+            viewLoadTask->killCountdown = 0;
+        } else {
+            if (cdCmdCommitReplacement() >= 0) {
+                // Skip the movie-ready state when only a deferred CD request remains.
+                viewLoadTask->state += 2;
+            } else {
+                viewLoadTask->state = LOADING_VIEW_IMAGE_FINISH_READY;
+                loadingFinishViewLoad(viewLoadTask);
+            }
+        }
+    }
+}

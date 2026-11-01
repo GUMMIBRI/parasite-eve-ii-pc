@@ -1,0 +1,13 @@
+// Overlay-local symbols for mist_r21.
+_gMistR21UnusedTargetSetMessage = 0x8017D5D0; // force_not_migration:True string no code reads, after the task state table
+_gMistR21RoomMessages = 0x8017D770; // size:0x28 defined:True
+_gMistR21IdleTaskDesc = 0x8017D798; // size:0xC defined:True
+_mistR21RejectKeyItemUse = 0x8017d5dc; // type:func
+_mistR21ResolveRoomTransition = 0x8017d5e4; // type:func
+_mistR21IgnoreRoomCommand = 0x8017d60c; // type:func
+_mistR21IgnoreRoomAction = 0x8017d614; // type:func
+_mistR21IdleAuxiliaryTask = 0x8017d760; // type:func
+_mistR21InitializeRoomTask = 0x8017d61c; // type:func
+_mistR21CheckPlazaReloadShortcut = 0x8017d678; // type:func
+mistR21RoomTask = 0x8017d708; // type:func
+_gMistR21RoomTaskStates = 0x8017d5c4;

@@ -1,0 +1,3172 @@
+#include "gameplay/model_lighting.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/inline_c.h>
+#include <psyq/memory.h>
+#include <psyq/rand.h>
+
+#include "common.h"
+#include "gte.h"
+
+#include "gameplay/attachment_state.h"
+#include "gameplay/attachments.h"
+#include "game_debug.h"
+#include "attachments.h"
+#include "gameplay/game_debug.h"
+#include "hud_sprites.h"
+#include "model_lighting.h"
+#include "model_objects.h"
+#include "tmd_stream_types.h"
+#include "pad_input.h"
+#include "gameplay/player_actor.h"
+#include "gameplay/room_effects.h"
+#include "scene_runtime.h"
+
+/// Writable packet word containing vertex 0's texture coordinates and CLUT address.
+///
+/// `primitive` must point to a live, writable Psy-Q `POLY_FT3`, `POLY_FT4`,
+/// `POLY_GT3` or `POLY_GT4` aligned to four bytes. On the little-endian target,
+/// the `u32` lvalue spans `u0` (bits 0..7), `v0` (bits 8..15) and `clut`
+/// (bits 16..31): two unsigned texel coordinates and the GPU's encoded palette
+/// address. The word view copies all four bytes from the model stream together
+/// before palette offsets are added. Evaluates `primitive` once and captures
+/// no caller variables.
+#define MODEL_LIGHTING_UV0_CLUT_WORD(primitive) (*(u32*)&((primitive)->u0))
+
+/// Writable packet word containing vertex 1's texture coordinates and texture-page settings.
+///
+/// `primitive` must point to a live, writable Psy-Q `POLY_FT3`, `POLY_FT4`,
+/// `POLY_GT3` or `POLY_GT4` aligned to four bytes. On the little-endian target,
+/// the `u32` lvalue spans `u1` (bits 0..7), `v1` (bits 8..15) and `tpage`
+/// (bits 16..31): two unsigned texel coordinates and the GPU's encoded page
+/// location, colour depth and semi-transparency mode. The word view copies all
+/// four bytes from the model stream together before page offsets are added.
+/// Evaluates `primitive` once and captures no caller variables.
+#define MODEL_LIGHTING_UV1_TPAGE_WORD(primitive) (*(u32*)&((primitive)->u1))
+
+#include "main/display.h"
+#include "main/fs.h"
+#include "main/gamemain.h"
+#include "main/gameflag_types.h"
+#include "main/mc.h"
+#include "main/mem.h"
+#include "main/game_debug.h"
+#include "main/pad.h"
+#include "main/random.h"
+#include "main/session.h"
+#include "main/sound.h"
+#include "main/task.h"
+#include "main/text.h"
+#include "main/wipsys.h"
+#include <psyq/memory.h>
+#include <psyq/rand.h>
+
+/// Geometry references are byte offsets into eight-byte SVECTOR entries.
+/// Low reference bits are discarded; their meaning is unproven for these records.
+enum {
+    TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK = 0xFFF8,
+    TMD_STREAM_VERTEX_INDEX_SHIFT        = 3,
+    TMD_FT3_RAW_OPAQUE_COMMAND           = 0x25,
+    TMD_FT4_RAW_OPAQUE_COMMAND           = 0x2D,
+    TMD_DRAW_OT_INDEX_SHIFT              = 4, // Display-scaled OTZ units to four-byte OT buckets
+    TMD_GT3_CORNER_COUNT                 = 3,
+    TMD_GT4_CORNER_COUNT                 = 4
+};
+
+/// Four-corner vertex/normal prefix of a directly transformed Gouraud textured quad.
+///
+/// The first eight bytes select vertices and the next eight select normals,
+/// both in corner order. Masking with `TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK`
+/// produces byte offsets into the source's borrowed SVECTOR arrays.
+/// Every offset must select a complete eight-byte entry; the arrays' capacities
+/// are not stored here. The low three bits are ignored by these consumers and
+/// their roles are unproven. Colour/material and texture data follow this
+/// prefix in the element stream and are outside this type's 16-byte extent.
+typedef struct {
+    u16 vertexByteRefs[TMD_GT4_CORNER_COUNT]; // Part-local vertex references for corners 0..3
+    u16 normalByteRefs[TMD_GT4_CORNER_COUNT]; // Part-local normal references for corners 0..3
+} _ModelLightingGt4GeometryRefs;
+STATIC_ASSERT_SIZEOF(_ModelLightingGt4GeometryRefs, 2 * TMD_GT4_CORNER_COUNT * sizeof(u16));
+
+/// Environment mapping uses fixed 320x240 screen centring and overlapping pages.
+/// Normal scaling is GPF12 with colorBlend >> 9; U/V stores truncate to bytes.
+enum {
+    TMD_ENV_SCREEN_CENTER_X        = 160,
+    TMD_ENV_SCREEN_CENTER_Y        = 120,
+    TMD_ENV_NORMAL_BLEND_SHIFT     = 9,
+    TMD_ENV_FIRST_PAGE_U_LIMIT     = 256,
+    TMD_ENV_PAGE_U_DISPLACEMENT    = 128,
+    TMD_ENV_SECOND_PAGE_U_LIMIT    = 192,
+    TMD_ENV_V_LIMIT                = 240,
+    TMD_ENV_FIRST_PAGE_MARKER      = 0,
+    TMD_ENV_SECOND_PAGE_MARKER     = 1,
+    TMD_ENV_FIRST_TEXTURE_PAGE     = getTPage(2, GPU_BLEND_ADD, 448, 256),
+    TMD_ENV_SECOND_TEXTURE_PAGE    = getTPage(2, GPU_BLEND_ADD, 576, 256),
+    TMD_ENV_V_TO_PAGE_MARKER_BYTES = OFFSET_OF(POLY_GT3, v0) - OFFSET_OF(POLY_GT3, code),
+    TMD_ENV_CORNER_STRIDE_BYTES    = OFFSET_OF(POLY_GT3, u1) - OFFSET_OF(POLY_GT3, u0)
+};
+STATIC_ASSERT(OFFSET_OF(POLY_GT4, v0) - OFFSET_OF(POLY_GT4, code) == TMD_ENV_V_TO_PAGE_MARKER_BYTES,
+              tmd_env_quad_marker_displacement);
+STATIC_ASSERT(OFFSET_OF(POLY_GT4, u1) - OFFSET_OF(POLY_GT4, u0) == TMD_ENV_CORNER_STRIDE_BYTES,
+              tmd_env_quad_corner_stride);
+
+/// Lights the layer/base colour groups of one offset-layer corner and saves its rotated normal.
+///
+/// The `TmdLayerCornerRefs` layer/base offsets select aligned writable CVECTOR
+/// groups in the first packet region; its normal reference selects a complete
+/// SVECTOR after masking its low bits. The caller configures GTE lighting and
+/// supplies the layer/base material RGB/code words. GTE lighting registers and
+/// workspace normal scratch change; packet cursors and counts do not.
+/// cornerRefs is a readable TmdLayerCornerRefs*, not a halfword cursor. Masked
+/// normalByteRef is a byte offset, not a vertex/normal index; its complete
+/// eight-byte normal must be readable. Each destination receives a four-byte
+/// RGB/code store. Lighting precedes rotation, and the rotated normal is saved
+/// immediately for the caller's later mapping; no projected XY is written here.
+/// Arguments are evaluated repeatedly: supply side-effect-free pointers.
+/// Captures no caller identifiers. Expands to several statements: use only
+/// inside an enclosing compound block, never as an unbraced conditional body.
+#define MODEL_LIGHTING_LIGHT_OFFSET_LAYER_CORNER(workspace, cornerRefs, layerMaterial, baseMaterial)                  \
+    gte_ldv0((const u8*)(workspace)->normals + ((cornerRefs)->normalByteRef & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK)); \
+    gte_ldrgb((layerMaterial));                                                                                       \
+    gte_nccs();                                                                                                       \
+    gte_strgb((workspace)->preXformWrite + (cornerRefs)->layerColorByteOffset);                                       \
+    gte_ldrgb((baseMaterial));                                                                                        \
+    gte_nccs();                                                                                                       \
+    gte_strgb((workspace)->preXformWrite + (cornerRefs)->baseColorByteOffset);                                        \
+    gte_rtv0();                                                                                                       \
+    gte_stsv(&(workspace)->elemNormal);
+
+/// Work block of the task that runs play.
+///
+/// Each frame that task advances the play clock, watches for the death of the
+/// player or the companion, and otherwise updates the HUD. It allocates this
+/// block zero-filled when it starts, and the block is freed with the task. The
+/// block carries the play time as the clock readout shows it, the tick sample
+/// the clock advances from, and the HUD's state.
+///
+/// `hours` and `minutes` are the saved play time, a count of minutes, split
+/// once at start and then kept in step with it: each whole minute of
+/// `DisplayState.gameTick` adds one to both, and both stop at 999:59 with the
+/// saved count at 59999. Only the clock readout reads them, and it is drawn
+/// only while the saved state selects attract demo 1.
+typedef struct {
+    s32      hours;        // Whole hours of play time, 0..999
+    s32      minutes;      // Minutes past the hour, 0..59
+    s32      lastGameTick; // `DisplayState.gameTick` when the clock last advanced; the next advance adds the difference
+    HudState hud;          // HUD state, handed to the HUD routines by address
+} _PlayClockWork;
+STATIC_ASSERT_SIZEOF(_PlayClockWork, 0x30);
+
+/// Play-time units and the saved/displayed minute cap used by this frame update.
+enum {
+    PLAY_CLOCK_TICKS_PER_SECOND = 60,
+    PLAY_CLOCK_TICKS_PER_MINUTE = 60 * PLAY_CLOCK_TICKS_PER_SECOND,
+    PLAY_CLOCK_MINUTES_PER_HOUR = 60,
+    PLAY_CLOCK_MAX_MINUTES      = 59999
+};
+
+void func_807150F8(s32 arg0);
+
+void func_80715198(void);
+
+/// RGB material lit for the environment layer of each paired primitive.
+///
+/// Shared by this TU's environment drawers until the next material update.
+/// The setter clamps all three channels to 0..255; the code byte stays zero.
+static CVECTOR _gModelLightingEnvironmentLayerMaterial = { 0, 0, 0, 0 };
+
+/// RGB material lit for the base of each environment-layer primitive pair.
+///
+/// The next material update sets all channels to 128 for a nonpositive layer
+/// input, otherwise (255 - clamped layer)/2. The code byte stays zero.
+static CVECTOR _gModelLightingEnvironmentBaseMaterial = { 0, 0, 0, 0 };
+/// Retained bytes between the environment materials and stored BSS.
+///
+/// No identified access establishes their meaning or original object boundary.
+static u32 D_80114BAC = 0x10FF2220;
+
+/// Tests whether a quad's second triangle faces the viewer.
+///
+/// Call after the first triangle fails its positive-sign test and corner 3
+/// has been projected, leaving corners 1, 2, 3 in the GTE screen FIFO. The quad's
+/// corner order makes a negative result front-facing for this triangle;
+/// zero is rejected. The caller must have checked both projections for errors.
+///
+/// `workspace` borrows writable, word-aligned draw scratch; `signedArea` must
+/// address `workspace->gteResult`. Stores MAC0's 32-bit result (twice the signed
+/// screen area in squared pixels) there and returns true exactly when negative.
+/// Changes GTE MAC0/FLAG and the workspace result; no pointer is retained.
+static inline bool _modelLightingQuadSecondTriangleFacesViewer(TmdStreamWorkspace* workspace, s32* signedArea)
+{
+    gte_nclip();
+    gte_stopz(signedArea);
+    return workspace->gteResult < 0;
+}
+
+/// Lights a Gouraud textured quad's four corners from one loaded GTE material.
+///
+/// The caller supplies GTE light/colour matrices and background colour, and
+/// loads the shared material RGB/code word into RGBC. `geometryRefs` borrows
+/// the element's readable reference prefix; each masked normal byte reference
+/// must select a complete eight-byte SVECTOR in `workspace->normals`. The vertex
+/// references are unused here. Geometry, references and the writable `quad`
+/// must be word aligned and live for the call; normal-array bounds are unchecked.
+///
+/// Writes all four RGB/code words, including the high bytes `p1`, `p2`, `p3`;
+/// the caller sets `quad->code` afterwards. Tag, XY and texture fields stay
+/// intact. GTE normal/lighting registers change; workspace storage, packet
+/// cursors and counts do not. No borrowed pointer is retained.
+static inline void _modelLightingLightGt4CornerNormals(POLY_GT4* quad, const TmdStreamWorkspace* workspace, const _ModelLightingGt4GeometryRefs* geometryRefs)
+{
+    const u8* normalBytes;
+
+    normalBytes = (const u8*)workspace->normals;
+    gte_ldv3(normalBytes + (geometryRefs->normalByteRefs[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (geometryRefs->normalByteRefs[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (geometryRefs->normalByteRefs[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+    gte_ncct();
+    gte_strgb3_gt4(quad);
+    // Complete the fourth corner without reloading the shared material.
+    gte_ldv0((const u8*)workspace->normals + (geometryRefs->normalByteRefs[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+    gte_nccs();
+    gte_strgb(&quad->r3);
+}
+
+/// Links an offset-texture layer/base quad pair for GPU traversal in base-then-layer order.
+///
+/// `packetPair` borrows two consecutive writable, word-aligned `POLY_GT4`s:
+/// slot 0 is the layer, slot 1 the base. Their DMA payload lengths must already
+/// be set. `workspace->gteResult` supplies the pair's AVSZ4 OTZ, 0..65535;
+/// `displayState->otDepthShift` is normally 0..3. The unsigned scaled depth,
+/// shifted right by four and masked, selects entry 0..1023 in `workspace->ot`,
+/// whose base already includes the object's signed table displacement. That
+/// entry must fit its backing table; the mask wraps depth rather than clamps it.
+///
+/// `dmaAddressMask` and `dmaLengthMask` must be `GPU_DMA_LINK_ADDRESS_MASK` and
+/// `GPU_DMA_PACKET_LENGTH_MASK`. Each prepend retains the packet and OT tag's
+/// high length byte and encodes the next pointer in the low 24 bits. The final
+/// chain is base -> layer -> previous head. Only the packet and OT tags change;
+/// GTE registers, workspace storage and cursors/counts stay intact. Packets and
+/// OT must remain GPU-visible until DMA consumption ends; no pointer is retained.
+static inline void _modelLightingLinkOffsetLayerQuadPair(POLY_GT4 packetPair[2], const TmdStreamWorkspace* workspace, const DisplayState* displayState, u32 dmaAddressMask, u32 dmaLengthMask)
+{
+    enum { MODEL_LIGHTING_OFFSET_LAYER_PACKET = 0,
+           MODEL_LIGHTING_OFFSET_BASE_PACKET  = 1 };
+
+    // Prepend the layer first so GPU traversal reaches the base before the layer.
+    packetPair[MODEL_LIGHTING_OFFSET_LAYER_PACKET].tag = (packetPair[MODEL_LIGHTING_OFFSET_LAYER_PACKET].tag & dmaLengthMask) | (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] & dmaAddressMask);
+    workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] =
+        (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] & dmaLengthMask) | ((u32)&packetPair[MODEL_LIGHTING_OFFSET_LAYER_PACKET] & dmaAddressMask);
+    packetPair[MODEL_LIGHTING_OFFSET_BASE_PACKET].tag = (packetPair[MODEL_LIGHTING_OFFSET_BASE_PACKET].tag & dmaLengthMask) | (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] & dmaAddressMask);
+    workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] =
+        (workspace->ot[(((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT) & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))] & dmaLengthMask) | ((u32)&packetPair[MODEL_LIGHTING_OFFSET_BASE_PACKET] & dmaAddressMask);
+}
+
+/// Initializes one flat textured triangle's persistent texture coordinates and GPU addresses.
+///
+/// `triangle` is a writable, four-byte-aligned `POLY_FT3`. `elementWords` points
+/// to a four-byte-aligned element of a `0x1C`/`0x1E` stream record, past its
+/// three-word header, with at least five readable u32 words. Words 2 and 3 pack
+/// unsigned byte U/V texel coordinates with encoded CLUT and texture-page
+/// settings; word 4's low half packs U2/V2. Its high half is ignored, preserving
+/// `triangle->pad1`.
+///
+/// The workspace supplies signed displacements in encoded address units:
+/// `texturePageOffset` (-128..127) and `encodedClutOffset` (-8192..8128, 64 per
+/// palette row). Each sum wraps in its u16 field without changing U/V. The
+/// packet's tag, colour/command and screen positions remain untouched. All
+/// three objects are borrowed for the call; no cursor or count is changed.
+static inline void _modelLightingInitFt3Texture(POLY_FT3* triangle, const u32* elementWords, const TmdStreamWorkspace* workspace)
+{
+    // Word indices within the element, excluding the record header.
+    enum {
+        MODEL_LIGHTING_FT3_UV0_CLUT_WORD  = 2, // U0/V0 in low half, CLUT address in high half
+        MODEL_LIGHTING_FT3_UV1_TPAGE_WORD = 3, // U1/V1 in low half, texture-page settings in high half
+        MODEL_LIGHTING_FT3_UV2_WORD       = 4  // U2/V2 in low half; high half is not copied
+    };
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(triangle)  = elementWords[MODEL_LIGHTING_FT3_UV0_CLUT_WORD];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(triangle) = elementWords[MODEL_LIGHTING_FT3_UV1_TPAGE_WORD];
+    *(u16*)&triangle->u2                    = (u16)elementWords[MODEL_LIGHTING_FT3_UV2_WORD];
+    triangle->tpage                        += workspace->texturePageOffset;
+    triangle->clut                         += workspace->encodedClutOffset;
+}
+
+/// Initializes one flat textured quad's persistent texture coordinates and GPU addresses.
+///
+/// `quad` is a writable, four-byte-aligned `POLY_FT4`. `elementWords` points to
+/// a four-byte-aligned element of a `0x5C`/`0x5E` stream record, past its
+/// three-word header, with at least five readable u32 words. Words 2 and 3 pack
+/// unsigned byte U/V texel coordinates with encoded CLUT and texture-page
+/// settings; word 4 packs U2/V2 in its low half and U3/V3 in its high half.
+///
+/// The construction workspace supplies signed displacements in encoded address
+/// units: `texturePageOffset` (-128..127) and `encodedClutOffset` (-8192..8128,
+/// 64 per palette row). Each sum wraps in its u16 field without changing U/V.
+/// The packet's tag, colour/command, screen positions and pad1/pad2 remain
+/// untouched. All three objects are borrowed for the call; no cursor or count
+/// is changed and no pointer is retained.
+static inline void _modelLightingInitFt4Texture(POLY_FT4* quad, const u32* elementWords, const TmdStreamWorkspace* workspace)
+{
+    // Word indices within the element, excluding the record header.
+    enum {
+        MODEL_LIGHTING_FT4_UV0_CLUT_WORD  = 2, // U0/V0 in low half, CLUT address in high half
+        MODEL_LIGHTING_FT4_UV1_TPAGE_WORD = 3, // U1/V1 in low half, texture-page settings in high half
+        MODEL_LIGHTING_FT4_UV2_UV3_WORD   = 4  // U2/V2 in low half, U3/V3 in high half
+    };
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(quad)  = elementWords[MODEL_LIGHTING_FT4_UV0_CLUT_WORD];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(quad) = elementWords[MODEL_LIGHTING_FT4_UV1_TPAGE_WORD];
+    // Halfword stores copy each U/V pair without overwriting the SDK pad fields.
+    *(u16*)&quad->u2 = (u16)elementWords[MODEL_LIGHTING_FT4_UV2_UV3_WORD];
+    *(u16*)&quad->u3 = (u16)(elementWords[MODEL_LIGHTING_FT4_UV2_UV3_WORD] >> 16);
+    quad->tpage     += workspace->texturePageOffset;
+    quad->clut      += workspace->encodedClutOffset;
+}
+
+/// Initializes one gouraud textured triangle's persistent texture coordinates and GPU addresses.
+///
+/// `triangle` is a writable, four-byte-aligned `POLY_GT3`. `elementWords` points
+/// to a four-byte-aligned element of a `0x38`-family stream record, past its
+/// three-word header, with at least six readable u32 words. The first three
+/// words hold geometry references. Words 3 and 4 pack unsigned byte U/V texel
+/// coordinates in their low halves and encoded CLUT and texture-page settings
+/// in their high halves. Word 5's low half packs U2/V2; its high half is ignored.
+///
+/// The construction workspace supplies signed displacements in encoded address
+/// units: `texturePageOffset` (-128..127) and `encodedClutOffset` (-8192..8128,
+/// 64 per palette row). Each sum wraps in its u16 field without changing U/V.
+/// The packet's tag, colours/command, screen positions and pad fields remain
+/// untouched for the draw pass. All three objects are borrowed for the call;
+/// no pointer is retained and no workspace cursor or count is changed.
+static inline void _tmdInitGt3Texture(POLY_GT3* triangle, const u32* elementWords, const TmdStreamWorkspace* workspace)
+{
+    // Word indices within the element, excluding the record header.
+    enum {
+        TMD_GT3_UV0_CLUT_WORD  = 3, // U0/V0 in low half, CLUT address in high half
+        TMD_GT3_UV1_TPAGE_WORD = 4, // U1/V1 in low half, texture-page settings in high half
+        TMD_GT3_UV2_WORD       = 5  // U2/V2 in low half; high half is not copied
+    };
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(triangle)  = elementWords[TMD_GT3_UV0_CLUT_WORD];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(triangle) = elementWords[TMD_GT3_UV1_TPAGE_WORD];
+    // A halfword store copies U2/V2 without overwriting the adjacent pad2.
+    *(u16*)&triangle->u2 = (u16)elementWords[TMD_GT3_UV2_WORD];
+    triangle->tpage     += workspace->texturePageOffset;
+    triangle->clut      += workspace->encodedClutOffset;
+}
+
+/// Seeds one Gouraud textured quad's persistent texture data for the draw pass.
+///
+/// `quad` must address a writable, four-byte-aligned `POLY_GT4` packet.
+/// `elementWords` starts at a four-byte-aligned element payload, after the
+/// record's three-word header, with at least seven readable u32 words. This
+/// minimum does not establish the full element stride. Words 0..3 pack four
+/// vertex and four normal byte offsets; this helper does not read geometry.
+/// On the little-endian target, words 4 and 5 pack unsigned byte U/V texel
+/// coordinates in bits 0..15 and encoded CLUT/page settings in bits 16..31.
+/// Word 6 packs U2/V2 in its low half and U3/V3 in its high half.
+///
+/// `workspace` supplies construction-time signed encoded-address displacements:
+/// `texturePageOffset` (-128..127) and `encodedClutOffset` (-8192..8128, 64 per
+/// palette row). Both sums wrap modulo 65536 in their u16 packet fields without
+/// changing U/V. The packet's tag, colours/command, screen positions and SDK
+/// pad fields are preserved for drawing. All three objects are borrowed for
+/// this call; no pointer is retained and the workspace is unchanged.
+static inline void _modelLightingInitGt4Texture(POLY_GT4* quad, const u32* elementWords, const TmdStreamWorkspace* workspace)
+{
+    // Word indices within the element, excluding the record header.
+    enum {
+        MODEL_LIGHTING_GT4_UV0_CLUT_WORD  = 4, // U0/V0 in low half, CLUT address in high half
+        MODEL_LIGHTING_GT4_UV1_TPAGE_WORD = 5, // U1/V1 in low half, texture-page settings in high half
+        MODEL_LIGHTING_GT4_UV2_UV3_WORD   = 6  // U2/V2 in low half, U3/V3 in high half
+    };
+
+    STATIC_ASSERT(OFFSET_OF(POLY_GT4, v2) == OFFSET_OF(POLY_GT4, u2) + sizeof(u8) &&
+                      OFFSET_OF(POLY_GT4, pad2) == OFFSET_OF(POLY_GT4, u2) + sizeof(u16) &&
+                      OFFSET_OF(POLY_GT4, v3) == OFFSET_OF(POLY_GT4, u3) + sizeof(u8) &&
+                      OFFSET_OF(POLY_GT4, pad3) == OFFSET_OF(POLY_GT4, u3) + sizeof(u16),
+                  model_lighting_gt4_uv_pair_layout);
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(quad)  = elementWords[MODEL_LIGHTING_GT4_UV0_CLUT_WORD];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(quad) = elementWords[MODEL_LIGHTING_GT4_UV1_TPAGE_WORD];
+    // Split the packed U/V pairs without overwriting the adjacent pad2/pad3.
+    *(u16*)&quad->u2 = (u16)elementWords[MODEL_LIGHTING_GT4_UV2_UV3_WORD];
+    *(u16*)&quad->u3 = (u16)(elementWords[MODEL_LIGHTING_GT4_UV2_UV3_WORD] >> 16);
+    quad->tpage     += workspace->texturePageOffset;
+    quad->clut      += workspace->encodedClutOffset;
+}
+
+/// Seeds one per-corner-colour Gouraud quad's persistent texture data for the draw pass.
+///
+/// `quad` must address a writable, four-byte-aligned `POLY_GT4` packet.
+/// `elementWords` starts at a four-byte-aligned element payload, after an
+/// opcode `0x170` record's three-word header, and must provide at least eleven
+/// readable u32 words. Eleven words is the readable minimum, not the element's
+/// stride. Words 0..3 pack eight u16 byte offsets, vertices 0..3 then normals
+/// 0..3. Words 4..7 are the corners' material RGB and command bytes, lit when
+/// the quad is drawn. This helper copies only the texture suffix. On the
+/// little-endian target, word 8 packs U0/V0 in bits 0..15 and the encoded CLUT
+/// in bits 16..31, and word 9 packs U1/V1 in bits 0..15 and the encoded
+/// texture-page settings in bits 16..31. Word 10 packs U2/V2 in its low half
+/// and U3/V3 in its high half.
+///
+/// `workspace` supplies construction-time signed encoded-address displacements:
+/// `texturePageOffset` (-128..127) and `encodedClutOffset` (-8192..8128, 64 per
+/// palette row). Both sums wrap modulo 65536 in their u16 packet fields and
+/// leave U/V unchanged. The packet's tag, colours/command, screen positions and
+/// SDK pad fields stay as they are for drawing. All three objects are borrowed
+/// for this call; no pointer is retained and the workspace is not modified.
+static inline void _modelLightingInitGt4CornerColorsTexture(POLY_GT4* quad, const u32* elementWords,
+                                                            const TmdStreamWorkspace* workspace)
+{
+    // Word indices within the element, excluding the record header.
+    enum {
+        MODEL_LIGHTING_GT4_CORNER_COLORS_UV0_CLUT_WORD  = 8, // U0/V0 in low half, CLUT address in high half
+        MODEL_LIGHTING_GT4_CORNER_COLORS_UV1_TPAGE_WORD = 9, // U1/V1 in low half, texture-page settings in high half
+        MODEL_LIGHTING_GT4_CORNER_COLORS_UV2_UV3_WORD   = 10 // U2/V2 in low half, U3/V3 in high half
+    };
+
+    STATIC_ASSERT(OFFSET_OF(POLY_GT4, v2) == OFFSET_OF(POLY_GT4, u2) + sizeof(u8) &&
+                      OFFSET_OF(POLY_GT4, pad2) == OFFSET_OF(POLY_GT4, u2) + sizeof(u16) &&
+                      OFFSET_OF(POLY_GT4, v3) == OFFSET_OF(POLY_GT4, u3) + sizeof(u8) &&
+                      OFFSET_OF(POLY_GT4, pad3) == OFFSET_OF(POLY_GT4, u3) + sizeof(u16),
+                  model_lighting_gt4_corner_colors_uv_pair_layout);
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(quad)  = elementWords[MODEL_LIGHTING_GT4_CORNER_COLORS_UV0_CLUT_WORD];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(quad) = elementWords[MODEL_LIGHTING_GT4_CORNER_COLORS_UV1_TPAGE_WORD];
+    // Split the packed U/V pairs without overwriting the adjacent pad2/pad3.
+    *(u16*)&quad->u2 = (u16)elementWords[MODEL_LIGHTING_GT4_CORNER_COLORS_UV2_UV3_WORD];
+    *(u16*)&quad->u3 = (u16)(elementWords[MODEL_LIGHTING_GT4_CORNER_COLORS_UV2_UV3_WORD] >> 16);
+    quad->tpage     += workspace->texturePageOffset;
+    quad->clut      += workspace->encodedClutOffset;
+}
+
+/// Initializes one Gouraud textured quad's persistent texture fields from packed element words.
+///
+/// `elementWords` is a four-byte-aligned element base, after the stream record's
+/// three-word header. `uv0ClutWordIndex` counts u32 words from that base and
+/// selects three consecutive readable words in the same element. It must be
+/// nonnegative, with index + 2 representable in s32; bounds are not checked.
+/// The first two words pack unsigned byte U/V texel coordinates in their low
+/// halves and encoded CLUT and texture-page settings in their high halves.
+/// The third word packs U2/V2 in its low half and U3/V3 in its high half.
+/// This readable extent does not establish the element's complete size.
+///
+/// `quad` must be a writable, four-byte-aligned `POLY_GT4`. A construction
+/// workspace supplies signed encoded-address displacements: `texturePageOffset`
+/// (-128..127) and `encodedClutOffset` (-8192..8128, 64 per palette row). Sums
+/// wrap modulo 65536 in the u16 packet fields without changing U/V. The tag,
+/// colours/command, screen positions and SDK pad fields remain untouched.
+/// All storage is borrowed for the call; no pointer is retained and no workspace
+/// cursor or count is changed.
+static inline void _modelLightingInitGt4TextureWords(POLY_GT4* quad, const u32* elementWords, s32 uv0ClutWordIndex,
+                                                     const TmdStreamWorkspace* workspace)
+{
+    // Relative word positions in the packed texture suffix, independent of its element prefix.
+    enum {
+        /// Offset in u32 stream words from a GT4 element's U0/V0/CLUT word to its U1/V1/texture-page word.
+        ///
+        /// The next four-byte word packs U1 in bits 0..7, V1 in bits 8..15 and
+        /// encoded texture-page settings in bits 16..31 on the little-endian
+        /// target. This is independent of the element prefix and of the byte
+        /// spacing between the destination packet's texture fields. Adding it
+        /// to `uv0ClutWordIndex` must fit in s32 and select a readable word in
+        /// the same element. The full word is copied before page relocation.
+        MODEL_LIGHTING_GT4_UV1_TPAGE_WORD_OFFSET = 1,
+        /// Offset in u32 stream words from a GT4 element's U0/V0/CLUT word to its U2/V2/U3/V3 word.
+        ///
+        /// The word two positions later packs U2/V2 in bits 0..15 and U3/V3 in
+        /// bits 16..31 on the little-endian target. Each half is copied into
+        /// the packet's adjacent u/v bytes, preserving pad2 and pad3. This
+        /// offset is independent of the element prefix and the destination
+        /// packet's byte layout. Adding it to `uv0ClutWordIndex` must fit in
+        /// s32 and select a readable u32 word in the same element; it does not
+        /// establish the element's size.
+        MODEL_LIGHTING_GT4_UV2_UV3_WORD_OFFSET = 2
+    };
+
+    STATIC_ASSERT(OFFSET_OF(POLY_GT4, v2) == OFFSET_OF(POLY_GT4, u2) + sizeof(u8) &&
+                      OFFSET_OF(POLY_GT4, pad2) == OFFSET_OF(POLY_GT4, u2) + sizeof(u16) &&
+                      OFFSET_OF(POLY_GT4, v3) == OFFSET_OF(POLY_GT4, u3) + sizeof(u8) &&
+                      OFFSET_OF(POLY_GT4, pad3) == OFFSET_OF(POLY_GT4, u3) + sizeof(u16),
+                  model_lighting_gt4_texture_words_uv_pair_layout);
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(quad)  = elementWords[uv0ClutWordIndex];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(quad) = elementWords[uv0ClutWordIndex + MODEL_LIGHTING_GT4_UV1_TPAGE_WORD_OFFSET];
+    // Split the packed U/V pairs without overwriting the adjacent pad2/pad3.
+    *(u16*)&quad->u2 = (u16)elementWords[uv0ClutWordIndex + MODEL_LIGHTING_GT4_UV2_UV3_WORD_OFFSET];
+    *(u16*)&quad->u3 = (u16)(elementWords[uv0ClutWordIndex + MODEL_LIGHTING_GT4_UV2_UV3_WORD_OFFSET] >> 16);
+    quad->tpage     += workspace->texturePageOffset;
+    quad->clut      += workspace->encodedClutOffset;
+}
+
+/// Initializes the offset-layer texture of one layered Gouraud triangle.
+///
+/// `triangle` must be a writable, four-byte-aligned `POLY_GT3` for the first
+/// packet in a layered pair. `elementWords` starts after a `0x4038` record's
+/// three-word header and provides at least six readable, four-byte-aligned u32
+/// words. Words 3 and 4 pack unsigned byte U/V texel coordinates with encoded
+/// CLUT and texture-page settings; only word 5's low half supplies U2/V2.
+/// This minimum readable extent does not establish the element's full stride.
+///
+/// `workspace->obj` must be a live object. Its `layerTexturePageOffset` adds
+/// -128..127 encoded page units; `layerClutRowOffset` adds -128..127 palette
+/// rows (-8192..8128 encoded CLUT units, 64 per row). These offsets are
+/// independent of the workspace's base-texture offsets. Address sums wrap
+/// modulo 65536 in the packet's u16 fields. Setting ABR bit 5 after relocation
+/// preserves bit 6, selecting mode 1 or 3; drawing enables semi-transparency.
+/// The tag, colours/command, positions and SDK pad fields remain untouched.
+/// All storage is borrowed for the call; no pointer is retained and neither
+/// workspace nor object is modified.
+static inline void _modelLightingInitGt3OffsetLayerTexture(POLY_GT3* triangle, const u32* elementWords, const TmdStreamWorkspace* workspace)
+{
+    enum {
+        /// Index of vertex 0's packed texture/CLUT word for the offset layer.
+        ///
+        /// Counts u32 words from the element base after the stream record's
+        /// three-word header. Words 0..2 hold three vertex and three normal
+        /// references. Word 3 packs unsigned texel coordinates U0 in bits
+        /// 0..7 and V0 in bits 8..15, with the encoded GPU palette address in
+        /// bits 16..31. All four bytes are copied to the first `POLY_GT3`
+        /// packet's u0/v0/clut before the object's signed CLUT-row displacement
+        /// is added. The selected word must be readable and four-byte aligned.
+        MODEL_LIGHTING_GT3_OFFSET_LAYER_UV0_CLUT_WORD_INDEX = 3,
+        /// Index of vertex 1's packed texture/page word for the offset layer.
+        ///
+        /// Counts u32 words from the element base after the stream record's
+        /// three-word header. On the little-endian target, word 4 packs
+        /// unsigned texel coordinates U1 in bits 0..7 and V1 in bits 8..15,
+        /// with encoded page location, colour depth and semi-transparency mode
+        /// in bits 16..31. All four bytes initialize the first `POLY_GT3`
+        /// packet's u1/v1/tpage before the object's signed page displacement
+        /// and blend-mode adjustment; U1/V1 remain unchanged. The selected
+        /// word must be readable and four-byte aligned. This index does not
+        /// define the element's stride or complete extent.
+        MODEL_LIGHTING_GT3_OFFSET_LAYER_UV1_TPAGE_WORD_INDEX = 4,
+        /// Index of vertex 2's packed texture-coordinate word for the offset layer.
+        ///
+        /// Counts u32 words from the element payload after the stream record's
+        /// three-word header. On the little-endian target, word 5 packs
+        /// unsigned texel coordinates U2 in bits 0..7 and V2 in bits 8..15.
+        /// Only the low half initializes the first `POLY_GT3` packet's u2/v2
+        /// bytes, preserving its adjacent `pad2`; the source high half is
+        /// ignored and its role is unproven. The selected word must be readable
+        /// and four-byte aligned. This index does not define the element's
+        /// stride or complete extent.
+        MODEL_LIGHTING_GT3_OFFSET_LAYER_UV2_WORD_INDEX = 5,
+        /// Encoded texture-page mask setting the offset layer's low ABR bit.
+        ///
+        /// Apply to the page after its signed displacement has wrapped to u16.
+        /// The GPU's two-bit semi-transparency mode occupies bits 5..6; ORing
+        /// this mask retains bit 6, selecting mode 1 when clear or 3 when set.
+        /// Every other page bit is preserved. The primitive command separately
+        /// enables semi-transparency.
+        MODEL_LIGHTING_OFFSET_LAYER_TPAGE_ABR_LOW_BIT = 1 << 5,
+        /// Shift from signed offset-layer palette rows to encoded CLUT displacement.
+        ///
+        /// The GPU CLUT address stores Y above six X/16 column bits.
+        /// Sign-extending the object's s8 row offset before this shift converts
+        /// -128..127 rows to -8192..8128 encoded units (64 per row). The sum
+        /// wraps in the packet's u16 CLUT field, preserving the six column bits.
+        MODEL_LIGHTING_OFFSET_LAYER_CLUT_ROW_SHIFT = 6
+    };
+    u32 layerTexturePage;
+    u8  layerClutRowByte;
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(triangle)  = elementWords[MODEL_LIGHTING_GT3_OFFSET_LAYER_UV0_CLUT_WORD_INDEX];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(triangle) = elementWords[MODEL_LIGHTING_GT3_OFFSET_LAYER_UV1_TPAGE_WORD_INDEX];
+    // Copy the U/V byte pair without overwriting the adjacent packet pad2.
+    *(u16*)&triangle->u2 = (u16)elementWords[MODEL_LIGHTING_GT3_OFFSET_LAYER_UV2_WORD_INDEX];
+    // The page sum wraps to u16 before its ABR mode is adjusted.
+    triangle->tpage += workspace->obj->layerTexturePageOffset;
+    // Keep the row byte unsigned until the CLUT calculation restores its sign.
+    layerClutRowByte  = workspace->obj->layerClutRowOffset;
+    layerTexturePage  = triangle->tpage;
+    layerTexturePage |= MODEL_LIGHTING_OFFSET_LAYER_TPAGE_ABR_LOW_BIT;
+    triangle->tpage   = layerTexturePage;
+    triangle->clut   += (s8)layerClutRowByte << MODEL_LIGHTING_OFFSET_LAYER_CLUT_ROW_SHIFT;
+}
+
+/// Initializes the offset-layer texture of one layered Gouraud quad.
+///
+/// `quad` is the writable, four-byte-aligned first `POLY_GT4` of a layered
+/// pair. `elementWords` is the aligned payload base after the record header;
+/// `uv0ClutWordIndex` selects three consecutive readable u32 words within
+/// that element. The index is nonnegative and index + 2 must fit s32. It is
+/// 4 for `0x4078` and 2 for `0x4079`; this does not establish the full stride.
+/// The first two words pack unsigned byte U/V texel coordinates with encoded
+/// CLUT and page settings. The third packs U2/V2 in its low half and U3/V3 in
+/// its high half. Their destination halfword views preserve SDK pad2/pad3.
+///
+/// `workspace->obj` must be a live object. Its `layerTexturePageOffset` adds
+/// -128..127 encoded page units; `layerClutRowOffset` adds -128..127 palette
+/// rows (-8192..8128 encoded CLUT units, 64 per row). These offsets are
+/// independent of the workspace's base-texture offsets. Address sums wrap
+/// modulo 65536 in the packet's u16 fields. Setting ABR bit 5 after relocation
+/// preserves bit 6, selecting mode 1 or 3; drawing enables semi-transparency.
+/// The tag, colours/command, positions and SDK pad fields remain untouched.
+/// All storage is borrowed for the call; no pointer is retained and neither
+/// workspace nor object is modified.
+static inline void _modelLightingInitGt4OffsetLayerTexture(POLY_GT4* quad, const u32* elementWords, s32 uv0ClutWordIndex,
+                                                           const TmdStreamWorkspace* workspace)
+{
+    enum {
+        MODEL_LIGHTING_OFFSET_LAYER_TPAGE_ABR_LOW_BIT = 1 << 5, // OR after relocation; retains ABR bit 6 (mode 1 or 3)
+        MODEL_LIGHTING_OFFSET_LAYER_CLUT_ROW_SHIFT    = 6       // Signed palette rows to encoded CLUT units (64 per row)
+    };
+    u32 layerTexturePage;
+    u8  layerClutRowByte;
+
+    STATIC_ASSERT(OFFSET_OF(POLY_GT4, v2) == OFFSET_OF(POLY_GT4, u2) + sizeof(u8) &&
+                      OFFSET_OF(POLY_GT4, pad2) == OFFSET_OF(POLY_GT4, u2) + sizeof(u16) &&
+                      OFFSET_OF(POLY_GT4, v3) == OFFSET_OF(POLY_GT4, u3) + sizeof(u8) &&
+                      OFFSET_OF(POLY_GT4, pad3) == OFFSET_OF(POLY_GT4, u3) + sizeof(u16),
+                  model_lighting_gt4_offset_layer_uv_pair_layout);
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(quad)  = elementWords[uv0ClutWordIndex];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(quad) = elementWords[uv0ClutWordIndex + 1];
+    // Split the packed U/V pairs without overwriting the adjacent pad2/pad3.
+    *(u16*)&quad->u2 = (u16)elementWords[uv0ClutWordIndex + 2];
+    *(u16*)&quad->u3 = (u16)(elementWords[uv0ClutWordIndex + 2] >> 16);
+    // The page sum wraps to u16 before its ABR mode is adjusted.
+    quad->tpage += workspace->obj->layerTexturePageOffset;
+    // Keep the row byte unsigned until the CLUT calculation restores its sign.
+    layerClutRowByte  = workspace->obj->layerClutRowOffset;
+    layerTexturePage  = quad->tpage;
+    layerTexturePage |= MODEL_LIGHTING_OFFSET_LAYER_TPAGE_ABR_LOW_BIT;
+    quad->tpage       = layerTexturePage;
+    quad->clut       += (s8)layerClutRowByte * (1 << MODEL_LIGHTING_OFFSET_LAYER_CLUT_ROW_SHIFT);
+}
+
+/// Initializes one Gouraud textured triangle's texture from a per-corner-colour element.
+///
+/// `triangle` must be a writable, four-byte-aligned `POLY_GT3`. `elementWords`
+/// starts after an opcode `0x130` record's three-word header and must provide
+/// at least nine readable, four-byte-aligned u32 words. Words 0..2 pack vertex
+/// and normal byte offsets; words 3..5 hold the corners' material colours.
+/// Words 6 and 7 pack unsigned byte U/V texel coordinates in their low halves
+/// and encoded CLUT and texture-page settings in their high halves. Only the
+/// low half of word 8 supplies U2/V2; its upper half is ignored, with no role
+/// established here. Nine words is a minimum readable extent, not an element
+/// stride or complete record size.
+///
+/// The construction workspace supplies signed encoded-address displacements:
+/// `texturePageOffset` (-128..127) and `encodedClutOffset` (-8192..8128, 64 per
+/// palette row). Each sum wraps modulo 65536 in its u16 packet field without
+/// changing U/V. The tag, colours/command, screen positions and pad fields are
+/// preserved for drawing. All storage is borrowed for this call; no pointer is
+/// retained and no workspace cursor or count is changed.
+static inline void _modelLightingInitGt3CornerColorsTexture(POLY_GT3* triangle, const u32* elementWords,
+                                                            const TmdStreamWorkspace* workspace)
+{
+    // Word indices within the element, excluding the record header.
+    enum {
+        MODEL_LIGHTING_GT3_CORNER_COLORS_UV0_CLUT_WORD  = 6, // U0/V0 in low half, CLUT address in high half
+        MODEL_LIGHTING_GT3_CORNER_COLORS_UV1_TPAGE_WORD = 7, // U1/V1 in low half, texture-page settings in high half
+        MODEL_LIGHTING_GT3_CORNER_COLORS_UV2_WORD       = 8  // U2/V2 in low half; high half is not copied
+    };
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(triangle)  = elementWords[MODEL_LIGHTING_GT3_CORNER_COLORS_UV0_CLUT_WORD];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(triangle) = elementWords[MODEL_LIGHTING_GT3_CORNER_COLORS_UV1_TPAGE_WORD];
+    // Copy the U2/V2 pair without overwriting the SDK's adjacent pad2 field.
+    *(u16*)&triangle->u2 = (u16)elementWords[MODEL_LIGHTING_GT3_CORNER_COLORS_UV2_WORD];
+    triangle->tpage     += workspace->texturePageOffset;
+    triangle->clut      += workspace->encodedClutOffset;
+}
+
+/// Initializes a Gouraud textured triangle's persistent texture fields from packed element words.
+///
+/// `elementWords` is a four-byte-aligned element base, after the stream record's
+/// three-word header. `uv0ClutWordIndex` counts u32 words from that base and
+/// selects three consecutive readable words in the same element. It must be
+/// nonnegative, with index + 2 representable in s32; bounds are not checked.
+/// The first two words pack unsigned byte U/V texel coordinates in their low
+/// halves and encoded CLUT and texture-page settings in their high halves.
+/// Only the last word's low half supplies U2/V2; its high half is ignored.
+/// This readable extent does not establish the element's complete size.
+///
+/// `triangle` must be a writable, four-byte-aligned `POLY_GT3`. A construction
+/// workspace supplies signed encoded-address displacements: `texturePageOffset`
+/// (-128..127) and `encodedClutOffset` (-8192..8128, 64 per palette row). Sums
+/// wrap modulo 65536 in the u16 packet fields without changing U/V. The tag,
+/// colours/command, screen positions and pad fields remain untouched for drawing.
+/// All storage is borrowed for the call; no pointer is retained and no workspace
+/// cursor or count is changed.
+static inline void _modelLightingInitGt3TextureWords(POLY_GT3* triangle, const u32* elementWords, s32 uv0ClutWordIndex,
+                                                     const TmdStreamWorkspace* workspace)
+{
+    // Relative word positions in the packed texture suffix, independent of its element prefix.
+    enum {
+        /// Offset in u32 stream words from a GT3 element's U0/V0/CLUT word to its U1/V1/texture-page word.
+        ///
+        /// The next four-byte word packs U1 in bits 0..7, V1 in bits 8..15 and
+        /// encoded texture-page settings in bits 16..31 on the little-endian
+        /// target. This is independent of the element prefix and of the byte
+        /// spacing between the destination packet's texture fields. Adding it
+        /// to `uv0ClutWordIndex` must fit in s32 and select a readable word in
+        /// the same element. The full word is copied before page relocation.
+        MODEL_LIGHTING_GT3_UV1_TPAGE_WORD_OFFSET = 1,
+        /// Offset in u32 stream words from a GT3 element's U0/V0/CLUT word to its U2/V2 word.
+        ///
+        /// The word two positions later packs U2 in bits 0..7 and V2 in bits
+        /// 8..15 on the little-endian target. Only its low half is copied into
+        /// the packet's adjacent u2/v2 bytes, preserving pad2; the source high
+        /// half is ignored and its role is unproven. This offset is independent
+        /// of the element prefix and destination packet's byte layout. Adding
+        /// it to `uv0ClutWordIndex` must fit in s32 and select a readable u32
+        /// word in the same element; it does not establish the element's size.
+        MODEL_LIGHTING_GT3_UV2_WORD_OFFSET = 2
+    };
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(triangle)  = elementWords[uv0ClutWordIndex];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(triangle) = elementWords[uv0ClutWordIndex + MODEL_LIGHTING_GT3_UV1_TPAGE_WORD_OFFSET];
+    // The halfword view copies the U/V byte pair while preserving the SDK's adjacent pad2.
+    *(u16*)&triangle->u2 = (u16)elementWords[uv0ClutWordIndex + MODEL_LIGHTING_GT3_UV2_WORD_OFFSET];
+    triangle->tpage     += workspace->texturePageOffset;
+    triangle->clut      += workspace->encodedClutOffset;
+}
+
+/// Initializes the blended offset-layer texture of one pre-transformed Gouraud triangle.
+///
+/// `triangle` must be a writable, four-byte-aligned `POLY_GT3`; the caller
+/// supplies the first packet of an offset-layer/base pair. `elementWords`
+/// starts after an opcode `0x4039` record's three-word header and must provide
+/// at least five readable, four-byte-aligned u32 words. Words 0..1 contain
+/// depth-cache references and are not read here. Words 2 and 3 pack unsigned
+/// U/V texel bytes in their low halves and encoded CLUT and texture-page
+/// settings in their high halves. Only word 4's low half supplies U2/V2;
+/// its high half is ignored. This minimum extent does not establish a stride.
+///
+/// `workspace->obj` must be a live object. Its `layerTexturePageOffset` adds
+/// -128..127 encoded page units; `layerClutRowOffset` adds -128..127 palette
+/// rows, with 64 encoded CLUT units per row. These displacements are independent
+/// of the workspace's base-texture offsets. Address sums wrap modulo 65536 in
+/// the packet's u16 fields. Setting ABR bit 5 after page relocation preserves
+/// bit 6, selecting blend mode 1 or 3; drawing supplies the semitransparent
+/// command separately. Tags, colours/command, positions and SDK pad fields
+/// remain untouched. All storage is borrowed for the call; no pointer is
+/// retained and neither the workspace nor its object is modified.
+static inline void _modelLightingInitGt3PreXformOffsetLayerTexture(POLY_GT3* triangle, const u32* elementWords,
+                                                                   const TmdStreamWorkspace* workspace)
+{
+    enum {
+        MODEL_LIGHTING_GT3_PRE_XFORM_LAYER_UV0_CLUT_WORD  = 2,      // Packed U0/V0 bytes and encoded CLUT
+        MODEL_LIGHTING_GT3_PRE_XFORM_LAYER_UV1_TPAGE_WORD = 3,      // Packed U1/V1 bytes and encoded page settings
+        MODEL_LIGHTING_GT3_PRE_XFORM_LAYER_UV2_WORD       = 4,      // Low half is U2/V2; high half is ignored
+        MODEL_LIGHTING_OFFSET_LAYER_TPAGE_ABR_LOW_BIT     = 1 << 5, // OR after relocation; retains ABR bit 6 (mode 1 or 3)
+        MODEL_LIGHTING_OFFSET_LAYER_CLUT_ROW_SHIFT        = 6       // Signed palette rows to encoded CLUT units (64 per row)
+    };
+    u32 layerTexturePage;
+    u8  layerClutRowByte;
+
+    MODEL_LIGHTING_UV0_CLUT_WORD(triangle)  = elementWords[MODEL_LIGHTING_GT3_PRE_XFORM_LAYER_UV0_CLUT_WORD];
+    MODEL_LIGHTING_UV1_TPAGE_WORD(triangle) = elementWords[MODEL_LIGHTING_GT3_PRE_XFORM_LAYER_UV1_TPAGE_WORD];
+    // Copy U2/V2 together without overwriting the adjacent pad2.
+    *(u16*)&triangle->u2 = elementWords[MODEL_LIGHTING_GT3_PRE_XFORM_LAYER_UV2_WORD];
+    // Wrap page relocation before selecting the layer's blend mode.
+    triangle->tpage += workspace->obj->layerTexturePageOffset;
+    // Keep the row byte unsigned until conversion to signed encoded CLUT units.
+    layerClutRowByte  = workspace->obj->layerClutRowOffset;
+    layerTexturePage  = triangle->tpage;
+    layerTexturePage |= MODEL_LIGHTING_OFFSET_LAYER_TPAGE_ABR_LOW_BIT;
+    triangle->tpage   = layerTexturePage;
+    triangle->clut   += (s8)layerClutRowByte * (1 << MODEL_LIGHTING_OFFSET_LAYER_CLUT_ROW_SHIFT);
+}
+
+/// Interpolates one lit environment-layer colour with the reference RGB vector.
+///
+/// Uses GPF12/GPL12 with the object's twelve-fraction-bit blend, reading the
+/// blend separately at both loads. Caller gates this at colorBlend < 4096.
+/// `colorCursor` is a writable pointer lvalue; `colorDestination` and the
+/// reference address select live word-aligned colour groups. Cursor assignment
+/// follows the first GTE weight load. Workspace is evaluated twice, destination
+/// and reference once; use simple side-effect-free arguments. Captures no caller
+/// locals. colorCursor is u8*, and referenceColor points to a readable CVECTOR.
+/// GPF12/GPL12 operate on RGB and retain their GTE saturation; this is a Q12
+/// weighted sum. Writes destination RGB while preserving its code/page-marker
+/// byte and clobbers GTE interpolation state.
+/// This statement sequence must stand inside a compound block.
+#define MODEL_LIGHTING_BLEND_ENVIRONMENT_LAYER_COLOR(workspace, colorCursor, colorDestination, referenceColor) \
+    gte_lddp((workspace)->obj->shading.colorBlend);                                                            \
+    (colorCursor) = (colorDestination);                                                                        \
+    gte_ldcv(colorCursor);                                                                                     \
+    gte_gpf12();                                                                                               \
+    gte_lddp(TMD_OBJECT_COLOR_BLEND_ONE - (workspace)->obj->shading.colorBlend);                               \
+    gte_ldcv(referenceColor);                                                                                  \
+    gte_gpl12();                                                                                               \
+    gte_stcv(colorCursor)
+
+/// Rebases unmarked environment U bytes for the second overlapping page.
+///
+/// The u8* U/marker cursors traverse the layer of a live POLY_GT3[2] or POLY_GT4[2],
+/// so their final increments remain within the pair's storage. Corner groups are
+/// twelve bytes apart; the caller initializes cornerIndex to zero. Marker 0
+/// means first page and 1 second page. The signed-byte test selects U >= 128;
+/// adding 128 then storing to u8 subtracts 128 modulo 256. Smaller U clamps
+/// to zero; marked corners retain U. Both byte cursors advance past the last
+/// addressed group and the index ends at cornerCount. Arguments are evaluated
+/// repeatedly and must be simple cursor/index lvalues or a side-effect-free
+/// count, with no aliasing among the cursors. Captures no caller locals; does
+/// not use the GTE. This loop is a single do/while statement.
+#define MODEL_LIGHTING_FOLD_ENVIRONMENT_PAGE_U(pageMarker, textureU, cornerIndex, cornerCount) \
+    do {                                                                                       \
+        if (*(pageMarker) == TMD_ENV_FIRST_PAGE_MARKER) {                                      \
+            if ((s8) * (textureU) < 0) {                                                       \
+                *(textureU) = *(textureU) + TMD_ENV_PAGE_U_DISPLACEMENT;                       \
+            } else {                                                                           \
+                *(textureU) = 0;                                                               \
+            }                                                                                  \
+        }                                                                                      \
+        (textureU) += TMD_ENV_CORNER_STRIDE_BYTES;                                             \
+        (cornerIndex)++;                                                                       \
+        (pageMarker) += TMD_ENV_CORNER_STRIDE_BYTES;                                           \
+    } while ((cornerIndex) < (cornerCount))
+
+/// Lights one corner from its material RGB and complete referenced normal.
+///
+/// Material RGB/code, a complete SVECTOR and the writable colour group must be
+/// word aligned and remain live for the operation. Each argument is evaluated
+/// once, in material/normal/destination order; no caller identifier is captured.
+/// Uses the caller's light/colour matrices and overwrites GTE lighting state.
+/// The material is a readable four-byte CVECTOR/RGB-code word, the normal a
+/// complete eight-byte SVECTOR with Q12 components. NCCS clamps the lit RGB
+/// channels and carries the material's code byte into the four-byte store;
+/// the primitive caller overwrites that code later. Source and output must not
+/// overlap during the operation. No geometry projection or OT linking occurs.
+/// Expands to several statements: use only as a standalone sequence inside a
+/// compound block, never as an unbraced conditional or loop body.
+#define MODEL_LIGHTING_LIGHT_STREAM_CORNER(materialColor, normal, rgb) \
+    gte_ldrgb((materialColor));                                        \
+    gte_ldv0((normal));                                                \
+    gte_nccs();                                                        \
+    gte_strgb((rgb));
+
+/// Prepends layer then base, retaining GPU DMA address and length fields.
+///
+/// `packetPair` addresses two writable, aligned POLY_GT3 slots; the workspace's
+/// GTE result is their valid AVSZ3 OTZ. The display shift is normally 0..3 and
+/// every resulting masked bucket must fit the displaced OT. Address/length masks
+/// must be GPU_DMA_LINK_ADDRESS_MASK/GPU_DMA_PACKET_LENGTH_MASK. Packets and OT
+/// remain GPU-visible through consumption. Arguments are evaluated repeatedly:
+/// supply simple side-effect-free pointers/mask values. Captures no caller locals.
+/// This statement sequence requires an enclosing compound block; it cannot serve
+/// as an unbraced conditional or loop body. Neither GTE nor workspace scratch changes.
+/// Slot 0 is the translucent layer and slot 1 the base. Prepends in that order
+/// leave the base first in GPU traversal. The u32 pointer conversions encode
+/// 24-bit DMA addresses; both OT stores preserve the existing high length byte.
+/// Depth selection and tag loads repeat for each insertion, after AVSZ3 is saved.
+#define MODEL_LIGHTING_LINK_OFFSET_LAYER_TRIANGLE_PAIR(packetPair, workspace, displayState, addressMask, lengthMask)                                                                                                                                            \
+    (packetPair)[0].tag = ((packetPair)[0].tag & (lengthMask)) | ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] & (addressMask)); \
+    (workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] =                                                                               \
+        ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] & (lengthMask)) | ((u32) & (packetPair)[0] & (addressMask));               \
+    (packetPair)[1].tag = ((packetPair)[1].tag & (lengthMask)) | ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] & (addressMask)); \
+    (workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] =                                                                               \
+        ((workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))] & (lengthMask)) | ((u32) & (packetPair)[1] & (addressMask));
+
+/// Maps a corner's screen pixels and rotated normal to environment texels.
+///
+/// Requires simple pointer/lvalue arguments with no side effects: arguments are
+/// evaluated repeatedly. Captures no caller identifiers. GPF12 overwrites
+/// rotated-normal scratch. Writes U, advances screen/texture cursors from X/U
+/// to Y/V, leaves the clamped V in `textureComponent`, and sets `secondPage`
+/// to 1 on U rebasing (the caller initializes it to 0). Expands to a statement
+/// sequence that requires an enclosing compound block; never use as an unbraced
+/// conditional or loop body. The caller stores V
+/// and the page marker in its required order. Normal coefficients have twelve
+/// fractional bits; colorBlend is normally 0..4096. GTE state is clobbered.
+/// workspace is TmdStreamWorkspace*, rotatedNormal writable SVECTOR*,
+/// screenComponent a writable s16* cursor starting at X, textureCoordinate a
+/// writable u8* cursor starting at U. textureComponent/secondPage are distinct
+/// s32 scratch outputs. The normal weight is colorBlend >> 9 in GPF12; a Q12
+/// unit normal therefore displaces at most eight pixels at full blend. Screen
+/// centres are (160,120); U >= 256 moves to the overlapping page by subtracting
+/// 128 and clamps to 191, while V clamps to [0,239]. Normal scratch and the
+/// texture packet must be disjoint; the caller owns all storage.
+#define MODEL_LIGHTING_CALCULATE_ENVIRONMENT_CORNER_UV(workspace, rotatedNormal, screenComponent, textureCoordinate, textureComponent, secondPage) \
+    gte_lddp((workspace)->obj->shading.colorBlend >> TMD_ENV_NORMAL_BLEND_SHIFT);                                                                  \
+    gte_ldsv((rotatedNormal));                                                                                                                     \
+    gte_gpf12();                                                                                                                                   \
+    gte_stsv((rotatedNormal));                                                                                                                     \
+    (textureComponent)  = *(screenComponent) + TMD_ENV_SCREEN_CENTER_X;                                                                            \
+    (textureComponent) -= (rotatedNormal)->vx;                                                                                                     \
+    if ((textureComponent) < 0) {                                                                                                                  \
+        (textureComponent) = 0;                                                                                                                    \
+    } else if ((textureComponent) >= TMD_ENV_FIRST_PAGE_U_LIMIT) {                                                                                 \
+        (textureComponent) -= TMD_ENV_PAGE_U_DISPLACEMENT;                                                                                         \
+        (secondPage)        = TMD_ENV_SECOND_PAGE_MARKER;                                                                                          \
+        if ((textureComponent) >= TMD_ENV_SECOND_PAGE_U_LIMIT) {                                                                                   \
+            (textureComponent) = TMD_ENV_SECOND_PAGE_U_LIMIT - 1;                                                                                  \
+        }                                                                                                                                          \
+    }                                                                                                                                              \
+    *(textureCoordinate) = (textureComponent);                                                                                                     \
+    (screenComponent)++;                                                                                                                           \
+    (textureCoordinate)++;                                                                                                                         \
+    (textureComponent)  = *(screenComponent) + TMD_ENV_SCREEN_CENTER_Y;                                                                            \
+    (textureComponent) -= (rotatedNormal)->vy;                                                                                                     \
+    if ((textureComponent) < 0) {                                                                                                                  \
+        (textureComponent) = 0;                                                                                                                    \
+    } else if ((textureComponent) >= TMD_ENV_V_LIMIT) {                                                                                            \
+        (textureComponent) = TMD_ENV_V_LIMIT - 1;                                                                                                  \
+    }
+
+/// Completes and links a projected, front-facing raw-texture triangle.
+///
+/// The GTE must retain this triangle's screen XY and depths with valid ZSF3.
+/// `triangle` is its prebuilt, aligned POLY_FT3 slot; texture fields persist.
+/// `gteResultDestination` addresses `workspace->gteResult`. Its OT and the
+/// packet must remain GPU-visible through consumption. The display shift is
+/// 0..3 in normal drawing; the wrapped bucket must fit the displaced OT base.
+/// `rawTextureCommand` is 0x25 (opaque) or 0x27 (semitransparent). Pointer
+/// arguments are evaluated repeatedly and must have no side effects; the command
+/// is evaluated once. Captures no caller locals. The do/while wrapper is one
+/// statement. GTE depth/result state and both DMA tags are updated.
+#define MODEL_LIGHTING_LINK_PROJECTED_RAW_FT3(triangle, workspace, gteResultDestination, displayState, rawTextureCommand)   \
+    do {                                                                                                                    \
+        gte_stsxy3_ft3((triangle));                                                                                         \
+        gte_avsz3();                                                                                                        \
+        setlen((triangle), (sizeof(*(triangle)) - sizeof((triangle)->tag)) / sizeof(u32));                                  \
+        setcode((triangle), (rawTextureCommand));                                                                           \
+        gte_stotz((gteResultDestination));                                                                                  \
+        addPrim(&(workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & \
+                                 (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))],                          \
+                (triangle));                                                                                                \
+    } while (0)
+
+/// Completes and links a projected, front-facing raw-texture quad.
+///
+/// The first three XY pairs are already stored in the aligned prebuilt
+/// `quad`; GTE SXY2 holds corner 3 and the depth FIFO holds all four depths.
+/// ZSF4 must be initialized. `gteResultDestination` is `&workspace->gteResult`.
+/// Texture fields persist. The wrapped display-scaled bucket must fit the
+/// displaced OT base; packet and OT storage must outlive GPU consumption.
+/// `rawTextureCommand` is 0x2D (opaque) or 0x2F (semitransparent). Pointer
+/// arguments are evaluated repeatedly and must have no side effects; the command
+/// is evaluated once. Captures no caller locals. The do/while wrapper is one
+/// statement. GTE depth/result state and both DMA tags are updated.
+#define MODEL_LIGHTING_LINK_PROJECTED_RAW_FT4(quad, workspace, gteResultDestination, displayState, rawTextureCommand)       \
+    do {                                                                                                                    \
+        gte_stsxy2(&(quad)->x3);                                                                                            \
+        gte_avsz4();                                                                                                        \
+        setlen((quad), (sizeof(*(quad)) - sizeof((quad)->tag)) / sizeof(u32));                                              \
+        setcode((quad), (rawTextureCommand));                                                                               \
+        gte_stotz((gteResultDestination));                                                                                  \
+        addPrim(&(workspace)->ot[((u32)(workspace)->gteResult << (displayState)->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & \
+                                 (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*(workspace)->ot))],                          \
+                (quad));                                                                                                    \
+    } while (0)
+
+u32* tmdXformStreamVertsEnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    s32                       previousVertexRef;
+    s32                       elementCount;
+    u32                       vertexRef;
+    const TmdLayerCornerRefs* cornerRefs;
+    CVECTOR                   referenceColor;
+    u8*                       textureCoordinate;
+    u8*                       layerColor;
+    s16*                      screenComponent;
+    SVECTOR*                  rotatedNormal;
+    s32                       colorBlend;
+    s32                       secondPage;
+    s32                       textureComponent;
+
+    referenceColor = gModelLightingNeutralColor;
+    elementCount   = workspace->elemCount;
+    if (elementCount == 0) {
+        return elements;
+    }
+    previousVertexRef    = -1;
+    workspace->elemCount = elementCount + previousVertexRef;
+    if (elementCount > 0) {
+        do {
+            cornerRefs = (const TmdLayerCornerRefs*)elements;
+            vertexRef  = cornerRefs->vertexByteRef;
+            // Consecutive identical references reuse the GTE projection and cached depth.
+            if (vertexRef != previousVertexRef) {
+                gte_ldv0((const u8*)workspace->verts + (vertexRef & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_rtps();
+                gte_stsz(&workspace->gteResult);
+                gte_stflg(&workspace->gteFlag);
+                if (workspace->gteFlag & TMD_GTE_ERROR_FLAG) {
+                    workspace->gteResult |= TMD_VERTEX_DEPTH_INVALID;
+                }
+                workspace->szTable[cornerRefs->vertexByteRef >> TMD_STREAM_VERTEX_INDEX_SHIFT] = workspace->gteResult;
+            }
+            previousVertexRef = cornerRefs->vertexByteRef;
+            gte_stsxy(workspace->preXformWrite + cornerRefs->layerColorByteOffset + (OFFSET_OF(POLY_GT3, x0) - OFFSET_OF(POLY_GT3, r0)));
+            gte_stsxy(workspace->preXformWrite + cornerRefs->baseColorByteOffset + (OFFSET_OF(POLY_GT3, x0) - OFFSET_OF(POLY_GT3, r0)));
+            gte_stsxy(&workspace->texCoord);
+            gte_ldv0((const u8*)workspace->normals + (cornerRefs->normalByteRef & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_ldrgb(&_gModelLightingEnvironmentLayerMaterial);
+            gte_nccs();
+            gte_strgb(workspace->preXformWrite + cornerRefs->layerColorByteOffset);
+            gte_ldrgb(&_gModelLightingEnvironmentBaseMaterial);
+            gte_nccs();
+            gte_strgb(workspace->preXformWrite + cornerRefs->baseColorByteOffset);
+            gte_rtv0();
+            gte_stsv(&workspace->elemNormal);
+            elements += workspace->elemStride;
+            // Weight the lit layer colour by the object's blend and the grey
+            // reference by its complement below the full-colour endpoint.
+            colorBlend = workspace->obj->shading.colorBlend;
+            if (colorBlend < TMD_OBJECT_COLOR_BLEND_ONE) {
+                gte_lddp(colorBlend);
+                layerColor = workspace->preXformWrite + cornerRefs->layerColorByteOffset;
+                gte_ldcv(layerColor);
+                gte_gpf12();
+                gte_lddp(TMD_OBJECT_COLOR_BLEND_ONE - colorBlend);
+                gte_ldcv(&referenceColor);
+                gte_gpl12();
+                gte_stcv(layerColor);
+            }
+            screenComponent   = &workspace->texCoord.vx;
+            secondPage        = TMD_ENV_FIRST_PAGE_MARKER;
+            textureCoordinate = workspace->preXformWrite + cornerRefs->layerColorByteOffset + (OFFSET_OF(POLY_GT3, u0) - OFFSET_OF(POLY_GT3, r0));
+            rotatedNormal     = &workspace->elemNormal;
+            MODEL_LIGHTING_CALCULATE_ENVIRONMENT_CORNER_UV(workspace, rotatedNormal, screenComponent, textureCoordinate, textureComponent, secondPage);
+            *textureCoordinate                                 = textureComponent;
+            textureCoordinate[-TMD_ENV_V_TO_PAGE_MARKER_BYTES] = secondPage;
+        } while (workspace->elemCount-- > 0);
+    }
+    return elements;
+}
+
+u32* tmdXformStreamVertsOffsetLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_OFFSET_LAYER_COLOR_SHIFT = 5 };
+    enum { TMD_PREVIOUS_VERTEX_REF_NONE = -1 };
+    s32                       previousVertexRef;
+    s32                       elementCount;
+    u32                       vertexRef;
+    const TmdLayerCornerRefs* cornerRefs;
+    CVECTOR                   layerMaterial;
+    CVECTOR                   baseMaterial;
+    u8*                       screenDestination;
+    s32                       layerIntensity;
+    s32                       baseIntensity;
+
+    layerMaterial   = gModelLightingWhiteColor;
+    baseMaterial    = gModelLightingNeutralColor;
+    layerIntensity  = workspace->obj->shading.colorBlend >> TMD_OFFSET_LAYER_COLOR_SHIFT;
+    baseIntensity   = (TMD_OBJECT_COLOR_BLEND_ONE >> TMD_OFFSET_LAYER_COLOR_SHIFT) - layerIntensity;
+    layerMaterial.b = layerIntensity;
+    layerMaterial.g = layerIntensity;
+    layerMaterial.r = layerIntensity;
+    baseMaterial.b  = baseIntensity;
+    baseMaterial.g  = baseIntensity;
+    baseMaterial.r  = baseIntensity;
+    elementCount    = workspace->elemCount;
+    if (elementCount == 0) {
+        return elements;
+    }
+    previousVertexRef    = TMD_PREVIOUS_VERTEX_REF_NONE;
+    workspace->elemCount = elementCount + previousVertexRef;
+    if (elementCount > 0) {
+        do {
+            cornerRefs = (const TmdLayerCornerRefs*)elements;
+            vertexRef  = cornerRefs->vertexByteRef;
+            // Reuse screen XY and cached Z only for consecutive identical references.
+            if (vertexRef != previousVertexRef) {
+                gte_ldv0((const u8*)workspace->verts + (vertexRef & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_rtps();
+                gte_stsz(&workspace->gteResult);
+                gte_stflg(&workspace->gteFlag);
+                if (workspace->gteFlag & TMD_GTE_ERROR_FLAG) {
+                    workspace->gteResult |= TMD_VERTEX_DEPTH_INVALID;
+                }
+                workspace->szTable[cornerRefs->vertexByteRef >> TMD_STREAM_VERTEX_INDEX_SHIFT] = workspace->gteResult;
+            }
+            previousVertexRef = cornerRefs->vertexByteRef;
+            screenDestination = workspace->preXformWrite + cornerRefs->layerColorByteOffset + sizeof(CVECTOR);
+            gte_stsxy(screenDestination);
+            screenDestination = workspace->preXformWrite + cornerRefs->baseColorByteOffset + sizeof(CVECTOR);
+            gte_stsxy(screenDestination);
+            gte_stsxy(&workspace->texCoord);
+            MODEL_LIGHTING_LIGHT_OFFSET_LAYER_CORNER(workspace, cornerRefs, &layerMaterial, &baseMaterial);
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    return elements;
+}
+
+u32* tmdDrawStreamPrimGt3EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_GT3_OPAQUE_COMMAND     = 0x34,
+           TMD_GT3_SEMI_TRANS_COMMAND = 0x36 };
+    POLY_GT3*  packetPair;
+    const u16* elementHalfwords;
+    const u8*  vertexBytes;
+    const u8*  normalBytes;
+    CVECTOR    referenceColor;
+    SVECTOR*   rotatedNormal;
+    s16*       screenComponent;
+    u8*        textureCoordinate;
+    u8*        layerColor;
+    u8*        pageMarker;
+    u8*        textureU;
+    s32        anySecondPage;
+    s32        secondPage;
+    s32        textureComponent;
+    s32        cornerIndex;
+    s32        payloadWordCount;
+
+    packetPair       = (POLY_GT3*)workspace->primWrite;
+    referenceColor   = gModelLightingNeutralColor;
+    payloadWordCount = sizeof(*packetPair) / sizeof(u32) - 1;
+    if (workspace->elemCount-- > 0) {
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(&workspace->gteFlag);
+            if (workspace->gteFlag >= 0) {
+                gte_nclip();
+                gte_stopz(&workspace->gteResult);
+                if (workspace->gteResult > 0) {
+                    gte_stsxy3_gt3(&packetPair[0]);
+                    gte_stsxy3_gt3(&packetPair[1]);
+                    gte_avsz3();
+                    normalBytes = (const u8*)workspace->normals;
+                    gte_ldv3(normalBytes + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                    gte_ldrgb(&_gModelLightingEnvironmentLayerMaterial);
+                    gte_ncct();
+                    gte_strgb3_gt3(&packetPair[0]);
+                    gte_ldrgb(&_gModelLightingEnvironmentBaseMaterial);
+                    gte_ncct();
+                    gte_strgb3_gt3(&packetPair[1]);
+                    if (workspace->obj->shading.colorBlend < TMD_OBJECT_COLOR_BLEND_ONE) {
+                        MODEL_LIGHTING_BLEND_ENVIRONMENT_LAYER_COLOR(workspace, layerColor, &packetPair[0].r0, &referenceColor);
+                        MODEL_LIGHTING_BLEND_ENVIRONMENT_LAYER_COLOR(workspace, layerColor, &packetPair[0].r1, &referenceColor);
+                        MODEL_LIGHTING_BLEND_ENVIRONMENT_LAYER_COLOR(workspace, layerColor, &packetPair[0].r2, &referenceColor);
+                    }
+                    // Map screen pixels minus scaled view-space normals into the environment texture.
+                    gte_rtv0();
+                    gte_stsv(&workspace->elemNormal);
+                    anySecondPage     = 0;
+                    screenComponent   = &packetPair[0].x0;
+                    textureCoordinate = &packetPair[0].u0;
+                    secondPage        = TMD_ENV_FIRST_PAGE_MARKER;
+                    rotatedNormal     = &workspace->elemNormal;
+                    MODEL_LIGHTING_CALCULATE_ENVIRONMENT_CORNER_UV(workspace, rotatedNormal, screenComponent, textureCoordinate, textureComponent, secondPage);
+                    anySecondPage                                     |= secondPage;
+                    *textureCoordinate                                 = textureComponent;
+                    textureCoordinate[-TMD_ENV_V_TO_PAGE_MARKER_BYTES] = secondPage;
+
+                    gte_rtv1();
+                    gte_stsv(&workspace->elemNormal);
+                    screenComponent   = &packetPair[0].x1;
+                    textureCoordinate = &packetPair[0].u1;
+                    secondPage        = TMD_ENV_FIRST_PAGE_MARKER;
+                    rotatedNormal     = &workspace->elemNormal;
+                    MODEL_LIGHTING_CALCULATE_ENVIRONMENT_CORNER_UV(workspace, rotatedNormal, screenComponent, textureCoordinate, textureComponent, secondPage);
+                    anySecondPage                                     |= secondPage;
+                    *textureCoordinate                                 = textureComponent;
+                    textureCoordinate[-TMD_ENV_V_TO_PAGE_MARKER_BYTES] = secondPage;
+
+                    gte_rtv2();
+                    gte_stsv(&workspace->elemNormal);
+                    screenComponent   = &packetPair[0].x2;
+                    textureCoordinate = &packetPair[0].u2;
+                    secondPage        = TMD_ENV_FIRST_PAGE_MARKER;
+                    rotatedNormal     = &workspace->elemNormal;
+                    MODEL_LIGHTING_CALCULATE_ENVIRONMENT_CORNER_UV(workspace, rotatedNormal, screenComponent, textureCoordinate, textureComponent, secondPage);
+                    anySecondPage                                     |= secondPage;
+                    *textureCoordinate                                 = textureComponent;
+                    textureCoordinate[-TMD_ENV_V_TO_PAGE_MARKER_BYTES] = secondPage;
+
+                    if (anySecondPage == 0) {
+                        packetPair[0].tpage = TMD_ENV_FIRST_TEXTURE_PAGE;
+                    } else {
+                        // Rebase unmarked U bytes when any corner selects the second page.
+                        pageMarker  = &packetPair[0].code;
+                        cornerIndex = 0;
+                        textureU    = &packetPair[0].u0;
+                        MODEL_LIGHTING_FOLD_ENVIRONMENT_PAGE_U(pageMarker, textureU, cornerIndex, TMD_GT3_CORNER_COUNT);
+                        packetPair[0].tpage = TMD_ENV_SECOND_TEXTURE_PAGE;
+                    }
+                    setlen(&packetPair[0], payloadWordCount);
+                    setcode(&packetPair[0], TMD_GT3_SEMI_TRANS_COMMAND);
+                    setlen(&packetPair[1], payloadWordCount);
+                    setcode(&packetPair[1], TMD_GT3_OPAQUE_COMMAND);
+                    gte_stotz(&workspace->gteResult);
+                    addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*workspace->ot)]), &packetPair[0]);
+                    addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*workspace->ot)]), &packetPair[1]);
+                }
+            }
+            packetPair += 2;
+            elements   += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)packetPair;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimGt3OffsetLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_OFFSET_LAYER_COLOR_SHIFT       = 5,
+           TMD_OFFSET_LAYER_TPAGE_ABR_LOW_BIT = 1 << 5 };
+    enum { TMD_GT3_OPAQUE_COMMAND     = 0x34,
+           TMD_GT3_SEMI_TRANS_COMMAND = 0x36 };
+    POLY_GT3*           packetPair;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    u32                 addressMask;
+    u32                 lengthMask;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+    const u8*           normalBytes;
+    CVECTOR             layerMaterial;
+    CVECTOR             baseMaterial;
+    s32                 payloadWordCount;
+    s32                 baseCommand;
+    s32                 layerIntensity;
+    s32                 baseIntensity;
+
+    packetPair      = (POLY_GT3*)workspace->primWrite;
+    layerMaterial   = gModelLightingNeutralColor;
+    baseMaterial    = gModelLightingNeutralColor;
+    layerIntensity  = workspace->obj->shading.colorBlend >> TMD_OFFSET_LAYER_COLOR_SHIFT;
+    baseIntensity   = (TMD_OBJECT_COLOR_BLEND_ONE >> TMD_OFFSET_LAYER_COLOR_SHIFT) - layerIntensity;
+    layerMaterial.b = layerIntensity;
+    layerMaterial.g = layerIntensity;
+    layerMaterial.r = layerIntensity;
+    baseMaterial.b  = baseIntensity;
+    baseMaterial.g  = baseIntensity;
+    baseMaterial.r  = baseIntensity;
+    if (workspace->elemCount-- > 0) {
+        gteResultDestination = &workspace->gteResult;
+        payloadWordCount     = sizeof(*packetPair) / sizeof(u32) - 1;
+        baseCommand          = TMD_GT3_OPAQUE_COMMAND;
+        displayState         = &gDisplayState;
+        addressMask          = GPU_DMA_LINK_ADDRESS_MASK;
+        lengthMask           = GPU_DMA_PACKET_LENGTH_MASK;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(&workspace->gteFlag);
+            if (workspace->gteFlag >= 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                if (workspace->gteResult > 0) {
+                    gte_stsxy3_gt3(&packetPair[0]);
+                    gte_stsxy3_gt3(&packetPair[1]);
+                    gte_avsz3();
+                    normalBytes = (const u8*)workspace->normals;
+                    gte_ldv3(normalBytes + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                    gte_ldrgb(&layerMaterial);
+                    gte_ncct();
+                    gte_strgb3_gt3(&packetPair[0]);
+                    gte_ldrgb(&baseMaterial);
+                    gte_ncct();
+                    gte_strgb3_gt3(&packetPair[1]);
+                    setlen(&packetPair[0], payloadWordCount);
+                    setcode(&packetPair[0], TMD_GT3_SEMI_TRANS_COMMAND);
+                    setlen(&packetPair[1], payloadWordCount);
+                    setcode(&packetPair[1], baseCommand);
+                    packetPair[0].tpage |= TMD_OFFSET_LAYER_TPAGE_ABR_LOW_BIT;
+                    gte_stotz(gteResultDestination);
+                    MODEL_LIGHTING_LINK_OFFSET_LAYER_TRIANGLE_PAIR(packetPair, workspace, displayState, addressMask, lengthMask);
+                }
+            }
+            packetPair += 2;
+            elements   += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)packetPair;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimGt4OffsetLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_GT4_OPAQUE_COMMAND     = 0x3C,
+           TMD_GT4_SEMI_TRANS_COMMAND = 0x3E };
+    enum { TMD_OFFSET_LAYER_COLOR_SHIFT = 5 };
+    POLY_GT4*                            packetPair;
+    s32*                                 gteResultDestination;
+    const DisplayState*                  displayState;
+    u32                                  addressMask;
+    u32                                  lengthMask;
+    u32                                  projectionErrorMask;
+    s32*                                 gteFlagDestination;
+    const _ModelLightingGt4GeometryRefs* geometryRefs;
+    const u8*                            vertexBytes;
+    const u8*                            normalBytes;
+    CVECTOR                              layerMaterial;
+    CVECTOR                              baseMaterial;
+    s32                                  payloadWordCount;
+    s32                                  baseCommand;
+    s32                                  layerIntensity;
+    s32                                  baseIntensity;
+
+    packetPair      = (POLY_GT4*)workspace->primWrite;
+    layerMaterial   = gModelLightingNeutralColor;
+    baseMaterial    = gModelLightingNeutralColor;
+    layerIntensity  = workspace->obj->shading.colorBlend >> TMD_OFFSET_LAYER_COLOR_SHIFT;
+    baseIntensity   = (TMD_OBJECT_COLOR_BLEND_ONE >> TMD_OFFSET_LAYER_COLOR_SHIFT) - layerIntensity;
+    layerMaterial.b = layerIntensity;
+    layerMaterial.g = layerIntensity;
+    layerMaterial.r = layerIntensity;
+    baseMaterial.b  = baseIntensity;
+    baseMaterial.g  = baseIntensity;
+    baseMaterial.r  = baseIntensity;
+    if (workspace->elemCount-- > 0) {
+        gteFlagDestination   = &workspace->gteFlag;
+        projectionErrorMask  = TMD_GTE_ERROR_FLAG;
+        gteResultDestination = &workspace->gteResult;
+        do {
+            geometryRefs = (const _ModelLightingGt4GeometryRefs*)elements;
+            vertexBytes  = (const u8*)workspace->verts;
+            // Projection errors reject the packet; facing is tested separately below.
+            gte_ldv3(vertexBytes + (geometryRefs->vertexByteRefs[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (geometryRefs->vertexByteRefs[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (geometryRefs->vertexByteRefs[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(gteFlagDestination);
+            if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                gte_stsxy3_gt4(&packetPair[0]);
+                gte_stsxy3_gt4(&packetPair[1]);
+                gte_ldv0((const u8*)workspace->verts + (geometryRefs->vertexByteRefs[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_rtps();
+                gte_stflg(gteFlagDestination);
+                if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                    // Draw if NCLIP(0,1,2) > 0, or otherwise NCLIP(1,2,3) < 0.
+                    if (workspace->gteResult > 0 || _modelLightingQuadSecondTriangleFacesViewer(workspace, gteResultDestination)) {
+                        gte_stsxy2(&packetPair[0].x3);
+                        gte_stsxy2(&packetPair[1].x3);
+                        gte_avsz4();
+                        normalBytes = (const u8*)workspace->normals;
+                        gte_ldv3(normalBytes + (geometryRefs->normalByteRefs[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (geometryRefs->normalByteRefs[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (geometryRefs->normalByteRefs[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                        gte_ldrgb(&layerMaterial);
+                        gte_ncct();
+                        gte_strgb3_gt4(&packetPair[0]);
+                        gte_ldrgb(&baseMaterial);
+                        gte_ncct();
+                        gte_strgb3_gt4(&packetPair[1]);
+                        gte_ldv0((const u8*)workspace->normals + (geometryRefs->normalByteRefs[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                        gte_ldrgb(&layerMaterial);
+                        gte_nccs();
+                        gte_strgb(&packetPair[0].r3);
+                        gte_ldrgb(&baseMaterial);
+                        gte_nccs();
+                        gte_strgb(&packetPair[1].r3);
+                        payloadWordCount = sizeof(*packetPair) / sizeof(u32) - 1;
+                        baseCommand      = TMD_GT4_OPAQUE_COMMAND;
+                        displayState     = &gDisplayState;
+                        addressMask      = GPU_DMA_LINK_ADDRESS_MASK;
+                        lengthMask       = GPU_DMA_PACKET_LENGTH_MASK;
+                        setlen(&packetPair[0], payloadWordCount);
+                        setcode(&packetPair[0], TMD_GT4_SEMI_TRANS_COMMAND);
+                        setlen(&packetPair[1], payloadWordCount);
+                        setcode(&packetPair[1], baseCommand);
+                        gte_stotz(gteResultDestination);
+                        _modelLightingLinkOffsetLayerQuadPair(packetPair, workspace, displayState, addressMask, lengthMask);
+                    }
+                }
+            }
+            packetPair += 2;
+            elements   += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)packetPair;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimGt4EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_GT4_OPAQUE_COMMAND     = 0x3C,
+           TMD_GT4_SEMI_TRANS_COMMAND = 0x3E };
+    POLY_GT4*                            packetPair;
+    s32*                                 gteResultDestination;
+    s32*                                 gteFlagDestination;
+    const _ModelLightingGt4GeometryRefs* geometryRefs;
+    const u8*                            vertexBytes;
+    const u8*                            normalBytes;
+    CVECTOR                              referenceColor;
+    SVECTOR*                             rotatedNormal;
+    s16*                                 screenComponent;
+    s16*                                 corner3ScreenPosition;
+    u8*                                  corner3LayerColor;
+    u8*                                  textureCoordinate;
+    u8*                                  textureU;
+    u8*                                  layerColor;
+    u8*                                  pageMarker;
+    s32                                  secondPage;
+    s32                                  anySecondPage;
+    s32                                  textureComponent;
+    s32                                  cornerIndex;
+    s32                                  payloadWordCount;
+
+    packetPair     = (POLY_GT4*)workspace->primWrite;
+    referenceColor = gModelLightingNeutralColor;
+    for (; workspace->elemCount-- > 0; packetPair += 2, elements += workspace->elemStride) {
+        gteFlagDestination   = &workspace->gteFlag;
+        gteResultDestination = &workspace->gteResult;
+        geometryRefs         = (const _ModelLightingGt4GeometryRefs*)elements;
+        vertexBytes          = (const u8*)workspace->verts;
+        // Project packed byte references; packet slots are consumed even on rejection.
+        gte_ldv3(vertexBytes + (geometryRefs->vertexByteRefs[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (geometryRefs->vertexByteRefs[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (geometryRefs->vertexByteRefs[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+        gte_rtpt();
+        gte_stflg(gteFlagDestination);
+        if ((workspace->gteFlag & TMD_GTE_ERROR_FLAG) == 0) {
+            gte_nclip();
+            gte_stopz(gteResultDestination);
+            gte_stsxy3_gt4(&packetPair[0]);
+            gte_stsxy3_gt4(&packetPair[1]);
+            gte_ldv0((const u8*)workspace->verts + (geometryRefs->vertexByteRefs[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtps();
+            gte_stflg(gteFlagDestination);
+            if ((workspace->gteFlag & TMD_GTE_ERROR_FLAG) == 0) {
+                gte_nclip();
+                gte_stsxy2(&packetPair[0].x3);
+                gte_stsxy2(&packetPair[1].x3);
+                // Collapse the rejected half into a repeated endpoint; retain AVSZ4 depths.
+                if (workspace->gteResult <= 0) {
+                    *(u_long*)&packetPair[0].x0 = *(u_long*)&packetPair[0].x1;
+                    *(u_long*)&packetPair[1].x0 = *(u_long*)&packetPair[1].x1;
+                    gte_stopz(gteResultDestination);
+                    if (workspace->gteResult >= 0) {
+                        continue;
+                    }
+                } else {
+                    gte_stopz(gteResultDestination);
+                    if (workspace->gteResult >= 0) {
+                        *(u_long*)&packetPair[0].x3 = *(u_long*)&packetPair[0].x2;
+                        *(u_long*)&packetPair[1].x3 = *(u_long*)&packetPair[1].x2;
+                    }
+                }
+                gte_avsz4();
+                normalBytes = (const u8*)workspace->normals;
+                gte_ldv3(normalBytes + (geometryRefs->normalByteRefs[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (geometryRefs->normalByteRefs[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (geometryRefs->normalByteRefs[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_ldrgb(&_gModelLightingEnvironmentLayerMaterial);
+                gte_ncct();
+                gte_strgb3_gt4(&packetPair[0]);
+                gte_ldrgb(&_gModelLightingEnvironmentBaseMaterial);
+                gte_ncct();
+                gte_strgb3_gt4(&packetPair[1]);
+                // Map screen pixels minus scaled view-space normals into the environment texture.
+                gte_rtv0();
+                gte_stsv(&workspace->elemNormal);
+                anySecondPage     = 0;
+                screenComponent   = &packetPair[0].x0;
+                textureCoordinate = &packetPair[0].u0;
+                secondPage        = TMD_ENV_FIRST_PAGE_MARKER;
+                rotatedNormal     = &workspace->elemNormal;
+                MODEL_LIGHTING_CALCULATE_ENVIRONMENT_CORNER_UV(workspace, rotatedNormal, screenComponent, textureCoordinate, textureComponent, secondPage);
+                *textureCoordinate = textureComponent;
+                textureCoordinate -= TMD_ENV_V_TO_PAGE_MARKER_BYTES;
+                *textureCoordinate = secondPage;
+                anySecondPage     |= secondPage;
+                gte_rtv1();
+                gte_stsv(&workspace->elemNormal);
+                screenComponent   = &packetPair[0].x1;
+                textureCoordinate = &packetPair[0].u1;
+                secondPage        = TMD_ENV_FIRST_PAGE_MARKER;
+                rotatedNormal     = &workspace->elemNormal;
+                MODEL_LIGHTING_CALCULATE_ENVIRONMENT_CORNER_UV(workspace, rotatedNormal, screenComponent, textureCoordinate, textureComponent, secondPage);
+                *textureCoordinate = textureComponent;
+                textureCoordinate -= TMD_ENV_V_TO_PAGE_MARKER_BYTES;
+                *textureCoordinate = secondPage;
+                anySecondPage     |= secondPage;
+                gte_rtv2();
+                gte_stsv(&workspace->elemNormal);
+                screenComponent   = &packetPair[0].x2;
+                textureCoordinate = &packetPair[0].u2;
+                secondPage        = TMD_ENV_FIRST_PAGE_MARKER;
+                rotatedNormal     = &workspace->elemNormal;
+                MODEL_LIGHTING_CALCULATE_ENVIRONMENT_CORNER_UV(workspace, rotatedNormal, screenComponent, textureCoordinate, textureComponent, secondPage);
+                *textureCoordinate    = textureComponent;
+                textureCoordinate    -= TMD_ENV_V_TO_PAGE_MARKER_BYTES;
+                *textureCoordinate    = secondPage;
+                anySecondPage        |= secondPage;
+                corner3ScreenPosition = &packetPair[0].x3;
+                gte_ldv0((const u8*)workspace->normals + (geometryRefs->normalByteRefs[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_ldrgb(&_gModelLightingEnvironmentLayerMaterial);
+                gte_nccs();
+                gte_strgb(&packetPair[0].r3);
+                gte_ldrgb(&_gModelLightingEnvironmentBaseMaterial);
+                gte_nccs();
+                gte_strgb(&packetPair[1].r3);
+                gte_rtv0();
+                gte_stsv(&workspace->elemNormal);
+                screenComponent   = corner3ScreenPosition;
+                textureCoordinate = &packetPair[0].u3;
+                secondPage        = TMD_ENV_FIRST_PAGE_MARKER;
+                rotatedNormal     = &workspace->elemNormal;
+                MODEL_LIGHTING_CALCULATE_ENVIRONMENT_CORNER_UV(workspace, rotatedNormal, screenComponent, textureCoordinate, textureComponent, secondPage);
+                *textureCoordinate = textureComponent;
+                textureCoordinate -= TMD_ENV_V_TO_PAGE_MARKER_BYTES;
+                *textureCoordinate = secondPage;
+
+                anySecondPage |= secondPage;
+                if (workspace->obj->shading.colorBlend < TMD_OBJECT_COLOR_BLEND_ONE) {
+                    MODEL_LIGHTING_BLEND_ENVIRONMENT_LAYER_COLOR(workspace, layerColor, &packetPair[0].r0, &referenceColor);
+
+                    MODEL_LIGHTING_BLEND_ENVIRONMENT_LAYER_COLOR(workspace, layerColor, &packetPair[0].r1, &referenceColor);
+
+                    MODEL_LIGHTING_BLEND_ENVIRONMENT_LAYER_COLOR(workspace, layerColor, &packetPair[0].r2, &referenceColor);
+
+                    MODEL_LIGHTING_BLEND_ENVIRONMENT_LAYER_COLOR(workspace, corner3LayerColor, &packetPair[0].r3, &referenceColor);
+                }
+
+                pageMarker = &packetPair[0].code;
+                if (anySecondPage == 0) {
+                    packetPair[0].tpage = TMD_ENV_FIRST_TEXTURE_PAGE;
+                } else {
+                    cornerIndex = 0;
+                    textureU    = &packetPair[0].u0;
+                    MODEL_LIGHTING_FOLD_ENVIRONMENT_PAGE_U(pageMarker, textureU, cornerIndex, TMD_GT4_CORNER_COUNT);
+                    packetPair[0].tpage = TMD_ENV_SECOND_TEXTURE_PAGE;
+                }
+
+                payloadWordCount = sizeof(*packetPair) / sizeof(u32) - 1;
+                setlen(&packetPair[0], payloadWordCount);
+                setcode(&packetPair[0], TMD_GT4_SEMI_TRANS_COMMAND);
+                setlen(&packetPair[1], payloadWordCount);
+                setcode(&packetPair[1], TMD_GT4_OPAQUE_COMMAND);
+                gte_stotz(gteResultDestination);
+                addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*workspace->ot)]), &packetPair[0]);
+                addPrim((&workspace->ot[(((((u32)workspace->gteResult << gDisplayState.otDepthShift) >> 2) & GPU_ORDERING_TABLE_DEPTH_BYTE_MASK)) / sizeof(*workspace->ot)]), &packetPair[1]);
+            }
+        }
+    }
+    workspace->primWrite = (u8*)packetPair;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimGt3ElemColor(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_GT3_ELEMENT_COLOR_WORD_INDEX = 3 };
+    enum { TMD_GT3_OPAQUE_COMMAND     = 0x34,
+           TMD_GT3_SEMI_TRANS_COMMAND = 0x36 };
+    POLY_GT3*           triangle;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+    const u8*           normalBytes;
+
+    triangle = (POLY_GT3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(&workspace->gteFlag);
+            if (workspace->gteFlag >= 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                if (workspace->gteResult > 0) {
+                    gte_ldrgb(elements + TMD_GT3_ELEMENT_COLOR_WORD_INDEX);
+                    gte_stsxy3_gt3(triangle);
+                    gte_avsz3();
+                    normalBytes = (const u8*)workspace->normals;
+                    gte_ldv3(normalBytes + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                    gte_ncct();
+                    gte_strgb3_gt3(triangle);
+                    setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
+                    setcode(triangle, TMD_GT3_OPAQUE_COMMAND);
+                    if (workspace->obj->flags & TMD_OBJECT_SEMI_TRANS) {
+                        setcode(triangle, TMD_GT3_SEMI_TRANS_COMMAND);
+                    }
+                    gte_stotz(gteResultDestination);
+                    addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], triangle);
+                }
+            }
+            triangle++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimGt4ElemColor(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_GT4_ELEMENT_COLOR_WORD_INDEX = 4 };
+    enum { TMD_GT4_OPAQUE_COMMAND     = 0x3C,
+           TMD_GT4_SEMI_TRANS_COMMAND = 0x3E };
+    POLY_GT4*                            quad;
+    s32*                                 gteResultDestination;
+    const DisplayState*                  displayState;
+    u32                                  projectionErrorMask;
+    s32*                                 gteFlagDestination;
+    const _ModelLightingGt4GeometryRefs* geometryRefs;
+    const u8*                            vertexBytes;
+
+    quad = (POLY_GT4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteFlagDestination   = &workspace->gteFlag;
+        projectionErrorMask  = TMD_GTE_ERROR_FLAG;
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            geometryRefs = (const _ModelLightingGt4GeometryRefs*)elements;
+            vertexBytes  = (const u8*)workspace->verts;
+            // Projection errors reject the packet; facing is tested separately below.
+            gte_ldv3(vertexBytes + (geometryRefs->vertexByteRefs[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (geometryRefs->vertexByteRefs[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (geometryRefs->vertexByteRefs[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(gteFlagDestination);
+            if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                gte_ldrgb(elements + TMD_GT4_ELEMENT_COLOR_WORD_INDEX);
+                gte_stsxy3_gt4(quad);
+                gte_ldv0((const u8*)workspace->verts + (geometryRefs->vertexByteRefs[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_rtps();
+                gte_stflg(gteFlagDestination);
+                if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                    // Draw if NCLIP(0,1,2) > 0, or otherwise NCLIP(1,2,3) < 0.
+                    if (workspace->gteResult > 0 || _modelLightingQuadSecondTriangleFacesViewer(workspace, gteResultDestination)) {
+                        gte_stsxy2(&quad->x3);
+                        gte_avsz4();
+                        _modelLightingLightGt4CornerNormals(quad, workspace, geometryRefs);
+                        setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
+                        setcode(quad, TMD_GT4_OPAQUE_COMMAND);
+                        if (workspace->obj->flags & TMD_OBJECT_SEMI_TRANS) {
+                            setcode(quad, TMD_GT4_SEMI_TRANS_COMMAND);
+                        }
+                        gte_stotz(gteResultDestination);
+                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], quad);
+                    }
+                }
+            }
+            quad++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimFt3(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_FT3_VERTEX_BYTE_OFFSET_MASK = 0xFFF8 }; // Keep aligned eight-byte vertex offsets
+    POLY_FT3*           triangle;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    const u16*          vertexRefs;
+    const u8*           vertexBytes;
+
+    triangle = (POLY_FT3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            // Stream halfwords encode byte offsets; low reference bits are discarded.
+            vertexRefs  = (const u16*)elements;
+            vertexBytes = (const u8*)workspace->verts;
+            gte_ldv3(vertexBytes + (vertexRefs[0] & TMD_FT3_VERTEX_BYTE_OFFSET_MASK),
+                     vertexBytes + (vertexRefs[1] & TMD_FT3_VERTEX_BYTE_OFFSET_MASK),
+                     vertexBytes + (vertexRefs[2] & TMD_FT3_VERTEX_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(&workspace->gteFlag);
+            if (workspace->gteFlag >= 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                if (workspace->gteResult > 0) {
+                    MODEL_LIGHTING_LINK_PROJECTED_RAW_FT3(triangle, workspace, gteResultDestination, displayState, TMD_FT3_RAW_OPAQUE_COMMAND);
+                }
+            }
+            // Rejected triangles consume their construction-reserved slots too.
+            triangle++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimFt4(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_FT4_VERTEX_BYTE_OFFSET_MASK = 0xFFF8 }; // Keep aligned eight-byte vertex offsets
+    POLY_FT4*           quad;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    u32                 projectionErrorMask;
+    s32*                gteFlagDestination;
+    const u16*          vertexRefs;
+    const u8*           vertexBytes;
+
+    quad = (POLY_FT4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteFlagDestination   = &workspace->gteFlag;
+        projectionErrorMask  = TMD_GTE_ERROR_FLAG;
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            vertexRefs  = (const u16*)elements;
+            vertexBytes = (const u8*)workspace->verts;
+            gte_ldv3(vertexBytes + (vertexRefs[0] & TMD_FT4_VERTEX_BYTE_OFFSET_MASK),
+                     vertexBytes + (vertexRefs[1] & TMD_FT4_VERTEX_BYTE_OFFSET_MASK),
+                     vertexBytes + (vertexRefs[2] & TMD_FT4_VERTEX_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(gteFlagDestination);
+            if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                // Retain the first facing result while projecting the fourth corner.
+                gte_stsxy3_ft4(quad);
+                gte_ldv0((const u8*)workspace->verts + (vertexRefs[3] & TMD_FT4_VERTEX_BYTE_OFFSET_MASK));
+                gte_rtps();
+                gte_stflg(gteFlagDestination);
+                if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                    // The FIFO now holds corners 1,2,3; either half may face forward.
+                    if (workspace->gteResult > 0 || _modelLightingQuadSecondTriangleFacesViewer(workspace, gteResultDestination)) {
+                        MODEL_LIGHTING_LINK_PROJECTED_RAW_FT4(quad, workspace, gteResultDestination, displayState, TMD_FT4_RAW_OPAQUE_COMMAND);
+                    }
+                }
+            }
+            // Rejected quads may keep partial XY writes and still consume a slot.
+            quad++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimGt4Unlit(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_GT4*           quad;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    u32                 projectionErrorMask;
+    s32*                gteFlagDestination;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+
+    quad = (POLY_GT4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteFlagDestination   = &workspace->gteFlag;
+        projectionErrorMask  = TMD_GTE_ERROR_FLAG;
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(gteFlagDestination);
+            if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                gte_stsxy3_gt4(quad);
+                gte_ldv0((const u8*)workspace->verts + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_rtps();
+                gte_stflg(gteFlagDestination);
+                if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                    if (workspace->gteResult > 0 || _modelLightingQuadSecondTriangleFacesViewer(workspace, gteResultDestination)) {
+                        gte_stsxy2(&quad->x3);
+                        gte_avsz4();
+                        gte_stotz(gteResultDestination);
+                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], quad);
+                    }
+                }
+            }
+            quad++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimF4(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_F4_OPAQUE_COMMAND = 0x28 };
+    POLY_F4*            quad;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    u32                 projectionErrorMask;
+    s32*                gteFlagDestination;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+
+    quad = (POLY_F4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteFlagDestination   = &workspace->gteFlag;
+        projectionErrorMask  = TMD_GTE_ERROR_FLAG;
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(gteFlagDestination);
+            if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                gte_stsxy3_f4(quad);
+                gte_ldv0((const u8*)workspace->verts + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_rtps();
+                gte_stflg(gteFlagDestination);
+                if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                    if (workspace->gteResult > 0 || _modelLightingQuadSecondTriangleFacesViewer(workspace, gteResultDestination)) {
+                        gte_stsxy2(&quad->x3);
+                        gte_avsz4();
+                        setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
+                        setcode(quad, TMD_F4_OPAQUE_COMMAND);
+                        gte_stotz(gteResultDestination);
+                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], quad);
+                    }
+                }
+            }
+            quad++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimF3(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_F3_OPAQUE_COMMAND = 0x20 };
+    POLY_F3*            triangle;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    u32                 projectionErrorMask;
+    s32*                gteFlagDestination;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+
+    triangle = (POLY_F3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteFlagDestination   = &workspace->gteFlag;
+        projectionErrorMask  = TMD_GTE_ERROR_FLAG;
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(gteFlagDestination);
+            if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                if (workspace->gteResult > 0) {
+                    gte_stsxy3_f3(triangle);
+                    gte_stflg(gteFlagDestination);
+                    if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                        gte_avsz3();
+                        setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
+                        setcode(triangle, TMD_F3_OPAQUE_COMMAND);
+                        gte_stotz(gteResultDestination);
+                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], triangle);
+                    }
+                }
+            }
+            triangle++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimFt3SemiTrans(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_FT3_RAW_SEMI_TRANS_COMMAND = 0x27 };
+    POLY_FT3*           triangle;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+
+    triangle = (POLY_FT3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(&workspace->gteFlag);
+            if (workspace->gteFlag >= 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                if (workspace->gteResult > 0) {
+                    MODEL_LIGHTING_LINK_PROJECTED_RAW_FT3(triangle, workspace, gteResultDestination, displayState, TMD_FT3_RAW_SEMI_TRANS_COMMAND);
+                }
+            }
+            triangle++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimFt4SemiTrans(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_FT4_RAW_SEMI_TRANS_COMMAND = 0x2F };
+    POLY_FT4*           quad;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    u32                 projectionErrorMask;
+    s32*                gteFlagDestination;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+
+    quad = (POLY_FT4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteFlagDestination   = &workspace->gteFlag;
+        projectionErrorMask  = TMD_GTE_ERROR_FLAG;
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(gteFlagDestination);
+            if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                gte_stsxy3_ft4(quad);
+                gte_ldv0((const u8*)workspace->verts + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_rtps();
+                gte_stflg(gteFlagDestination);
+                if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                    if (workspace->gteResult > 0 || _modelLightingQuadSecondTriangleFacesViewer(workspace, gteResultDestination)) {
+                        MODEL_LIGHTING_LINK_PROJECTED_RAW_FT4(quad, workspace, gteResultDestination, displayState, TMD_FT4_RAW_SEMI_TRANS_COMMAND);
+                    }
+                }
+            }
+            quad++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimG3CornerColors(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_CORNER_COLOR_WORD_INDEX = 3 };
+    enum { TMD_G3_OPAQUE_COMMAND = 0x30 };
+    POLY_G3*            triangle;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+
+    triangle = (POLY_G3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(&workspace->gteFlag);
+            if (workspace->gteFlag >= 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                if (workspace->gteResult > 0) {
+                    gte_stsxy3_g3(triangle);
+                    gte_avsz3();
+                    MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX, (const u8*)workspace->normals + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r0);
+                    MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r1);
+                    MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r2);
+                    setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
+                    setcode(triangle, TMD_G3_OPAQUE_COMMAND);
+                    gte_stotz(gteResultDestination);
+                    addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], triangle);
+                }
+            }
+            triangle++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimG3CornerColorsSemiTrans(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_CORNER_COLOR_WORD_INDEX = 3 };
+    enum { TMD_G3_SEMI_TRANS_COMMAND = 0x32 };
+    POLY_G3*            triangle;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+
+    triangle = (POLY_G3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(&workspace->gteFlag);
+            if (workspace->gteFlag >= 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                if (workspace->gteResult > 0) {
+                    gte_stsxy3_g3(triangle);
+                    gte_avsz3();
+                    MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX, (const u8*)workspace->normals + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r0);
+                    MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r1);
+                    MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r2);
+                    setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
+                    setcode(triangle, TMD_G3_SEMI_TRANS_COMMAND);
+                    gte_stotz(gteResultDestination);
+                    addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], triangle);
+                }
+            }
+            triangle++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimG4CornerColors(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_CORNER_COLOR_WORD_INDEX = 4 };
+    enum { TMD_G4_OPAQUE_COMMAND = 0x38 };
+    POLY_G4*            quad;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    u32                 projectionErrorMask;
+    s32*                gteFlagDestination;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+
+    quad = (POLY_G4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteFlagDestination   = &workspace->gteFlag;
+        projectionErrorMask  = TMD_GTE_ERROR_FLAG;
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(gteFlagDestination);
+            if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                gte_stsxy3_g4(quad);
+                gte_ldv0((const u8*)workspace->verts + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_rtps();
+                gte_stflg(gteFlagDestination);
+                if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                    if (workspace->gteResult > 0 || _modelLightingQuadSecondTriangleFacesViewer(workspace, gteResultDestination)) {
+                        gte_stsxy2(&quad->x3);
+                        gte_avsz4();
+                        MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX, (const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r0);
+                        MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r1);
+                        MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[6] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r2);
+                        MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 3, (const u8*)workspace->normals + (elementHalfwords[7] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r3);
+                        setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
+                        setcode(quad, TMD_G4_OPAQUE_COMMAND);
+                        gte_stotz(gteResultDestination);
+                        addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], quad);
+                    }
+                }
+            }
+            quad++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdDrawStreamPrimG4CornerColorsSemiTrans(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_CORNER_COLOR_WORD_INDEX = 4 };
+    enum { TMD_G4_SEMI_TRANS_COMMAND = 0x3A };
+    POLY_G4*            quad;
+    s32*                gteResultDestination;
+    const DisplayState* displayState;
+    u32                 projectionErrorMask;
+    s32*                gteFlagDestination;
+    const u16*          elementHalfwords;
+    const u8*           vertexBytes;
+
+    quad = (POLY_G4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        gteFlagDestination   = &workspace->gteFlag;
+        projectionErrorMask  = TMD_GTE_ERROR_FLAG;
+        gteResultDestination = &workspace->gteResult;
+        displayState         = &gDisplayState;
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexBytes      = (const u8*)workspace->verts;
+            // Project packed byte references; packet slots are consumed even on rejection.
+            gte_ldv3(vertexBytes + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), vertexBytes + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+            gte_rtpt();
+            gte_stflg(gteFlagDestination);
+            if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                gte_nclip();
+                gte_stopz(gteResultDestination);
+                if (workspace->gteResult > 0) {
+                    gte_stsxy3_g4(quad);
+                    gte_ldv0((const u8*)workspace->verts + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                    gte_rtps();
+                    gte_stflg(gteFlagDestination);
+                    if ((workspace->gteFlag & projectionErrorMask) == 0) {
+                        if (workspace->gteResult > 0 || _modelLightingQuadSecondTriangleFacesViewer(workspace, gteResultDestination)) {
+                            gte_stsxy2(&quad->x3);
+                            gte_avsz4();
+                            MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX, (const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r0);
+                            MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r1);
+                            MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[6] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r2);
+                            MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 3, (const u8*)workspace->normals + (elementHalfwords[7] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r3);
+                            setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
+                            setcode(quad, TMD_G4_SEMI_TRANS_COMMAND);
+                            gte_stotz(gteResultDestination);
+                            addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / sizeof(*workspace->ot))], quad);
+                        }
+                    }
+                }
+            }
+            quad++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+void modelLightingSetLayerMaterials(s32 layerIntensity)
+{
+    enum { MODEL_LIGHTING_LAYER_INTENSITY_MAX    = 255,
+           MODEL_LIGHTING_BASE_NEUTRAL_INTENSITY = 128 };
+    s32 baseIntensity;
+
+    if (layerIntensity <= 0) {
+        layerIntensity = 0;
+        baseIntensity  = MODEL_LIGHTING_BASE_NEUTRAL_INTENSITY;
+    } else {
+        if (layerIntensity >= MODEL_LIGHTING_LAYER_INTENSITY_MAX + 1) {
+            layerIntensity = MODEL_LIGHTING_LAYER_INTENSITY_MAX;
+        }
+        baseIntensity = (MODEL_LIGHTING_LAYER_INTENSITY_MAX - layerIntensity) >> 1;
+    }
+
+    _gModelLightingEnvironmentLayerMaterial.r = _gModelLightingEnvironmentLayerMaterial.g = _gModelLightingEnvironmentLayerMaterial.b = layerIntensity;
+    _gModelLightingEnvironmentBaseMaterial.r = _gModelLightingEnvironmentBaseMaterial.g = _gModelLightingEnvironmentBaseMaterial.b = baseIntensity;
+}
+
+u32* tmdXformStreamVertsUnlit(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_PREVIOUS_VERTEX_REF_NONE = -1 };
+    s32        previousVertexRef;
+    s32        elementCount;
+    u32        vertexRef;
+    const u16* elementHalfwords;
+
+    elementCount = workspace->elemCount;
+    if (elementCount == 0) {
+        return elements;
+    }
+    previousVertexRef    = TMD_PREVIOUS_VERTEX_REF_NONE;
+    workspace->elemCount = elementCount + previousVertexRef;
+    if (elementCount > 0) {
+        do {
+            elementHalfwords = (const u16*)elements;
+            vertexRef        = elementHalfwords[0];
+            // Reuse screen XY and cached Z only for consecutive identical references.
+            if (vertexRef != previousVertexRef) {
+                gte_ldv0((const u8*)workspace->verts + (vertexRef & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
+                gte_rtps();
+                gte_stsz(&workspace->gteResult);
+                // Retain the incoming saved FLAG decision rather than publishing this RTPS's FLAG.
+                if (workspace->gteFlag & TMD_GTE_ERROR_FLAG) {
+                    workspace->gteResult |= TMD_VERTEX_DEPTH_INVALID;
+                }
+                workspace->szTable[elementHalfwords[0] >> TMD_STREAM_VERTEX_INDEX_SHIFT] = workspace->gteResult;
+            }
+            previousVertexRef = elementHalfwords[0];
+            gte_stsxy(workspace->preXformWrite + elementHalfwords[1]);
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    return elements;
+}
+
+u32* tmdBuildStreamGt3PreXform(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    // Word offset after the element's three u16 depth references and unused high half.
+    enum { TMD_GT3_PRE_XFORM_UV0_CLUT_WORD_INDEX = 2 };
+    POLY_GT3* triangle;
+
+    triangle = (POLY_GT3*)workspace->preXformWrite;
+    // Seed texture data in the region whose positions and colours the projection pre-pass writes.
+    while (workspace->elemCount-- > 0) {
+        _modelLightingInitGt3TextureWords(triangle, elements, TMD_GT3_PRE_XFORM_UV0_CLUT_WORD_INDEX, workspace);
+        triangle++;
+        elements += workspace->elemStride;
+    }
+    workspace->preXformWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdBuildStreamGt4PreXform(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_GT4_PRE_XFORM_UV0_CLUT_WORD_INDEX = 2 };
+    POLY_GT4* quad;
+
+    quad = (POLY_GT4*)workspace->preXformWrite;
+    // Seed texture data before projection commands supply positions and colours.
+    while (workspace->elemCount-- > 0) {
+        _modelLightingInitGt4TextureWords(quad, elements, TMD_GT4_PRE_XFORM_UV0_CLUT_WORD_INDEX, workspace);
+        quad++;
+        elements += workspace->elemStride;
+    }
+    workspace->preXformWrite = (u8*)quad;
+    return elements;
+}
+
+u32* modelLightingStreamPrimF4PreXform(TmdStreamWorkspace* ws, s32 flags, u32* stream)
+{
+    POLY_F4* poly;
+    s32      color;
+
+    poly = (POLY_F4*)ws->preXformWrite;
+    if (ws->elemCount-- > 0) {
+        do {
+            color = stream[2];
+            setlen(poly, 5);
+            GPU_PRIMITIVE_COLOR_WORD(poly, 0) = color;
+            // The colour word includes the command byte, so the flat code follows it.
+            setcode(poly, 0x28);
+            poly++;
+            stream += ws->elemStride;
+        } while (ws->elemCount-- > 0);
+    }
+    ws->preXformWrite = (u8*)poly;
+    return stream;
+}
+
+u32* modelLightingStreamPrimF3PreXform(TmdStreamWorkspace* ws, s32 flags, u32* stream)
+{
+    POLY_F3* poly;
+    s32      color;
+
+    poly = (POLY_F3*)ws->preXformWrite;
+    if (ws->elemCount-- > 0) {
+        do {
+            color = stream[2];
+            setlen(poly, 4);
+            GPU_PRIMITIVE_COLOR_WORD(poly, 0) = color;
+            // The colour word includes the command byte, so the flat code follows it.
+            setcode(poly, 0x20);
+            poly++;
+            stream += ws->elemStride;
+        } while (ws->elemCount-- > 0);
+    }
+    ws->preXformWrite = (u8*)poly;
+    return stream;
+}
+
+u32* tmdBuildStreamGt3(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_GT3* triangle;
+
+    triangle = (POLY_GT3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        do {
+            _tmdInitGt3Texture(triangle, elements, workspace);
+            triangle++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdBuildStreamGt4(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_GT4* quad;
+
+    quad = (POLY_GT4*)workspace->primWrite;
+    // Seed texture data that persists while drawing updates geometry and lighting.
+    while (workspace->elemCount-- > 0) {
+        _modelLightingInitGt4Texture(quad, elements, workspace);
+        quad++;
+        elements += workspace->elemStride;
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdBuildStreamGt3ElemColor(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    /// Index of the first texture word in a GT3 element with one material colour.
+    ///
+    /// Counts u32 words from the element base, after the three-word record
+    /// header. Opcode `0x30` stores three geometry-reference words followed by
+    /// one material-colour word. This word packs U0/V0 in bits 0..15 and the
+    /// encoded CLUT in bits 16..31; the next two words supply U1/V1/texture-page
+    /// settings and U2/V2 in the last low half. Seven readable words are needed,
+    /// without establishing the element's full extent or the last high half's role.
+    enum { MODEL_LIGHTING_GT3_ELEMENT_COLOR_UV0_CLUT_WORD = 4 };
+    POLY_GT3* triangle;
+
+    triangle = (POLY_GT3*)workspace->primWrite;
+    // Seed texture data for the draw pass that lights the element's material colour.
+    while (workspace->elemCount-- > 0) {
+        _modelLightingInitGt3TextureWords(triangle, elements, MODEL_LIGHTING_GT3_ELEMENT_COLOR_UV0_CLUT_WORD, workspace);
+        triangle++;
+        elements += workspace->elemStride;
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdBuildStreamGt3CornerColors(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_GT3* triangle;
+
+    triangle = (POLY_GT3*)workspace->primWrite;
+    // Seed texture data for the draw pass that lights each corner's material colour.
+    while (workspace->elemCount-- > 0) {
+        _modelLightingInitGt3CornerColorsTexture(triangle, elements, workspace);
+        triangle++;
+        elements += workspace->elemStride;
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdBuildStreamGt4ElemColor(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    /// Index of the first texture word in a GT4 element with one material colour.
+    ///
+    /// Counts u32 words from the element base, after the three-word record
+    /// header. Opcode `0x70` stores four geometry-reference words, then one
+    /// material-colour word, then this word. It packs U0/V0 in bits 0..15 and
+    /// the encoded CLUT in bits 16..31. The next word supplies U1/V1 and the
+    /// encoded texture-page settings, and the word after that packs U2/V2 in
+    /// its low half and U3/V3 in its high half. Eight readable words are
+    /// needed, without establishing the element's full extent.
+    enum { MODEL_LIGHTING_GT4_ELEMENT_COLOR_UV0_CLUT_WORD = 5 };
+    POLY_GT4* quad;
+
+    quad = (POLY_GT4*)workspace->primWrite;
+    // Seed texture data for the draw pass that lights the element's material colour.
+    while (workspace->elemCount-- > 0) {
+        _modelLightingInitGt4TextureWords(quad, elements, MODEL_LIGHTING_GT4_ELEMENT_COLOR_UV0_CLUT_WORD, workspace);
+        quad++;
+        elements += workspace->elemStride;
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdBuildStreamGt4CornerColors(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_GT4* quad;
+
+    quad = (POLY_GT4*)workspace->primWrite;
+    // Seed texture data for the draw pass that lights each corner's material colour.
+    while (workspace->elemCount-- > 0) {
+        _modelLightingInitGt4CornerColorsTexture(quad, elements, workspace);
+        quad++;
+        elements += workspace->elemStride;
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdBuildStreamGt3OneNormal(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum {
+        /// Index of the first packed texture word in a one-face-normal GT3 element.
+        ///
+        /// Counts u32 words from the element base, after the three-word stream
+        /// header for opcodes 0x18/0x1A. Words 0/1 hold three u16 vertex byte
+        /// offsets and one u16 face-normal byte offset. On the little-endian
+        /// target, word 2 packs U0 in bits 0..7, V0 in bits 8..15 and the
+        /// model-relative encoded CLUT address in bits 16..31, copied together
+        /// before palette relocation. The next two words supply U1/V1/tpage
+        /// and U2/V2; only the latter's low half is copied. Each element must
+        /// provide at least five readable words; its complete extent comes
+        /// from the record's word stride rather than this index.
+        MODEL_LIGHTING_GT3_ONE_NORMAL_UV0_CLUT_WORD_INDEX = 2
+    };
+    POLY_GT3* triangle;
+
+    triangle = (POLY_GT3*)workspace->primWrite;
+    // Seed texture data for the draw pass that lights all corners from the face normal.
+    while (workspace->elemCount-- > 0) {
+        _modelLightingInitGt3TextureWords(triangle, elements, MODEL_LIGHTING_GT3_ONE_NORMAL_UV0_CLUT_WORD_INDEX, workspace);
+        triangle++;
+        elements += workspace->elemStride;
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdBuildStreamGt4OneNormal(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_GT4_ONE_NORMAL_UV0_CLUT_WORD_INDEX = 3 };
+    POLY_GT4* quad;
+
+    quad = (POLY_GT4*)workspace->primWrite;
+    // Drawing lights all four corners from the element's face normal.
+    while (workspace->elemCount-- > 0) {
+        _modelLightingInitGt4TextureWords(quad, elements, TMD_GT4_ONE_NORMAL_UV0_CLUT_WORD_INDEX, workspace);
+        quad++;
+        elements += workspace->elemStride;
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdBuildStreamGt4Unlit(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum {
+        TMD_GT4_UNLIT_COLOR_WORD_INDEX    = 2,
+        TMD_GT4_UNLIT_UV0_CLUT_WORD_INDEX = 6,
+        TMD_GT4_UNLIT_SEMI_TRANS_COMMAND  = 0x3E
+    };
+    POLY_GT4* quad;
+    u32       corner3ColorWord;
+
+    quad = (POLY_GT4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        do {
+            // Copy all four colour bytes; only corner 0's command is replaced.
+            GPU_PRIMITIVE_COLOR_WORD(quad, 0) = elements[TMD_GT4_UNLIT_COLOR_WORD_INDEX];
+            GPU_PRIMITIVE_COLOR_WORD(quad, 1) = elements[TMD_GT4_UNLIT_COLOR_WORD_INDEX + 1];
+            GPU_PRIMITIVE_COLOR_WORD(quad, 2) = elements[TMD_GT4_UNLIT_COLOR_WORD_INDEX + 2];
+            corner3ColorWord                  = elements[TMD_GT4_UNLIT_COLOR_WORD_INDEX + 3];
+            setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
+            setcode(quad, TMD_GT4_UNLIT_SEMI_TRANS_COMMAND);
+            GPU_PRIMITIVE_COLOR_WORD(quad, 3) = corner3ColorWord;
+            _modelLightingInitGt4TextureWords(quad, elements, TMD_GT4_UNLIT_UV0_CLUT_WORD_INDEX, workspace);
+            quad++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* modelLightingStreamPrimFt3(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_FT3* triangle;
+
+    triangle = (POLY_FT3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        // Seed persistent texture data before drawing transforms and links the packets.
+        do {
+            _modelLightingInitFt3Texture(triangle, elements, workspace);
+            triangle++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* modelLightingStreamPrimFt4(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_FT4* quad;
+
+    quad = (POLY_FT4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        // Seed persistent texture data before drawing projects and links the packets.
+        do {
+            _modelLightingInitFt4Texture(quad, elements, workspace);
+            quad++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* modelLightingStreamPrimF4(TmdStreamWorkspace* ws, s32 flags, u32* stream)
+{
+    POLY_F4* poly;
+    s32      color;
+
+    poly = (POLY_F4*)ws->primWrite;
+    if (ws->elemCount-- > 0) {
+        do {
+            color = stream[2];
+            setlen(poly, 5);
+            GPU_PRIMITIVE_COLOR_WORD(poly, 0) = color;
+            // The colour word includes the command byte, so the flat code follows it.
+            setcode(poly, 0x28);
+            poly++;
+            stream += ws->elemStride;
+        } while (ws->elemCount-- > 0);
+    }
+    ws->primWrite = (u8*)poly;
+    return stream;
+}
+
+u32* modelLightingStreamPrimF3(TmdStreamWorkspace* ws, s32 flags, u32* stream)
+{
+    POLY_F3* poly;
+    s32      color;
+
+    poly = (POLY_F3*)ws->primWrite;
+    if (ws->elemCount-- > 0) {
+        do {
+            color = stream[2];
+            setlen(poly, 4);
+            GPU_PRIMITIVE_COLOR_WORD(poly, 0) = color;
+            // The colour word includes the command byte, so the flat code follows it.
+            setcode(poly, 0x20);
+            poly++;
+            stream += ws->elemStride;
+        } while (ws->elemCount-- > 0);
+    }
+    ws->primWrite = (u8*)poly;
+    return stream;
+}
+
+u32* tmdBuildStreamGt3OffsetLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_GT3* triangle;
+
+    triangle = (POLY_GT3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        do {
+            // Layer and base share UVs, with independent stream-relative GPU addresses.
+            _modelLightingInitGt3OffsetLayerTexture(triangle, elements, workspace);
+            triangle++;
+            _tmdInitGt3Texture(triangle, elements, workspace);
+            triangle++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdBuildStreamGt3LayeredBase(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_GT3* triangle;
+
+    triangle = (POLY_GT3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        do {
+            // Leave the first packet for the environment layer; texture the opaque base.
+            triangle++;
+            _tmdInitGt3Texture(triangle, elements, workspace);
+            triangle++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdBuildStreamGt4OffsetLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    /// Index of the texture suffix shared by both packets of a layered GT4 element.
+    ///
+    /// Counts u32 words from the element base, after the three-word record
+    /// header. Opcode `0x4078` stores four geometry-reference words, then this
+    /// word. It packs U0/V0 in bits 0..15 and the encoded CLUT in bits 16..31.
+    /// The next word supplies U1/V1 and the encoded texture-page settings, and
+    /// the word after that packs U2/V2 in its low half and U3/V3 in its high
+    /// half. The layer packet relocates this suffix with the object's layer
+    /// offsets; the base packet adds the workspace's base displacements.
+    enum { MODEL_LIGHTING_GT4_OFFSET_LAYER_UV0_CLUT_WORD = 4 };
+    POLY_GT4* quad;
+
+    quad = (POLY_GT4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        do {
+            // Layer and base share UVs, with independent stream-relative GPU addresses.
+            _modelLightingInitGt4OffsetLayerTexture(quad, elements, MODEL_LIGHTING_GT4_OFFSET_LAYER_UV0_CLUT_WORD, workspace);
+            quad++;
+            _modelLightingInitGt4TextureWords(quad, elements, MODEL_LIGHTING_GT4_OFFSET_LAYER_UV0_CLUT_WORD, workspace);
+            quad++;
+            elements += workspace->elemStride;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdBuildStreamGt4LayeredBase(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_GT4* quad;
+
+    quad = (POLY_GT4*)workspace->primWrite;
+    while (workspace->elemCount-- > 0) {
+        // Leave the first packet for the environment layer; texture the opaque base.
+        quad++;
+        _modelLightingInitGt4Texture(quad, elements, workspace);
+        quad++;
+        elements += workspace->elemStride;
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdBuildStreamGt3PreXformEnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum {
+        TMD_GT3_ENV_INITIAL_TEXTURE_DEPTH_4BIT = 0, // GPU texture-depth selector before drawing replaces the page
+        TMD_GT3_ENV_BASE_UV0_CLUT_WORD_INDEX   = 2  // After three u16 depth references and an unused high half
+    };
+    POLY_GT3* triangle;
+
+    triangle = (POLY_GT3*)workspace->preXformWrite;
+    while (workspace->elemCount-- > 0) {
+        // Seed the environment slot; drawing replaces its page after projection supplies U/V.
+        triangle->tpage = getTPage(TMD_GT3_ENV_INITIAL_TEXTURE_DEPTH_4BIT, GPU_BLEND_ADD, 960, 256);
+        triangle->clut  = getClut(256, 240);
+        triangle++;
+        // Only the opaque base receives the element texture and model displacements.
+        _modelLightingInitGt3TextureWords(triangle, elements, TMD_GT3_ENV_BASE_UV0_CLUT_WORD_INDEX, workspace);
+        triangle++;
+        elements += workspace->elemStride;
+    }
+    workspace->preXformWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdBuildStreamGt4PreXformEnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum {
+        TMD_GT4_ENV_INITIAL_TEXTURE_DEPTH_4BIT = 0,
+        TMD_GT4_ENV_BASE_UV0_CLUT_WORD_INDEX   = 2
+    };
+    POLY_GT4* quad;
+
+    quad = (POLY_GT4*)workspace->preXformWrite;
+    while (workspace->elemCount-- > 0) {
+        // Projection supplies the environment UVs; drawing replaces its page.
+        quad->tpage = getTPage(TMD_GT4_ENV_INITIAL_TEXTURE_DEPTH_4BIT, GPU_BLEND_ADD, 960, 256);
+        quad->clut  = getClut(256, 240);
+        quad++;
+        _modelLightingInitGt4TextureWords(quad, elements, TMD_GT4_ENV_BASE_UV0_CLUT_WORD_INDEX, workspace);
+        quad++;
+        elements += workspace->elemStride;
+    }
+    workspace->preXformWrite = (u8*)quad;
+    return elements;
+}
+
+u32* tmdBuildStreamGt3PreXformOffsetLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_GT3_PRE_XFORM_OFFSET_LAYER_BASE_UV0_CLUT_WORD = 2 };
+    POLY_GT3* triangle;
+
+    triangle = (POLY_GT3*)workspace->preXformWrite;
+    while (workspace->elemCount-- > 0) {
+        // Layer and base share UVs, with independent stream-relative GPU addresses.
+        _modelLightingInitGt3PreXformOffsetLayerTexture(triangle, elements, workspace);
+        triangle++;
+        _modelLightingInitGt3TextureWords(triangle, elements, TMD_GT3_PRE_XFORM_OFFSET_LAYER_BASE_UV0_CLUT_WORD, workspace);
+        triangle++;
+        elements += workspace->elemStride;
+    }
+    workspace->preXformWrite = (u8*)triangle;
+    return elements;
+}
+
+u32* tmdBuildStreamGt4PreXformOffsetLayer(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_GT4_PRE_XFORM_OFFSET_LAYER_UV0_CLUT_WORD_INDEX = 2 };
+    POLY_GT4* quad;
+
+    quad = (POLY_GT4*)workspace->preXformWrite;
+    while (workspace->elemCount-- > 0) {
+        // Both packets share UVs; their GPU addresses have independent displacements.
+        _modelLightingInitGt4OffsetLayerTexture(quad, elements, TMD_GT4_PRE_XFORM_OFFSET_LAYER_UV0_CLUT_WORD_INDEX, workspace);
+        quad++;
+        _modelLightingInitGt4TextureWords(quad, elements, TMD_GT4_PRE_XFORM_OFFSET_LAYER_UV0_CLUT_WORD_INDEX, workspace);
+        quad++;
+        elements += workspace->elemStride;
+    }
+    workspace->preXformWrite = (u8*)quad;
+    return elements;
+}
+
+u32* modelLightingReserveStreamPrimG4(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_G4* quad;
+    s32      elementStrideWords;
+
+    quad = (POLY_G4*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        elementStrideWords = workspace->elemStride;
+        // Keep each element's packet slot in step with the later draw pass.
+        do {
+            elements += elementStrideWords;
+            quad++;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)quad;
+    return elements;
+}
+
+u32* modelLightingReserveStreamPrimG3(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    POLY_G3* triangle;
+    s32      elementStrideWords;
+
+    triangle = (POLY_G3*)workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        elementStrideWords = workspace->elemStride;
+        // Keep each element's packet slot in step with the later draw pass.
+        do {
+            elements += elementStrideWords;
+            triangle++;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = (u8*)triangle;
+    return elements;
+}
+
+/// Reserves one untouched 20-byte packet slot per stream element in the second region.
+///
+/// This callback-shaped function has no known callers. Its packet kind is
+/// unproven; a 20-byte stride alone does not establish a POLY_F3 or a sprite.
+/// The caller must supply initial count 0..65535, a stride in u32 words,
+/// readable complete element strides and enough second-region storage.
+/// Bounds are unchecked. Returns elements + initial count * elemStride and
+/// advances primWrite by 20 * count bytes without accessing either payload.
+/// Count ends at -1, even for empty input; preXformWrite is unchanged.
+/// objectFlags is ignored. No allocation occurs and no storage is retained.
+static u32* _tmdReserveStreamPackets20(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_PACKET_SLOT_BYTES = 20 };
+    u8* packetCursor;
+    s32 elementStrideWords;
+
+    packetCursor = workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        elementStrideWords = workspace->elemStride;
+        do {
+            elements     += elementStrideWords;
+            packetCursor += TMD_PACKET_SLOT_BYTES;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = packetCursor;
+    return elements;
+}
+
+/// Reserves one untouched 24-byte packet slot per stream element in the second region.
+///
+/// This callback-shaped function has no known callers. Its packet kind is
+/// unproven; the 24-byte stride does not by itself establish a POLY_F4.
+/// The caller must supply initial count 0..65535, a stride in u32 words,
+/// readable complete element strides and enough second-region storage.
+/// Bounds are unchecked. Returns elements + initial count * elemStride and
+/// advances primWrite by 24 * count bytes without accessing either payload.
+/// Count ends at -1, even for empty input; preXformWrite is unchanged.
+/// objectFlags is ignored. No allocation occurs and no storage is retained.
+static u32* _tmdReserveStreamPackets24(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
+{
+    enum { TMD_PACKET_SLOT_BYTES = 24 };
+    u8* packetCursor;
+    s32 elementStrideWords;
+
+    packetCursor = workspace->primWrite;
+    if (workspace->elemCount-- > 0) {
+        elementStrideWords = workspace->elemStride;
+        do {
+            elements     += elementStrideWords;
+            packetCursor += TMD_PACKET_SLOT_BYTES;
+        } while (workspace->elemCount-- > 0);
+    }
+    workspace->primWrite = packetCursor;
+    return elements;
+}
+
+void gameDebugApplyInputOverride(s32 overrideMode, u16* buttons)
+{
+    enum {
+        GAME_DEBUG_REPLAY_CURSOR_LIMIT_BYTES = 0x17FDF,
+        GAME_DEBUG_REPLAY_BUTTONS_INVALID    = 0xFFFF,
+        GAME_DEBUG_REPLAY_BUTTONS_END        = GAME_DEBUG_REPLAY_BUTTONS_INVALID,
+    };
+    u16 remainingUpdates;
+    u16 recordedButtons;
+    s32 cursorOffsetBytes;
+
+    if (overrideMode == GAME_DEBUG_INPUT_OVERRIDE_EXTERNAL) {
+        func_807150F8(1);
+        return;
+    }
+
+    // The cursor advances in records, but the buffer limit is a byte offset.
+    cursorOffsetBytes = (const u8*)gGameDebugReplayCursor - gFsActorBuffer2Base;
+    if (gDisplayState.demoScene == DISPLAY_DEMO_FIXED_REPLAY) {
+        cursorOffsetBytes = (const u8*)gGameDebugReplayCursor - GAME_DEBUG_FIXED_REPLAY_BASE;
+    }
+    if (cursorOffsetBytes <= GAME_DEBUG_REPLAY_CURSOR_LIMIT_BYTES) {
+        if (gGameMainHaltFlags != 0) {
+            *buttons = gGameDebugReplayButtons;
+            return;
+        }
+        recordedButtons = gGameDebugReplayCursor->buttons;
+        if (recordedButtons != gGameDebugReplayButtons) {
+            gGameDebugReplayButtons         = recordedButtons;
+            gGameDebugReplayFramesRemaining = gGameDebugReplayCursor->holdUpdates;
+        }
+        if (*buttons & PAD_BUTTON_START) {
+            *buttons                                = gGameDebugReplayButtons | PAD_BUTTON_START;
+            gGameMainPersistentState.skipTitleIntro = 1;
+        } else {
+            *buttons = gGameDebugReplayButtons;
+        }
+        // Consume one update regardless of the elapsed display ticks.
+        remainingUpdates                = gGameDebugReplayFramesRemaining - 1;
+        gGameDebugReplayFramesRemaining = remainingUpdates;
+        if (remainingUpdates == 0) {
+            const GameDebugReplayRecord* nextRecord  = gGameDebugReplayCursor + 1;
+            const u16*                   nextButtons = &nextRecord->buttons;
+
+            // Publish the next record before testing its first button halfword.
+            // Invalidating the cache makes that record install its duration.
+            gGameDebugReplayButtons = GAME_DEBUG_REPLAY_BUTTONS_INVALID;
+            gGameDebugReplayCursor  = nextRecord;
+            if (*nextButtons == GAME_DEBUG_REPLAY_BUTTONS_END) {
+                gGameMainPersistentState.skipTitleIntro = 0;
+                gGameDebugState->inputOverrideMode      = GAME_DEBUG_INPUT_OVERRIDE_NONE;
+            }
+        }
+    } else {
+        gGameDebugState->inputOverrideMode = GAME_DEBUG_INPUT_OVERRIDE_NONE;
+    }
+}
+
+/// Initializes deterministic demo playback after the play clock's initial tick sample.
+///
+/// `display` must be the resident display state, with a nonzero demo selector.
+/// Requires the selected 0x18000-byte save-and-input resource to stay loaded
+/// and word-aligned throughout playback. Fixed replay uses development RAM;
+/// other demo selectors use actor-load buffer 2. The serialized prefix precedes
+/// native u16 button/duration pairs, ended by a 0xFFFF button word; only that
+/// stream is viewed as halfwords. Invalidating the cache makes the first replay
+/// update install its duration. Reset order preserves the startup timing.
+static inline void _gameDebugInitializePlayReplay(DisplayState* display)
+{
+    enum {
+        GAME_DEBUG_REPLAY_RANDOM_SEED         = 1,
+        GAME_DEBUG_REPLAY_BUTTONS_INVALID     = 0xFFFF,
+        GAME_DEBUG_REPLAY_INITIAL_FRAMES_LEFT = 1,
+        GAME_DEBUG_REPLAY_STREAM_OFFSET_BYTES = sizeof(McSaveData) + PLAYER_STATUS_SAVE_RECORD_BYTES +
+                                                GAME_FLAG_AKROPOLIS_BANK_BYTES + GAME_FLAG_DRYFIELD_BANK_BYTES + GAME_FLAG_DRYFIELD_NIGHT_BANK_BYTES +
+                                                GAME_FLAG_MINE_SHELTER_BANK_BYTES + GAME_FLAG_NEO_ARK_BANK_BYTES + sizeof(GameFlagNibbleBank)
+    };
+
+    srand(GAME_DEBUG_REPLAY_RANDOM_SEED);
+    display->animFrame       = 0;
+    gDisplayState.frameCount = 0;
+    gRandomLcgState          = 0;
+    display->gameTick        = 0;
+    display->loopCount       = 0;
+    display->vsyncCount      = 0;
+    display->loopTicks       = 0;
+    if (display->demoScene == DISPLAY_DEMO_FIXED_REPLAY) {
+        gGameDebugReplayCursor = (const GameDebugReplayRecord*)(GAME_DEBUG_FIXED_REPLAY_BASE + GAME_DEBUG_REPLAY_STREAM_OFFSET_BYTES);
+    } else {
+        gGameDebugReplayCursor = (const GameDebugReplayRecord*)(gFsActorBuffer2Base + GAME_DEBUG_REPLAY_STREAM_OFFSET_BYTES);
+    }
+    // Invalidate the button cache so the first record installs its duration.
+    gGameDebugReplayButtons            = GAME_DEBUG_REPLAY_BUTTONS_INVALID;
+    gGameDebugReplayFramesRemaining    = GAME_DEBUG_REPLAY_INITIAL_FRAMES_LEFT;
+    gGameDebugState->inputOverrideMode = GAME_DEBUG_INPUT_OVERRIDE_REPLAY;
+}
+
+void playClockInitializeTask(Task* task)
+{
+    _PlayClockWork* work;
+    DisplayState*   display;
+
+    // Sample input before giving the task its zeroed clock and HUD storage.
+    padInputUpdate();
+    gGameSession->field_5E = 1;
+    work                   = memCalloc(sizeof(*work), 0);
+    if (work == NULL) {
+        taskKill(task);
+        return;
+    }
+    hudReset(&work->hud);
+    displaySetFrameTiming(DISPLAY_TIMING_TWO_VBLANKS);
+    // Snapshot the saved minutes and current tick before room startup and demo resets.
+    task->work         = work;
+    work->hours        = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.playTime / 60;
+    work->minutes      = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.playTime % 60;
+    display            = &gDisplayState;
+    work->lastGameTick = display->gameTick;
+    sceneStartRoomTasks();
+    if (display->demoScene != DISPLAY_DEMO_NONE) {
+        _gameDebugInitializePlayReplay(display);
+    } else if (gGameDebugState->field_9 == 1) {
+        func_80715198();
+    }
+    task->state++;
+}
+
+/// Advances the saved minute count and its display from one elapsed game-tick sample.
+///
+/// Borrows live, initialized clock work and the resident save/remainder.
+/// `currentGameTick` is the signed 60-Hz display tick sample; the elapsed
+/// difference and its accumulation must fit s32. A sample reaching 3600 ticks
+/// consumes exactly one minute, retaining any excess ticks for later calls.
+/// Saved/displayed time saturates at 59999 minutes (999:59), but a whole minute
+/// is still removed from the remainder at saturation. The sample is always saved.
+static inline void _playClockAdvanceSavedTime(_PlayClockWork* work, s32 currentGameTick)
+{
+    gPlayClockPendingTicks += currentGameTick - work->lastGameTick;
+    work->lastGameTick      = currentGameTick;
+    if (gPlayClockPendingTicks >= PLAY_CLOCK_TICKS_PER_MINUTE) {
+        McSaveData* minuteSave;
+        gPlayClockPendingTicks -= PLAY_CLOCK_TICKS_PER_MINUTE;
+        minuteSave              = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+        if (minuteSave->state.playTime <= PLAY_CLOCK_MAX_MINUTES - 1) {
+            minuteSave->state.playTime++;
+            work->minutes++;
+            if (work->minutes >= PLAY_CLOCK_MINUTES_PER_HOUR) {
+                work->minutes -= PLAY_CLOCK_MINUTES_PER_HOUR;
+                work->hours++;
+            }
+        } else {
+            minuteSave->state.playTime = PLAY_CLOCK_MAX_MINUTES;
+            work->hours                = PLAY_CLOCK_MAX_MINUTES / PLAY_CLOCK_MINUTES_PER_HOUR;
+            work->minutes              = PLAY_CLOCK_MAX_MINUTES % PLAY_CLOCK_MINUTES_PER_HOUR;
+        }
+    }
+}
+
+/// Ends attachment control and requests PE-effect cancellation before death presentation.
+///
+/// Requires live attachment, room-effect and scene state and space in the CD
+/// ring for the attachment teardown's current-view seek. Clears the attachment
+/// phase first; teardown may replace it with CANCELLED when previously armed.
+/// Teardown resumes actor updates and clears pending attachment/sound state.
+/// Room PE cancellation is deferred to the next controller update; this call
+/// does not wait for effects to release their tasks or resources.
+static inline void _playClockCancelDeathEffects(void)
+{
+    gAttachmentState.effectPhase = ATTACHMENT_EFFECT_IDLE;
+    attachmentCancel();
+    roomEffectRequestCancelPe();
+}
+
+void playClockUpdateTask(Task* task)
+{
+    enum {
+        PLAY_CLOCK_READOUT_DEMO_SCENE        = 1,
+        PLAY_CLOCK_READOUT_OT_INDEX          = 4,
+        PLAY_CLOCK_READOUT_COLOR_RGB         = 0x502008,
+        PLAY_CLOCK_READOUT_PAD_PORT          = 1,
+        PLAY_CLOCK_COMPANION_KYLE            = 1,
+        PLAY_CLOCK_COMPANION_GROWTH_ROOM     = 3,
+        PLAY_CLOCK_WEAPON_STOP_CONTROL       = 8,
+        PLAY_CLOCK_DEATH_RESOURCE_GROUP      = 9,
+        PLAY_CLOCK_PLAYER_DEATH_FILE_BASE    = 0x1D,
+        PLAY_CLOCK_COMPANION_DEATH_FILE_BASE = 0x20
+    };
+    TextDrawReq     timeRequest;
+    u8              numberText[0x20];
+    _PlayClockWork* work;
+    McSaveData*     save;
+    PlayerStatus*   player;
+    GameSession*    session;
+    s32             currentGameTick;
+    s32             companionType;
+
+    work   = task->work;
+    player = &gPlayerStatus;
+    padInputUpdate();
+
+    // Account for at most one minute per call, retaining excess ticks.
+    currentGameTick = gDisplayState.gameTick;
+    _playClockAdvanceSavedTime(work, currentGameTick);
+
+    // Only attract demo 1 draws the clock readout.
+    save = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+    if (save->state.demoScene == PLAY_CLOCK_READOUT_DEMO_SCENE) {
+        timeRequest.x          = -0x96;
+        timeRequest.y          = 0x64;
+        timeRequest.otIndex    = PLAY_CLOCK_READOUT_OT_INDEX;
+        timeRequest.colorRgb   = PLAY_CLOCK_READOUT_COLOR_RGB;
+        timeRequest.glyphTable = TEXT_GLYPH_TABLE_LARGE_ALTERNATE;
+        timeRequest.alignment  = TEXT_ALIGNMENT_LEFT;
+        timeRequest.drawMode   = TEXT_DRAW_OUTLINED;
+        textDrawString(&timeRequest, textItoaUnsigned(numberText, work->hours));
+        textDrawString(&timeRequest, (const u8*)":");
+        textDrawString(&timeRequest, textItoaPadded(numberText, work->minutes, 2));
+        textDrawString(&timeRequest, (const u8*)"'");
+        textDrawString(&timeRequest, textItoaPadded(numberText, gPlayClockPendingTicks / PLAY_CLOCK_TICKS_PER_SECOND, 2));
+        padCheckButtons(PLAY_CLOCK_READOUT_PAD_PORT, PAD_BUTTON_QUERY_PRESSED, PAD_BUTTON_SELECT);
+    }
+
+    // Active events postpone death; eligible deaths prepare presentation before holding the display.
+    if (gGameSession->suppressDeathChecks == 0 && (player->hp <= 0 || (save->state.companionType == PLAY_CLOCK_COMPANION_KYLE && save->state.companionHp <= 0) || (save->state.companionType == PLAY_CLOCK_COMPANION_GROWTH_ROOM && save->state.companionHp <= 0))) {
+        McSaveData* companionSave;
+
+        if (player->hp <= 0) {
+            if (gGameSession->eventState != 0) {
+                player->hp = 1;
+                return;
+            }
+            _playClockCancelDeathEffects();
+            session = gGameSession;
+            if (session->restartMode != GAME_SESSION_RESTART_PRESERVE_DISPLAY) {
+                RANDOM_LCG_ADVANCE();
+                session->deathVariant = (gRandomLcgState >> 16 & 1) + 1;
+                sndEvtRequestScriptStop(SOUND_BANK_TYPE_WEAPON_ALL, PLAY_CLOCK_WEAPON_STOP_CONTROL);
+                sndScriptSetTypeRequestsEnabled(0, SOUND_BANK_TYPE_WEAPON_ALL);
+                cdCmdEnqueueDisplayResource(PLAY_CLOCK_DEATH_RESOURCE_GROUP, ((u8)gGameSession->deathVariant + PLAY_CLOCK_PLAYER_DEATH_FILE_BASE) & 0xFF, CD_COMMAND_DISPLAY_LOAD_DEFAULT);
+            }
+        }
+
+        companionSave = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+        if (companionSave->state.companionHp <= 0) {
+            if (gGameSession->eventState != 0) {
+                companionSave->state.companionHp = 1;
+                return;
+            }
+            _playClockCancelDeathEffects();
+            companionType = companionSave->state.companionType;
+            if (companionType == PLAY_CLOCK_COMPANION_KYLE) {
+                gGameSession->restartMode = companionType;
+                RANDOM_LCG_ADVANCE();
+                gGameSession->deathVariant = (gRandomLcgState >> 16 & 1) + 1;
+                sndEvtRequestScriptStop(SOUND_BANK_TYPE_WEAPON_ALL, PLAY_CLOCK_WEAPON_STOP_CONTROL);
+                sndScriptSetTypeRequestsEnabled(0, SOUND_BANK_TYPE_WEAPON_ALL);
+                cdCmdEnqueueDisplayResource(PLAY_CLOCK_DEATH_RESOURCE_GROUP, ((u8)gGameSession->deathVariant + PLAY_CLOCK_COMPANION_DEATH_FILE_BASE) & 0xFF, CD_COMMAND_DISPLAY_LOAD_DEFAULT);
+                companionType = companionSave->state.companionType;
+            }
+            if (companionType == PLAY_CLOCK_COMPANION_GROWTH_ROOM) {
+                gGameSession->restartMode = GAME_SESSION_RESTART_COMPANION_3_DOWN;
+            }
+        }
+        displayAcquireMenuHold();
+        task->killCountdown               = gGameSession->deathRestartDelay;
+        gGameMainPersistentState.gameOver = 1;
+        task->state++;
+        return;
+    }
+
+    // Ending shares the death wait; continuing play owns the ordinary HUD update.
+    if (gGameSession->restartMode == GAME_SESSION_RESTART_ENDING) {
+        displayAcquireMenuHold();
+        gGameSession->deathVariant = 1;
+        task->state++;
+    } else {
+        hudUpdateAndDraw(&work->hud);
+    }
+}
+
+/// Stops task traversal and abandons the default session list and both frame tables.
+///
+/// Borrows the resident display, which must outlive the following heap reset.
+/// GPU use of both tables must have finished. Does not run task exits or free
+/// allocations: the caller must reset their heaps before reusing the storage.
+/// The current task is detached with the list and becomes invalid at that reset.
+static inline void _playClockDiscardSessionTasksAndPackets(DisplayState* display)
+{
+    display->stopTaskWalk = 1;
+    taskResetDefaultList();
+    gpuClearFrameOrderingTable(0);
+    gpuClearFrameOrderingTable(1);
+}
+
+void playClockRestartSessionTask(Task* task)
+{
+    enum {
+        PLAY_CLOCK_RESTART_FADE_STEP                   = 10,
+        PLAY_CLOCK_RESTART_FADE_LIMIT                  = 256,
+        PLAY_CLOCK_RESTART_FADE_TERMINAL               = 255,
+        PLAY_CLOCK_RESTART_MIDI_FADE_AUDIO_TICKS       = 8,
+        PLAY_CLOCK_RESTART_SCRIPT_FADE_AUDIO_TICKS     = 120,
+        PLAY_CLOCK_RESTART_CLEAR_WIDTH_WORDS           = 320,
+        PLAY_CLOCK_RESTART_CLEAR_HEIGHT_ROWS           = 512,
+        PLAY_CLOCK_ENDING_PRIMITIVE_HEAP_BYTES         = 0xB000,
+        PLAY_CLOCK_ENDING_AUXILIARY_HEAP_BYTES         = 0x30000,
+        PLAY_CLOCK_ENDING_PRIMITIVE_BEFORE_IMAGE_BYTES = 0x35800,
+        PLAY_CLOCK_ENDING_AUXILIARY_BEFORE_IMAGE_BYTES = 0xA800
+    };
+    RECT          clearRegion;
+    DisplayState* display;
+    GameSession*  session;
+    CdCmdQueue*   queue;
+    s32           terminalFadeValue;
+
+    queue = &gCdCmdQueue;
+    playClockAdvanceDeathSound(&task->killCountdown);
+    task->spawnArg1.value += PLAY_CLOCK_RESTART_FADE_STEP;
+    if (task->spawnArg1.value < PLAY_CLOCK_RESTART_FADE_LIMIT) {
+        return;
+    }
+    if (gGameSession->restartMode != GAME_SESSION_RESTART_PRESERVE_DISPLAY) {
+        SetDispMask(0);
+    }
+    sndEvtRequestMidiStop(0, PLAY_CLOCK_RESTART_MIDI_FADE_AUDIO_TICKS);
+    sndEvtRequestScriptStop(SOUND_BANK_TYPE_ALL_NON_AMBIENT, PLAY_CLOCK_RESTART_SCRIPT_FADE_AUDIO_TICKS);
+    sndEvtRequestScriptStop(SOUND_STAGE_AMBIENT, PLAY_CLOCK_RESTART_SCRIPT_FADE_AUDIO_TICKS);
+    terminalFadeValue     = PLAY_CLOCK_RESTART_FADE_TERMINAL;
+    task->spawnArg1.value = terminalFadeValue;
+    padStartInputBlock(0);
+    gameClearTaskSlots();
+    // Retire task traversal and GPU packets before resetting their storage.
+    display = &gDisplayState;
+    _playClockDiscardSessionTasksAndPackets(display);
+    memInitHeaps();
+    cdCmdRequestCancel();
+    session                          = gGameSession;
+    queue->suppressMoviePresentation = 1;
+    if (session->restartMode != GAME_SESSION_RESTART_PRESERVE_DISPLAY) {
+        clearRegion.w = PLAY_CLOCK_RESTART_CLEAR_WIDTH_WORDS;
+        clearRegion.y = 0;
+        clearRegion.x = 0;
+        clearRegion.h = PLAY_CLOCK_RESTART_CLEAR_HEIGHT_ROWS;
+        ClearImage(&clearRegion, 0, 0, 0);
+        DrawSync(0);
+        display->control.flags.imageSource = DISPLAY_IMAGE_NONE;
+    }
+    memset(&gGameSession->location, 0, sizeof(gGameSession->location));
+    memConfigureImageMemory(GAME_STAGE_NONE, 0);
+    // Subtract byte addresses to locate separate heaps before the image workspace.
+    if (gGameSession->restartMode == GAME_SESSION_RESTART_ENDING) {
+        gGpuPrimitiveBufferBytes = PLAY_CLOCK_ENDING_PRIMITIVE_HEAP_BYTES;
+        gMemActiveAuxHeapBytes   = PLAY_CLOCK_ENDING_AUXILIARY_HEAP_BYTES;
+        gGpuPrimitiveBufferBase  = (u8*)((u32)gFsImageWorkspacePtr - PLAY_CLOCK_ENDING_PRIMITIVE_BEFORE_IMAGE_BYTES);
+        gMemActiveAuxHeap        = (void*)((u32)gFsImageWorkspacePtr - PLAY_CLOCK_ENDING_AUXILIARY_BEFORE_IMAGE_BYTES);
+    }
+    memInitHeaps();
+    memInitAuxHeap();
+    if (gGameSession->restartMode != GAME_SESSION_RESTART_ENDING) {
+        cdCmdReservePlaybackBuffers();
+    }
+    taskSpawnFromTable(&gLoadingRestartPresentationTaskDesc, 0, 0, 0);
+}

@@ -1,0 +1,74 @@
+// Overlay-local symbols for shelter_1f_parking_garage.
+_gShelter1fParkingGarageGlowPoints = 0x80180BEC; // size:0x68 defined:True
+gShelter1fParkingGarageCollisionRooms = 0x80180C64; // size:0x10 defined:True
+gShelter1fParkingGarageRoomLighting = 0x80180C74; // size:0x8 defined:True
+gShelter1fParkingGarageViewMaps = 0x80180C7C; // size:0x4 defined:True
+gShelter1fParkingGarageViewCounts = 0x80180C80; // size:0x2 defined:True
+gShelter1fParkingGarageWarps = 0x80180C84; // size:0x70 defined:True
+_gShelter1fParkingGarageCollisionGridNormals = 0x80180CF4; // size:0x58 defined:True
+_gShelter1fParkingGarageCollisionGridVerts = 0x80180D4C; // size:0x110 defined:True
+_gShelter1fParkingGarageCollisionGridFaces = 0x80180E5C; // size:0x9C defined:True
+_gShelter1fParkingGarageCollisionGridCells = 0x80180EF8; // size:0xB0 defined:True
+_gShelter1fParkingGarageCollisionGridTable = 0x80180FA8; // size:0x40 defined:True
+_gShelter1fParkingGarageCollisionGrid = 0x80180FE8; // size:0x24 defined:True
+gShelter1fParkingGarageViewCameras = 0x8018100C; // size:0x90 defined:True
+_gShelter1fParkingGarageView1SpriteBatches = 0x8018109C; // size:0x10 defined:True
+_gShelter1fParkingGarageView2SpriteSources = 0x801810AC; // size:0x104 defined:True
+_gShelter1fParkingGarageView2SpriteBatches = 0x801811B0; // size:0x20 defined:True
+_gShelter1fParkingGarageView3SpriteSources = 0x801811D0; // size:0x230 defined:True
+_gShelter1fParkingGarageView3SpriteBatches = 0x80181400; // size:0x20 defined:True
+_gShelter1fParkingGarageView4SpriteBatches = 0x80181420; // size:0x10 defined:True
+gShelter1fParkingGarageSpriteViews = 0x80181430; // size:0x30 defined:True
+_gShelter1fParkingGaragePointLights = 0x80181460; // size:0x180 defined:True
+_gShelter1fParkingGarageLights = 0x801815E0; // size:0x18 defined:True
+_gShelter1fParkingGarageViewBoundaryTriggers = 0x801815F8; // size:0x130 defined:True
+_gShelter1fParkingGarageActionTriggers = 0x80181728; // size:0x17C defined:True
+_gShelter1fParkingGarageViewAmbientMinima = 0x801818A4; // size:0x28 defined:True
+_gShelter1fParkingGarageEmptyAreaResources = 0x801818CC; // size:0xC defined:True
+gShelter1fParkingGarageAreaVariants = 0x801818D8; // size:0x60 defined:True
+_gShelter1fParkingGarageFloorFootstepSounds = 0x80181938; // size:0xC defined:True
+_gShelter1fParkingGarageBlockingSurface = 0x80181944; // size:0x8 defined:True
+_gShelter1fParkingGarageFloorSurface = 0x8018194C; // size:0x8 defined:True
+gShelter1fParkingGarageSurfaceProperties = 0x80181954; // size:0x20 defined:True
+gRoomEventFade = 0x80181974; // size:0x4 defined:True
+_gShelter1fParkingGarageUndergroundDepartureFade = 0x80181978; // size:0x4 defined:True
+_gRoomEventStagedMsg = 0x8018197C; // size:0x8 defined:True
+gViewIdentityMap = 0x8010CAF8; // absolute:True
+gMapNeoArkParkingGarageDefaultPlacements = 0x8017AEC0; // absolute:True owner=map_neo_ark
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x80180C54; // size:0x10 defined:True
+_gShelter1fParkingGarageStagedEventStarted = 0x80181984; // size:0x1 defined:True
+D_shelter_1f_parking_garage_80181985 = 0x80181985; // size:0x1 defined:True
+D_shelter_1f_parking_garage_80181986 = 0x80181986; // size:0x1 defined:True
+D_shelter_1f_parking_garage_80181987 = 0x80181987; // size:0x1 defined:True
+gRoomDeparture = 0x80181988; // size:0xC defined:True
+gRoomEventLatched = 0x80181998; // size:0xC defined:True
+_gShelter1fParkingGarageDepartureTaskDesc = 0x80180BA0; // size:0xC defined:True
+_gShelter1fParkingGarageStagedEventTaskDesc = 0x80180BAC; // size:0xC defined:True
+_gShelter1fParkingGarageRoomMessages = 0x80180BB8; // size:0x28 defined:True
+_gShelter1fParkingGarageUndergroundDepartureTaskDesc = 0x80180BE0; // size:0xC defined:True
+
+shelter1fParkingGarageDrawViewGlowsTask = 0x8017DF6C; // type:func
+
+shelter1fParkingGarageRoomVisualEffectsFlashTask = 0x8017EC0C; // type:func
+
+shelter1fParkingGarageRoomVisualEffectsTwinTrailTask = 0x8017F670; // type:func
+
+shelter1fParkingGarageRoomVisualEffectsSparkBurstTask = 0x8017FF58; // type:func
+_roomVisualEffectsDrawFlashRing = 0x8017EEB0; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x8017F2DC; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x8017FB60; // type:func
+_roomVisualEffectsDrawBurstStar = 0x801801E0; // type:func
+roomEventStagedTask = 0x8017D958; // type:func
+_glowDrawFactorDisc = 0x8017E868; // type:func
+roomEventDepartureTask = 0x8017D7E8; // type:func
+_roomVariantResolveShelter = 0x8017D6AC; // type:func
+_glowDrawAngledCapsule = 0x8017E080; // type:func
+_shelter1fParkingGarageRejectKeyItemMessage = 0x8017dcec; // type:func
+_shelter1fParkingGarageIgnoreCommandMessage = 0x8017de44; // type:func
+_shelter1fParkingGarageIdle = 0x8017df04; // type:func
+_shelter1fParkingGarageUndergroundDepartureTask = 0x8017daf0; // type:func
+_shelter1fParkingGarageResolveRoomEvent = 0x8017dcf4; // type:func
+_shelter1fParkingGarageHandleRoomAction = 0x8017de4c; // type:func
+_shelter1fParkingGarageInitializeRoom = 0x8017de9c; // type:func
+shelter1fParkingGarageRoomTask = 0x8017df14; // type:func
+_gShelter1fParkingGarageRoomStateHandlers = 0x8017d6a0;

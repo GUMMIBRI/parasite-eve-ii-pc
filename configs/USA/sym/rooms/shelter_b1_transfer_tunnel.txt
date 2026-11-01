@@ -1,0 +1,73 @@
+// Overlay-local symbols for shelter_b1_transfer_tunnel.
+_gShelterB1TransferTunnelGlowPoints = 0x801828E8; // size:0x48 defined:True
+_gShelterB1TransferTunnelRoomMessages = 0x801828C0; // size:0x28 defined:True
+_gRoomVisualEffectsHaloShades = 0x80182930; // size:0x14 defined:True
+gShelterB1TransferTunnelRoomViewMaps = 0x80182954; // size:0x4 defined:True
+gShelterB1TransferTunnelRoomViewCounts = 0x80182958; // size:0x2 defined:True
+gShelterB1TransferTunnelWarpEntries = 0x8018295C; // size:0x70 defined:True
+_gShelterB1TransferTunnelRoomCollisionNormals = 0x801829CC; // size:0x30 defined:True
+_gShelterB1TransferTunnelRoomCollisionVerts = 0x801829FC; // size:0x60 defined:True
+_gShelterB1TransferTunnelRoomCollisionFaces = 0x80182A5C; // size:0x48 defined:True
+_gShelterB1TransferTunnelRoomCollisionCells = 0x80182AA4; // size:0x30 defined:True
+_gShelterB1TransferTunnelRoomCollisionTable = 0x80182AD4; // size:0x18 defined:True
+gShelterB1TransferTunnelRoomCollision = 0x80182AEC; // size:0x24 defined:True
+gShelterB1TransferTunnelViewCameras = 0x80182B10; // size:0x90 defined:True
+_gShelterB1TransferTunnelView1SpriteBatches = 0x80182BA0; // size:0x10 defined:True
+_gShelterB1TransferTunnelView2SpriteBatches = 0x80182BB0; // size:0x10 defined:True
+_gShelterB1TransferTunnelView3SpriteBatches = 0x80182BC0; // size:0x10 defined:True
+_gShelterB1TransferTunnelView4SpriteBatches = 0x80182BD0; // size:0x10 defined:True
+gShelterB1TransferTunnelSpriteViews = 0x80182BE0; // size:0x30 defined:True
+_gShelterB1TransferTunnelPointLights = 0x80182C10; // size:0x180 defined:True
+gShelterB1TransferTunnelRoomLights = 0x80182D90; // size:0x18 defined:True
+gShelterB1TransferTunnelViewBoundaryTriggers = 0x80182DA8; // size:0x130 defined:True
+gShelterB1TransferTunnelWarpTriggers = 0x80182ED8; // size:0x98 defined:True
+_gShelterB1TransferTunnelVariant1Resources = 0x80182F70; // size:0x24 defined:True
+_gShelterB1TransferTunnelVariant11Resources = 0x80182F94; // size:0x24 defined:True
+_gShelterB1TransferTunnelVariant1Placements = 0x80182FB8; // size:0x80 defined:True
+_gShelterB1TransferTunnelVariant11Placements = 0x80183038; // size:0x80 defined:True
+gShelterB1TransferTunnelAreaVariants = 0x801830B8; // size:0xB0 defined:True
+_gShelterB1TransferTunnelFloorFootstepSounds = 0x80183168; // size:0xC defined:True
+_gShelterB1TransferTunnelDefaultSurface = 0x80183174; // size:0x8 defined:True
+_gShelterB1TransferTunnelFloorSurface = 0x8018317C; // size:0x8 defined:True
+gShelterB1TransferTunnelSurfacePropertiesByClass = 0x80183184; // size:0x20 defined:True
+gViewIdentityMap = 0x8010CAF8; // absolute:True
+gActor102100WatcherTaskDesc = 0x80135C30; // absolute:True owner=actor_102100
+gActor202300RookGolemTasks = 0x8015FAB8; // absolute:True owner=actor_202300
+gActor200300Tasks = 0x80160110; // absolute:True owner=actor_200300
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x80182944; // size:0x10 defined:True
+
+shelterB1TransferTunnelRoomVisualEffectsFlashTask = 0x8018092C; // type:func
+
+shelterB1TransferTunnelRoomVisualEffectsTwinTrailTask = 0x80181390; // type:func
+
+shelterB1TransferTunnelRoomVisualEffectsSparkBurstTask = 0x80181C78; // type:func
+
+shelterB1TransferTunnelRoomVisualEffectsMoteTask = 0x8017E308; // type:func
+
+shelterB1TransferTunnelRoomVisualEffectsHaloTask = 0x8017F050; // type:func
+
+shelterB1TransferTunnelRoomVisualEffectsHaloOrangeBurstTask = 0x8017F3E8; // type:func
+
+shelterB1TransferTunnelRoomVisualEffectsSparkEmitterTask = 0x801807F8; // type:func
+
+shelterB1TransferTunnelDrawGlowsTask = 0x8017D6D0; // type:func
+_roomVisualEffectsDrawMote = 0x8017E5D4; // type:func
+_roomVisualEffectsDrawHaloRing = 0x8017E898; // type:func
+_roomVisualEffectsDrawHaloDisc = 0x8017ECBC; // type:func
+_roomVisualEffectsDrawHaloBurstGlow = 0x8017F594; // type:func
+_roomVisualEffectsDrawHaloBurstGroundQuad = 0x8017FAC0; // type:func
+_roomVisualEffectsDrawHaloStar = 0x8017FE38; // type:func
+_roomVisualEffectsDrawFlashRing = 0x80180BD0; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x80180FFC; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x80181880; // type:func
+_roomVisualEffectsDrawBurstStar = 0x80181F00; // type:func
+glowDrawDimGreyCapsule = 0x8017D830; // type:func
+glowDrawRedDisc = 0x8017DFAC; // type:func
+_shelterB1TransferTunnelRejectKeyItemUse = 0x8017d5d0; // type:func
+_shelterB1TransferTunnelIgnoreRoomCommand = 0x8017d61c; // type:func
+_shelterB1TransferTunnelIgnoreRoomAction = 0x8017d624; // type:func
+_shelterB1TransferTunnelIdle = 0x8017d670; // type:func
+_shelterB1TransferTunnelResolveRoomEvent = 0x8017d5d8; // type:func
+_shelterB1TransferTunnelInitializeRoom = 0x8017d62c; // type:func
+shelterB1TransferTunnelRoomTask = 0x8017d678; // type:func
+_gShelterB1TransferTunnelRoomTaskStates = 0x8017d5c4;

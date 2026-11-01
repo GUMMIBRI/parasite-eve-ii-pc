@@ -1,0 +1,676 @@
+// Overlay-local symbols for map_shelter (file 900004).
+// Its tables are C; what they point at outside the package is named here:
+// room records, task entries and models in the Mesa, mine and Shelter room
+// packages, an enemy task and its models in the actor package loaded for the
+// stage, and marker models in the map pictures. Each lives in a package loaded
+// at a slot of its own, so each is absolute.
+mineMesaRoomTask = 0x8017DD98; // type:func absolute:True owner=mine_mesa shared=rooms
+gMineMesaRoomCollisionResources = 0x80186538; // absolute:True owner=mine_mesa
+gMineMesaRoomViewMaps = 0x80186548; // absolute:True owner=mine_mesa
+gMineMesaRoomLighting = 0x8018654C; // absolute:True owner=mine_mesa
+gMineMesaRoomViewCounts = 0x80186554; // absolute:True owner=mine_mesa
+gMineMesaWarpEntries = 0x80186558; // absolute:True owner=mine_mesa
+gMineMesaViewCameras = 0x80187030; // absolute:True owner=mine_mesa
+gMineMesaSpriteViews = 0x80188744; // absolute:True owner=mine_mesa
+gMineMesaSurfacePropertiesByClass = 0x80189A60; // absolute:True owner=mine_mesa
+mineCavernRoomTask = 0x8017DF54; // type:func absolute:True owner=mine_cavern
+gMineCavernRoomCollisionResources = 0x80188FE0; // absolute:True owner=mine_cavern
+gMineCavernRoomLighting = 0x80189010; // absolute:True owner=mine_cavern
+gMineCavernRoomViewMaps = 0x80189060; // absolute:True owner=mine_cavern
+gMineCavernRoomViewCounts = 0x8018906C; // absolute:True owner=mine_cavern
+gMineCavernWarpEntries = 0x80189074; // absolute:True owner=mine_cavern shared=rooms
+gMineCavernViewCameras = 0x80189840; // absolute:True owner=mine_cavern
+gMineCavernSpriteViews = 0x8018CD10; // absolute:True owner=mine_cavern
+gMineCavernSurfacePropertiesByClass = 0x8018E30C; // absolute:True owner=mine_cavern
+mineTunnelEntranceRoomTask = 0x8017D6BC; // type:func absolute:True owner=mine_tunnel_entrance shared=rooms
+gMineTunnelEntranceRoomLighting = 0x8017DB58; // absolute:True owner=mine_tunnel_entrance
+gMineTunnelEntranceRoomCollisionResources = 0x8017DB60; // absolute:True owner=mine_tunnel_entrance
+gMineTunnelEntranceRoomViewMaps = 0x8017DB70; // absolute:True owner=mine_tunnel_entrance
+gMineTunnelEntranceRoomViewCounts = 0x8017DB74; // absolute:True owner=mine_tunnel_entrance
+gMineTunnelEntranceWarpEntries = 0x8017DB78; // absolute:True owner=mine_tunnel_entrance
+gMineTunnelEntranceViewCameras = 0x8017E0E4; // absolute:True owner=mine_tunnel_entrance shared=rooms
+gMineTunnelEntranceSpriteViews = 0x8017EA4C; // absolute:True owner=mine_tunnel_entrance
+gMineTunnelEntranceSurfacePropertiesByClass = 0x8017F3E8; // absolute:True owner=mine_tunnel_entrance
+mineTunnelRoomTask = 0x8017D77C; // type:func absolute:True owner=mine_tunnel shared=rooms
+gMineTunnelRoomLighting = 0x8017E154; // absolute:True owner=mine_tunnel
+gMineTunnelRoomCollisionResources = 0x8017E15C; // absolute:True owner=mine_tunnel
+gMineTunnelRoomViewMaps = 0x8017E16C; // absolute:True owner=mine_tunnel
+gMineTunnelRoomViewCounts = 0x8017E170; // absolute:True owner=mine_tunnel
+gMineTunnelWarpEntries = 0x8017E174; // absolute:True owner=mine_tunnel
+gMineTunnelViewCameras = 0x8017E890; // absolute:True owner=mine_tunnel
+gMineTunnelSpriteViews = 0x8017F9A4; // absolute:True owner=mine_tunnel
+gMineTunnelSurfaceProperties = 0x8018032C; // absolute:True owner=mine_tunnel
+mineGorgeRoomTask = 0x8017D9A0; // type:func absolute:True owner=mine_gorge shared=rooms
+gMineGorgeRoomLighting = 0x8017E7A8; // absolute:True owner=mine_gorge
+gMineGorgeRoomCollisionResources = 0x8017E7B8; // absolute:True owner=mine_gorge
+gMineGorgeRoomViewMaps = 0x8017E7E4; // absolute:True owner=mine_gorge shared=rooms
+gMineGorgeRoomViewCounts = 0x8017E7EC; // absolute:True owner=mine_gorge shared=rooms
+gMineGorgeWarpEntries = 0x8017E7F0; // absolute:True owner=mine_gorge
+gMineGorgeViewCameras = 0x8017FA14; // absolute:True owner=mine_gorge
+gMineGorgeSpriteViews = 0x801827F8; // absolute:True owner=mine_gorge shared=rooms
+gMineGorgeSurfacePropertiesByClass = 0x80183644; // absolute:True owner=mine_gorge
+mineRefugeRoomTask = 0x8017FFBC; // type:func absolute:True owner=mine_refuge
+gMineRefugeRoomLighting = 0x801818F0; // absolute:True owner=mine_refuge
+gMineRefugeRoomCollisionResources = 0x801818F8; // absolute:True owner=mine_refuge
+gMineRefugeRoomViewMaps = 0x80181908; // absolute:True owner=mine_refuge
+gMineRefugeRoomViewCounts = 0x8018190C; // absolute:True owner=mine_refuge
+gMineRefugeWarpEntries = 0x80181910; // absolute:True owner=mine_refuge
+gMineRefugeViewCameras = 0x80181BC8; // absolute:True owner=mine_refuge shared=rooms
+gMineRefugeSpriteViews = 0x8018264C; // absolute:True owner=mine_refuge
+gMineRefugeSurfacePropertiesByClass = 0x80182AB4; // absolute:True owner=mine_refuge shared=rooms
+mineForkedTunnelAreaObjectTask = 0x8017DBE4; // type:func absolute:True owner=mine_forked_tunnel
+mineForkedTunnelRoomTask = 0x8017E25C; // type:func absolute:True owner=mine_forked_tunnel
+gMineForkedTunnelModel01B48 = 0x801807B4; // absolute:True owner=mine_forked_tunnel
+gMineForkedTunnelRoomLighting = 0x80183634; // absolute:True owner=mine_forked_tunnel shared=rooms
+gMineForkedTunnelRoomCollisionResources = 0x8018363C; // absolute:True owner=mine_forked_tunnel
+gMineForkedTunnelRoomViewMaps = 0x8018364C; // absolute:True owner=mine_forked_tunnel shared=rooms
+gMineForkedTunnelRoomViewCounts = 0x80183650; // absolute:True owner=mine_forked_tunnel
+gMineForkedTunnelWarpEntries = 0x80183654; // absolute:True owner=mine_forked_tunnel
+gMineForkedTunnelViewCameras = 0x80183D94; // absolute:True owner=mine_forked_tunnel
+gMineForkedTunnelSpriteViews = 0x80184D64; // absolute:True owner=mine_forked_tunnel
+gMineForkedTunnelSurfacePropertiesByClass = 0x801855C0; // absolute:True owner=mine_forked_tunnel
+mineSecretPassageRoomTask = 0x8017D970; // type:func absolute:True owner=mine_secret_passage shared=rooms
+gMineSecretPassageRoomLighting = 0x80180F9C; // absolute:True owner=mine_secret_passage
+gMineSecretPassageRoomCollisionResources = 0x80180FA4; // absolute:True owner=mine_secret_passage
+gMineSecretPassageRoomViewMaps = 0x80180FB4; // absolute:True owner=mine_secret_passage
+gMineSecretPassageRoomViewCounts = 0x80180FB8; // absolute:True owner=mine_secret_passage
+gMineSecretPassageWarpEntries = 0x80180FBC; // absolute:True owner=mine_secret_passage
+gMineSecretPassageViewCameras = 0x80181604; // absolute:True owner=mine_secret_passage
+gMineSecretPassageSpriteViews = 0x80182994; // absolute:True owner=mine_secret_passage
+gMineSecretPassageSurfacePropertiesByClass = 0x80183420; // absolute:True owner=mine_secret_passage
+shelterB1ElevatorHallRoomTask = 0x8017DC28; // type:func absolute:True owner=shelter_b1_elevator_hall shared=rooms
+gShelterB1ElevatorHallRoomLighting = 0x80182DF8; // absolute:True owner=shelter_b1_elevator_hall shared=rooms
+gShelterB1ElevatorHallRoomCollisionResources = 0x80182E00; // absolute:True owner=shelter_b1_elevator_hall shared=rooms
+gShelterB1ElevatorHallRoomViewMaps = 0x80182E10; // absolute:True owner=shelter_b1_elevator_hall
+gShelterB1ElevatorHallRoomViewCounts = 0x80182E14; // absolute:True owner=shelter_b1_elevator_hall
+gShelterB1ElevatorHallWarpEntries = 0x80182E18; // absolute:True owner=shelter_b1_elevator_hall shared=rooms
+gShelterB1ElevatorHallViewCameras = 0x80183438; // absolute:True owner=shelter_b1_elevator_hall
+gShelterB1ElevatorHallSpriteViews = 0x80183CC4; // absolute:True owner=shelter_b1_elevator_hall
+gShelterB1ElevatorHallSurfacePropertiesByClass = 0x801849D0; // absolute:True owner=shelter_b1_elevator_hall
+shelterB1SouthMaintenanceWalkwayRoomTask = 0x8017DA34; // type:func absolute:True owner=shelter_b1_south_maintenance_walkway shared=rooms
+gShelterB1SouthMaintenanceWalkwayRoomLighting = 0x801823F4; // absolute:True owner=shelter_b1_south_maintenance_walkway
+gShelterB1SouthMaintenanceWalkwayRoomCollisionResources = 0x801823FC; // absolute:True owner=shelter_b1_south_maintenance_walkway
+gShelterB1SouthMaintenanceWalkwayRoomViewMaps = 0x8018240C; // absolute:True owner=shelter_b1_south_maintenance_walkway
+gShelterB1SouthMaintenanceWalkwayRoomViewCounts = 0x80182410; // absolute:True owner=shelter_b1_south_maintenance_walkway shared=rooms
+gShelterB1SouthMaintenanceWalkwayWarpEntries = 0x80182414; // absolute:True owner=shelter_b1_south_maintenance_walkway
+gShelterB1SouthMaintenanceWalkwayViewCameras = 0x801827DC; // absolute:True owner=shelter_b1_south_maintenance_walkway shared=rooms
+gShelterB1SouthMaintenanceWalkwaySpriteViews = 0x80182E18; // absolute:True owner=shelter_b1_south_maintenance_walkway shared=rooms
+gShelterB1SouthMaintenanceWalkwaySurfacePropertiesByClass = 0x80183614; // absolute:True owner=shelter_b1_south_maintenance_walkway
+shelterB1StoreroomTask = 0x8017D794; // type:func absolute:True owner=shelter_b1_storeroom shared=rooms
+gShelterB1StoreroomRoomCollisionResources = 0x80184B50; // absolute:True owner=shelter_b1_storeroom
+gShelterB1StoreroomRoomLighting = 0x80184B60; // absolute:True owner=shelter_b1_storeroom
+gShelterB1StoreroomRoomViewMaps = 0x80184B68; // absolute:True owner=shelter_b1_storeroom
+gShelterB1StoreroomRoomViewCounts = 0x80184B6C; // absolute:True owner=shelter_b1_storeroom
+gShelterB1StoreroomWarpEntries = 0x80184B70; // absolute:True owner=shelter_b1_storeroom
+gShelterB1StoreroomViewCameras = 0x801850FC; // absolute:True owner=shelter_b1_storeroom
+gShelterB1StoreroomSpriteViews = 0x80186090; // absolute:True owner=shelter_b1_storeroom
+gShelterB1StoreroomSurfaceClassProperties = 0x80186DEC; // absolute:True owner=shelter_b1_storeroom
+shelterB1NorthMaintenanceWalkwayRoomTask = 0x8017DAFC; // type:func absolute:True owner=shelter_b1_north_maintenance_walkway
+gShelterB1NorthMaintenanceWalkwayViewMaps = 0x80184B80; // absolute:True owner=shelter_b1_north_maintenance_walkway
+gShelterB1NorthMaintenanceWalkwayRoomViewCounts = 0x80184B84; // absolute:True owner=shelter_b1_north_maintenance_walkway
+gShelterB1NorthMaintenanceWalkwayWarpEntries = 0x80184B88; // absolute:True owner=shelter_b1_north_maintenance_walkway
+gShelterB1NorthMaintenanceWalkwayCollisionGrid = 0x80184F40; // absolute:True owner=shelter_b1_north_maintenance_walkway shared=rooms
+gShelterB1NorthMaintenanceWalkwayViewCameras = 0x80184F64; // absolute:True owner=shelter_b1_north_maintenance_walkway
+gShelterB1NorthMaintenanceWalkwaySpriteViews = 0x801853AC; // absolute:True owner=shelter_b1_north_maintenance_walkway
+gShelterB1NorthMaintenanceWalkwayRoomLights = 0x801855D4; // absolute:True owner=shelter_b1_north_maintenance_walkway
+gShelterB1NorthMaintenanceWalkwayViewBoundaryTriggers = 0x801855EC; // absolute:True owner=shelter_b1_north_maintenance_walkway shared=rooms
+gShelterB1NorthMaintenanceWalkwaySightOccluders = 0x801857B4; // absolute:True owner=shelter_b1_north_maintenance_walkway
+gShelterB1NorthMaintenanceWalkwayActionTriggers = 0x80185A98; // absolute:True owner=shelter_b1_north_maintenance_walkway
+gShelterB1NorthMaintenanceWalkwaySurfacePropertiesByClass = 0x80185B4C; // absolute:True owner=shelter_b1_north_maintenance_walkway
+shelterB1ArmoryRoomTask = 0x8018078C; // type:func absolute:True owner=shelter_b1_armory
+gShelterB1ArmoryRoomViewMaps = 0x80182580; // absolute:True owner=shelter_b1_armory
+gShelterB1ArmoryRoomViewCounts = 0x80182584; // absolute:True owner=shelter_b1_armory
+gShelterB1ArmoryWarpEntries = 0x80182588; // absolute:True owner=shelter_b1_armory
+gShelterB1ArmoryCollisionGrid = 0x80182ED0; // absolute:True owner=shelter_b1_armory
+gShelterB1ArmoryViewCameras = 0x80182EF4; // absolute:True owner=shelter_b1_armory
+gShelterB1ArmorySpriteViews = 0x80184220; // absolute:True owner=shelter_b1_armory
+gShelterB1ArmoryRoomLights = 0x80184AFC; // absolute:True owner=shelter_b1_armory
+gShelterB1ArmoryViewBoundaryTriggers = 0x80184B14; // absolute:True owner=shelter_b1_armory
+gShelterB1ArmoryActionTriggers = 0x80184E0C; // absolute:True owner=shelter_b1_armory shared=rooms
+gShelterB1ArmorySurfacePropertiesByClass = 0x80185554; // absolute:True owner=shelter_b1_armory
+shelterB1SleepingQuartersAreaObjectTask = 0x8017D608; // type:func absolute:True owner=shelter_b1_sleeping_quarters shared=rooms
+shelterB1SleepingQuartersRoomTask = 0x8017D888; // type:func absolute:True owner=shelter_b1_sleeping_quarters shared=rooms
+gShelterB1SleepingQuartersModel02DFC = 0x801804F4; // absolute:True owner=shelter_b1_sleeping_quarters
+gShelterB1SleepingQuartersRoomViewMaps = 0x80180658; // absolute:True owner=shelter_b1_sleeping_quarters
+gShelterB1SleepingQuartersRoomViewCounts = 0x8018065C; // absolute:True owner=shelter_b1_sleeping_quarters
+gShelterB1SleepingQuartersWarpEntries = 0x80180660; // absolute:True owner=shelter_b1_sleeping_quarters shared=rooms
+gShelterB1SleepingQuartersCollisionGrid = 0x801810D4; // absolute:True owner=shelter_b1_sleeping_quarters
+gShelterB1SleepingQuartersViewCameras = 0x801810F8; // absolute:True owner=shelter_b1_sleeping_quarters
+gShelterB1SleepingQuartersSpriteViews = 0x80182E70; // absolute:True owner=shelter_b1_sleeping_quarters
+gShelterB1SleepingQuartersRoomLights = 0x80183234; // absolute:True owner=shelter_b1_sleeping_quarters
+gShelterB1SleepingQuartersViewBoundaryTriggers = 0x8018324C; // absolute:True owner=shelter_b1_sleeping_quarters
+gShelterB1SleepingQuartersOccluders = 0x801837A4; // absolute:True owner=shelter_b1_sleeping_quarters
+gShelterB1SleepingQuartersActionTriggers = 0x801838D0; // absolute:True owner=shelter_b1_sleeping_quarters
+gShelterB1SleepingQuartersSurfacePropertiesByClass = 0x801840B0; // absolute:True owner=shelter_b1_sleeping_quarters
+shelterB1MainCorridorRoomTask = 0x8017DD98; // type:func absolute:True owner=shelter_b1_main_corridor shared=rooms
+gShelterB1MainCorridorRoomViewMaps = 0x801831F8; // absolute:True owner=shelter_b1_main_corridor
+gShelterB1MainCorridorRoomViewCounts = 0x801831FC; // absolute:True owner=shelter_b1_main_corridor
+gShelterB1MainCorridorWarpEntries = 0x80183200; // absolute:True owner=shelter_b1_main_corridor
+gShelterB1MainCorridorCollisionGrid = 0x801840F0; // absolute:True owner=shelter_b1_main_corridor
+gShelterB1MainCorridorViewCameras = 0x80184114; // absolute:True owner=shelter_b1_main_corridor
+gShelterB1MainCorridorSpriteViews = 0x80185128; // absolute:True owner=shelter_b1_main_corridor
+gShelterB1MainCorridorRoomLights = 0x801853E0; // absolute:True owner=shelter_b1_main_corridor
+gShelterB1MainCorridorViewBoundaries = 0x801853F8; // absolute:True owner=shelter_b1_main_corridor
+gShelterB1MainCorridorWarpTriggers = 0x801858B8; // absolute:True owner=shelter_b1_main_corridor shared=rooms
+gShelterB1MainCorridorSurfacePropertiesByClass = 0x80185D04; // absolute:True owner=shelter_b1_main_corridor
+shelterB1SterilizationRoomTask = 0x80180518; // type:func absolute:True owner=shelter_b1_sterilization_room
+gShelterB1SterilizationRoomItemBoxModel = 0x80184DF8; // absolute:True owner=shelter_b1_sterilization_room
+gShelterB1SterilizationRoomLighting = 0x80189354; // absolute:True owner=shelter_b1_sterilization_room
+gShelterB1SterilizationRoomCollisionResources = 0x8018936C; // absolute:True owner=shelter_b1_sterilization_room
+gShelterB1SterilizationRoomViewMaps = 0x801893CC; // absolute:True owner=shelter_b1_sterilization_room
+gShelterB1SterilizationRoomViewCounts = 0x801893D8; // absolute:True owner=shelter_b1_sterilization_room
+gShelterB1SterilizationRoomWarpEntries = 0x801893E0; // absolute:True owner=shelter_b1_sterilization_room
+gShelterB1SterilizationRoomViewCameras = 0x80189E68; // absolute:True owner=shelter_b1_sterilization_room
+gShelterB1SterilizationRoomSpriteViews = 0x8018B00C; // absolute:True owner=shelter_b1_sterilization_room
+gShelterB1SterilizationRoomSurfacePropertiesByClass = 0x8018C314; // absolute:True owner=shelter_b1_sterilization_room
+shelterB1PodAccessTunnelRoomTask = 0x8017DEE8; // type:func absolute:True owner=shelter_b1_pod_access_tunnel
+gShelterB1PodAccessTunnelRoomViewMaps = 0x80183A14; // absolute:True owner=shelter_b1_pod_access_tunnel
+gShelterB1PodAccessTunnelRoomViewCounts = 0x80183A18; // absolute:True owner=shelter_b1_pod_access_tunnel
+gShelterB1PodAccessTunnelWarpEntries = 0x80183A1C; // absolute:True owner=shelter_b1_pod_access_tunnel
+gShelterB1PodAccessTunnelCollisionGrid = 0x80183C24; // absolute:True owner=shelter_b1_pod_access_tunnel
+gShelterB1PodAccessTunnelViewCameras = 0x80183C48; // absolute:True owner=shelter_b1_pod_access_tunnel
+gShelterB1PodAccessTunnelSpriteViews = 0x8018462C; // absolute:True owner=shelter_b1_pod_access_tunnel
+gShelterB1PodAccessTunnelRoomLights = 0x80184734; // absolute:True owner=shelter_b1_pod_access_tunnel shared=rooms
+gShelterB1PodAccessTunnelViewBoundaryTriggers = 0x8018474C; // absolute:True owner=shelter_b1_pod_access_tunnel
+gShelterB1PodAccessTunnelSightOccluders = 0x8018487C; // absolute:True owner=shelter_b1_pod_access_tunnel
+gShelterB1PodAccessTunnelActionTriggers = 0x801848B8; // absolute:True owner=shelter_b1_pod_access_tunnel
+gShelterB1PodAccessTunnelSurfacePropertiesByClass = 0x80184CDC; // absolute:True owner=shelter_b1_pod_access_tunnel
+shelterB1ControlRoomRoomTask = 0x8017EECC; // type:func absolute:True owner=shelter_b1_control_room
+gShelterB1ControlRoomRoomViewMaps = 0x80181C70; // absolute:True owner=shelter_b1_control_room
+gShelterB1ControlRoomRoomViewCounts = 0x80181C74; // absolute:True owner=shelter_b1_control_room
+gShelterB1ControlRoomWarpEntries = 0x80181C78; // absolute:True owner=shelter_b1_control_room
+gShelterB1ControlRoomRoomCollision = 0x801820F8; // absolute:True owner=shelter_b1_control_room
+gShelterB1ControlRoomViewCameras = 0x8018211C; // absolute:True owner=shelter_b1_control_room shared=rooms
+gShelterB1ControlRoomSpriteViews = 0x801833BC; // absolute:True owner=shelter_b1_control_room
+gShelterB1ControlRoomRoomLights = 0x801834DC; // absolute:True owner=shelter_b1_control_room shared=rooms
+gShelterB1ControlRoomViewBoundaryTriggers = 0x801834F4; // absolute:True owner=shelter_b1_control_room
+gShelterB1ControlRoomActionTriggers = 0x80183624; // absolute:True owner=shelter_b1_control_room
+gShelterB1ControlRoomAmbientByView = 0x80183B48; // absolute:True owner=shelter_b1_control_room shared=rooms
+gShelterB1ControlRoomSurfacePropertiesByClass = 0x80183BC0; // absolute:True owner=shelter_b1_control_room shared=rooms
+shelterB1AccessTunnelRoomTask = 0x8017DD08; // type:func absolute:True owner=shelter_b1_access_tunnel shared=rooms
+gShelterB1AccessTunnelRoomViewMaps = 0x8017E7E4; // absolute:True owner=shelter_b1_access_tunnel shared=rooms
+gShelterB1AccessTunnelRoomViewCounts = 0x8017E7E8; // absolute:True owner=shelter_b1_access_tunnel
+gShelterB1AccessTunnelWarpEntries = 0x8017E7EC; // absolute:True owner=shelter_b1_access_tunnel shared=rooms
+gShelterB1AccessTunnelCollisionGrid = 0x8017EB24; // absolute:True owner=shelter_b1_access_tunnel
+gShelterB1AccessTunnelViewCameras = 0x8017EB48; // absolute:True owner=shelter_b1_access_tunnel
+gShelterB1AccessTunnelSpriteViews = 0x8017F6A0; // absolute:True owner=shelter_b1_access_tunnel
+gShelterB1AccessTunnelRoomLights = 0x8017FA1C; // absolute:True owner=shelter_b1_access_tunnel
+gShelterB1AccessTunnelViewBoundaryTriggers = 0x8017FA34; // absolute:True owner=shelter_b1_access_tunnel
+gShelterB1AccessTunnelWarpTriggers = 0x8017FBFC; // absolute:True owner=shelter_b1_access_tunnel
+gShelterB1AccessTunnelSightOccluders = 0x8017FD2C; // absolute:True owner=shelter_b1_access_tunnel shared=rooms
+gShelterB1AccessTunnelSurfacePropertiesByClass = 0x8017FF24; // absolute:True owner=shelter_b1_access_tunnel
+shelterB1UndergroundParkingRoomTask = 0x801838B4; // type:func absolute:True owner=shelter_b1_underground_parking
+gShelterB1UndergroundParkingRoomLighting = 0x801877B4; // absolute:True owner=shelter_b1_underground_parking
+gShelterB1UndergroundParkingRoomCollisionResources = 0x801877F4; // absolute:True owner=shelter_b1_underground_parking shared=rooms
+gShelterB1UndergroundParkingRoomViewMaps = 0x8018791C; // absolute:True owner=shelter_b1_underground_parking
+gShelterB1UndergroundParkingRoomViewCounts = 0x8018793C; // absolute:True owner=shelter_b1_underground_parking
+gShelterB1UndergroundParkingWarpEntries = 0x8018794C; // absolute:True owner=shelter_b1_underground_parking
+gShelterB1UndergroundParkingViewCameras = 0x80189778; // absolute:True owner=shelter_b1_underground_parking
+gShelterB1UndergroundParkingSpriteViews = 0x8018AB9C; // absolute:True owner=shelter_b1_underground_parking
+gShelterB1UndergroundParkingSurfacePropertiesByClass = 0x8018D724; // absolute:True owner=shelter_b1_underground_parking
+shelterB1GolemFreezer1RoomTask = 0x8017D6EC; // type:func absolute:True owner=shelter_b1_golem_freezer_1
+gShelterB1GolemFreezer1ViewMaps = 0x8017E790; // absolute:True owner=shelter_b1_golem_freezer_1
+gShelterB1GolemFreezer1ViewCounts = 0x8017E794; // absolute:True owner=shelter_b1_golem_freezer_1
+gShelterB1GolemFreezer1WarpEntries = 0x8017E798; // absolute:True owner=shelter_b1_golem_freezer_1
+gShelterB1GolemFreezer1RoomCollision = 0x8017E9C0; // absolute:True owner=shelter_b1_golem_freezer_1 shared=rooms
+gShelterB1GolemFreezer1ViewCameras = 0x8017E9E4; // absolute:True owner=shelter_b1_golem_freezer_1
+gShelterB1GolemFreezer1SpriteViews = 0x8017EDB0; // absolute:True owner=shelter_b1_golem_freezer_1 shared=rooms
+gShelterB1GolemFreezer1RoomLights = 0x8017EE64; // absolute:True owner=shelter_b1_golem_freezer_1
+gShelterB1GolemFreezer1ViewBoundaryTriggers = 0x8017EE7C; // absolute:True owner=shelter_b1_golem_freezer_1 shared=rooms
+gShelterB1GolemFreezer1ActionTriggers = 0x8017EFAC; // absolute:True owner=shelter_b1_golem_freezer_1
+gShelterB1GolemFreezer1AmbientByView = 0x8017F234; // absolute:True owner=shelter_b1_golem_freezer_1
+gShelterB1GolemFreezer1SurfacePropertiesByClass = 0x8017F290; // absolute:True owner=shelter_b1_golem_freezer_1
+shelterB2PodBottomRoomTask = 0x8017D708; // type:func absolute:True owner=shelter_b2_pod_bottom shared=rooms
+gShelterB2PodBottomRoomCollisionResources = 0x80181D14; // absolute:True owner=shelter_b2_pod_bottom
+gShelterB2PodBottomRoomLighting = 0x80181D24; // absolute:True owner=shelter_b2_pod_bottom
+gShelterB2PodBottomRoomViewMaps = 0x80181D2C; // absolute:True owner=shelter_b2_pod_bottom
+gShelterB2PodBottomRoomViewCounts = 0x80181D30; // absolute:True owner=shelter_b2_pod_bottom
+gShelterB2PodBottomWarpEntries = 0x80181D34; // absolute:True owner=shelter_b2_pod_bottom
+gShelterB2PodBottomViewCameras = 0x80182B80; // absolute:True owner=shelter_b2_pod_bottom shared=rooms
+gShelterB2PodBottomSpriteViews = 0x80185904; // absolute:True owner=shelter_b2_pod_bottom
+gShelterB2PodBottomSurfaceProperties = 0x80188770; // absolute:True owner=shelter_b2_pod_bottom
+shelterB1PodServiceGantryRoomTask = 0x8017D89C; // type:func absolute:True owner=shelter_b1_pod_service_gantry
+gShelterB1PodServiceGantryRoomViewMaps = 0x8017FB1C; // absolute:True owner=shelter_b1_pod_service_gantry
+gShelterB1PodServiceGantryRoomViewCounts = 0x8017FB20; // absolute:True owner=shelter_b1_pod_service_gantry
+gShelterB1PodServiceGantryWarpEntries = 0x8017FB24; // absolute:True owner=shelter_b1_pod_service_gantry
+gShelterB1PodServiceGantryRoomCollision = 0x801801C4; // absolute:True owner=shelter_b1_pod_service_gantry
+gShelterB1PodServiceGantryViewCameras = 0x801801E8; // absolute:True owner=shelter_b1_pod_service_gantry
+gShelterB1PodServiceGantrySpriteViews = 0x80181BA0; // absolute:True owner=shelter_b1_pod_service_gantry
+gShelterB1PodServiceGantryRoomLights = 0x801824F4; // absolute:True owner=shelter_b1_pod_service_gantry
+gShelterB1PodServiceGantrySurfacePropertiesByClass = 0x80182520; // absolute:True owner=shelter_b1_pod_service_gantry
+shelterB1TransferTunnelRoomTask = 0x8017D678; // type:func absolute:True owner=shelter_b1_transfer_tunnel shared=rooms
+gShelterB1TransferTunnelRoomViewMaps = 0x80182954; // absolute:True owner=shelter_b1_transfer_tunnel
+gShelterB1TransferTunnelRoomViewCounts = 0x80182958; // absolute:True owner=shelter_b1_transfer_tunnel
+gShelterB1TransferTunnelWarpEntries = 0x8018295C; // absolute:True owner=shelter_b1_transfer_tunnel
+gShelterB1TransferTunnelRoomCollision = 0x80182AEC; // absolute:True owner=shelter_b1_transfer_tunnel
+gShelterB1TransferTunnelViewCameras = 0x80182B10; // absolute:True owner=shelter_b1_transfer_tunnel
+gShelterB1TransferTunnelSpriteViews = 0x80182BE0; // absolute:True owner=shelter_b1_transfer_tunnel
+gShelterB1TransferTunnelRoomLights = 0x80182D90; // absolute:True owner=shelter_b1_transfer_tunnel
+gShelterB1TransferTunnelViewBoundaryTriggers = 0x80182DA8; // absolute:True owner=shelter_b1_transfer_tunnel shared=rooms
+gShelterB1TransferTunnelWarpTriggers = 0x80182ED8; // absolute:True owner=shelter_b1_transfer_tunnel
+gShelterB1TransferTunnelSurfacePropertiesByClass = 0x80183184; // absolute:True owner=shelter_b1_transfer_tunnel shared=rooms
+shelterB1ControlRoomAccessTunnelRoomTask = 0x8017D68C; // type:func absolute:True owner=shelter_b1_control_room_access_tunnel
+gShelterB1ControlRoomAccessTunnelRoomViewMaps = 0x80181F00; // absolute:True owner=shelter_b1_control_room_access_tunnel
+gShelterB1ControlRoomAccessTunnelRoomViewCounts = 0x80181F04; // absolute:True owner=shelter_b1_control_room_access_tunnel
+gShelterB1ControlRoomAccessTunnelWarpEntries = 0x80181F08; // absolute:True owner=shelter_b1_control_room_access_tunnel
+gShelterB1ControlRoomAccessTunnelCollisionGrid = 0x80182070; // absolute:True owner=shelter_b1_control_room_access_tunnel
+gShelterB1ControlRoomAccessTunnelViewCameras = 0x80182094; // absolute:True owner=shelter_b1_control_room_access_tunnel shared=rooms
+gShelterB1ControlRoomAccessTunnelSpriteViews = 0x80182130; // absolute:True owner=shelter_b1_control_room_access_tunnel
+gShelterB1ControlRoomAccessTunnelRoomLights = 0x801822D4; // absolute:True owner=shelter_b1_control_room_access_tunnel
+gShelterB1ControlRoomAccessTunnelViewBoundaryTriggers = 0x801822EC; // absolute:True owner=shelter_b1_control_room_access_tunnel
+gShelterB1ControlRoomAccessTunnelWarpTriggers = 0x80182384; // absolute:True owner=shelter_b1_control_room_access_tunnel shared=rooms
+gShelterB1ControlRoomAccessTunnelSurfacePropertiesByClass = 0x80182678; // absolute:True owner=shelter_b1_control_room_access_tunnel
+shelterB2ElevatorRoomTask = 0x8017DB18; // type:func absolute:True owner=shelter_b2_elevator shared=rooms
+gShelterB2ElevatorViewMaps = 0x8017DFD8; // absolute:True owner=shelter_b2_elevator
+gShelterB2ElevatorViewCounts = 0x8017DFDC; // absolute:True owner=shelter_b2_elevator
+gShelterB2ElevatorWarps = 0x8017DFE0; // absolute:True owner=shelter_b2_elevator
+gShelterB2ElevatorCollisionGrid = 0x8017E0E4; // absolute:True owner=shelter_b2_elevator shared=rooms
+gShelterB2ElevatorViewCameras = 0x8017E108; // absolute:True owner=shelter_b2_elevator
+gShelterB2ElevatorSpriteViews = 0x8017E7BC; // absolute:True owner=shelter_b2_elevator
+gShelterB2ElevatorRoomLights = 0x8017E840; // absolute:True owner=shelter_b2_elevator
+gShelterB2ElevatorViewBoundaryTriggers = 0x8017E858; // absolute:True owner=shelter_b2_elevator shared=rooms
+gShelterB2ElevatorActionTriggers = 0x8017E8F0; // absolute:True owner=shelter_b2_elevator
+gShelterB2ElevatorSurfacePropertiesByClass = 0x8017E9D8; // absolute:True owner=shelter_b2_elevator
+shelterB2ElevatorHallRoomTask = 0x8017DD08; // type:func absolute:True owner=shelter_b2_elevator_hall shared=rooms
+gShelterB2ElevatorHallViewMaps = 0x801838DC; // absolute:True owner=shelter_b2_elevator_hall
+gShelterB2ElevatorHallRoomViewCounts = 0x801838E0; // absolute:True owner=shelter_b2_elevator_hall
+gShelterB2ElevatorHallWarpEntries = 0x801838E4; // absolute:True owner=shelter_b2_elevator_hall shared=rooms
+gShelterB2ElevatorHallRoomCollision = 0x80183DB4; // absolute:True owner=shelter_b2_elevator_hall
+gShelterB2ElevatorHallViewCameras = 0x80183DD8; // absolute:True owner=shelter_b2_elevator_hall
+gShelterB2ElevatorHallSpriteViews = 0x80184120; // absolute:True owner=shelter_b2_elevator_hall
+gShelterB2ElevatorHallRoomLights = 0x801846B4; // absolute:True owner=shelter_b2_elevator_hall
+gShelterB2ElevatorHallViewBoundaryTriggers = 0x801846CC; // absolute:True owner=shelter_b2_elevator_hall
+gShelterB2ElevatorHallSightOccluders = 0x8018492C; // absolute:True owner=shelter_b2_elevator_hall
+gShelterB2ElevatorHallWarpTriggers = 0x80184968; // absolute:True owner=shelter_b2_elevator_hall
+gShelterB2ElevatorHallSurfacePropertiesByClass = 0x80184D5C; // absolute:True owner=shelter_b2_elevator_hall
+shelterB2SouthMaintenanceWalkwayRoomTask = 0x8017DC6C; // type:func absolute:True owner=shelter_b2_south_maintenance_walkway shared=rooms
+gShelterB2SouthMaintenanceWalkwayRoomViewMaps = 0x8018263C; // absolute:True owner=shelter_b2_south_maintenance_walkway
+gShelterB2SouthMaintenanceWalkwayRoomViewCounts = 0x80182640; // absolute:True owner=shelter_b2_south_maintenance_walkway
+gShelterB2SouthMaintenanceWalkwayWarpEntries = 0x80182644; // absolute:True owner=shelter_b2_south_maintenance_walkway
+gShelterB2SouthMaintenanceWalkwayCollisionGrid = 0x801829E8; // absolute:True owner=shelter_b2_south_maintenance_walkway
+gShelterB2SouthMaintenanceWalkwayViewCameras = 0x80182A0C; // absolute:True owner=shelter_b2_south_maintenance_walkway
+gShelterB2SouthMaintenanceWalkwaySpriteViews = 0x80183018; // absolute:True owner=shelter_b2_south_maintenance_walkway
+gShelterB2SouthMaintenanceWalkwayRoomLights = 0x80183294; // absolute:True owner=shelter_b2_south_maintenance_walkway
+gShelterB2SouthMaintenanceWalkwayViewBoundaryTriggers = 0x801832AC; // absolute:True owner=shelter_b2_south_maintenance_walkway
+gShelterB2SouthMaintenanceWalkwayActionTriggers = 0x80183474; // absolute:True owner=shelter_b2_south_maintenance_walkway
+gShelterB2SouthMaintenanceWalkwaySightOccluders = 0x8018385C; // absolute:True owner=shelter_b2_south_maintenance_walkway
+gShelterB2SouthMaintenanceWalkwaySurfacePropertiesByClass = 0x801838B4; // absolute:True owner=shelter_b2_south_maintenance_walkway shared=rooms
+shelterB2OperatingRoomTask = 0x8017DD60; // type:func absolute:True owner=shelter_b2_operating_room shared=rooms
+gShelterB2OperatingRoomRoomViewMaps = 0x80180BC8; // absolute:True owner=shelter_b2_operating_room
+gShelterB2OperatingRoomRoomViewCounts = 0x80180BCC; // absolute:True owner=shelter_b2_operating_room
+gShelterB2OperatingRoomWarpEntries = 0x80180BD0; // absolute:True owner=shelter_b2_operating_room
+gShelterB2OperatingRoomCollisionGrid = 0x80181364; // absolute:True owner=shelter_b2_operating_room
+gShelterB2OperatingRoomViewCameras = 0x80181388; // absolute:True owner=shelter_b2_operating_room
+gShelterB2OperatingRoomSpriteViews = 0x80183184; // absolute:True owner=shelter_b2_operating_room shared=rooms
+gShelterB2OperatingRoomRoomLights = 0x80183718; // absolute:True owner=shelter_b2_operating_room
+gShelterB2OperatingRoomViewBoundaryTriggers = 0x80183730; // absolute:True owner=shelter_b2_operating_room
+gShelterB2OperatingRoomOccluders = 0x80183A28; // absolute:True owner=shelter_b2_operating_room
+gShelterB2OperatingRoomActionTriggers = 0x80183ADC; // absolute:True owner=shelter_b2_operating_room
+gShelterB2OperatingRoomRoomAmbient = 0x80184184; // absolute:True owner=shelter_b2_operating_room
+gShelterB2OperatingRoomSurfaceProperties = 0x801841F4; // absolute:True owner=shelter_b2_operating_room
+shelterB2NorthMaintenanceWalkwayRoomTask = 0x8017DD90; // type:func absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwayRoomViewMaps = 0x80183C5C; // absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwayRoomViewCounts = 0x80183C60; // absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwayWarpEntries = 0x80183C64; // absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwayCollisionGrid = 0x8018401C; // absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwayViewCameras = 0x80184040; // absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwaySpriteViews = 0x80185B04; // absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwayLights = 0x80185D44; // absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwayViewBoundaryTriggers = 0x80185D5C; // absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwayActionTriggers = 0x80185F24; // absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwaySightOccluders = 0x80186308; // absolute:True owner=shelter_b2_north_maintenance_walkway
+gShelterB2NorthMaintenanceWalkwaySurfacePropertiesByClass = 0x80186360; // absolute:True owner=shelter_b2_north_maintenance_walkway shared=rooms
+shelterB2LaboratoryTask = 0x801804A4; // type:func absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratoryItemBoxModel = 0x801829E4; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratoryRoomViewMaps = 0x80182C08; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratoryRoomViewCounts = 0x80182C0C; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratoryWarpEntries = 0x80182C10; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratoryCollisionGrid = 0x8018355C; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratoryViewCameras = 0x80183580; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratorySpriteViews = 0x801854D0; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratoryRoomLights = 0x80185944; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratoryViewBoundaryTriggers = 0x8018595C; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratoryActionTriggers = 0x80185D84; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratoryViewAmbientTable = 0x801863B8; // absolute:True owner=shelter_b2_laboratory
+gShelterB2LaboratorySurfacePropertiesByClass = 0x80186468; // absolute:True owner=shelter_b2_laboratory
+shelterB2BreedingRoomAreaObjectTask = 0x8017D5F8; // type:func absolute:True owner=shelter_b2_breeding_room shared=rooms
+shelterB2BreedingRoomRoomTask = 0x8017D840; // type:func absolute:True owner=shelter_b2_breeding_room shared=rooms
+gShelterB2BreedingRoomModel02E04 = 0x801803F0; // absolute:True owner=shelter_b2_breeding_room
+gShelterB2BreedingRoomRoomViewMaps = 0x8018055C; // absolute:True owner=shelter_b2_breeding_room
+gShelterB2BreedingRoomRoomViewCounts = 0x80180560; // absolute:True owner=shelter_b2_breeding_room
+gShelterB2BreedingRoomWarpEntries = 0x80180564; // absolute:True owner=shelter_b2_breeding_room
+gShelterB2BreedingRoomCollisionGrid = 0x801810F4; // absolute:True owner=shelter_b2_breeding_room
+gShelterB2BreedingRoomViewCameras = 0x80181118; // absolute:True owner=shelter_b2_breeding_room
+gShelterB2BreedingRoomSpriteViews = 0x801833D4; // absolute:True owner=shelter_b2_breeding_room
+gShelterB2BreedingRoomRoomLights = 0x801837AC; // absolute:True owner=shelter_b2_breeding_room shared=rooms
+gShelterB2BreedingRoomViewBoundaryTriggers = 0x801837C4; // absolute:True owner=shelter_b2_breeding_room
+gShelterB2BreedingRoomActionTriggers = 0x80183F9C; // absolute:True owner=shelter_b2_breeding_room shared=rooms
+gShelterB2BreedingRoomAmbientByView = 0x80184624; // absolute:True owner=shelter_b2_breeding_room
+gShelterB2BreedingRoomOccluders = 0x8018467C; // absolute:True owner=shelter_b2_breeding_room shared=rooms
+gShelterB2BreedingRoomSurfacePropertiesByClass = 0x801847F4; // absolute:True owner=shelter_b2_breeding_room
+shelterB2MainCorridorRoomTask = 0x8017E338; // type:func absolute:True owner=shelter_b2_main_corridor shared=rooms
+gShelterB2MainCorridorViewMaps = 0x801830CC; // absolute:True owner=shelter_b2_main_corridor
+gShelterB2MainCorridorViewCounts = 0x801830D0; // absolute:True owner=shelter_b2_main_corridor
+gShelterB2MainCorridorWarpEntries = 0x801830D4; // absolute:True owner=shelter_b2_main_corridor
+gShelterB2MainCorridorCollisionGrid = 0x80184440; // absolute:True owner=shelter_b2_main_corridor
+gShelterB2MainCorridorViewCameras = 0x80184464; // absolute:True owner=shelter_b2_main_corridor
+gShelterB2MainCorridorSpriteViews = 0x80188848; // absolute:True owner=shelter_b2_main_corridor
+gShelterB2MainCorridorRoomLights = 0x80188BE4; // absolute:True owner=shelter_b2_main_corridor
+gShelterB2MainCorridorViewBoundaryTriggers = 0x80188BFC; // absolute:True owner=shelter_b2_main_corridor shared=rooms
+gShelterB2MainCorridorActionTriggers = 0x801893EC; // absolute:True owner=shelter_b2_main_corridor
+gShelterB2MainCorridorSurfacePropertiesByClass = 0x80189624; // absolute:True owner=shelter_b2_main_corridor
+shelterB2SepticTankRoomTask = 0x8017DB10; // type:func absolute:True owner=shelter_b2_septic_tank shared=rooms
+gShelterB2SepticTankViewMaps = 0x8018356C; // absolute:True owner=shelter_b2_septic_tank
+gShelterB2SepticTankRoomViewCounts = 0x80183570; // absolute:True owner=shelter_b2_septic_tank
+gShelterB2SepticTankWarpEntries = 0x80183574; // absolute:True owner=shelter_b2_septic_tank
+gShelterB2SepticTankCollisionGrid = 0x80183E0C; // absolute:True owner=shelter_b2_septic_tank shared=rooms
+gShelterB2SepticTankViewCameras = 0x80183E30; // absolute:True owner=shelter_b2_septic_tank shared=rooms
+gShelterB2SepticTankSpriteViews = 0x801866F4; // absolute:True owner=shelter_b2_septic_tank
+gShelterB2SepticTankRoomLights = 0x80186A3C; // absolute:True owner=shelter_b2_septic_tank
+gShelterB2SepticTankViewBoundaryTriggers = 0x80186A54; // absolute:True owner=shelter_b2_septic_tank
+gShelterB2SepticTankActionTriggers = 0x80186C1C; // absolute:True owner=shelter_b2_septic_tank
+gShelterB2SepticTankSurfacePropertiesByClass = 0x80187014; // absolute:True owner=shelter_b2_septic_tank
+shelterB2PodAccessTunnelRoomTask = 0x8017DC14; // type:func absolute:True owner=shelter_b2_pod_access_tunnel
+gShelterB2PodAccessTunnelRoomCollisionResources = 0x80183DEC; // absolute:True owner=shelter_b2_pod_access_tunnel
+gShelterB2PodAccessTunnelRoomLighting = 0x80183E0C; // absolute:True owner=shelter_b2_pod_access_tunnel shared=rooms
+gShelterB2PodAccessTunnelRoomViewMaps = 0x80183E24; // absolute:True owner=shelter_b2_pod_access_tunnel
+gShelterB2PodAccessTunnelRoomViewCounts = 0x80183E2C; // absolute:True owner=shelter_b2_pod_access_tunnel
+gShelterB2PodAccessTunnelWarpEntries = 0x80183E30; // absolute:True owner=shelter_b2_pod_access_tunnel shared=rooms
+gShelterB2PodAccessTunnelViewCameras = 0x801841D8; // absolute:True owner=shelter_b2_pod_access_tunnel
+gShelterB2PodAccessTunnelSpriteViews = 0x80184C6C; // absolute:True owner=shelter_b2_pod_access_tunnel
+gShelterB2PodAccessTunnelSurfacePropertiesByClass = 0x801856D8; // absolute:True owner=shelter_b2_pod_access_tunnel shared=rooms
+shelterR36RoomTask = 0x8017D9DC; // type:func absolute:True owner=shelter_r36
+gShelterR36RoomViewMaps = 0x8017E9BC; // absolute:True owner=shelter_r36
+gShelterR36ViewCounts = 0x8017E9C0; // absolute:True owner=shelter_r36 shared=rooms
+gShelterR36WarpEntries = 0x8017E9C4; // absolute:True owner=shelter_r36
+gShelterR36FloorCollisionGrid = 0x8017EAB0; // absolute:True owner=shelter_r36
+gShelterR36ViewCameras = 0x8017EAD4; // absolute:True owner=shelter_r36
+gShelterR36SpriteViews = 0x8017F318; // absolute:True owner=shelter_r36
+gShelterR36RoomLights = 0x8017F6DC; // absolute:True owner=shelter_r36 shared=rooms
+gShelterR36ViewBoundaryTriggers = 0x8017F6F4; // absolute:True owner=shelter_r36 shared=rooms
+gShelterR36SurfacePropertiesByClass = 0x8017FAE4; // absolute:True owner=shelter_r36
+shelterR37RoomTask = 0x8017D678; // type:func absolute:True owner=shelter_r37 shared=rooms
+gShelterR37ViewMaps = 0x8017D6F8; // absolute:True owner=shelter_r37 shared=rooms
+gShelterR37ViewCounts = 0x8017D6FC; // absolute:True owner=shelter_r37 shared=rooms
+gShelterR37WarpEntries = 0x8017D700; // absolute:True owner=shelter_r37 shared=rooms
+gShelterR37RoomCollision = 0x8017D920; // absolute:True owner=shelter_r37
+gShelterR37ViewCameras = 0x8017D944; // absolute:True owner=shelter_r37
+gShelterR37SpriteViews = 0x8017D9E0; // absolute:True owner=shelter_r37 shared=rooms
+gShelterR37RoomLights = 0x8017DD44; // absolute:True owner=shelter_r37
+gShelterR37ViewBoundaryTriggers = 0x8017DD5C; // absolute:True owner=shelter_r37
+gShelterR37SurfacePropertiesByClass = 0x8017DED8; // absolute:True owner=shelter_r37
+shelter1fHeliportS4RoomTask = 0x8017D678; // type:func absolute:True owner=shelter_1f_heliport_s4 shared=rooms
+gShelter1fHeliportS4RoomViewMaps = 0x8017D6F8; // absolute:True owner=shelter_1f_heliport_s4 shared=rooms
+gShelter1fHeliportS4RoomViewCounts = 0x8017D6FC; // absolute:True owner=shelter_1f_heliport_s4 shared=rooms
+gShelter1fHeliportS4WarpEntries = 0x8017D700; // absolute:True owner=shelter_1f_heliport_s4 shared=rooms
+gShelter1fHeliportS4CollisionGrid = 0x8017D9C8; // absolute:True owner=shelter_1f_heliport_s4
+gShelter1fHeliportS4ViewCameras = 0x8017D9EC; // absolute:True owner=shelter_1f_heliport_s4
+gShelter1fHeliportS4SpriteViews = 0x8017DAF0; // absolute:True owner=shelter_1f_heliport_s4 shared=rooms
+gShelter1fHeliportS4RoomLights = 0x8017DE6C; // absolute:True owner=shelter_1f_heliport_s4
+gShelter1fHeliportS4ViewBoundaryTriggers = 0x8017DE84; // absolute:True owner=shelter_1f_heliport_s4 shared=rooms
+gShelter1fHeliportS4SurfacePropertiesByClass = 0x8017E060; // absolute:True owner=shelter_1f_heliport_s4 shared=rooms
+shelterB3DumpingHoleRoomTask = 0x8017D9A8; // type:func absolute:True owner=shelter_b3_dumping_hole shared=rooms
+gShelterB3DumpingHoleItemBoxModel = 0x80187550; // absolute:True owner=shelter_b3_dumping_hole
+gShelterB3DumpingHoleRoomCollisionResources = 0x8018B678; // absolute:True owner=shelter_b3_dumping_hole
+gShelterB3DumpingHoleViewMaps = 0x8018B698; // absolute:True owner=shelter_b3_dumping_hole
+gShelterB3DumpingHoleViewCounts = 0x8018B6A0; // absolute:True owner=shelter_b3_dumping_hole
+gShelterB3DumpingHoleWarpEntries = 0x8018B6A4; // absolute:True owner=shelter_b3_dumping_hole
+gShelterB3DumpingHoleViewCameras = 0x8018C410; // absolute:True owner=shelter_b3_dumping_hole
+gShelterB3DumpingHoleSpriteViews = 0x8018E050; // absolute:True owner=shelter_b3_dumping_hole
+gShelterB3DumpingHoleRoom1Lights = 0x8018E3DC; // absolute:True owner=shelter_b3_dumping_hole shared=rooms
+gShelterB3DumpingHoleRoom2Lights = 0x8018E874; // absolute:True owner=shelter_b3_dumping_hole
+gShelterB3DumpingHoleRoom1AmbientByView = 0x8018F1FC; // absolute:True owner=shelter_b3_dumping_hole
+gShelterB3DumpingHoleRoom2AmbientByView = 0x8018F32C; // absolute:True owner=shelter_b3_dumping_hole
+gShelterB3DumpingHoleSurfacePropertiesByClass = 0x8018F480; // absolute:True owner=shelter_b3_dumping_hole
+shelterB3GarbageIncineratorRoomTask = 0x8017DC7C; // type:func absolute:True owner=shelter_b3_garbage_incinerator
+gShelterB3GarbageIncineratorRoomLighting = 0x80187280; // absolute:True owner=shelter_b3_garbage_incinerator
+gShelterB3GarbageIncineratorRoomCollisionResources = 0x801872B8; // absolute:True owner=shelter_b3_garbage_incinerator
+gShelterB3GarbageIncineratorViewMaps = 0x801873F0; // absolute:True owner=shelter_b3_garbage_incinerator
+gShelterB3GarbageIncineratorRoomViewCounts = 0x8018740C; // absolute:True owner=shelter_b3_garbage_incinerator
+gShelterB3GarbageIncineratorWarpEntries = 0x8018741C; // absolute:True owner=shelter_b3_garbage_incinerator
+gShelterB3GarbageIncineratorCameras = 0x801883AC; // absolute:True owner=shelter_b3_garbage_incinerator
+gShelterB3GarbageIncineratorSpriteViews = 0x8018D100; // absolute:True owner=shelter_b3_garbage_incinerator
+gShelterB3GarbageIncineratorSurfaceProperties = 0x8018FB4C; // absolute:True owner=shelter_b3_garbage_incinerator
+shelterB3IncineratorControlRoomTask = 0x8017FCB8; // type:func absolute:True owner=shelter_b3_incinerator_control_room
+gShelterB3IncineratorControlRoomViewMaps = 0x80181920; // absolute:True owner=shelter_b3_incinerator_control_room
+gShelterB3IncineratorControlRoomViewCounts = 0x80181928; // absolute:True owner=shelter_b3_incinerator_control_room
+gShelterB3IncineratorControlRoomWarpEntries = 0x8018192C; // absolute:True owner=shelter_b3_incinerator_control_room
+gShelterB3IncineratorControlRoomCollisionGrid = 0x80181CC0; // absolute:True owner=shelter_b3_incinerator_control_room
+gShelterB3IncineratorControlRoomViewCameras = 0x80181CE4; // absolute:True owner=shelter_b3_incinerator_control_room
+gShelterB3IncineratorControlRoomSpriteViews = 0x80182140; // absolute:True owner=shelter_b3_incinerator_control_room shared=rooms
+gShelterB3IncineratorControlRoomLights = 0x801824A0; // absolute:True owner=shelter_b3_incinerator_control_room
+gShelterB3IncineratorControlRoomViewBoundaryTriggers = 0x801824B8; // absolute:True owner=shelter_b3_incinerator_control_room
+gShelterB3IncineratorControlRoomRoom1ActionTriggers = 0x80182668; // absolute:True owner=shelter_b3_incinerator_control_room
+gShelterB3IncineratorControlRoomRoom2ActionTriggers = 0x801827E4; // absolute:True owner=shelter_b3_incinerator_control_room shared=rooms
+gShelterB3IncineratorControlRoomOccluders = 0x801829AC; // absolute:True owner=shelter_b3_incinerator_control_room
+gShelterB3IncineratorControlRoomSurfacePropertiesByClass = 0x80182A20; // absolute:True owner=shelter_b3_incinerator_control_room
+shelterB3ElevatorHallRoomTask = 0x8017DE18; // type:func absolute:True owner=shelter_b3_elevator_hall
+gShelterB3ElevatorHallViewMaps = 0x80182B54; // absolute:True owner=shelter_b3_elevator_hall shared=rooms
+gShelterB3ElevatorHallRoomViewCounts = 0x80182B58; // absolute:True owner=shelter_b3_elevator_hall
+gShelterB3ElevatorHallWarpEntries = 0x80182B5C; // absolute:True owner=shelter_b3_elevator_hall shared=rooms
+gShelterB3ElevatorHallCollisionGrid = 0x801834C8; // absolute:True owner=shelter_b3_elevator_hall
+gShelterB3ElevatorHallViewCameras = 0x801834EC; // absolute:True owner=shelter_b3_elevator_hall
+gShelterB3ElevatorHallSpriteViews = 0x801841DC; // absolute:True owner=shelter_b3_elevator_hall
+gShelterB3ElevatorHallRoomLights = 0x80184410; // absolute:True owner=shelter_b3_elevator_hall
+gShelterB3ElevatorHallViewBoundaryTriggers = 0x80184428; // absolute:True owner=shelter_b3_elevator_hall
+gShelterB3ElevatorHallActionTriggers = 0x801847DC; // absolute:True owner=shelter_b3_elevator_hall
+gShelterB3ElevatorHallOccluders = 0x8018490C; // absolute:True owner=shelter_b3_elevator_hall
+gShelterB3ElevatorHallSurfacePropertiesByClass = 0x801849E0; // absolute:True owner=shelter_b3_elevator_hall
+shelterB4LowerSewerRoomTask = 0x8017D6D4; // type:func absolute:True owner=shelter_b4_lower_sewer shared=rooms
+gShelterB4LowerSewerViewMaps = 0x80181FA4; // absolute:True owner=shelter_b4_lower_sewer
+gShelterB4LowerSewerRoomViewCounts = 0x80181FA8; // absolute:True owner=shelter_b4_lower_sewer
+gShelterB4LowerSewerWarpEntries = 0x80181FAC; // absolute:True owner=shelter_b4_lower_sewer
+gShelterB4LowerSewerCollisionGrid = 0x801828E4; // absolute:True owner=shelter_b4_lower_sewer
+gShelterB4LowerSewerViewCameras = 0x80182908; // absolute:True owner=shelter_b4_lower_sewer shared=rooms
+gShelterB4LowerSewerSpriteViews = 0x80182E80; // absolute:True owner=shelter_b4_lower_sewer
+gShelterB4LowerSewerRoomLights = 0x8018342C; // absolute:True owner=shelter_b4_lower_sewer
+gShelterB4LowerSewerViewBoundaryTriggers = 0x80183444; // absolute:True owner=shelter_b4_lower_sewer
+gShelterB4LowerSewerActionTriggers = 0x801837D4; // absolute:True owner=shelter_b4_lower_sewer
+gShelterB4LowerSewerSurfacePropertiesByClass = 0x80183DF4; // absolute:True owner=shelter_b4_lower_sewer
+shelterB4UpperSewerRoomTask = 0x8017DC30; // type:func absolute:True owner=shelter_b4_upper_sewer shared=rooms
+gShelterB4UpperSewerViewMaps = 0x80186590; // absolute:True owner=shelter_b4_upper_sewer
+gShelterB4UpperSewerViewCounts = 0x80186594; // absolute:True owner=shelter_b4_upper_sewer
+gShelterB4UpperSewerWarpEntries = 0x80186598; // absolute:True owner=shelter_b4_upper_sewer
+gShelterB4UpperSewerCollisionGrid = 0x80186EF8; // absolute:True owner=shelter_b4_upper_sewer
+gShelterB4UpperSewerViewCameras = 0x80186F1C; // absolute:True owner=shelter_b4_upper_sewer shared=rooms
+gShelterB4UpperSewerSpriteViews = 0x801879BC; // absolute:True owner=shelter_b4_upper_sewer
+gShelterB4UpperSewerRoomLights = 0x80188184; // absolute:True owner=shelter_b4_upper_sewer
+gShelterB4UpperSewerViewBoundaryTriggers = 0x8018819C; // absolute:True owner=shelter_b4_upper_sewer
+gShelterB4UpperSewerActionTriggers = 0x801886F4; // absolute:True owner=shelter_b4_upper_sewer
+gShelterB4UpperSewerOccluders = 0x80188BFC; // absolute:True owner=shelter_b4_upper_sewer shared=rooms
+gShelterB4UpperSewerSurfacePropertiesByClass = 0x80188CFC; // absolute:True owner=shelter_b4_upper_sewer shared=rooms
+shelterB4ReservoirRoomTask = 0x8017E88C; // type:func absolute:True owner=shelter_b4_reservoir
+gShelterB4ReservoirRoomLighting = 0x801850E8; // absolute:True owner=shelter_b4_reservoir
+gShelterB4ReservoirRoomCollisionResources = 0x801850F8; // absolute:True owner=shelter_b4_reservoir
+gShelterB4ReservoirViewMaps = 0x80185118; // absolute:True owner=shelter_b4_reservoir
+gShelterB4ReservoirRoomViewCounts = 0x80185120; // absolute:True owner=shelter_b4_reservoir
+gShelterB4ReservoirWarpEntries = 0x80185124; // absolute:True owner=shelter_b4_reservoir
+gShelterB4ReservoirViewCameras = 0x80185ADC; // absolute:True owner=shelter_b4_reservoir
+gShelterB4ReservoirSpriteViews = 0x80186730; // absolute:True owner=shelter_b4_reservoir shared=rooms
+gShelterB4ReservoirSurfacePropertiesByClass = 0x80187480; // absolute:True owner=shelter_b4_reservoir
+shelterB4WaterSupplyRoomTask = 0x8017DDA4; // type:func absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplyViewMaps = 0x8018273C; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplyViewCounts = 0x80182740; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplyWarpEntries = 0x80182744; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplyCollisionGrid = 0x80182E3C; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplyViewCameras = 0x80182E60; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplySpriteViews = 0x80183F90; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplyRoomLights = 0x801843D4; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplyViewBoundaryTriggers = 0x801843EC; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplyActionTriggers = 0x80184944; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplyOccluders = 0x80184D04; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplyRoomAmbient = 0x80184D7C; // absolute:True owner=shelter_b4_water_supply
+gShelterB4WaterSupplySurfacePropertiesByClass = 0x80184E14; // absolute:True owner=shelter_b4_water_supply
+shelterR47RoomTask = 0x801807B4; // type:func absolute:True owner=shelter_r47
+gShelterR47ViewMaps = 0x80187674; // absolute:True owner=shelter_r47
+gShelterR47ViewCounts = 0x80187678; // absolute:True owner=shelter_r47 shared=rooms
+gShelterR47WarpEntries = 0x8018767C; // absolute:True owner=shelter_r47
+gShelterR47ViewBoundaryTriggers = 0x801876B4; // absolute:True owner=shelter_r47
+gShelterR47ActionTriggers = 0x8018787C; // absolute:True owner=shelter_r47
+gShelterR47CollisionGrid = 0x8018828C; // absolute:True owner=shelter_r47
+gShelterR47ViewCameras = 0x801882B0; // absolute:True owner=shelter_r47
+gShelterR47SpriteViews = 0x80189C68; // absolute:True owner=shelter_r47
+gShelterR47RoomLights = 0x8018A5BC; // absolute:True owner=shelter_r47
+gShelterR47SurfaceProperties = 0x8018A618; // absolute:True owner=shelter_r47
+shelterR48RoomTask = 0x8017E224; // type:func absolute:True owner=shelter_r48
+gShelterR48RoomLighting = 0x80183014; // absolute:True owner=shelter_r48
+gShelterR48RoomCollisionResources = 0x8018301C; // absolute:True owner=shelter_r48
+gShelterR48ViewMaps = 0x8018302C; // absolute:True owner=shelter_r48
+gShelterR48ViewCounts = 0x80183030; // absolute:True owner=shelter_r48
+gShelterR48WarpEntries = 0x80183034; // absolute:True owner=shelter_r48
+gShelterR48ViewCameras = 0x80183F10; // absolute:True owner=shelter_r48
+gShelterR48SpriteViews = 0x80189FB4; // absolute:True owner=shelter_r48
+gShelterR48SurfacePropertiesByClass = 0x8018BE10; // absolute:True owner=shelter_r48
+shelterR49RoomTask = 0x8017D6C4; // type:func absolute:True owner=shelter_r49 shared=rooms
+gShelterR49RoomCollisionResources = 0x8017DA18; // absolute:True owner=shelter_r49
+gShelterR49RoomViewMaps = 0x8017DA28; // absolute:True owner=shelter_r49
+gShelterR49RoomViewCounts = 0x8017DA2C; // absolute:True owner=shelter_r49
+gShelterR49RoomLighting = 0x8017DA30; // absolute:True owner=shelter_r49
+gShelterR49WarpEntries = 0x8017DA38; // absolute:True owner=shelter_r49
+gShelterR49ViewCameras = 0x8017DAD0; // absolute:True owner=shelter_r49 shared=rooms
+gShelterR49SpriteViews = 0x8017DCA0; // absolute:True owner=shelter_r49
+gShelterR49SurfacePropertiesByClass = 0x8017DDF8; // absolute:True owner=shelter_r49 shared=rooms
+actor503500SliderTask = 0x8013270C; // type:func absolute:True owner=actor_503500
+gActor503500Model14DA0 = 0x80147314; // absolute:True owner=actor_503500
+gActor503500Model15820 = 0x80147D6C; // absolute:True owner=actor_503500
+gMappicS400CavernShape = 0x8012EFBC; // absolute:True owner=mappic_s4_00 shared=mappic
+gMappicS400SecretPassageShape = 0x8012F0D8; // absolute:True owner=mappic_s4_00
+gMappicS402MesaShape = 0x8012EFA0; // absolute:True owner=mappic_s4_02 shared=mappic
+gMappicS402TunnelEntranceShape = 0x8012F030; // absolute:True owner=mappic_s4_02 shared=mappic
+gMappicS402TunnelShape = 0x8012F0C0; // absolute:True owner=mappic_s4_02
+gMappicS402GorgeShape = 0x8012F150; // absolute:True owner=mappic_s4_02
+gMappicS402RefugeShape = 0x8012F1E0; // absolute:True owner=mappic_s4_02
+gMappicS402ForkedTunnelShape = 0x8012F28C; // absolute:True owner=mappic_s4_02
+gMappicS403B1ElevatorHallShape = 0x8012EFD8; // absolute:True owner=mappic_s4_03 shared=mappic
+gMappicS403B1SouthMaintenanceWalkwayShape = 0x8012F084; // absolute:True owner=mappic_s4_03 shared=mappic
+gMappicS403B1StoreroomShape = 0x8012F114; // absolute:True owner=mappic_s4_03 shared=mappic
+gMappicS403B1NorthMaintenanceWalkwayShape = 0x8012F1C0; // absolute:True owner=mappic_s4_03 shared=mappic
+gMappicS403B1ArmoryShape = 0x8012F26C; // absolute:True owner=mappic_s4_03 shared=mappic
+gMappicS403B1SleepingQuartersShape = 0x8012F318; // absolute:True owner=mappic_s4_03 shared=mappic
+gMappicS403B1MainCorridorShape = 0x8012F3F8; // absolute:True owner=mappic_s4_03
+gMappicS403B1SterilizationRoomShape = 0x8012F488; // absolute:True owner=mappic_s4_03
+gMappicS403B1PodAccessTunnelShape = 0x8012F584; // absolute:True owner=mappic_s4_03
+gMappicS403B1ControlRoomShape = 0x8012F664; // absolute:True owner=mappic_s4_03
+gMappicS403B1AccessTunnelShape = 0x8012F710; // absolute:True owner=mappic_s4_03
+gMappicS403B1UndergroundParkingShape = 0x8012F7F0; // absolute:True owner=mappic_s4_03
+gMappicS403B1GolemFreezer1Shape = 0x8012F8D0; // absolute:True owner=mappic_s4_03
+gMappicS403B1TransferTunnelShape = 0x8012F960; // absolute:True owner=mappic_s4_03
+gMappicS403B1ControlRoomAccessTunnelShape = 0x8012F9F0; // absolute:True owner=mappic_s4_03
+gMappicS403B1PodDeckShape = 0x8012FAEC; // absolute:True owner=mappic_s4_03
+gMappicS404B2ElevatorHallShape = 0x8012EFD8; // absolute:True owner=mappic_s4_04 shared=mappic
+gMappicS404B2SouthMaintenanceWalkwayShape = 0x8012F084; // absolute:True owner=mappic_s4_04 shared=mappic
+gMappicS404B2OperatingRoomShape = 0x8012F114; // absolute:True owner=mappic_s4_04 shared=mappic
+gMappicS404B2NorthMaintenanceWalkwayShape = 0x8012F1C0; // absolute:True owner=mappic_s4_04 shared=mappic
+gMappicS404B2LaboratoryShape = 0x8012F26C; // absolute:True owner=mappic_s4_04 shared=mappic
+gMappicS404B2BreedingRoomShape = 0x8012F318; // absolute:True owner=mappic_s4_04 shared=mappic
+gMappicS404B2MainCorridorShape = 0x8012F468; // absolute:True owner=mappic_s4_04
+gMappicS404B2SepticTankShape = 0x8012F4F8; // absolute:True owner=mappic_s4_04
+gMappicS404B2PodAccessTunnelShape = 0x8012F5F4; // absolute:True owner=mappic_s4_04
+gMappicS404B2PodBottomShape = 0x8012F6BC; // absolute:True owner=mappic_s4_04
+gMappicS405DumpingHoleShape = 0x8012EFF0; // absolute:True owner=mappic_s4_05 shared=mappic
+gMappicS405GarbageIncineratorShape = 0x8012F14C; // absolute:True owner=mappic_s4_05
+gMappicS405IncineratorControlRoomShape = 0x8012F1F8; // absolute:True owner=mappic_s4_05
+gMappicS405ElevatorHallShape = 0x8012F32C; // absolute:True owner=mappic_s4_05
+gMappicS406ReservoirShape = 0x8012EFF0; // absolute:True owner=mappic_s4_06 shared=mappic
+gMappicS406UpperSewerShape = 0x8012F0B8; // absolute:True owner=mappic_s4_06 shared=mappic
+gMappicS406WaterSupplyShape = 0x8012F198; // absolute:True owner=mappic_s4_06
+gMappicS406LowerSewerShape = 0x8012F260; // absolute:True owner=mappic_s4_06
+
+mapShelterRoomVariantResolve = 0x80179A04; // type:func
+_gMapShelterDumpingHoleRoomLighting = 0x8017ae7c;
+gMapShelterRoomLightingTables = 0x8017AEC4; // size:0xC4 defined:True
+_gMapShelterAreaViewMaps = 0x8017b484;
+_gMapShelterAreaSpriteViews = 0x8017b54c;
+gMapShelterImageSlotsByArea = 0x80179b40;
+_gMapShelterEmptyObjectSpawns = 0x8017a888;
+_gMapShelterB1NorthMaintenanceWalkwayRoomLighting = 0x8017adc4;
+_gMapShelterB1ArmoryRoomLighting = 0x8017adcc;
+_gMapShelterB1SleepingQuartersRoomLighting = 0x8017add4;
+_gMapShelterB1MainCorridorRoomLighting = 0x8017addc;
+_gMapShelterB1PodAccessTunnelRoomLighting = 0x8017ade4;
+_gMapShelterB1ControlRoomLighting = 0x8017adec;
+_gMapShelterB1AccessTunnelRoomLighting = 0x8017adf4;
+_gMapShelterB1GolemFreezer1RoomLighting = 0x8017adfc;
+_gMapShelterB1PodServiceGantryRoomLighting = 0x8017ae04;
+_gMapShelterB1TransferTunnelRoomLighting = 0x8017ae0c;
+_gMapShelterB1ControlRoomAccessTunnelRoomLighting = 0x8017ae14;
+_gMapShelterB2ElevatorRoomLighting = 0x8017ae1c;
+_gMapShelterB2ElevatorHallRoomLighting = 0x8017ae24;
+_gMapShelterB2SouthMaintenanceWalkwayRoomLighting = 0x8017ae2c;
+_gMapShelterB2OperatingRoomLighting = 0x8017ae34;
+_gMapShelterB2NorthMaintenanceWalkwayRoomLighting = 0x8017ae3c;
+_gMapShelterB2LaboratoryRoomLighting = 0x8017ae44;
+_gMapShelterB2BreedingRoomLighting = 0x8017ae4c;
+_gMapShelterB2MainCorridorRoomLighting = 0x8017ae54;
+_gMapShelterB2SepticTankRoomLighting = 0x8017ae5c;
+_gMapShelterR36RoomLighting = 0x8017ae64;
+_gMapShelterR37RoomLighting = 0x8017ae6c;
+_gMapShelter1fHeliportS4RoomLighting = 0x8017ae74;
+_gMapShelterB3IncineratorControlRoomLighting = 0x8017ae8c;
+_gMapShelterB3ElevatorHallRoomLighting = 0x8017ae9c;
+_gMapShelterB4LowerSewerRoomLighting = 0x8017aea4;
+_gMapShelterB4UpperSewerRoomLighting = 0x8017aeac;
+_gMapShelterB4WaterSupplyRoomLighting = 0x8017aeb4;
+_gMapShelterR47RoomLighting = 0x8017aebc;
+gMapShelterSurfacePropertiesByArea = 0x8017b614;
+_gMapShelterMineMesaObjectPlaces = 0x8017b6d8;
+_gMapShelterMineCavernObjectPlaces = 0x8017b6f8;
+_gMapShelterMineRefugeObjectPlaces = 0x8017b728;
+_gMapShelterMineForkedTunnelObjectPlaces = 0x8017b778;
+_gMapShelterMineForkedTunnelObjectSpawns = 0x8017a898;
+_gMapShelterB1StoreroomObjectPlaces = 0x8017b7a8;
+_gMapShelterB1NorthMaintenanceWalkwayObjectPlaces = 0x8017b7d8;
+_gMapShelterB1ArmoryObjectPlaces = 0x8017b7f8;
+_gMapShelterB1SleepingQuartersObjectPlaces = 0x8017b848;
+_gMapShelterB1SleepingQuartersObjectSpawns = 0x8017a8b8;
+_gMapShelterB1SterilizationRoomObjectPlaces = 0x8017b868;
+_gMapShelterB1SterilizationRoomObjectSpawns = 0x8017a978;
+_gMapShelterB1UndergroundParkingObjectPlaces = 0x8017b898;
+_gMapShelterB1UndergroundParkingObjectSpawns = 0x8017a968;
+_gMapShelterB1GolemFreezer1ObjectPlaces = 0x8017b988;
+_gMapShelterB2ElevatorObjectPlaces = 0x8017b998;
+_gMapShelterB2OperatingRoomObjectPlaces = 0x8017b9b8;
+_gMapShelterB2LaboratoryObjectPlaces = 0x8017b9e8;
+_gMapShelterB2LaboratoryObjectSpawns = 0x8017a8d8;
+_gMapShelterB2BreedingRoomObjectPlaces = 0x8017ba18;
+_gMapShelterB2BreedingRoomObjectSpawns = 0x8017a8f8;
+_gMapShelterB3DumpingHoleObjectPlaces = 0x8017ba68;
+_gMapShelterB3DumpingHoleObjectSpawns = 0x8017a918;
+_gMapShelterB3IncineratorControlRoomObjectPlaces = 0x8017baa8;
+_gMapShelterB4ReservoirObjectPlaces = 0x8017bac8;
+_gMapShelterR47ObjectPlaces = 0x8017bae8;
+_gMapShelterR48ObjectPlaces = 0x8017bb28;
+_gMapShelterR48ObjectSpawns = 0x8017a938;
+_gMapShelterAreaViewCameras = 0x8017b3bc;
+_gMapShelterAreaViewCounts = 0x8017b04c;
+_gMapShelterB1SleepingQuartersRoomCollisionResources = 0x8017b134;
+_gMapShelterB1MainCorridorRoomCollisionResources = 0x8017b144;
+_gMapShelterB1PodAccessTunnelRoomCollisionResources = 0x8017b154;
+_gMapShelterB1AccessTunnelRoomCollisionResources = 0x8017b174;
+_gMapShelterB1GolemFreezer1RoomCollisionResources = 0x8017b184;
+_gMapShelterB1PodServiceGantryRoomCollisionResources = 0x8017b194;
+_gMapShelterB1TransferTunnelRoomCollisionResources = 0x8017b1a4;
+_gMapShelterB1ControlRoomAccessTunnelRoomCollisionResources = 0x8017b1b4;
+_gMapShelterB2ElevatorRoomCollisionResources = 0x8017b1c4;
+_gMapShelterB2ElevatorHallRoomCollisionResources = 0x8017b1d4;
+_gMapShelterB2OperatingRoomCollisionResources = 0x8017b1f4;
+_gMapShelterB2LaboratoryRoomCollisionResources = 0x8017b214;
+_gMapShelterB2BreedingRoomCollisionResources = 0x8017b224;
+_gMapShelterB2MainCorridorRoomCollisionResources = 0x8017b234;
+_gMapShelterB2SepticTankRoomCollisionResources = 0x8017b244;
+_gMapShelterR36RoomCollisionResources = 0x8017b254;
+_gMapShelterR37RoomCollisionResources = 0x8017b264;
+_gMapShelter1fHeliportS4RoomCollisionResources = 0x8017b274;
+_gMapShelterB3IncineratorControlRoomCollisionResources = 0x8017b284;
+_gMapShelterB3ElevatorHallRoomCollisionResources = 0x8017b2a4;
+_gMapShelterB4LowerSewerRoomCollisionResources = 0x8017b2b4;
+_gMapShelterB4UpperSewerRoomCollisionResources = 0x8017b2c4;
+_gMapShelterB4WaterSupplyRoomCollisionResources = 0x8017b2d4;
+_gMapShelterB1NorthMaintenanceWalkwayRoomCollisionResources = 0x8017b114;
+_gMapShelterB1ArmoryRoomCollisionResources = 0x8017b124;
+_gMapShelterB1ControlRoomRoomCollisionResources = 0x8017b164;
+_gMapShelterB2SouthMaintenanceWalkwayRoomCollisionResources = 0x8017b1e4;
+_gMapShelterB2NorthMaintenanceWalkwayRoomCollisionResources = 0x8017b204;
+_gMapShelterR47RoomCollisionResources = 0x8017b2e4;
+_gMapShelterWorldCollisionAreaRooms = 0x8017b2f4;
+gMapShelterAreaWarpEntries = 0x8017af88;

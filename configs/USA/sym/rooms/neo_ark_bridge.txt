@@ -1,0 +1,96 @@
+// Overlay-local symbols for neo_ark_bridge.
+_gNeoArkBridgeRedMarkerCentre = 0x80181F58; // size:0x8 defined:True
+_gNeoArkBridgeFirstSmokeSpawnPoint = 0x80181F60; // size:0x8 defined:True
+_gNeoArkBridgeSecondSmokeSpawnPoint = 0x80181F68; // size:0x8 defined:True
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x80181F70; // size:0x10 defined:True
+_gNeoArkBridgeRoomMessages = 0x80181F30; // size:0x28 defined:True
+gNeoArkBridgeViewMaps = 0x80181F80; // size:0x4 defined:True
+gNeoArkBridgeViewCounts = 0x80181F84; // size:0x2 defined:True
+gNeoArkBridgeWaterRefractionTaskDesc = 0x80181F18; // size:0xC defined:True
+_gNeoArkBridgeUnusedWaterDistortionTaskDesc = 0x80181F24; // size:0xC defined:True
+gNeoArkBridgeWarpEntries = 0x80181F88; // size:0x70 defined:True
+gNeoArkBridgeDiverWaterY = 0x80181FF8; // size:0x2 defined:True
+_gNeoArkBridgeDiverPatrolWaypoints0 = 0x80181FFC; // size:0x40 defined:True
+_gNeoArkBridgeDiverPatrolWaypoints1 = 0x8018203C; // size:0x40 defined:True
+_gNeoArkBridgeDiverPatrolWaypoints2 = 0x8018207C; // size:0x40 defined:True
+gNeoArkBridgeDiverPatrolRings = 0x801820BC; // size:0x10 defined:True
+gNeoArkBridgeDiverSurfaceSpots = 0x801820CC; // size:0x48 defined:True
+_gNeoArkBridgeCollisionGridNormals = 0x80182114; // size:0x28 defined:True
+_gNeoArkBridgeCollisionGridVerts = 0x8018213C; // size:0x308 defined:True
+_gNeoArkBridgeCollisionGridFaces = 0x80182444; // size:0x204 defined:True
+_gNeoArkBridgeCollisionGridCells = 0x80182648; // size:0x178 defined:True
+_gNeoArkBridgeCollisionGridTable = 0x801827C0; // size:0x54 defined:True
+gNeoArkBridgeCollisionGrid = 0x80182814; // size:0x24 defined:True
+gNeoArkBridgeViewCameras = 0x80182838; // size:0xD8 defined:True
+_gNeoArkBridgeView1SpriteBatches = 0x80182910; // size:0x10 defined:True
+_gNeoArkBridgeView2SpriteSources = 0x80182920; // size:0x2A8 defined:True
+_gNeoArkBridgeView2SpriteBatches = 0x80182BC8; // size:0x18 defined:True
+_gNeoArkBridgeView3SpriteSources = 0x80182BE0; // size:0x6F4 defined:True
+_gNeoArkBridgeView3SpriteBatches = 0x801832D4; // size:0x30 defined:True
+_gNeoArkBridgeView4SpriteSources = 0x80183304; // size:0xA8C defined:True
+_gNeoArkBridgeView4SpriteBatches = 0x80183D90; // size:0x28 defined:True
+_gNeoArkBridgeView5SpriteSources = 0x80183DB8; // size:0x4C4 defined:True
+_gNeoArkBridgeView5SpriteBatches = 0x8018427C; // size:0x28 defined:True
+_gNeoArkBridgeView6SpriteSources = 0x801842A4; // size:0x2A8 defined:True
+_gNeoArkBridgeView6SpriteBatches = 0x8018454C; // size:0x18 defined:True
+gNeoArkBridgeSpriteViews = 0x80184564; // size:0x48 defined:True
+_gNeoArkBridgeDirectionalLights = 0x801845AC; // size:0x160 defined:True
+gNeoArkBridgeRoomLights = 0x8018470C; // size:0x18 defined:True
+gNeoArkBridgeViewBoundaryTriggers = 0x80184724; // size:0x260 defined:True
+_gNeoArkBridgeVariant1Resources = 0x80184984; // size:0x18 defined:True
+_gNeoArkBridgeVariant2Resources = 0x8018499C; // size:0x24 defined:True
+_gNeoArkBridgeVariant3Resources = 0x801849C0; // size:0x24 defined:True
+_gNeoArkBridgeVariant4Resources = 0x801849E4; // size:0x24 defined:True
+_gNeoArkBridgeVariant5Resources = 0x80184A08; // size:0x18 defined:True
+_gNeoArkBridgeVariant11Resources = 0x80184A20; // size:0x18 defined:True
+_gNeoArkBridgeVariant12Resources = 0x80184A38; // size:0x18 defined:True
+gNeoArkBridgePlacementVariants = 0x80184A50; // size:0x68 defined:True
+gNeoArkBridgeActionTriggers = 0x80184AB8; // size:0xE4 defined:True
+_gNeoArkBridgeSurface3FootstepSounds = 0x80184B9C; // size:0xC defined:True
+_gNeoArkBridgeSurface4FootstepSounds = 0x80184BA8; // size:0xC defined:True
+_gNeoArkBridgeSolidSurface = 0x80184BB4; // size:0x8 defined:True
+_gNeoArkBridgeProbePassSurface = 0x80184BBC; // size:0x8 defined:True
+_gNeoArkBridgeSurface3Properties = 0x80184BC4; // size:0x8 defined:True
+_gNeoArkBridgeSurface4Properties = 0x80184BCC; // size:0x8 defined:True
+gNeoArkBridgeSurfaceProperties = 0x80184BD4; // size:0x20 defined:True
+gActor102300RookGolemTasks = 0x80147AB8; // absolute:True owner=actor_102300
+gActor100400Tasks = 0x80147E48; // absolute:True owner=actor_100400
+gActor203800BlackBeetleTaskDesc = 0x8014FD74; // absolute:True owner=actor_203800
+gActor201100Tasks = 0x8015F400; // absolute:True owner=actor_201100
+gMapNeoArkBridgeVariant1Placements = 0x8017C1D0; // absolute:True owner=map_neo_ark
+gMapNeoArkBridgeVariant2Placements = 0x8017C210; // absolute:True owner=map_neo_ark
+gMapNeoArkBridgeVariant3Placements = 0x8017C270; // absolute:True owner=map_neo_ark
+gMapNeoArkBridgeVariant4Placements = 0x8017C2A0; // absolute:True owner=map_neo_ark
+gMapNeoArkBridgeVariant5Placements = 0x8017C2E0; // absolute:True owner=map_neo_ark
+gMapNeoArkBridgeVariant11Placements = 0x8017C320; // absolute:True owner=map_neo_ark
+gMapNeoArkBridgeVariant12Placements = 0x8017C350; // absolute:True owner=map_neo_ark
+
+neoArkBridgeAmbientEffectsTask = 0x8017E954; // type:func
+
+neoArkBridgeWaterRippleTask = 0x8017EF70; // type:func
+
+neoArkBridgeWaterDriftTask = 0x8017F3F8; // type:func
+
+neoArkBridgeRoomVisualEffectsFlashTask = 0x8017FF84; // type:func
+
+neoArkBridgeRoomVisualEffectsTwinTrailTask = 0x801809E8; // type:func
+
+neoArkBridgeRoomVisualEffectsSparkBurstTask = 0x801812D0; // type:func
+_roomVisualEffectsDrawFlashRing = 0x80180228; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x80180654; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x80180ED8; // type:func
+_roomVisualEffectsDrawBurstStar = 0x80181558; // type:func
+_waterDrawSplash = 0x8017F0C4; // type:func
+waterDistortBandTask = 0x8017E28C; // type:func
+waterRefractionTask = 0x8017D638; // type:func
+_waterDrawSpin = 0x8017F8B4; // type:func
+_waterDrawTile = 0x8017FCA0; // type:func
+_neoArkBridgeDrawPulsingRedStar = 0x8017eb08; // type:func
+_neoArkBridgeRejectKeyItemUse = 0x8017e82c; // type:func
+_neoArkBridgeResolveRoomTransition = 0x8017e834; // type:func
+_neoArkBridgeIgnoreRoomCommand = 0x8017e878; // type:func
+_neoArkBridgeIgnoreRoomAction = 0x8017e880; // type:func
+_neoArkBridgeInitRoomTask = 0x8017e888; // type:func
+_neoArkBridgeIdleRoomTask = 0x8017e8f4; // type:func
+neoArkBridgeRoomTask = 0x8017e8fc; // type:func
+_gNeoArkBridgeRoomTaskStates = 0x8017d614;

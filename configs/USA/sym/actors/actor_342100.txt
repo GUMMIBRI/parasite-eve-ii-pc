@@ -1,0 +1,52 @@
+// Overlay-local symbols for actor_342100.
+_gActor342100BlazeClipSuccessors = 0x80164910; // size:0x6 defined:True
+_gActor342100BlazeFirePlacementsView30 = 0x80164918; // size:0x18 defined:True
+_gActor342100BlazeFirePlacementsView29 = 0x80164930; // size:0x18 defined:True
+_gActor342100BlazeFirePlacementsView31 = 0x80164948; // size:0x38 defined:True
+_gActor342100BlazeFirePlacementsView36 = 0x80164980; // size:0x20 defined:True
+_gBlazePlayerFireArg = 0x801649A0; // size:0x8 defined:True
+_gBlazePlayerFireParts = 0x801649A8; // size:0x20 defined:True
+_gActor342100BlazeScript = 0x801649C8; // size:0x1B0 defined:True
+gActor342100EncounterBlazeTaskDescriptors = 0x80164B78; // size:0x3C defined:True
+_gScreenWaveContext = 0x80164BB4; // size:0x4 defined:True
+_gActor342100BlazeControllerTask = 0x80164BB8; // size:0x4 defined:True
+_gScreenWaveColumnWaves = 0x80164BBC; // size:0x50 defined:True
+_gScreenWaveRowWaves = 0x80164C0C; // size:0xF0 defined:True
+gScreenWaveGrid = 0x80164CFC; // size:0x4B00 defined:True
+_gActor342100Animation019F0Bank1 = 0x80163534; // size:0x48 defined:True
+_gActor342100Animation019F0Bank4 = 0x8016357C; // size:0xB8 defined:True
+_gActor342100Animation019F0Records = 0x80163634; // size:0x1B4 defined:True
+_gActor342100Animation019F0Indices = 0x801637E8; // size:0x28 defined:True
+gAyaStandClip = 0x80163810; // size:0x28 defined:True
+_gActor342100Animation0242CBank1 = 0x80163838; // size:0xC0 defined:True
+_gActor342100Animation0242CBank4 = 0x801638F8; // size:0x3D8 defined:True
+_gActor342100Animation0242CRecords = 0x80163CD0; // size:0x554 defined:True
+_gActor342100Animation0242CIndices = 0x80164224; // size:0x28 defined:True
+gGolemNo9PlayerEvent58Clip = 0x8016424C; // size:0x28 defined:True
+_gActor342100Animation02A94Bank1 = 0x80164274; // size:0xA8 defined:True
+_gActor342100Animation02A94Bank4 = 0x8016431C; // size:0x250 defined:True
+_gActor342100Animation02A94Records = 0x8016456C; // size:0x320 defined:True
+_gActor342100Animation02A94Indices = 0x8016488C; // size:0x28 defined:True
+gGolemNo9PlayerEvent59Clip = 0x801648B4; // size:0x28 defined:True
+_gActor342100BlazeHeatHazeTaskDescs = 0x801648DC; // size:0x18 defined:True
+_gScreenWaveAmplitude = 0x801648F4; // size:0x4 defined:True
+_gBlazeFadeMessages = 0x801648F8; // size:0x8 defined:True
+_gActor342100BlazeAnimationSets = 0x80164900; // size:0x10 defined:True
+
+gShelterB3DumpingHoleEncounterTaskDescriptors = 0x8018B83C; // absolute:True owner=shelter_b3_dumping_hole
+
+gShelterB3DumpingHoleEncounterCaptionTaskDescriptors = 0x8018B57C; // absolute:True owner=shelter_b3_dumping_hole
+_screenWaveGridTask = 0x80161E70; // type:func
+_blazeFadeTask = 0x80162748; // type:func
+_blazeBodyFireTask = 0x80162DDC; // type:func
+_actor342100AdvanceBlazeAnimation = 0x801629b8; // type:func
+_actor342100HandleBlazeFadeState = 0x80163344; // type:func
+_actor342100PlayBlazeAnimation = 0x8016334c; // type:func
+_actor342100SetBlazeFadeState = 0x801633d0; // type:func
+_actor342100TriggerBlazeDeath = 0x80163518; // type:func
+_actor342100StartBlazeHeatHaze = 0x80163408; // type:func
+_actor342100BlazeFireEmitterTask = 0x80162ab0; // type:func
+_actor342100SpawnBlazeFireEmitters = 0x80162c88; // type:func
+_actor342100UpdateBlazeScene = 0x80162f54; // type:func
+_actor342100EncounterBlazeControllerTask = 0x801630a4; // type:func
+_actor342100SetBlazeBodyFireMode = 0x80163454; // type:func

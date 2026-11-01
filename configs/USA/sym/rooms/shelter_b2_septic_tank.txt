@@ -1,0 +1,124 @@
+// Overlay-local symbols for shelter_b2_septic_tank.
+_gShelterB2SepticTankFirstWaterWaveSurfaces = 0x801832CC; // size:0x24 defined:True
+_gShelterB2SepticTankSecondWaterWaveSurfaces = 0x801832F0; // size:0x24 defined:True
+_gShelterB2SepticTankGlowPoints = 0x80183314; // size:0x248 defined:True
+gShelterB2SepticTankWaterY = 0x801832BC; // size:0x2 defined:True
+_gShelterB2SepticTankWaterTaskDesc = 0x801832C0; // size:0xC defined:True
+gShelterB2SepticTankViewMaps = 0x8018356C; // size:0x4 defined:True
+gShelterB2SepticTankRoomViewCounts = 0x80183570; // size:0x2 defined:True
+_gShelterB2SepticTankEncounterIntroScript = 0x80183004; // size:0x108 defined:True
+_gShelterB2SepticTankCombatSetupScript = 0x8018310C; // size:0x1B0 defined:True
+gShelterB2SepticTankWarpEntries = 0x80183574; // size:0x70 defined:True
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x8018355C; // size:0x10 defined:True
+_gShelterB2SepticTankDiverPatrolRing0 = 0x801835E4; // size:0x40 defined:True
+_gShelterB2SepticTankDiverPatrolRing1 = 0x80183624; // size:0x40 defined:True
+_gShelterB2SepticTankDiverPatrolRing2 = 0x80183664; // size:0x40 defined:True
+gShelterB2SepticTankDiverPatrolRings = 0x801836A4; // size:0x10 defined:True
+gShelterB2SepticTankDiverSurfaceSpots = 0x801836B4; // size:0x60 defined:True
+_gShelterB2SepticTankCollisionGridNormals = 0x80183714; // size:0x90 defined:True
+_gShelterB2SepticTankCollisionGridVerts = 0x801837A4; // size:0x290 defined:True
+_gShelterB2SepticTankCollisionGridFaces = 0x80183A34; // size:0x174 defined:True
+_gShelterB2SepticTankCollisionGridCells = 0x80183BA8; // size:0x21C defined:True
+_gShelterB2SepticTankCollisionGridTable = 0x80183DC4; // size:0x48 defined:True
+gShelterB2SepticTankCollisionGrid = 0x80183E0C; // size:0x24 defined:True
+gShelterB2SepticTankViewCameras = 0x80183E30; // size:0xD8 defined:True
+_gShelterB2SepticTankView1SpriteBatches = 0x80183F08; // size:0x10 defined:True
+_gShelterB2SepticTankView2SpriteSources = 0x80183F18; // size:0x67C defined:True
+_gShelterB2SepticTankView2SpriteBatches = 0x80184594; // size:0x30 defined:True
+_gShelterB2SepticTankView3SpriteSources = 0x801845C4; // size:0x9EC defined:True
+_gShelterB2SepticTankView3SpriteBatches = 0x80184FB0; // size:0x50 defined:True
+_gShelterB2SepticTankView4SpriteSources = 0x80185000; // size:0xB40 defined:True
+_gShelterB2SepticTankView4SpriteBatches = 0x80185B40; // size:0x58 defined:True
+_gShelterB2SepticTankView5SpriteSources = 0x80185B98; // size:0xB2C defined:True
+_gShelterB2SepticTankView5SpriteBatches = 0x801866C4; // size:0x20 defined:True
+_gShelterB2SepticTankView6SpriteBatches = 0x801866E4; // size:0x10 defined:True
+gShelterB2SepticTankSpriteViews = 0x801866F4; // size:0x48 defined:True
+_gShelterB2SepticTankPointLights = 0x8018673C; // size:0x300 defined:True
+gShelterB2SepticTankRoomLights = 0x80186A3C; // size:0x18 defined:True
+gShelterB2SepticTankViewBoundaryTriggers = 0x80186A54; // size:0x1C8 defined:True
+gShelterB2SepticTankActionTriggers = 0x80186C1C; // size:0x130 defined:True
+_gShelterB2SepticTankVariant1Resources = 0x80186D4C; // size:0x18 defined:True
+_gShelterB2SepticTankVariant2Resources = 0x80186D64; // size:0x18 defined:True
+_gShelterB2SepticTankVariant3Resources = 0x80186D7C; // size:0x24 defined:True
+_gShelterB2SepticTankVariant4Resources = 0x80186DA0; // size:0x18 defined:True
+_gShelterB2SepticTankVariant11Resources = 0x80186DB8; // size:0x24 defined:True
+_gShelterB2SepticTankVariant21Resources = 0x80186DDC; // size:0x24 defined:True
+_gShelterB2SepticTankVariant1Placements = 0x80186E00; // size:0x30 defined:True
+_gShelterB2SepticTankVariant2Placements = 0x80186E30; // size:0x30 defined:True
+_gShelterB2SepticTankVariant3Placements = 0x80186E60; // size:0x30 defined:True
+_gShelterB2SepticTankVariant4Placements = 0x80186E90; // size:0x20 defined:True
+_gShelterB2SepticTankVariant11Placements = 0x80186EB0; // size:0x50 defined:True
+_gShelterB2SepticTankVariant21Placements = 0x80186F00; // size:0x40 defined:True
+gShelterB2SepticTankAreaVariants = 0x80186F40; // size:0xB0 defined:True
+_gShelterB2SepticTankClass2FootstepSounds = 0x80186FF0; // size:0xC defined:True
+_gShelterB2SepticTankDefaultSurface = 0x80186FFC; // size:0x8 defined:True
+_gShelterB2SepticTankProbePassSurface = 0x80187004; // size:0x8 defined:True
+_gShelterB2SepticTankClass2Surface = 0x8018700C; // size:0x8 defined:True
+gShelterB2SepticTankSurfacePropertiesByClass = 0x80187014; // size:0x20 defined:True
+gRoomEventFade = 0x80187034; // size:0x8 defined:True
+gActor102100WatcherTaskDesc = 0x80135C30; // absolute:True owner=actor_102100
+gActor100400Tasks = 0x80147E48; // absolute:True owner=actor_100400
+gActor201100Tasks = 0x8015F400; // absolute:True owner=actor_201100
+gActor202000PawnGolemTasks = 0x8015FDF0; // absolute:True owner=actor_202000
+gActor200400Tasks = 0x8015FE48; // absolute:True owner=actor_200400
+_gShelterB2SepticTankCombatSetupAnimationRequest = 0x80182FC0; // size:0x14 defined:True
+_gShelterB2SepticTankCombatPlayerPlacement = 0x80182FD4; // size:0x18 defined:True
+_gShelterB2SepticTankEncounterFacingRequest = 0x80182FEC; // size:0x18 defined:True
+_gShelterB2SepticTankIntroSwimCommand = 0x80182FA0; // size:0x4 defined:True
+_gShelterB2SepticTankIntroSurfaceCommand = 0x80182FA4; // size:0x4 defined:True
+_gShelterB2SepticTankFightCommand = 0x80182FA8; // size:0x4 defined:True
+D_shelter_b2_septic_tank_80182FAC = 0x80182FAC; // size:0x14 defined:True
+_gRoomEventStagedMsg = 0x8018703C; // size:0x8 defined:True
+_gShelterB2SepticTankAnimation05958Bank1 = 0x80182B74; // size:0x48 defined:True
+_gShelterB2SepticTankAnimation05958Bank4 = 0x80182BBC; // size:0x100 defined:True
+_gShelterB2SepticTankAnimation05958Records = 0x80182CBC; // size:0x234 defined:True
+_gShelterB2SepticTankAnimation05958Indices = 0x80182EF0; // size:0x28 defined:True
+_gShelterB2SepticTankAnimation05958 = 0x80182F18; // size:0x28 defined:True
+_gShelterB2SepticTankStagedEventTaskDesc = 0x80182F40; // size:0xC defined:True
+_gShelterB2SepticTankRoomMessages = 0x80182F4C; // size:0x28 defined:True
+_gShelterB2SepticTankEncounterAnimationSets = 0x80182F74; // size:0x4 defined:True
+_gShelterB2SepticTankEncounterAnimationBankCopy = 0x80182F78; // size:0x8 defined:True
+_gShelterB2SepticTankIntroAnimationRequest = 0x80182F80; // size:0x14 defined:True
+D_shelter_b2_septic_tank_80182F94 = 0x80182F94; // size:0xC defined:True
+_gShelterB2SepticTankStagedEventStarted = 0x80187044; // size:0x1 defined:True
+_gShelterB2SepticTankEncounterSceneStage = 0x80187045; // size:0x1 defined:True
+D_shelter_b2_septic_tank_80187046 = 0x80187046; // size:0x2 defined:True
+gRoomEventLatched = 0x80187048; // size:0xC defined:True
+_gShelterB2SepticTankWaterPacketCursor = 0x80187054; // size:0x4 defined:True
+
+shelterB2SepticTankGlowTask = 0x8017EB7C; // type:func
+
+shelterB2SepticTankWaterRippleTask = 0x8017F040; // type:func
+
+shelterB2SepticTankWaterDriftTask = 0x8017F4C8; // type:func
+
+shelterB2SepticTankRoomVisualEffectsFlashTask = 0x80180BE0; // type:func
+
+shelterB2SepticTankRoomVisualEffectsTwinTrailTask = 0x80181644; // type:func
+
+shelterB2SepticTankRoomVisualEffectsSparkBurstTask = 0x80181F2C; // type:func
+_roomVisualEffectsDrawFlashRing = 0x80180E84; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x801812B0; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x80181B34; // type:func
+_roomVisualEffectsDrawBurstStar = 0x801821B4; // type:func
+_glowDrawBeam = 0x80180054; // type:func
+_waterDrawSplash = 0x8017F194; // type:func
+_waterDrawSpin = 0x8017F984; // type:func
+_waterDrawTile = 0x8017FD70; // type:func
+roomEventStagedTask = 0x8017D614; // type:func
+_glowDrawBitDisc = 0x8018083C; // type:func
+_waterDrawWaveStrips = 0x8017DB68; // type:func
+_waterDrawSecondWaveStrips = 0x8017E2DC; // type:func
+_shelterB2SepticTankRejectKeyItem = 0x8017d7ac; // type:func
+_shelterB2SepticTankIgnoreCommand = 0x8017d904; // type:func
+_shelterB2SepticTankSetEncounterPhase = 0x8017d97c; // type:func
+_shelterB2SepticTankInitializeRoom = 0x8017da18; // type:func
+shelterB2SepticTankRoomTask = 0x8017db10; // type:func
+_shelterB2SepticTankInitializeWater = 0x8017eab8; // type:func
+_shelterB2SepticTankDrawWater = 0x8017eaf8; // type:func
+_shelterB2SepticTankWaterTask = 0x8017ea50; // type:func
+_shelterB2SepticTankResolveRoomEvent = 0x8017d7b4; // type:func
+_shelterB2SepticTankHandleRoomAction = 0x8017d90c; // type:func
+_shelterB2SepticTankPrepareEncounterFacing = 0x8017d9a0; // type:func
+_shelterB2SepticTankMonitorEncounterIntro = 0x8017da74; // type:func
+_gShelterB2SepticTankStateHandlers = 0x8017d5d8;

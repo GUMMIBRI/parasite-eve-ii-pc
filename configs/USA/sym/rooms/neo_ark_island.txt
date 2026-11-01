@@ -1,0 +1,90 @@
+// Overlay-local symbols for neo_ark_island.
+_gNeoArkIslandGalleryDestination = 0x80184008; // size:0x8 defined:True
+gNeoArkIslandAreaVariants = 0x80183F48; // size:0x68 defined:True
+_gNeoArkIslandSurface3FootstepSounds = 0x80183FB0; // size:0xC defined:True
+_gNeoArkIslandSurface4FootstepSounds = 0x80183FBC; // size:0xC defined:True
+_gNeoArkIslandSolidSurface = 0x80183FC8; // size:0x8 defined:True
+_gNeoArkIslandProbePassSurface = 0x80183FD0; // size:0x8 defined:True
+_gNeoArkIslandSurface3Properties = 0x80183FD8; // size:0x8 defined:True
+_gNeoArkIslandSurface4Properties = 0x80183FE0; // size:0x8 defined:True
+gNeoArkIslandSurfaceProperties = 0x80183FE8; // size:0x20 defined:True
+gMapNeoArkIslandVariant1Placements = 0x8017B550; // absolute:True owner=map_neo_ark
+gMapNeoArkIslandVariant2Placements = 0x8017B590; // absolute:True owner=map_neo_ark
+gMapNeoArkIslandVariant3Placements = 0x8017B5C0; // absolute:True owner=map_neo_ark
+gMapNeoArkIslandVariant4Placements = 0x8017B600; // absolute:True owner=map_neo_ark
+gMapNeoArkIslandVariant11Placements = 0x8017B610; // absolute:True owner=map_neo_ark shared=mapui
+gNeoArkIslandRoomCollisionResources = 0x80181B94; // size:0x10 defined:True
+gNeoArkIslandRoomLighting = 0x80181BA4; // size:0x8 defined:True
+gNeoArkIslandViewMaps = 0x80181BAC; // size:0x4 defined:True
+gNeoArkIslandViewCounts = 0x80181BB0; // size:0x2 defined:True
+_gNeoArkIslandCollisionGridNormals = 0x80181D30; // size:0x68 defined:True
+_gNeoArkIslandCollisionGridVerts = 0x80181D98; // size:0x3F8 defined:True
+_gNeoArkIslandCollisionGridFaces = 0x80182190; // size:0x2DC defined:True
+_gNeoArkIslandCollisionGridCells = 0x8018246C; // size:0x20C defined:True
+_gNeoArkIslandCollisionGridTable = 0x80182678; // size:0x50 defined:True
+gNeoArkIslandCollisionGrid = 0x801826C8; // size:0x24 defined:True
+gNeoArkIslandViewCameras = 0x801826EC; // size:0xB4 defined:True
+_gNeoArkIslandView1SpriteBatches = 0x801827A0; // size:0x10 defined:True
+_gNeoArkIslandView2SpriteSources = 0x801827B0; // size:0x294 defined:True
+_gNeoArkIslandView2SpriteBatches = 0x80182A44; // size:0x20 defined:True
+_gNeoArkIslandView3SpriteSources = 0x80182A64; // size:0x550 defined:True
+_gNeoArkIslandView3SpriteBatches = 0x80182FB4; // size:0x30 defined:True
+_gNeoArkIslandView4SpriteSources = 0x80182FE4; // size:0xAF0 defined:True
+_gNeoArkIslandView4SpriteBatches = 0x80183AD4; // size:0x30 defined:True
+_gNeoArkIslandView5SpriteBatches = 0x80183B04; // size:0x10 defined:True
+gNeoArkIslandSpriteViews = 0x80183B14; // size:0x3C defined:True
+_gNeoArkIslandDirectionalLights = 0x80183B50; // size:0x160 defined:True
+gNeoArkIslandRoomLights = 0x80183CB0; // size:0x18 defined:True
+gNeoArkIslandViewBoundaryTriggers = 0x80183CC8; // size:0x130 defined:True
+gNeoArkIslandActionTriggers = 0x80183DF8; // size:0xE4 defined:True
+_gNeoArkIslandVariant1Resources = 0x80183EDC; // size:0x18 defined:True
+_gNeoArkIslandVariant2Resources = 0x80183EF4; // size:0x18 defined:True
+_gNeoArkIslandVariant3Resources = 0x80183F0C; // size:0x18 defined:True
+_gNeoArkIslandVariant4Resources = 0x80183F24; // size:0xC defined:True
+_gNeoArkIslandVariant11Resources = 0x80183F30; // size:0x18 defined:True
+gActor100400Tasks = 0x80147E48; // absolute:True owner=actor_100400
+gActor05700RookGolemTasks = 0x801491F8; // absolute:True owner=actor_105700
+gActor01100Tasks = 0x8015F400; // absolute:True owner=actor_204900
+gNeoArkIslandWarpEntries = 0x80181BB4; // size:0x70 defined:True
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x80181B84; // size:0x10 defined:True
+gNeoArkIslandDiverWaterY = 0x80181C24; // size:0x2 defined:True
+_gNeoArkIslandDiverPatrolWaypoints0 = 0x80181C28; // size:0x40 defined:True
+_gNeoArkIslandDiverPatrolWaypoints1 = 0x80181C68; // size:0x40 defined:True
+_gNeoArkIslandDiverPatrolWaypoints2 = 0x80181CA8; // size:0x40 defined:True
+gNeoArkIslandDiverPatrolRings = 0x80181CE8; // size:0x10 defined:True
+gNeoArkIslandDiverSurfaceSpots = 0x80181CF8; // size:0x38 defined:True
+gNeoArkIslandWaterRefractionTaskDesc = 0x80181B30; // size:0xC defined:True
+_gNeoArkIslandUnusedWaterDistortionTaskDesc = 0x80181B3C; // size:0xC defined:True
+gNeoArkIslandRoomMessages = 0x80181B48; // size:0x30 defined:True
+gNeoArkIslandGalleryDepartureTaskDesc = 0x80181B78; // size:0xC defined:True
+
+neoArkIslandInstallRoomEffectIdsTask = 0x8017FB2C; // type:func
+
+neoArkIslandWaterRippleTask = 0x8017EB68; // type:func
+
+neoArkIslandWaterSprayTask = 0x8017EFE8; // type:func
+
+neoArkIslandRoomVisualEffectsFlashTask = 0x8017FB9C; // type:func
+
+neoArkIslandRoomVisualEffectsTwinTrailTask = 0x80180600; // type:func
+
+neoArkIslandRoomVisualEffectsSparkBurstTask = 0x80180EE8; // type:func
+_roomVisualEffectsDrawFlashRing = 0x8017FE40; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x8018026C; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x80180AF0; // type:func
+_roomVisualEffectsDrawBurstStar = 0x80181170; // type:func
+_waterDrawSplash = 0x8017ECB4; // type:func
+waterDistortBandTask = 0x8017E2A4; // type:func
+waterRefractionTask = 0x8017D650; // type:func
+_waterDrawSpinU16 = 0x8017F4A4; // type:func
+_waterDrawTileU16 = 0x8017F890; // type:func
+neoArkIslandRejectKeyItemMessage = 0x8017e960; // type:func
+neoArkIslandIgnoreCommandMessage = 0x8017ea24; // type:func
+neoArkIslandIgnoreActionMessage = 0x8017ea2c; // type:func
+neoArkIslandSoundMessage = 0x8017ea34; // type:func
+_neoArkIslandRoomIdleState = 0x8017eb08; // type:func
+_neoArkIslandInitializeRoom = 0x8017ea94; // type:func
+neoArkIslandRoomTask = 0x8017eb10; // type:func
+neoArkIslandGalleryDepartureTask = 0x8017e844; // type:func
+neoArkIslandResolveRoomTransition = 0x8017e968; // type:func
+_gNeoArkIslandRoomTaskStates = 0x8017d614;

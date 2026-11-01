@@ -1,0 +1,148 @@
+#ifndef INCLUDE_ROOMS_NEO_ARK_POWER_PLANT_2_H
+#define INCLUDE_ROOMS_NEO_ARK_POWER_PLANT_2_H
+
+#include "types.h"
+
+#include "gameplay/area.h"
+#include "gameplay/direction.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/task_types.h"
+
+/// Number of retained placement-variant slots, including absent slots.
+enum { NEO_ARK_POWER_PLANT_2_AREA_VARIANT_COUNT = 19 };
+
+/// Actor placements and loading/spawn recipes indexed by `GameLocationKey.variant`.
+///
+/// Slots 1, 11, 17 are present; every other slot is absent (NULL, NULL).
+/// Supply an index in 0..18; this directory has no terminator or bounds check.
+/// The placement selector is independent of room and view selectors.
+/// Placements belong to the stage map, recipes to this room. Keep both overlays
+/// loaded while loading or using either table. Referenced actor overlays must
+/// be loaded for spawning and model-policy updates.
+extern AreaVariant gNeoArkPowerPlant2AreaVariants[NEO_ARK_POWER_PLANT_2_AREA_VARIANT_COUNT];
+
+/// Collision resources for the plant's single room, indexed by room minus one.
+///
+/// Borrows the grid, eight view boundaries, eight action quads and one sight
+/// occluder. Setup mutates and links those room-owned records; keep this overlay
+/// loaded until collision teardown. The directory has no terminator.
+extern WorldCollisionRoomResources gNeoArkPowerPlant2CollisionRooms[1];
+
+/// Lighting for the plant's single room, indexed by room minus one.
+///
+/// Borrows 21 mutable point lights and ambient minima for logical views 1..9.
+/// The stage map and lighting queries require this room overlay to stay loaded.
+extern WorldCoordRoomLighting gNeoArkPowerPlant2RoomLighting[1];
+
+/// Logical-view map directory for the plant's single room.
+///
+/// Entry zero borrows `gViewIdentityMap`: logical views 1..9 select the same
+/// camera, image and sprite indices. Indexed by room minus one, with no
+/// terminator; the room directory and gameplay-owned map must remain loaded.
+extern u8* gNeoArkPowerPlant2ViewMaps[1];
+
+/// Number of camera and sprite entries selected by the plant's identity view map.
+enum { NEO_ARK_POWER_PLANT_2_VIEW_COUNT = 9 };
+
+/// Nine logical views for room 1, followed by an unqueried zero halfword.
+///
+/// Counts are signed elements indexed by room minus one, not a sentinel list.
+/// The second halfword's role is unproven. The map directory borrows this
+/// room-owned storage while the overlay is loaded.
+extern ViewCount gNeoArkPowerPlant2ViewCounts[2];
+
+/// The plant's sole warp endpoint, selected by 1-based warp slot 1.
+///
+/// Places player and companion at (4000, -5000, -400), yaw 3072 in 4096 units
+/// per turn, and starts logical view 2. No sounds, arrival flags or map mark
+/// are requested. The map borrows the entry from this loaded room overlay.
+extern DirectionWarpEntry gNeoArkPowerPlant2WarpEntries[1];
+
+/// Cameras for mapped views 1..9, indexed by mapped view minus one.
+///
+/// Rotation coefficients use Q12, translation is the negated world-space
+/// camera origin, and projection distance is in pixels. There is no terminator;
+/// queued camera applications require this overlay to remain loaded.
+extern ViewCamera gNeoArkPowerPlant2ViewCameras[NEO_ARK_POWER_PLANT_2_VIEW_COUNT];
+
+/// Sprite resources for mapped views 1..9, indexed by mapped view minus one.
+///
+/// Views 1, 7 and 8 contain only decoded background strips; the others add
+/// cached source sprites. Each batch list ends at SPRITE_BATCH_END, and no
+/// view has draw-area clipping. The directory borrows mutable room-owned
+/// sources and batches for the lifetime of the loaded overlay.
+extern SpriteView gNeoArkPowerPlant2SpriteViews[NEO_ARK_POWER_PLANT_2_VIEW_COUNT];
+
+/// Number of room-local collision surface classes in the plant's directory.
+enum { NEO_ARK_POWER_PLANT_2_SURFACE_CLASS_COUNT = 8 };
+
+/// Collision policies and footstep cues indexed by surface class 0..7.
+///
+/// Classes 0, 1, 6 and 7 share a blocking policy without footstep cues.
+/// Class 2 supplies stair cues; class 3 passes probes and ignores weapon
+/// impacts. Classes 4 and 5 block probes and supply their own footstep cues.
+/// All classes apply pushback. The directory and borrowed records remain
+/// valid only while this room overlay is loaded; there is no terminator.
+extern WorldCollisionSurfaceProperties* gNeoArkPowerPlant2SurfaceProperties[NEO_ARK_POWER_PLANT_2_SURFACE_CLASS_COUNT];
+
+/// Sets visibility of view 6's five-sprite batch for the generator Life Support task.
+///
+/// `hidden` is 0 to show or 1 to hide; other byte values leave it unchanged.
+/// The active session must select this room's sprite tables, with its map and
+/// room overlays loaded. Updates view 6 regardless of the current view.
+void neoArkPowerPlant2SetView6SpritesHidden(u8 hidden);
+
+/// Runs this room's charging pink flash, peak screen tint and fading star.
+///
+/// Starts in state 0 with a coordinate body and counted `EffectWork` in
+/// `spawnArg2.pointer` from `effectSpawn`. `spawnArg1.value` is a positive
+/// charge duration in active ticks, consumed as a countdown. Nonzero room
+/// effect control pauses it; control 4 or above, state 3, or completion
+/// releases the work and task. The effect controller and room overlay must
+/// remain live until teardown.
+void neoArkPowerPlant2RoomVisualEffectsFlashTask(Task* task);
+
+/// Records two moving endpoints and draws their fading trail as a blue beam.
+///
+/// Starts in state 0 with a coordinate body and counted `EffectWork` in
+/// `spawnArg2.pointer` from `effectSpawn`; its parent coordinate must stay live.
+/// Owns two eight-coordinate histories in `Task::work`, freed by task teardown.
+/// Allocation failure resets age to zero for retry. Initialization is the first
+/// active tick; later ticks draw seven quads tinted 1:2:3 in R:G:B.
+/// `spawnArg1.value` is 0 for external teardown or 2..32767 for a first-cycle
+/// active-age limit. Room effect control at two or above pauses recording and
+/// drawing without cancellation. Requires a live effect controller and room overlay.
+void neoArkPowerPlant2RoomVisualEffectsTwinTrailTask(Task* task);
+
+/// Runs an impact flash followed by smoke puffs or expanding orange rings and sparks.
+///
+/// Starts in state 0 with a coordinate body and owned, zero-aged `EffectWork`
+/// in `spawnArg2.pointer`. Nonzero `spawnArg1.value` selects smoke; zero selects
+/// rings. Active age 7 enters release; age 8 releases work and the task.
+/// Room effect control 1..3 pauses and 4 or above cancels. Spawned effects
+/// remain independent. Keep this overlay and the effect controller loaded.
+void neoArkPowerPlant2RoomVisualEffectsSparkBurstTask(Task* task);
+
+/// Installs the plant's effect IDs and updates its view-dependent generator lighting.
+///
+/// State 0 installs flash, twin-trail and spark-burst callbacks, then enters
+/// state 1. Mapped view 6 draws the intact generator glow or, while its part is
+/// down and effects run before plant clearance, gives each tick a 1/8 chance
+/// of a flash. View 8 refreshes transient light slot 4 for four frames, with
+/// blue Q12 intensity 0x800..0xF00 and half that intensity in red and green.
+/// Requires this overlay, the effect controller and current render resources
+/// to remain loaded. Owns no work allocation; child flashes are independent.
+void neoArkPowerPlant2UpdateViewLightingTask(Task* task);
+
+/// Runs the Neo Ark Power Plant 2 room controller for one tick.
+///
+/// `task` must be live with state 0..2 and this room overlay loaded.
+/// Initialize room messages and music options, watch for generator defeat, then kill.
+/// State 0 registers the borrowed task in `GAME_TASK_SLOT_ROOM`; state 2
+/// requests teardown. The controller allocates no work or body of its own.
+void neoArkPowerPlant2RoomTask(Task* task);
+
+#endif // INCLUDE_ROOMS_NEO_ARK_POWER_PLANT_2_H

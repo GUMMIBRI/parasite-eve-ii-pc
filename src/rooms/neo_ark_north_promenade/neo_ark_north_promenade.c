@@ -1,0 +1,715 @@
+#include "rooms/neo_ark_north_promenade.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/inline_c.h>
+#include <psyq/libgs.h>
+
+#include "common.h"
+#include "gte.h"
+
+#include "actors/actor_00300.h"
+#include "actors/actor_02000.h"
+#include "actors/actor_05600.h"
+
+#include "gameplay/display.h"
+#include "gameplay/actor_render.h"
+#include "gameplay/area.h"
+#include "gameplay/captions.h"
+#include "gameplay/gameflag.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/effect_tasks.h"
+#include "gameplay/effects.h"
+#include "gameplay/hud_sprites.h"
+#include "gameplay/light.h"
+#include "gameplay/message.h"
+#include "gameplay/room.h"
+#include "gameplay/room_effects.h"
+#include "gameplay/scene.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+#include "gameplay/world_coords.h"
+
+#include "main/coord.h"
+#include "main/areas.h"
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/gameflag.h"
+#include "main/gamemain.h"
+#include "main/gfx.h"
+#include "main/gfx_types.h"
+#include "main/mem.h"
+#include "main/scratch.h"
+#include "main/session.h"
+#include "main/sound_ids.h"
+#include "main/sound_types.h"
+#include "main/task.h"
+#include "main/task_types.h"
+#include "main/tmd_types.h"
+
+#include "mapui/map_neo_ark.h"
+
+#include "rooms/room.h"
+
+#include "rooms/room_common.h"
+
+#include "../../shared/room/room_visual_effects.h"
+
+static void _neoArkNorthPromenadeInitializeRoom(Task* task);
+static void _neoArkNorthPromenadeRoomIdleState(Task* task);
+
+/// North promenade room callbacks: 0 register, 1 idle, 2 release.
+///
+/// Three pointers copied for unchecked `Task::state` dispatch in 0..2; no
+/// terminator. Keep this room's callback code loaded until the task exits.
+static const TaskFuncTable3 _gNeoArkNorthPromenadeRoomTaskStates = {
+    { _neoArkNorthPromenadeInitializeRoom, _neoArkNorthPromenadeRoomIdleState, taskKill },
+};
+
+static WorldCollisionGrid     _gNeoArkNorthPromenadeCollisionGrid;
+static WorldCollisionOccluder _gNeoArkNorthPromenadeSightOccluder;
+static WorldCollisionTrigger  _gNeoArkNorthPromenadeViewBoundaryTriggers[8];
+static WorldCollisionTrigger  _gNeoArkNorthPromenadeActionTriggers[6];
+static WorldCoordRoomLights   _gNeoArkNorthPromenadeRoomLights;
+
+static s32 _neoArkNorthPromenadeRejectKeyItemUse(Task* task, s32 messageId, s32 itemId, s32 unusedArg);
+static s32 _neoArkNorthPromenadeResolveRoomTransition(Task* unusedTask, s32 unusedMessageId, RoomEventMsg* request, RoomEventMsg* reply);
+static s32 _neoArkNorthPromenadeIgnoreRoomCommand(Task* task, s32 messageId, s32 commandId, s32 commandArg);
+static s32 _neoArkNorthPromenadeIgnoreRoomAction(Task* task, s32 messageId, const DirectionActionRequest* request, s32 unusedArg);
+
+/// Promenade handlers for exit resolution, key-item refusal and ignored actions/commands.
+///
+/// Four handlers and a `TASK_MESSAGE_TABLE_END` record; the room task borrows
+/// this read-only table and its callbacks while the overlay remains loaded.
+static const TaskMessageEntry _gNeoArkNorthPromenadeRoomMessages[5] SECTION(".data") = {
+    { ROOM_EVENT_MESSAGE_RESOLVE, _neoArkNorthPromenadeResolveRoomTransition },
+    { ROOM_MESSAGE_USE_KEY_ITEM, _neoArkNorthPromenadeRejectKeyItemUse },
+    { DIRECTION_MESSAGE_ROOM_ACTION, _neoArkNorthPromenadeIgnoreRoomAction },
+    { ROOM_MESSAGE_COMMAND, _neoArkNorthPromenadeIgnoreRoomCommand },
+    { TASK_MESSAGE_TABLE_END, NULL },
+};
+
+/// Initializes this overlay's three halo tint rows and retained trailing halfword.
+///
+/// Rows 0..2 give RGB right shifts of brightness (0 full, 1 half, 2 quarter).
+/// Requires `ROOM_VISUAL_EFFECTS_HALO_STORAGE_TYPE` = `RoomFxHaloStorage` and an empty
+/// `ROOM_VISUAL_EFFECTS_HALO_STORAGE_BOUND`. The trailing u16 is preserved
+/// verbatim; its role is unproven and it is not a fourth tint row.
+/// Bind around `room_visual_effects_halo_data.inc.c`, then undefine.
+/// Expands to a constant braced initializer, with no arguments or side effects.
+#define ROOM_VISUAL_EFFECTS_HALO_STORAGE_INITIALIZER { \
+    .entries = {                                       \
+        { .rShift = 0, .gShift = 1, .bShift = 2 },     \
+        { .rShift = 2, .gShift = 1, .bShift = 0 },     \
+        { .rShift = 0, .gShift = 2, .bShift = 1 },     \
+    },                                                 \
+    .alignmentFill = 0x01D9,                           \
+}
+/// Selects the halo tint storage record, including its retained trailing halfword.
+///
+/// Expands to the `RoomFxHaloStorage` type token; requires an empty
+/// `ROOM_VISUAL_EFFECTS_HALO_STORAGE_BOUND` and a
+/// `ROOM_VISUAL_EFFECTS_HALO_STORAGE_INITIALIZER` for `entries` and `alignmentFill`.
+/// Only the three RGB-shift rows are read, at indices 0..2; the halfword's
+/// role is unproven. Include `room_visual_effects.h` first, bind around
+/// `room_visual_effects_halo_data.inc.c`, then undefine.
+#define ROOM_VISUAL_EFFECTS_HALO_STORAGE_TYPE RoomFxHaloStorage
+/// Declares one halo storage record, retaining the halfword after its tint rows.
+///
+/// This empty suffix requires `ROOM_VISUAL_EFFECTS_HALO_STORAGE_TYPE` to be
+/// `RoomFxHaloStorage`. Bind around `room_visual_effects_halo_data.inc.c`.
+#define ROOM_VISUAL_EFFECTS_HALO_STORAGE_BOUND
+#include "../../shared/room/room_visual_effects_halo_data.inc.c"
+
+/// Returns this overlay's three read-only halo tint rows for spawn indices 0..2.
+static inline const RoomFxShade* _roomVisualEffectsGetHaloShades(void)
+{
+    return _gRoomVisualEffectsHaloShades.entries;
+}
+#undef ROOM_VISUAL_EFFECTS_HALO_STORAGE_INITIALIZER
+#undef ROOM_VISUAL_EFFECTS_HALO_STORAGE_TYPE
+#undef ROOM_VISUAL_EFFECTS_HALO_STORAGE_BOUND
+
+#include "../../shared/room/room_visual_effects_trail_data.inc.c"
+
+WorldCollisionRoomResources gNeoArkNorthPromenadeRoomCollisionResources[1] = {
+    {
+        .grid                 = &_gNeoArkNorthPromenadeCollisionGrid,
+        .viewBoundaryTriggers = _gNeoArkNorthPromenadeViewBoundaryTriggers,
+        .actionTriggers       = _gNeoArkNorthPromenadeActionTriggers,
+        .occluders            = &_gNeoArkNorthPromenadeSightOccluder,
+    },
+};
+
+WorldCoordRoomLighting gNeoArkNorthPromenadeRoomLighting[1] = {
+    { &_gNeoArkNorthPromenadeRoomLights, NULL },
+};
+
+u8* gNeoArkNorthPromenadeViewMaps[1] = {
+    gViewIdentityMap,
+};
+
+ViewCount gNeoArkNorthPromenadeViewCounts[1] = { NEO_ARK_NORTH_PROMENADE_VIEW_COUNT };
+
+DirectionWarpEntry gNeoArkNorthPromenadeWarpEntries[2] = {
+    {
+        .player         = { .yaw = { .word = (ACTOR_TRANSFORM_ANGLE_TURN * 3 / 4) }, .x = 0x2A43, .y = 0, .z = 1354 },
+        .unknown_10     = { 0 },
+        .companion      = { .yaw = { .word = (ACTOR_TRANSFORM_ANGLE_TURN * 3 / 4) }, .x = 0x2A43, .y = 0, .z = 1354 },
+        .unknown_24     = { 0 },
+        .arrivalSound   = DIRECTION_WARP_SOUND_NONE,
+        .departureSound = DIRECTION_WARP_SOUND_NONE,
+        .blockedSound   = DIRECTION_WARP_SOUND_NONE,
+        .initialView    = 6,
+        .flags          = DIRECTION_WARP_FLAG_NONE,
+        .mapFlagId      = DIRECTION_WARP_MAP_FLAG_NONE,
+    },
+    {
+        .player         = { .yaw = { .word = (ACTOR_TRANSFORM_ANGLE_TURN / 4) }, .x = 1193, .y = 0, .z = 0x2C19 },
+        .unknown_10     = { 0 },
+        .companion      = { .yaw = { .word = (ACTOR_TRANSFORM_ANGLE_TURN / 4) }, .x = 1193, .y = 0, .z = 0x2C19 },
+        .unknown_24     = { 0 },
+        .arrivalSound   = SOUND_AREA(GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_NORTH_PROMENADE, 2),
+        .departureSound = SOUND_AREA(GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_NORTH_PROMENADE, 1),
+        .blockedSound   = SOUND_AREA(GAME_STAGE_SHELTER_NEO_ARK, GAME_AREA_NEO_ARK_NORTH_PROMENADE, 3),
+        .initialView    = 2,
+        .flags          = DIRECTION_WARP_FLAG_NONE,
+        .mapFlagId      = GAME_FLAG_MAP_MARK_POWER_PLANT_1,
+    },
+};
+
+/// Room-space face normals for the promenade grid, with `ONE` for unit length.
+static SVECTOR _gNeoArkNorthPromenadeCollisionGridNormals[] = {
+#include "assets/neo_ark_north_promenade_collision_04E2C_normals.inc"
+};
+
+/// Promenade collision vertices in signed room-space game units.
+static SVECTOR _gNeoArkNorthPromenadeCollisionGridVerts[] = {
+#include "assets/neo_ark_north_promenade_collision_04E2C_verts.inc"
+};
+
+/// Promenade collision quads indexing the grid's vertex/normal pools and surface classes.
+static WorldCollisionGridFace _gNeoArkNorthPromenadeCollisionGridFaces[] = {
+#include "assets/neo_ark_north_promenade_collision_04E2C_faces.inc"
+};
+
+/// Serialized signed face-index lists selected by the grid's cells.
+///
+/// Each referenced list ends with `WORLD_COLLISION_GRID_CELL_END`; retain the full
+/// asset extent, including its final halfword after the last list terminator.
+static s16 _gNeoArkNorthPromenadeCollisionGridCells[] = {
+#include "assets/neo_ark_north_promenade_collision_04E2C_cells.inc"
+};
+
+/// Supplies this grid's cell face-list addresses to its generated table.
+///
+/// `halfwordOffset` is an integer constant measured in `s16` elements of
+/// `_gNeoArkNorthPromenadeCollisionGridCells` and occurs once in the expansion.
+/// It must start a complete `WORLD_COLLISION_GRID_CELL_END`-terminated list
+/// within the pool. Returns a borrowed `s16*` valid while this overlay is loaded.
+/// Set `collisionSource.cell_face_list_macro` to this identifier; keep the
+/// binding through the table include, then undefine it.
+#define NEO_ARK_NORTH_PROMENADE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkNorthPromenadeCollisionGridCells[(halfwordOffset)])
+/// X-major 4-by-4 cell directory; NULL denotes the one empty cell.
+static s16* _gNeoArkNorthPromenadeCollisionGridTable[] = {
+#include "assets/neo_ark_north_promenade_collision_04E2C_table.inc"
+};
+#undef NEO_ARK_NORTH_PROMENADE_CELL_FACE_LIST_AT_OFFSET
+
+/// Promenade room collision mesh and 4000-game-unit XZ cell index.
+///
+/// The grid starts at room X/Z (700, 700); setup binds its view coordinate.
+/// Its mutable descriptor and pools must remain loaded while the grid is active.
+static WorldCollisionGrid _gNeoArkNorthPromenadeCollisionGrid = {
+    .viewCoord   = NULL,
+    .normals     = _gNeoArkNorthPromenadeCollisionGridNormals,
+    .vertices    = _gNeoArkNorthPromenadeCollisionGridVerts,
+    .faces       = _gNeoArkNorthPromenadeCollisionGridFaces,
+    .cellFaceIds = _gNeoArkNorthPromenadeCollisionGridTable,
+    .xBias       = -700,
+    .zBias       = -700,
+    .cellCountX  = 4,
+    .cellCountZ  = 4,
+    .cellSize    = 4000,
+    .faceCount   = ARRAY_SIZE(_gNeoArkNorthPromenadeCollisionGridFaces),
+};
+
+ViewCamera gNeoArkNorthPromenadeViewCameras[NEO_ARK_NORTH_PROMENADE_VIEW_COUNT] = {
+    { { { { ONE, 0, 0 }, { 0, 0, -ONE }, { 0, ONE, 0 } }, { -7000, 0x58D6, -7000 } }, 289 },
+    { { { { -462, 0, 4069 }, { -44, 4095, -5 }, { -4069, -45, -462 } }, { -8700, 1302, -0x2EE0 } }, 289 },
+    { { { { -413, 0, 4075 }, { -220, 4089, -22 }, { -4069, -221, -413 } }, { -0x319C, 1202, -0x2E18 } }, 289 },
+    { { { { 4068, 0, 473 }, { -10, 4094, 93 }, { -472, -93, 4067 } }, { -0x2E7C, 1302, -2000 } }, 225 },
+    { { { { -4045, 0, 643 }, { -7, 4095, -44 }, { -643, -44, -4044 } }, { -0x2E7C, 1302, -9500 } }, 235 },
+    { { { { -4037, 0, 687 }, { 72, 4073, 423 }, { -683, 429, -4015 } }, { -0x2EE0, 1502, -5800 } }, 225 },
+};
+
+/// View 1's empty sprite list, retaining image-strip background presentation.
+static SpriteBatch _gNeoArkNorthPromenadeView1SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// View 2's empty sprite list, retaining image-strip background presentation.
+static SpriteBatch _gNeoArkNorthPromenadeView2SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// View 3's empty sprite list, retaining image-strip background presentation.
+static SpriteBatch _gNeoArkNorthPromenadeView3SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// VRAM texture and palette addresses for the room's view sprites.
+///
+/// Both pages hold 8-bit textures; RGB 128 is neutral colour modulation.
+enum {
+    NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE          = getTPage(1, 0, 896, 0),
+    NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE         = getTPage(1, 0, 960, 0),
+    NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT        = getClut(0, 255),
+    NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT   = getClut(0, 256),
+    NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION = 128,
+};
+
+/// View 4's 26 opaque and ten semitransparent depth-sorted sprite rectangles.
+///
+/// Position/size use pixels about the view centre; texture coordinates use texels.
+/// Sources remain mutable and live with their view's batches in the loaded overlay.
+static SpriteSource _gNeoArkNorthPromenadeView4SpriteSources[] = {
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 8, 8 } }, -160, -88, 1587, { .fields = { 88, 240 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, 16, 1587, { .fields = { 64, 192 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 40, 48 } }, -112, 16, 1600, { .fields = { 88, 48 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 24, 32 } }, -72, 16, 1887, { .fields = { 56, 40 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 32, 48 } }, -104, -32, 1600, { .fields = { 48, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 24, 8 } }, -72, 8, 1887, { .fields = { 96, 240 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 32, 48 } }, -72, -80, 1887, { .fields = { 48, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 40, 48 } }, -112, -80, 1600, { .fields = { 48, 48 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 32 } }, -160, -80, 1587, { .fields = { 32, 184 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 40, 40 } }, -112, -120, 1600, { .fields = { 48, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 32, 40 } }, -72, -120, 1887, { .fields = { 48, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 40, 32 } }, -40, -120, 2000, { .fields = { 40, 72 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 40, 8 } }, -152, -120, 1587, { .fields = { 32, 248 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, 0, 1600, { .fields = { 64, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -112, 0, 1612, { .fields = { 0, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 16, 40 } }, -64, 8, 1912, { .fields = { 80, 192 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, -48, 1600, { .fields = { 80, 48 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -112, -48, 1612, { .fields = { 80, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 8, 32 } }, -64, -48, 1912, { .fields = { 72, 216 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, -96, 1600, { .fields = { 16, 192 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -112, -96, 1612, { .fields = { 0, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 32, 48 } }, -64, -96, 1912, { .fields = { 8, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 24, 8 } }, -64, -104, 1912, { .fields = { 64, 240 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 8 } }, -112, -104, 1612, { .fields = { 72, 248 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 8, 16 } }, -112, -120, 1612, { .fields = { 120, 240 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 24 } }, -160, -120, 1600, { .fields = { 24, 216 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 48, 48 } }, -160, -24, 1590, { .fields = { 0, 48 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 48, 48 } }, -112, -24, 1602, { .fields = { 80, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 16, 48 } }, -64, -24, 1890, { .fields = { 112, 192 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 48, 48 } }, -160, -72, 1590, { .fields = { 80, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 48, 48 } }, -112, -72, 1602, { .fields = { 80, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 16, 48 } }, -64, -72, 1890, { .fields = { 112, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 48, 48 } }, -160, -120, 1590, { .fields = { 96, 192 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 48, 48 } }, -112, -120, 1602, { .fields = { 88, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 48 } }, -64, -120, 1890, { .fields = { 40, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 40, 32 } }, -40, -120, 2000, { .fields = { 40, 104 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+};
+
+/// View 4's image background and source ranges [0,13), [13,26), [26,36).
+///
+/// Only the last range is semitransparent. The final record ends the list;
+/// serialized `field_6` bytes are retained without assigning them a role.
+static SpriteBatch _gNeoArkNorthPromenadeView4SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 13, 0, 0, { 1, 0 } },
+    { 13, 13, 0, 0, { 2, 0 } },
+    { 26, ARRAY_SIZE(_gNeoArkNorthPromenadeView4SpriteSources) - 26, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// View 5's sixteen opaque and seven semitransparent depth-sorted sprite rectangles.
+///
+/// Position/size use pixels about the view centre; texture coordinates use texels.
+/// Sources remain mutable and live with their view's batches in the loaded overlay.
+static SpriteSource _gNeoArkNorthPromenadeView5SpriteSources[] = {
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 16, 16 } }, 144, 24, 750, { .fields = { 64, 224 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 8, 8 } }, -160, -104, 1812, { .fields = { 72, 248 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 8, 8 } }, -16, -8, 1813, { .fields = { 72, 240 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 16 } }, -160, 48, 1862, { .fields = { 112, 80 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 16 } }, -112, 48, 1862, { .fields = { 112, 64 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 16 } }, -64, 48, 1862, { .fields = { 80, 240 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 32, 8 } }, -16, 48, 1862, { .fields = { 0, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, 0, 1812, { .fields = { 32, 48 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -112, 0, 1812, { .fields = { 80, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -64, 0, 1812, { .fields = { 80, 48 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 32, 48 } }, -16, 0, 1812, { .fields = { 96, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, -48, 1812, { .fields = { 48, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -112, -48, 1812, { .fields = { 80, 192 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 40 } }, -64, -40, 1812, { .fields = { 0, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 32, 24 } }, -112, -72, 1812, { .fields = { 0, 40 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, -96, 1812, { .fields = { 80, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 40 } }, -160, -96, 1775, { .fields = { 56, 184 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 48 } }, -136, -88, 1775, { .fields = { 56, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 40 } }, -112, -64, 1775, { .fields = { 32, 136 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 40 } }, -88, -48, 1775, { .fields = { 32, 176 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 40 } }, -64, -32, 1775, { .fields = { 32, 216 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 40 } }, -40, -16, 1775, { .fields = { 56, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 40 } }, -16, 0, 1775, { .fields = { 32, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+};
+
+/// View 5's image background and source ranges [0,1), [1,16), [16,23).
+///
+/// Only the last range is semitransparent. The final record ends the list;
+/// serialized `field_6` bytes are retained without assigning them a role.
+static SpriteBatch _gNeoArkNorthPromenadeView5SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 1, 0, 0, { 1, 0 } },
+    { 1, 15, 0, 0, { 2, 0 } },
+    { 16, ARRAY_SIZE(_gNeoArkNorthPromenadeView5SpriteSources) - 16, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// View 6's 21 opaque and eleven semitransparent depth-sorted sprite rectangles.
+///
+/// Position/size use pixels about the view centre; texture coordinates use texels.
+/// Sources remain mutable and live with their view's batches in the loaded overlay.
+static SpriteSource _gNeoArkNorthPromenadeView6SpriteSources[] = {
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 8, 8 } }, -16, -32, 825, { .fields = { 96, 240 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, 72, 825, { .fields = { 32, 192 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -112, 72, 825, { .fields = { 80, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -64, 72, 825, { .fields = { 80, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -16, 72, 825, { .fields = { 80, 48 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 24, 48 } }, 32, 72, 825, { .fields = { 104, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, 24, 825, { .fields = { 80, 192 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -112, 24, 825, { .fields = { 56, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -64, 24, 825, { .fields = { 32, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -16, 24, 825, { .fields = { 32, 48 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 24, 48 } }, 32, 24, 825, { .fields = { 56, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 32, 32 } }, 32, -8, 825, { .fields = { 32, 136 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, -24, 825, { .fields = { 8, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -112, -24, 825, { .fields = { 8, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -64, -24, 825, { .fields = { 112, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -16, -24, 825, { .fields = { 112, 48 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, -72, 825, { .fields = { 112, 192 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -112, -72, 825, { .fields = { 88, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 40 } }, -64, -64, 825, { .fields = { 40, 96 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 48, 48 } }, -160, -120, 825, { .fields = { 88, 144 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_OPAQUE_CLUT, { .fields = { 32, 24 } }, -112, -96, 825, { .fields = { 16, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, 0 },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 40, 48 } }, 0, 8, 825, { .fields = { 72, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_RIGHT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 16 } }, 0, -8, 825, { .fields = { 104, 240 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 48, 32 } }, -48, 8, 825, { .fields = { 16, 32 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 48, 48 } }, -48, -40, 825, { .fields = { 64, 48 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 48, 48 } }, -96, -40, 825, { .fields = { 64, 192 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 48, 32 } }, -96, -72, 825, { .fields = { 16, 168 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 40, 24 } }, -136, -40, 825, { .fields = { 24, 200 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 40, 32 } }, -136, -72, 825, { .fields = { 24, 64 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 32, 24 } }, -136, -96, 825, { .fields = { 32, 224 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 40 } }, -160, -112, 825, { .fields = { 64, 136 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+    { NEO_ARK_NORTH_PROMENADE_SPRITE_LEFT_PAGE, NEO_ARK_NORTH_PROMENADE_SPRITE_TRANSLUCENT_CLUT, { .fields = { 24, 32 } }, -160, -72, 825, { .fields = { 48, 0 } }, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, NEO_ARK_NORTH_PROMENADE_SPRITE_NEUTRAL_MODULATION, SPRITE_SOURCE_SEMI_TRANSPARENT },
+};
+
+/// View 6's image background and source ranges [0,21), [21,32).
+///
+/// Only the last range is semitransparent. The final record ends the list;
+/// serialized `field_6` bytes are retained without assigning them a role.
+static SpriteBatch _gNeoArkNorthPromenadeView6SpriteBatches[] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 21, 0, 0, { 1, 0 } },
+    { 21, ARRAY_SIZE(_gNeoArkNorthPromenadeView6SpriteSources) - 21, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+SpriteView gNeoArkNorthPromenadeSpriteViews[NEO_ARK_NORTH_PROMENADE_VIEW_COUNT] = {
+    { { .empty = _gNeoArkNorthPromenadeView1SpriteBatches }, _gNeoArkNorthPromenadeView1SpriteBatches, NULL },
+    { { .empty = _gNeoArkNorthPromenadeView2SpriteBatches }, _gNeoArkNorthPromenadeView2SpriteBatches, NULL },
+    { { .empty = _gNeoArkNorthPromenadeView3SpriteBatches }, _gNeoArkNorthPromenadeView3SpriteBatches, NULL },
+    { { .elements = _gNeoArkNorthPromenadeView4SpriteSources }, _gNeoArkNorthPromenadeView4SpriteBatches, NULL },
+    { { .elements = _gNeoArkNorthPromenadeView5SpriteSources }, _gNeoArkNorthPromenadeView5SpriteBatches, NULL },
+    { { .elements = _gNeoArkNorthPromenadeView6SpriteSources }, _gNeoArkNorthPromenadeView6SpriteBatches, NULL },
+};
+
+/// Two directional model lights contributing in every promenade view.
+///
+/// Translation vectors supply room-space directions; RGB has twelve fractional
+/// bits. View parenting, composition caches and query attenuation remain writable.
+static WorldCoordLight _gNeoArkNorthPromenadeDirectionalLights[] = {
+    { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 392, -740, 260 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 4997, 4915, 4894 }, { 0, 0 } },
+    { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -332, 260, -220 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 1310, 1290, 1228 }, { 0, 0 } },
+};
+
+/// Promenade's directional-light collection, with no authored point or cone lights.
+static WorldCoordRoomLights _gNeoArkNorthPromenadeRoomLights = {
+    .directionalLightCount = ARRAY_SIZE(_gNeoArkNorthPromenadeDirectionalLights),
+    .directionalLights     = _gNeoArkNorthPromenadeDirectionalLights,
+    .pointLightCount       = 0,
+    .pointLights           = NULL,
+    .coneLightCount        = 0,
+    .coneLights            = NULL,
+};
+
+/// Eight directed boundaries between promenade views 2..6.
+///
+/// Each direction of 2/3, 3/4, 4/5 and 5/6 has its own quad. Setup binds and
+/// enables every record, including LAST; keep mutable nodes loaded until unlinked.
+static WorldCollisionTrigger _gNeoArkNorthPromenadeViewBoundaryTriggers[8] = {
+    { NULL, NULL, NULL, { 4829, -1568, 0x2D0C, 0 }, { { 60, -1904, -3017, 0 }, { -60, -1904, 3018, 0 }, { 60, 1904, -3017, 0 }, { -60, 1904, 3018, 0 } }, { ONE, 0, 81, 0 }, { 0, 0, ONE, 0 }, 3565, 0, 3, 2, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { 4967, -1600, 0x2CDB, 0 }, { { -65, -1904, 2884, 0 }, { 65, -1904, -2884, 0 }, { -65, 1904, 2884, 0 }, { 65, 1904, -2884, 0 } }, { -4109, 0, -93, 0 }, { 0, 0, ONE, 0 }, 3453, 0, 2, 3, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { 8592, -1441, 0x2C30, 0 }, { { -112, -1904, 3056, 0 }, { 112, -1904, -3056, 0 }, { -112, 1904, 3056, 0 }, { 112, 1904, -3056, 0 } }, { -4099, 0, -151, 0 }, { 0, 0, ONE, 0 }, 3602, 0, 3, 4, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { 8352, -1601, 0x2C30, 0 }, { { 128, -1904, -3040, 0 }, { -128, -1904, 3040, 0 }, { 128, 1904, -3040, 0 }, { -128, 1904, 3040, 0 } }, { 4092, 0, 172, 0 }, { 0, 0, ONE, 0 }, 3584, 0, 4, 3, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { 0x2B20, -1440, 5856, 0 }, { { 3775, -1904, -166, 0 }, { -3781, -1904, 160, 0 }, { 3775, 1904, -166, 0 }, { -3781, 1904, 160, 0 } }, { 176, 0, ONE, 0 }, { 0, 0, ONE, 0 }, 4222, 0, 4, 5, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { 0x2B11, -1504, 6031, 0 }, { { -3767, -1904, 156, 0 }, { 3757, -1904, -166, 0 }, { -3767, 1904, 156, 0 }, { 3757, 1904, -166, 0 } }, { -176, 0, -4103, 0 }, { 0, 0, ONE, 0 }, 4190, 0, 5, 4, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { 9024, -1472, 2096, 0 }, { { -3690, -1904, -736, 0 }, { 3686, -1904, 732, 0 }, { -3690, 1904, -736, 0 }, { 3686, 1904, 732, 0 } }, { 799, 0, -4022, 0 }, { 0, 0, ONE, 0 }, 4190, 0, 6, 5, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { 9249, -1504, 2112, 0 }, { { 3276, -1904, 650, 0 }, { -3280, -1904, -654, 0 }, { 3276, 1904, 650, 0 }, { -3280, 1904, -654, 0 } }, { -801, 0, 4020, 0 }, { 0, 0, ONE, 0 }, 3840, 0, 5, 6, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY | WORLD_COLLISION_TRIGGER_LAST, 0 },
+};
+
+/// Variant 2's resource recipe for placement entry 3: actor file 100300, task 0.
+///
+/// The two map-owned placements share this recipe; AREA_PLACEMENT_END terminates it.
+static AreaResource _gNeoArkNorthPromenadeVariant2Resources[] = {
+    { .entryId = 3, .fileNumber = 3, .fileGroupIndex = LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR, .taskIndex = 0, .unknown_6 = { 0, 0 }, .taskTable = gActor100300Tasks },
+    { AREA_PLACEMENT_END, 0, 0, 0, { 0, 0 }, NULL },
+};
+
+/// Variant 3's resource recipe for placement entry 20: actor file 102000, task 0.
+///
+/// Three map-owned placements share this recipe; AREA_PLACEMENT_END terminates it.
+static AreaResource _gNeoArkNorthPromenadeVariant3Resources[] = {
+    { .entryId = 20, .fileNumber = 20, .fileGroupIndex = LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR, .taskIndex = 0, .unknown_6 = { 0, 0 }, .taskTable = gActor102000PawnGolemTasks },
+    { AREA_PLACEMENT_END, 0, 0, 0, { 0, 0 }, NULL },
+};
+
+/// Variant 11's resource recipe for placement entry 56: actor file 105600, task 0.
+///
+/// The two map-owned placements share this recipe; AREA_PLACEMENT_END terminates it.
+static AreaResource _gNeoArkNorthPromenadeVariant11Resources[] = {
+    { .entryId = 56, .fileNumber = 56, .fileGroupIndex = LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR, .taskIndex = 0, .unknown_6 = { 0, 0 }, .taskTable = gActor105600PawnGolemTasks },
+    { AREA_PLACEMENT_END, 0, 0, 0, { 0, 0 }, NULL },
+};
+
+AreaVariant gNeoArkNorthPromenadeAreaVariants[NEO_ARK_NORTH_PROMENADE_AREA_VARIANT_COUNT] = {
+    [2]  = { .placements = gMapNeoArkNorthPromenadeVariant2Placements, .resources = _gNeoArkNorthPromenadeVariant2Resources },
+    [3]  = { .placements = gMapNeoArkNorthPromenadeVariant3Placements, .resources = _gNeoArkNorthPromenadeVariant3Resources },
+    [11] = { .placements = gMapNeoArkNorthPromenadeVariant11Placements, .resources = _gNeoArkNorthPromenadeVariant11Resources },
+};
+
+/// Packed action parameters for the promenade's warps, stair climb and CAP interactions.
+enum {
+    NEO_ARK_NORTH_PROMENADE_OBSERVATORY_WARP    = (1 << 4) | 2, // Departure slot 1, destination arrival slot 2.
+    NEO_ARK_NORTH_PROMENADE_FOREST_WARP         = (2 << 4) | 1, // Departure slot 2, destination arrival slot 1.
+    NEO_ARK_NORTH_PROMENADE_STAIR_SURFACE_STEPS = (1 << 4) | 5, // Surface class 1 throughout five ascending steps.
+    NEO_ARK_NORTH_PROMENADE_STAIR_YAW           = 1024 >> 4,    // Quarter-turn yaw in the action's 16-angle-unit steps.
+    NEO_ARK_NORTH_PROMENADE_CAP_INTERACTION_2   = 2,
+    NEO_ARK_NORTH_PROMENADE_CAP_INTERACTION_3   = 3,
+};
+
+/// Promenade's two departure warps, ascending stair and three CAP interaction quads.
+///
+/// The Observatory warp lies at the stair landing; the other enters the Forest Zone.
+/// Nodes are borrowed and mutable until unlinked, and the sixth is marked LAST.
+static WorldCollisionTrigger _gNeoArkNorthPromenadeActionTriggers[6] = {
+    { NULL, NULL, NULL, { 0x2D20, -1104, 1504, 0 }, { { 0, 1088, -896, 0 }, { 0, -1088, -896, 0 }, { 0, 1088, 896, 0 }, { 0, -1088, 896, 0 } }, { 4098, 0, 0, 0 }, { -ONE, 0, 0, 0 }, 1408, WORLD_COLLISION_TRIGGER_ACTION_WARP, GAME_AREA_NEO_ARK_OBSERVATORY, NEO_ARK_NORTH_PROMENADE_OBSERVATORY_WARP, WORLD_COLLISION_TRIGGER_QUAD, 0 },
+    { NULL, NULL, NULL, { 976, -48, 0x2D00, 0 }, { { -400, 0, -1424, 0 }, { 400, 0, -1424, 0 }, { -400, 0, 1424, 0 }, { 400, 0, 1424, 0 } }, { 0, 4108, 0, 0 }, { ONE, 0, 0, 0 }, 1476, WORLD_COLLISION_TRIGGER_ACTION_WARP, GAME_AREA_NEO_ARK_FOREST_ZONE, NEO_ARK_NORTH_PROMENADE_FOREST_WARP, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 0x2A60, -64, 1536, 0 }, { { -256, 0, -720, 0 }, { 256, 0, -720, 0 }, { -256, 0, 720, 0 }, { 256, 0, 720, 0 } }, { 0, 4104, 0, 0 }, { -ONE, 0, 0, 0 }, 762, WORLD_COLLISION_TRIGGER_ACTION_FACING, NEO_ARK_NORTH_PROMENADE_STAIR_SURFACE_STEPS, NEO_ARK_NORTH_PROMENADE_STAIR_YAW, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 4624, -64, 9952, 0 }, { { -3840, 0, -560, 0 }, { 3840, 0, -560, 0 }, { -3840, 0, 560, 0 }, { 3840, 0, 560, 0 } }, { 0, 4104, 0, 0 }, { 0, 0, ONE, 0 }, 3873, WORLD_COLLISION_TRIGGER_ACTION_CAP, NEO_ARK_NORTH_PROMENADE_CAP_INTERACTION_3, 0, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 7088, -64, 0x3280, 0 }, { { -6448, 0, -560, 0 }, { 6448, 0, -560, 0 }, { -6448, 0, 560, 0 }, { 6448, 0, 560, 0 } }, { 0, 4102, 0, 0 }, { 0, 0, -ONE, 0 }, 6456, WORLD_COLLISION_TRIGGER_ACTION_CAP, NEO_ARK_NORTH_PROMENADE_CAP_INTERACTION_2, 0, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { 0x31A7, -64, 0x2E77, 0 }, { { -2805, 0, 441, 0 }, { -835, 0, -887, 0 }, { -2641, 0, 1549, 0 }, { 6283, 0, -1101, 0 } }, { 0, 4115, 0, 0 }, { -3290, 0, -2441, 0 }, 6374, WORLD_COLLISION_TRIGGER_ACTION_CAP, NEO_ARK_NORTH_PROMENADE_CAP_INTERACTION_2, 0, WORLD_COLLISION_TRIGGER_FACING_QUAD | WORLD_COLLISION_TRIGGER_LAST, 0 },
+};
+
+/// Sight-blocking room quad.
+///
+/// Origin and corner offsets use room-local game units; normals use 4096 per unit.
+/// Room binding links and enables every record through LAST; storage stays live
+/// until unlinking or room/view rebinding. The authored low flag bit is unproven.
+static WorldCollisionOccluder _gNeoArkNorthPromenadeSightOccluder = { NULL, NULL, { 6384, -1520, 5040, 0 }, { { -3056, 2672, -4368, 0 }, { 3056, 2672, 4368, 0 }, { -3056, -2672, -4368, 0 }, { 3056, -2672, 4368, 0 } }, { -3361, 0, 2350, 0 }, 5948, 1 | WORLD_COLLISION_OCCLUDER_LAST, 0 };
+
+/// Cue-2 request bases in the loaded type-1 sound bank; cue 1 uses the next entry.
+enum {
+    NEO_ARK_NORTH_PROMENADE_FOOTSTEP_WALK = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x41,
+    NEO_ARK_NORTH_PROMENADE_FOOTSTEP_RUN  = SOUND_SCRIPT_REQUEST_TYPE_1 | 0x43,
+};
+
+/// Shared walking, running and stair-climb footstep bases for surface classes 1 and 2.
+///
+/// Walking and stair climbing share a pair; running uses the following pair.
+/// Consumers borrow the cues while this overlay and its type-1 bank are loaded.
+static WorldCollisionFootstepSounds _gNeoArkNorthPromenadeFootstepSounds = {
+    .walk         = NEO_ARK_NORTH_PROMENADE_FOOTSTEP_WALK,
+    .run          = NEO_ARK_NORTH_PROMENADE_FOOTSTEP_RUN,
+    .scriptedJump = NEO_ARK_NORTH_PROMENADE_FOOTSTEP_WALK,
+};
+
+/// Classes 0 and 3..7: probe blocking, weapon impacts and pushback without footstep cues.
+static WorldCollisionSurfaceProperties _gNeoArkNorthPromenadeSolidSurface = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = NULL,
+};
+
+/// Class 1: probe blocking, weapon impacts, pushback and the room's footstep cues.
+static WorldCollisionSurfaceProperties _gNeoArkNorthPromenadeSolidFootstepSurface = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gNeoArkNorthPromenadeFootstepSounds,
+};
+
+/// Class 2: probe passage and no weapon impacts, retaining pushback and footstep cues.
+static WorldCollisionSurfaceProperties _gNeoArkNorthPromenadeProbePassSurface = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_PASS_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_IGNORE_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gNeoArkNorthPromenadeFootstepSounds,
+};
+
+WorldCollisionSurfaceProperties* gNeoArkNorthPromenadeSurfaceProperties[NEO_ARK_NORTH_PROMENADE_SURFACE_CLASS_COUNT] = {
+    &_gNeoArkNorthPromenadeSolidSurface,
+    &_gNeoArkNorthPromenadeSolidFootstepSurface,
+    &_gNeoArkNorthPromenadeProbePassSurface,
+    &_gNeoArkNorthPromenadeSolidSurface,
+    &_gNeoArkNorthPromenadeSolidSurface,
+    &_gNeoArkNorthPromenadeSolidSurface,
+    &_gNeoArkNorthPromenadeSolidSurface,
+    &_gNeoArkNorthPromenadeSolidSurface,
+};
+
+/// Rejects every key-item use in this room without changing the item or room.
+///
+/// All arguments are ignored; returns the item menu's cannot-use result.
+static s32 _neoArkNorthPromenadeRejectKeyItemUse(Task* task, s32 messageId, s32 itemId, s32 unusedArg)
+{
+    return ROOM_KEY_ITEM_USE_REFUSED;
+}
+
+/// Resolves Neo Ark room variants and refuses the locked forest-zone departure.
+///
+/// Borrows a complete request and writable reply, which may alias. Returns 1
+/// for other areas or the unlocked forest, otherwise 0. A refused execution
+/// writes 2 to the request's optional flag and runs CAP command 1; a query
+/// suppresses both effects. Requires the Neo Ark map and loaded CAP resources.
+static s32 _neoArkNorthPromenadeResolveRoomTransition(Task* unusedTask, s32 unusedMessageId, RoomEventMsg* request, RoomEventMsg* reply)
+{
+    enum { TRANSITION_REFUSED = 0,
+           TRANSITION_ALLOWED = 1,
+           REFUSAL_FLAG_VALUE = 2,
+           CAP_FOREST_LOCKED  = 1 };
+
+    *reply = *request;
+    mapNeoArkResolveRoomVariant(request, reply);
+    if (request->areaId != GAME_AREA_NEO_ARK_FOREST_ZONE) {
+        return TRANSITION_ALLOWED;
+    }
+    if (gameFlagGetNibble(GAME_FLAG_NEO_ARK_FOREST_ZONE_UNLOCKED) != 0) {
+        return TRANSITION_ALLOWED;
+    }
+    if (request->queryOnly != ROOM_EVENT_EXECUTE) {
+        return TRANSITION_REFUSED;
+    }
+    gameFlagSetNibbleIfPresent(request->flagId, REFUSAL_FLAG_VALUE);
+    capRunCommandWithTransition(CAP_FOREST_LOCKED);
+    return TRANSITION_REFUSED;
+}
+
+/// Ignores every CAP room command and returns zero without retaining its arguments.
+static s32 _neoArkNorthPromenadeIgnoreRoomCommand(Task* task, s32 messageId, s32 commandId, s32 commandArg)
+{
+    return 0;
+}
+
+/// Ignores every direction action and returns zero without reading its borrowed request.
+static s32 _neoArkNorthPromenadeIgnoreRoomAction(Task* task, s32 messageId, const DirectionActionRequest* request, s32 unusedArg)
+{
+    return 0;
+}
+
+/// Installs the north promenade's room-message receiver and advances to idle.
+///
+/// The session's room slot borrows the live task; teardown does not clear it.
+static void _neoArkNorthPromenadeInitializeRoom(Task* task)
+{
+    task->msgTable = _gNeoArkNorthPromenadeRoomMessages;
+    gameSetTaskSlot(task, GAME_TASK_SLOT_ROOM);
+    task->state = task->state + 1;
+}
+
+/// Keeps the room task in its idle state while synchronous messages handle room requests.
+static void _neoArkNorthPromenadeRoomIdleState(Task* task)
+{
+}
+
+void neoArkNorthPromenadeRoomTask(Task* task)
+{
+    TaskFuncTable3 handlers;
+
+    handlers = _gNeoArkNorthPromenadeRoomTaskStates;
+    handlers.funcs[task->state](task);
+}
+
+void neoArkNorthPromenadeBindRoomEffectsTask(Task* task)
+{
+    enum { EFFECT_BINDINGS_INITIALIZE,
+           EFFECT_BINDINGS_READY };
+
+    if (task->state == EFFECT_BINDINGS_INITIALIZE) {
+        gRoomEffectMoteId         = EFFECT_NEO_ARK_NORTH_PROMENADE_MOTE;
+        gRoomEffectHaloId         = EFFECT_NEO_ARK_NORTH_PROMENADE_HALO;
+        gRoomEffectOrangeBurstId  = EFFECT_NEO_ARK_NORTH_PROMENADE_ORANGE_BURST;
+        gRoomEffectSparkEmitterId = EFFECT_NEO_ARK_NORTH_PROMENADE_SPARK_EMITTER;
+        gRoomEffectFlashId        = EFFECT_NEO_ARK_NORTH_PROMENADE_FLASH;
+        gRoomEffectTwinTrailId    = EFFECT_NEO_ARK_NORTH_PROMENADE_TWIN_TRAIL;
+        gRoomEffectSparkBurstId   = EFFECT_NEO_ARK_NORTH_PROMENADE_SPARK_BURST;
+        task->state               = EFFECT_BINDINGS_READY;
+    }
+}
+
+#include "../../shared/room/room_visual_effects.inc.c"
+
+void neoArkNorthPromenadeRoomVisualEffectsMoteTask(Task* task)
+{
+    _roomVisualEffectsMoteTask(task);
+}
+
+#include "../../shared/room/room_visual_effects_halo.inc.c"
+
+void neoArkNorthPromenadeRoomVisualEffectsHaloTask(Task* task)
+{
+    _roomVisualEffectsHaloTask(task);
+}
+
+void neoArkNorthPromenadeRoomVisualEffectsHaloOrangeBurstTask(Task* task)
+{
+    _roomVisualEffectsHaloOrangeBurstTask(task);
+}
+
+#include "../../shared/room/room_visual_effects_glow_quad.inc.c"
+#include "../../shared/room/room_visual_effects_flash.inc.c"
+
+void neoArkNorthPromenadeRoomVisualEffectsSparkEmitterTask(Task* task)
+{
+    _roomVisualEffectsSparkEmitterTask(task);
+}
+
+#include "../../shared/room/room_visual_effects_flash_task.inc.c"
+
+void neoArkNorthPromenadeRoomVisualEffectsFlashTask(Task* task)
+{
+    _roomVisualEffectsFlashTask(task);
+}
+
+#include "../../shared/room/room_visual_effects_trails.inc.c"
+
+void neoArkNorthPromenadeRoomVisualEffectsTwinTrailTask(Task* task)
+{
+#include "../../shared/room/room_visual_effects_trail_task.inc.c"
+
+    void neoArkNorthPromenadeRoomVisualEffectsSparkBurstTask(Task * task)
+    {
+        _roomVisualEffectsSparkBurstTask(task);
+    }
+
+#include "../../shared/room/room_visual_effects_glow.inc.c"

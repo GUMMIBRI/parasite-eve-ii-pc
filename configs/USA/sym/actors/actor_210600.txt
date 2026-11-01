@@ -1,0 +1,77 @@
+// Overlay-local symbols for actor_210600.
+_gActor210600AnimationBlendFrames = 0x8015A498; // size:0x19 defined:True
+_gActor210600GrinningStrangerAnimationSets = 0x8015A4B4; // size:0x18 defined:True
+_gActor210600GrinningStrangerMessages = 0x8015A4CC; // size:0x20 defined:True
+gActor210600GrinningStrangerTaskDesc = 0x8015A4EC; // size:0xC defined:True
+_gActor210600Animation07EF4Bank1 = 0x8014CF28; // size:0x540 defined:True
+_gActor210600Animation07EF4Bank4 = 0x8014D468; // size:0x1938 defined:True
+_gActor210600Animation07EF4Records = 0x8014EDA0; // size:0x2F4C defined:True
+_gActor210600Animation07EF4Indices = 0x80151CEC; // size:0x28 defined:True
+gAkropolisCafeteriaPlayerRupertTalkClip = 0x80151D14; // size:0x28 defined:True
+_gActor210600Animation0A050Bank1 = 0x80151D3C; // size:0x4F8 defined:True
+_gActor210600Animation0A050Bank4 = 0x80152234; // size:0xABC defined:True
+_gActor210600Animation0A050Records = 0x80152CF0; // size:0x1158 defined:True
+_gActor210600Animation0A050Indices = 0x80153E48; // size:0x28 defined:True
+gAkropolisCafeteriaPlayerFollowUpEndClip = 0x80153E70; // size:0x28 defined:True
+_gStrangerGrinningBodySkeleton = 0x80153E98; // size:0x2AC defined:True
+_gStrangerGrinningBodyPartVerts = 0x80154144; // size:0x4C defined:True
+_gStrangerGrinningBodyVerts = 0x80154190; // size:0x990 defined:True
+_gStrangerGrinningBodyNormals = 0x80154B20; // size:0xB68 defined:True
+_gStrangerGrinningBodyStream = 0x80155688; // size:0x3E50 defined:True
+_gStrangerGrinningBody = 0x801594D8; // size:0x24 defined:True
+_gActor210600Animation10650Bank1 = 0x801594FC; // size:0x174 defined:True
+_gActor210600Animation10650Bank4 = 0x80159670; // size:0x5D8 defined:True
+_gActor210600Animation10650Records = 0x80159C48; // size:0x800 defined:True
+_gActor210600Animation10650Indices = 0x8015A448; // size:0x28 defined:True
+_gAkropolisCafeteriaGrinningStrangerAppearClip = 0x8015A470; // size:0x28 defined:True
+_gActor210600Animation11F5CBank1 = 0x8015A4F8; // size:0x1BC defined:True
+_gActor210600Animation11F5CBank4 = 0x8015A6B4; // size:0x734 defined:True
+_gActor210600Animation11F5CRecords = 0x8015ADE8; // size:0xF6C defined:True
+_gActor210600Animation11F5CIndices = 0x8015BD54; // size:0x28 defined:True
+gAkropolisCafeteriaBossStrangerCollapseClip = 0x8015BD7C; // size:0x28 defined:True
+_gActor210600Animation12244Bank1 = 0x8015BDA4; // size:0x3C defined:True
+_gActor210600Animation12244Bank4 = 0x8015BDE0; // size:0xD0 defined:True
+_gActor210600Animation12244Records = 0x8015BEB0; // size:0x18C defined:True
+_gActor210600Animation12244Indices = 0x8015C03C; // size:0x28 defined:True
+gStrangerLesserIdleClip = 0x8015C064; // size:0x28 defined:True
+_gActor210600Animation12B30Bank1 = 0x8015C08C; // size:0xC0 defined:True
+_gActor210600Animation12B30Bank4 = 0x8015C14C; // size:0x374 defined:True
+_gActor210600Animation12B30Records = 0x8015C4C0; // size:0x468 defined:True
+_gActor210600Animation12B30Indices = 0x8015C928; // size:0x28 defined:True
+gAkropolisCafeteriaBossStrangerFollowUp3Clip = 0x8015C950; // size:0x28 defined:True
+_gActor210600Animation1310CBank1 = 0x8015C978; // size:0x60 defined:True
+_gActor210600Animation1310CBank4 = 0x8015C9D8; // size:0x258 defined:True
+_gActor210600Animation1310CRecords = 0x8015CC30; // size:0x2D4 defined:True
+_gActor210600Animation1310CIndices = 0x8015CF04; // size:0x28 defined:True
+gAkropolisCafeteriaExtraAnim6Clip = 0x8015CF2C; // size:0x28 defined:True
+_gActor210600Animation134C8Bank1 = 0x8015CF54; // size:0x54 defined:True
+_gActor210600Animation134C8Bank4 = 0x8015CFA8; // size:0x120 defined:True
+_gActor210600Animation134C8Records = 0x8015D0C8; // size:0x1F8 defined:True
+_gActor210600Animation134C8Indices = 0x8015D2C0; // size:0x28 defined:True
+gAkropolisCafeteriaExtraAnim7Clip = 0x8015D2E8; // size:0x28 defined:True
+ActorContact_ScratchPosition = 0x8015D310; // size:0x8 defined:True allow_duplicated:True
+ActorContact_ScratchPosition = 0x8015D318; // size:0x8 defined:True allow_duplicated:True
+
+_actorRenderYawJointInWorld = 0x80149E30; // type:func allow_duplicated:True
+
+_actorContactFindLastObstaclePush = 0x8014A13C; // type:func allow_duplicated:True
+
+_actorContactApplyAvoidancePushback = 0x8014A484; // type:func allow_duplicated:True
+
+_actorContactApplyGridPushback = 0x8014A9D0; // type:func allow_duplicated:True
+
+_actorContactApplyBearingPushback = 0x8014AB74; // type:func allow_duplicated:True
+_actorRenderYawJointInWorld = 0x8014BA98; // type:func allow_duplicated:True
+_actorContactFindLastObstaclePush = 0x8014BDA4; // type:func allow_duplicated:True
+_actorContactApplyAvoidancePushback = 0x8014C0EC; // type:func allow_duplicated:True
+_actorContactApplyGridPushback = 0x8014C638; // type:func allow_duplicated:True
+_actorContactApplyBearingPushback = 0x8014C7DC; // type:func allow_duplicated:True
+_actorRenderSetYawScale = 0x8014B7B0; // type:func
+actorMsgPlace = 0x8014B6A0; // type:func
+_actor210600DriveAnimation = 0x8014b2c0; // type:func
+_actor210600SetModelDraw = 0x8014b5f4; // type:func
+_actor210600ApplyCommand = 0x8014b770; // type:func
+_actor210600Update = 0x8014b434; // type:func
+_actor210600Spawn = 0x8014b8c8; // type:func
+_actor210600Task = 0x8014ba3c; // type:func
+_gActor210600GrinningStrangerTaskStates = 0x80149e24;

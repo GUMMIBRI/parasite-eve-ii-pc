@@ -1,0 +1,72 @@
+// Overlay-local symbols for mine_tunnel.
+_gMineTunnelFlareWorldPoints = 0x8017E12C; // size:0x28 defined:True
+_gMineTunnelRoomMessages = 0x8017DFC4; // size:0x28 defined:True
+gMineTunnelRoomLighting = 0x8017E154; // size:0x8 defined:True
+gMineTunnelRoomCollisionResources = 0x8017E15C; // size:0x10 defined:True
+gMineTunnelRoomViewMaps = 0x8017E16C; // size:0x4 defined:True
+gMineTunnelRoomViewCounts = 0x8017E170; // size:0x2 defined:True
+gMineTunnelWarpEntries = 0x8017E174; // size:0x70 defined:True
+_gMineTunnelCollisionGridNormals = 0x8017E1E4; // size:0xE8 defined:True
+_gMineTunnelCollisionGridVerts = 0x8017E2CC; // size:0x280 defined:True
+_gMineTunnelCollisionGridFaces = 0x8017E54C; // size:0x1BC defined:True
+_gMineTunnelCollisionGridCells = 0x8017E708; // size:0x13C defined:True
+_gMineTunnelCollisionGridTable = 0x8017E844; // size:0x28 defined:True
+_gMineTunnelCollisionGrid = 0x8017E86C; // size:0x24 defined:True
+gMineTunnelViewCameras = 0x8017E890; // size:0xB4 defined:True
+_gMineTunnelView1SpriteBatches = 0x8017E944; // size:0x10 defined:True
+_gMineTunnelView2SpriteSources = 0x8017E954; // size:0xC8 defined:True
+_gMineTunnelView2SpriteBatches = 0x8017EA1C; // size:0x20 defined:True
+_gMineTunnelView3SpriteSources = 0x8017EA3C; // size:0x3FC defined:True
+_gMineTunnelView3SpriteBatches = 0x8017EE38; // size:0x48 defined:True
+_gMineTunnelView4SpriteSources = 0x8017EE80; // size:0x4EC defined:True
+_gMineTunnelView4SpriteBatches = 0x8017F36C; // size:0x48 defined:True
+_gMineTunnelView5SpriteSources = 0x8017F3B4; // size:0x5C8 defined:True
+_gMineTunnelView5SpriteBatches = 0x8017F97C; // size:0x28 defined:True
+gMineTunnelSpriteViews = 0x8017F9A4; // size:0x3C defined:True
+_gMineTunnelPointLights = 0x8017F9E0; // size:0x1E0 defined:True
+_gMineTunnelRoomLights = 0x8017FBC0; // size:0x18 defined:True
+_gMineTunnelViewBoundaryTriggers = 0x8017FBD8; // size:0x1C8 defined:True
+_gMineTunnelActionTriggers = 0x8017FDA0; // size:0x130 defined:True
+_gMineTunnelVariant1Resources = 0x8017FED0; // size:0x18 defined:True
+_gMineTunnelVariant2Resources = 0x8017FEE8; // size:0x18 defined:True
+_gMineTunnelVariant3Resources = 0x8017FF00; // size:0x24 defined:True
+_gMineTunnelVariant4Resources = 0x8017FF24; // size:0x24 defined:True
+_gMineTunnelVariant11Resources = 0x8017FF48; // size:0x24 defined:True
+_gMineTunnelVariant1Placements = 0x8017FF6C; // size:0x60 defined:True
+_gMineTunnelVariant2Placements = 0x8017FFCC; // size:0x60 defined:True
+_gMineTunnelVariant3Placements = 0x8018002C; // size:0xB0 defined:True
+_gMineTunnelVariant4Placements = 0x801800DC; // size:0x80 defined:True
+_gMineTunnelVariant11Placements = 0x8018015C; // size:0x70 defined:True
+gMineTunnelAreaVariants = 0x801801CC; // size:0x60 defined:True
+_gMineTunnelAmbientByView = 0x8018022C; // size:0x30 defined:True
+_gMineTunnelSightOccluders = 0x8018025C; // size:0xB4 defined:True
+_gMineTunnelFloorFootstepSounds = 0x80180310; // size:0xC defined:True
+_gMineTunnelSolidSurfaceProperties = 0x8018031C; // size:0x8 defined:True
+_gMineTunnelFloorSurfaceProperties = 0x80180324; // size:0x8 defined:True
+gMineTunnelSurfaceProperties = 0x8018032C; // size:0x20 defined:True
+gActor102500Tasks = 0x801379A8; // absolute:True owner=actor_102500
+gActor101600ScavengerTaskDesc = 0x801445DC; // absolute:True owner=actor_101600
+gActor203700BatTaskDesc = 0x80151DAC; // absolute:True owner=actor_203700
+gActor01500MindSucklerTaskDesc = 0x80153E28; // absolute:True owner=actor_201500
+_gMineTunnelEncounterAnimationSets = 0x8017DFEC; // size:0x8 defined:True
+_gMineTunnelEncounterAnimationBankCopy = 0x8017DFF4; // size:0x8 defined:True
+_gMineTunnelEncounterAnimationPlay = 0x8017DFFC; // size:0x14 defined:True
+D_mine_tunnel_8017E010 = 0x8017E010; // size:0x14 defined:True
+_gMineTunnelEntranceEncounterScript = 0x8017E024; // size:0x108 defined:True
+_gMineTunnelAnimation009DCBank1 = 0x8017DB54; // size:0x78 defined:True
+_gMineTunnelAnimation009DCBank4 = 0x8017DBCC; // size:0x17C defined:True
+_gMineTunnelAnimation009DCRecords = 0x8017DD48; // size:0x22C defined:True
+_gMineTunnelAnimation009DCIndices = 0x8017DF74; // size:0x28 defined:True
+_gMineTunnelAnimation009DC = 0x8017DF9C; // size:0x28 defined:True
+
+mineTunnelDrawViewFlaresTask = 0x8017D7D4; // type:func
+_glowDrawFlare = 0x8017D8CC; // type:func
+_mineTunnelSetEnemyWave = 0x8017d6e0; // type:func
+_mineTunnelRejectKeyItemUse = 0x8017d5e4; // type:func
+_mineTunnelResolveRoomTransition = 0x8017d5ec; // type:func
+_mineTunnelIdleRoomTask = 0x8017d774; // type:func
+_mineTunnelHandleCommand = 0x8017d630; // type:func
+_mineTunnelHandleDirectionAction = 0x8017d670; // type:func
+_mineTunnelInitializeRoomTask = 0x8017d6ec; // type:func
+mineTunnelRoomTask = 0x8017d77c; // type:func
+_gMineTunnelRoomTaskStates = 0x8017d5c4;

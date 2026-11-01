@@ -1,0 +1,130 @@
+/* Continue room_visual_effects.inc.c after the preceding overlay wrappers. */
+
+/// Draws an additive four-spike star over two concentric shaded discs.
+///
+/// `coord` must have a composed world matrix and `rgb` supplies three colour
+/// bytes. `radius` is a signed world-unit radius, scaled by 64 / (SZ3 / 4 + 1).
+/// The outer disc and spikes use half brightness; the inner disc uses full
+/// brightness at half radius. Two spikes reach the radius and two reach twice
+/// it. The shoulders use one eighth of the disc scale. Negative GTE flags
+/// suppress drawing.
+static void _roomVisualEffectsDrawBurstStar(const GfxCoord* coord, s16 radius, const u8 rgb[3])
+{
+    /// Initializes a star wedge with three black rim vertices and a centre tint.
+    ///
+    /// `quad` addresses one writable `POLY_G4` and is evaluated fourteen times
+    /// through the SDK setters; it must be side-effect-free. Each colour is
+    /// evaluated once and narrowed to u8, so callers supply 0..255 expressions
+    /// independent of the packet being written. Captures no caller locals.
+    /// Initializes only length, code and RGB: positions, tag and frame-arena
+    /// ownership remain with the drawer. Use this statement list inside a braced
+    /// body with a terminating semicolon; undefined before leaving the drawer.
+#define ROOM_VISUAL_EFFECTS_INIT_STAR_WEDGE(quad, red, green, blue) \
+    setPolyG4(quad);                                                \
+    setRGB0(quad, 0, 0, 0);                                         \
+    setRGB1(quad, 0, 0, 0);                                         \
+    setRGB2(quad, (red), (green), (blue));                          \
+    setRGB3(quad, 0, 0, 0)
+
+    RoomFxRadialScratch* projection;
+    POLY_G4*             quad;
+    s32                  angle;
+    s32                  midAngle;
+    s32                  nextAngle;
+    s32                  shoulderAngle;
+
+    projection                = SCRATCH_STACK_RESERVE_BLOCK(RoomFxRadialScratch);
+    projection->worldPoint.vx = coord->workm.t[0];
+    projection->worldPoint.vy = coord->workm.t[1];
+    projection->worldPoint.vz = coord->workm.t[2];
+
+    gte_SetTransMatrix(&GsWSMATRIX);
+    gte_SetRotMatrix(&GsWSMATRIX);
+    gte_ldv0(&projection->worldPoint);
+    gte_rtps();
+    gte_stsxy(&projection->screenX);
+    gte_stflg(&projection->projectionFlags);
+    if (projection->projectionFlags >= 0) {
+        gte_stszotz(&projection->depth);
+        projection->depth++;
+        projection->radii.star.disc  = (radius * ROOM_VISUAL_EFFECTS_RADIAL_PROJECTION_SCALE) / projection->depth;
+        projection->radii.star.spike = (radius * ROOM_VISUAL_EFFECTS_STAR_SHOULDER_PROJECTION_SCALE) / projection->depth;
+
+        // Layer a full-bright inner disc over the half-bright outer disc.
+        angle = 0;
+        do {
+            quad           = gGpuPrimCursor;
+            gGpuPrimCursor = quad + 1;
+            ROOM_VISUAL_EFFECTS_INIT_STAR_WEDGE(quad, rgb[0] >> 1, rgb[1] >> 1, rgb[2] >> 1);
+            quad->x0  = projection->screenX + ((projection->radii.star.disc * rsin(angle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            midAngle  = angle + 0x100;
+            quad->y0  = projection->screenY + ((projection->radii.star.disc * rcos(angle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            quad->x1  = projection->screenX + ((projection->radii.star.disc * rsin(midAngle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            quad->y1  = projection->screenY + ((projection->radii.star.disc * rcos(midAngle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            nextAngle = angle + 0x200;
+            quad->x2  = projection->screenX;
+            quad->y2  = projection->screenY;
+            quad->x3  = projection->screenX + ((projection->radii.star.disc * rsin(nextAngle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            quad->y3  = projection->screenY + ((projection->radii.star.disc * rcos(nextAngle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            addPrim(GPU_ORDERING_TABLE_ENTRY_AT_DEPTH(projection->depth),
+                    quad);
+            gpuSetPrimitiveBlendMode(quad, GPU_BLEND_ADD, projection->depth);
+
+            quad           = gGpuPrimCursor;
+            gGpuPrimCursor = quad + 1;
+            ROOM_VISUAL_EFFECTS_INIT_STAR_WEDGE(quad, rgb[0], rgb[1], rgb[2]);
+            quad->x0 = projection->screenX + ((projection->radii.star.disc * rsin(angle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS + 1));
+            quad->y0 = projection->screenY + ((projection->radii.star.disc * rcos(angle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS + 1));
+            quad->x1 = projection->screenX + ((projection->radii.star.disc * rsin(midAngle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS + 1));
+            quad->y1 = projection->screenY + ((projection->radii.star.disc * rcos(midAngle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS + 1));
+            quad->x2 = projection->screenX;
+            quad->y2 = projection->screenY;
+            quad->x3 = projection->screenX + ((projection->radii.star.disc * rsin(nextAngle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS + 1));
+            quad->y3 = projection->screenY + ((projection->radii.star.disc * rcos(nextAngle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS + 1));
+            angle    = nextAngle;
+            addPrim(GPU_ORDERING_TABLE_ENTRY_AT_DEPTH(projection->depth),
+                    quad);
+            gpuSetPrimitiveBlendMode(quad, GPU_BLEND_ADD, projection->depth);
+        } while (angle < ROOM_VISUAL_EFFECTS_FULL_TURN);
+
+        // Alternate short and long spikes around the projected centre.
+        angle = 0x200;
+        do {
+            quad           = gGpuPrimCursor;
+            gGpuPrimCursor = quad + 1;
+            ROOM_VISUAL_EFFECTS_INIT_STAR_WEDGE(quad, rgb[0] >> 1, rgb[1] >> 1, rgb[2] >> 1);
+            shoulderAngle = angle - 0x400;
+            quad->x0      = projection->screenX + ((projection->radii.star.spike * rsin(shoulderAngle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS + 1));
+            quad->y0      = projection->screenY + ((projection->radii.star.spike * rcos(shoulderAngle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS + 1));
+            quad->x1      = projection->screenX + ((projection->radii.star.disc * rsin(angle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            quad->y1      = projection->screenY + ((projection->radii.star.disc * rcos(angle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            shoulderAngle = angle + 0x400;
+            quad->x2      = projection->screenX;
+            quad->y2      = projection->screenY;
+            quad->x3      = projection->screenX + ((projection->radii.star.spike * rsin(shoulderAngle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS + 1));
+            quad->y3      = projection->screenY + ((projection->radii.star.spike * rcos(shoulderAngle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS + 1));
+            addPrim(GPU_ORDERING_TABLE_ENTRY_AT_DEPTH(projection->depth),
+                    quad);
+            gpuSetPrimitiveBlendMode(quad, GPU_BLEND_ADD, projection->depth);
+
+            quad           = gGpuPrimCursor;
+            gGpuPrimCursor = quad + 1;
+            ROOM_VISUAL_EFFECTS_INIT_STAR_WEDGE(quad, rgb[0] >> 1, rgb[1] >> 1, rgb[2] >> 1);
+            quad->x0      = projection->screenX + ((projection->radii.star.spike * rsin(angle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            quad->y0      = projection->screenY + ((projection->radii.star.spike * rcos(angle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            quad->x1      = projection->screenX + ((projection->radii.star.disc * rsin(shoulderAngle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS - 1));
+            quad->y1      = projection->screenY + ((projection->radii.star.disc * rcos(shoulderAngle)) >> (ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS - 1));
+            shoulderAngle = angle + 0x800;
+            quad->x2      = projection->screenX;
+            quad->y2      = projection->screenY;
+            quad->x3      = projection->screenX + ((projection->radii.star.spike * rsin(shoulderAngle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            quad->y3      = projection->screenY + ((projection->radii.star.spike * rcos(shoulderAngle)) >> ROOM_VISUAL_EFFECTS_TRIG_FRACTION_BITS);
+            angle         = shoulderAngle;
+            addPrim(GPU_ORDERING_TABLE_ENTRY_AT_DEPTH(projection->depth),
+                    quad);
+            gpuSetPrimitiveBlendMode(quad, GPU_BLEND_ADD, projection->depth);
+        } while (angle < ROOM_VISUAL_EFFECTS_FULL_TURN);
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(RoomFxRadialScratch);
+#undef ROOM_VISUAL_EFFECTS_INIT_STAR_WEDGE
+}

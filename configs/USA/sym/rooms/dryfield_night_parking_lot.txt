@@ -1,0 +1,101 @@
+// Overlay-local symbols for dryfield_night_parking_lot.
+gDryfieldNightParkingLotLobbyUnlockAreaUpdates = 0x8018155C; // size:0x8 defined:True
+_gRoomEventMsg = 0x80181564; // size:0x8 defined:True
+_gDryfieldNightParkingLotAmbientEffectGates = 0x8017EDBC; // size:0x10 defined:True
+_gDryfieldNightParkingLotGlowPoints = 0x8017EDCC; // size:0x48 defined:True
+gDryfieldNightParkingLotRoomLighting = 0x8017EE14; // size:0x10 defined:True
+gDryfieldNightParkingLotRoomCollisionResources = 0x8017EE24; // size:0x20 defined:True
+_gDryfieldNightParkingLotRoom2ViewMap = 0x8017EE44; // size:0x8 defined:True
+gDryfieldNightParkingLotViewMaps = 0x8017EE4C; // size:0x8 defined:True
+gDryfieldNightParkingLotViewCounts = 0x8017EE54; // size:0x4 defined:True
+gDryfieldNightParkingLotWarpEntries = 0x8017EE58; // size:0x118 defined:True
+_gDryfieldNightParkingLotCollisionGridNormals = 0x8017EF70; // size:0x90 defined:True
+_gDryfieldNightParkingLotCollisionGridVerts = 0x8017F000; // size:0x420 defined:True
+_gDryfieldNightParkingLotCollisionGridFaces = 0x8017F420; // size:0x294 defined:True
+_gDryfieldNightParkingLotCollisionGridCells = 0x8017F6B4; // size:0x368 defined:True
+_gDryfieldNightParkingLotCollisionGridTable = 0x8017FA1C; // size:0xB4 defined:True
+_gDryfieldNightParkingLotCollisionGrid = 0x8017FAD0; // size:0x24 defined:True
+gDryfieldNightParkingLotViewCameras = 0x8017FAF4; // size:0x18C defined:True
+_gDryfieldNightParkingLotView1SpriteBatches = 0x8017FC80; // size:0x10 defined:True
+_gDryfieldNightParkingLotView2SpriteSources = 0x8017FC90; // size:0xC8 defined:True
+_gDryfieldNightParkingLotView2SpriteBatches = 0x8017FD58; // size:0x20 defined:True
+_gDryfieldNightParkingLotView2SpriteDrawAreas = 0x8017FD78; // size:0x14 defined:True
+_gDryfieldNightParkingLotView3SpriteSources = 0x8017FD8C; // size:0x1E0 defined:True
+_gDryfieldNightParkingLotView3SpriteBatches = 0x8017FF6C; // size:0x18 defined:True
+_gDryfieldNightParkingLotView4SpriteSources = 0x8017FF84; // size:0x140 defined:True
+_gDryfieldNightParkingLotView4SpriteBatches = 0x801800C4; // size:0x30 defined:True
+_gDryfieldNightParkingLotView5SpriteSources = 0x801800F4; // size:0x8C defined:True
+_gDryfieldNightParkingLotView5SpriteBatches = 0x80180180; // size:0x18 defined:True
+_gDryfieldNightParkingLotView6SpriteSources = 0x80180198; // size:0x1A4 defined:True
+_gDryfieldNightParkingLotView6SpriteBatches = 0x8018033C; // size:0x20 defined:True
+_gDryfieldNightParkingLotView7SpriteBatches = 0x8018035C; // size:0x10 defined:True
+_gDryfieldNightParkingLotView8SpriteSources = 0x8018036C; // size:0xC8 defined:True
+_gDryfieldNightParkingLotView8SpriteBatches = 0x80180434; // size:0x20 defined:True
+_gDryfieldNightParkingLotView8SpriteDrawAreas = 0x80180454; // size:0x14 defined:True
+_gDryfieldNightParkingLotView9SpriteSources = 0x80180468; // size:0x8C defined:True
+_gDryfieldNightParkingLotView9SpriteBatches = 0x801804F4; // size:0x18 defined:True
+_gDryfieldNightParkingLotView10SpriteSources = 0x8018050C; // size:0x78 defined:True
+_gDryfieldNightParkingLotView10SpriteBatches = 0x80180584; // size:0x18 defined:True
+_gDryfieldNightParkingLotView11SpriteBatches = 0x8018059C; // size:0x10 defined:True
+gDryfieldNightParkingLotSpriteViews = 0x801805AC; // size:0x84 defined:True
+_gDryfieldNightParkingLotPointLights = 0x80180630; // size:0x660 defined:True
+_gDryfieldNightParkingLotRoomLights = 0x80180C90; // size:0x18 defined:True
+_gDryfieldNightParkingLotViewBoundaryTriggers = 0x80180CA8; // size:0x2F8 defined:True
+_gDryfieldNightParkingLotActionTriggers = 0x80180FA0; // size:0x390 defined:True
+_gDryfieldNightParkingLotOccluders = 0x80181330; // size:0x78 defined:True
+_gDryfieldNightParkingLotVariant2Resources = 0x801813A8; // size:0x24 defined:True
+_gDryfieldNightParkingLotVariant3Resources = 0x801813CC; // size:0x18 defined:True
+_gDryfieldNightParkingLotVariant4Resources = 0x801813E4; // size:0x24 defined:True
+_gDryfieldNightParkingLotVariant7Resources = 0x80181408; // size:0x18 defined:True
+_gDryfieldNightParkingLotVariant21Resources = 0x80181420; // size:0x18 defined:True
+gDryfieldNightParkingLotAreaVariants = 0x80181438; // size:0xB0 defined:True
+_gDryfieldNightParkingLotClass5FootstepSounds = 0x801814E8; // size:0xC defined:True
+_gDryfieldNightParkingLotClass2FootstepSounds = 0x801814F4; // size:0xC defined:True
+_gDryfieldNightParkingLotClass3FootstepSounds = 0x80181500; // size:0xC defined:True
+_gDryfieldNightParkingLotSilentBlockingSurface = 0x8018150C; // size:0x8 defined:True
+_gDryfieldNightParkingLotClass5Surface = 0x80181514; // size:0x8 defined:True
+_gDryfieldNightParkingLotClass2Surface = 0x8018151C; // size:0x8 defined:True
+_gDryfieldNightParkingLotClass3Surface = 0x80181524; // size:0x8 defined:True
+_gDryfieldNightParkingLotProbePassThroughSurface = 0x8018152C; // size:0x8 defined:True
+_gDryfieldNightParkingLotClass6Surface = 0x80181534; // size:0x8 defined:True
+gDryfieldNightParkingLotSurfacePropertiesByClass = 0x8018153C; // size:0x20 defined:True
+gActor103700BatTaskDesc = 0x80139DAC; // absolute:True owner=actor_103700
+gActor101600ScavengerTaskDesc = 0x801445DC; // absolute:True owner=actor_101600
+gActor00100DesertChaserTaskDesc = 0x8014D8A4; // absolute:True owner=actor_400100
+gActor403900GolemTaskDesc = 0x801540E0; // absolute:True owner=actor_403900
+gActor300700MothTaskDesc = 0x80165B88; // absolute:True owner=actor_300700
+gActor02500Tasks = 0x801679A8; // absolute:True owner=actor_302500
+gMapDryfieldFullParkingLotVariant2Placements = 0x8017BAB8; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullParkingLotVariant3Placements = 0x8017BB28; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullParkingLotVariant4Placements = 0x8017BB78; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullParkingLotVariant7Placements = 0x8017BBE8; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullParkingLotVariant21Placements = 0x8017BC08; // absolute:True owner=map_dryfield_full
+gRoomEventActive = 0x8018156C; // size:0x4 defined:True
+gRoomEventReq = 0x80181570; // size:0x14 defined:True
+_gDryfieldNightParkingLotAnimation0166CBank1 = 0x8017E7E4; // size:0x78 defined:True
+_gDryfieldNightParkingLotAnimation0166CBank4 = 0x8017E85C; // size:0x17C defined:True
+_gDryfieldNightParkingLotAnimation0166CRecords = 0x8017E9D8; // size:0x22C defined:True
+_gDryfieldNightParkingLotAnimation0166CIndices = 0x8017EC04; // size:0x28 defined:True
+_gDryfieldNightParkingLotAnimation0166C = 0x8017EC2C; // size:0x28 defined:True
+gRoomEventTaskDesc = 0x8017EC54; // size:0xC defined:True
+gDryfieldNightParkingLotRoomMessages = 0x8017EC60; // size:0x30 defined:True
+_gDryfieldNightParkingLotScavengerEntranceAnimationSets = 0x8017EC90; // size:0x8 defined:True
+_gDryfieldNightParkingLotScavengerEntranceBankCopy = 0x8017EC98; // size:0x8 defined:True
+_gDryfieldNightParkingLotScavengerEntranceAnimationRequest = 0x8017ECA0; // size:0x14 defined:True
+gDryfieldNightParkingLotScavengerEntranceScript = 0x8017ECB4; // size:0x108 defined:True
+
+dryfieldNightParkingLotDrawGlowsTask = 0x8017DC88; // type:func
+_roomEventGate = 0x8017D5FC; // type:func
+roomEventTask = 0x8017D760; // type:func
+glowDrawFlareClipped = 0x8017DE10; // type:func
+parkingLotResolveMessage = 0x8017D8D0; // type:func
+parkingLotSoundMsg = 0x8017DAB4; // type:func
+_dryfieldNightParkingLotDrawGreyCapsule = 0x8017e08c; // type:func
+dryfieldNightParkingLotRejectKeyItemUse = 0x8017db04; // type:func
+dryfieldNightParkingLotSetScavengerWave = 0x8017dba4; // type:func
+_dryfieldNightParkingLotIdleState = 0x8017dc28; // type:func
+dryfieldNightParkingLotStartScavengerEncounterMessage = 0x8017db34; // type:func
+_dryfieldNightParkingLotInitializeRoom = 0x8017dbb0; // type:func
+dryfieldNightParkingLotRoomTask = 0x8017dc30; // type:func
+dryfieldNightParkingLotCommandMessage = 0x8017db0c; // type:func
+_gDryfieldNightParkingLotRoomStates = 0x8017d5dc;

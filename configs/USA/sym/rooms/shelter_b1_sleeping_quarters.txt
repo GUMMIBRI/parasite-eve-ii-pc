@@ -1,0 +1,101 @@
+// Overlay-local symbols for shelter_b1_sleeping_quarters.
+_gShelterB1SleepingQuartersGreenBeamEndpoints = 0x8018054C; // size:0x10 defined:True
+_gShelterB1SleepingQuartersRedDiscPosition = 0x8018055C; // size:0x10 defined:True
+_gShelterB1SleepingQuartersWhiteBeamEndpoints = 0x8018056C; // size:0x80 defined:True
+_gShelterB1SleepingQuartersView6BeamEndpoints = 0x801805EC; // size:0x20 defined:True
+_gShelterB1SleepingQuartersView10BeamEndpoints = 0x8018060C; // size:0x40 defined:True
+_gShelterB1SleepingQuartersRoomMessages = 0x80180518; // size:0x28 defined:True
+_gShelterB1SleepingQuartersAlternateCapTaskDesc = 0x80180540; // size:0xC defined:True
+gShelterB1SleepingQuartersModel02DFC = 0x801804F4; // size:0x24 defined:True
+_gRoomVisualEffectsGlowDiscShades = 0x8018064C; // size:0xC defined:True
+gShelterB1SleepingQuartersRoomViewMaps = 0x80180658; // size:0x4 defined:True
+gShelterB1SleepingQuartersRoomViewCounts = 0x8018065C; // size:0x2 defined:True
+gShelterB1SleepingQuartersWarpEntries = 0x80180660; // size:0x70 defined:True
+_gShelterB1SleepingQuartersCollisionGridNormals = 0x801806D0; // size:0x38 defined:True
+_gShelterB1SleepingQuartersCollisionGridVerts = 0x80180708; // size:0x478 defined:True
+_gShelterB1SleepingQuartersCollisionGridFaces = 0x80180B80; // size:0x300 defined:True
+_gShelterB1SleepingQuartersCollisionGridCells = 0x80180E80; // size:0x224 defined:True
+_gShelterB1SleepingQuartersCollisionGridTable = 0x801810A4; // size:0x30 defined:True
+gShelterB1SleepingQuartersCollisionGrid = 0x801810D4; // size:0x24 defined:True
+gShelterB1SleepingQuartersViewCameras = 0x801810F8; // size:0x168 defined:True
+_gShelterB1SleepingQuartersView1SpriteBatches = 0x80181260; // size:0x10 defined:True
+_gShelterB1SleepingQuartersView2SpriteBatches = 0x80181270; // size:0x10 defined:True
+_gShelterB1SleepingQuartersView3SpriteSources = 0x80181280; // size:0x64 defined:True
+_gShelterB1SleepingQuartersView3SpriteBatches = 0x801812E4; // size:0x18 defined:True
+_gShelterB1SleepingQuartersView4SpriteSources = 0x801812FC; // size:0x78 defined:True
+_gShelterB1SleepingQuartersView4SpriteBatches = 0x80181374; // size:0x18 defined:True
+_gShelterB1SleepingQuartersView5SpriteSources = 0x8018138C; // size:0x6A4 defined:True
+_gShelterB1SleepingQuartersView5SpriteBatches = 0x80181A30; // size:0x20 defined:True
+_gShelterB1SleepingQuartersView5SpriteDrawAreas = 0x80181A50; // size:0x14 defined:True
+_gShelterB1SleepingQuartersView6SpriteSources = 0x80181A64; // size:0x8C0 defined:True
+_gShelterB1SleepingQuartersView6SpriteBatches = 0x80182324; // size:0x28 defined:True
+_gShelterB1SleepingQuartersView6SpriteDrawAreas = 0x8018234C; // size:0x14 defined:True
+_gShelterB1SleepingQuartersView7SpriteSources = 0x80182360; // size:0x2E4 defined:True
+_gShelterB1SleepingQuartersView7SpriteBatches = 0x80182644; // size:0x20 defined:True
+_gShelterB1SleepingQuartersView7SpriteDrawAreas = 0x80182664; // size:0x14 defined:True
+_gShelterB1SleepingQuartersView8SpriteSources = 0x80182678; // size:0x30C defined:True
+_gShelterB1SleepingQuartersView8SpriteBatches = 0x80182984; // size:0x20 defined:True
+_gShelterB1SleepingQuartersView9SpriteBatches = 0x801829A4; // size:0x10 defined:True
+_gShelterB1SleepingQuartersView10SpriteSources = 0x801829B4; // size:0x474 defined:True
+_gShelterB1SleepingQuartersView10SpriteBatches = 0x80182E28; // size:0x38 defined:True
+_gShelterB1SleepingQuartersView11SpriteBatches = 0x80182E60; // size:0x10 defined:True
+gShelterB1SleepingQuartersSpriteViews = 0x80182E70; // size:0x84 defined:True
+_gShelterB1SleepingQuartersDirectionalLights = 0x80182EF4; // size:0x160 defined:True
+_gShelterB1SleepingQuartersPointLights = 0x80183054; // size:0x1E0 defined:True
+gShelterB1SleepingQuartersRoomLights = 0x80183234; // size:0x18 defined:True
+gShelterB1SleepingQuartersViewBoundaryTriggers = 0x8018324C; // size:0x558 defined:True
+gShelterB1SleepingQuartersOccluders = 0x801837A4; // size:0x12C defined:True
+gShelterB1SleepingQuartersActionTriggers = 0x801838D0; // size:0x50C defined:True
+_gShelterB1SleepingQuartersVariant1Resources = 0x80183DDC; // size:0x24 defined:True
+_gShelterB1SleepingQuartersVariant2Resources = 0x80183E00; // size:0x18 defined:True
+_gShelterB1SleepingQuartersVariant3Resources = 0x80183E18; // size:0x24 defined:True
+_gShelterB1SleepingQuartersVariant11Resources = 0x80183E3C; // size:0x18 defined:True
+_gShelterB1SleepingQuartersVariant17Resources = 0x80183E54; // size:0x18 defined:True
+_gShelterB1SleepingQuartersVariant1Placements = 0x80183E6C; // size:0x60 defined:True
+_gShelterB1SleepingQuartersVariant2Placements = 0x80183ECC; // size:0x80 defined:True
+_gShelterB1SleepingQuartersVariant3Placements = 0x80183F4C; // size:0x50 defined:True
+_gShelterB1SleepingQuartersVariant11Placements = 0x80183F9C; // size:0x20 defined:True
+_gShelterB1SleepingQuartersVariant17Placements = 0x80183FBC; // size:0x20 defined:True
+gShelterB1SleepingQuartersAreaVariants = 0x80183FDC; // size:0xB0 defined:True
+_gShelterB1SleepingQuartersFootstepSounds = 0x8018408C; // size:0xC defined:True
+_gShelterB1SleepingQuartersDefaultSurfaceProperties = 0x80184098; // size:0x8 defined:True
+_gShelterB1SleepingQuartersProbePassSurfaceProperties = 0x801840A0; // size:0x8 defined:True
+_gShelterB1SleepingQuartersFootstepSurfaceProperties = 0x801840A8; // size:0x8 defined:True
+gShelterB1SleepingQuartersSurfacePropertiesByClass = 0x801840B0; // size:0x20 defined:True
+gActor102400Tasks = 0x8013647C; // absolute:True owner=actor_102400
+gActor04400MadChaserTaskDescs = 0x80142604; // absolute:True owner=actor_104400
+gActor207200CreepingStrangerTaskDesc = 0x80153EC8; // absolute:True owner=actor_207200
+gActor403900GolemTaskDesc = 0x801540E0; // absolute:True owner=actor_403900
+gActor402200GolemTaskDesc = 0x80154188; // absolute:True owner=actor_402200
+gActor401800OddStrangerTaskDesc = 0x80155AC4; // absolute:True owner=actor_401800
+gActor300700RatTaskDesc = 0x801693AC; // absolute:True owner=actor_300700
+_gShelterB1SleepingQuartersModel02DFCSkeleton = 0x801802E4; // size:0x24 defined:True
+_gShelterB1SleepingQuartersModel02DFCPartVerts = 0x80180308; // size:0x4 defined:True
+_gShelterB1SleepingQuartersModel02DFCVerts = 0x8018030C; // size:0xB0 defined:True
+_gShelterB1SleepingQuartersModel02DFCStream = 0x801803BC; // size:0x138 defined:True
+
+shelterB1SleepingQuartersDrawViewLightsTask = 0x8017D8E0; // type:func
+
+_shelterB1SleepingQuartersPlayAlternateCapTask = 0x8017D778; // type:func
+
+shelterB1SleepingQuartersRoomVisualEffectsGlowDiscTask = 0x8017E6DC; // type:func
+
+shelterB1SleepingQuartersRoomVisualEffectsFlyingOrangeBurstTask = 0x8017F894; // type:func
+
+shelterB1SleepingQuartersRoomVisualEffectsFlyingSparkTask = 0x8017EC34; // type:func
+_roomVisualEffectsDrawFlyingSpark = 0x8017EE58; // type:func
+_roomVisualEffectsDrawFlyingRing = 0x8017F0DC; // type:func
+_roomVisualEffectsDrawFlyingDisc = 0x8017F500; // type:func
+_roomVisualEffectsDrawFlyingBurstGlow = 0x8017FA40; // type:func
+_roomVisualEffectsDrawFlyingBurstGroundQuad = 0x8017FF6C; // type:func
+_glowDrawBeam = 0x8017DB50; // type:func
+_glowDrawBitDisc = 0x8017E338; // type:func
+_shelterB1SleepingQuartersRejectKeyItemUse = 0x8017d668; // type:func
+_shelterB1SleepingQuartersIgnoreRoomAction = 0x8017d770; // type:func
+_shelterB1SleepingQuartersIdleRoomState = 0x8017d880; // type:func
+shelterB1SleepingQuartersAreaObjectTask = 0x8017d608; // type:func
+_shelterB1SleepingQuartersResolveRoomEvent = 0x8017d670; // type:func
+_shelterB1SleepingQuartersHandleCapCommand = 0x8017d6fc; // type:func
+_shelterB1SleepingQuartersInitializeRoom = 0x8017d83c; // type:func
+shelterB1SleepingQuartersRoomTask = 0x8017d888; // type:func
+_gShelterB1SleepingQuartersStateHandlers = 0x8017d5c4;

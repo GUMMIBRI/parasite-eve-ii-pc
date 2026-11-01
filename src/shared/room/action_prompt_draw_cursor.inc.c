@@ -1,0 +1,89 @@
+/* Part of the action prompt library; see action_prompt.h. */
+
+#ifndef ACTION_PROMPT_CURSOR_DRAW_HELPERS_DEFINED
+/// Keeps the geometry constants and inline helper unique when this fragment is included twice.
+#define ACTION_PROMPT_CURSOR_DRAW_HELPERS_DEFINED
+
+/// Cursor geometry and the 4-bit texture and palettes in the prompt's VRAM atlas.
+enum {
+    ACTION_PROMPT_CURSOR_ORIGIN_OFFSET = 2,
+    ACTION_PROMPT_CURSOR_WIDTH         = 16,
+    ACTION_PROMPT_CURSOR_HEIGHT        = 23,
+    ACTION_PROMPT_CURSOR_TEXTURE_U     = 0,
+    ACTION_PROMPT_CURSOR_TEXTURE_V     = 232,
+    ACTION_PROMPT_CURSOR_TEXTURE_PAGE  = getTPage(0, GPU_BLEND_AVERAGE, 896, 256),
+    ACTION_PROMPT_CURSOR_IDLE_CLUT     = getClut(128, 242),
+    ACTION_PROMPT_CURSOR_HOTSPOT_CLUT  = getClut(112, 242)
+};
+
+/// Sets the action cursor's screen-space rectangle in a writable textured quad.
+///
+/// `cursorX` and `cursorY` are pixels from the screen center, with Y increasing
+/// downward. The 16-by-23 rectangle starts two pixels above and left of that
+/// point. Each edge is narrowed to s16; callers supply X in [-160, 159] and
+/// Y in [-110, 110]. `cursorQuad` must point to one writable `POLY_FT4`;
+/// this helper writes its vertex coordinates and retains no pointer to it.
+static inline void _actionPromptSetCursorVertices(POLY_FT4* cursorQuad, s32 cursorX, s32 cursorY)
+{
+    s16 leftX;
+    s16 rightX;
+    s16 topY;
+    s16 bottomY;
+
+    leftX          = cursorX - ACTION_PROMPT_CURSOR_ORIGIN_OFFSET;
+    cursorQuad->x2 = leftX;
+    cursorQuad->x0 = leftX;
+    rightX         = cursorX + (ACTION_PROMPT_CURSOR_WIDTH - ACTION_PROMPT_CURSOR_ORIGIN_OFFSET);
+    cursorQuad->x3 = rightX;
+    cursorQuad->x1 = rightX;
+    topY           = cursorY - ACTION_PROMPT_CURSOR_ORIGIN_OFFSET;
+    cursorQuad->y1 = topY;
+    cursorQuad->y0 = topY;
+    bottomY        = cursorY + (ACTION_PROMPT_CURSOR_HEIGHT - ACTION_PROMPT_CURSOR_ORIGIN_OFFSET);
+    cursorQuad->y3 = bottomY;
+    cursorQuad->y2 = bottomY;
+}
+#endif
+
+/// Queues the point-and-click cursor as an opaque, unmodulated textured quad.
+///
+/// `cursorX` and `cursorY` are pixels from the screen center, with Y increasing
+/// downward; callers supply X in [-160, 159] and Y in [-110, 110]. The quad starts
+/// two pixels above and left of that point; each vertex is narrowed to s16.
+/// `cursorMode` is `ACTION_PROMPT_MODE_HIDDEN` (0), `ACTION_PROMPT_MODE_NORMAL` (1)
+/// or `ACTION_PROMPT_MODE_HIGHLIGHTED` (2). Hidden queues nothing; highlighted
+/// selects its palette, and every other nonzero value uses the ordinary palette.
+///
+/// Requires a word-aligned packet arena with room for one `POLY_FT4` and a
+/// writable current ordering-table tag, with the cursor texture and palettes
+/// already in VRAM. The packet is borrowed until the GPU consumes the frame;
+/// this routine advances the arena cursor by `sizeof(POLY_FT4)` without a bound
+/// check and links the packet at `gGpuCurrentOt[0]`. Hidden mode touches neither.
+static void ACTION_PROMPT_DRAW_CURSOR(s32 cursorX, s32 cursorY, s32 cursorMode)
+{
+    POLY_FT4* cursorQuad;
+
+    if (cursorMode == ACTION_PROMPT_MODE_HIDDEN) {
+        return;
+    }
+
+    cursorQuad     = gGpuPrimCursor;
+    gGpuPrimCursor = cursorQuad + 1;
+
+    _actionPromptSetCursorVertices(cursorQuad, cursorX, cursorY);
+
+    cursorQuad->tpage = ACTION_PROMPT_CURSOR_TEXTURE_PAGE;
+    if (cursorMode == ACTION_PROMPT_MODE_HIGHLIGHTED) {
+        cursorQuad->clut = ACTION_PROMPT_CURSOR_HOTSPOT_CLUT;
+    } else {
+        cursorQuad->clut = ACTION_PROMPT_CURSOR_IDLE_CLUT;
+    }
+
+    // Raw-texture mode ignores RGB bytes, so they need no initialization.
+    setUVWH(cursorQuad, ACTION_PROMPT_CURSOR_TEXTURE_U, ACTION_PROMPT_CURSOR_TEXTURE_V,
+            ACTION_PROMPT_CURSOR_WIDTH, ACTION_PROMPT_CURSOR_HEIGHT);
+    setPolyFT4(cursorQuad);
+    setShadeTex(cursorQuad, true);
+
+    addPrim(gGpuCurrentOt, cursorQuad);
+}

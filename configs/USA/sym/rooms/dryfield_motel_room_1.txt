@@ -1,0 +1,82 @@
+// Overlay-local symbols for dryfield_motel_room_1.
+_gDryfieldMotelRoom1FirstStagingPlacements = 0x8017E0D0; // size:0x30 defined:True
+_gDryfieldMotelRoom1SecondStagingPlacements = 0x8017E100; // size:0x30 defined:True
+_gDryfieldMotelRoom1EnemyCombatPlacements = 0x8017E130; // size:0x30 defined:True
+_gDryfieldMotelRoom1MessageTable = 0x8017E0A8; // size:0x28 defined:True
+_gDryfieldMotelRoom1OpeningScript = 0x8017E160; // size:0x1E0 defined:True
+_gDryfieldMotelRoom1OpeningSkipScript = 0x8017E340; // size:0x138 defined:True
+gDryfieldMotelRoom1OpeningEventTaskDesc = 0x8017E478; // size:0xC defined:True
+gDryfieldMotelRoom1RoomCollisionResources = 0x8017E484; // size:0x20 defined:True
+_gDryfieldMotelRoom1ViewMap = 0x8017E4A4; // size:0xC defined:True
+gDryfieldMotelRoom1RoomViewMaps = 0x8017E4B0; // size:0x8 defined:True
+gDryfieldMotelRoom1RoomViewCounts = 0x8017E4B8; // size:0x4 defined:True
+gDryfieldMotelRoom1RoomLighting = 0x8017E4BC; // size:0x10 defined:True
+gDryfieldMotelRoom1WarpEntries = 0x8017E4CC; // size:0x38 defined:True
+_gDryfieldMotelRoom1CollisionGridNormals = 0x8017E504; // size:0x48 defined:True
+_gDryfieldMotelRoom1CollisionGridVerts = 0x8017E54C; // size:0x2A8 defined:True
+_gDryfieldMotelRoom1CollisionGridFaces = 0x8017E7F4; // size:0x1C8 defined:True
+_gDryfieldMotelRoom1CollisionGridCells = 0x8017E9BC; // size:0xF0 defined:True
+_gDryfieldMotelRoom1CollisionGridTable = 0x8017EAAC; // size:0x10 defined:True
+_gDryfieldMotelRoom1CollisionGrid = 0x8017EABC; // size:0x24 defined:True
+gDryfieldMotelRoom1ViewCameras = 0x8017EAE0; // size:0x144 defined:True
+_gDryfieldMotelRoom1MappedView1SpriteBatches = 0x8017EC24; // size:0x10 defined:True
+_gDryfieldMotelRoom1MappedView2SpriteBatches = 0x8017EC34; // size:0x10 defined:True
+_gDryfieldMotelRoom1MappedView3SpriteBatches = 0x8017EC44; // size:0x10 defined:True
+_gDryfieldMotelRoom1MappedView4SpriteSources = 0x8017EC54; // size:0x348 defined:True
+_gDryfieldMotelRoom1MappedView4SpriteBatches = 0x8017EF9C; // size:0x30 defined:True
+_gDryfieldMotelRoom1MappedView5SpriteSources = 0x8017EFCC; // size:0x6A4 defined:True
+_gDryfieldMotelRoom1MappedView5SpriteBatches = 0x8017F670; // size:0x38 defined:True
+_gDryfieldMotelRoom1MappedView6SpriteSources = 0x8017F6A8; // size:0x4C4 defined:True
+_gDryfieldMotelRoom1MappedView6SpriteBatches = 0x8017FB6C; // size:0x28 defined:True
+_gDryfieldMotelRoom1MappedView7SpriteSources = 0x8017FB94; // size:0x244 defined:True
+_gDryfieldMotelRoom1MappedView7SpriteBatches = 0x8017FDD8; // size:0x30 defined:True
+_gDryfieldMotelRoom1MappedView8SpriteSources = 0x8017FE08; // size:0x8AC defined:True
+_gDryfieldMotelRoom1MappedView8SpriteBatches = 0x801806B4; // size:0x50 defined:True
+_gDryfieldMotelRoom1MappedView9SpriteSources = 0x80180704; // size:0x53C defined:True
+_gDryfieldMotelRoom1MappedView9SpriteBatches = 0x80180C40; // size:0x50 defined:True
+gDryfieldMotelRoom1SpriteViews = 0x80180C90; // size:0x6C defined:True
+_gDryfieldMotelRoom1ViewBoundaryTriggers = 0x80180CFC; // size:0x260 defined:True
+_gDryfieldMotelRoom1ActionTriggers = 0x80180F5C; // size:0x260 defined:True
+_gDryfieldMotelRoom1Occluders = 0x801811BC; // size:0x3C defined:True
+_gDryfieldMotelRoom1PointLights = 0x801811F8; // size:0x1E0 defined:True
+_gDryfieldMotelRoom1RoomLights = 0x801813D8; // size:0x18 defined:True
+_gDryfieldMotelRoom1Variant1Resources = 0x801813F0; // size:0xC defined:True
+_gDryfieldMotelRoom1Variant2Resources = 0x801813FC; // size:0x24 defined:True
+_gDryfieldMotelRoom1Variant3Resources = 0x80181420; // size:0x24 defined:True
+_gDryfieldMotelRoom1Variant7Resources = 0x80181444; // size:0x24 defined:True
+_gDryfieldMotelRoom1Variant10Resources = 0x80181468; // size:0x24 defined:True
+_gDryfieldMotelRoom1Variant10Placements = 0x8018148C; // size:0x50 defined:True
+gDryfieldMotelRoom1PlacementVariants = 0x801814DC; // size:0x68 defined:True
+_gDryfieldMotelRoom1Class1FootstepSounds = 0x80181544; // size:0xC defined:True
+_gDryfieldMotelRoom1Class2FootstepSounds = 0x80181550; // size:0xC defined:True
+_gDryfieldMotelRoom1SolidSurfaceProperties = 0x8018155C; // size:0x8 defined:True
+_gDryfieldMotelRoom1Class1SurfaceProperties = 0x80181564; // size:0x8 defined:True
+_gDryfieldMotelRoom1Class2SurfaceProperties = 0x8018156C; // size:0x8 defined:True
+_gDryfieldMotelRoom1Class3SurfaceProperties = 0x80181574; // size:0x8 defined:True
+gDryfieldMotelRoom1SurfacePropertiesByClass = 0x8018157C; // size:0x20 defined:True
+_gDryfieldMotelRoom1OpeningEventTask = 0x8018159C; // size:0x4 defined:True
+gActor123200BoneSucklerTaskDesc = 0x80137234; // absolute:True owner=actor_123200
+gActor201200BoneSucklerTaskDesc = 0x80150E98; // absolute:True owner=actor_201200
+gActor401800OddStrangerTaskDesc = 0x80155AC4; // absolute:True owner=actor_401800
+gActor301200BoneSucklerTaskDesc = 0x80168E98; // absolute:True owner=actor_301200
+gActor304000BloodSucklerTaskDesc = 0x8016E500; // absolute:True owner=actor_304000
+gMapDryfieldMotelRoom1Variant1Placements = 0x8017AF94; // absolute:True owner=map_dryfield
+gMapDryfieldMotelRoom1Variant2Placements = 0x8017AFA4; // absolute:True owner=map_dryfield
+gMapDryfieldMotelRoom1Variant3Placements = 0x8017B004; // absolute:True owner=map_dryfield
+gMapDryfieldMotelRoom1Variant7Placements = 0x8017B054; // absolute:True owner=map_dryfield
+
+dryfieldMotelRoom1NoOpEffectTask = 0x8017E0A0; // type:func
+_dryfieldMotelRoom1FinishOpeningScene = 0x8017df08; // type:func
+_dryfieldMotelRoom1RejectKeyItemUse = 0x8017d5ec; // type:func
+_dryfieldMotelRoom1ResolveTransition = 0x8017d5f4; // type:func
+_dryfieldMotelRoom1IgnoreRoomCommand = 0x8017d61c; // type:func
+_dryfieldMotelRoom1IdleRoomTask = 0x8017d74c; // type:func
+_dryfieldMotelRoom1RequestEventAction = 0x8017dfb0; // type:func
+_dryfieldMotelRoom1RestorePlayerAfterSkip = 0x8017dfd0; // type:func
+_dryfieldMotelRoom1InitRoomTask = 0x8017d69c; // type:func
+dryfieldMotelRoom1Task = 0x8017d754; // type:func
+_dryfieldMotelRoom1ExecuteEventAction = 0x8017d7ac; // type:func
+_dryfieldMotelRoom1HandleRoomAction = 0x8017d624; // type:func
+_dryfieldMotelRoom1InitializeOpeningEvent = 0x8017dc2c; // type:func
+_dryfieldMotelRoom1OpeningEventTask = 0x8017dd3c; // type:func
+_gDryfieldMotelRoom1RoomTaskStates = 0x8017d5c4;

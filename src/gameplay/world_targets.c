@@ -1,0 +1,1316 @@
+#include "world_targets.h"
+#include "scene_combat.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/gtemac.h>
+#include <psyq/inline_c.h>
+#include <psyq/stdio.h>
+
+#include "common.h"
+#include "gte.h"
+
+#include "gameplay/actor_render.h"
+#include "gameplay/area_entry.h"
+#include "gameplay/attachment_state.h"
+#include "gameplay/attachments.h"
+#include "gameplay/battle_reward.h"
+#include "gameplay/damage.h"
+#include "gameplay/enemy.h"
+#include "gameplay/gpu_image_upload.h"
+#include "geometry.h"
+#include "gameplay/hud_sprites.h"
+#include "item_use.h"
+#include "gameplay/items.h"
+#include "items.h"
+#include "gameplay/enemy_params.h"
+#include "gameplay/world_collision.h"
+#include "world_coords.h"
+#include "gameplay/world_state.h"
+
+#include "main/display.h"
+#include "main/gfx.h"
+#include "main/mc.h"
+#include "main/game_debug.h"
+#include "main/pad.h"
+#include "main/scratch.h"
+#include "main/session.h"
+#include "main/sound.h"
+#include "main/text.h"
+#include "main/ui.h"
+
+/// Scratch-stack block holding the line-of-sight segment of one lock-on scan.
+///
+/// The aim point is the aiming actor's world position raised by 1000 units.
+/// Each candidate target's body point is placed in view space, and the target
+/// can be locked only while no world occluder blocks the segment between the
+/// two view-space points. The occluder test maps occluder geometry into the
+/// same space through the current view matrix.
+typedef struct {
+    SVECTOR eyeView;      // Aim point in view space; segment end
+    SVECTOR targetView;   // Candidate's body point, local to its coordinate until transformed into view space; segment start
+    SVECTOR eyeWorld;     // Aim point in world space, before the view transform
+    byte    unused18[32]; // Reserved with the block but never accessed; role unproven
+} _WorldTargetLockScanScratch;
+STATIC_ASSERT_SIZEOF(_WorldTargetLockScanScratch, 0x38);
+
+/// Scratch-stack reservation for converting a target's body point to world space.
+///
+/// Reserve and release all 40 bytes around coordinate composition and the GTE
+/// transform. The relative matrix maps the target's local body point into world
+/// units by removing the view transform from its composed coordinate. It is
+/// borrowed only during this call; the leading eight bytes are never accessed
+/// and have no established role.
+typedef struct {
+    byte   unused[8];   // Reserved but never accessed; role unproven
+    MATRIX bodyToWorld; // Target-coordinate to world-coordinate transform
+} _WorldTargetPositionScratch;
+STATIC_ASSERT_SIZEOF(_WorldTargetPositionScratch, 0x28);
+
+/// Scratch-stack block for projecting one target's body point to the screen.
+///
+/// The point is projected through the working matrix of the target's
+/// coordinate node. The screen pixels are stored outside the block, in a word
+/// the caller supplies; the block holds only the input point and the
+/// projection's other results. Reserve the complete record on the scratch
+/// stack; none of its members survive the matching release.
+typedef struct {
+    SVECTOR point;           // Target body point, local to its coordinate node
+    s32     depthCue;        // GTE IR0 depth-cue coefficient, with 12 fractional bits
+    s32     projectionFlags; // GTE FLAG bits; negative when the summary error bit is set
+    s32     orderingDepth;   // Quarter camera-space depth from SZ3 (0..16383)
+} _WorldTargetProjectionScratch;
+STATIC_ASSERT_SIZEOF(_WorldTargetProjectionScratch, 0x14);
+
+/// Projected screen position of a target bound to a readout.
+///
+/// The projection writes both pixels as one word. The readout's on-screen
+/// number reads the two signed components when it places itself beside the
+/// target. The origin is the screen center and Y increases downward. Storing
+/// either member replaces the other.
+typedef union {
+    DVECTOR xy;     // Signed screen pixels from the center (vx right, vy down)
+    s32     packed; // Both pixels in the one word the projection stores
+} WorldTargetScreenPos;
+STATIC_ASSERT_SIZEOF(WorldTargetScreenPos, 4);
+
+/// Lifetime and display limits of one floating readout.
+enum {
+    WORLD_TARGET_READOUT_FRAMES        = 20,    // Passes the number stays up after the latest addition
+    WORLD_TARGET_READOUT_DEPARTED      = 4,     // Binding word once the target has left the tracked list; not a pointer
+    WORLD_TARGET_READOUT_DISPLAY_LIMIT = 10000, // Absolute total at which the drawn figure stops growing
+    WORLD_TARGET_READOUT_DISPLAY_MAX   = 9999   // Figure drawn once the stored total reaches the limit
+};
+
+/// One floating damage or heal number drawn beside a tracked target.
+///
+/// `_gWorldTargetReadouts` holds 32 of these. The binding is NULL when the slot is
+/// empty, a `WorldTargetNode` while that target stays on the tracked list, or
+/// `WORLD_TARGET_READOUT_DEPARTED` once the target has left the list. A
+/// non-negative total and a negative total use separate slots for the same
+/// target. Each addition rearms `framesLeft` to `WORLD_TARGET_READOUT_FRAMES`
+/// passes. Each draw stores a new projection in `screen` while the target
+/// remains listed, and leaves the last projection in place after the target
+/// leaves. That draw decrements `framesLeft` and clears the slot at zero.
+/// The drawn figure is the absolute value, limited to
+/// `WORLD_TARGET_READOUT_DISPLAY_MAX`. The stored total is not limited.
+/// Releasing a slot clears the binding, the total and the countdown.
+typedef struct {
+    union {
+        WorldTargetNode* node;       // Bound target, or NULL when the slot is empty
+        u32              word;       // Same storage; WORLD_TARGET_READOUT_DEPARTED after the target leaves the list
+    } binding;
+    s16                  amount;     // Signed total (non-negative damage, negative heal)
+    s16                  framesLeft; // Passes left before the slot is cleared
+    WorldTargetScreenPos screen;     // Last projected position; not cleared on release
+} WorldTargetReadout;
+STATIC_ASSERT_SIZEOF(WorldTargetReadout, 0xC);
+STATIC_ASSERT(OFFSET_OF(WorldTargetReadout, amount) == 4, WorldTargetReadout_amount);
+STATIC_ASSERT(OFFSET_OF(WorldTargetReadout, framesLeft) == 6, WorldTargetReadout_framesLeft);
+STATIC_ASSERT(OFFSET_OF(WorldTargetReadout, screen) == 8, WorldTargetReadout_screen);
+
+/// Floating damage/heal pool, with separate sign-class totals for each target.
+///
+/// Each addition rearms 20 draw passes. Departed targets keep their final
+/// projection until expiry; clearing releases bindings without clearing screen.
+/// The complete 32-entry pool lives with gameplay and retains no node ownership.
+static WorldTargetReadout _gWorldTargetReadouts[32];
+
+/* Define BSS before API headers to preserve first-declaration order. */
+
+SceneCombatState gSceneCombatState;
+
+#include "gameplay/scene_combat.h"
+#include "gameplay/world_targets.h"
+
+/// Lock scan modes and ranking scales; angles use 4096 units per turn.
+enum {
+    WORLD_TARGET_LOCK_SCAN_AUTOMATIC           = 0,
+    WORLD_TARGET_LOCK_SCAN_LEFT                = 1,
+    WORLD_TARGET_LOCK_SCAN_RIGHT               = -1,
+    WORLD_TARGET_LOCK_ANGLE_TURN               = 0x1000,
+    WORLD_TARGET_LOCK_INITIAL_SCORE            = 0x3000,
+    WORLD_TARGET_LOCK_REJECT_SCORE             = 0x2000,
+    WORLD_TARGET_LOCK_INITIAL_DISTANCE_SQUARED = 0x7FFFFFFF,
+    WORLD_TARGET_LOCK_NEAR_DISTANCE_SQUARED    = 0x300000,
+    WORLD_TARGET_LOCK_PROXIMITY_SHIFT          = 13,
+    WORLD_TARGET_LOCK_SCORE_SHIFT              = 10,
+    WORLD_TARGET_LOCK_EYE_HEIGHT               = 1000
+};
+
+/// Selector and audio-update duration of the final battle hold's music fade.
+enum { SCENE_COMBAT_END_MUSIC_ALL_SEQUENCES = 0,
+       SCENE_COMBAT_END_MUSIC_FADE_TICKS    = 180 };
+
+static WorldTargetNode* _worldTargetScanLockNodes(Task* aimingTask, VECTOR3* outPosition, s32 scanMode);
+
+static void _worldTargetDrawReadouts(void);
+
+static WorldTargetNode* _worldTargetFindLockNodeAndPositionFromPad(Task* aimingTask, VECTOR3* outPosition);
+
+/// Finishes battle signaling and starts the delay after the final encounter hold.
+///
+/// `combat` must be live and writable, with its final battle reference already
+/// released. Sets the finished phase, clears action/enemy stimuli and rearms
+/// the 60-frame end delay. The caller handles rewards and the music fade.
+static inline void _sceneFinishBattleSignals(SceneCombatState* combat)
+{
+    combat->signals.bytes.battlePhase    = SCENE_COMBAT_BATTLE_FINISHED;
+    combat->signals.bytes.actionFlags    = 0;
+    combat->signals.bytes.enemyAlert     = 0;
+    combat->signals.bytes.endDelayFrames = SCENE_COMBAT_END_DELAY_FRAMES;
+}
+
+/// Reads port-zero held directions for lock cycling, with left taking precedence.
+///
+/// Returns `WORLD_TARGET_LOCK_SCAN_LEFT` (1), `WORLD_TARGET_LOCK_SCAN_RIGHT`
+/// (-1), or `WORLD_TARGET_LOCK_SCAN_AUTOMATIC` (0) when neither is held. Reads
+/// the processed pad sample, including synthesized stick directions; input is
+/// not polled or consumed. Right is queried only when left is clear.
+static inline s32 _worldTargetGetPadLockScanMode(void)
+{
+    enum { WORLD_TARGET_LOCK_PAD_PORT = 0 };
+
+    if (padCheckButtons(WORLD_TARGET_LOCK_PAD_PORT, PAD_BUTTON_QUERY_HELD_ANY, PAD_BUTTON_LEFT) != 0) {
+        return WORLD_TARGET_LOCK_SCAN_LEFT;
+    }
+    if (padCheckButtons(WORLD_TARGET_LOCK_PAD_PORT, PAD_BUTTON_QUERY_HELD_ANY, PAD_BUTTON_RIGHT) != 0) {
+        return WORLD_TARGET_LOCK_SCAN_RIGHT;
+    }
+    return WORLD_TARGET_LOCK_SCAN_AUTOMATIC;
+}
+
+/// Places a candidate's local body point in the view frame used by sight occluders.
+///
+/// `candidate` must be a live enemy's embedded target entry with a writable,
+/// acyclic coordinate chain whose full transform maps into the current view.
+/// `scanScratch` is the caller's separate, word-aligned live scan reservation;
+/// only `targetView` XYZ is written and its pad is preserved. Coordinates use
+/// game units: local XYZ narrows to signed 16 bits, rotation uses 12 fractional
+/// bits and saturates to -32768..32767, then translation adds with 16-bit wrapping.
+/// Refreshes coordinate caches and changes GTE state. Both pointers are borrowed
+/// for this call; the caller retains and releases the scratch reservation.
+static inline void _worldTargetTransformLockCandidate(const WorldTargetNode* candidate, _WorldTargetLockScanScratch* scanScratch)
+{
+    GfxCoord* targetCoord;
+    SVECTOR   targetLocal;
+
+    actorRenderComposeCoord(WORLD_TARGET_ENEMY_FROM_NODE(candidate)->coord);
+    scanScratch->targetView.vx = WORLD_TARGET_ENEMY_FROM_NODE(candidate)->bodyPos.vx;
+    scanScratch->targetView.vy = WORLD_TARGET_ENEMY_FROM_NODE(candidate)->bodyPos.vy;
+    scanScratch->targetView.vz = WORLD_TARGET_ENEMY_FROM_NODE(candidate)->bodyPos.vz;
+    targetCoord                = WORLD_TARGET_ENEMY_FROM_NODE(candidate)->coord;
+    targetLocal                = scanScratch->targetView;
+
+    // Add translation on the CPU so it wraps after the GTE rotation saturates.
+    gte_ApplyMatrixSV(&targetCoord->workm, &targetLocal, &scanScratch->targetView);
+    scanScratch->targetView.vx += WORLD_TARGET_ENEMY_FROM_NODE(candidate)->coord->workm.t[0];
+    scanScratch->targetView.vy += WORLD_TARGET_ENEMY_FROM_NODE(candidate)->coord->workm.t[1];
+    scanScratch->targetView.vz += WORLD_TARGET_ENEMY_FROM_NODE(candidate)->coord->workm.t[2];
+}
+
+/// Clears the player and companion actors' borrowed lock-on references to `node`.
+///
+/// Call before ending the target entry's lifetime. Each occupied actor task must
+/// have a live `GameActor` work block. Only pointer identity is compared; the
+/// caller manages the target entry's tracking state and storage.
+static inline void _worldTargetReleaseActorLocks(const WorldTargetNode* node)
+{
+    s32        actorSlot;
+    Task**     taskSlot;
+    Task*      actorTask;
+    GameActor* actor;
+
+    actorSlot = 0;
+    taskSlot  = gPlayerActorTasks;
+    do {
+        actorTask = *taskSlot;
+        if (actorTask != NULL) {
+            actor = actorTask->work;
+            if (actor->targetNode == node) {
+                actor->targetNode = NULL;
+            }
+        }
+        actorSlot++;
+        taskSlot++;
+    } while (actorSlot < PLAYER_ACTOR_TASK_COUNT);
+}
+
+/// Queues one raw texture or palette transfer without changing its upload record.
+///
+/// `scratchDestination` must hold a word-aligned writable `RECT`, separate from
+/// `upload`, so SDK width/height clamping cannot change the source destination.
+/// The upload must meet `GpuImageUpload`'s VRAM bounds and pixel-buffer contract.
+/// The caller selects copy entries; this helper does not read the operation.
+/// The scratch rectangle can be reused on return; pixel storage stays borrowed
+/// until transfer completes. The SDK return value is ignored, and this helper
+/// neither waits for transfer completion nor manages the scratch-stack cursor.
+static inline void _gpuUploadImageEntry(RECT* scratchDestination, const GpuImageUpload* upload)
+{
+    scratchDestination->x = upload->destination.x;
+    scratchDestination->y = upload->destination.y;
+    scratchDestination->w = upload->destination.w;
+    scratchDestination->h = upload->destination.h;
+    LoadImage(scratchDestination, upload->pixels);
+}
+
+/// Updates a live readout's packed screen position from its target's body point.
+///
+/// The binding must have been found on the tracked list and belong to a live
+/// enemy with a coordinate whose working matrix is already composed. Body
+/// coordinates narrow to signed 16 bits before projection. Screen pixels use
+/// the screen center as origin, with Y downward; GTE errors are not filtered.
+/// Requires an initialized scratch stack with room for the projection block.
+/// Only the readout's screen word is changed; the scratch block is released
+/// before returning, and the GTE transform registers are left changed.
+static inline void _worldTargetProjectReadout(WorldTargetReadout* readout)
+{
+    s32*                           packedScreen;
+    const WorldTargetNode*         node;
+    _WorldTargetProjectionScratch* projection;
+
+    packedScreen = &readout->screen.packed;
+    node         = readout->binding.node;
+    SCRATCH_STACK_RESERVE_BLOCK(_WorldTargetProjectionScratch);
+    projection           = SCRATCH_STACK_CURSOR(_WorldTargetProjectionScratch);
+    projection->point.vx = WORLD_TARGET_ENEMY_FROM_NODE(node)->bodyPos.vx;
+    projection->point.vy = WORLD_TARGET_ENEMY_FROM_NODE(node)->bodyPos.vy;
+    projection->point.vz = WORLD_TARGET_ENEMY_FROM_NODE(node)->bodyPos.vz;
+    gte_SetRotMatrix(&WORLD_TARGET_ENEMY_FROM_NODE(node)->coord->workm);
+    gte_SetTransMatrix(&WORLD_TARGET_ENEMY_FROM_NODE(node)->coord->workm);
+    gte_ldv0(&projection->point);
+    gte_rtps();
+    gte_stsxy(packedScreen);
+    gte_stdp(&projection->depthCue);
+    gte_stflg(&projection->projectionFlags);
+    gte_stszotz(&projection->orderingDepth);
+    SCRATCH_STACK_RELEASE_BLOCK(_WorldTargetProjectionScratch);
+}
+
+void worldTargetDrawOverlay(void)
+{
+    enum {
+        WORLD_TARGET_CURSOR_FRACTION_BITS          = 8,
+        WORLD_TARGET_CURSOR_EASING_PASSES          = 5,
+        WORLD_TARGET_CURSOR_EASING_COMPLETE        = 0xFF,
+        WORLD_TARGET_CURSOR_HIDDEN_PAUSE_STATE     = 1,
+        WORLD_TARGET_CURSOR_FRAME_COUNT            = 8,
+        WORLD_TARGET_CURSOR_TICKS_PER_FRAME        = 3,
+        WORLD_TARGET_CURSOR_SMALL_HALF_SIZE        = 8,
+        WORLD_TARGET_CURSOR_FULL_HALF_SIZE         = 16,
+        WORLD_TARGET_CURSOR_CELL_SHIFT             = 5, // 32-pixel cells
+        WORLD_TARGET_CURSOR_COLUMN_SHIFT           = 2, // Four columns, two rows
+        WORLD_TARGET_CURSOR_TEXTURE_BASE_U         = 64,
+        WORLD_TARGET_CURSOR_TEXTURE_MODE_4BIT      = 0,
+        WORLD_TARGET_CURSOR_TEXTURE_PAGE_X         = 896,
+        WORLD_TARGET_CURSOR_TEXTURE_PAGE_Y         = 256,
+        WORLD_TARGET_CURSOR_CLUT_X                 = 16,
+        WORLD_TARGET_CURSOR_CLUT_Y                 = 242,
+        WORLD_TARGET_CURSOR_RAW_SEMITRANS_FT4_CODE = 0x2F // Unmodulated texture; packet RGB bytes are ignored
+    };
+    WorldTargetNode*             targetNode;
+    GameSession*                 session;
+    WorldCoordProjectionScratch* projection;
+    POLY_FT4*                    cursorQuad;
+    s32                          cursorEasing;
+    s32                          cursorFrame;
+    s32                          textureU;
+    s32                          textureV;
+
+    /// Eases a changed target and marks this pass for the small reticle.
+    ///
+    /// The node and projection arguments must be side-effect-free live pointers;
+    /// the projection holds screen pixels before shake compensation. `easingActive`
+    /// is a distinct writable s32 local initialized to zero. Arguments repeat;
+    /// this macro captures and updates gWorldTargetCursorNode, gWorldTargetCursorEasingPass, gWorldTargetCursorXFixed8 and
+    /// gWorldTargetCursorYFixed8, using the WORLD_TARGET_CURSOR_ easing constants above.
+    /// Initial acquisition snaps. Changing targets halves displacement for at
+    /// most five passes; convergence still draws small on its final easing pass.
+    /// Expands multiple statements; use only standalone in a braced block.
+#define WORLD_TARGET_EASE_CURSOR(targetNode, projection, easingActive)                                                                  \
+    if (gWorldTargetCursorNode != (targetNode)) {                                                                                       \
+        if (gWorldTargetCursorNode == NULL) {                                                                                           \
+            gWorldTargetCursorEasingPass = WORLD_TARGET_CURSOR_EASING_COMPLETE;                                                         \
+        } else {                                                                                                                        \
+            gWorldTargetCursorEasingPass = 0;                                                                                           \
+        }                                                                                                                               \
+        gWorldTargetCursorNode = (targetNode);                                                                                          \
+    }                                                                                                                                   \
+    if (gWorldTargetCursorEasingPass < WORLD_TARGET_CURSOR_EASING_PASSES) {                                                             \
+        gWorldTargetCursorXFixed8 += (((projection)->screen.vx << WORLD_TARGET_CURSOR_FRACTION_BITS) - gWorldTargetCursorXFixed8) >> 1; \
+        gWorldTargetCursorYFixed8 += (((projection)->screen.vy << WORLD_TARGET_CURSOR_FRACTION_BITS) - gWorldTargetCursorYFixed8) >> 1; \
+        if ((projection)->screen.vx == (gWorldTargetCursorXFixed8 >> WORLD_TARGET_CURSOR_FRACTION_BITS) &&                              \
+            (projection)->screen.vy == (gWorldTargetCursorYFixed8 >> WORLD_TARGET_CURSOR_FRACTION_BITS)) {                              \
+            gWorldTargetCursorEasingPass = WORLD_TARGET_CURSOR_EASING_COMPLETE;                                                         \
+        } else {                                                                                                                        \
+            gWorldTargetCursorEasingPass++;                                                                                             \
+        }                                                                                                                               \
+        (easingActive)          = 1;                                                                                                    \
+        (projection)->screen.vx = gWorldTargetCursorXFixed8 >> WORLD_TARGET_CURSOR_FRACTION_BITS;                                       \
+        (projection)->screen.vy = gWorldTargetCursorYFixed8 >> WORLD_TARGET_CURSOR_FRACTION_BITS;                                       \
+    } else {                                                                                                                            \
+        gWorldTargetCursorXFixed8 = (projection)->screen.vx << WORLD_TARGET_CURSOR_FRACTION_BITS;                                       \
+        gWorldTargetCursorYFixed8 = (projection)->screen.vy << WORLD_TARGET_CURSOR_FRACTION_BITS;                                       \
+    }
+
+    targetNode = gWorldTargetListHead;
+    if (gGameDebugState->hideHud != 0) {
+        return;
+    }
+    // Readouts keep aging under the cursor-only gates below.
+    _worldTargetDrawReadouts();
+    session = gGameSession;
+    if (session->sceneUpdatesPaused == WORLD_TARGET_CURSOR_HIDDEN_PAUSE_STATE) {
+        return;
+    }
+    if (gAttachmentState.mode == ATTACHMENT_MODE_ARMED || gAttachmentState.mode == ATTACHMENT_MODE_CAST) {
+        return;
+    }
+    if (gAttachmentState.mode == ATTACHMENT_MODE_WHEEL) {
+        return;
+    }
+    if (session->eventState != 0) {
+        return;
+    }
+    if (session->hideHud != 0) {
+        return;
+    }
+    for (; targetNode != NULL; targetNode = targetNode->next) {
+        if (targetNode->state.parts.targeted != 0 && !(targetNode->state.parts.flags & WORLD_TARGET_NOT_LOCKABLE)) {
+            // Project the first marked, lockable enemy's local body point.
+            cursorEasing         = 0;
+            projection           = SCRATCH_STACK_RESERVE_BLOCK(WorldCoordProjectionScratch);
+            projection->point.vx = WORLD_TARGET_ENEMY_FROM_NODE(targetNode)->bodyPos.vx;
+            projection->point.vy = WORLD_TARGET_ENEMY_FROM_NODE(targetNode)->bodyPos.vy;
+            projection->point.vz = WORLD_TARGET_ENEMY_FROM_NODE(targetNode)->bodyPos.vz;
+            actorRenderComposeCoord(WORLD_TARGET_ENEMY_FROM_NODE(targetNode)->coord);
+            gte_SetRotMatrix(&WORLD_TARGET_ENEMY_FROM_NODE(targetNode)->coord->workm);
+            gte_SetTransMatrix(&WORLD_TARGET_ENEMY_FROM_NODE(targetNode)->coord->workm);
+            gte_RotTransPers(&projection->point, &projection->screen, &projection->depthCue,
+                             &projection->projectionFlags, &projection->orderingDepth);
+            WORLD_TARGET_EASE_CURSOR(targetNode, projection, cursorEasing);
+#undef WORLD_TARGET_EASE_CURSOR
+            // Remove screen shake after easing; draw the eight-cell cursor animation.
+            projection->screen.vy -= gDisplayState.vramYOffset;
+            cursorFrame            = gDisplayState.animFrame % (WORLD_TARGET_CURSOR_FRAME_COUNT * WORLD_TARGET_CURSOR_TICKS_PER_FRAME) /
+                          WORLD_TARGET_CURSOR_TICKS_PER_FRAME;
+            cursorQuad     = gGpuPrimCursor;
+            gGpuPrimCursor = cursorQuad + 1;
+            if (cursorEasing == 1) {
+                cursorQuad->x0 = cursorQuad->x2 = projection->screen.vx - WORLD_TARGET_CURSOR_SMALL_HALF_SIZE;
+                cursorQuad->x1 = cursorQuad->x3 = projection->screen.vx + WORLD_TARGET_CURSOR_SMALL_HALF_SIZE;
+                cursorQuad->y0 = cursorQuad->y1 = projection->screen.vy - WORLD_TARGET_CURSOR_SMALL_HALF_SIZE;
+                cursorQuad->y2 = cursorQuad->y3 = projection->screen.vy + WORLD_TARGET_CURSOR_SMALL_HALF_SIZE;
+            } else {
+                cursorQuad->x0 = cursorQuad->x2 = projection->screen.vx - WORLD_TARGET_CURSOR_FULL_HALF_SIZE;
+                cursorQuad->x1 = cursorQuad->x3 = projection->screen.vx + WORLD_TARGET_CURSOR_FULL_HALF_SIZE;
+                cursorQuad->y0 = cursorQuad->y1 = projection->screen.vy - WORLD_TARGET_CURSOR_FULL_HALF_SIZE;
+                cursorQuad->y2 = cursorQuad->y3 = projection->screen.vy + WORLD_TARGET_CURSOR_FULL_HALF_SIZE;
+            }
+            textureU = (cursorFrame & ((1 << WORLD_TARGET_CURSOR_COLUMN_SHIFT) - 1)) << WORLD_TARGET_CURSOR_CELL_SHIFT;
+            textureV = (cursorFrame >> WORLD_TARGET_CURSOR_COLUMN_SHIFT) << WORLD_TARGET_CURSOR_CELL_SHIFT;
+            setUV4(cursorQuad, textureU + WORLD_TARGET_CURSOR_TEXTURE_BASE_U, textureV,
+                   textureU + WORLD_TARGET_CURSOR_TEXTURE_BASE_U + (1 << WORLD_TARGET_CURSOR_CELL_SHIFT), textureV,
+                   textureU + WORLD_TARGET_CURSOR_TEXTURE_BASE_U, textureV + (1 << WORLD_TARGET_CURSOR_CELL_SHIFT),
+                   textureU + WORLD_TARGET_CURSOR_TEXTURE_BASE_U + (1 << WORLD_TARGET_CURSOR_CELL_SHIFT), textureV + (1 << WORLD_TARGET_CURSOR_CELL_SHIFT));
+            cursorQuad->clut  = getClut(WORLD_TARGET_CURSOR_CLUT_X, WORLD_TARGET_CURSOR_CLUT_Y);
+            cursorQuad->tpage = getTPage(WORLD_TARGET_CURSOR_TEXTURE_MODE_4BIT, GPU_BLEND_ADD,
+                                         WORLD_TARGET_CURSOR_TEXTURE_PAGE_X, WORLD_TARGET_CURSOR_TEXTURE_PAGE_Y);
+            setlen(cursorQuad, (sizeof(*cursorQuad) - sizeof(cursorQuad->tag)) / sizeof(u_long));
+            setcode(cursorQuad, WORLD_TARGET_CURSOR_RAW_SEMITRANS_FT4_CODE);
+            addPrim(gGpuCurrentOt, cursorQuad);
+            SCRATCH_STACK_RELEASE_BLOCK(WorldCoordProjectionScratch);
+            break;
+        }
+    }
+    if (targetNode == NULL) {
+        gWorldTargetCursorNode       = NULL;
+        gWorldTargetCursorEasingPass = 0;
+    }
+}
+
+/// Selects a visible enemy node by automatic ranking or directional cycling.
+///
+/// `scanMode` is automatic (0), left (1) or right (-1). Cached target offsets
+/// are in the player's rotated frame even when the aiming task is a companion.
+/// Automatic mode minimizes the proximity-adjusted absolute bearing, quantized
+/// by 10 bits, then proximity-adjusted squared distance; equal ties favor later entries.
+/// Cycling wraps the bearing difference by one turn and reverses the left score.
+/// Both modes penalize the current target by one turn rather than excluding it.
+/// Writes only the selected body's world-space XYZ; no selection leaves output
+/// unchanged. Returns a borrowed live node or NULL without changing actor locks.
+/// Requires the public finders' actor/list contract, a separate writable output,
+/// and 56 scratch bytes plus callees (200 bytes at the occlusion-query peak).
+/// Short-vector transforms narrow/saturate coordinates; integer scoring retains
+/// the target's arithmetic widths. Releases scratch and changes GTE state.
+static WorldTargetNode* _worldTargetScanLockNodes(Task* aimingTask, VECTOR3* outPosition, s32 scanMode)
+{
+    _WorldTargetLockScanScratch* scratch;
+    GameActor*                   aimingActor;
+    GfxCoord*                    aimingCoord;
+    WorldTargetNode*             candidate;
+    WorldTargetNode*             selected;
+    s32                          bestScore;
+    u32                          bestDistanceSquared;
+    s32                          currentBearing;
+    s32                          candidateScore;
+    u32                          distanceSquared;
+    s32                          proximityBonus;
+    SVECTOR*                     aimWorldPoint;
+
+    // Place the aiming actor's raised eye point in the view frame used by occluders.
+    selected             = NULL;
+    scratch              = SCRATCH_STACK_RESERVE_BLOCK(_WorldTargetLockScanScratch);
+    aimingActor          = aimingTask->work;
+    aimingCoord          = aimingTask->extra.tmd->coords;
+    scratch->eyeWorld.vx = aimingCoord->coord.t[0];
+    scratch->eyeWorld.vy = aimingCoord->coord.t[1] - WORLD_TARGET_LOCK_EYE_HEIGHT;
+    scratch->eyeWorld.vz = aimingCoord->coord.t[2];
+    actorRenderComposeCoord(&gGfxViewCoord);
+    aimWorldPoint = &scratch->eyeWorld;
+    gte_SetRotMatrix(&gGfxViewCoord.workm);
+    gte_ldv0(aimWorldPoint);
+    gte_rtv0();
+    gte_stsv(&scratch->eyeView);
+    scratch->eyeView.vx += gGfxViewCoord.workm.t[0];
+    scratch->eyeView.vy += gGfxViewCoord.workm.t[1];
+    scratch->eyeView.vz += gGfxViewCoord.workm.t[2];
+
+    if (aimingActor->targetNode != NULL && scanMode != WORLD_TARGET_LOCK_SCAN_AUTOMATIC) {
+        candidate      = aimingActor->targetNode;
+        currentBearing = ratan2(WORLD_TARGET_ENEMY_FROM_NODE(candidate)->playerRelPos.vx, WORLD_TARGET_ENEMY_FROM_NODE(candidate)->playerRelPos.vz);
+    } else {
+        currentBearing = 0;
+    }
+    bestScore           = WORLD_TARGET_LOCK_INITIAL_SCORE;
+    bestDistanceSquared = WORLD_TARGET_LOCK_INITIAL_DISTANCE_SQUARED;
+    distanceSquared     = 0;
+    for (candidate = gWorldTargetListHead; candidate != NULL; candidate = candidate->next) {
+        if (candidate->state.parts.flags & WORLD_TARGET_NOT_LOCKABLE) {
+            continue;
+        }
+        candidateScore = ratan2(WORLD_TARGET_ENEMY_FROM_NODE(candidate)->playerRelPos.vx, WORLD_TARGET_ENEMY_FROM_NODE(candidate)->playerRelPos.vz);
+        // Automatic selection favors proximity and forward bearing; cycling wraps from the current bearing.
+        if (scanMode == WORLD_TARGET_LOCK_SCAN_AUTOMATIC) {
+            distanceSquared = WORLD_TARGET_ENEMY_FROM_NODE(candidate)->playerRelPos.vz * WORLD_TARGET_ENEMY_FROM_NODE(candidate)->playerRelPos.vz + WORLD_TARGET_ENEMY_FROM_NODE(candidate)->playerRelPos.vx * WORLD_TARGET_ENEMY_FROM_NODE(candidate)->playerRelPos.vx + WORLD_TARGET_ENEMY_FROM_NODE(candidate)->playerRelPos.vy * WORLD_TARGET_ENEMY_FROM_NODE(candidate)->playerRelPos.vy;
+            if (candidateScore < 0) {
+                candidateScore = -candidateScore;
+            }
+            if (distanceSquared <= WORLD_TARGET_LOCK_NEAR_DISTANCE_SQUARED) {
+                proximityBonus   = WORLD_TARGET_LOCK_NEAR_DISTANCE_SQUARED - distanceSquared;
+                proximityBonus >>= WORLD_TARGET_LOCK_PROXIMITY_SHIFT;
+                proximityBonus  *= 3;
+                candidateScore  -= proximityBonus;
+                if (candidateScore < 0) {
+                    candidateScore = 0;
+                }
+                distanceSquared += proximityBonus / 3;
+            }
+            candidateScore >>= WORLD_TARGET_LOCK_SCORE_SHIFT;
+            if (candidate == aimingActor->targetNode) {
+                candidateScore += WORLD_TARGET_LOCK_ANGLE_TURN;
+            }
+            if (candidateScore == bestScore && distanceSquared > bestDistanceSquared) {
+                candidateScore = WORLD_TARGET_LOCK_REJECT_SCORE;
+            }
+        } else {
+            candidateScore -= currentBearing;
+            if (candidateScore < 0) {
+                candidateScore += WORLD_TARGET_LOCK_ANGLE_TURN;
+            }
+            if (candidateScore >= WORLD_TARGET_LOCK_ANGLE_TURN) {
+                candidateScore -= WORLD_TARGET_LOCK_ANGLE_TURN;
+            }
+            if (scanMode == WORLD_TARGET_LOCK_SCAN_LEFT) {
+                candidateScore = -candidateScore;
+            }
+            if (candidate == aimingActor->targetNode) {
+                candidateScore += WORLD_TARGET_LOCK_ANGLE_TURN;
+            }
+        }
+        if (candidateScore > bestScore) {
+            continue;
+        }
+        // Only a visible candidate can replace the best score found so far.
+        _worldTargetTransformLockCandidate(candidate, scratch);
+        if (worldCollisionSegmentOccluded(&scratch->targetView, &scratch->eyeView) != true) {
+            bestScore           = candidateScore;
+            selected            = candidate;
+            bestDistanceSquared = distanceSquared;
+        }
+    }
+    if (selected != NULL) {
+        worldTargetGetBodyPosition(selected, outPosition);
+    }
+    SCRATCH_STACK_RELEASE_BLOCK(_WorldTargetLockScanScratch);
+    return selected;
+}
+
+void worldTargetAddReadoutAmount(WorldTargetNode* node, s32 amount, s32 unusedArg)
+{
+    WorldTargetReadout* found;
+    s32                 readoutIndex;
+    WorldTargetReadout* readout;
+
+    /// Finds the first readout bound to a target with the requested amount sign.
+    ///
+    /// Zero belongs to the nonnegative damage class; negative totals are heals.
+    /// nodeArg and amountArg are side-effect-free inputs. foundArg, indexArg and
+    /// readoutArg are distinct writable WorldTargetReadout*/s32/WorldTargetReadout*
+    /// scratch lvalues, evaluated repeatedly. A miss writes NULL and advances
+    /// index/cursor past the complete `_gWorldTargetReadouts` array; a hit leaves
+    /// them at its slot. Captures that array only; changes no slot or game state.
+    /// Binding comparison uses pointer identity and never dereferences the node.
+    /// Each break exits the internal search loop. Invoke inside a braced block.
+#define WORLD_TARGET_FIND_READOUT(nodeArg, amountArg, foundArg, indexArg, readoutArg) \
+    {                                                                                 \
+        (foundArg)   = NULL;                                                          \
+        (indexArg)   = 0;                                                             \
+        (readoutArg) = _gWorldTargetReadouts;                                         \
+        for (; (indexArg) < ARRAY_SIZE(_gWorldTargetReadouts); (indexArg)++) {        \
+            if ((readoutArg)->binding.node == (nodeArg)) {                            \
+                if ((amountArg) >= 0) {                                               \
+                    if ((readoutArg)->amount >= 0) {                                  \
+                        (foundArg) = (readoutArg);                                    \
+                        break;                                                        \
+                    }                                                                 \
+                    (readoutArg)++;                                                   \
+                } else if ((readoutArg)->amount < 0) {                                \
+                    (foundArg) = (readoutArg);                                        \
+                    break;                                                            \
+                } else {                                                              \
+                    (readoutArg)++;                                                   \
+                }                                                                     \
+            } else {                                                                  \
+                (readoutArg)++;                                                       \
+            }                                                                         \
+        }                                                                             \
+    }
+
+    // Keep damage and healing in separate totals for the same target.
+    WORLD_TARGET_FIND_READOUT(node, amount, found, readoutIndex, readout);
+#undef WORLD_TARGET_FIND_READOUT
+    if (found == NULL) {
+        for (readoutIndex = 0, readout = _gWorldTargetReadouts; readoutIndex < ARRAY_SIZE(_gWorldTargetReadouts); readoutIndex++, readout++) {
+            if (readout->binding.node == NULL) {
+                found                 = readout;
+                readout->binding.node = node;
+                found->amount         = 0;
+                break;
+            }
+        }
+    }
+    if (found != NULL) {
+        found->framesLeft = WORLD_TARGET_READOUT_FRAMES;
+        found->amount    += amount;
+    }
+}
+
+/// Draws and ages every floating damage/heal readout once.
+///
+/// The tracked list must be acyclic and its nodes must belong to live enemies
+/// with composed coordinate working matrices. A departed binding is compared
+/// only by its word and keeps its last projection. Occupied slots draw before
+/// their signed 16-bit countdown is decremented; expiry clears the binding,
+/// amount and countdown. Empty slots have their amount/countdown cleared too.
+/// Requires the scratch stack, small-font and UI-frame resources, writable OT
+/// entry -10 and sufficient primitive-arena space. Packets remain borrowed by
+/// the GPU until the frame is consumed. The caller controls HUD suppression;
+/// this pass counts calls rather than elapsed or unpaused gameplay frames.
+static void _worldTargetDrawReadouts(void)
+{
+    enum {
+        WORLD_TARGET_READOUT_DAMAGE_OFFSET_X      = 10,
+        WORLD_TARGET_READOUT_DAMAGE_OFFSET_Y      = 4,
+        WORLD_TARGET_READOUT_HEAL_OFFSET_X        = -10,
+        WORLD_TARGET_READOUT_HEAL_OFFSET_Y        = -16,
+        WORLD_TARGET_READOUT_LEFT_LIMIT_X         = -136,
+        WORLD_TARGET_READOUT_RIGHT_LIMIT_X        = 137,
+        WORLD_TARGET_READOUT_BOTTOM_LIMIT_Y       = 85,
+        WORLD_TARGET_READOUT_TOP_LIMIT_Y          = -100,
+        WORLD_TARGET_READOUT_LEFT_BAND_X          = -143,
+        WORLD_TARGET_READOUT_RIGHT_BAND_X         = 143,
+        WORLD_TARGET_READOUT_BOTTOM_BAND_Y        = 77,
+        WORLD_TARGET_READOUT_TOP_BAND_Y           = -93,
+        WORLD_TARGET_READOUT_EDGE_PHASE_MASK      = 7,
+        WORLD_TARGET_READOUT_OT_INDEX             = -10,
+        WORLD_TARGET_READOUT_DAMAGE_RGB           = GPU_PACK_COLOR_WORD(120, 122, 3, 0),
+        WORLD_TARGET_READOUT_HEAL_RGB             = GPU_PACK_COLOR_WORD(8, 128, 128, 0),
+        WORLD_TARGET_READOUT_TEXT_RIGHT_OFFSET_X  = 14,
+        WORLD_TARGET_READOUT_FRAME_TOP_INSET      = 8,
+        WORLD_TARGET_READOUT_FRAME_HEIGHT         = 12,
+        WORLD_TARGET_READOUT_FRAME_LEFT_3_DIGITS  = 16,
+        WORLD_TARGET_READOUT_FRAME_WIDTH_3_DIGITS = 32,
+        WORLD_TARGET_READOUT_FRAME_LEFT_4_DIGITS  = 24,
+        WORLD_TARGET_READOUT_FRAME_WIDTH_4_DIGITS = 40,
+        WORLD_TARGET_READOUT_FRAME_LEFT_2_DIGITS  = 8,
+        WORLD_TARGET_READOUT_FRAME_WIDTH_2_DIGITS = 24,
+        WORLD_TARGET_READOUT_4_DIGIT_MINIMUM      = 1000,
+        WORLD_TARGET_READOUT_3_DIGIT_MINIMUM      = 100
+    };
+    RECT                frameRect;
+    u8                  numberBuffer[16];
+    TextDrawReq         request;
+    s32                 readoutIndex;
+    WorldTargetReadout* readout;
+    u8*                 numberText;
+    TextDrawReq*        numberRequest;
+    s32                 frameX;
+    s32                 baselineY;
+    s32                 displayAmount;
+    s32                 rightEdgeX;
+    s32                 otIndex;
+    WorldTargetNode*    bindingNode;
+    WorldTargetNode*    listedNode;
+    s32                 targetListed;
+
+    /// Places one readout beside its target, folding off-screen anchors into edge bands.
+    ///
+    /// The caller supplies the WORLD_TARGET_READOUT_* placement constants above.
+    /// `readout` is a side-effect-free pointer to a readable readout; `signedTotal`
+    /// receives its amount. The other outputs are frame X and text baseline Y in
+    /// screen-centered pixels. All writable arguments must be distinct s32 local
+    /// lvalues without side effects; arguments are repeated. Right/top bands
+    /// reverse the low-three-bit variation. Expands several statements: use only
+    /// as a standalone statement in a braced block. No readout changes.
+#define WORLD_TARGET_PLACE_READOUT(readout, signedTotal, frameX, baselineY)                                      \
+    (signedTotal) = (readout)->amount;                                                                           \
+    if ((signedTotal) >= 0) {                                                                                    \
+        (frameX)    = (readout)->screen.xy.vx + WORLD_TARGET_READOUT_DAMAGE_OFFSET_X;                            \
+        (baselineY) = (readout)->screen.xy.vy + WORLD_TARGET_READOUT_DAMAGE_OFFSET_Y;                            \
+    } else {                                                                                                     \
+        (frameX)    = (readout)->screen.xy.vx + WORLD_TARGET_READOUT_HEAL_OFFSET_X;                              \
+        (baselineY) = (readout)->screen.xy.vy + WORLD_TARGET_READOUT_HEAL_OFFSET_Y;                              \
+    }                                                                                                            \
+    if ((frameX) < WORLD_TARGET_READOUT_LEFT_LIMIT_X) {                                                          \
+        (frameX) = ((frameX) & WORLD_TARGET_READOUT_EDGE_PHASE_MASK) + WORLD_TARGET_READOUT_LEFT_BAND_X;         \
+    }                                                                                                            \
+    if ((frameX) >= WORLD_TARGET_READOUT_RIGHT_LIMIT_X) {                                                        \
+        (frameX) = -((frameX) & WORLD_TARGET_READOUT_EDGE_PHASE_MASK) + WORLD_TARGET_READOUT_RIGHT_BAND_X;       \
+    }                                                                                                            \
+    if ((baselineY) >= WORLD_TARGET_READOUT_BOTTOM_LIMIT_Y) {                                                    \
+        (baselineY) = ((baselineY) & WORLD_TARGET_READOUT_EDGE_PHASE_MASK) + WORLD_TARGET_READOUT_BOTTOM_BAND_Y; \
+    }                                                                                                            \
+    if ((baselineY) < WORLD_TARGET_READOUT_TOP_LIMIT_Y) {                                                        \
+        (baselineY) = -((baselineY) & WORLD_TARGET_READOUT_EDGE_PHASE_MASK) + WORLD_TARGET_READOUT_TOP_BAND_Y;   \
+    }
+
+    readout       = _gWorldTargetReadouts;
+    readoutIndex  = 0;
+    numberText    = numberBuffer;
+    numberRequest = &request;
+    otIndex       = WORLD_TARGET_READOUT_OT_INDEX;
+    do {
+        bindingNode = readout->binding.node;
+        if (bindingNode != NULL) {
+            // Validate the binding against live entries before interpreting it as a node.
+            targetListed = 0;
+            for (listedNode = gWorldTargetListHead; listedNode != NULL; listedNode = listedNode->next) {
+                if (bindingNode == listedNode) {
+                    targetListed = 1;
+                    break;
+                }
+            }
+            if (targetListed != 0) {
+                _worldTargetProjectReadout(readout);
+            } else {
+                // Keep the last projection after the target leaves, until the countdown ends.
+                readout->binding.word = WORLD_TARGET_READOUT_DEPARTED;
+            }
+
+            WORLD_TARGET_PLACE_READOUT(readout, displayAmount, frameX, baselineY);
+#undef WORLD_TARGET_PLACE_READOUT
+
+            rightEdgeX         = frameX + WORLD_TARGET_READOUT_TEXT_RIGHT_OFFSET_X;
+            request.x          = rightEdgeX;
+            request.y          = baselineY;
+            request.otIndex    = otIndex;
+            request.colorRgb   = WORLD_TARGET_READOUT_DAMAGE_RGB;
+            request.glyphTable = TEXT_GLYPH_TABLE_SMALL;
+            request.alignment  = TEXT_ALIGNMENT_RIGHT;
+            request.drawMode   = TEXT_DRAW_OUTLINED;
+
+            displayAmount = readout->amount;
+            if (displayAmount < 0) {
+                request.colorRgb = WORLD_TARGET_READOUT_HEAL_RGB;
+                displayAmount    = -displayAmount;
+            }
+            if (displayAmount >= WORLD_TARGET_READOUT_DISPLAY_LIMIT) {
+                displayAmount = WORLD_TARGET_READOUT_DISPLAY_MAX;
+            }
+
+            // The largest displayed value has four digits plus NUL, within numberBuffer.
+            request.x        = rightEdgeX;
+            request.drawMode = TEXT_DRAW_FILL_ONLY;
+            textDrawString(numberRequest, textItoaSigned(numberText, displayAmount));
+            // Restore the right anchor; prepend the outline so it executes before the fill.
+            request.x        = rightEdgeX;
+            request.drawMode = TEXT_DRAW_OUTLINE_ONLY;
+            textDrawString(numberRequest, textItoaSigned(numberText, displayAmount));
+
+            frameRect.x = frameX - WORLD_TARGET_READOUT_FRAME_LEFT_3_DIGITS;
+            frameRect.y = baselineY - WORLD_TARGET_READOUT_FRAME_TOP_INSET;
+            frameRect.w = WORLD_TARGET_READOUT_FRAME_WIDTH_3_DIGITS;
+            frameRect.h = WORLD_TARGET_READOUT_FRAME_HEIGHT;
+            if (displayAmount >= WORLD_TARGET_READOUT_4_DIGIT_MINIMUM) {
+                frameRect.x = frameX - WORLD_TARGET_READOUT_FRAME_LEFT_4_DIGITS;
+                frameRect.w = WORLD_TARGET_READOUT_FRAME_WIDTH_4_DIGITS;
+            } else if (displayAmount < WORLD_TARGET_READOUT_3_DIGIT_MINIMUM) {
+                frameRect.x = frameX - WORLD_TARGET_READOUT_FRAME_LEFT_2_DIGITS;
+                frameRect.w = WORLD_TARGET_READOUT_FRAME_WIDTH_2_DIGITS;
+            }
+            uiDrawRectFrame(&frameRect, WORLD_TARGET_READOUT_OT_INDEX, USER_INTERFACE_PANEL_TITLE_STYLE, NULL);
+
+            {
+                s16 framesLeft;
+                framesLeft = readout->framesLeft;
+                framesLeft--;
+                readout->framesLeft = framesLeft;
+                if (framesLeft <= 0) {
+                    readout->amount       = 0;
+                    readout->framesLeft   = 0;
+                    readout->binding.node = NULL;
+                }
+            }
+        } else {
+            readout->amount     = 0;
+            readout->framesLeft = 0;
+        }
+        readoutIndex++;
+        readout++;
+    } while (readoutIndex < ARRAY_SIZE(_gWorldTargetReadouts));
+}
+
+void worldTargetUnlinkNode(WorldTargetNode* node)
+{
+    enum {
+        WORLD_TARGET_OFF_LIST     = 0,
+        WORLD_TARGET_ON_LIST      = 1,
+        WORLD_TARGET_NOT_TARGETED = 0
+    };
+    WorldTargetNode** incomingLink;
+
+    _worldTargetReleaseActorLocks(node);
+
+    // The incoming link is either the list head or a predecessor's successor.
+    if (node->state.parts.onList == WORLD_TARGET_ON_LIST) {
+        incomingLink = &gWorldTargetListHead;
+        while (*incomingLink != node) {
+            if (*incomingLink == NULL) {
+                break;
+            }
+            incomingLink = &(*incomingLink)->next;
+        }
+        if (*incomingLink != NULL) {
+            *incomingLink = node->next;
+        }
+        node->state.parts.onList   = WORLD_TARGET_OFF_LIST;
+        node->state.parts.targeted = WORLD_TARGET_NOT_TARGETED;
+    }
+}
+
+void worldTargetLinkNode(WorldTargetNode* node)
+{
+    enum {
+        WORLD_TARGET_OFF_LIST     = 0,
+        WORLD_TARGET_ON_LIST      = 1,
+        WORLD_TARGET_NOT_TARGETED = 0
+    };
+    WorldTargetNode** incomingLink;
+
+    if (node->state.parts.onList == WORLD_TARGET_OFF_LIST) {
+        incomingLink = &gWorldTargetListHead;
+        while (*incomingLink != NULL) {
+            incomingLink = &(*incomingLink)->next;
+        }
+        *incomingLink              = node;
+        node->next                 = NULL;
+        node->state.parts.targeted = WORLD_TARGET_NOT_TARGETED;
+        node->state.parts.onList   = WORLD_TARGET_ON_LIST;
+        node->state.parts.flags   &= WORLD_TARGET_NOT_LOCKABLE_CLEAR;
+    } else {
+        node->state.parts.flags &= WORLD_TARGET_NOT_LOCKABLE_CLEAR;
+    }
+}
+
+s32 worldTargetGetActorLockMask(const WorldTargetNode* node)
+{
+    s32              mask;
+    s32              actorSlot;
+    s32              slotBit;
+    Task**           taskSlot;
+    Task*            actorTask;
+    const GameActor* actor;
+
+    mask      = 0;
+    actorSlot = 0;
+    slotBit   = 1;
+    taskSlot  = gPlayerActorTasks;
+    do {
+        actorTask = *taskSlot;
+        if (actorTask != NULL) {
+            actor = actorTask->work;
+            if (actor->targetNode == node) {
+                mask |= slotBit << actorSlot;
+            }
+        }
+        actorSlot++;
+        taskSlot++;
+    } while (actorSlot < PLAYER_ACTOR_TASK_COUNT);
+    return mask;
+}
+
+void worldTargetSetPlayerLock(WorldTargetNode* node)
+{
+    enum { WORLD_TARGET_NOT_TARGETED = 0,
+           WORLD_TARGET_TARGETED     = 1 };
+    Task*            playerTask;
+    GameActor*       actor;
+    WorldTargetNode* previous;
+    u8               flags;
+
+    playerTask = gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER];
+    if (playerTask != NULL) {
+        actor    = playerTask->work;
+        previous = actor->targetNode;
+        if (previous != NULL) {
+            previous->state.parts.targeted = WORLD_TARGET_NOT_TARGETED;
+        }
+        actor->targetNode = node;
+    }
+    flags                      = node->state.parts.flags;
+    node->state.parts.targeted = WORLD_TARGET_TARGETED;
+    node->state.parts.flags    = flags & WORLD_TARGET_NOT_LOCKABLE_CLEAR;
+}
+
+void worldTargetDisableNodeLockOn(WorldTargetNode* node)
+{
+    enum { WORLD_TARGET_NOT_TARGETED = 0 };
+    u8 flags;
+
+    _worldTargetReleaseActorLocks(node);
+    flags                      = node->state.parts.flags;
+    node->state.parts.targeted = WORLD_TARGET_NOT_TARGETED;
+    node->state.parts.flags    = flags | WORLD_TARGET_NOT_LOCKABLE;
+}
+
+WorldTargetNode* worldTargetFindLockNode(Task* aimingTask)
+{
+    VECTOR3 targetPosition;
+
+    return _worldTargetScanLockNodes(aimingTask, &targetPosition, WORLD_TARGET_LOCK_SCAN_AUTOMATIC);
+}
+
+WorldTargetNode* worldTargetFindLockNodeFromPad(Task* aimingTask)
+{
+    VECTOR3  targetPosition;
+    VECTOR3* positionOutput;
+    s32      scanMode;
+
+    positionOutput = &targetPosition;
+    scanMode       = _worldTargetGetPadLockScanMode();
+    return _worldTargetScanLockNodes(aimingTask, positionOutput, scanMode);
+}
+
+/// Selects a lock target from port-zero input and writes its world-space body point.
+///
+/// Uses the same borrowed-node, actor and scratch contract as `worldTargetFindLockNodeFromPad`.
+/// `outPosition` provides three writable signed 32-bit components and is unchanged
+/// when no target is selected. Its storage must remain clear of the scratch stack.
+static WorldTargetNode* _worldTargetFindLockNodeAndPositionFromPad(Task* aimingTask, VECTOR3* outPosition)
+{
+    s32 scanMode;
+
+    scanMode = _worldTargetGetPadLockScanMode();
+    return _worldTargetScanLockNodes(aimingTask, outPosition, scanMode);
+}
+
+void worldTargetGetBodyPosition(const WorldTargetNode* node, VECTOR3* outPosition)
+{
+    GfxCoord*                    worldCoord;
+    GfxCoord*                    bodyCoord;
+    _WorldTargetPositionScratch* scratchTop;
+    MATRIX*                      bodyToWorld;
+
+    if (node == NULL) {
+        printf(gWorldTargetNullBodyPositionDiagnostic);
+        outPosition->vx = 0;
+        outPosition->vy = 0;
+        outPosition->vz = 0;
+        return;
+    }
+
+    bodyCoord  = WORLD_TARGET_ENEMY_FROM_NODE(node)->coord;
+    worldCoord = &gGfxViewCoord;
+    if (bodyCoord == worldCoord) {
+        outPosition->vx = WORLD_TARGET_ENEMY_FROM_NODE(node)->bodyPos.vx;
+        outPosition->vy = WORLD_TARGET_ENEMY_FROM_NODE(node)->bodyPos.vy;
+        outPosition->vz = WORLD_TARGET_ENEMY_FROM_NODE(node)->bodyPos.vz;
+        return;
+    }
+
+    // Remove the view transform before applying the enemy's local body point.
+    scratchTop                                        = SCRATCH_STACK_CURSOR(_WorldTargetPositionScratch);
+    SCRATCH_STACK_CURSOR(_WorldTargetPositionScratch) = scratchTop - 1;
+    actorRenderComposeCoord(bodyCoord);
+    bodyToWorld = &(scratchTop - 1)->bodyToWorld;
+    gfxMakeRelativeTransform(&worldCoord->workm, &bodyCoord->workm, bodyToWorld);
+    gte_SetRotMatrix(bodyToWorld);
+    gte_SetTransMatrix(bodyToWorld);
+    gte_ldlvl(&WORLD_TARGET_ENEMY_FROM_NODE(node)->bodyPos);
+    gte_rtirtr();
+    gte_stlvl(outPosition);
+    SCRATCH_STACK_RELEASE_BLOCK(_WorldTargetPositionScratch);
+}
+
+/// Empties every floating readout, retaining each slot's last screen position.
+static void _worldTargetClearReadouts(void)
+{
+    s32                 readoutIndex;
+    WorldTargetReadout* readout;
+
+    readout      = _gWorldTargetReadouts;
+    readoutIndex = 0;
+    do {
+        readoutIndex++;
+        readout->binding.node = NULL;
+        readout->amount       = 0;
+        readout->framesLeft   = 0;
+        readout++;
+    } while (readoutIndex < ARRAY_SIZE(_gWorldTargetReadouts));
+}
+
+void worldTargetResetAreaTracking(void)
+{
+    enum { WORLD_TARGET_CURSOR_RESET_FIXED8 = 0xFFF00000 }; // -4096 pixels, eight fractional bits
+
+    gWorldTargetListHead = NULL;
+    _worldTargetClearReadouts();
+    gWorldTargetCursorYFixed8 = WORLD_TARGET_CURSOR_RESET_FIXED8;
+    gWorldTargetCursorXFixed8 = WORLD_TARGET_CURSOR_RESET_FIXED8;
+}
+
+/// Projects an enemy target's body point and returns its quarter-depth for ordering.
+///
+/// Retained standalone projection with no current caller. `node` must be a live
+/// enemy's embedded target entry; its coordinate's working matrix must already
+/// be composed. Body coordinates narrow to signed 16 bits. `packedScreen` must
+/// provide one writable, word-aligned s32 for the two signed screen pixels,
+/// centered on the screen with Y downward. GTE error flags are not filtered;
+/// the return is SZ3 >> 2 (0..16383). Requires an initialized scratch stack
+/// with space for the projection block, released before returning. No pointer
+/// is retained; the GTE transform registers are left changed.
+static s32 _worldTargetProjectBodyPoint(const WorldTargetNode* node, s32* packedScreen)
+{
+    _WorldTargetProjectionScratch* projection;
+    s32                            orderingDepth;
+
+    projection           = SCRATCH_STACK_RESERVE_BLOCK(_WorldTargetProjectionScratch);
+    projection->point.vx = WORLD_TARGET_ENEMY_FROM_NODE(node)->bodyPos.vx;
+    projection->point.vy = WORLD_TARGET_ENEMY_FROM_NODE(node)->bodyPos.vy;
+    projection->point.vz = WORLD_TARGET_ENEMY_FROM_NODE(node)->bodyPos.vz;
+    gte_SetRotMatrix(&WORLD_TARGET_ENEMY_FROM_NODE(node)->coord->workm);
+    gte_SetTransMatrix(&WORLD_TARGET_ENEMY_FROM_NODE(node)->coord->workm);
+    gte_ldv0(&projection->point);
+    gte_rtps();
+    gte_stsxy(packedScreen);
+    gte_stdp(&projection->depthCue);
+    gte_stflg(&projection->projectionFlags);
+    gte_stszotz(&projection->orderingDepth);
+    orderingDepth = projection->orderingDepth;
+    SCRATCH_STACK_RELEASE_BLOCK(_WorldTargetProjectionScratch);
+    return orderingDepth;
+}
+
+void worldTargetClearActorTargetMarks(void)
+{
+    enum { WORLD_TARGET_NOT_TARGETED = 0 };
+    s32              actorSlot;
+    Task**           taskSlot;
+    Task*            actorTask;
+    const GameActor* actor;
+    WorldTargetNode* node;
+
+    actorSlot = 0;
+    taskSlot  = gPlayerActorTasks;
+    do {
+        actorTask = *taskSlot;
+        if (actorTask != NULL) {
+            actor = actorTask->work;
+            node  = actor->targetNode;
+            if (node != NULL) {
+                node->state.parts.targeted = WORLD_TARGET_NOT_TARGETED;
+            }
+        }
+        actorSlot++;
+        taskSlot++;
+    } while (actorSlot < PLAYER_ACTOR_TASK_COUNT);
+}
+
+s32 inventoryGrantBattleRewards(const InventoryItemRange* rewardRange)
+{
+    enum { INVENTORY_BATTLE_REWARD_MODE_NORMAL_REPLAY = 0,
+           INVENTORY_BATTLE_REWARD_MODE_SCAVENGER     = 2 };
+    const GameLocationKey*       location;
+    const InventoryBattleReward* reward;
+    s32                          areaLayoutKey;
+    s32                          grantResult;
+    s32                          itemSlot;
+    u16                          itemId;
+    s8                           gameMode;
+    u8                           stage;
+    u8                           area;
+    u8                           variant;
+
+    grantResult   = INVENTORY_BATTLE_REWARD_NONE_GRANTED;
+    location      = &gGameSession->location;
+    stage         = location->stage;
+    area          = location->area;
+    variant       = location->variant;
+    areaLayoutKey = GAME_LOCATION_KEY(stage, area, variant, 0);
+    gameMode      = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.gameMode;
+    if ((gameMode == INVENTORY_BATTLE_REWARD_MODE_NORMAL_REPLAY) || (gameMode == INVENTORY_BATTLE_REWARD_MODE_SCAVENGER)) {
+        reward = gInventoryBattleRewardLists[stage];
+    } else {
+        reward = gInventoryHardBattleRewardLists[stage];
+    }
+    // Grant only the first row for this area layout.
+    if (reward->areaLayoutKey != INVENTORY_BATTLE_REWARD_LIST_END) {
+        do {
+            if (reward->areaLayoutKey == areaLayoutKey) {
+                for (itemSlot = 0; itemSlot < ARRAY_SIZE(reward->items); itemSlot++) {
+                    itemId = reward->items[itemSlot];
+                    if (itemId != INVENTORY_ITEM_NONE) {
+                        if ((itemSlot != INVENTORY_BATTLE_REWARD_BONUS_SLOT) || (equipmentHasEffect(EQUIPMENT_EFFECT_MEDICINE_WHEEL) != 0)) {
+                            if (inventoryIsItemLimitReached(itemId) == 0) {
+                                grantResult = INVENTORY_BATTLE_REWARD_ITEM_GRANTED;
+                                if (itemSlot == INVENTORY_BATTLE_REWARD_BONUS_SLOT) {
+                                    grantResult = INVENTORY_BATTLE_REWARD_BONUS_GRANTED;
+                                }
+                                inventoryGiveItem(rewardRange, itemId, INVENTORY_GIVE_ONE_PACK);
+                            }
+                        }
+                    }
+                }
+                return grantResult;
+            }
+            reward++;
+        } while (reward->areaLayoutKey != INVENTORY_BATTLE_REWARD_LIST_END);
+    }
+    return grantResult;
+}
+
+s32 actorRenderUploadTexture(Task* actorTask, GpuImageUpload* uploadList, const RECT* textureRect)
+{
+    enum {
+        ACTOR_RENDER_TEXTURE_PAGE_WORD_SHIFT = 6,
+        ACTOR_RENDER_TEXTURE_BASE_X_WORDS    = 0x180,
+        ACTOR_RENDER_TEXTURE_BASE_Y_ROWS     = 0x100,
+        ACTOR_RENDER_TEXTURE_LIST_PRESENT    = 0,
+        ACTOR_RENDER_TEXTURE_LIST_ABSENT     = 1
+    };
+    s32        listAbsent;
+    TmdObject* model;
+    s32        baseXWords;
+
+    model      = actorTask->extra.tmd;
+    listAbsent = ACTOR_RENDER_TEXTURE_LIST_PRESENT;
+    if (uploadList != NULL) {
+        // Translate the mixed-unit model rectangle into a VRAM destination.
+        uploadList->destination.x = (model->texturePageOffset << ACTOR_RENDER_TEXTURE_PAGE_WORD_SHIFT) +
+                                    (baseXWords = (textureRect->x + 1) / 2 + ACTOR_RENDER_TEXTURE_BASE_X_WORDS);
+        uploadList->destination.y = textureRect->y + ACTOR_RENDER_TEXTURE_BASE_Y_ROWS;
+        uploadList->destination.w = textureRect->w;
+        uploadList->destination.h = textureRect->h;
+        gpuUploadImages(uploadList);
+    } else {
+        listAbsent = ACTOR_RENDER_TEXTURE_LIST_ABSENT;
+    }
+    return listAbsent;
+}
+
+void gpuUploadImages(const GpuImageUpload* uploadList)
+{
+    RECT* scratchDestination;
+    s32   reachedEnd;
+
+    reachedEnd         = 0;
+    scratchDestination = SCRATCH_STACK_RESERVE_BLOCK(RECT);
+
+    // The SDK copies each rectangle into its queue but borrows the pixel data.
+    do {
+        switch (uploadList->operation) {
+            case GPU_IMAGE_UPLOAD_COPY:
+                _gpuUploadImageEntry(scratchDestination, uploadList);
+                break;
+            case GPU_IMAGE_UPLOAD_END:
+                reachedEnd = 1;
+                break;
+            default:
+                reachedEnd = 1;
+                break;
+        }
+        uploadList++;
+    } while (reachedEnd == 0);
+
+    SCRATCH_STACK_RELEASE_BLOCK(RECT);
+}
+
+void sceneResetCombatState(void)
+{
+    SceneCombatState* combat;
+    McSaveData*       save;
+    u8                difficulty;
+
+    // Clear encounter accounting and group coordination before the new tasks run.
+    combat                                      = &gSceneCombatState;
+    gSceneCombatState.signals.bytes.battlePhase = SCENE_COMBAT_BATTLE_IDLE;
+    combat->signals.bytes.endDelayFrames        = 0;
+    combat->signals.bytes.actionFlags           = 0;
+    combat->signals.bytes.enemyAlert            = 0;
+    combat->actorControl                        = SCENE_COMBAT_ACTORS_RUNNING;
+    combat->peTargetCount                       = 0;
+    combat->battleRefs                          = 0;
+    combat->expReward                           = 0;
+    combat->bpReward                            = 0;
+    combat->mpReward                            = 0;
+    combat->lifeDrainHp                         = 0;
+    combat->actor00700DeathAlert                = 0;
+    combat->actor03700Flags                     = 0;
+    combat->actor03700Wave                      = 0;
+    combat->actor02400Alert                     = 0;
+    combat->actor01600Wave                      = 0;
+    combat->pairedEnemySignals                  = 0;
+    combat->maggotCaterpillarEntranceReady      = 0;
+    combat->madChaserAlertOwner                 = 0;
+    combat->shrineEnemyPhase                    = SCENE_COMBAT_SHRINE_HIDDEN;
+    combat->actor02500EntranceReady             = 0;
+    combat->maggotCaterpillarAmbushReady        = 0;
+    combat->actor00400HideRequested             = 0;
+    combat->zebraStalkerGroupPhase              = SCENE_COMBAT_ZEBRA_STALKER_WAITING;
+    combat->enemySoundBankQueued                = 0;
+    combat->generatorDeathStarted               = 0;
+    combat->zebraStalkerDeathAlert              = 0;
+    combat->actor00300AttackAlert               = 0;
+    combat->golemPawnRookDeathAlert             = 0;
+    combat->field_2A                            = 0;
+    // A cleared normal save uses the replay difficulty row; training stays normal.
+    if (attachmentIsTrainingMode() == 1) {
+        combat->difficulty = SCENE_COMBAT_DIFFICULTY_NORMAL;
+    } else {
+        save               = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+        difficulty         = (u8)save->state.gameMode;
+        combat->difficulty = difficulty;
+        if (difficulty == SCENE_COMBAT_DIFFICULTY_NORMAL) {
+            if (save->state.clearCount != 0) {
+                combat->difficulty = SCENE_COMBAT_DIFFICULTY_REPLAY;
+            }
+        }
+    }
+}
+
+void sceneEngageBattle(s32 unusedArg)
+{
+    if (gSceneCombatState.signals.bytes.battlePhase == SCENE_COMBAT_BATTLE_IDLE) {
+        gSceneCombatState.signals.bytes.battlePhase = SCENE_COMBAT_BATTLE_ENGAGED;
+    }
+}
+
+void sceneLatchActionSignal(s32 actionSignal)
+{
+    if (actionSignal != SCENE_COMBAT_ACTION_SIGNAL_NONE) {
+        gSceneCombatState.signals.bytes.actionFlags |= 1 << (actionSignal - 1);
+    }
+}
+
+void sceneSetEnemyAlert(s32 alertClass)
+{
+    gSceneCombatState.signals.bytes.enemyAlert = alertClass;
+}
+
+void sceneAcquireBattleRef(s32 unusedArg)
+{
+    gSceneCombatState.battleRefs++;
+}
+
+void sceneReleaseBattleRefWithRewards(Task* enemyTask, s32 unusedArg)
+{
+    SceneCombatState*  combat;
+    SceneCombatState*  rewards;
+    const EnemyParams* params;
+
+    combat = &gSceneCombatState;
+    if (combat->battleRefs != 0) {
+        combat->battleRefs--;
+        if (combat->battleRefs == 0) {
+            _sceneFinishBattleSignals(combat);
+            if (!(gGameSession->flowFlags & GAME_SESSION_FLOW_SKIP_AREA_MUSIC)) {
+                sndEvtRequestMidiStop(SCENE_COMBAT_END_MUSIC_ALL_SEQUENCES, SCENE_COMBAT_END_MUSIC_FADE_TICKS);
+            }
+        }
+        // Credit this release even when other holds remain; parameters may be absent.
+        params = ((Enemy*)enemyTask->spawnArg2.pointer)->param;
+        if (params != NULL) {
+            rewards             = &gSceneCombatState;
+            rewards->expReward += params->exp;
+            rewards->bpReward  += params->bp;
+            rewards->mpReward  += params->mp;
+        }
+    }
+}
+
+void sceneReleaseBattleRefAndClearRewards(Task* unusedTask, s32 unusedArg)
+{
+    SceneCombatState* combat;
+
+    combat = &gSceneCombatState;
+    if (combat->battleRefs != 0) {
+        combat->battleRefs--;
+        if (combat->battleRefs == 0) {
+            _sceneFinishBattleSignals(combat);
+            combat->expReward = 0;
+            combat->bpReward  = 0;
+            combat->mpReward  = 0;
+            if (!(gGameSession->flowFlags & GAME_SESSION_FLOW_SKIP_AREA_MUSIC)) {
+                sndEvtRequestMidiStop(SCENE_COMBAT_END_MUSIC_ALL_SEQUENCES, SCENE_COMBAT_END_MUSIC_FADE_TICKS);
+            }
+        }
+    }
+}
+
+void sceneReleaseBattleRef(Task* unusedTask, s32 unusedArg)
+{
+    SceneCombatState* combat;
+
+    combat = &gSceneCombatState;
+    if (combat->battleRefs != 0) {
+        combat->battleRefs--;
+        if (combat->battleRefs == 0) {
+            _sceneFinishBattleSignals(combat);
+            if (!(gGameSession->flowFlags & GAME_SESSION_FLOW_SKIP_AREA_MUSIC)) {
+                sndEvtRequestMidiStop(SCENE_COMBAT_END_MUSIC_ALL_SEQUENCES, SCENE_COMBAT_END_MUSIC_FADE_TICKS);
+            }
+        }
+    }
+}

@@ -1,0 +1,100 @@
+// Overlay-local symbols for shelter_b2_elevator_hall.
+_gShelterB2ElevatorHallLampEndpoints = 0x801837D8; // size:0xD0 defined:True
+_gShelterB2ElevatorHallUnlockedDoorIndicatorPoint = 0x801838A8; // size:0x8 defined:True
+_gShelterB2ElevatorHallLockedDoorIndicatorPoint = 0x801838B0; // size:0x8 defined:True
+_gRoomVisualEffectsHaloShades = 0x801838B8; // size:0x12 defined:True
+_gRoomEventTaskDesc = 0x80183790; // size:0xC defined:True
+_gShelterB2ElevatorHallElevatorTaskDesc = 0x8018379C; // size:0xC defined:True
+_gShelterB2ElevatorHallRoomMessages = 0x801837A8; // size:0x30 defined:True
+gShelterB2ElevatorHallViewMaps = 0x801838DC; // size:0x4 defined:True
+gShelterB2ElevatorHallRoomViewCounts = 0x801838E0; // size:0x2 defined:True
+gShelterB2ElevatorHallWarpEntries = 0x801838E4; // size:0xA8 defined:True
+_gShelterB2ElevatorHallRoomCollisionNormals = 0x8018398C; // size:0x38 defined:True
+_gShelterB2ElevatorHallRoomCollisionVerts = 0x801839C4; // size:0x180 defined:True
+_gShelterB2ElevatorHallRoomCollisionFaces = 0x80183B44; // size:0x150 defined:True
+_gShelterB2ElevatorHallRoomCollisionCells = 0x80183C94; // size:0xF8 defined:True
+_gShelterB2ElevatorHallRoomCollisionTable = 0x80183D8C; // size:0x28 defined:True
+gShelterB2ElevatorHallRoomCollision = 0x80183DB4; // size:0x24 defined:True
+gShelterB2ElevatorHallViewCameras = 0x80183DD8; // size:0xFC defined:True
+_gShelterB2ElevatorHallView1SpriteBatches = 0x80183ED4; // size:0x10 defined:True
+_gShelterB2ElevatorHallView2SpriteBatches = 0x80183EE4; // size:0x10 defined:True
+_gShelterB2ElevatorHallView3SpriteBatches = 0x80183EF4; // size:0x10 defined:True
+_gShelterB2ElevatorHallView4SpriteSources = 0x80183F04; // size:0xC8 defined:True
+_gShelterB2ElevatorHallView4SpriteBatches = 0x80183FCC; // size:0x18 defined:True
+_gShelterB2ElevatorHallView4DrawAreas = 0x80183FE4; // size:0x14 defined:True
+_gShelterB2ElevatorHallView5SpriteSources = 0x80183FF8; // size:0xF0 defined:True
+_gShelterB2ElevatorHallView5SpriteBatches = 0x801840E8; // size:0x18 defined:True
+_gShelterB2ElevatorHallView6SpriteBatches = 0x80184100; // size:0x10 defined:True
+_gShelterB2ElevatorHallView7SpriteBatches = 0x80184110; // size:0x10 defined:True
+gShelterB2ElevatorHallSpriteViews = 0x80184120; // size:0x54 defined:True
+_gShelterB2ElevatorHallPointLights = 0x80184174; // size:0x540 defined:True
+gShelterB2ElevatorHallRoomLights = 0x801846B4; // size:0x18 defined:True
+gShelterB2ElevatorHallViewBoundaryTriggers = 0x801846CC; // size:0x260 defined:True
+gShelterB2ElevatorHallSightOccluders = 0x8018492C; // size:0x3C defined:True
+gShelterB2ElevatorHallWarpTriggers = 0x80184968; // size:0xE4 defined:True
+_gShelterB2ElevatorHallVariant1Resources = 0x80184A4C; // size:0x18 defined:True
+_gShelterB2ElevatorHallVariant2Resources = 0x80184A64; // size:0x18 defined:True
+_gShelterB2ElevatorHallVariant3Resources = 0x80184A7C; // size:0x18 defined:True
+_gShelterB2ElevatorHallVariant11Resources = 0x80184A94; // size:0x24 defined:True
+_gShelterB2ElevatorHallVariant21Resources = 0x80184AB8; // size:0x24 defined:True
+_gShelterB2ElevatorHallVariant1Placements = 0x80184ADC; // size:0x80 defined:True
+_gShelterB2ElevatorHallVariant2Placements = 0x80184B5C; // size:0x30 defined:True
+_gShelterB2ElevatorHallVariant3Placements = 0x80184B8C; // size:0x40 defined:True
+_gShelterB2ElevatorHallVariant11Placements = 0x80184BCC; // size:0x60 defined:True
+_gShelterB2ElevatorHallVariant21Placements = 0x80184C2C; // size:0x50 defined:True
+gShelterB2ElevatorHallAreaVariants = 0x80184C7C; // size:0xB0 defined:True
+_gShelterB2ElevatorHallSurfaceClass1FootstepSounds = 0x80184D2C; // size:0xC defined:True
+_gShelterB2ElevatorHallSurfaceClass2FootstepSounds = 0x80184D38; // size:0xC defined:True
+_gShelterB2ElevatorHallSilentSurfaceProperties = 0x80184D44; // size:0x8 defined:True
+_gShelterB2ElevatorHallSurfaceClass1Properties = 0x80184D4C; // size:0x8 defined:True
+_gShelterB2ElevatorHallSurfaceClass2Properties = 0x80184D54; // size:0x8 defined:True
+gShelterB2ElevatorHallSurfacePropertiesByClass = 0x80184D5C; // size:0x20 defined:True
+_gRoomEventMsg = 0x80184D7C; // size:0x8 defined:True
+gActor102100WatcherTaskDesc = 0x80135C30; // absolute:True owner=actor_102100
+gActor02600MaggotCaterpillarBodyTask = 0x8013A8D4; // absolute:True owner=actor_102600
+gActor101100Tasks = 0x80147400; // absolute:True owner=actor_101100
+gActor100300Tasks = 0x80148110; // absolute:True owner=actor_100300
+gActor05700RookGolemTasks = 0x801611F8; // absolute:True owner=actor_205700
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x801838CC; // size:0x10 defined:True
+gRoomEventActive = 0x80184D84; // size:0x4 defined:True
+gRoomEventReq = 0x80184D88; // size:0x14 defined:True
+
+shelterB2ElevatorHallRoomVisualEffectsFlashTask = 0x801817FC; // type:func
+
+shelterB2ElevatorHallRoomVisualEffectsTwinTrailTask = 0x80182260; // type:func
+
+shelterB2ElevatorHallRoomVisualEffectsSparkBurstTask = 0x80182B48; // type:func
+
+shelterB2ElevatorHallRoomVisualEffectsMoteTask = 0x8017F1D8; // type:func
+
+shelterB2ElevatorHallRoomVisualEffectsHaloTask = 0x8017FF20; // type:func
+
+shelterB2ElevatorHallRoomVisualEffectsHaloOrangeBurstTask = 0x801802B8; // type:func
+
+shelterB2ElevatorHallRoomVisualEffectsSparkEmitterTask = 0x801816C8; // type:func
+
+shelterB2ElevatorHallDrawGlowsTask = 0x8017DD60; // type:func
+_roomVisualEffectsDrawMote = 0x8017F4A4; // type:func
+_roomVisualEffectsDrawHaloRing = 0x8017F768; // type:func
+_roomVisualEffectsDrawHaloDisc = 0x8017FB8C; // type:func
+_roomVisualEffectsDrawHaloBurstGlow = 0x80180464; // type:func
+_roomVisualEffectsDrawHaloBurstGroundQuad = 0x80180990; // type:func
+_roomVisualEffectsDrawHaloStar = 0x80180D08; // type:func
+_roomVisualEffectsDrawFlashRing = 0x80181AA0; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x80181ECC; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x80182750; // type:func
+_roomVisualEffectsDrawBurstStar = 0x80182DD0; // type:func
+_glowDrawCapsule = 0x8017DFB8; // type:func
+_glowDrawTintedDisc = 0x8017E7FC; // type:func
+_roomEventGate = 0x8017D610; // type:func
+roomEventTask = 0x8017D774; // type:func
+shelterElevatorTask = 0x8017D8E4; // type:func
+_shelterB2ElevatorHallRejectKeyItem = 0x8017dc70; // type:func
+_shelterB2ElevatorHallIgnoreRoomCommand = 0x8017dc78; // type:func
+_shelterB2ElevatorHallIgnoreRoomAction = 0x8017dc80; // type:func
+_shelterB2ElevatorHallHandleSoundCue = 0x8017dc88; // type:func
+_shelterB2ElevatorHallInitRoomTask = 0x8017dcbc; // type:func
+_shelterB2ElevatorHallIdleRoomTask = 0x8017dd00; // type:func
+shelterB2ElevatorHallRoomTask = 0x8017dd08; // type:func
+_shelterB2ElevatorHallResolveRoomTransition = 0x8017dad4; // type:func
+_gShelterB2ElevatorHallRoomStates = 0x8017d5f0;

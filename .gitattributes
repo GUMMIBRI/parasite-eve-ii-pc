@@ -1,0 +1,16 @@
+# Append-only records. Every session adds entries from the same base commit, so
+# a merge or cherry-pick between two sessions conflicts at the end of the file
+# every time - even though both sides' content should simply be kept. The union
+# driver concatenates instead of conflicting, which is the correct resolution
+# here and turns a manual reconcile into a no-op.
+DECOMPILATION_LEARNINGS.md  merge=union
+tools/match/difficult_functions   merge=union
+
+# Line endings. Every text file is checked out with LF on every platform,
+# whatever core.autocrlf says. Git for Windows turns it on by default, and a
+# CRLF checkout breaks the build there: `git apply` rejects tools/*.patch, bash
+# rejects the scripts, and generated files stop comparing equal to tracked ones.
+* text=auto eol=lf
+# cmd.exe wants its own line endings, in labels above all.
+*.bat text eol=crlf
+*.cmd text eol=crlf

@@ -1,0 +1,64 @@
+// Overlay-local symbols for shelter_b6_growth_room.
+_gShelterB6GrowthRoomEffectAnchors = 0x8017F258; // size:0x120 defined:True
+_gShelterB6GrowthRoomMessages = 0x8017F16C; // size:0x28 defined:True
+_gShelterB6GrowthRoomCollisionBoxTemplateNormals = 0x8017F194; // size:0x20 defined:True
+_gShelterB6GrowthRoomCollisionBoxTemplateVerts = 0x8017F1B4; // size:0x40 defined:True
+_gShelterB6GrowthRoomCollisionBoxTemplateFaces = 0x8017F1F4; // size:0x30 defined:True
+_gShelterB6GrowthRoomCollisionBoxTemplateCells = 0x8017F224; // size:0xA defined:True
+_gShelterB6GrowthRoomCollisionBoxTemplateTable = 0x8017F230; // size:0x4 defined:True
+_gShelterB6GrowthRoomCollisionBoxTemplate = 0x8017F234; // size:0x24 defined:True
+gShelterB6GrowthRoomViewMaps = 0x8017F378; // size:0x4 defined:True
+gShelterB6GrowthRoomViewCounts = 0x8017F37C; // size:0x2 defined:True
+gShelterB6GrowthRoomWarpEntries = 0x8017F380; // size:0x38 defined:True
+_gShelterB6GrowthRoomCollisionGridNormals = 0x8017F3B8; // size:0x70 defined:True
+_gShelterB6GrowthRoomCollisionGridVerts = 0x8017F428; // size:0x280 defined:True
+_gShelterB6GrowthRoomCollisionGridFaces = 0x8017F6A8; // size:0x288 defined:True
+_gShelterB6GrowthRoomCollisionGridCells = 0x8017F930; // size:0x1A0 defined:True
+_gShelterB6GrowthRoomCollisionGridTable = 0x8017FAD0; // size:0x20 defined:True
+gShelterB6GrowthRoomCollisionGrid = 0x8017FAF0; // size:0x24 defined:True
+gShelterB6GrowthRoomViewCameras = 0x8017FB14; // size:0x120 defined:True
+_gShelterB6GrowthRoomView1SpriteBatches = 0x8017FC34; // size:0x10 defined:True
+_gShelterB6GrowthRoomView2SpriteSources = 0x8017FC44; // size:0x78 defined:True
+_gShelterB6GrowthRoomView2SpriteBatches = 0x8017FCBC; // size:0x18 defined:True
+_gShelterB6GrowthRoomView3SpriteSources = 0x8017FCD4; // size:0x17C defined:True
+_gShelterB6GrowthRoomView3SpriteBatches = 0x8017FE50; // size:0x18 defined:True
+_gShelterB6GrowthRoomView4SpriteBatches = 0x8017FE68; // size:0x10 defined:True
+_gShelterB6GrowthRoomView5SpriteBatches = 0x8017FE78; // size:0x10 defined:True
+_gShelterB6GrowthRoomView6SpriteBatches = 0x8017FE88; // size:0x10 defined:True
+_gShelterB6GrowthRoomView7SpriteBatches = 0x8017FE98; // size:0x10 defined:True
+_gShelterB6GrowthRoomView8SpriteBatches = 0x8017FEA8; // size:0x10 defined:True
+gShelterB6GrowthRoomSpriteViews = 0x8017FEB8; // size:0x60 defined:True
+_gShelterB6GrowthRoomPointLights = 0x8017FF18; // size:0x60 defined:True
+gShelterB6GrowthRoomLights = 0x8017FF78; // size:0x18 defined:True
+gShelterB6GrowthRoomViewBoundaryTriggers = 0x8017FF90; // size:0x390 defined:True
+_gShelterB6GrowthRoomSceneResources = 0x80180320; // size:0x18 defined:True
+gShelterB6GrowthRoomAreaVariants = 0x80180338; // size:0x68 defined:True
+gShelterB6GrowthRoomActionTriggers = 0x801803A0; // size:0x390 defined:True
+gShelterB6GrowthRoomAmbientByView = 0x80180730; // size:0x48 defined:True
+_gShelterB6GrowthRoomSurface1FootstepSounds = 0x80180778; // size:0xC defined:True
+_gShelterB6GrowthRoomSurface2FootstepSounds = 0x80180784; // size:0xC defined:True
+_gShelterB6GrowthRoomSilentSurface = 0x80180790; // size:0x8 defined:True
+_gShelterB6GrowthRoomSurface1 = 0x80180798; // size:0x8 defined:True
+_gShelterB6GrowthRoomSurface2 = 0x801807A0; // size:0x8 defined:True
+gShelterB6GrowthRoomSurfaceProperties = 0x801807A8; // size:0x20 defined:True
+gShelterB6GrowthRoomEntryAreaUpdates = 0x801807C8; // size:0xE8 defined:True
+gMapNeoArkGrowthRoomDefaultPlacements = 0x8017C0E0; // absolute:True owner=map_neo_ark
+
+shelterB6GrowthRoomAmbientEffectsTask = 0x8017D9D8; // type:func
+
+shelterB6GrowthRoomMistTask = 0x8017E564; // type:func
+
+shelterB6GrowthRoomDriftPuffTask = 0x8017EAC8; // type:func
+glowDrawDisc = 0x8017E0A8; // type:func
+_shelterB6GrowthRoomDrawMist = 0x8017e7f0; // type:func
+_shelterB6GrowthRoomDrawDriftPuff = 0x8017ed28; // type:func
+_shelterB6GrowthRoomDrawBottomGlow = 0x8017e448; // type:func
+shelterB6GrowthRoomResetCollisionBox = 0x8017d82c; // type:func
+_shelterB6GrowthRoomRejectKeyItemUse = 0x8017d5e8; // type:func
+_shelterB6GrowthRoomResolveRoomVariant = 0x8017d5f0; // type:func
+_shelterB6GrowthRoomMessageIdle = 0x8017d7cc; // type:func
+shelterB6GrowthRoomTask = 0x8017d7d4; // type:func
+_shelterB6GrowthRoomHandleCompanionCommand = 0x8017d634; // type:func
+_shelterB6GrowthRoomHandleRoomAction = 0x8017d6c8; // type:func
+_shelterB6GrowthRoomInitializeTask = 0x8017d71c; // type:func
+_gShelterB6GrowthRoomTaskStates = 0x8017d5c4;

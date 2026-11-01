@@ -1,0 +1,104 @@
+#ifndef INCLUDE_ROOMS_DRYFIELD_NIGHT_MOTEL_LOBBY_H
+#define INCLUDE_ROOMS_DRYFIELD_NIGHT_MOTEL_LOBBY_H
+
+#include "types.h"
+
+#include "gameplay/area.h"
+#include "gameplay/direction.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/task_types.h"
+
+/// Eleven absent placement/resource variants for the nighttime motel lobby.
+///
+/// Indexed directly by `GameLocationKey.variant` (0..10); every slot contains
+/// two NULL pointers. Gameplay publishes this loaded-room table for area 17.
+extern AreaVariant gDryfieldNightMotelLobbyAreaVariants[11];
+
+/// Collision resources for the nighttime lobby's sole room (room ID 1).
+///
+/// Borrows one mesh, four view boundaries and eight action triggers; there
+/// are no sight occluders. The night Dryfield map directory selects this
+/// array for area 17. Grid binding and trigger linking mutate the resources,
+/// which must remain loaded while active or linked.
+extern WorldCollisionRoomResources gDryfieldNightMotelLobbyRoomCollisionResources[1];
+
+/// Model lighting for the nighttime lobby's sole room (room ID 1).
+///
+/// Borrows the overlay's seven writable point lights and seven-view ambient
+/// table. Lighting descriptors and light storage require the lobby to remain loaded.
+extern WorldCoordRoomLighting gDryfieldNightMotelLobbyRoomLighting[1];
+
+/// Logical-view maps for the lobby's sole room (room ID 1).
+///
+/// Borrows gameplay's `gViewIdentityMap`: logical views retain their 1-based
+/// camera/image/sprite indices. This room directory requires the lobby overlay.
+extern u8* gDryfieldNightMotelLobbyViewMaps[1];
+
+/// Reverse-lookup search length for the lobby's sole room (room ID 1).
+///
+/// Searches seven logical-view map entries. This is independent of the shared
+/// map's capacity and the eight camera/sprite records retained by the overlay.
+extern ViewCount gDryfieldNightMotelLobbyViewCounts[1];
+
+/// The nighttime lobby's sole warp endpoint, indexed by warp ID 1 minus one.
+///
+/// Places player and companion at (2940, 0, 316), yaw zero, with initial view 2.
+/// Uses area-bank sound 2 on arrival and 1 on departure, no blocked sound or
+/// spawn/departure flags, and map-marker nibble 481. Direction code copies
+/// the complete entry while this overlay is loaded; no terminator follows it.
+extern DirectionWarpEntry gDryfieldNightMotelLobbyWarpEntries[1];
+
+/// Eight world-to-camera records for the lobby's mapped view indices 1..8.
+///
+/// Rotations use Q12, translations are negated origins in game-coordinate
+/// units, and projection distances are pixels. Borrow only while the lobby is loaded.
+extern ViewCamera gDryfieldNightMotelLobbyViewCameras[8];
+
+/// Sprite resources for the lobby's mapped view indices 1..8.
+///
+/// Views 2..4 select 50, 52 and 71 depth-sorted source rectangles respectively;
+/// the other views have empty lists. Every view retains the decoded background,
+/// and none selects clipping rectangles. Mutable sources and batches belong to
+/// the loaded lobby overlay; empty source slots retain their batch-list address.
+extern SpriteView gDryfieldNightMotelLobbySpriteViews[8];
+
+/// Lobby collision policies indexed by surface class 0..7.
+///
+/// All classes block probes, permit weapon impacts and apply pushback. Class 2
+/// selects alternate footstep cues; class 1 retains its own policy record, and
+/// classes 0 and 3..7 share the default record. Pointers borrow loaded-room storage.
+extern WorldCollisionSurfaceProperties* gDryfieldNightMotelLobbySurfacePropertyTable[8];
+
+/// Updates the night motel lobby's telephone save menu and statistics panels.
+///
+/// Requires the lobby overlay and a live telephone UI task whose
+/// `spawnArg2.pointer` owns its UI object. State 0 initializes the menu;
+/// states 1..3 process save, statistics and notice dismissal. Normal play
+/// before a clear opens saving directly; a clear or demo scene 1 enables
+/// the four-entry menu. Child UI objects supply results through this task.
+void dryfieldNightMotelLobbyTelephoneMenuTask(Task* task);
+
+/// Draws the night motel lobby's light glows for the current logical view.
+///
+/// Bank-6 effect 0x10D; `unusedTask` is ignored. The room overlay must be loaded.
+/// Views 2 and 4 draw a pulsing cyan diamond, view 5 a layered cyan disc;
+/// views 2, 3 and 4 draw flickering textured flares. Other views queue nothing.
+/// The view matrices, ordering table and current frame's packet arena must be
+/// ready. Drawers reject negative GTE flags and otherwise require nonzero
+/// camera Z / 4 for perspective sizing. Queued packets live in the frame arena.
+/// Requires 64 free scratch bytes; each flare leaves 16 bytes reserved until
+/// the frame reset, up to 48 bytes per update in view 2.
+void dryfieldNightMotelLobbyDrawGlowsTask(Task* unusedTask);
+
+/// Runs the night motel lobby's room receiver and masterkey objective monitor.
+///
+/// Requires the loaded lobby and state 0 (initialize), 1 (monitor), or 2 (kill).
+/// Initialization registers the room receiver and suppresses an objective
+/// update for an already collected Bronco masterkey. The monitor records
+/// objective 20 only when that persistent collection bit changes from 0 to 1.
+void dryfieldNightMotelLobbyRoomTask(Task* task);
+
+#endif // INCLUDE_ROOMS_DRYFIELD_NIGHT_MOTEL_LOBBY_H

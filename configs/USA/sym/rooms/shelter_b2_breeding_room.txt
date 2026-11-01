@@ -1,0 +1,104 @@
+// Overlay-local symbols for shelter_b2_breeding_room.
+_gShelterB2BreedingRoomGlowPoints = 0x80180450; // size:0x100 defined:True
+_gShelterB2BreedingRoomMessages = 0x80180414; // size:0x30 defined:True
+_gShelterB2BreedingRoomFirstSceneCompletionTaskDesc = 0x80180444; // size:0xC defined:True
+_gRoomVisualEffectsGlowDiscShades = 0x80180550; // size:0xC defined:True
+gShelterB2BreedingRoomRoomViewMaps = 0x8018055C; // size:0x4 defined:True
+gShelterB2BreedingRoomRoomViewCounts = 0x80180560; // size:0x2 defined:True
+gShelterB2BreedingRoomWarpEntries = 0x80180564; // size:0x70 defined:True
+_gShelterB2BreedingRoomCollisionGridNormals = 0x801805D4; // size:0xD8 defined:True
+_gShelterB2BreedingRoomCollisionGridVerts = 0x801806AC; // size:0x408 defined:True
+_gShelterB2BreedingRoomCollisionGridFaces = 0x80180AB4; // size:0x384 defined:True
+_gShelterB2BreedingRoomCollisionGridCells = 0x80180E38; // size:0x28C defined:True
+_gShelterB2BreedingRoomCollisionGridTable = 0x801810C4; // size:0x30 defined:True
+gShelterB2BreedingRoomCollisionGrid = 0x801810F4; // size:0x24 defined:True
+gShelterB2BreedingRoomViewCameras = 0x80181118; // size:0x168 defined:True
+_gShelterB2BreedingRoomView1SpriteBatches = 0x80181280; // size:0x10 defined:True
+_gShelterB2BreedingRoomView2SpriteSources = 0x80181290; // size:0x190 defined:True
+_gShelterB2BreedingRoomView2SpriteBatches = 0x80181420; // size:0x20 defined:True
+_gShelterB2BreedingRoomView3SpriteSources = 0x80181440; // size:0x30C defined:True
+_gShelterB2BreedingRoomView3SpriteBatches = 0x8018174C; // size:0x48 defined:True
+_gShelterB2BreedingRoomView4SpriteSources = 0x80181794; // size:0xC8 defined:True
+_gShelterB2BreedingRoomView4SpriteBatches = 0x8018185C; // size:0x28 defined:True
+_gShelterB2BreedingRoomView5SpriteSources = 0x80181884; // size:0x564 defined:True
+_gShelterB2BreedingRoomView5SpriteBatches = 0x80181DE8; // size:0x38 defined:True
+_gShelterB2BreedingRoomView6SpriteSources = 0x80181E20; // size:0x604 defined:True
+_gShelterB2BreedingRoomView6SpriteBatches = 0x80182424; // size:0x58 defined:True
+_gShelterB2BreedingRoomView7SpriteSources = 0x8018247C; // size:0x49C defined:True
+_gShelterB2BreedingRoomView7SpriteBatches = 0x80182918; // size:0x38 defined:True
+_gShelterB2BreedingRoomView8SpriteSources = 0x80182950; // size:0x17C defined:True
+_gShelterB2BreedingRoomView8SpriteBatches = 0x80182ACC; // size:0x28 defined:True
+_gShelterB2BreedingRoomView9SpriteSources = 0x80182AF4; // size:0x898 defined:True
+_gShelterB2BreedingRoomView9SpriteBatches = 0x8018338C; // size:0x38 defined:True
+_gShelterB2BreedingRoomView10SpriteBatches = 0x801833C4; // size:0x10 defined:True
+gShelterB2BreedingRoomSpriteViews = 0x801833D4; // size:0x78 defined:True
+_gShelterB2BreedingRoomPointLights = 0x8018344C; // size:0x360 defined:True
+gShelterB2BreedingRoomRoomLights = 0x801837AC; // size:0x18 defined:True
+gShelterB2BreedingRoomViewBoundaryTriggers = 0x801837C4; // size:0x428 defined:True
+_gShelterB2BreedingRoomVariant1Resources = 0x80183BEC; // size:0x18 defined:True
+_gShelterB2BreedingRoomVariant2Resources = 0x80183C04; // size:0x24 defined:True
+_gShelterB2BreedingRoomVariant3Resources = 0x80183C28; // size:0x30 defined:True
+_gShelterB2BreedingRoomVariant4Resources = 0x80183C58; // size:0x30 defined:True
+_gShelterB2BreedingRoomVariant7Resources = 0x80183C88; // size:0x18 defined:True
+_gShelterB2BreedingRoomVariant11Resources = 0x80183CA0; // size:0x24 defined:True
+_gShelterB2BreedingRoomVariant21Resources = 0x80183CC4; // size:0x18 defined:True
+_gShelterB2BreedingRoomVariant1Placements = 0x80183CDC; // size:0x50 defined:True
+_gShelterB2BreedingRoomVariant2Placements = 0x80183D2C; // size:0x60 defined:True
+_gShelterB2BreedingRoomVariant3Placements = 0x80183D8C; // size:0x60 defined:True
+_gShelterB2BreedingRoomVariant4Placements = 0x80183DEC; // size:0x50 defined:True
+_gShelterB2BreedingRoomVariant7Placements = 0x80183E3C; // size:0x20 defined:True
+_gShelterB2BreedingRoomVariant11Placements = 0x80183E5C; // size:0x70 defined:True
+_gShelterB2BreedingRoomVariant21Placements = 0x80183ECC; // size:0x20 defined:True
+gShelterB2BreedingRoomAreaVariants = 0x80183EEC; // size:0xB0 defined:True
+gShelterB2BreedingRoomActionTriggers = 0x80183F9C; // size:0x688 defined:True
+gShelterB2BreedingRoomAmbientByView = 0x80184624; // size:0x58 defined:True
+gShelterB2BreedingRoomOccluders = 0x8018467C; // size:0x12C defined:True
+_gShelterB2BreedingRoomSurface1FootstepSounds = 0x801847A8; // size:0xC defined:True
+_gShelterB2BreedingRoomSurface3FootstepSounds = 0x801847B4; // size:0xC defined:True
+_gShelterB2BreedingRoomSurface4FootstepSounds = 0x801847C0; // size:0xC defined:True
+_gShelterB2BreedingRoomSilentSurfaceProperties = 0x801847CC; // size:0x8 defined:True
+_gShelterB2BreedingRoomSurface1Properties = 0x801847D4; // size:0x8 defined:True
+_gShelterB2BreedingRoomSurface2Properties = 0x801847DC; // size:0x8 defined:True
+_gShelterB2BreedingRoomSurface3Properties = 0x801847E4; // size:0x8 defined:True
+_gShelterB2BreedingRoomSurface4Properties = 0x801847EC; // size:0x8 defined:True
+gShelterB2BreedingRoomSurfacePropertiesByClass = 0x801847F4; // size:0x20 defined:True
+gActor02600MaggotCaterpillarBodyTask = 0x8013A8D4; // absolute:True owner=actor_102600
+gActor04400MadChaserTaskDescs = 0x80142604; // absolute:True owner=actor_104400
+gActor202400Tasks = 0x8014E47C; // absolute:True owner=actor_202400
+gActor207200SkullStalkerTaskDesc = 0x8014E7A4; // absolute:True owner=actor_207200
+gActor203800BlackBeetleTaskDesc = 0x8014FD74; // absolute:True owner=actor_203800
+gActor207200CreepingStrangerTaskDesc = 0x80153EC8; // absolute:True owner=actor_207200
+gActor403900GolemTaskDesc = 0x801540E0; // absolute:True owner=actor_403900
+gActor402200GolemTaskDesc = 0x80154188; // absolute:True owner=actor_402200
+gActor207000SlouchTaskDescs = 0x801575F0; // absolute:True owner=actor_207000
+gShelterB2BreedingRoomModel02E04 = 0x801803F0; // size:0x24 defined:True
+_gShelterB2BreedingRoomModel02E04Skeleton = 0x8018037C; // size:0x24 defined:True
+_gShelterB2BreedingRoomModel02E04PartVerts = 0x801803A0; // size:0x4 defined:True
+_gShelterB2BreedingRoomModel02E04Verts = 0x801803A4; // size:0x20 defined:True
+_gShelterB2BreedingRoomModel02E04Stream = 0x801803C4; // size:0x2C defined:True
+
+shelterB2BreedingRoomRoomVisualEffectsGlowDiscTask = 0x8017E774; // type:func
+
+shelterB2BreedingRoomRoomVisualEffectsFlyingSparkTask = 0x8017ECCC; // type:func
+
+shelterB2BreedingRoomRoomVisualEffectsFlyingOrangeBurstTask = 0x8017F92C; // type:func
+
+shelterB2BreedingRoomDrawGlowsTask = 0x8017D898; // type:func
+_roomVisualEffectsDrawFlyingSpark = 0x8017EEF0; // type:func
+_roomVisualEffectsDrawFlyingRing = 0x8017F174; // type:func
+_roomVisualEffectsDrawFlyingDisc = 0x8017F598; // type:func
+_roomVisualEffectsDrawFlyingBurstGlow = 0x8017FAD8; // type:func
+_roomVisualEffectsDrawFlyingBurstGroundQuad = 0x80180004; // type:func
+_glowDrawCapsule = 0x8017DB90; // type:func
+glowDrawDisc = 0x8017E3D4; // type:func
+shelterB2BreedingRoomAreaObjectTask = 0x8017d5f8; // type:func
+_shelterB2BreedingRoomRefuseKeyItemUse = 0x8017d658; // type:func
+_shelterB2BreedingRoomResolveRoomTransition = 0x8017d660; // type:func
+_shelterB2BreedingRoomIgnoreAction = 0x8017d750; // type:func
+_shelterB2BreedingRoomSoundMsg = 0x8017d758; // type:func
+_shelterB2BreedingRoomFinishFirstSceneTask = 0x8017d7a8; // type:func
+_shelterB2BreedingRoomInitializeRoomTask = 0x8017d7ec; // type:func
+_shelterB2BreedingRoomIdleRoomTask = 0x8017d838; // type:func
+shelterB2BreedingRoomRoomTask = 0x8017d840; // type:func
+_shelterB2BreedingRoomCommandMessage = 0x8017d6a4; // type:func
+_gShelterB2BreedingRoomStateHandlers = 0x8017d5c4;

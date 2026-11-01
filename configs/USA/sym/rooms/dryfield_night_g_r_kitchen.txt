@@ -1,0 +1,58 @@
+// Overlay-local symbols for dryfield_night_g_r_kitchen.
+_gDryfieldNightGRKitchenView2LightShaftPoints = 0x8017E27C; // size:0x20 defined:True
+_gDryfieldNightGRKitchenView3LightShaftPoints = 0x8017E29C; // size:0x20 defined:True
+_gRoomEventTaskDesc = 0x8017E248; // size:0xC defined:True
+_gDryfieldNightGRKitchenRoomMessages = 0x8017E254; // size:0x28 defined:True
+gDryfieldNightGRKitchenRoomLighting = 0x8017E2BC; // size:0x8 defined:True
+gDryfieldNightGRKitchenRoomCollisionResources = 0x8017E2C4; // size:0x10 defined:True
+gDryfieldNightGRKitchenViewMaps = 0x8017E2D4; // size:0x4 defined:True
+gDryfieldNightGRKitchenViewCounts = 0x8017E2D8; // size:0x2 defined:True
+gDryfieldNightGRKitchenWarpEntries = 0x8017E2DC; // size:0x70 defined:True
+_gDryfieldNightGRKitchenCollisionGridNormals = 0x8017E34C; // size:0x30 defined:True
+_gDryfieldNightGRKitchenCollisionGridVerts = 0x8017E37C; // size:0xD0 defined:True
+_gDryfieldNightGRKitchenCollisionGridFaces = 0x8017E44C; // size:0xC0 defined:True
+_gDryfieldNightGRKitchenCollisionGridCells = 0x8017E50C; // size:0x40 defined:True
+_gDryfieldNightGRKitchenCollisionGridTable = 0x8017E54C; // size:0x8 defined:True
+_gDryfieldNightGRKitchenCollisionGrid = 0x8017E554; // size:0x24 defined:True
+gDryfieldNightGRKitchenViewCameras = 0x8017E578; // size:0x6C defined:True
+_gDryfieldNightGRKitchenView1SpriteBatches = 0x8017E5E4; // size:0x10 defined:True
+_gDryfieldNightGRKitchenView2SpriteSources = 0x8017E5F4; // size:0x8C defined:True
+_gDryfieldNightGRKitchenView2SpriteBatches = 0x8017E680; // size:0x18 defined:True
+_gDryfieldNightGRKitchenView3SpriteBatches = 0x8017E698; // size:0x10 defined:True
+gDryfieldNightGRKitchenSpriteViews = 0x8017E6A8; // size:0x24 defined:True
+_gDryfieldNightGRKitchenPointLights = 0x8017E6CC; // size:0x180 defined:True
+_gDryfieldNightGRKitchenRoomLights = 0x8017E84C; // size:0x18 defined:True
+_gDryfieldNightGRKitchenViewBoundaryTriggers = 0x8017E864; // size:0x98 defined:True
+_gDryfieldNightGRKitchenActionTriggers = 0x8017E8FC; // size:0x214 defined:True
+_gDryfieldNightGRKitchenVariant1Resources = 0x8017EB10; // size:0x24 defined:True
+_gDryfieldNightGRKitchenVariant3Resources = 0x8017EB34; // size:0x30 defined:True
+_gDryfieldNightGRKitchenVariant11Resources = 0x8017EB64; // size:0x24 defined:True
+gDryfieldNightGRKitchenAreaVariants = 0x8017EB88; // size:0x60 defined:True
+_gDryfieldNightGRKitchenFloorFootstepSounds = 0x8017EBE8; // size:0xC defined:True
+_gDryfieldNightGRKitchenSilentSurfaceProperties = 0x8017EBF4; // size:0x8 defined:True
+_gDryfieldNightGRKitchenFloorSurfaceProperties = 0x8017EBFC; // size:0x8 defined:True
+gDryfieldNightGRKitchenSurfacePropertiesByClass = 0x8017EC04; // size:0x20 defined:True
+_gRoomEventMsg = 0x8017EC24; // size:0x8 defined:True
+gActor04000BloodSucklerTaskDesc = 0x8013E500; // absolute:True owner=actor_104000
+gActor101600ScavengerTaskDesc = 0x801445DC; // absolute:True owner=actor_101600
+gActor200700RatTaskDesc = 0x80150C80; // absolute:True owner=actor_200700
+gActor00700MothTaskDesc = 0x801513C8; // absolute:True owner=actor_200700
+gActor204000BloodSucklerTaskDesc = 0x80156500; // absolute:True owner=actor_204000
+gMapDryfieldFullGRKitchenVariant1Placements = 0x8017BF08; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullGRKitchenVariant3Placements = 0x8017BF88; // absolute:True owner=map_dryfield_full
+gMapDryfieldFullGRKitchenVariant11Placements = 0x8017C038; // absolute:True owner=map_dryfield_full
+gRoomEventActive = 0x8017EC2C; // size:0x4 defined:True
+gRoomEventReq = 0x8017EC30; // size:0x14 defined:True
+
+dryfieldNightGRKitchenDrawLightShaftsTask = 0x8017E1E4; // type:func
+_glowDrawShaft = 0x8017D9FC; // type:func
+_roomEventGate = 0x8017D5E8; // type:func
+roomEventTask = 0x8017D74C; // type:func
+_roomVariantGRKitchenMsg = 0x8017D8C4; // type:func
+_dryfieldNightGRKitchenRejectKeyItemUse = 0x8017d8bc; // type:func
+_dryfieldNightGRKitchenIgnoreCommand = 0x8017d948; // type:func
+_dryfieldNightGRKitchenIgnoreRoomAction = 0x8017d950; // type:func
+_dryfieldNightGRKitchenIdleState = 0x8017d99c; // type:func
+_dryfieldNightGRKitchenInitializeRoom = 0x8017d958; // type:func
+dryfieldNightGRKitchenRoomTask = 0x8017d9a4; // type:func
+_gDryfieldNightGRKitchenRoomStates = 0x8017d5dc;

@@ -1,0 +1,156 @@
+#include "rooms/dryfield_night_motel_balcony.h"
+
+#include "types.h"
+
+#include "dryfield_night_motel_balcony_private.h"
+
+#include "actors/actor_335800.h"
+
+#include "gameplay/area_flags.h"
+#include "gameplay/attachment_state.h"
+#include "gameplay/attachments.h"
+#include "gameplay/captions.h"
+#include "gameplay/actor_presentation.h"
+#include "gameplay/gameflag.h"
+#include "gameplay/sound.h"
+#include "gameplay/evs.h"
+#include "gameplay/evs_scripts.h"
+#include "gameplay/items.h"
+#include "gameplay/message.h"
+#include "gameplay/scene_combat.h"
+
+#include "main/areas.h"
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/gameflag.h"
+#include "main/mc.h"
+#include "main/mc_types.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/sound.h"
+#include "main/task.h"
+#include "main/task_types.h"
+
+#include "rooms/room_common.h"
+// The flag symbol is four bytes; the gate writes the first.
+#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#include "../../shared/room/room_events.h"
+#include "../../shared/room/room_variants.h"
+
+extern RoomEventActiveBytes gRoomEventActive;
+
+/// A gameplay state byte; the one-shot balcony event waits while it is 1.
+
+/// The request the event gate latched for the event task.
+extern RoomEventReq gRoomEventReq;
+
+enum { DRYFIELD_NIGHT_MOTEL_BALCONY_BURNER_TURN_VARIANT = 4 };
+
+const AreaApplyRec gDryfieldNightMotelBalconyBurnerTurnAreaUpdates[2] SECTION(".data") = {
+    { GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_MOTEL_BALCONY, DRYFIELD_NIGHT_MOTEL_BALCONY_BURNER_TURN_VARIANT, AREA_APPLY_MODE_ALWAYS },
+    { AREA_APPLY_END, 0, 0, 0 },
+};
+
+/// Snapshot of the accepted transition for the deferred room event.
+///
+/// The gate copies all eight bytes before spawning; another accepted start
+/// replaces them. The task commits area, arrival and the room byte on reload.
+/// Keep this room loaded and the snapshot unchanged until that task finishes.
+static RoomEventMsg _gRoomEventMsg = { 0 };
+
+RoomEventActiveBytes gRoomEventActive = { 0, { 115, 55, 136 } };
+
+RoomEventReq gRoomEventReq;
+
+static void _dryfieldNightMotelBalconyInitRoom(Task* task);
+static void _dryfieldNightMotelBalconyCheckFollowUpScene(Task* unusedTask);
+
+enum {
+    DRYFIELD_NIGHT_MOTEL_BALCONY_SCENE_VARIANT     = 2,
+    DRYFIELD_NIGHT_MOTEL_BALCONY_FOLLOW_UP_PENDING = 1,
+    DRYFIELD_NIGHT_MOTEL_BALCONY_FOLLOW_UP_STARTED = 2,
+};
+
+#include "../../shared/room/room_event.inc.c"
+
+#define ROOM_VARIANT_MOTEL_BALCONY_DOORS_MSG roomVariantMotelBalconyDoorsMsg
+#include "../../shared/room/room_variants_motel_balcony_doors.inc.c"
+
+/// Selects the balcony sound-message definition shared by this overlay's TUs.
+///
+/// The private header declares the s32 (Task*, s32, s32, s32) handler before
+/// inclusion, with external linkage for the room message table in the data TU.
+/// The fragment undefines this function-identifier binding after its definition.
+#define MOTEL_BALCONY_CUE_SOUND_MSG motelBalconyCueSoundMsg
+#include "../../shared/room/room_variants_motel_balcony_sound.inc.c"
+
+s32 dryfieldNightMotelBalconyRefuseKeyItemMsg(Task* unusedTask, s32 unusedMessageId, s32 unusedItemId, s32 unusedSecondArg)
+{
+    return ROOM_KEY_ITEM_USE_REFUSED;
+}
+
+s32 dryfieldNightMotelBalconyIgnoreCommandMsg(Task* unusedTask, s32 unusedMessageId, s32 unusedCommandKey, s32 unusedSecondArg)
+{
+    return 0;
+}
+
+s32 dryfieldNightMotelBalconyIgnoreRoomActionMsg(Task* unusedTask, s32 unusedMessageId, s32 unusedFirstArg, s32 unusedSecondArg)
+{
+    return 0;
+}
+
+/// Registers the room, restores damaged scenery and starts its unseen entry scene.
+///
+/// State 0 borrows the live room task/session and loaded sprite tables. Variant
+/// 2, room 2 starts the script pair once and arms the follow-up scene. Advances
+/// to state 1 after setup; the message table stays live with the room overlay.
+static void _dryfieldNightMotelBalconyInitRoom(Task* task)
+{
+    u8 variant;
+
+    task->msgTable = gDryfieldNightMotelBalconyMessageTable;
+    gameSetTaskSlot(task, GAME_TASK_SLOT_ROOM);
+    dryfieldNightMotelBalconyRestoreSectionStates();
+    variant = gGameSession->location.variant;
+    if (variant == DRYFIELD_NIGHT_MOTEL_BALCONY_SCENE_VARIANT && gGameSession->location.roomState == variant && gameFlagGetNibble(GAME_FLAG_NIGHT_MOTEL_BALCONY_SCENE_SEEN) == 0) {
+        evsStartScriptWithSkip(gActor335800BalconyEntryScript, EVENT_SCRIPT_HUD_HIDE_RESTORE, gActor335800BalconyEntrySkipScript);
+        gameFlagSetNibble(GAME_FLAG_NIGHT_MOTEL_BALCONY_SCENE_SEEN, 1);
+        gameFlagSetNibble(GAME_FLAG_NIGHT_MOTEL_BALCONY_SCRIPT_STATE, DRYFIELD_NIGHT_MOTEL_BALCONY_FOLLOW_UP_PENDING);
+        gameFlagSetNibble(EVENT_FLAG_TELEPHONE_DIALOGUE_COUNTER, EVENT_FLAG_TELEPHONE_DIALOGUE_UNHEARD);
+        gameFlagSetNibble(EVENT_FLAG_STORY_DIALOGUE_INDEX, 1);
+        gGameSession->flowFlags = (GAME_SESSION_FLOW_SKIP_ENDING_MUSIC | GAME_SESSION_FLOW_LOAD_ENDING_MUSIC_ONLY | GAME_SESSION_FLOW_REEQUIP_WEAPON);
+    }
+    task->state = task->state + 1;
+}
+
+/// Starts the armed follow-up scene when event and attachment control allow it.
+///
+/// State 1 requires the live session, attachment state and loaded event script.
+/// The task argument is unused. Marks the saved script state as started without
+/// advancing the task, so subsequent ticks leave the scene alone.
+static void _dryfieldNightMotelBalconyCheckFollowUpScene(Task* unusedTask)
+{
+    if (gGameSession->eventState == 0 && gAttachmentState.mode != ATTACHMENT_MODE_WHEEL && gameFlagGetNibble(GAME_FLAG_NIGHT_MOTEL_BALCONY_SCRIPT_STATE) == DRYFIELD_NIGHT_MOTEL_BALCONY_FOLLOW_UP_PENDING) {
+        evsStartScript(gActor335800BalconyBattleStartScript, EVENT_SCRIPT_HUD_HIDE_RESTORE);
+        gameFlagSetNibble(GAME_FLAG_NIGHT_MOTEL_BALCONY_SCRIPT_STATE, DRYFIELD_NIGHT_MOTEL_BALCONY_FOLLOW_UP_STARTED);
+    }
+}
+
+/// Room-task lifecycle: state 0 initializes, state 1 waits or updates, state 2 releases.
+///
+/// The dispatcher copies all three callback pointers before indexing by `Task::state`.
+/// The selector must be in 0..2; there is no terminator or bounds check.
+/// Keep this overlay loaded until the room task is released.
+static const TaskFuncTable3 _gDryfieldNightMotelBalconyRoomTaskStates = {
+    _dryfieldNightMotelBalconyInitRoom,
+    _dryfieldNightMotelBalconyCheckFollowUpScene,
+    taskKill,
+};
+
+void dryfieldNightMotelBalconyRoomTask(Task* task)
+{
+    TaskFuncTable3 states;
+
+    states = _gDryfieldNightMotelBalconyRoomTaskStates;
+    states.funcs[task->state](task);
+}

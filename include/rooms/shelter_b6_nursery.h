@@ -1,0 +1,235 @@
+#ifndef INCLUDE_ROOMS_SHELTER_B6_NURSERY_H
+#define INCLUDE_ROOMS_SHELTER_B6_NURSERY_H
+
+#include "types.h"
+
+#include "gameplay/area.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/task_types.h"
+#include "main/tmd_types.h"
+
+extern TmdSource gShelterB6NurseryModel07BAC;
+
+/// Number of retained placement-variant slots, including absent slots.
+enum { SHELTER_B6_NURSERY_AREA_VARIANT_COUNT = 13 };
+
+/// Shelter B6 nursery placement/resource directory indexed by `GameLocationKey.variant`.
+///
+/// Variant 1 publishes the Kyle and Pawn layout. Its saved variant and spawn
+/// flags are also used by the growth room, which has a separate directory.
+/// All other slots, including 0, are absent (NULL, NULL).
+/// Placements belong to the Neo Ark map overlay; recipes belong to this room.
+/// Keep both and any actors supplying task descriptors loaded through loading,
+/// spawning and model-flag updates.
+/// Selectors must be in 0..12; there is no terminator or bounds check.
+extern AreaVariant gShelterB6NurseryAreaVariants[SHELTER_B6_NURSERY_AREA_VARIANT_COUNT];
+
+/// Logical-view maps for the nursery's single room.
+///
+/// Room 1 borrows `gViewIdentityMap`: logical views 1..19 select the same
+/// camera, image and sprite indices. The directory has no terminator and
+/// stays valid while the nursery overlay is loaded.
+extern u8* gShelterB6NurseryViewMaps[1];
+
+/// Logical-view reverse-search length for the nursery's single room.
+///
+/// Room-minus-one indexing selects the signed count 19. This limits search
+/// through the identity map, independently of that map's 50-byte capacity.
+/// The array has no terminator and borrows the loaded nursery overlay's lifetime.
+extern ViewCount gShelterB6NurseryViewCounts[1];
+
+/// Two nursery arrival placements and departure-facing recipes.
+///
+/// Warp-minus-one indexing selects matching player/companion placements with
+/// initial views 2 and 6. Coordinates use game units and yaw uses 4096 units
+/// per turn. Neither endpoint plays sounds, sets map flags or requests fade
+/// options. The entries have no terminator and remain live with this overlay.
+extern DirectionWarpEntry gShelterB6NurseryWarpEntries[2];
+
+/// Nursery collision mesh and its four XZ face-index cells.
+///
+/// Contains 43 faces over 54 vertices and 14 Q12 normals. The 2 by 2 cells
+/// have 4000-unit sides and an origin at room X=50, Z=-1450; lists end at
+/// `WORLD_COLLISION_GRID_CELL_END`. Activation binds the view coordinate.
+/// The descriptor and its private pools must stay loaded while active.
+extern WorldCollisionGrid gShelterB6NurseryCollisionGrid;
+
+/// Camera transforms and perspective distances for mapped nursery views 1..19.
+///
+/// Indexed by mapped view minus one. Rotation is Q12, translation is the
+/// negated camera origin in game units, and projection distance is in pixels.
+/// The array has no terminator; queued camera applications borrow its records
+/// until they are applied, requiring the nursery overlay to remain loaded.
+extern ViewCamera gShelterB6NurseryViewCameras[19];
+
+/// Sprite sources and drawing ranges for mapped nursery views 1..19.
+///
+/// Indexed by mapped view minus one, with no directory terminator or clipping
+/// lists. Empty views retain their batch-list address in `sources.empty`;
+/// populated views borrow mutable `sources.elements`. Each batch list ends
+/// with `SPRITE_BATCH_END`; its first zero count keeps decoded background
+/// strips. The descriptors and backing lists stay live with this overlay.
+extern SpriteView gShelterB6NurserySpriteViews[19];
+
+/// The nursery's five point lights for model shading and spatial light queries.
+///
+/// All five apply in every view; there are no directional or cone lights.
+/// Coordinate composition and lighting queries mutate the private light array,
+/// which stays live with this record while the nursery overlay is loaded.
+extern WorldCoordRoomLights gShelterB6NurseryRoomLights;
+
+/// Six nursery view-boundary quads linking views 2/3, 3/4 and 4/5 in both directions.
+///
+/// Room-space positions use game units and normals use Q12. The last record
+/// carries `WORLD_COLLISION_TRIGGER_LAST`. Room setup binds the current view
+/// coordinate, links and enables these mutable records; this overlay must
+/// remain loaded until they are unlinked.
+extern WorldCollisionTrigger gShelterB6NurseryViewBoundaryTriggers[6];
+
+/// Twelve nursery interaction quads for room actions, CAP commands and departure.
+///
+/// Includes room actions 1..3, room command 10 and the training-room warp request
+/// (departure slot 1, arrival slot 2). Positions use room game units and normals
+/// use Q12. The final record carries `WORLD_COLLISION_TRIGGER_LAST`. Room setup
+/// links these mutable records to the current view coordinate; their storage
+/// stays loaded until unlinking, and action hits are latched until consumed.
+extern WorldCollisionTrigger gShelterB6NurseryActionTriggers[12];
+
+/// Minimum model ambient colours for nursery views 1..19.
+///
+/// Entry zero holds the count; entry `view` holds that view's RGB minima
+/// in sixteenths of an 8-bit colour level and a retained weighted luma.
+/// Views 2..5 have brighter minima; the other views use one colour level.
+/// Consumers borrow this table while the nursery overlay is loaded.
+extern WorldCoordRoomAmbientEntry gShelterB6NurseryAmbientByView[20];
+
+/// Collision and footstep policies indexed by nursery surface class 0..7.
+///
+/// Every class blocks probes, allows weapon impacts and applies pushback.
+/// Class 1 supplies paired footstep cues; the other classes have none and
+/// share one record. All pointers borrow storage in the loaded nursery overlay.
+extern WorldCollisionSurfaceProperties* gShelterB6NurserySurfaceProperties[8];
+
+/// Dispatches the nursery room task's initialization, idle or release state.
+///
+/// Requires this overlay and `task->state` in 0..2. Initialization installs
+/// room messages, registers the room task, restores companion HP and starts
+/// the entry script selected by nursery progress. State 1 waits for messages;
+/// state 2 releases the task. Dispatch uses a copy of the three-entry table.
+void shelterB6NurseryRoomTask(Task* task);
+
+/// Latches and spawns positional nursery ambience when its start latch is clear.
+///
+/// Event scripts may call this without arguments while the nursery overlay is
+/// loaded. Repeated calls with a set latch do nothing. Sets the latch before
+/// spawning and leaves it set even if task allocation fails. Room command 10
+/// clears it to request that the ambience task stop and release itself.
+void shelterB6NurseryStartAmbience(void);
+
+/// Shows or hides the second sprite batch in the nursery's view 13.
+///
+/// `hidden` is 0 to show or 1 to hide; other byte values leave it unchanged.
+/// Requires the active session's stage and area to select the nursery sprite
+/// tables. Changes view 13 regardless of the current view.
+void shelterB6NurserySetView13SpriteHidden(u8 hidden);
+
+/// Spins and draws one grey triangular shard of the nursery's spark shower.
+///
+/// Requires a coordinate body and counted, owned `EffectWork` in `spawnArg2`.
+/// The low 12 bits of `spawnArg1.value` give its radius in local coordinate
+/// units. Initializes a Q12 direction, speed 64..127, shade 64..191 and Euler
+/// increments in 4096 units per turn. Releases the work when parent-space Y
+/// exceeds zero. Room effect control 2..3 pauses it; 4 or above cancels it.
+void shelterB6NurserySparkShowerShardTask(Task* task);
+
+/// Sets the nursery's glint-pulse and spark-shower cues for its view-effect task.
+///
+/// Stores the low 16 bits of each argument. A nonzero fastGlintPulse selects
+/// the faster glint pulse in views 3, 6, 8 and 10; a nonzero sparkShowerScale
+/// triggers sixteen shards in view 13 and scales their spread and radius.
+/// The view-effect task clears both on initialization and after that shower.
+/// Requires the nursery overlay and its initialized view-effect task to stay
+/// loaded until the cues are consumed; (0, 0) clears any pending cues.
+void shelterB6NurserySetEffectCues(s32 fastGlintPulse, s32 sparkShowerScale);
+
+/// Draws the nursery's view glints and spawns its debris, particles and cued shower.
+///
+/// Requires the nursery overlay, active view, room-effect state and effect
+/// resources. Initialization publishes the nursery flash/trail/burst IDs and
+/// clears both effect cues. View 12 spawns three chunks once; view 13 enables
+/// ongoing particles at two anchors, including after leaving that view.
+/// A shower cue in view 13 spawns sixteen shards and then clears both cues.
+/// Particle emission uses alternate animation frames. This controller does
+/// not inspect room-effect control or release itself; children own their work.
+void shelterB6NurseryViewEffectsTask(Task* task);
+
+/// Tumbles and bounces one nursery debris model while emitting trail particles.
+///
+/// Requires a TMD body and counted, owned `EffectWork` in `spawnArg2.pointer`.
+/// Initialization enables model drawing, seeds a Q12 direction and speed
+/// 64..127 coordinate units per active frame, and stores Euler increments in
+/// `work->pos` at 4096 units per turn. Collision mixes the room-space normal
+/// into that direction and reduces speed to two thirds; a missed collision
+/// adds 384 to its signed-halfword Y direction. Trail particles spawn on odd
+/// active ages and switch texture strips after age 64. Control 2..3 pauses;
+/// control 4 or above or leaving mapped view 12 releases the work. There is
+/// no age-based release, and the signed-halfword age retains its wrap.
+void shelterB6NurseryDebrisChunkTask(Task* task);
+
+/// Animates one nursery particle through a ten-frame or eight-frame texture strip.
+///
+/// Requires a coordinate body and counted, owned `EffectWork` in `spawnArg2`.
+/// `spawnArg1.value` packs half-diagonal (bits 0..11), frame period (12..14,
+/// default 1 when bits 12..15 are zero), speed (16..23, zero selects 64),
+/// motion mode (24..27), and the eight-frame strip selector (bit 31).
+/// A nonzero period is required: bit 15 alone must not select the period.
+/// Motion modes are 0 stationary, 1 negative-Y fan, 2 scatter, 3 negative-Y
+/// jet, 5 spawn-offset direction, 6 XZ scatter, and 7 parent-rotated jet.
+/// Existing nonzero `move` bypasses direction generation and speed scaling.
+/// Each frame draws before moving, then advances the strip at its period;
+/// completion releases the work. This task runs regardless of room effect control.
+void shelterB6NurseryAnimatedParticleTask(Task* task);
+
+/// Runs the nursery's charging pink flash, peak screen tint and fading star.
+///
+/// Requires a coordinate body and counted, owned `EffectWork` in `spawnArg2`.
+/// `spawnArg1.value` is a positive charge duration in active ticks, consumed
+/// as a countdown. Nonzero room effect control pauses it; control 4 or above,
+/// state 3, or completion releases the effect.
+void shelterB6NurseryRoomVisualEffectsFlashTask(Task* task);
+
+/// Records two anchor-relative endpoints and draws their fading trail as a beam.
+///
+/// Requires a coordinate body and counted, owned `EffectWork` in `spawnArg2`;
+/// its parent coordinate stays live through teardown. `work` starts null and
+/// owns sixteen allocated coordinate snapshots, eight for each endpoint.
+/// `spawnArg1.value` is the nonzero signed-16-bit age at which to finish;
+/// zero leaves lifetime to external teardown. Age advances with room effect
+/// control below 2, including initialization; allocation failure resets it
+/// for retry. Teardown releases both allocations.
+void shelterB6NurseryRoomVisualEffectsTwinTrailTask(Task* task);
+
+/// Runs the nursery's impact flash with smoke or fading rings and bouncing sparks.
+///
+/// Requires a coordinate body and counted, zero-aged `EffectWork` in
+/// `spawnArg2.pointer`. Nonzero `spawnArg1.value` selects smoke; zero selects
+/// rings and sparks. Enters release at active age 7 and frees work on the next
+/// active tick. Nonzero room control below 4 pauses; 4 or above cancels.
+/// Spawned effects are independent tasks and keep their own lifetimes.
+void shelterB6NurseryRoomVisualEffectsSparkBurstTask(Task* task);
+
+/// Runs the nursery telephone's save menu and optional statistics panels.
+///
+/// Requires a live telephone `UiObject` in `task->spawnArg2.pointer` and this
+/// overlay to stay loaded. Normal uncleared play opens saving directly; a
+/// cleared game or attract-demo scene 1 enables the four-row menu. Save results
+/// open a saved/cancelled notice; dismissal returns to the menu or closes the
+/// save-only telephone. Cancel publishes the No result and clears UI-open state.
+void shelterB6NurseryTelephoneMenuTask(Task* task);
+
+#endif // INCLUDE_ROOMS_SHELTER_B6_NURSERY_H

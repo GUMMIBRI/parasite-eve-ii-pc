@@ -1,0 +1,181 @@
+// Overlay-local symbols for neo_ark_shrine.
+gNeoArkShrinePuzzleLayoutRestorePending = 0x8018686A; // type:s16 size:0x2
+_gNeoArkShrinePuzzleTileTextureOrigins = 0x801825AC; // size:0x40 defined:True
+_gNeoArkShrinePuzzleCellNeighbours = 0x801825EC; // size:0xA0 defined:True
+_gNeoArkShrineFlarePositions = 0x8018268C; // size:0x88 defined:True
+gNeoArkShrineCollisionRooms = 0x80182724; // size:0x60 defined:True
+gNeoArkShrineRoomLighting = 0x80182784; // size:0x30 defined:True
+_gNeoArkShrineRoom2ViewMap = 0x801827B4; // size:0x14 defined:True
+_gNeoArkShrineRoom4ViewMap = 0x801827C8; // size:0x14 defined:True
+_gNeoArkShrineRoom5ViewMap = 0x801827DC; // size:0x14 defined:True
+gNeoArkShrineViewMaps = 0x801827F0; // size:0x18 defined:True
+gNeoArkShrineViewCounts = 0x80182808; // size:0xC defined:True
+gNeoArkShrineWarpEntries = 0x80182814; // size:0xA8 defined:True
+_gNeoArkShrineBaseCollisionGridNormals = 0x801828BC; // size:0x50 defined:True
+_gNeoArkShrineBaseCollisionGridVerts = 0x8018290C; // size:0x170 defined:True
+_gNeoArkShrineBaseCollisionGridFaces = 0x80182A7C; // size:0x168 defined:True
+_gNeoArkShrineBaseCollisionGridCells = 0x80182BE4; // size:0x14 defined:True
+_gNeoArkShrineBaseCollisionGridTable = 0x80182CFC; // size:0x30 defined:True
+_gNeoArkShrineBaseCollisionGrid = 0x80182D2C; // size:0x24 defined:True
+_gNeoArkShrineActiveCollisionGridNormals = 0x80182D50; // size:0x48 defined:True
+_gNeoArkShrineActiveCollisionGridVerts = 0x80182D98; // size:0x180 defined:True
+_gNeoArkShrineActiveCollisionGridFaces = 0x80182F18; // size:0x174 defined:True
+_gNeoArkShrineActiveCollisionGridCells = 0x8018308C; // size:0x11C defined:True
+_gNeoArkShrinePuzzleCellOrigins = 0x8018252C; // size:0x40 defined:True
+gNeoArkShrinePuzzleInitialTileOrigins = 0x8018256C; // size:0x40 defined:True
+_gNeoArkShrineActiveCollisionGridTable = 0x801831A8; // size:0x30 defined:True
+_gNeoArkShrineActiveCollisionGrid = 0x801831D8; // size:0x24 defined:True
+_gNeoArkShrineEnemyReleaseCollisionGridNormals = 0x801831FC; // size:0x48 defined:True
+_gNeoArkShrineEnemyReleaseCollisionGridVerts = 0x80183244; // size:0x190 defined:True
+_gNeoArkShrineEnemyReleaseCollisionGridFaces = 0x801833D4; // size:0x174 defined:True
+_gNeoArkShrineEnemyReleaseCollisionGridCells = 0x80183548; // size:0x120 defined:True
+_gNeoArkShrineEnemyReleaseCollisionGridTable = 0x80183668; // size:0x30 defined:True
+_gNeoArkShrineEnemyReleaseCollisionGrid = 0x80183698; // size:0x24 defined:True
+gNeoArkShrineViewCameras = 0x801836BC; // size:0x288 defined:True
+_gNeoArkShrineView1SpriteBatches = 0x80183944; // size:0x10 defined:True
+_gNeoArkShrineView2SpriteBatches = 0x80183954; // size:0x10 defined:True
+_gNeoArkShrineView3SpriteSources = 0x80183964; // size:0x474 defined:True
+_gNeoArkShrineView3SpriteBatches = 0x80183DD8; // size:0x38 defined:True
+_gNeoArkShrineView4SpriteSources = 0x80183E10; // size:0x2D0 defined:True
+_gNeoArkShrineView4SpriteBatches = 0x801840E0; // size:0x28 defined:True
+_gNeoArkShrineView5SpriteSources = 0x80184108; // size:0xB4 defined:True
+_gNeoArkShrineView5SpriteBatches = 0x801841BC; // size:0x18 defined:True
+_gNeoArkShrineView6SpriteSources = 0x801841D4; // size:0x4C4 defined:True
+_gNeoArkShrineView6SpriteBatches = 0x80184698; // size:0x50 defined:True
+_gNeoArkShrineView7SpriteBatches = 0x801846E8; // size:0x10 defined:True
+_gNeoArkShrineView8SpriteSources = 0x801846F8; // size:0x140 defined:True
+_gNeoArkShrineView8SpriteBatches = 0x80184838; // size:0x18 defined:True
+_gNeoArkShrineView9SpriteSources = 0x80184850; // size:0x168 defined:True
+_gNeoArkShrineView9SpriteBatches = 0x801849B8; // size:0x18 defined:True
+_gNeoArkShrineView10SpriteSources = 0x801849D0; // size:0x118 defined:True
+_gNeoArkShrineView10SpriteBatches = 0x80184AE8; // size:0x20 defined:True
+_gNeoArkShrineView11SpriteBatches = 0x80184B08; // size:0x10 defined:True
+_gNeoArkShrineView12SpriteBatches = 0x80184B18; // size:0x10 defined:True
+_gNeoArkShrineView13SpriteSources = 0x80184B28; // size:0x230 defined:True
+_gNeoArkShrineView13SpriteBatches = 0x80184D58; // size:0x20 defined:True
+_gNeoArkShrineView14SpriteBatches = 0x80184D78; // size:0x10 defined:True
+_gNeoArkShrineView15SpriteBatches = 0x80184D88; // size:0x10 defined:True
+_gNeoArkShrineView16SpriteSources = 0x80184D98; // size:0x2A8 defined:True
+_gNeoArkShrineView16SpriteBatches = 0x80185040; // size:0x28 defined:True
+_gNeoArkShrineView17SpriteSources = 0x80185068; // size:0x118 defined:True
+_gNeoArkShrineView17SpriteBatches = 0x80185180; // size:0x20 defined:True
+_gNeoArkShrineView18SpriteSources = 0x801851A0; // size:0xC8 defined:True
+_gNeoArkShrineView18SpriteBatches = 0x80185268; // size:0x18 defined:True
+gNeoArkShrineSpriteViews = 0x80185280; // size:0xD8 defined:True
+_gNeoArkShrineDirectionalLights = 0x80185358; // size:0xB0 defined:True
+_gNeoArkShrinePointLights = 0x80185408; // size:0x660 defined:True
+_gNeoArkShrineRoomLights = 0x80185A68; // size:0x18 defined:True
+_gNeoArkShrineViewBoundaryTriggers = 0x80185A80; // size:0x428 defined:True
+_gNeoArkShrineBaseActionTriggers = 0x80185EA8; // size:0x2AC defined:True
+_gNeoArkShrineActiveActionTriggers = 0x80186154; // size:0x260 defined:True
+_gNeoArkShrineEnemyReleaseActionTriggers = 0x801863B4; // size:0x260 defined:True
+_gNeoArkShrineVariant1Resources = 0x80186614; // size:0x18 defined:True
+_gNeoArkShrineVariant2Resources = 0x8018662C; // size:0x18 defined:True
+_gNeoArkShrineVariant3Resources = 0x80186644; // size:0x18 defined:True
+_gNeoArkShrineVariant4Resources = 0x8018665C; // size:0x24 defined:True
+_gNeoArkShrineVariant5Resources = 0x80186680; // size:0x18 defined:True
+_gNeoArkShrineVariant7Resources = 0x80186698; // size:0x18 defined:True
+_gNeoArkShrineVariant11Resources = 0x801866B0; // size:0x18 defined:True
+gNeoArkShrineAreaVariants = 0x801866C8; // size:0x68 defined:True
+_gNeoArkShrineSightOccluders = 0x80186730; // size:0xF0 defined:True
+_gNeoArkShrineFootstepSounds = 0x80186820; // size:0xC defined:True
+_gNeoArkShrineSurface0Properties = 0x8018682C; // size:0x8 defined:True
+_gNeoArkShrineSurface1Properties = 0x80186834; // size:0x8 defined:True
+_gNeoArkShrineSurface2Properties = 0x8018683C; // size:0x8 defined:True
+gNeoArkShrineSurfaceProperties = 0x80186844; // size:0x20 defined:True
+gNeoArkShrinePuzzleControllerTask = 0x80186864; // size:0x4 defined:True
+gNeoArkShrinePuzzleLayoutActive = 0x80186868; // size:0x2 defined:True
+gActor102500Tasks = 0x801379A8; // absolute:True owner=actor_102500
+gActor103800BlackBeetleTaskDesc = 0x80137D74; // absolute:True owner=actor_103800
+gActor102000PawnGolemTasks = 0x80147DF0; // absolute:True owner=actor_102000
+gActor02500Tasks = 0x8014F9A8; // absolute:True owner=actor_202500
+gActor403900GolemTaskDesc = 0x801540E0; // absolute:True owner=actor_403900
+gActor402200GolemTaskDesc = 0x80154188; // absolute:True owner=actor_402200
+gMapNeoArkShrineVariant1Placements = 0x8017BEB0; // absolute:True owner=map_neo_ark
+gMapNeoArkShrineVariant2Placements = 0x8017BEF0; // absolute:True owner=map_neo_ark
+gMapNeoArkShrineVariant3Placements = 0x8017BF40; // absolute:True owner=map_neo_ark
+gMapNeoArkShrineVariant4Placements = 0x8017BF90; // absolute:True owner=map_neo_ark
+gMapNeoArkShrineVariant5Placements = 0x8017C020; // absolute:True owner=map_neo_ark
+gMapNeoArkShrineVariant7Placements = 0x8017C050; // absolute:True owner=map_neo_ark
+gMapNeoArkShrineVariant11Placements = 0x8017C070; // absolute:True owner=map_neo_ark
+gNeoArkShrinePuzzleCellTiles = 0x8018686C; // size:0x20 defined:True
+gNeoArkShrinePuzzleDrawnOrigins = 0x8018688C; // size:0x40 defined:True
+gNeoArkShrinePuzzleTargetOrigins = 0x801868CC; // size:0x40 defined:True
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x80182714; // size:0x10 defined:True
+_gNeoArkShrineRoomMessages = 0x80181E34; // size:0x28 defined:True
+_gNeoArkShrinePuzzleSessionTaskDescs = 0x80181E5C; // size:0x18 defined:True
+_gNeoArkShrineObjectEventVariantKey = 0x80181E74; // size:0x4 defined:True
+_gNeoArkShrineModel049E8Skeleton = 0x80181E78; // size:0x24 defined:True
+_gNeoArkShrineModel049E8PartVerts = 0x80181E9C; // size:0x4 defined:True
+_gNeoArkShrineModel049E8Verts = 0x80181EA0; // size:0x108 defined:True
+_gNeoArkShrineModel049E8Stream = 0x80181FA8; // size:0x1A8 defined:True
+_gNeoArkShrineModel049E8 = 0x80182150; // size:0x24 defined:True
+_gNeoArkShrineModel04C6CSkeleton = 0x80182174; // size:0x24 defined:True
+_gNeoArkShrineModel04C6CPartVerts = 0x80182198; // size:0x4 defined:True
+_gNeoArkShrineModel04C6CVerts = 0x8018219C; // size:0x90 defined:True
+_gNeoArkShrineModel04C6CStream = 0x8018222C; // size:0x1B4 defined:True
+_gNeoArkShrineModel04C6C = 0x801823E0; // size:0x24 defined:True
+gNeoArkShrinePuzzleCursorTaskDescs = 0x80182404; // size:0xC defined:True
+gNeoArkShrinePuzzleInitialCellTiles = 0x80182410; // size:0x20 defined:True
+gNeoArkShrinePuzzleHotspots = 0x80182430; // size:0xD8 defined:True
+gNeoArkShrinePuzzleTaskDescs = 0x80182508; // size:0x24 defined:True
+
+neoArkShrineFlareTask = 0x8017F8DC; // type:func
+
+neoArkShrineRoomVisualEffectsFlashTask = 0x8017FEA0; // type:func
+
+neoArkShrineRoomVisualEffectsTwinTrailTask = 0x80180904; // type:func
+
+neoArkShrineRoomVisualEffectsSparkBurstTask = 0x801811EC; // type:func
+_roomVisualEffectsDrawFlashRing = 0x80180144; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x80180570; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x80180DF4; // type:func
+_roomVisualEffectsDrawBurstStar = 0x80181474; // type:func
+_actionPromptOutlineRectDefault = 0x8017DD38; // type:func
+_actionPromptMoveCursorsDefault = 0x8017E528; // type:func
+_actionPromptDrawCursorDefault = 0x8017E988; // type:func
+actionPromptHitTest = 0x8017EC10; // type:func
+_actionPromptResetDefault = 0x8017F80C; // type:func
+_neoArkShrineUpdateFallingPropLighting = 0x8017f86c; // type:func
+_neoArkShrineDrawFlare = 0x8017fc14; // type:func
+_neoArkShrineInitializeFirstFallingProp = 0x8017f4c8; // type:func
+_neoArkShrineInitializeSecondFallingProp = 0x8017f688; // type:func
+_neoArkShrineRefuseKeyItemUse = 0x8017d6a4; // type:func
+_neoArkShrineRoomIdle = 0x8017d940; // type:func
+neoArkShrineRoomTask = 0x8017d948; // type:func
+neoArkShrineAnimateAndDrawPuzzle = 0x8017df7c; // type:func
+_neoArkShrineCheckPuzzleArrangement = 0x8017e254; // type:func
+neoArkShrineDrawPuzzleFrame = 0x8017eac0; // type:func
+neoArkShrinePuzzleCursorTask = 0x8017ea70; // type:func
+neoArkShrineFirstFallingPropTask = 0x8017eb54; // type:func
+neoArkShrineSecondFallingPropTask = 0x8017ebb8; // type:func
+_neoArkShrinePreparePuzzleCursor = 0x8017edac; // type:func
+_neoArkShrineOpenPuzzleCommands = 0x8017ede0; // type:func
+_neoArkShrineClosePuzzle = 0x8017eed4; // type:func
+_neoArkShrineBeginPuzzleLayoutActivation = 0x8017ef68; // type:func
+_neoArkShrineWaitPuzzleLayoutActivation = 0x8017efe4; // type:func
+_neoArkShrineBeginPuzzleEnemyRelease = 0x8017f094; // type:func
+_neoArkShrineWaitPuzzleEnemyReveal = 0x8017f21c; // type:func
+_neoArkShrineFinishPuzzleEnemyRelease = 0x8017f274; // type:func
+_neoArkShrineBeginPuzzleLayoutRestoration = 0x8017f320; // type:func
+_neoArkShrineWaitPuzzleLayoutRestoration = 0x8017f398; // type:func
+neoArkShrineResetPuzzle = 0x8017f448; // type:func
+_neoArkShrineInitializeRoom = 0x8017d8f4; // type:func
+neoArkShrinePuzzleIdle = 0x8017d9a0; // type:func
+neoArkShrinePuzzleTask = 0x8017eae0; // type:func
+_neoArkShrineDropFirstProp = 0x8017f578; // type:func
+_neoArkShrineWaitFirstPropLayoutRestore = 0x8017f640; // type:func
+_neoArkShrineDropSecondProp = 0x8017f738; // type:func
+_neoArkShrineResolveRoomEvent = 0x8017d6ac; // type:func
+_neoArkShrineHandleRoomCommand = 0x8017d740; // type:func
+_neoArkShrineHandleRoomAction = 0x8017d7f0; // type:func
+_neoArkShrinePuzzleSessionTask = 0x8017d84c; // type:func
+neoArkShrineSlidePuzzleTile = 0x8017db10; // type:func
+_neoArkShrineResolvePuzzleExamine = 0x8017ee44; // type:func
+_neoArkShrineWaitToSpawnFirstFallingProp = 0x8017f0f0; // type:func
+_neoArkShrineWaitToSpawnSecondFallingProp = 0x8017f178; // type:func
+_neoArkShrineInitializePuzzle = 0x8017ecc4; // type:func
+_gNeoArkShrinePuzzleStates = 0x8017d5d0;
+_gNeoArkShrineFirstPropStates = 0x8017d610;
+_gNeoArkShrineSecondPropStates = 0x8017d620;
+_gNeoArkShrineRoomStateHandlers = 0x8017d5c4;

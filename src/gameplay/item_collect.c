@@ -1,0 +1,928 @@
+#include "gameplay/items.h"
+
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/memory.h>
+
+#include "types.h"
+
+#include "gameplay/area_flags.h"
+#include "area_flags.h"
+#include "attachments.h"
+#include "gameplay/enemy.h"
+#include "gameplay/inventory.h"
+#include "inventory.h"
+#include "item_menu.h"
+#include "items.h"
+#include "player_actor.h"
+#include "gameplay/scene_runtime.h"
+#include "scene_runtime.h"
+
+#include "gameplay/damage.h"
+#include "main/gfx.h"
+#include "main/gameflag.h"
+#include "main/mc.h"
+#include "main/session.h"
+#include "main/task.h"
+#include "main/ui.h"
+#include "main/wipsys.h"
+
+/// Terminator of the ordered collected-item catalog, distinct from INVENTORY_ITEM_NONE.
+enum { INVENTORY_COLLECTED_LIST_END = 0xFFFF };
+
+/// Catalog identification flags stored in the live save.
+enum {
+    ITEM_IDENTIFICATION_ID_LIMIT      = 0x180,
+    ITEM_IDENTIFICATION_BITS_PER_WORD = 32
+};
+
+/// Whole saved minutes before the Ice Bag becomes a Bag of Water.
+enum { INVENTORY_ICE_BAG_MELT_MINUTES = 2 };
+
+/// Packing of sixteen two-bit area object states into each saved word.
+enum {
+    AREA_OBJECT_STATE_BITS       = 2,
+    AREA_OBJECT_STATE_INDEX_MASK = 0xF,
+    AREA_OBJECT_STATE_WORD_SHIFT = 4
+};
+
+/// Placed-model task phases and the saved state that requests their removal.
+enum {
+    AREA_OBJECT_MODEL_INITIAL       = 0,
+    AREA_OBJECT_MODEL_WAITING       = 1,
+    AREA_OBJECT_MODEL_REMOVED_STATE = 2
+};
+
+/// Player resource sets selected before departing M.I.S.T. for each destination.
+enum {
+    PLAYER_ACTOR_RESOURCE_ACROPOLIS = 1,
+    PLAYER_ACTOR_RESOURCE_DRYFIELD  = 2
+};
+
+static inline s32 _gpGetModLevel(s32 item);
+
+static inline void _gpApplyBit2List(AreaObjectRoom* table, u32* dest);
+
+static inline s32 _areaReadObjectState(const u32* objectStates, s32 objectId);
+
+static inline s32 _areaReadModelObjectState(const Task* task);
+
+static inline void _playerCaptureRootPose(void);
+
+static inline void _areaApplyObjectPlacement(Enemy* enemy, const AreaObjectPlace* place);
+
+static void _modelObjectResetDrawFlagsTask(Task* task);
+
+static void _areaSeedRoomObjectStates(AreaObjectRoom* rooms, u32* objectStates);
+
+static s32 _areaGetObjectState(const GameLocationKey* location, s32 objectId);
+
+static Enemy* _areaSpawnObjectAtPlace(AreaObjectSpawn* spawn, const AreaObjectPlace* place);
+
+static void _areaObjectFlaggedModelTask(Task* task);
+
+static void _equipmentInitializeWeaponLoads(void);
+
+static s32 _inventoryGetSavedItemQuantity(s32 itemId);
+
+static void _inventorySetCarriedSavedRange(s32 rowCount);
+
+static void _itemInitializeIdentification(void);
+
+static s16 _inventoryGetIceBagElapsedMinutes(void);
+
+static inline s32 _gpGetModLevel(s32 item)
+{
+    s32         ret;
+    s32         idx;
+    ArmorStats* stats;
+
+    idx = item - 0x60;
+    ret = 0;
+    if ((u32)idx < 0x20) {
+        stats = &gEquipmentArmorStats[(item)-0x60];
+        ret   = stats->baseAttachmentSlots;
+        ret  += gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.itemLevelBonus[idx];
+        if (ret >= ARMOR_ATTACHMENT_SLOT_MAX + 1) {
+            ret = ARMOR_ATTACHMENT_SLOT_MAX;
+        }
+    }
+    return ret;
+}
+static inline void _gpApplyBit2List(AreaObjectRoom* table, u32* dest)
+{
+    AreaObjectPlace* rec;
+    u32*             p;
+    u32              mask;
+
+    if (table == NULL) {
+        return;
+    }
+    rec = table->places.list;
+    if (table->places.sentinel == AREA_OBJECT_ROOM_END) {
+        return;
+    }
+    do {
+        if (rec != NULL) {
+            for (; rec->flagIndex != AREA_OBJECT_PLACE_END; rec++) {
+                mask = AREA_OBJECT_PLACE_STATE_MASK << ((rec->flagIndex & 0xF) * 2);
+                p    = &dest[rec->flagIndex >> 4];
+                *p  &= ~mask;
+                mask = (rec->state & AREA_OBJECT_PLACE_STATE_MASK) << ((rec->flagIndex & 0xF) * 2);
+                *p  |= mask;
+            }
+        }
+        table++;
+        rec = table->places.list;
+    } while (table->places.sentinel != AREA_OBJECT_ROOM_END);
+}
+/// Reads one low-pair-first two-bit state from borrowed, readable saved words.
+///
+/// `objectId` must be nonnegative and select a pair within the supplied bank.
+static inline s32 _areaReadObjectState(const u32* objectStates, s32 objectId)
+{
+    u32 word;
+    s32 stateShift;
+
+    objectStates += objectId >> AREA_OBJECT_STATE_WORD_SHIFT;
+    stateShift    = (objectId & AREA_OBJECT_STATE_INDEX_MASK) * AREA_OBJECT_STATE_BITS;
+    word          = *objectStates;
+    word         &= AREA_OBJECT_PLACE_STATE_MASK << stateShift;
+    word        >>= stateShift;
+    return word;
+}
+
+/// Reads a placed model's saved state in the current stage.
+///
+/// Borrows a live enemy task; its place-key low byte must be 0..63 and the
+/// current stage must be 1..5 with readable object-state words. Returns 0..3;
+/// stage 3 shares stage 2's saved bank. No saved state or task data is changed.
+static inline s32 _areaReadModelObjectState(const Task* task)
+{
+    const AreaObjectStage* stages;
+    const u32*             objectStates;
+    const u32*             stateWord;
+    const GameSession*     session;
+    const Enemy*           enemy;
+    s32                    flagIndex;
+    s32                    stateShift;
+    u32                    word;
+
+    session = gGameSession;
+    stages  = gAreaObjectStages;
+    enemy   = task->spawnArg2.pointer;
+    // Placed models use the current stage and the key's low-byte flag index.
+    flagIndex    = (u8)enemy->placeKey;
+    objectStates = stages[session->location.stage].objectStates;
+    stateWord    = objectStates + (flagIndex >> AREA_OBJECT_STATE_WORD_SHIFT);
+    stateShift   = (flagIndex & AREA_OBJECT_STATE_INDEX_MASK) * AREA_OBJECT_STATE_BITS;
+    word         = *stateWord;
+    return (word & (AREA_OBJECT_PLACE_STATE_MASK << stateShift)) >> stateShift;
+}
+
+/// Captures the live player root's local translation and facing for save preparation.
+///
+/// Requires a live player task and model root in the room's coordinate frame.
+/// XYZ narrow to signed halfwords; yaw uses 4096 units per turn, measured from
+/// +Z toward +X, with both signed half-turn endpoints retained. No composition
+/// is performed and no root pointer is retained.
+static inline void _playerCaptureRootPose(void)
+{
+    const GfxCoord* root;
+    PlayerPos*      savedPose;
+    s32             yaw;
+    s32             storedX;
+
+    root           = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER)->extra.tmd->coords;
+    storedX        = (u16)root->coord.t[0];
+    savedPose      = &gPlayerStatus.pos;
+    savedPose->x   = storedX;
+    savedPose->y   = root->coord.t[1];
+    savedPose->z   = root->coord.t[2];
+    yaw            = ratan2(root->coord.m[0][2], root->coord.m[2][2]);
+    savedPose->yaw = yaw;
+    if ((s16)yaw >= PLAYER_YAW_HALF_TURN + 1) {
+        savedPose->yaw = yaw - PLAYER_YAW_FULL_TURN;
+    } else if ((s16)yaw < -PLAYER_YAW_HALF_TURN) {
+        savedPose->yaw = yaw + PLAYER_YAW_FULL_TURN;
+    }
+}
+
+/// Applies a placed object's identity, kind and transform to its live enemy.
+///
+/// Requires the enemy's task to own a model with a root in the room frame.
+/// Borrows both records without retaining either pointer. XYZ use game units;
+/// yaw narrows to a signed halfword in 4096 units per turn. Zero yaw records
+/// zero while preserving the existing matrix rotation; nonzero yaw replaces
+/// that rotation. Every placement invalidates the root's cached composition.
+static inline void _areaApplyObjectPlacement(Enemy* enemy, const AreaObjectPlace* place)
+{
+    TmdObject* model;
+    GfxCoord*  root;
+
+    model              = enemy->task->extra.tmd;
+    root               = model->coords;
+    enemy->placeKey    = place->flagIndex | (place->placeKeyHigh << ENEMY_PLACE_STAGE_SHIFT);
+    enemy->workType    = place->kind;
+    root->coord.t[0]   = place->x;
+    root->coord.t[1]   = place->y;
+    root->coord.t[2]   = place->z;
+    root->param.rot.vy = place->yaw;
+    if (root->param.rot.vy != 0) {
+        gfxRotMatrixY(&root->coord, (s16)place->yaw, GRAPHICS_ROTATION_REPLACE);
+    }
+    root->composeStamp = GRAPHICS_COORD_DIRTY;
+}
+
+/// Display order of forty collection catalog IDs, followed by INVENTORY_COLLECTED_LIST_END.
+///
+/// Each ID's low seven bits select its live saved collection bit. Enumeration
+/// skips unset bits and returns the caller's zero-based collected position in
+/// this order. The sentinel is not an item, and adjacent retained bytes are
+/// outside the catalog. The IDs and their order remain unchanged.
+static u16 _gInventoryCollectedItemOrder[41] = {
+    297,
+    296,
+    295,
+    293,
+    292,
+    301,
+    291,
+    290,
+    INVENTORY_COLLECTION_ID_BOWMANS_CARD,
+    288,
+    300,
+    INVENTORY_COLLECTION_ID_OAK_BOARD,
+    INVENTORY_COLLECTION_ID_SUV_KEY,
+    INVENTORY_COLLECTION_ID_BAG_OF_WATER,
+    INVENTORY_COLLECTION_ID_ICE_BAG,
+    INVENTORY_COLLECTION_ID_GASOLINE,
+    INVENTORY_COLLECTION_ID_JERRY_CAN,
+    INVENTORY_COLLECTION_ID_TRUCK_KEY,
+    INVENTORY_COLLECTION_ID_BRONCO_MASTERKEY,
+    INVENTORY_COLLECTION_ID_LOBBY_KEY,
+    INVENTORY_COLLECTION_ID_WIRE_ROPE,
+    INVENTORY_COLLECTION_ID_MONKEY_WRENCH,
+    INVENTORY_COLLECTION_ID_FACTORY_KEY,
+    INVENTORY_COLLECTION_ID_BOTTLECAP_MAGNET,
+    272,
+    INVENTORY_COLLECTION_ID_MOTEL_ROOM_6_KEY,
+    INVENTORY_COLLECTION_ID_DRYFIELD_MAP,
+    INVENTORY_COLLECTION_ID_MANUAL,
+    INVENTORY_COLLECTION_ID_NMC_PHOTO,
+    INVENTORY_COLLECTION_ID_MIST_SEARCH_WARRANT,
+    264,
+    INVENTORY_COLLECTION_ID_ARMORY_CARDKEY,
+    INVENTORY_COLLECTION_ID_BLUE_KEY,
+    INVENTORY_COLLECTION_ID_RED_KEY,
+    INVENTORY_COLLECTION_ID_MENDEL_JOURNAL,
+    258,
+    INVENTORY_COLLECTION_ID_PARTHENON_KEY,
+    INVENTORY_COLLECTION_ID_MIST_BADGE,
+    INVENTORY_COLLECTION_ID_PIERCE_RESCUE_BONUS,
+    INVENTORY_COLLECTION_ID_SOLDIER_RESCUE_BONUS,
+    INVENTORY_COLLECTED_LIST_END
+};
+/// Retained bytes after the collected-item list's end marker.
+///
+/// The list walker stops before these bytes; their meaning and original object
+/// boundary are unproven.
+static u16 D_80114B32 = 0x1131;
+
+s32 inventoryGetCollectedItemId(s32 collectedIndex, s32 unused)
+{
+    enum {
+        INVENTORY_COLLECTION_ID_MASK       = 0x7F,
+        INVENTORY_COLLECTION_BITS_PER_WORD = 32
+    };
+    const u16* collectedIds;
+    s32        collectedItemId;
+    const s32* collectionWord;
+    s32        bitIndex;
+    s32        itemId;
+    u32        maskUnit;
+
+    collectedIds    = _gInventoryCollectedItemOrder;
+    collectedItemId = INVENTORY_ITEM_NONE;
+    if (*collectedIds != INVENTORY_COLLECTED_LIST_END) {
+        do {
+            itemId          = *collectedIds;
+            collectionWord  = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.collectedBits;
+            maskUnit        = 1U;
+            bitIndex        = itemId & INVENTORY_COLLECTION_ID_MASK;
+            collectionWord += bitIndex / INVENTORY_COLLECTION_BITS_PER_WORD;
+            bitIndex       %= INVENTORY_COLLECTION_BITS_PER_WORD;
+            if (*collectionWord & (maskUnit << bitIndex)) {
+                collectedIndex--;
+                collectedIds++;
+                if (collectedIndex >= 0) {
+                    continue;
+                }
+                collectedItemId = itemId;
+                break;
+            }
+            collectedIds++;
+        } while (*collectedIds != INVENTORY_COLLECTED_LIST_END);
+    }
+    return collectedItemId;
+}
+
+/// Borrows the base row table selected by a readable inventory range.
+///
+/// The range is unchanged; saved and area tables last with their images,
+/// while the indirect table's owner determines its lifetime.
+static inline InventoryItemRow* _inventoryGetRangeTable(const InventoryItemRange* range)
+{
+    InventoryItemRow* table;
+
+    switch (range->tableId) {
+        case INVENTORY_ITEM_TABLE_AREA_GRANTS:
+            table = gInventoryBattleRewardRows;
+            break;
+        case INVENTORY_ITEM_TABLE_INDIRECT:
+            table = gInventoryIndirectRows;
+            break;
+        default:
+            table = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.itemRows;
+            break;
+    }
+    return table;
+}
+
+s32 inventoryGetItemQuantity(const InventoryItemRange* range, s32 itemId)
+{
+    enum { INVENTORY_KEY_ITEM_FIRST = 0x100 };
+    InventoryItemRow*       table;
+    const InventoryItemRow* row;
+    s32                     rowIndex;
+    s32                     quantity;
+    s32                     rowCount;
+    s32                     firstRow;
+    s32                     rowLimit;
+
+    if (itemId >= INVENTORY_KEY_ITEM_FIRST) {
+        return inventoryHasCollectedBit(itemId);
+    }
+
+    quantity = 0;
+    table    = _inventoryGetRangeTable(range);
+    rowIndex = 0;
+    rowCount = range->rowCount;
+    firstRow = range->firstRow;
+    if (rowCount != 0) {
+        rowLimit = rowCount;
+        row      = INVENTORY_ROW_AT(table, firstRow);
+        do {
+            if (row->itemId == itemId) {
+                quantity += row->qty;
+            }
+            rowIndex++;
+            row++;
+        } while (rowIndex < rowLimit);
+    }
+    return quantity;
+}
+
+/// Clears every model draw flag on a live TMD-bodied task.
+///
+/// Permits the active pass and default automatic buffer allocation, and clears
+/// flagged-pass selection and special draw modes. Does not allocate a buffer,
+/// advance task state or retain the model pointer. No current caller is known.
+static void _modelObjectResetDrawFlagsTask(Task* task)
+{
+    task->extra.tmd->flags = 0;
+}
+
+void itemSetIdentified(s32 itemId, s32 identified)
+{
+    McSaveData* save;
+    s32         wordIndex;
+    u32         bitMask;
+
+    wordIndex = itemId / ITEM_IDENTIFICATION_BITS_PER_WORD;
+    bitMask   = 1U << (itemId % ITEM_IDENTIFICATION_BITS_PER_WORD);
+    if ((u32)itemId >= ITEM_IDENTIFICATION_ID_LIMIT) {
+        return;
+    }
+    if (identified == 0) {
+        save                                 = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+        save->state.itemSeenBits[wordIndex] &= ~bitMask;
+        return;
+    }
+    save                                 = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+    save->state.itemSeenBits[wordIndex] |= bitMask;
+}
+
+/// Seeds a bank from every room's placed-object initial states.
+///
+/// NULL rooms is a no-op. Room and place lists require their respective end
+/// markers. Every flag index must fit the writable bank; other pairs remain.
+/// The tables are borrowed unchanged and no pointers are retained.
+static void _areaSeedRoomObjectStates(AreaObjectRoom* rooms, u32* objectStates)
+{
+    _gpApplyBit2List(rooms, objectStates);
+}
+
+void areaSetObjectState(s32 objectId, u8 state, s32 stageId)
+{
+    s32  stateShift;
+    u32  stateMask;
+    u32* stateWord;
+
+    stateShift  = (objectId & AREA_OBJECT_STATE_INDEX_MASK) * AREA_OBJECT_STATE_BITS;
+    stateMask   = AREA_OBJECT_PLACE_STATE_MASK << stateShift;
+    stateWord   = &gAreaObjectStages[stageId].objectStates[objectId >> AREA_OBJECT_STATE_WORD_SHIFT];
+    *stateWord &= ~stateMask;
+    stateMask   = state << stateShift;
+    *stateWord |= stateMask;
+}
+
+s32 equipmentGetWeaponLoadCapacity(s32 weaponItemId, s32 loadSelection)
+{
+    s32 capacity;
+    s32 weaponIndex;
+
+    weaponIndex = weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST;
+    capacity    = 0;
+    if ((u32)weaponIndex < ARRAY_SIZE(gEquipmentWeaponPrimaryLoadOptions.rows)) {
+        if (loadSelection == EQUIPMENT_WEAPON_SUPPLY_PRIMARY) {
+            capacity = gEquipmentWeaponPrimaryLoadOptions.rows[weaponIndex].capacity;
+        } else {
+            capacity = gEquipmentWeaponSecondaryLoadOptions.rows[weaponIndex].capacity;
+        }
+    }
+    return capacity;
+}
+
+/// Returns the saved two-bit object state in a supplied location's stage.
+///
+/// Requires stage 1..5 and object id 0..63. Area, view and variant are ignored;
+/// Night Dryfield shares daytime Dryfield's words. The location is borrowed.
+static s32 _areaGetObjectState(const GameLocationKey* location, s32 objectId)
+{
+    return _areaReadObjectState(gAreaObjectStages[location->stage].objectStates, objectId);
+}
+
+void playerCaptureSaveState(void)
+{
+    const PlayerStatus* player;
+    McSaveData*         save;
+
+    _playerCaptureRootPose();
+    player                = &gPlayerStatus;
+    save                  = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+    save->state.playerExp = player->exp;
+    save->state.playerBp  = player->bp;
+}
+
+/// Spawns one descriptor at a room placement, returning its owned enemy or NULL.
+///
+/// Borrows both records during the call; no search or kind comparison is made.
+/// A bodyless task keeps the spawn defaults, including its place key/work type.
+/// Other bodies must provide a model root and receive the placement transform.
+static Enemy* _areaSpawnObjectAtPlace(AreaObjectSpawn* spawn, const AreaObjectPlace* place)
+{
+    Enemy* enemy;
+    Task*  task;
+
+    enemy = enemySpawnFromTable(&spawn->taskDesc, 0, spawn->kind, NULL);
+    if (enemy != NULL) {
+        task = enemy->task;
+        if (task->bodyKind != TASK_BODY_NONE) {
+            _areaApplyObjectPlacement(enemy, place);
+        }
+    }
+    return enemy;
+}
+
+/// Keeps a placed model in only the flagged draw pass until its saved state is 2.
+///
+/// Requires a live TMD-bodied enemy task and current stage 1..5. The low byte
+/// of the enemy's place key must index the stage's readable object-state words
+/// (0..63). Phase zero overwrites the model flags, then checks the flag in the
+/// same tick. Completion clears flagged drawing before calling the task's exit
+/// callback, which may release the enemy and task. No current caller is known.
+static void _areaObjectFlaggedModelTask(Task* task)
+{
+    TmdObject* model;
+
+    model = task->extra.tmd;
+    if (task->state == AREA_OBJECT_MODEL_INITIAL) {
+        model->flags = (TMD_OBJECT_SKIP_ACTIVE_DRAW | TMD_OBJECT_FLAGGED_PASS);
+        task->state += 1;
+    }
+    if (task->state == AREA_OBJECT_MODEL_WAITING) {
+        if (_areaReadModelObjectState(task) == AREA_OBJECT_MODEL_REMOVED_STATE) {
+            model->flags &= (u16)~TMD_OBJECT_FLAGGED_PASS;
+            taskCallExit(task);
+        }
+    }
+}
+
+void areaObjectModelTask(Task* task)
+{
+    TmdObject* model;
+
+    model = task->extra.tmd;
+    if (task->state == AREA_OBJECT_MODEL_INITIAL) {
+        model->flags = TMD_OBJECT_FLAGGED_PASS;
+        task->state += 1;
+    }
+    if (task->state == AREA_OBJECT_MODEL_WAITING) {
+        if (_areaReadModelObjectState(task) == AREA_OBJECT_MODEL_REMOVED_STATE) {
+            model->flags &= (u16)~TMD_OBJECT_FLAGGED_PASS;
+            taskCallExit(task);
+        }
+    }
+}
+
+s16 inventoryFindStackQuantity(const InventoryItemRow* table, const InventoryItemRange* range, s32* rowIndex, s32 itemId)
+{
+    s32 currentRowIndex;
+    s32 quantity;
+    s32 nextRowIndex;
+
+    currentRowIndex = *rowIndex;
+    quantity        = 0;
+    while (currentRowIndex < range->firstRow + range->rowCount) {
+        if (table[currentRowIndex].itemId == itemId) {
+            quantity = table[currentRowIndex].qty;
+            break;
+        }
+        nextRowIndex    = currentRowIndex + 1;
+        *rowIndex       = nextRowIndex;
+        currentRowIndex = nextRowIndex;
+    }
+    return quantity;
+}
+
+s32 equipmentFindNextCarriedWeaponSupply(s32 firstSupplyIndex)
+{
+    const InventoryItemRange*    range;
+    s32                          supplyIndex;
+    const EquipmentWeaponSupply* supply;
+
+    range = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems;
+    if ((u32)firstSupplyIndex >= EQUIPMENT_WEAPON_SUPPLY_COUNT) {
+        return EQUIPMENT_WEAPON_SUPPLY_NOT_FOUND;
+    }
+    for (supplyIndex = firstSupplyIndex; supplyIndex < EQUIPMENT_WEAPON_SUPPLY_COUNT; supplyIndex++) {
+        supply = &gEquipmentWeaponSupplies[supplyIndex];
+        if (inventoryGetItemQuantity(range, supply->weaponItemId)) {
+            return supplyIndex;
+        }
+    }
+    return EQUIPMENT_WEAPON_SUPPLY_NOT_FOUND;
+}
+
+const EquipmentWeaponSupply* equipmentGetWeaponSupply(s32 supplyIndex)
+{
+    return &gEquipmentWeaponSupplies[supplyIndex];
+}
+
+s32 equipmentHasCarriedWeaponSupply(void)
+{
+    s32                          found;
+    const InventoryItemRange*    range;
+    s32                          supplyIndex;
+    const EquipmentWeaponSupply* supply;
+
+    found = 0;
+    range = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems;
+    for (supplyIndex = 0, supply = gEquipmentWeaponSupplies; supplyIndex < EQUIPMENT_WEAPON_SUPPLY_COUNT; supplyIndex++) {
+        if (inventoryGetItemQuantity(range, supply->weaponItemId)) {
+            found = 1;
+            break;
+        }
+        supply++;
+    }
+    return found;
+}
+
+/// Resets all saved weapon loads, then fills each built-in supply to capacity.
+///
+/// Removable primaries start empty; only the M4A1 grenade secondary is reloadable.
+/// Every other secondary starts unavailable until the supply catalog is applied.
+static void _equipmentInitializeWeaponLoads(void)
+{
+    enum { EQUIPMENT_ITEM_M4A1_GRENADE = 0x9A };
+    EquipmentWeaponLoad* load;
+    s32                  weaponIndex;
+
+    load = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems;
+    for (weaponIndex = 0; weaponIndex < ARRAY_SIZE(gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems); weaponIndex++) {
+        load->primaryItemId   = INVENTORY_ITEM_NONE;
+        load->primaryQty      = 0;
+        load->secondaryItemId = EQUIPMENT_WEAPON_SECONDARY_UNAVAILABLE;
+        load->secondaryQty    = 0;
+        // The M4A1 grenade launcher has a reloadable secondary slot.
+        if (weaponIndex == EQUIPMENT_ITEM_M4A1_GRENADE - EQUIPMENT_WEAPON_ITEM_FIRST) {
+            load->secondaryItemId = INVENTORY_ITEM_NONE;
+            load->secondaryQty    = 0;
+        }
+        load->field_4 = 0;
+        load++;
+    }
+    equipmentInitializeWeaponSupplies();
+}
+
+/// Sums an item's quantity in saved rows 0..254, or queries a key collection bit.
+///
+/// The 255-row range is the representable maximum and excludes saved row 255.
+/// Ids at least 0x100 instead select the collection bit by their low seven bits.
+static s32 _inventoryGetSavedItemQuantity(s32 itemId)
+{
+    InventoryItemRange query;
+
+    memset(&query, 0, sizeof(query));
+    query.rowCount = INVENTORY_ITEM_RANGE_MAX_ROWS;
+    return inventoryGetItemQuantity(&query, itemId);
+}
+
+/// Selects saved rows starting at zero as the live carried range.
+///
+/// `rowCount` narrows to an unsigned byte (0..255); rows are not cleared.
+/// The range's unproven fourth byte is retained.
+static void _inventorySetCarriedSavedRange(s32 rowCount)
+{
+    McSaveData* save;
+
+    save                              = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+    save->state.carriedItems.firstRow = 0;
+    save->state.carriedItems.rowCount = rowCount;
+    save->state.carriedItems.tableId  = INVENTORY_ITEM_TABLE_SAVED;
+}
+
+void equipmentSyncPrimaryAttackSelector(void)
+{
+    enum {
+        // Addition encodes itemId - 0x9F through the stored unsigned byte.
+        EQUIPMENT_PRIMARY_ATTACK_SELECTOR_OFFSET = 0x100 - (INVENTORY_CONSUMABLE_ITEM_FIRST - 1)
+    };
+    PlayerStatus* status;
+    s32           weaponItemId;
+    u8            primaryItemId;
+
+    status = &gPlayerStatus;
+    if (status->weapon == PLAYER_STATUS_EQUIPMENT_NONE) {
+        status->weaponSlotItem = PLAYER_STATUS_EQUIPMENT_NONE;
+    } else {
+        weaponItemId  = status->weapon + (EQUIPMENT_WEAPON_ITEM_FIRST - 1);
+        primaryItemId = _equipmentGetWeaponLoad(weaponItemId)->primaryItemId;
+        if (primaryItemId == INVENTORY_ITEM_NONE) {
+            status->weaponSlotItem = PLAYER_STATUS_EQUIPMENT_NONE;
+        } else {
+            status->weaponSlotItem = primaryItemId + EQUIPMENT_PRIMARY_ATTACK_SELECTOR_OFFSET;
+        }
+    }
+    playerActorUpdateWeaponCollisionKey();
+}
+
+/// Clears saved identification storage and identifies items without an unknown name.
+///
+/// Scans ids 0..383. Text must contain three NUL/newline-terminated identified
+/// fields; a newline immediately after those fields marks an absent unknown name.
+/// The ordinary-table id mapping beyond its declared extent remains unproven.
+static void _itemInitializeIdentification(void)
+{
+    enum {
+        ITEM_IDENTIFICATION_KEY_ITEM_FIRST = 0x100,
+        ITEM_IDENTIFIED_TEXT_FIELD_COUNT   = 3
+    };
+    McSaveData*     save;
+    const ItemDesc* descriptor;
+    const u8*       text;
+    s32             itemId;
+    s32             fieldsRemaining;
+
+    save = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+    // Reset the full stored array before reusing the index for catalog ids.
+    for (itemId = ARRAY_SIZE(save->state.itemSeenBits) - 1; itemId >= 0; itemId--) {
+        save->state.itemSeenBits[itemId] = 0;
+    }
+
+    itemId = 0;
+    do {
+        fieldsRemaining = ITEM_IDENTIFIED_TEXT_FIELD_COUNT;
+        if (itemId < ITEM_IDENTIFICATION_KEY_ITEM_FIRST) {
+            descriptor = &gItemDescriptors[itemId];
+        } else {
+            descriptor = &gItemKeyDescriptors[itemId - ITEM_IDENTIFICATION_KEY_ITEM_FIRST];
+        }
+        text = descriptor->textFields;
+        while (fieldsRemaining > 0) {
+            if (*text == '\0' || *text == '\n') {
+                fieldsRemaining--;
+            }
+            text++;
+        }
+        if (*text == '\n') {
+            itemSetIdentified(itemId, 1);
+        }
+        itemId++;
+    } while (itemId < ITEM_IDENTIFICATION_ID_LIMIT);
+}
+
+bool itemIsIdentified(s32 itemId)
+{
+    const McSaveData* save;
+    s32               wordIndex;
+    u32               bitMask;
+    u32               identifiedBit;
+
+    wordIndex = itemId / ITEM_IDENTIFICATION_BITS_PER_WORD;
+    bitMask   = 1U << (itemId % ITEM_IDENTIFICATION_BITS_PER_WORD);
+    if ((u32)itemId >= ITEM_IDENTIFICATION_ID_LIMIT) {
+        return true;
+    }
+    save          = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+    identifiedBit = save->state.itemSeenBits[wordIndex] & bitMask;
+    return identifiedBit != 0;
+}
+
+void equipmentRecalculateMaxHp(void)
+{
+    PlayerStatus*              status;
+    const McSaveData*          save;
+    const PlayerModeBaseStats* modeStats;
+    u16                        maximumHp;
+
+    // Preserve 16-bit narrowing before the signed maximum is capped.
+    status        = &gPlayerStatus;
+    modeStats     = gEquipmentModeBaseStats;
+    save          = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+    maximumHp     = modeStats[save->state.gameMode].baseHp.hp;
+    status->hpMax = maximumHp;
+    maximumHp    += save->state.hpBonus;
+    status->hpMax = maximumHp;
+    if (status->armor != PLAYER_STATUS_EQUIPMENT_NONE) {
+        maximumHp    += gEquipmentArmorStats[status->armor - 1].hpBonus;
+        status->hpMax = maximumHp;
+    }
+    if (status->hpMax >= PLAYER_STATUS_STAT_MAX + 1) {
+        status->hpMax = PLAYER_STATUS_STAT_MAX;
+    }
+    if (status->hp > status->hpMax) {
+        status->hp = status->hpMax;
+    }
+}
+
+void equipmentRestoreHpMp(void)
+{
+    PlayerStatus* status;
+
+    status     = &gPlayerStatus;
+    status->hp = status->hpMax;
+    status->mp = status->mpMax;
+}
+
+s32 inventoryGetRangeCapacity(const InventoryItemRange* range)
+{
+    return range->rowCount;
+}
+
+s32 inventoryGetItemSortKey(s32 itemId)
+{
+    enum {
+        INVENTORY_SORT_ARMOR_ITEM_FIRST = 0x60,
+        INVENTORY_SORT_EMPTY_KEY        = 0x1000,
+        INVENTORY_SORT_FALLBACK_OFFSET  = 0x100
+    };
+    s32 key;
+
+    key = 0;
+    if (itemId == INVENTORY_ITEM_NONE) {
+        key = INVENTORY_SORT_EMPTY_KEY;
+    } else if (itemId > 0 && itemId < INVENTORY_SORT_ARMOR_ITEM_FIRST) {
+        key = gInventoryOrdinarySortKeys[itemId];
+    } else if (itemId >= INVENTORY_SORT_ARMOR_ITEM_FIRST && itemId < EQUIPMENT_WEAPON_ITEM_FIRST) {
+        key = gInventoryArmorSortKeys[itemId - INVENTORY_SORT_ARMOR_ITEM_FIRST];
+    } else if (itemId >= EQUIPMENT_WEAPON_ITEM_FIRST && itemId < INVENTORY_CONSUMABLE_ITEM_FIRST) {
+        key = gInventoryWeaponSortKeys[itemId - EQUIPMENT_WEAPON_ITEM_FIRST];
+    } else if (itemId >= INVENTORY_CONSUMABLE_ITEM_FIRST && itemId < (INVENTORY_CONSUMABLE_ITEM_FIRST + INVENTORY_CONSUMABLE_ITEM_COUNT)) {
+        key = gInventoryConsumableSortKeys[itemId - INVENTORY_CONSUMABLE_ITEM_FIRST];
+    }
+    if (key == 0) {
+        key = itemId + INVENTORY_SORT_FALLBACK_OFFSET;
+    }
+    return key;
+}
+
+void inventoryResetIceBagTimer(void)
+{
+    gGameFlagNibbleBanks[GAME_FLAG_NIBBLE_BANK_LIVE].payload.state.playTimeMark = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.playTime;
+}
+
+/// Returns saved whole minutes since the Ice Bag marker, narrowed to signed 16 bits.
+///
+/// This retains the saved clock's wrap/reset behavior; it is not a monotonic timer.
+static s16 _inventoryGetIceBagElapsedMinutes(void)
+{
+    const u16* markMinutes;
+
+    markMinutes = &gGameFlagNibbleBanks[GAME_FLAG_NIBBLE_BANK_LIVE].payload.state.playTimeMark;
+    return gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.playTime - *markMinutes;
+}
+
+/// Converts the held Ice Bag when the signed elapsed-minute timer expires.
+///
+/// Returns 1 only when Ice Bag becomes Bag of Water, otherwise 0. The difference
+/// of saved whole minutes narrows to signed 16 bits before the two-minute test;
+/// the marker is retained, including across saved-clock wrap or reset.
+static inline s32 _inventoryMeltIceBagIfExpired(void)
+{
+    s32        melted;
+    const u16* markMinutes;
+
+    melted = 0;
+    if (inventoryHasCollectedBit(INVENTORY_COLLECTION_ID_ICE_BAG) != 0) {
+        markMinutes = &gGameFlagNibbleBanks[GAME_FLAG_NIBBLE_BANK_LIVE].payload.state.playTimeMark;
+        if ((s16)(gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.playTime - *markMinutes) >= INVENTORY_ICE_BAG_MELT_MINUTES) {
+            inventoryClearCollectedBit(INVENTORY_COLLECTION_ID_ICE_BAG);
+            inventorySetCollectedBit(INVENTORY_COLLECTION_ID_BAG_OF_WATER);
+            melted = 1;
+        }
+    }
+    return melted;
+}
+
+s32 inventoryMeltIceBagIfExpired(void)
+{
+    return _inventoryMeltIceBagIfExpired();
+}
+
+void inventoryUpdateIceBag(void)
+{
+    _inventoryMeltIceBagIfExpired();
+}
+
+s32 equipmentGetArmorAttachmentSlotCount(s32 armorItemId)
+{
+    return _gpGetModLevel(armorItemId);
+}
+
+void itemMenuPlayerStatsPanelTask(Task* task)
+{
+    enum {
+        ITEM_MENU_STATS_PANEL_INITIAL        = 0,
+        ITEM_MENU_STATS_PANEL_CONTENT_WIDTH  = 176,
+        ITEM_MENU_STATS_PANEL_CONTENT_HEIGHT = 47,
+        ITEM_MENU_STATS_PANEL_Y              = -12
+    };
+    UiObject* object;
+
+    object = task->spawnArg2.pointer;
+    if (task->state == ITEM_MENU_STATS_PANEL_INITIAL) {
+        uiSetPanelContentSize(&object->panel, ITEM_MENU_STATS_PANEL_CONTENT_WIDTH, ITEM_MENU_STATS_PANEL_CONTENT_HEIGHT);
+        object->panel.bounds.rect.y = ITEM_MENU_STATS_PANEL_Y;
+        object->panel.bounds.rect.x = -object->panel.bounds.rect.w / 2;
+        task->state++;
+    }
+    itemMenuDrawPlayerStats(&object->panel, 0);
+}
+
+s32 inventoryHasAttachedItem(s32 itemId)
+{
+    const InventoryItemRange* range;
+    const InventoryItemRow*   row;
+    s32                       rowIndex;
+    s32                       hasAttachedItem;
+    s32                       rowCount;
+
+    range           = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems;
+    hasAttachedItem = 0;
+    row             = _inventoryGetRangeTable(range);
+    rowIndex        = 0;
+    row            += range->firstRow;
+    rowCount        = range->rowCount;
+    for (; rowIndex < rowCount; rowIndex++) {
+        if (row->attachSlot > INVENTORY_ATTACHMENT_NONE) {
+            if (row->itemId == itemId) {
+                hasAttachedItem = 1;
+                break;
+            }
+        }
+        row++;
+    }
+    return hasAttachedItem;
+}
+
+void inventoryResetCarriedRange(void)
+{
+    McSaveData* save;
+
+    save                     = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+    save->state.carriedItems = gInventoryTrainingCarriedRange;
+}
+
+void playerActorPrepareAcropolisLoadout(void)
+{
+    gPlayerStatus.resourceVariant = PLAYER_ACTOR_RESOURCE_ACROPOLIS;
+    equipmentEnsureM93rEquipped();
+}
+
+void playerActorPrepareDryfieldLoadout(void)
+{
+    gPlayerStatus.resourceVariant = PLAYER_ACTOR_RESOURCE_DRYFIELD;
+    equipmentEnsureM93rEquipped();
+}

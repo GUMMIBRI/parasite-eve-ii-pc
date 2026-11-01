@@ -1,0 +1,189 @@
+/* The Rat, the first enemy of actor_00700 (actor_100700/actor_200700) and the
+ * second of actor_300700. Its per-frame update reads the reaction flags, runs
+ * a contact pass and a five-mode behaviour machine - idle wandering with timed
+ * moves rolled from per-place-row chance tables, a sensor-triggered approach
+ * and attack with a short-lived attack sphere, a knock-back stagger, a build-
+ * up hold, and a hurt pause - then turns toward the wanted heading, steps
+ * along its facing and plays its six-slot animation, with a randomly timed
+ * idle sound and a ground shadow. On death it unlinks its node and four
+ * collision spheres, squashes the model flat over 60 frames and is destroyed.
+ *
+ * Include this header in the prologue and each fragment at its function's
+ * position.
+ */
+
+#ifndef SRC_SHARED_RAT_H
+#define SRC_SHARED_RAT_H
+
+#include "types.h"
+
+#include "actors/actor.h"
+
+#include "main/task_types.h"
+
+#include "gameplay/actor.h"
+#include "gameplay/animation.h"
+#include "gameplay/effects.h"
+
+/// Top-level behaviour of a rat, kept in `RatWork::mode`.
+enum {
+    RAT_MODE_IDLE    = 0, // Wanders in timed moves until `attackRequested`
+    RAT_MODE_ATTACK  = 1, // Closes on `targetCoord`, bites and backs off
+    RAT_MODE_STAGGER = 2, // Knocked back from the player by a stagger reaction
+    RAT_MODE_BUILDUP = 3, // Held down for as long as the build-up reaction lasts
+    RAT_MODE_HURT    = 4, // Flinches after a hit it survived
+    RAT_MODE_DEAD    = 5, // No behaviour: the task's death state has taken over
+};
+
+/// Animations of a rat, kept in `RatWork::animId`: indices into the package's
+/// animation-set and blend tables, named for when each is played. Entry 0 of
+/// the set table is empty.
+enum {
+    RAT_ANIM_IDLE            = 1,  // Standing still
+    RAT_ANIM_RUN             = 2,  // The fast idle move, and the approach to the target
+    RAT_ANIM_BACK_OFF        = 3,  // Retreat after a bite
+    RAT_ANIM_ATTACK          = 4,  // The bite
+    RAT_ANIM_HURT            = 5,  // Flinch
+    RAT_ANIM_COLLAPSE        = 6,  // Going down: the start of a build-up hold, and the death
+    RAT_ANIM_WALK            = 7,  // The slow idle move
+    RAT_ANIM_BUILDUP_HOLD    = 8,  // Held down by the build-up reaction
+    RAT_ANIM_STAGGER_RECOVER = 9,  // Getting back up after a stagger
+    RAT_ANIM_STAGGER         = 10, // Knocked back
+};
+
+/// Extents of the carrier's animation and idle-movement tables.
+///
+/// Placement rows must be 0..7. Chance entries are thresholds against a
+/// uniform 0..15 roll (0 never, 16 always); duration entries count updates.
+enum {
+    RAT_ANIM_SET_COUNT      = RAT_ANIM_STAGGER + 1,
+    RAT_PLACEMENT_ROW_COUNT = 8,
+    RAT_CHANCE_ROLL_COUNT   = 16,
+    RAT_MOVE_DURATION_COUNT = 16
+};
+
+/// Poison reaction nibble packed into the rat bite's enemy-attack key.
+enum { RAT_BITE_REACTION_POISON = 3 };
+
+// The spawn fragment requires three carrier bindings before inclusion.
+//
+// `RAT_BITE_ATTACK` supplies a non-NULL pointer readable as `const DamageAttack*`.
+// It selects the single bite entry (index 0), also selected by the enemy
+// parameters' `attacks` pointer. Spawn evaluates the binding once and copies
+// the packed collision key; it neither writes nor retains the descriptor.
+// The descriptor must remain live through that read; the binding has no side effects.
+// `RAT_ENEMY_PARAMS` supplies an addressable, non-const `EnemyParams` object.
+// Spawn takes its address for `Enemy::param` and separately reads `hpMax` to
+// initialize the rat's hit points; both uses must select the same object
+// without side effects. Enemies borrow the record without copying or freeing
+// it, and damage reactions and battle rewards read it until enemy teardown.
+// The record must remain loaded for that lifetime; its `attacks` pointer
+// selects the same bite entry as `RAT_BITE_ATTACK`.
+// `RAT_ANIM_SETS` names an `AnimationSet*` array of `RAT_ANIM_SET_COUNT`
+// entries, indexed by `RAT_ANIM_*`: entry 0 is NULL and entries 1..10
+// supply tracks 1..6 of the seven-part model. Bind it as a plain identifier
+// without side effects; spawn evaluates it once, and playback retains the
+// table pointer in the context and slots without copying or modifying the data.
+// The table, descriptors and clip arrays must remain loaded until task teardown;
+// playback does not check their bounds.
+// The carrier undefines the bindings after the fragment. actor_00700 binds
+// TU-local objects; actor_300700 binds its private two-TU interface.
+
+/// Work block of a rat: the zeroed allocation its spawn handler makes and
+/// keeps at `Task::work` until the enemy is destroyed.
+///
+/// It opens with the playback storage of the model's seven parts and the two
+/// matrices the model is lit with, then the four collision spheres the spawn
+/// links, each followed by its own contact table, and ends with the state the
+/// per-frame handlers share. Angles are 4096 to a turn, speeds are world
+/// units a frame and timers count frames.
+typedef struct {
+    ActorAnimRig7         rig;               // Playback storage of the model's seven parts; slots 1 to 6 are driven
+    MATRIX                colorMtx;          // Colour matrix the model is lit with
+    MATRIX                lightMtx;          // Light matrix the model is lit with
+    WorldCollisionBody    sensorBody;        // Keyless sphere ahead of the root; pairs while the rat idles, to notice a player body
+    WorldCollisionContact sensorContacts[1]; // The one contact of `sensorBody`; a player-body contact there sets `targetCoord` and `attackRequested`
+    WorldCollisionBody    hitBody;           // Sphere on the model's fifth coordinate that takes hits and is pushed off other bodies
+    WorldCollisionContact hitContacts[3];    // Contacts of `hitBody`; also the enemy's hit records
+    WorldCollisionBody    gridBody;          // Sphere above the root tested against the room's grid and floor
+    WorldCollisionContact gridContacts[4];   // Contacts of `gridBody`; their averaged push-back is applied to the root each frame
+    WorldCollisionBody    attackBody;        // Sphere ahead of the root that deals the bite; pairs only on the bite's hit frames
+    WorldCollisionContact attackContacts[1]; // The one contact of `attackBody`; a contact there ends the bite's hit frames
+    EffectSpawnArg        hitEffectArg;      // Argument of the effect a hit spawns, hung off the model's root coordinate
+    GfxCoord*             targetCoord;       // Borrowed root coordinate of the player actor being attacked; NULL until the sensor or the attack picks one
+    MATRIX                savedRootMtx;      // Root matrix when the death began; each squash frame rescales a copy of it
+    VECTOR                prevPos;           // Root position before the frame's step, restored when the grid contacts oppose each other
+    SVECTOR               staggerDir;        // Unit vector (4096 = 1) from the rat to the player when the stagger began; the knock-back moves against it
+    s16                   hitCooldown;       // Frames before another hit is taken; set from the hit's id parameter 2
+    s16                   mode;              // Top-level behaviour, a `RAT_MODE_` value
+    s16                   step;              // Step within the running mode, or within the death, counted from 0
+    s16                   animId;            // Animation requested, a `RAT_ANIM_` value
+    s16                   appliedAnimId;     // Animation the slots were last seeded with; a different `animId` reseeds them, and a handler resets this to restart its animation
+    s16                   animFrame;         // Frames since the slots were last reseeded
+    s16                   forwardSpeed;      // Speed along the facing; negative backs away
+    s16                   turnRate;          // Angle the root turns toward `targetYaw` each frame; 0 holds the heading
+    s16                   yaw;               // Current heading: each turn reads it back from the root's rotation and steps it toward `targetYaw`
+    u16                   targetYaw;         // Heading the root turns toward, 0..0xFFF
+    s16                   timer;             // Frame count of the running step: counts up between idle move rolls and through the death, down otherwise
+    s16                   wanderTimer;       // Frames before the idle mode picks its next random heading
+    s16                   squashScale;       // Dying: vertical scale of the root, 0x1000 shrinking to 0x200
+    s16                   idleSoundTimer;    // Frames before the idle mode's next sound
+    s16                   attackRequested;   // Set by a player-body contact on `sensorBody` and when a stagger, build-up or flinch ends; the idle mode then attacks
+    s16                   knockedDown;       // Set from the start of a stagger or build-up until it ends; a build-up entered with it set skips the collapse
+    s16                   buildupHeld;       // Set when the build-up reaction interrupts another mode, until the hold ends; a survived hit then causes no flinch
+} RatWork;
+STATIC_ASSERT_SIZEOF(RatWork, 0x39C);
+
+/// Indices of the carrier's three task-state callbacks.
+enum {
+    RAT_TASK_SPAWN  = 0,
+    RAT_TASK_UPDATE = 1,
+    RAT_TASK_DEATH  = 2
+};
+
+/// Mode-specific selectors stored in the signed-halfword `RatWork::step`.
+enum {
+    RAT_IDLE_STEP_REST         = 0,
+    RAT_IDLE_STEP_WALK         = 1,
+    RAT_IDLE_STEP_RUN          = 2,
+    RAT_ATTACK_STEP_APPROACH   = 0,
+    RAT_ATTACK_STEP_BITE       = 1,
+    RAT_ATTACK_STEP_RETREAT    = 2,
+    RAT_STAGGER_STEP_BEGIN     = 0,
+    RAT_STAGGER_STEP_KNOCKBACK = 1,
+    RAT_STAGGER_STEP_RECOVER   = 2,
+    RAT_BUILDUP_STEP_BEGIN     = 0,
+    RAT_BUILDUP_STEP_COLLAPSE  = 1,
+    RAT_BUILDUP_STEP_WAIT      = 2,
+    RAT_BUILDUP_STEP_HOLD      = 3,
+    RAT_HURT_STEP_BEGIN        = 0,
+    RAT_HURT_STEP_RECOVER      = 1
+};
+
+/// Wander/approach speeds in parent-coordinate units per update; yaw in 1/4096 turns.
+enum {
+    RAT_WALK_SPEED              = 20,
+    RAT_RUN_SPEED               = 50,
+    RAT_WANDER_TURN_RATE        = 25,
+    RAT_DIRECTION_FRACTION_BITS = 12
+};
+
+/// Rat-bank scripts; the placement index occupies the script-instance byte.
+enum {
+    RAT_SOUND_IDLE              = 0x40070001,
+    RAT_SOUND_HURT              = 0x40070002,
+    RAT_SOUND_ALERT             = 0x40070003,
+    RAT_SOUND_ATTACK_RECOVER    = 0x40070004,
+    RAT_SOUND_PLACE_INDEX_SHIFT = 8
+};
+
+/// Allocates and initializes the rat's work, animation, lighting and collision bodies.
+///
+/// Requires a live `Enemy` and seven-part model task at spawn state 0. The task
+/// owns the zeroed primary-heap `RatWork` until enemy teardown; model matrices
+/// and collision contacts borrow its storage. Hit/target queries use model
+/// coordinate 4. Success links four bodies, acquires a battle reference and
+/// advances the task to update state 1; allocation failure destroys the enemy.
+void ratSpawn(Enemy* enemy, Task* actor);
+
+#endif /* SRC_SHARED_RAT_H */

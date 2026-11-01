@@ -1,0 +1,92 @@
+// Overlay-local symbols for shelter_b2_operating_room.
+_gShelterB2OperatingRoomGlowPoints = 0x801809BC; // size:0x200 defined:True
+_gRoomVisualEffectsGlowDiscShades = 0x80180BBC; // size:0xC defined:True
+gShelterB2OperatingRoomRoomViewMaps = 0x80180BC8; // size:0x4 defined:True
+gShelterB2OperatingRoomRoomViewCounts = 0x80180BCC; // size:0x2 defined:True
+gShelterB2OperatingRoomWarpEntries = 0x80180BD0; // size:0xA8 defined:True
+_gShelterB2OperatingRoomCollisionGridNormals = 0x80180C78; // size:0x90 defined:True
+_gShelterB2OperatingRoomCollisionGridVerts = 0x80180D08; // size:0x318 defined:True
+_gShelterB2OperatingRoomCollisionGridFaces = 0x80181020; // size:0x1F8 defined:True
+_gShelterB2OperatingRoomCollisionGridCells = 0x80181218; // size:0x12C defined:True
+_gShelterB2OperatingRoomCollisionGridTable = 0x80181344; // size:0x20 defined:True
+gShelterB2OperatingRoomCollisionGrid = 0x80181364; // size:0x24 defined:True
+gShelterB2OperatingRoomViewCameras = 0x80181388; // size:0x1B0 defined:True
+_gShelterB2OperatingRoomView1SpriteBatches = 0x80181538; // size:0x10 defined:True
+_gShelterB2OperatingRoomView2SpriteSources = 0x80181548; // size:0x1F4 defined:True
+_gShelterB2OperatingRoomView2SpriteBatches = 0x8018173C; // size:0x20 defined:True
+_gShelterB2OperatingRoomView3SpriteSources = 0x8018175C; // size:0x154 defined:True
+_gShelterB2OperatingRoomView3SpriteBatches = 0x801818B0; // size:0x18 defined:True
+_gShelterB2OperatingRoomView4SpriteSources = 0x801818C8; // size:0x6CC defined:True
+_gShelterB2OperatingRoomView4SpriteBatches = 0x80181F94; // size:0x70 defined:True
+_gShelterB2OperatingRoomView5SpriteSources = 0x80182004; // size:0x9B0 defined:True
+_gShelterB2OperatingRoomView5SpriteBatches = 0x801829B4; // size:0x70 defined:True
+_gShelterB2OperatingRoomView6SpriteSources = 0x80182A24; // size:0x320 defined:True
+_gShelterB2OperatingRoomView6SpriteBatches = 0x80182D44; // size:0x28 defined:True
+_gShelterB2OperatingRoomView7SpriteSources = 0x80182D6C; // size:0x3E8 defined:True
+_gShelterB2OperatingRoomView7SpriteBatches = 0x80183154; // size:0x30 defined:True
+gShelterB2OperatingRoomSpriteViews = 0x80183184; // size:0x54 defined:True
+_gShelterB2OperatingRoomPointLights = 0x801831D8; // size:0x540 defined:True
+gShelterB2OperatingRoomRoomLights = 0x80183718; // size:0x18 defined:True
+gShelterB2OperatingRoomViewBoundaryTriggers = 0x80183730; // size:0x2F8 defined:True
+gShelterB2OperatingRoomOccluders = 0x80183A28; // size:0xB4 defined:True
+gShelterB2OperatingRoomActionTriggers = 0x80183ADC; // size:0x3DC defined:True
+_gShelterB2OperatingRoomVariant1Resources = 0x80183EB8; // size:0x3C defined:True
+_gShelterB2OperatingRoomVariant2Resources = 0x80183EF4; // size:0x18 defined:True
+_gShelterB2OperatingRoomVariant3Resources = 0x80183F0C; // size:0x18 defined:True
+_gShelterB2OperatingRoomVariant11Resources = 0x80183F24; // size:0x30 defined:True
+_gShelterB2OperatingRoomVariant1Placements = 0x80183F54; // size:0x70 defined:True
+_gShelterB2OperatingRoomVariant2Placements = 0x80183FC4; // size:0x50 defined:True
+_gShelterB2OperatingRoomVariant3Placements = 0x80184014; // size:0x80 defined:True
+_gShelterB2OperatingRoomVariant11Placements = 0x80184094; // size:0x90 defined:True
+gShelterB2OperatingRoomAreaVariants = 0x80184124; // size:0x60 defined:True
+gShelterB2OperatingRoomRoomAmbient = 0x80184184; // size:0x40 defined:True
+_gShelterB2OperatingRoomSurface1FootstepSounds = 0x801841C4; // size:0xC defined:True
+_gShelterB2OperatingRoomSurface2FootstepSounds = 0x801841D0; // size:0xC defined:True
+_gShelterB2OperatingRoomDefaultSurfaceProperties = 0x801841DC; // size:0x8 defined:True
+_gShelterB2OperatingRoomSurface1Properties = 0x801841E4; // size:0x8 defined:True
+_gShelterB2OperatingRoomSurface2Properties = 0x801841EC; // size:0x8 defined:True
+gShelterB2OperatingRoomSurfaceProperties = 0x801841F4; // size:0x20 defined:True
+gRoomEventFade = 0x80184214; // size:0x8 defined:True
+gActor102400Tasks = 0x8013647C; // absolute:True owner=actor_102400
+gActor107000SucklercephTaskDescs = 0x80139E60; // absolute:True owner=actor_107000
+gActor02600MaggotCaterpillarBodyTask = 0x8013A8D4; // absolute:True owner=actor_102600
+gActor107000SlouchTaskDescs = 0x8013F5F0; // absolute:True owner=actor_107000
+gActor207200SkullStalkerTaskDesc = 0x8014E7A4; // absolute:True owner=actor_207200
+gActor207200CreepingStrangerTaskDesc = 0x80153EC8; // absolute:True owner=actor_207200
+gActor207000SlouchTaskDescs = 0x801575F0; // absolute:True owner=actor_207000
+_gRoomEventMsg = 0x8018421C; // size:0x8 defined:True
+gRoomEventActive = 0x80184224; // size:0x8 defined:True
+_gRoomEventStagedMsg = 0x8018422C; // size:0x8 defined:True
+_gShelterB2OperatingRoomStagedEventStart = 0x80184234; // size:0x4 defined:True
+gRoomEventReq = 0x80184238; // size:0x20 defined:True
+_gRoomEventTaskDesc = 0x80180904; // size:0xC defined:True
+_gShelterB2OperatingRoomStagedEventTaskDesc = 0x80180910; // size:0xC defined:True
+_gShelterB2OperatingRoomMessageTable = 0x8018091C; // size:0x28 defined:True
+D_shelter_b2_operating_room_80180944 = 0x80180944; // size:0x78 defined:True
+gRoomEventLatched = 0x80184258; // size:0xC defined:True
+
+shelterB2OperatingRoomRoomVisualEffectsFlyingSparkTask = 0x8017F254; // type:func
+
+shelterB2OperatingRoomDrawGlowsTask = 0x8017DDB8; // type:func
+
+shelterB2OperatingRoomRoomVisualEffectsGlowDiscTask = 0x8017ECFC; // type:func
+
+shelterB2OperatingRoomRoomVisualEffectsFlyingOrangeBurstTask = 0x8017FEB4; // type:func
+_roomVisualEffectsDrawFlyingSpark = 0x8017F478; // type:func
+_roomVisualEffectsDrawFlyingRing = 0x8017F6FC; // type:func
+_roomVisualEffectsDrawFlyingDisc = 0x8017FB20; // type:func
+_roomVisualEffectsDrawFlyingBurstGlow = 0x80180060; // type:func
+_roomVisualEffectsDrawFlyingBurstGroundQuad = 0x8018058C; // type:func
+_glowDrawCapsule = 0x8017E118; // type:func
+glowDrawDisc = 0x8017E95C; // type:func
+_roomEventGate = 0x8017D628; // type:func
+roomEventTask = 0x8017D78C; // type:func
+roomEventStagedTask = 0x8017D8FC; // type:func
+_shelterB2OperatingRoomIgnoreKeyItem = 0x8017dc9c; // type:func
+_shelterB2OperatingRoomIgnoreAction = 0x8017dd0c; // type:func
+_shelterB2OperatingRoomInitTask = 0x8017dd14; // type:func
+_shelterB2OperatingRoomIdleTask = 0x8017dd58; // type:func
+shelterB2OperatingRoomTask = 0x8017dd60; // type:func
+_shelterB2OperatingRoomResolveRoomEventMessage = 0x8017da94; // type:func
+_shelterB2OperatingRoomHandleCommandMessage = 0x8017dca4; // type:func
+_gShelterB2OperatingRoomTaskStates = 0x8017d5f0;

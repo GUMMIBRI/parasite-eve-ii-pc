@@ -1,0 +1,1531 @@
+#include "actors/actor_141000.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/abs.h>
+#include <psyq/gtemac.h>
+#include <psyq/inline_c.h>
+
+#include "common.h"
+#include "gte.h"
+
+#include "actors/actor.h"
+
+#include "gameplay/display.h"
+#include "gameplay/actor_render.h"
+#include "gameplay/animation.h"
+#include "gameplay/effect_tasks.h"
+#include "gameplay/enemy.h"
+#include "gameplay/gpu_image_upload.h"
+#include "gameplay/message.h"
+#include "gameplay/room_effects.h"
+#include "gameplay/scene.h"
+#include "gameplay/scene_combat.h"
+#include "gameplay/scene_runtime.h"
+#include "gameplay/world_coords.h"
+#include "gameplay/world_targets.h"
+
+#include "main/coord.h"
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/gfx.h"
+#include "main/gfx_types.h"
+#include "main/mem.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/task.h"
+#include "main/task_types.h"
+#include "main/tmd.h"
+#include "main/tmd_types.h"
+#include "../../shared/actor/actor_motion.h"
+#include "../../shared/actor/actor_messages.h"
+#include "../../shared/effects/glow_draw.h"
+
+/// `_Actor141000EveWork::blinkStep`: the eye image the blink posts next.
+///
+/// A blink posts the closed, half-open and open eyes in turn, so the eyes are
+/// seen opening; nothing posts a closing frame before them.
+enum {
+    ACTOR_141000_BLINK_NONE   = 0, // No blink in progress
+    ACTOR_141000_BLINK_CLOSED = 1, // The closed eyes are posted next
+    ACTOR_141000_BLINK_HALF   = 2, // The half-open eyes are posted next
+    ACTOR_141000_BLINK_OPEN   = 3, // The open eyes are posted next, which ends the blink
+};
+
+/// Texture regions within Eve's page; X/width are VRAM words, Y/height are rows.
+enum {
+    ACTOR_141000_EYES_X_WORDS      = 0,
+    ACTOR_141000_EYES_Y_ROWS       = 64,
+    ACTOR_141000_EYES_WIDTH_WORDS  = 25,
+    ACTOR_141000_FACE_HEIGHT_ROWS  = 20,
+    ACTOR_141000_MOUTH_X_WORDS     = 12,
+    ACTOR_141000_MOUTH_Y_ROWS      = 96,
+    ACTOR_141000_MOUTH_WIDTH_WORDS = 14,
+};
+
+/// Initial walk step, driven-slot range and blend duration shared by Eve's handlers.
+enum {
+    ACTOR_141000_WALK_FACE_TARGET  = 0,
+    ACTOR_141000_FIRST_DRIVEN_SLOT = 1,
+    ACTOR_141000_WALK_BLEND_FRAMES = 5,
+};
+
+/// Four screen rings of six vertices, consumed together by the beam drawer.
+enum { ACTOR_141000_BEAM_SCREEN_POINT_COUNT = 24 };
+
+/// Work block of Eve's body, the package's scripted walker.
+///
+/// The task's spawn state allocates it zeroed and keeps it at `Task::work`
+/// for the task's life. It opens as `ActorMotion19WalkWork` does - the
+/// nineteen-part rig, the model state and the walk a room script sends the
+/// actor on - and the model object borrows `model.light` and `model.color`
+/// for as long as the block lives.
+///
+/// What follows is the package's own: the pace of the walk, the blink that
+/// swaps the eye texture of the face, and the delayed free of the model's
+/// buffers once the model has been hidden.
+typedef struct {
+    ActorAnimRig19  rig;             // Playback storage of the nineteen-part body model; slots 1 to 18 are driven
+    ActorModelState model;           // Clip and bank the rig plays, and the matrices the model is lit with
+    ActorWalkState  walk;            // Destination, closing rotation, per-frame velocity and step of the walk in progress
+    s16             blinkFrameDelay; // Value `blinkCountdown` restarts from after the closed and the half-open eyes: each is shown for this many ticks plus one
+    s16             blinkCountdown;  // Ticks left before the blink posts its next eye image, which the tick taking it below 0 does; not reset as a blink starts or ends
+    s8              fastPace;        // Pace of the walks that follow, set by an actor command (0 half the per-frame displacement and default start clip 10, 1 the full displacement and clip 2)
+    s8              freeCountdown;   // Ticks left before the model's buffers are freed, which the tick finding 0 does (-1 no free pending)
+    s8              blinkStep;       // Eye image the blink posts next (0 `ACTOR_141000_BLINK_NONE`, else `_CLOSED`, `_HALF` or `_OPEN`)
+} _Actor141000EveWork;
+STATIC_ASSERT_SIZEOF(_Actor141000EveWork, 0x4CC);
+
+/// Work block of the overlay's controller task, allocated zeroed by its spawn
+/// state and kept at `Task::work`.
+///
+/// The controller unfolds its model along Z, holds it, then flies it along a
+/// recorded rotation/position path while spawning trail actors; the ring-beam
+/// actor it attaches reads `beamLevel` through its parent link.
+typedef struct {
+    s32  beamLevel;    // Brightness and length of the attached ring beam, 4.12 fixed point; set once to 0xFFF (full)
+    byte field_4[0x4]; // Allocated but never accessed; role unproven
+    u16  frames;       // Frames into the flight path; indexes the path tables and paces trail spawns every eighth frame
+    u16  scale;        // Z scale of the model, 4.12 fixed point, ramped from 0 to 0x1000 while unfolding
+    u16  state;        // Animation phase (0 unfold, 1 hold, 2 fly the path, 3 idle at its end)
+    u16  ticks;        // Frames spent in the hold phase, which ends after 0x1F
+} Actor141000CtrlWork;
+STATIC_ASSERT_SIZEOF(Actor141000CtrlWork, 0x10);
+
+static void _actor141000SpawnFlightController(Task* task);
+static void _actor141000UpdateFlightController(Task* task);
+static void _actor141000ExitFlightController(Task* task);
+static void _actor141000UnfoldFlightModel(Task* task);
+static void _actor141000HoldFlightModel(Task* task);
+static void _actor141000AdvanceFlightPath(Task* task);
+static void _actor141000IdleFlightModel(Task* task);
+static s32  _actor141000ApplyFlightPathFrame(GfxCoord* rootCoord, s32 pathFrame);
+static void _actor141000ScaleFlightModelZ(GfxCoord* rootCoord, s32 zScale);
+static void _actor141000AttachRingBeam(Task* task);
+static void _actor141000DrawCappedBeam(Task* task);
+static void _actor141000UpdateEveWalker(Task* task);
+static void _actor141000TickEveBlink(Task* task);
+static void _actor141000SpawnEveWalker(Task* task);
+static void _actor141000ExitEveWalker(Task* task);
+static void _actor141000BindEveLighting(Task* task);
+static void _actor141000IdleEveWalk(Task* task);
+static void _actor141000RunEveWalkStep(Task* task);
+static void _actor141000FaceEveWalkTarget(Task* task);
+static void _actor141000BeginEveWalk(Task* task);
+static void _actor141000TurnEveToYaw(Task* task);
+
+/// Coordinate-body capped-beam lifecycle: 0 attach, 1 draw, 2 teardown.
+///
+/// Copied by value and indexed by `Task::state`, without a terminator or bounds
+/// check. Attachment borrows the controller and joins its teardown tree.
+static const TaskFuncTable3 _gActor141000CappedBeamTaskStates = {
+    .funcs = { _actor141000AttachRingBeam, _actor141000DrawCappedBeam, taskKill },
+};
+
+/// Flying TMD controller lifecycle: 0 initialize, 1 update, 2 teardown.
+///
+/// Copied by value and indexed by `Task::state` in 0..2, with no terminator or
+/// bounds check. Initialization owns the work and attaches the beam child.
+static const TaskFuncTable3 _gActor141000FlightControllerTaskStates = {
+    .funcs = { _actor141000SpawnFlightController, _actor141000UpdateFlightController, taskKill },
+};
+
+/// Flight phases: 0 unfold along Z, 1 hold, 2 follow the path, 3 remain at its end.
+///
+/// Copied by value and indexed by the signed low halfword of controller `state`
+/// in 0..3. Each callback advances its own phase; there is no bounds check.
+static const TaskFuncTable4 _gActor141000FlightPhases = {
+    .funcs = { _actor141000UnfoldFlightModel, _actor141000HoldFlightModel,
+               _actor141000AdvanceFlightPath, _actor141000IdleFlightModel },
+};
+
+/// Scripted Eve walker lifecycle: 0 initialize, 1 update, 2 release and teardown.
+///
+/// Copied by value and indexed by `Task::state` in 0..2 only while actors run.
+/// Initialization owns the work; exit releases the task's `Enemy` and body.
+static const TaskFuncTable3 _gActor141000EveWalkerTaskStates = {
+    .funcs = { _actor141000SpawnEveWalker, _actor141000UpdateEveWalker,
+               _actor141000ExitEveWalker },
+};
+
+/// Eve walk steps: 0 face the target, 1 set velocity, 2 test arrival, 3 finish yaw.
+///
+/// Copied by value and indexed by `walk.motionStep` in 0..3, without a bounds
+/// check. Arrival clears velocity; finishing yaw returns motion to idle.
+static const TaskFuncTable4 _gActor141000EveWalkSteps = {
+    .funcs = { _actor141000FaceEveWalkTarget, _actor141000BeginEveWalk,
+               _actorMotionArrive19, _actor141000TurnEveToYaw },
+};
+
+/// One parent-coordinate unit in the walk velocity's signed 16.16 format.
+enum { ACTOR_141000_WALK_VELOCITY_ONE = 0x10000 };
+
+/// Eve's fast walk velocity: local +Z at 48 parent-coordinate units per tick.
+///
+/// XYZ uses signed 16.16 displacement. Slow pace halves it before root rotation
+/// converts it into parent-frame velocity; the fourth word is unused and zero.
+static const VECTOR _gActor141000EveFastWalkVelocity = { 0, 0, 48 * ACTOR_141000_WALK_VELOCITY_ONE };
+
+static u32     _gShelterB1PodAccessTunnelFlamePartVerts[1];
+static SVECTOR _gShelterB1PodAccessTunnelFlameVerts[9];
+static TmdBone _gShelterB1PodAccessTunnelFlameSkeleton[1];
+static u32     _gShelterB1PodAccessTunnelFlameStream[54];
+
+static TmdSource _gShelterB1PodAccessTunnelFlame;
+static void      _actor141000FlightControllerTask(Task* task);
+static void      _actor141000SmokeTrailTask(Task* task);
+static void      _actor141000CappedBeamTask(Task* task);
+
+static AnimationSet _gEveIdleClip;
+static AnimationSet _gEveWalkSlowClip;
+static AnimationSet _gEveEveWalkClip;
+static AnimationSet _gEveWalkStopClip;
+static AnimationSet _gShelterB1PodAccessTunnelEveEntryScene4aClip;
+static AnimationSet _gShelterB1PodAccessTunnelEveEntryScene4bClip;
+static AnimationSet _gShelterB1PodAccessTunnelEveCastFlameClip;
+static AnimationSet _gShelterB1PodAccessTunnelEveEntryScene10Clip;
+static AnimationSet _gShelterB1PodAccessTunnelEveEntryScene11Clip;
+static AnimationSet _gShelterB1PodAccessTunnelEveEntryScene12Clip;
+static TmdSource    _gEveBody;
+static s32          _actor141000StartEveWalk(Task* task, s32 messageId, const ActorTransform* destination, const ActorMotionWalkAnim* clips);
+static s32          _actor141000SetEveDrawMode(Task* task, s32 messageId, s32 mode, s32 unusedArg);
+static s32          _actor141000SetEveWalkPace(Task* task, s32 messageId, const ActorCommand* command, s32 unusedArg);
+static s32          _actor141000SetEveTextureMode(Task* task, s32 messageId, s32 textureMode, s32 unusedArg);
+static void         _actor141000EveWalkerTask(Task* task);
+
+#include "assets/rooms/shelter/b1_pod_access_tunnel/flame.inc"
+
+/// Recorded flight Euler angles for frames 0..89, in 4096 units per turn.
+///
+/// Paired by index with `_gActor141000FlightPositions`; completed flight holds
+/// frame 89. Kept writable for the SDK's non-const `RotMatrix` interface.
+static SVECTOR _gActor141000FlightRotations[90] = {
+#include "assets/rooms/shelter/b1_pod_access_tunnel/flame_rotation_track.inc"
+};
+
+/// Recorded flight XYZ for frames 0..89, in integer root-parent coordinates.
+///
+/// Paired with `_gActor141000FlightRotations`; applying a frame subtracts 40
+/// from its X. The fourth halfword is unused.
+static const SVECTOR _gActor141000FlightPositions[ARRAY_SIZE(_gActor141000FlightRotations)] SECTION(".data") = {
+#include "assets/rooms/shelter/b1_pod_access_tunnel/flame_position_track.inc"
+};
+
+/// Capped-beam topology: six lit-core quads followed by ten fading halo quads.
+///
+/// Each signed-byte row selects four screen points and colours in 0..23.
+/// Points 12 and 18 are unused halo centres. Order also selects the blend mode.
+static const s8 _gGlowCappedBeamQuadIndices[16][4] SECTION(".data") = {
+    { 0, 6, 1, 11 },
+    { 0, 6, 5, 7 },
+    { 0, 3, 1, 2 },
+    { 0, 3, 5, 4 },
+    { 6, 9, 7, 8 },
+    { 6, 9, 11, 10 },
+    { 2, 1, 14, 13 },
+    { 3, 2, 15, 14 },
+    { 3, 4, 15, 16 },
+    { 4, 5, 16, 17 },
+    { 5, 7, 17, 19 },
+    { 8, 7, 20, 19 },
+    { 9, 8, 21, 20 },
+    { 9, 10, 21, 22 },
+    { 10, 11, 22, 23 },
+    { 1, 11, 13, 23 },
+};
+
+/// Warm capped-beam RGB colours for the four six-point screen contours.
+///
+/// Points 0..11 light the core; 12..23 are black halo edges. The drawer scales
+/// RGB by signed Q12 brightness. The fourth byte is zero and unused.
+static CVECTOR _gGlowCappedBeamColors[24] = {
+    { 200, 176, 160, 0 },
+    { 200, 176, 160, 0 },
+    { 112, 88, 64, 0 },
+    { 112, 88, 64, 0 },
+    { 112, 88, 64, 0 },
+    { 112, 88, 64, 0 },
+    { 112, 88, 64, 0 },
+    { 112, 88, 64, 0 },
+    { 112, 88, 64, 0 },
+    { 112, 88, 64, 0 },
+    { 112, 88, 64, 0 },
+    { 112, 88, 64, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+};
+
+/// Start and full-length end of the capped beam in controller-local game units.
+///
+/// The segment lies along +Z, 960 units long. Controller rotation transforms it;
+/// signed Q12 beam level shortens the end toward the start before translation.
+static SVECTOR _gActor141000CappedBeamEndpoints[2] = {
+    { 0, 0, 0, 0 },
+    { 0, 0, 960, 0 },
+};
+
+/// Start-cap contour used by the beam's core and its enlarged halo.
+///
+/// Entry 0 is the centre, followed by five rim offsets. XY is sized by projection
+/// distance / start depth, then rotated in screen space. Stored Z is unused.
+static SVECTOR _gActor141000CappedBeamStartCapOffsets[6] = {
+    { 0, 0, 0, 0 },
+    { 10, 0, 0, 0 },
+    { 6, 3, 0, 0 },
+    { 0, 6, 0, 0 },
+    { -6, 3, 0, 0 },
+    { -10, 0, 0, 0 },
+};
+
+/// End-cap contour opposite `_gActor141000CappedBeamStartCapOffsets`.
+///
+/// Centre plus five rim offsets, sized by projection distance / end depth and
+/// rotated in screen space for core and halo. Stored Z is unused.
+static SVECTOR _gActor141000CappedBeamEndCapOffsets[ARRAY_SIZE(_gActor141000CappedBeamStartCapOffsets)] = {
+    { 0, 0, 0, 0 },
+    { -10, 0, 0, 0 },
+    { -6, -3, 0, 0 },
+    { 0, -6, 0, 0 },
+    { 6, -3, 0, 0 },
+    { 10, 0, 0, 0 },
+};
+
+TaskDesc gActor141000FlightTasks[3] = {
+    {
+        .header   = { .fields = { .flags = TASK_BODY_TMD, .priority = TASK_PRIORITY_CONTROL } },
+        .callback = _actor141000FlightControllerTask,
+        .data     = { .model = &_gShelterB1PodAccessTunnelFlame },
+    },
+    {
+        .header   = { .fields = { .flags = TASK_BODY_COORD, .priority = TASK_PRIORITY_CONTROL } },
+        .callback = _actor141000CappedBeamTask,
+        .data     = { .value = 0 },
+    },
+    {
+        .header   = { .fields = { .flags = TASK_BODY_COORD, .priority = TASK_PRIORITY_CONTROL } },
+        .callback = _actor141000SmokeTrailTask,
+        .data     = { .value = 0 },
+    },
+};
+
+#include "assets/characters/eve/body.inc"
+
+#include "assets/rooms/shelter/b1_pod_access_tunnel/eve_clips.inc"
+
+/// Open-eye 8bpp pixels: 50 texels by 20 rows, packed four texels per word.
+///
+/// Borrowed by the corresponding upload list until GPU transfer completes.
+static u_long _gActor141000EveEyesOpenPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
+#include "assets/characters/eve/eyes_open.inc"
+};
+
+/// Terminated open-eye upload, used by static-eye requests and blink completion.
+///
+/// The actor uploader rewrites the first destination to the eye rectangle.
+/// Width counts 16-bit VRAM words, height rows; pixels stay live through transfer.
+static GpuImageUpload _gActor141000EveEyesOpenUploads[2] = {
+    { .operation   = GPU_IMAGE_UPLOAD_COPY,
+      .destination = { 0, 0, ACTOR_141000_EYES_WIDTH_WORDS, ACTOR_141000_FACE_HEIGHT_ROWS },
+      .pixels      = _gActor141000EveEyesOpenPixels },
+    { .operation = GPU_IMAGE_UPLOAD_END },
+};
+
+/// Half-open-eye 8bpp pixels: 50 texels by 20 rows, four texels per word.
+///
+/// Borrowed through GPU completion during the middle step of a blink.
+static u_long _gActor141000EveEyesHalfOpenPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
+#include "assets/characters/eve/eyes_half_closed.inc"
+};
+
+/// Terminated half-open-eye upload for the middle step of a blink.
+///
+/// The actor uploader rewrites the first destination to the eye rectangle.
+/// Width counts 16-bit VRAM words, height rows; pixels stay live through transfer.
+static GpuImageUpload _gActor141000EveEyesHalfOpenUploads[2] = {
+    { .operation   = GPU_IMAGE_UPLOAD_COPY,
+      .destination = { 0, 0, ACTOR_141000_EYES_WIDTH_WORDS, ACTOR_141000_FACE_HEIGHT_ROWS },
+      .pixels      = _gActor141000EveEyesHalfOpenPixels },
+    { .operation = GPU_IMAGE_UPLOAD_END },
+};
+
+/// Closed-eye 8bpp pixels: 50 texels by 20 rows, four texels per word.
+///
+/// Borrowed through GPU completion for static closed eyes and blink onset.
+static u_long _gActor141000EveEyesClosedPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
+#include "assets/characters/eve/eyes_closed.inc"
+};
+
+/// Terminated closed-eye upload for static closed eyes and the first blink step.
+///
+/// The actor uploader rewrites the first destination to the eye rectangle.
+/// Width counts 16-bit VRAM words, height rows; pixels stay live through transfer.
+static GpuImageUpload _gActor141000EveEyesClosedUploads[2] = {
+    { .operation   = GPU_IMAGE_UPLOAD_COPY,
+      .destination = { 0, 0, ACTOR_141000_EYES_WIDTH_WORDS, ACTOR_141000_FACE_HEIGHT_ROWS },
+      .pixels      = _gActor141000EveEyesClosedPixels },
+    { .operation = GPU_IMAGE_UPLOAD_END },
+};
+
+/// Closed-mouth 8bpp pixels: 28 texels by 20 rows, four texels per word.
+///
+/// The 140 words cover the normal mouth upload. Retained texture mode 2 requests
+/// 250 words from this base, reading 440 bytes beyond the payload into later data.
+static u_long _gActor141000EveMouthClosedPixels[ACTOR_141000_MOUTH_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
+#include "assets/characters/eve/mouth_closed.inc"
+};
+
+/// Terminated closed-mouth upload, normally placed in the 14-word-wide mouth rect.
+///
+/// The actor uploader rewrites the destination. Mode 5 uses 14 by 20 words/rows;
+/// retained mode 2 uses the 25 by 20 eye rectangle and overreads pixels by 440
+/// bytes. Its intended visual meaning is unproven. Pixels stay live through transfer.
+static GpuImageUpload _gActor141000EveMouthClosedUploads[2] = {
+    { .operation   = GPU_IMAGE_UPLOAD_COPY,
+      .destination = { 0, 0, ACTOR_141000_MOUTH_WIDTH_WORDS, ACTOR_141000_FACE_HEIGHT_ROWS },
+      .pixels      = _gActor141000EveMouthClosedPixels },
+    { .operation = GPU_IMAGE_UPLOAD_END },
+};
+
+/// Open-mouth 8bpp pixels: 28 texels by 20 rows, four texels per word.
+///
+/// The 140 words cover the normal mouth upload. Retained texture mode 3 requests
+/// 250 words: 440 bytes beyond the payload, including 292 beyond this loaded image.
+static u_long _gActor141000EveMouthOpenPixels[ACTOR_141000_MOUTH_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
+#include "assets/characters/eve/mouth_open.inc"
+};
+
+/// Terminated open-mouth upload, normally placed in the 14-word-wide mouth rect.
+///
+/// The actor uploader rewrites the destination. Mode 4 uses 14 by 20 words/rows;
+/// retained mode 3 uses the 25 by 20 eye rectangle, overreads pixels by 440 bytes,
+/// then starts a blink. Its intended visual meaning is unproven. Keep pixels live
+/// through GPU completion; the last 292 requested bytes lie beyond this image.
+static GpuImageUpload _gActor141000EveMouthOpenUploads[2] = {
+    { .operation   = GPU_IMAGE_UPLOAD_COPY,
+      .destination = { 0, 0, ACTOR_141000_MOUTH_WIDTH_WORDS, ACTOR_141000_FACE_HEIGHT_ROWS },
+      .pixels      = _gActor141000EveMouthOpenPixels },
+    { .operation = GPU_IMAGE_UPLOAD_END },
+};
+
+/// Eve's bank-0 clip table: absent clip 0, loaded clips 1..10.
+///
+/// `AnimationPlayRequest::animationId` selects an inner entry after bank
+/// selection. Walk defaults use 1 on arrival, 2 at fast pace and 10 at slow pace.
+/// Playback borrows this table and its sets while the actor overlay is loaded.
+#include "assets/rooms/shelter/b1_pod_access_tunnel/eve_bank.inc"
+
+/// Carrier-local banks for nineteen-part playback: only bank 0, clips 1..10.
+///
+/// `AnimationPlayRequest::source.index` selects the bank; `animationId` selects
+/// an entry of its clip table. Playback borrows that table and loaded clip data.
+static AnimationSet** const _gActorMotionAnimBanks19[1] SECTION(".data") = {
+    _gActor141000EveAnimationSets,
+};
+
+TaskDesc gActor141000EveWalkerTaskDesc = {
+    .header   = { .fields = { .flags    = TASK_BODY_TMD | TASK_DESC_SKIP_AUTO_MODEL_BUFFER,
+                              .priority = TASK_PRIORITY_CONTROL } },
+    .callback = _actor141000EveWalkerTask,
+    .data     = { .model = &_gEveBody },
+};
+
+/// Terminated message routes borrowed by the initialized Eve walker.
+///
+/// Animation and placement borrow requests; walk copies a destination and
+/// optional clip pair. Drawing and facial texture take integer modes; pace
+/// borrows an `ActorCommand`. Payloads are consumed synchronously. Unknown IDs
+/// return zero at `TASK_MESSAGE_TABLE_END`; callbacks retain both argument words.
+static TaskMessageEntry _gActor141000EveMessages[7] = {
+    { ACTOR_MESSAGE_PLAY_ANIMATION, _actorMotionPlayAnim19 },
+    { ACTOR_MESSAGE_PLACE, actorMsgPlaceEuler },
+    { ACTOR_MESSAGE_SET_MODEL_DRAW, _actor141000SetEveDrawMode },
+    { ACTOR_MESSAGE_WALK_TO, _actor141000StartEveWalk },
+    { ACTOR_COMMAND_MESSAGE_APPLY, _actor141000SetEveWalkPace },
+    { ACTOR_MESSAGE_SET_TEXTURE_MODE, _actor141000SetEveTextureMode },
+    { TASK_MESSAGE_TABLE_END, NULL },
+};
+
+static void _actor141000BuildRingBeamPoints(Task* task, SVECTOR screenPoints[ACTOR_141000_BEAM_SCREEN_POINT_COUNT], s32* startDepth, s32* projectionFlags);
+
+/// Flight controller's Q12 brightness binding for the capped-beam drawer.
+///
+/// `beamTask` is a live Task* expression, evaluated once; no locals are captured.
+/// Its `spawnArg2.pointer` borrows a live Task with initialized
+/// `Actor141000CtrlWork` at `work`; both must outlive drawing. Returns the stored
+/// s32 beam level, fixed at 4095 here. The drawer interprets its signed low
+/// halfword as Q12 (4096 is unit brightness), then narrows RGB without saturation.
+/// Define before including `glow_draw_ring_beam.inc.c`, which undefines it.
+#define GLOW_CAPPED_BEAM_BRIGHTNESS(beamTask) \
+    (((const Actor141000CtrlWork*)((const Task*)(beamTask)->spawnArg2.pointer)->work)->beamLevel)
+/// Ordering-table tag bias for the flight controller's capped-beam core and halo.
+///
+/// Required signed integer constant configuration for `glow_draw_ring_beam.inc.c`.
+/// Subtracts 20 tags from the quantized depth entry for every quad and draw-mode
+/// packet. Applied after byte-offset conversion to `u_long*`, so each unit is
+/// one four-byte DMA tag. The selected table must contain the resulting entry;
+/// the drawer neither clamps nor wraps the biased index. Has no arguments,
+/// captured identifiers or side effects. Define before the fragment, which
+/// undefines it after the draw function.
+#define GLOW_CAPPED_BEAM_ORDERING_TABLE_TAG_BIAS (-20)
+/// Complete additive GPU draw-mode word for the capped beam's halo.
+///
+/// Required 32-bit constant configuration for `glow_draw_ring_beam.inc.c`:
+/// 0xE1000425, stored in `DR_TPAGE::code[0]` before each semitransparent halo
+/// quad. Enables drawing in the display area, disables dithering and selects
+/// B + F blending. The encoded 4-bit page at VRAM word X=320, Y=0 is unused
+/// by these untextured quads. Requires Psy-Q `libgpu.h` and
+/// `main/display_types.h`; define before the fragment, which undefines it.
+/// Has no arguments, captured locals or side effects.
+#define GLOW_CAPPED_BEAM_HALO_DRAW_MODE _get_mode(true, false, getTPage(0, GPU_BLEND_ADD, 320, 0))
+#include "../../shared/effects/glow_draw_ring_beam.inc.c"
+
+/// Builds the attached beam's four six-point screen rings for its core and halo.
+///
+/// Requires a live TMD parent in `spawnArg2.pointer` with controller work.
+/// `screenPoints` supplies 24 writable SVECTORs; only X/Y are written, in pixels.
+/// `startDepth` receives the first end's GTE depth, used by the drawer for sorting;
+/// `projectionFlags` receives the second projection's FLAG word. All outputs are
+/// borrowed for this call and must be disjoint. Both projected depths must be
+/// nonzero for the ring-size divisions. End positions narrow to signed halfwords.
+/// The parent's signed low-halfword 4.12 beam level shortens the segment; the
+/// 4096-unit `killCountdown` angle selects an outer-ring size from one to three
+/// times the core size. The builder leaves that angle unchanged.
+static void _actor141000BuildRingBeamPoints(Task* task, SVECTOR screenPoints[ACTOR_141000_BEAM_SCREEN_POINT_COUNT], s32* startDepth, s32* projectionFlags)
+{
+    enum { ACTOR_141000_BEAM_SCALE_FRACTION_BITS = 12 };
+    SVECTOR                    offset;
+    SVECTOR                    rotated;
+    MATRIX                     screenRotation;
+    s32                        startScreen;
+    s32                        depthCue;
+    s32                        endScreen;
+    s32                        endDepth;
+    Task*                      parentTask;
+    const Actor141000CtrlWork* controllerWork;
+    const MATRIX*              parentMatrix;
+    const SVECTOR*             endPoint;
+    s16                        lengthScale;
+    s16                        haloScale;
+    s32                        screenDistance;
+
+    s32 pointIndex;
+    s32 screenAngle;
+    u16 beamLevel;
+    s16 startX;
+    s32 startY;
+    s16 endX;
+    s32 endY;
+    s32 screenDeltaX;
+    s32 screenDeltaY;
+
+    parentTask     = task->spawnArg2.pointer;
+    parentMatrix   = &parentTask->extra.tmd->coords->coord;
+    controllerWork = parentTask->work;
+    beamLevel      = controllerWork->beamLevel;
+    offset.vx      = _gActor141000CappedBeamEndpoints[0].vx;
+    offset.vy      = _gActor141000CappedBeamEndpoints[0].vy;
+    offset.vz      = _gActor141000CappedBeamEndpoints[0].vz;
+    endPoint       = &_gActor141000CappedBeamEndpoints[1];
+    rotated.vx     = endPoint->vx;
+    rotated.vy     = endPoint->vy;
+    rotated.vz     = endPoint->vz;
+    // Transform the segment, then shorten it before adding parent translation.
+    gte_SetRotMatrix(parentMatrix);
+    gte_ldv0(&offset);
+    gte_rtv0();
+    gte_stsv(&offset);
+    gte_ldv0(&rotated);
+    gte_rtv0();
+    gte_stsv(&rotated);
+    // The original performs this signed scale conversion through double.
+    lengthScale = (double)(s16)beamLevel;
+    rotated.vx  = offset.vx + (rotated.vx - offset.vx) * lengthScale / ONE;
+    rotated.vy  = offset.vy + (rotated.vy - offset.vy) * lengthScale / ONE;
+    rotated.vz  = offset.vz + (rotated.vz - offset.vz) * lengthScale / ONE;
+    offset.vx  += parentMatrix->t[0];
+    offset.vy  += parentMatrix->t[1];
+    offset.vz  += parentMatrix->t[2];
+    rotated.vx += parentMatrix->t[0];
+    rotated.vy += parentMatrix->t[1];
+    rotated.vz += parentMatrix->t[2];
+    // Project both ends. Each screen point comes back packed, x in the low
+    // half and y in the high; the depth-cue coefficient is not used.
+    gte_SetRotMatrix(&gGfxViewCoord.workm);
+    gte_SetTransMatrix(&gGfxViewCoord.workm);
+    gte_RotTransPers(&offset, &startScreen, &depthCue, projectionFlags, startDepth);
+    gte_RotTransPers(&rotated, &endScreen, &depthCue, projectionFlags, &endDepth);
+    screenDeltaY   = (startScreen >> 16) - (endScreen >> 16);
+    startX         = startScreen;
+    endX           = endScreen;
+    screenDeltaX   = endX - startX;
+    startY         = startScreen >> 16;
+    endY           = endScreen >> 16;
+    screenAngle    = ratan2(screenDeltaX, screenDeltaY);
+    screenDistance = gDisplayState.screenDistance;
+    gfxSetRotIdentity(&screenRotation);
+    RotMatrixZ(screenAngle, &screenRotation);
+    gte_SetRotMatrix(&screenRotation);
+    for (pointIndex = 0; pointIndex < (s32)ARRAY_SIZE(_gActor141000CappedBeamStartCapOffsets); pointIndex++) {
+        offset.vx = _gActor141000CappedBeamStartCapOffsets[pointIndex].vx * screenDistance / *startDepth;
+        offset.vy = _gActor141000CappedBeamStartCapOffsets[pointIndex].vy * screenDistance / *startDepth;
+        gte_ldv0(&offset);
+        gte_rtv0();
+        gte_stsv(&rotated);
+        screenPoints[pointIndex].vx = rotated.vx + startX;
+        screenPoints[pointIndex].vy = rotated.vy + startY;
+    }
+    for (pointIndex = 0; pointIndex < (s32)ARRAY_SIZE(_gActor141000CappedBeamEndCapOffsets); pointIndex++) {
+        offset.vx = _gActor141000CappedBeamEndCapOffsets[pointIndex].vx * screenDistance / endDepth;
+        offset.vy = _gActor141000CappedBeamEndCapOffsets[pointIndex].vy * screenDistance / endDepth;
+        gte_ldv0(&offset);
+        gte_rtv0();
+        gte_stsv(&rotated);
+        screenPoints[pointIndex + (s32)ARRAY_SIZE(_gActor141000CappedBeamStartCapOffsets)].vx = rotated.vx + endX;
+        screenPoints[pointIndex + (s32)ARRAY_SIZE(_gActor141000CappedBeamStartCapOffsets)].vy = rotated.vy + endY;
+    }
+    // Scale the outer rings independently of the fixed core rings.
+    haloScale = 2 * ONE - rsin(task->killCountdown);
+    for (pointIndex = 0; pointIndex < (s32)ARRAY_SIZE(_gActor141000CappedBeamStartCapOffsets); pointIndex++) {
+        offset.vx = ((_gActor141000CappedBeamStartCapOffsets[pointIndex].vx * haloScale) >> ACTOR_141000_BEAM_SCALE_FRACTION_BITS) * screenDistance / *startDepth;
+        offset.vy = ((_gActor141000CappedBeamStartCapOffsets[pointIndex].vy * haloScale) >> ACTOR_141000_BEAM_SCALE_FRACTION_BITS) * screenDistance / *startDepth;
+        gte_ldv0(&offset);
+        gte_rtv0();
+        gte_stsv(&rotated);
+        screenPoints[pointIndex + 2 * (s32)ARRAY_SIZE(_gActor141000CappedBeamStartCapOffsets)].vx = rotated.vx + startX;
+        screenPoints[pointIndex + 2 * (s32)ARRAY_SIZE(_gActor141000CappedBeamStartCapOffsets)].vy = rotated.vy + startY;
+    }
+    for (pointIndex = 0; pointIndex < (s32)ARRAY_SIZE(_gActor141000CappedBeamEndCapOffsets); pointIndex++) {
+        offset.vx = ((_gActor141000CappedBeamEndCapOffsets[pointIndex].vx * haloScale) >> ACTOR_141000_BEAM_SCALE_FRACTION_BITS) * screenDistance / endDepth;
+        offset.vy = ((_gActor141000CappedBeamEndCapOffsets[pointIndex].vy * haloScale) >> ACTOR_141000_BEAM_SCALE_FRACTION_BITS) * screenDistance / endDepth;
+        gte_ldv0(&offset);
+        gte_rtv0();
+        gte_stsv(&rotated);
+        screenPoints[pointIndex + 3 * (s32)ARRAY_SIZE(_gActor141000CappedBeamStartCapOffsets)].vx = rotated.vx + endX;
+        screenPoints[pointIndex + 3 * (s32)ARRAY_SIZE(_gActor141000CappedBeamStartCapOffsets)].vy = rotated.vy + endY;
+    }
+}
+
+/// Dispatches the flying model's initialization, update or teardown state.
+///
+/// Requires the descriptor-created one-part TMD body and task state 0..2.
+/// The state indexes the three handlers without a bounds check; their work is
+/// owned by the task. Updates continue independently of actor freezing.
+static void _actor141000FlightControllerTask(Task* task)
+{
+    TaskFuncTable3 handlers;
+
+    handlers = _gActor141000FlightControllerTaskStates;
+    handlers.funcs[task->state](task);
+}
+
+/// Initializes the flying model and attaches its full-strength ring beam.
+///
+/// State 0 requires the descriptor-created one-part TMD body and loaded path
+/// and beam resources. Allocates zeroed task-owned work, enables active drawing,
+/// installs path frame 0 at zero Z scale, then advances to state 1. The beam
+/// child borrows this task and its work until teardown. Allocation failure kills
+/// the controller; beam-spawn failure is ignored.
+static void _actor141000SpawnFlightController(Task* task)
+{
+    enum {
+        ACTOR_141000_BEAM_FULL_LEVEL      = ONE - 1,
+        ACTOR_141000_RING_BEAM_TASK_INDEX = 1,
+    };
+    Actor141000CtrlWork* work;
+    TmdObject*           model;
+    GfxCoord*            rootCoord;
+
+    model     = task->extra.tmd;
+    rootCoord = model->coords;
+    work      = memCalloc(sizeof(*work), 0);
+    if (work == NULL) {
+        taskKill(task);
+        return;
+    }
+    task->work      = work;
+    work->beamLevel = ACTOR_141000_BEAM_FULL_LEVEL;
+    model->flags   &= (u16)~TMD_OBJECT_SKIP_ACTIVE_DRAW;
+    _actor141000ApplyFlightPathFrame(rootCoord, 0);
+    _actor141000ScaleFlightModelZ(rootCoord, 0);
+    taskSpawnFromTable(gActor141000FlightTasks, ACTOR_141000_RING_BEAM_TASK_INDEX, 0, task);
+    task->exitCallback = _actor141000ExitFlightController;
+    task->state       += 1;
+}
+
+/// Advances the flying model's phase and emits smoke on odd game frames.
+///
+/// Requires initialized controller work and a live TMD body. `state` must be
+/// 0..3 (unfold, hold, follow the path, idle); its signed low halfword indexes
+/// the phase table without a bounds check. A ready session view tears down the
+/// task after the phase and smoke have run. Actor freezing does not gate this.
+static void _actor141000UpdateFlightController(Task* task)
+{
+    // Smoke: initial size 512, four ticks per atlas frame, motion variant 2.
+    enum { ACTOR_141000_FLIGHT_SMOKE_ARGUMENT = 0x24200 };
+    Actor141000CtrlWork* work;
+    TaskFuncTable4       handlers;
+
+    work     = task->work;
+    handlers = _gActor141000FlightPhases;
+    handlers.funcs[(s16)work->state](task);
+    if (gDisplayState.animFrame & 1) {
+        effectSpawn(EFFECT_SMOKE_PUFF, task->extra.tmd->coords, ACTOR_141000_FLIGHT_SMOKE_ARGUMENT, NULL);
+    }
+    if (gGameSession->viewReady != 0) {
+        taskKill(task);
+    }
+}
+
+/// Releases the flying model controller through default task teardown.
+///
+/// Installed as the exit callback after controller initialization. The task
+/// owns its work and attached beam; direct default teardown releases them
+/// without dispatching this replacement callback again.
+static void _actor141000ExitFlightController(Task* task)
+{
+    taskKill(task);
+}
+
+/// Unfolds the flying model along Z by 1/16 of unit scale per update.
+///
+/// Requires initialized controller work in phase 0 and a live TMD root.
+/// Restores path frame 0 before applying the absolute 4.12 Z scale, retaining
+/// unit X/Y scale. Reaching unit scale clamps it and advances to the hold phase.
+static void _actor141000UnfoldFlightModel(Task* task)
+{
+    enum { ACTOR_141000_UNFOLD_SCALE_STEP = ONE / 16 };
+    Actor141000CtrlWork* work;
+    u16                  scale;
+
+    work        = task->work;
+    scale       = work->scale + ACTOR_141000_UNFOLD_SCALE_STEP;
+    work->scale = scale;
+    if ((s16)scale >= ONE) {
+        work->scale = ONE;
+        work->state = work->state + 1;
+    }
+    // Rebuild first so scaling does not compound across updates.
+    _actor141000ApplyFlightPathFrame(task->extra.tmd->coords, 0);
+    _actor141000ScaleFlightModelZ(task->extra.tmd->coords, (s16)work->scale);
+}
+
+/// Holds the unfolded model for 31 updates before its flight begins.
+///
+/// Requires initialized controller work in phase 1, with `ticks` initially
+/// zero. The increment stores a u16 before testing its signed low halfword.
+/// The final tick advances the phase; the transform remains unchanged.
+static void _actor141000HoldFlightModel(Task* task)
+{
+    enum { ACTOR_141000_FLIGHT_HOLD_TICKS = 31 };
+    Actor141000CtrlWork* work;
+    u16                  ticks;
+
+    work        = task->work;
+    ticks       = work->ticks + 1;
+    work->ticks = ticks;
+    if ((s16)ticks >= ACTOR_141000_FLIGHT_HOLD_TICKS) {
+        work->state = work->state + 1;
+    }
+}
+
+/// Advances the recorded flight and leaves smoke emitters every eight path frames.
+///
+/// Requires phase 2, initialized controller work and a live TMD root. The
+/// increment narrows to u16, then the signed low halfword selects the path
+/// frame. Frame 90 holds the final transform and advances to idle without an
+/// emission. Successful emitters receive XYZ in the root's parent frame;
+/// they run independently and are not adopted by the controller. Spawn failure
+/// is ignored. The enclosing update supplies the view-ready teardown check.
+static void _actor141000AdvanceFlightPath(Task* task)
+{
+    enum {
+        ACTOR_141000_TRAIL_EMITTER_INTERVAL   = 8,
+        ACTOR_141000_TRAIL_EMITTER_TASK_INDEX = 2,
+    };
+    Actor141000CtrlWork* work;
+    TmdObject*           model;
+    Task*                emitterTask;
+    GfxCoord*            sourceCoord;
+    GfxCoord*            emitterCoord;
+    u16                  pathFrame;
+
+    work         = task->work;
+    model        = task->extra.tmd;
+    pathFrame    = work->frames + 1;
+    work->frames = pathFrame;
+
+    if (_actor141000ApplyFlightPathFrame(model->coords, (s16)pathFrame) != 0) {
+        work->state = work->state + 1;
+        return;
+    }
+
+    if (!(work->frames & (ACTOR_141000_TRAIL_EMITTER_INTERVAL - 1))) {
+        emitterTask = taskSpawnFromTable(gActor141000FlightTasks, ACTOR_141000_TRAIL_EMITTER_TASK_INDEX, 0, 0);
+        if (emitterTask != NULL) {
+            // Snapshot local translation; the emitter initializes its own rotation.
+            sourceCoord              = task->extra.tmd->coords;
+            emitterCoord             = emitterTask->extra.coordBody->coord;
+            emitterCoord->coord.t[0] = sourceCoord->coord.t[0];
+            emitterCoord->coord.t[1] = sourceCoord->coord.t[1];
+            emitterCoord->coord.t[2] = sourceCoord->coord.t[2];
+        }
+    }
+}
+
+/// Leaves the flying model at its final transform after the path completes.
+///
+/// Phase 3 does no transform work; the enclosing controller update continues
+/// emitting smoke and checking for teardown. The task argument is unused.
+static void _actor141000IdleFlightModel(Task* task)
+{
+}
+
+/// Applies one recorded flight transform to the model root.
+///
+/// `pathFrame` is a nonnegative frame index. Indices 0..89 select corresponding
+/// rotation and position triples; 90 or above hold entry 89 and return 1.
+/// In-range frames return 0. Angles use 4096 units per turn; positions use
+/// integer parent-frame coordinates with X shifted by -40. Replaces rotation
+/// and scale, preserves the matrix alignment bytes, and invalidates composition.
+static s32 _actor141000ApplyFlightPathFrame(GfxCoord* rootCoord, s32 pathFrame)
+{
+    enum { ACTOR_141000_FLIGHT_X_OFFSET = 40 };
+    const SVECTOR* position;
+    s32            pathIndex;
+    s32            pathFinished;
+
+    if (pathFrame < (s32)ARRAY_SIZE(_gActor141000FlightRotations)) {
+        pathIndex    = pathFrame;
+        pathFinished = false;
+    } else {
+        pathIndex    = (s32)ARRAY_SIZE(_gActor141000FlightRotations) - 1;
+        pathFinished = true;
+    }
+    gfxSetRotIdentity(&rootCoord->coord);
+    RotMatrix(&_gActor141000FlightRotations[pathIndex], &rootCoord->coord);
+    position                = &_gActor141000FlightPositions[pathIndex];
+    rootCoord->coord.t[0]   = position->vx;
+    rootCoord->coord.t[1]   = position->vy;
+    rootCoord->coord.t[2]   = position->vz;
+    rootCoord->coord.t[0]  -= ACTOR_141000_FLIGHT_X_OFFSET;
+    rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+    return pathFinished;
+}
+
+/// Multiplies the flying model's rotation by a signed 4.12 local Z scale.
+///
+/// Requires a writable root matrix. X/Y scale are unit; translation is kept.
+/// This compounds with existing scale and leaves composition invalidation to
+/// the caller, which rebuilds the flight transform before each scale operation.
+static void _actor141000ScaleFlightModelZ(GfxCoord* rootCoord, s32 zScale)
+{
+    VECTOR scale;
+
+    scale.vz = zScale;
+    scale.vx = ONE;
+    scale.vy = ONE;
+    ScaleMatrix(&rootCoord->coord, &scale);
+}
+
+/// Emits smoke every five running-actor updates at a recorded trail position.
+///
+/// Requires the descriptor-created coordinate body and state 0 or 1. The first
+/// call installs unit rotation while retaining the spawner's translation.
+/// `killCountdown` counts elapsed updates, starting at zero; actor freezing
+/// holds it. A ready session view or forced event skip tears down the emitter,
+/// after any emission on that call. Spawned puffs manage their own lifetimes.
+static void _actor141000SmokeTrailTask(Task* task)
+{
+    enum {
+        ACTOR_141000_TRAIL_SMOKE_INTERVAL = 5,
+        // Smoke: initial size 512, four ticks per atlas frame, motion variant 1.
+        ACTOR_141000_TRAIL_SMOKE_ARGUMENT = 0x14200,
+    };
+    GfxCoord* coord;
+    u16       elapsedTicks;
+
+    coord = task->extra.coordBody->coord;
+    if (task->state == 0) {
+        gfxSetRotIdentity(&coord->coord);
+        coord->composeStamp = GRAPHICS_COORD_DIRTY;
+        task->state        += 1;
+    }
+    if (gSceneCombatState.actorControl == SCENE_COMBAT_ACTORS_RUNNING) {
+        elapsedTicks        = task->killCountdown + 1;
+        task->killCountdown = elapsedTicks;
+        if ((s16)elapsedTicks >= ACTOR_141000_TRAIL_SMOKE_INTERVAL) {
+            task->killCountdown = 0;
+            effectSpawn(EFFECT_SMOKE_PUFF, coord, ACTOR_141000_TRAIL_SMOKE_ARGUMENT, NULL);
+        }
+    }
+    if ((gGameSession->viewReady != 0) || (gGameSession->evtSkipped != 0)) {
+        taskKill(task);
+    }
+}
+
+/// Dispatches the flight controller's capped-beam attachment, draw or teardown.
+///
+/// Requires a coordinate-body task with `state` in 0..2. Attachment borrows the
+/// live TMD controller from `spawnArg2.pointer` and joins its teardown tree;
+/// its coordinates and work must outlive beam drawing. Dispatch has no actor
+/// freeze gate or bounds check. The selected callback may destroy the task.
+static void _actor141000CappedBeamTask(Task* task)
+{
+    TaskFuncTable3 states;
+
+    states = _gActor141000CappedBeamTaskStates;
+    states.funcs[task->state](task);
+}
+
+/// Attaches the ring beam's coordinate and teardown lifetime to its controller.
+///
+/// Requires a coordinate-body task in state 0 and a live TMD controller borrowed
+/// through `spawnArg2.pointer`. The parent must outlive beam drawing. Seeds the
+/// halo angle at 2047 in a 4096-unit turn and advances to the drawing state;
+/// this package leaves the angle fixed. The coordinate is already dirty from
+/// body creation, so the new parent is composed on the first draw.
+static void _actor141000AttachRingBeam(Task* task)
+{
+    enum { ACTOR_141000_BEAM_HALO_ANGLE = ACTOR_TRANSFORM_ANGLE_HALF_TURN - 1 };
+    task->extra.coordBody->coord->parent = ((Task*)task->spawnArg2.pointer)->extra.tmd->coords;
+    taskReparent(task->spawnArg2.pointer, task);
+    task->killCountdown = ACTOR_141000_BEAM_HALO_ANGLE;
+    task->state        += 1;
+}
+
+/// Projects and queues one frame of the controller's beam core and halo caps.
+///
+/// Requires an attached coordinate-body task and a live controller model/work.
+/// The builder fills X/Y of 24 screen points; Z and fourth halfwords are unused.
+/// Both projected endpoint depths must be nonzero for perspective sizing. The
+/// start depth sorts all sixteen quads at camera Z / 4 minus 20 OT tags, which
+/// must be in the active table. Projection flags are collected but not tested.
+/// Brightness is the controller's signed low-halfword Q12 beam level. Geometry
+/// uses the current 4096-unit halo angle before drawing updates its wrap state.
+static void _actor141000DrawCappedBeam(Task* task)
+{
+    SVECTOR screenPoints[ACTOR_141000_BEAM_SCREEN_POINT_COUNT];
+    s32     startDepth;
+    s32     projectionFlags;
+
+    _actor141000BuildRingBeamPoints(task, screenPoints, &startDepth, &projectionFlags);
+    _glowDrawCappedBeam(task, screenPoints, startDepth);
+}
+
+/// Applies one frame's signed 16.16 XYZ velocity, retaining unsigned fractions.
+///
+/// Requires live writable work and root coordinate. Composition is invalidated
+/// even when stationary; the integer halves are signed and remaining fractions
+/// are zero-extended back into the accumulators.
+static inline void _actor141000IntegrateEveWalkVelocity(_Actor141000EveWork* work, GfxCoord* rootCoord)
+{
+    work->walk.carry[0].word += work->walk.velocity.vx;
+    work->walk.carry[1].word += work->walk.velocity.vy;
+    work->walk.carry[2].word += work->walk.velocity.vz;
+    rootCoord->coord.t[0]    += work->walk.carry[0].halves.integer;
+    rootCoord->coord.t[1]    += work->walk.carry[1].halves.integer;
+    rootCoord->coord.t[2]    += work->walk.carry[2].halves.integer;
+    rootCoord->composeStamp   = GRAPHICS_COORD_DIRTY;
+    work->walk.carry[0].word  = work->walk.carry[0].halves.fraction;
+    work->walk.carry[1].word  = work->walk.carry[1].halves.fraction;
+    work->walk.carry[2].word  = work->walk.carry[2].halves.fraction;
+}
+
+/// Updates Eve's walk, animation, visible-body lighting, blink and buffer release.
+///
+/// Requires initialized work and the nineteen-part TMD body. `walk.motion` must
+/// be 0 (idle) or 1 (walking); it indexes two callbacks without a bounds check.
+/// Integration and slots 1..18 continue while hidden. Shadows sample the previous
+/// composed part-1 position before lighting recomposes it. A nonnegative buffer
+/// countdown frees on the tick that finds zero, then becomes inactive at -1.
+static void _actor141000UpdateEveWalker(Task* task)
+{
+    enum { ACTOR_141000_SHADOW_HALF_SIZE = 512 };
+    TmdObject*           model             = task->extra.tmd;
+    _Actor141000EveWork* work              = task->work;
+    TaskFunc             motionHandlers[2] = { _actor141000IdleEveWalk, _actor141000RunEveWalkStep };
+    VECTOR3              shadowPosition;
+    GfxCoord*            rootCoord;
+    s32                  slotIndex;
+
+    motionHandlers[work->walk.motion](task);
+    rootCoord = task->extra.tmd->coords;
+    _actor141000IntegrateEveWalkVelocity(work, rootCoord);
+    if (work->model.ticking != 0) {
+        for (slotIndex = ACTOR_141000_FIRST_DRIVEN_SLOT; slotIndex < (s32)ARRAY_SIZE(work->rig.slots); slotIndex++) {
+            animationTickSlot(&work->rig.anim, slotIndex);
+        }
+    }
+    // Hidden bodies still move, animate and blink; only visual work is gated.
+    if (!(model->flags & TMD_OBJECT_SKIP_ACTIVE_DRAW)) {
+        if (worldCollisionProjectGroundPoint(GRAPHICS_MATRIX_TRANSLATION(&task->extra.tmd->coords[1].workm), &shadowPosition) != 0) {
+            effectDrawGroundShadow(&shadowPosition, ACTOR_141000_SHADOW_HALF_SIZE, gRoomEffectState->groundShadowShade);
+        }
+        task->extra.tmd->coords[1].composeStamp = GRAPHICS_COORD_DIRTY;
+        actorRenderComposeCoord(&task->extra.tmd->coords[1]);
+        worldCoordSetModelLighting(model, task->extra.tmd->coords[1].workm.t, 0, 3);
+    }
+    _actor141000TickEveBlink(task);
+    if (work->freeCountdown >= 0) {
+        if (work->freeCountdown == 0) {
+            tmdFreePrimitiveBuffer(model);
+        }
+        work->freeCountdown--;
+    }
+}
+
+#include "../../shared/actor/actor_motion_arrive19.inc.c"
+
+/// Posts the next closed or half-open eye image and advances its timed dwell.
+///
+/// Requires initialized work in the closed or half-open step and a live TMD.
+/// The terminated upload list is writable; its eye pixels remain borrowed until
+/// GPU transfer completes. The rectangle is borrowed only through this call.
+/// Its X counts two positions per VRAM word, width counts words, and Y/height count rows.
+/// The caller decrements the countdown; this resets it from the signed delay.
+static inline void _actor141000AdvanceEveBlinkImage(Task* task, _Actor141000EveWork* work,
+                                                    GpuImageUpload* uploadList, const RECT* eyeRect)
+{
+    actorRenderUploadTexture(task, uploadList, eyeRect);
+    work->blinkCountdown = work->blinkFrameDelay;
+    work->blinkStep      = work->blinkStep + 1;
+}
+
+/// Advances Eve's timed closed, half-open and open eye sequence once.
+///
+/// Each active step decrements the signed-halfword countdown and posts its image
+/// when that stored value is negative. Closed and half-open restart it from
+/// `blinkFrameDelay`, so a nonnegative delay gives that many ticks plus one.
+/// Open ends the blink without resetting the countdown; inactive steps do nothing.
+/// Requires initialized work and a live body. Pixel storage stays borrowed until
+/// the GPU transfer completes; no wait or automatic next blink is scheduled.
+static void _actor141000TickEveBlink(Task* task)
+{
+    _Actor141000EveWork* work;
+    RECT                 eyeRect;
+
+    work      = task->work;
+    eyeRect.x = ACTOR_141000_EYES_X_WORDS;
+    eyeRect.y = ACTOR_141000_EYES_Y_ROWS;
+    eyeRect.w = ACTOR_141000_EYES_WIDTH_WORDS;
+    eyeRect.h = ACTOR_141000_FACE_HEIGHT_ROWS;
+
+    switch (work->blinkStep) {
+        case ACTOR_141000_BLINK_CLOSED:
+            work->blinkCountdown = work->blinkCountdown - 1;
+            if (work->blinkCountdown < 0) {
+                _actor141000AdvanceEveBlinkImage(task, work, &_gActor141000EveEyesClosedUploads[0], &eyeRect);
+            }
+            break;
+        case ACTOR_141000_BLINK_HALF:
+            work->blinkCountdown = work->blinkCountdown - 1;
+            if (work->blinkCountdown < 0) {
+                _actor141000AdvanceEveBlinkImage(task, work, &_gActor141000EveEyesHalfOpenUploads[0], &eyeRect);
+            }
+            break;
+        case ACTOR_141000_BLINK_OPEN:
+            work->blinkCountdown = work->blinkCountdown - 1;
+            if (work->blinkCountdown < 0) {
+                actorRenderUploadTexture(task, &_gActor141000EveEyesOpenUploads[0], &eyeRect);
+                work->blinkStep = ACTOR_141000_BLINK_NONE;
+            }
+            break;
+    }
+}
+
+/// Binds and applies a changed bank-0 walk clip to Eve's nineteen-part rig.
+///
+/// Requires a live TMD task with initialized Eve work. Request is borrowed
+/// through the call and must not overlap playback state. The bank must be 0
+/// and the clip a loaded entry 1..10; blend duration counts whole frames.
+/// Driven slots exclude root 0. Rebinding invalidates the old clip; an unchanged
+/// clip in the same bank leaves ticking and its current poses intact.
+/// The model, work-owned poses/slots and clip data must outlive playback.
+static inline void _actor141000ApplyEveWalkAnimation(Task* task, const AnimationPlayRequest* request)
+{
+    _Actor141000EveWork* work;
+    TmdObject*           model;
+    s32                  slotIndex;
+
+    work  = task->work;
+    model = task->extra.tmd;
+    // A changed bank invalidates the old clip even if the clip IDs agree.
+    if (request->source.index != work->model.bank) {
+        work->model.bank   = request->source.index;
+        work->model.animId = ACTOR_MOTION_ANIMATION_INDEX_NONE;
+        animationInitContext(&work->rig.anim, _gActorMotionAnimBanks19[work->model.bank], model, work->rig.poses,
+                             work->rig.slots);
+    }
+    if (request->animationId != work->model.animId) {
+        work->model.animId = request->animationId;
+        if (request->blend != ANIMATION_BLEND_RESET && work->model.ticking != 0) {
+            for (slotIndex = ACTOR_141000_FIRST_DRIVEN_SLOT; slotIndex < (s32)ARRAY_SIZE(work->rig.slots); slotIndex++) {
+                animationSeekSlotWithBlend(&work->rig.anim, slotIndex, work->model.animId, 0, request->blendFrames);
+            }
+        } else {
+            for (slotIndex = ACTOR_141000_FIRST_DRIVEN_SLOT; slotIndex < (s32)ARRAY_SIZE(work->rig.slots); slotIndex++) {
+                animationResetSlot(&work->rig.anim, slotIndex, work->model.animId);
+            }
+        }
+        // Install the new pose before ordinary frame ticking resumes.
+        for (slotIndex = ACTOR_141000_FIRST_DRIVEN_SLOT; slotIndex < (s32)ARRAY_SIZE(work->rig.slots); slotIndex++) {
+            animationTickSlot(&work->rig.anim, slotIndex);
+        }
+        work->model.ticking = 1;
+    }
+}
+
+/// Starts Eve's scripted walk toward a borrowed destination and final rotation.
+///
+/// Copies parent-frame positions and 4096-unit Euler angles into work, then starts
+/// step 0. Optional clips select the starting and queued arrival clips in bank 0;
+/// without them, pace chooses clip 2 (fast) or 10 (slow), followed by clip 1.
+/// Clip IDs must select loaded entries 1..10. Changed clips blend for five frames
+/// when already ticking, or reset otherwise. Carry and current velocity survive
+/// until the following walk steps replace them. Payloads are borrowed only during
+/// dispatch; the message ID is ignored. Requires initialized work; returns 0.
+static s32 _actor141000StartEveWalk(Task* task, s32 messageId, const ActorTransform* destination, const ActorMotionWalkAnim* clips)
+{
+    enum {
+        ACTOR_141000_ANIM_DEFAULT_ARRIVAL = 1,
+        ACTOR_141000_ANIM_FAST_WALK       = 2,
+        ACTOR_141000_ANIM_SLOW_WALK       = 10,
+    };
+    _Actor141000EveWork* work;
+
+    AnimationPlayRequest walkRequest;
+
+    work                     = task->work;
+    work->walk.motion        = ACTOR_WALK_MOTION_WALKING;
+    work->walk.motionStep    = ACTOR_141000_WALK_FACE_TARGET;
+    work->walk.target.vx     = destination->pos.vx;
+    work->walk.target.vy     = destination->pos.vy;
+    work->walk.target.vz     = destination->pos.vz;
+    work->walk.targetRot.vx  = destination->rot.vx;
+    work->walk.targetRot.vy  = destination->rot.vy;
+    work->walk.targetRot.vz  = destination->rot.vz;
+    walkRequest.source.index = 0;
+    if (clips != NULL) {
+        walkRequest.animationId = clips->animationId;
+        work->model.nextAnimId  = clips->nextAnimId;
+    } else {
+        if (work->fastPace != 0) {
+            walkRequest.animationId = ACTOR_141000_ANIM_FAST_WALK;
+        } else {
+            walkRequest.animationId = ACTOR_141000_ANIM_SLOW_WALK;
+        }
+        work->model.nextAnimId = ACTOR_141000_ANIM_DEFAULT_ARRIVAL;
+    }
+    walkRequest.blend                = ANIMATION_BLEND_INTERPOLATE;
+    walkRequest.blendFrames          = ACTOR_141000_WALK_BLEND_FRAMES;
+    walkRequest.enableWorldCollision = ANIMATION_WORLD_COLLISION_ENABLE;
+
+    _actor141000ApplyEveWalkAnimation(task, &walkRequest);
+    return 0;
+}
+
+/// Dispatches Eve's walker initialization, update or exit while actors are running.
+///
+/// Requires the descriptor-created nineteen-part TMD body and task state 0..2;
+/// the state indexes the table without a bounds check. The body and Enemy passed
+/// in `spawnArg2.pointer` belong to the task until teardown.
+static void _actor141000EveWalkerTask(Task* task)
+{
+    TaskFuncTable3 handlers;
+
+    handlers = _gActor141000EveWalkerTaskStates;
+    if (gSceneCombatState.actorControl == SCENE_COMBAT_ACTORS_RUNNING) {
+        handlers.funcs[task->state](task);
+    }
+}
+
+/// Allocates and initializes Eve's scripted walker, then enables its message table.
+///
+/// The zeroed work belongs to the task until teardown. Bank and clip sentinels
+/// force the first animation request to bind the rig; no buffer release is pending.
+/// The model borrows the work's lighting matrices. Allocation failure releases the
+/// Enemy and ends the task before any later state can use absent work.
+static void _actor141000SpawnEveWalker(Task* task)
+{
+    enum { ACTOR_141000_BUFFER_RELEASE_NONE = -1 };
+    _Actor141000EveWork* work;
+
+    work = memCalloc(sizeof(*work), false);
+    if (work == NULL) {
+        enemyTaskExit(task);
+        return;
+    }
+
+    task->work               = work;
+    work->model.animId       = ACTOR_MOTION_ANIMATION_INDEX_NONE;
+    work->model.bank         = ACTOR_MOTION_ANIMATION_INDEX_NONE;
+    work->freeCountdown      = ACTOR_141000_BUFFER_RELEASE_NONE;
+    work->walk.carry[0].word = 0;
+    work->walk.carry[1].word = 0;
+    work->walk.carry[2].word = 0;
+
+    _actor141000BindEveLighting(task);
+
+    task->msgTable     = _gActor141000EveMessages;
+    task->exitCallback = _actor141000ExitEveWalker;
+    task->state++;
+}
+
+/// Releases Eve's enemy record and tears down her walker task and work.
+///
+/// Requires the task-owned live Enemy in `spawnArg2.pointer`. Used as both the
+/// exit state and the teardown callback; direct `taskKill` teardown bypasses
+/// this replacement callback, so release does not recurse.
+static void _actor141000ExitEveWalker(Task* task)
+{
+    enemyTaskExit(task);
+}
+
+/// Lends the walker's lighting matrices to its TMD body.
+///
+/// Requires initialized work and a live model. The matrices remain owned by the
+/// work block, which must outlive every model update using them.
+static void _actor141000BindEveLighting(Task* task)
+{
+    TmdObject*           model;
+    _Actor141000EveWork* work;
+
+    model           = task->extra.tmd;
+    work            = task->work;
+    model->lightMtx = &work->model.light;
+    model->colorMtx = &work->model.color;
+}
+
+/// Leaves walk state unchanged while no scripted walk is active.
+///
+/// This empty motion callback does not stop velocity integration, animation,
+/// lighting or blinking in the enclosing update.
+static void _actor141000IdleEveWalk(Task* task)
+{
+}
+
+/// Runs Eve's current scripted-walk step.
+///
+/// Requires initialized work with `walk.motionStep` in 0..3: face the destination,
+/// begin moving, test arrival, or turn to the requested final yaw. No bounds check
+/// is performed; each step controls its own transition.
+static void _actor141000RunEveWalkStep(Task* task)
+{
+    TaskFuncTable4       handlers;
+    _Actor141000EveWork* work;
+
+    work     = task->work;
+    handlers = _gActor141000EveWalkSteps;
+    handlers.funcs[work->walk.motionStep](task);
+}
+
+/// Faces Eve's root coordinate toward the copied walk destination, then advances.
+///
+/// Positions are in the root's parent frame; yaw uses 4096 units per turn.
+/// Replaces pitch, roll and scale with a yaw-only rotation and marks composition
+/// dirty. Requires a live model and initialized walker work.
+static void _actor141000FaceEveWalkTarget(Task* task)
+{
+    _Actor141000EveWork* work;
+    GfxCoord*            rootCoord;
+    VECTOR               targetOffset;
+    SVECTOR              direction;
+    SVECTOR              rotation;
+
+    work      = task->work;
+    rootCoord = task->extra.tmd->coords;
+
+    targetOffset.vx = work->walk.target.vx - rootCoord->coord.t[0];
+    targetOffset.vy = work->walk.target.vy - rootCoord->coord.t[1];
+    targetOffset.vz = work->walk.target.vz - rootCoord->coord.t[2];
+    VectorNormalS(&targetOffset, &direction);
+
+    rotation.vx = 0;
+    rotation.vy = ratan2(direction.vx, direction.vz);
+    rotation.vz = 0;
+
+    rootCoord->param.rot.vx = rotation.vx;
+    rootCoord->param.rot.vy = rotation.vy;
+    rootCoord->param.rot.vz = rotation.vz;
+    RotMatrix(&rootCoord->param.rot, &rootCoord->coord);
+    rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+    work->walk.motionStep++;
+}
+
+/// Sets Eve's walk velocity from the selected pace and current root rotation.
+///
+/// Rotates the local forward displacement into signed 16.16 parent-frame units
+/// per tick: 48 whole units at fast pace or 24 at slow pace. Seeds the arrival
+/// distance sentinel and advances to the arrival test; existing carry survives.
+static void _actor141000BeginEveWalk(Task* task)
+{
+    _Actor141000EveWork* work;
+    GfxCoord*            rootCoord;
+    VECTOR               localVelocity;
+
+    rootCoord = task->extra.tmd->coords;
+    work      = task->work;
+
+    localVelocity = _gActor141000EveFastWalkVelocity;
+    if (work->fastPace == 0) {
+        localVelocity.vx >>= 1;
+        localVelocity.vy >>= 1;
+        localVelocity.vz >>= 1;
+    }
+    ApplyMatrixLV(&rootCoord->coord, &localVelocity, &work->walk.velocity);
+    work->walk.lastDistance.vx = ACTOR_MOTION_INITIAL_ARRIVAL_GAP;
+    work->walk.lastDistance.vy = ACTOR_MOTION_INITIAL_ARRIVAL_GAP;
+    work->walk.lastDistance.vz = ACTOR_MOTION_INITIAL_ARRIVAL_GAP;
+    work->walk.motionStep      = work->walk.motionStep + 1;
+}
+
+/// Rebuilds Eve's root rotation at unit 4.12 scale while retaining translation.
+///
+/// Requires writable coordinate and a borrowed Euler triple in 4096-unit angles.
+/// Invalidates world composition after installing the rotation.
+static inline void _actor141000RebuildEveRotation(GfxCoord* rootCoord, SVECTOR* rotation)
+{
+    gfxSetRotIdentity(&rootCoord->coord);
+    RotMatrix(rotation, &rootCoord->coord);
+    rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+}
+
+/// Turns Eve to the walk's final yaw and returns her motion dispatcher to idle.
+///
+/// Yaw uses 4096 units per turn. The signed-halfword target difference selects a
+/// 64-unit step, without turn-period normalization; a gap of at most 64 snaps
+/// to the target and blends to the queued bank-0 clip for five frames.
+/// Requires initialized walker work and a valid queued clip (1..10). Translation
+/// survives the rotation rebuild; velocity has already been cleared on arrival.
+static void _actor141000TurnEveToYaw(Task* task)
+{
+    enum { ACTOR_141000_YAW_STEP = 64 };
+    _Actor141000EveWork* work;
+
+    GfxCoord*            rootCoord;
+    SVECTOR              rotation;
+    AnimationPlayRequest arrivalRequest;
+    s32                  currentYaw;
+    s16                  yawDelta;
+
+    rootCoord = task->extra.tmd->coords;
+    work      = task->work;
+
+    gfxExtractSmallestEuler(&rotation, &rootCoord->coord);
+    yawDelta = (u16)work->walk.targetRot.vy - (u16)rotation.vy;
+    if (ABS(yawDelta) > ACTOR_141000_YAW_STEP) {
+        currentYaw = rotation.vy;
+        if (yawDelta < 0) {
+            rotation.vy = currentYaw - ACTOR_141000_YAW_STEP;
+        } else {
+            rotation.vy = currentYaw + ACTOR_141000_YAW_STEP;
+        }
+    } else {
+        rotation.vy                         = work->walk.targetRot.vy;
+        arrivalRequest.source.index         = 0;
+        arrivalRequest.animationId          = work->model.nextAnimId;
+        arrivalRequest.blend                = ANIMATION_BLEND_INTERPOLATE;
+        arrivalRequest.blendFrames          = ACTOR_141000_WALK_BLEND_FRAMES;
+        arrivalRequest.enableWorldCollision = ANIMATION_WORLD_COLLISION_DISABLE;
+        _actorMotionPlayAnim19(task, ACTOR_MESSAGE_PLAY_ANIMATION, &arrivalRequest, 0);
+        work->walk.motion     = ACTOR_WALK_MOTION_IDLE;
+        work->walk.motionStep = ACTOR_141000_WALK_FACE_TARGET;
+    }
+
+    _actor141000RebuildEveRotation(rootCoord, &rotation);
+}
+
+#include "../../shared/actor/actor_motion_play19.inc.c"
+
+#include "../../shared/actor/actor_messages_place_euler.inc.c"
+
+/// Changes Eve's visibility and automatic primitive-buffer recovery mode.
+///
+/// Requires a live TMD body and initialized work. Mode 0 hides with recovery
+/// allowed; 1 shows, attempts buffer allocation and allows recovery; 2 hides,
+/// disables recovery and schedules a release on the third subsequent update;
+/// 3 shows with recovery disabled. Other modes change nothing and return 1;
+/// handled modes return 0 even if allocation fails. Modes 0, 1 and 3 retain any
+/// pending release. The message ID and second payload are ignored.
+static s32 _actor141000SetEveDrawMode(Task* task, s32 messageId, s32 mode, s32 unusedArg)
+{
+    TmdObject* model;
+    s32        result;
+
+    model  = task->extra.tmd;
+    result = 0;
+    switch (mode) {
+        case ACTOR_MESSAGE_DRAW_HIDE:
+            model->flags |= TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            model->flags &= ~TMD_OBJECT_SKIP_AUTO_BUFFER;
+            break;
+        case ACTOR_MESSAGE_DRAW_SHOW:
+            model->flags &= ~TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            tmdAllocPrimitiveBuffer(model);
+            model->flags &= ~TMD_OBJECT_SKIP_AUTO_BUFFER;
+            break;
+        case ACTOR_MESSAGE_DRAW_HIDE_SKIP_AUTO_BUFFER: {
+            _Actor141000EveWork* work;
+
+            model->flags       |= TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            work                = task->work;
+            work->freeCountdown = mode;
+            model->flags       |= TMD_OBJECT_SKIP_AUTO_BUFFER;
+            break;
+        }
+        case ACTOR_MESSAGE_DRAW_SHOW_SKIP_AUTO_BUFFER:
+            model->flags &= ~TMD_OBJECT_SKIP_ACTIVE_DRAW;
+            model->flags |= TMD_OBJECT_SKIP_AUTO_BUFFER;
+            break;
+        default:
+            result = 1;
+            break;
+    }
+    return result;
+}
+
+/// Selects Eve's pace for subsequent scripted walks from an actor command.
+///
+/// Command 1 selects half displacement and default clip 10; command 2 selects
+/// full displacement and default clip 2. An ongoing walk's velocity and clip
+/// remain unchanged. Requires initialized work and a borrowed non-NULL command.
+/// Other commands do nothing; all return 0. Ignores ID and second payload.
+static s32 _actor141000SetEveWalkPace(Task* task, s32 messageId, const ActorCommand* command, s32 unusedArg)
+{
+    enum {
+        ACTOR_141000_COMMAND_SLOW_WALK = 1,
+        ACTOR_141000_COMMAND_FAST_WALK = 2,
+    };
+    _Actor141000EveWork* work;
+
+    work = task->work;
+    switch (command->command) {
+        case ACTOR_141000_COMMAND_SLOW_WALK:
+            work->fastPace = 0;
+            break;
+        case ACTOR_141000_COMMAND_FAST_WALK:
+            work->fastPace = 1;
+            break;
+    }
+    return 0;
+}
+
+/// Selects Eve's facial texture mode for message 0x7E0.
+///
+/// Requires a live body and initialized work. Modes 0/1 post open/closed eyes;
+/// 4/5 post open/closed mouth. Modes 2/3 retain the original mouth-list uploads
+/// to the eye rectangle: each requests 250 words (1000 bytes) from a 140-word
+/// (560-byte) pixel array, reading 440 bytes past its end. Mode 3 also reads
+/// 292 bytes beyond the initialized overlay image. Their intended visual meaning
+/// is unproven. Mode 3 also starts closed,
+/// half-open, then open eyes, with a two-tick dwell between the first two images.
+/// Starting a blink retains its countdown; other modes do not cancel it.
+/// The writable lists and pixels stay live through GPU transfer. Returns the
+/// upload result, or 0 for unknown modes; ignores ID and the second payload.
+static s32 _actor141000SetEveTextureMode(Task* task, s32 messageId, s32 textureMode, s32 unusedArg)
+{
+    enum {
+        ACTOR_141000_TEXTURE_EYES_OPEN                    = 0,
+        ACTOR_141000_TEXTURE_EYES_CLOSED                  = 1,
+        ACTOR_141000_TEXTURE_CLOSED_MOUTH_IN_EYES         = 2,
+        ACTOR_141000_TEXTURE_OPEN_MOUTH_IN_EYES_AND_BLINK = 3,
+        ACTOR_141000_TEXTURE_MOUTH_OPEN                   = 4,
+        ACTOR_141000_TEXTURE_MOUTH_CLOSED                 = 5,
+        ACTOR_141000_BLINK_FRAME_DELAY                    = 1,
+    };
+    RECT            textureRect;
+    GpuImageUpload* uploadList;
+    s32             result;
+
+    result = 0;
+    switch (textureMode) {
+        case ACTOR_141000_TEXTURE_EYES_OPEN:
+            uploadList    = &_gActor141000EveEyesOpenUploads[0];
+            textureRect.y = ACTOR_141000_EYES_Y_ROWS;
+            textureRect.w = ACTOR_141000_EYES_WIDTH_WORDS;
+            textureRect.x = ACTOR_141000_EYES_X_WORDS;
+            textureRect.h = ACTOR_141000_FACE_HEIGHT_ROWS;
+            break;
+        case ACTOR_141000_TEXTURE_EYES_CLOSED:
+            uploadList    = &_gActor141000EveEyesClosedUploads[0];
+            textureRect.y = ACTOR_141000_EYES_Y_ROWS;
+            textureRect.w = ACTOR_141000_EYES_WIDTH_WORDS;
+            textureRect.x = ACTOR_141000_EYES_X_WORDS;
+            textureRect.h = ACTOR_141000_FACE_HEIGHT_ROWS;
+            break;
+        // Retained request: this reads 1000 bytes from a 560-byte mouth array.
+        case ACTOR_141000_TEXTURE_CLOSED_MOUTH_IN_EYES:
+            uploadList    = &_gActor141000EveMouthClosedUploads[0];
+            textureRect.y = ACTOR_141000_EYES_Y_ROWS;
+            textureRect.w = ACTOR_141000_EYES_WIDTH_WORDS;
+            textureRect.x = ACTOR_141000_EYES_X_WORDS;
+            textureRect.h = ACTOR_141000_FACE_HEIGHT_ROWS;
+            break;
+        case ACTOR_141000_TEXTURE_OPEN_MOUTH_IN_EYES_AND_BLINK: {
+            _Actor141000EveWork* stepWork;
+            _Actor141000EveWork* delayWork;
+            uploadList                 = &_gActor141000EveMouthOpenUploads[0];
+            textureRect.y              = ACTOR_141000_EYES_Y_ROWS;
+            textureRect.w              = ACTOR_141000_EYES_WIDTH_WORDS;
+            textureRect.x              = ACTOR_141000_EYES_X_WORDS;
+            textureRect.h              = ACTOR_141000_FACE_HEIGHT_ROWS;
+            stepWork                   = task->work;
+            stepWork->blinkStep        = ACTOR_141000_BLINK_CLOSED;
+            delayWork                  = task->work;
+            delayWork->blinkFrameDelay = ACTOR_141000_BLINK_FRAME_DELAY;
+            break;
+        }
+        case ACTOR_141000_TEXTURE_MOUTH_OPEN:
+            uploadList    = &_gActor141000EveMouthOpenUploads[0];
+            textureRect.x = ACTOR_141000_MOUTH_X_WORDS;
+            textureRect.y = ACTOR_141000_MOUTH_Y_ROWS;
+            textureRect.w = ACTOR_141000_MOUTH_WIDTH_WORDS;
+            textureRect.h = ACTOR_141000_FACE_HEIGHT_ROWS;
+            break;
+        case ACTOR_141000_TEXTURE_MOUTH_CLOSED:
+            uploadList    = &_gActor141000EveMouthClosedUploads[0];
+            textureRect.x = ACTOR_141000_MOUTH_X_WORDS;
+            textureRect.y = ACTOR_141000_MOUTH_Y_ROWS;
+            textureRect.w = ACTOR_141000_MOUTH_WIDTH_WORDS;
+            textureRect.h = ACTOR_141000_FACE_HEIGHT_ROWS;
+            break;
+        default:
+            uploadList = NULL;
+            break;
+    }
+    if (uploadList != NULL) {
+        result = actorRenderUploadTexture(task, uploadList, &textureRect);
+    }
+    return result;
+}

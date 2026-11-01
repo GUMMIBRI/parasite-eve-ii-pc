@@ -1,0 +1,53 @@
+// Overlay-local symbols for dryfield_g_r_kitchen.
+_gDryfieldGRKitchenLightBeamEndpoints = 0x8017EBE8; // size:0x40 defined:True
+_gRoomEventTaskDesc = 0x8017EBB4; // size:0xC defined:True
+_gDryfieldGRKitchenMessageTable = 0x8017EBC0; // size:0x28 defined:True
+gDryfieldGRKitchenRoomCollisionResources = 0x8017EC28; // size:0x10 defined:True
+gDryfieldGRKitchenViewMaps = 0x8017EC38; // size:0x4 defined:True
+gDryfieldGRKitchenViewCounts = 0x8017EC3C; // size:0x2 defined:True
+gDryfieldGRKitchenRoomLighting = 0x8017EC40; // size:0x8 defined:True
+gDryfieldGRKitchenWarpEntries = 0x8017EC48; // size:0x70 defined:True
+_gDryfieldGRKitchenCollisionGridNormals = 0x8017ECB8; // size:0x30 defined:True
+_gDryfieldGRKitchenCollisionGridVerts = 0x8017ECE8; // size:0xD0 defined:True
+_gDryfieldGRKitchenCollisionGridFaces = 0x8017EDB8; // size:0xC0 defined:True
+_gDryfieldGRKitchenCollisionGridCells = 0x8017EE78; // size:0x40 defined:True
+_gDryfieldGRKitchenCollisionGridTable = 0x8017EEB8; // size:0x8 defined:True
+_gDryfieldGRKitchenCollisionGrid = 0x8017EEC0; // size:0x24 defined:True
+gDryfieldGRKitchenViewCameras = 0x8017EEE4; // size:0x6C defined:True
+_gDryfieldGRKitchenView1SpriteBatches = 0x8017EF50; // size:0x10 defined:True
+_gDryfieldGRKitchenView2Sprites = 0x8017EF60; // size:0x8C defined:True
+_gDryfieldGRKitchenView2SpriteBatches = 0x8017EFEC; // size:0x18 defined:True
+_gDryfieldGRKitchenView3SpriteBatches = 0x8017F004; // size:0x10 defined:True
+gDryfieldGRKitchenSpriteViews = 0x8017F014; // size:0x24 defined:True
+_gDryfieldGRKitchenViewBoundaryTriggers = 0x8017F038; // size:0x98 defined:True
+_gDryfieldGRKitchenActionTriggers = 0x8017F0D0; // size:0x214 defined:True
+_gDryfieldGRKitchenPointLights = 0x8017F2E4; // size:0x180 defined:True
+_gDryfieldGRKitchenRoomLights = 0x8017F464; // size:0x18 defined:True
+_gDryfieldGRKitchenVariant1Resources = 0x8017F47C; // size:0x18 defined:True
+_gDryfieldGRKitchenVariant2Resources = 0x8017F494; // size:0x24 defined:True
+gDryfieldGRKitchenAreaVariants = 0x8017F4B8; // size:0x68 defined:True
+_gDryfieldGRKitchenClass1FootstepSounds = 0x8017F520; // size:0xC defined:True
+_gDryfieldGRKitchenSilentSurfaceProperties = 0x8017F52C; // size:0x8 defined:True
+_gDryfieldGRKitchenClass1SurfaceProperties = 0x8017F534; // size:0x8 defined:True
+gDryfieldGRKitchenSurfacePropertiesByClass = 0x8017F53C; // size:0x20 defined:True
+_gRoomEventMsg = 0x8017F55C; // size:0x8 defined:True
+gActor01500MindSucklerTaskDesc = 0x8013BE28; // absolute:True owner=actor_101500
+gActor200700RatTaskDesc = 0x80150C80; // absolute:True owner=actor_200700
+gMapDryfieldGRKitchenVariant1Placements = 0x8017B474; // absolute:True owner=map_dryfield
+gMapDryfieldGRKitchenVariant2Placements = 0x8017B4B4; // absolute:True owner=map_dryfield
+gRoomEventActive = 0x8017F564; // size:0x4 defined:True
+gRoomEventReq = 0x8017F568; // size:0x14 defined:True
+
+dryfieldGRKitchenDrawLightBeamsTask = 0x8017EB04; // type:func
+_roomEventGate = 0x8017D5E8; // type:func
+roomEventTask = 0x8017D74C; // type:func
+_glowDrawTaperedBeam = 0x8017D9FC; // type:func
+_roomVariantGRKitchenMsg = 0x8017D8C4; // type:func
+_dryfieldGRKitchenRejectKeyItemUse = 0x8017d8bc; // type:func
+_dryfieldGRKitchenIgnoreCommand = 0x8017d948; // type:func
+_dryfieldGRKitchenIgnoreActionRequest = 0x8017d950; // type:func
+_dryfieldGRKitchenIdleRoomTask = 0x8017d99c; // type:func
+_dryfieldGRKitchenDrawDimTaperedBeam = 0x8017e27c; // type:func
+_dryfieldGRKitchenInitRoomTask = 0x8017d958; // type:func
+dryfieldGRKitchenRoomTask = 0x8017d9a4; // type:func
+_gDryfieldGRKitchenRoomTaskStates = 0x8017D5DC; // size:0xC defined:True

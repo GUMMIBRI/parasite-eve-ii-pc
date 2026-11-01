@@ -1,0 +1,104 @@
+// Overlay-local symbols for actor_104600.
+// Shared with this actor's other RAM slots, so every symbol is named by
+// file offset. Local labels are named only when something outside the
+// shared body reaches them.
+
+_gSucklercephTaskStates = 0x80131E24;
+_gSucklercephDropTaskStates = 0x80131E30;
+Actor04600_Jt00024 = 0x80131E44;
+_gSkullStalkerTaskStates = 0x80131E5C;
+_sucklercephSpawnState = 0x80131E68;
+_sucklercephReactionDispatch = 0x801321F4;
+_sucklercephDormantTick = 0x801323D0;
+_sucklercephAwakeTick = 0x801325D0;
+_sucklercephContacts = 0x80132798;
+_sucklercephTakeDamage = 0x80132CE8;
+_sucklercephTurnToPlayer = 0x80132DF8;
+_sucklercephDeathState = 0x80132F30;
+_sucklercephKill = 0x80133424;
+_sucklercephDropSpawnState = 0x801335EC;
+_sucklercephDropState = 0x8013391C;
+_sucklercephDropCollide = 0x80133C2C;
+_sucklercephMessage = 0x80133D74;
+_sucklercephTask = 0x801342C4;
+_sucklercephUpdateState = 0x80134320;
+_sucklercephReactionFlags = 0x80134438;
+_sucklercephStep = 0x8013454C;
+_sucklercephAnimate = 0x801345DC;
+_sucklercephColour = 0x80134690;
+_sucklercephDrawShadow = 0x80134700;
+_sucklercephScalePart = 0x8013476C;
+_sucklercephFlatten = 0x80134934;
+_sucklercephExit = 0x80134A28;
+_sucklercephDropTask = 0x80134A8C;
+_sucklercephFallStep = 0x80134AF4;
+_skullStalkerSpawnState = 0x80134B88;
+_skullStalkerIdleTick = 0x80134EC8;
+_skullStalkerProcessContacts = 0x8013528C;
+_skullStalkerDeathState = 0x80135778;
+_skullStalkerTask = 0x801359A0;
+_skullStalkerUpdateState = 0x801359FC;
+_skullStalkerConsumeReactions = 0x80135B0C;
+_skullStalkerUpdateBehavior = 0x80135B74;
+_skullStalkerAnimate = 0x80135C30;
+_skullStalkerUpdateColor = 0x80135CE0;
+_skullStalkerUpdateVisibility = 0x80135D50;
+_skullStalkerFlatten = 0x80135E2C;
+_skullStalkerExit = 0x80135F20;
+_gSucklercephBurstAttack = 0x80135F7C; // size:0x4 defined:True
+_gSucklercephParams = 0x80135F80; // size:0x10 defined:True
+_gSucklercephBurstPadScript = 0x80135F90; // size:0xC defined:True
+_gSucklercephBurstVibrationSegments = 0x80135F9C; // size:0xC defined:True
+_gAkropolisForkedRoadSucklercephBodySkeleton = 0x80135FA8; // size:0x6C defined:True
+_gAkropolisForkedRoadSucklercephBodyPartVerts = 0x80136014; // size:0xC defined:True
+_gAkropolisForkedRoadSucklercephBodyVerts = 0x80136020; // size:0x220 defined:True
+_gAkropolisForkedRoadSucklercephBodyNormals = 0x80136240; // size:0x220 defined:True
+_gAkropolisForkedRoadSucklercephBodyStream = 0x80136460; // size:0xBC0 defined:True
+_gAkropolisForkedRoadSucklercephBody = 0x80137020; // size:0x24 defined:True
+_gActor04600Actor104600Animation05554Bank1 = 0x80137044; // size:0x198 defined:True
+_gActor04600Actor104600Animation05554Bank4 = 0x801371DC; // size:0x68 defined:True
+_gActor04600Actor104600Animation05554Records = 0x80137244; // size:0x128 defined:True
+_gActor04600Actor104600Animation05554Indices = 0x8013736C; // size:0x8 defined:True
+_gAkropolisForkedRoadSucklercephIdleClip = 0x80137374; // size:0x28 defined:True
+_gActor04600Actor104600Animation0569CBank1 = 0x8013739C; // size:0x84 defined:True
+_gActor04600Actor104600Animation0569CBank4 = 0x80137420; // size:0x24 defined:True
+_gActor04600Actor104600Animation0569CRecords = 0x80137444; // size:0x70 defined:True
+_gActor04600Actor104600Animation0569CIndices = 0x801374B4; // size:0x8 defined:True
+_gAkropolisForkedRoadSucklercephCrawlClip = 0x801374BC; // size:0x28 defined:True
+_gActor04600Actor104600Animation05840Bank1 = 0x801374E4; // size:0xB4 defined:True
+_gActor04600Actor104600Animation05840Bank4 = 0x80137598; // size:0x30 defined:True
+_gActor04600Actor104600Animation05840Records = 0x801375C8; // size:0x90 defined:True
+_gActor04600Actor104600Animation05840Indices = 0x80137658; // size:0x8 defined:True
+_gAkropolisForkedRoadSucklercephAnim03Clip = 0x80137660; // size:0x28 defined:True
+_gSucklercephDropMsgTable = 0x80137688; // size:0x10 defined:True
+gActor04600SucklercephTaskDesc = 0x80137698; // size:0xC defined:True
+_gActor04600SucklercephDropTaskDesc = 0x801376A4; // size:0xC defined:True
+_gSucklercephAnimSets = 0x801376B0; // size:0x10 defined:True
+_gSucklercephBurstParticleOffset = 0x801376C0; // size:0x8 defined:True
+_gSucklercephPuffOffset = 0x801376C8; // size:0x8 defined:True
+_gSkullStalkerAttacks = 0x801376D0; // size:0x4 defined:True
+_gSkullStalkerParams = 0x801376D4; // size:0x10 defined:True
+_gAkropolisForkedRoadSkullStalkerBodySkeleton = 0x801376E4; // size:0x6C defined:True
+_gAkropolisForkedRoadSkullStalkerBodyPartVerts = 0x80137750; // size:0xC defined:True
+_gAkropolisForkedRoadSkullStalkerBodyVerts = 0x8013775C; // size:0x128 defined:True
+_gAkropolisForkedRoadSkullStalkerBodyNormals = 0x80137884; // size:0x178 defined:True
+_gAkropolisForkedRoadSkullStalkerBodyStream = 0x801379FC; // size:0x5E4 defined:True
+_gAkropolisForkedRoadSkullStalkerBody = 0x80137FE0; // size:0x24 defined:True
+_gActor04600Actor104600Animation06220Bank1 = 0x80138004; // size:0x18 defined:True
+_gActor04600Actor104600Animation06220Bank4 = 0x8013801C; // size:0x4 defined:True
+_gActor04600Actor104600Animation06220Records = 0x80138020; // size:0x18 defined:True
+_gActor04600Actor104600Animation06220Indices = 0x80138038; // size:0x8 defined:True
+_gAkropolisForkedRoadSkullStalkerIdleClip = 0x80138040; // size:0x28 defined:True
+_gActor04600Actor104600Animation06474Bank1 = 0x80138068; // size:0x120 defined:True
+_gActor04600Actor104600Animation06474Bank4 = 0x80138188; // size:0x28 defined:True
+_gActor04600Actor104600Animation06474Records = 0x801381B0; // size:0xDC defined:True
+_gActor04600Actor104600Animation06474Indices = 0x8013828C; // size:0x8 defined:True
+_gAkropolisForkedRoadSkullStalkerAlertClip = 0x80138294; // size:0x28 defined:True
+gActor04600SkullStalkerTaskDesc = 0x801382BC; // size:0xC defined:True
+_gSkullStalkerAnimSets = 0x801382C8; // size:0xC defined:True
+_gSkullStalkerDeathParticleOffset = 0x801382D4; // size:0x8 defined:True
+_gSkullStalkerDeathGlowOffset = 0x801382DC; // size:0x8 defined:True
+
+gShelterB3GarbageIncineratorEncounterSpots = 0x801874C4; // absolute:True owner=shelter_b3_garbage_incinerator
+
+gShelterB3DumpingHoleEncounterSpots = 0x8018B74C; // absolute:True owner=shelter_b3_dumping_hole

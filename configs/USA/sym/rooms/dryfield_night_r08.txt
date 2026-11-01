@@ -1,0 +1,63 @@
+// Overlay-local symbols for dryfield_night_r08.
+_gDryfieldNightR08WhiteBeamEndpoints = 0x8018056C; // size:0x40 defined:True
+_gDryfieldNightR08GlowPlacements = 0x801805AC; // size:0xC0 defined:True
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x8018066C; // size:0x10 defined:True
+_gDryfieldNightR08RoomMessages = 0x80180544; // size:0x28 defined:True
+gDryfieldNightR08RoomLighting = 0x8018067C; // size:0x8 defined:True
+gDryfieldNightR08RoomCollisionResources = 0x80180684; // size:0x10 defined:True
+gDryfieldNightR08ViewMaps = 0x80180694; // size:0x4 defined:True
+gDryfieldNightR08ViewCounts = 0x80180698; // size:0x2 defined:True
+gDryfieldNightR08WarpEntries = 0x8018069C; // size:0x38 defined:True
+_gDryfieldNightR08CollisionGridNormals = 0x801806D4; // size:0x110 defined:True
+_gDryfieldNightR08CollisionGridVerts = 0x801807E4; // size:0x560 defined:True
+_gDryfieldNightR08CollisionGridFaces = 0x80180D44; // size:0x3D8 defined:True
+_gDryfieldNightR08CollisionGridCells = 0x8018111C; // size:0x310 defined:True
+_gDryfieldNightR08CollisionGridTable = 0x8018142C; // size:0x48 defined:True
+_gDryfieldNightR08CollisionGrid = 0x80181474; // size:0x24 defined:True
+gDryfieldNightR08ViewCameras = 0x80181498; // size:0x144 defined:True
+_gDryfieldNightR08View1SpriteBatches = 0x801815DC; // size:0x10 defined:True
+_gDryfieldNightR08View2SpriteBatches = 0x801815EC; // size:0x10 defined:True
+_gDryfieldNightR08View3SpriteBatches = 0x801815FC; // size:0x10 defined:True
+_gDryfieldNightR08View4SpriteBatches = 0x8018160C; // size:0x10 defined:True
+_gDryfieldNightR08View5SpriteBatches = 0x8018161C; // size:0x10 defined:True
+_gDryfieldNightR08View6SpriteSources = 0x8018162C; // size:0xB4 defined:True
+_gDryfieldNightR08View6SpriteBatches = 0x801816E0; // size:0x18 defined:True
+_gDryfieldNightR08View7SpriteBatches = 0x801816F8; // size:0x10 defined:True
+_gDryfieldNightR08View8SpriteBatches = 0x80181708; // size:0x10 defined:True
+_gDryfieldNightR08View9SpriteBatches = 0x80181718; // size:0x10 defined:True
+gDryfieldNightR08SpriteViews = 0x80181728; // size:0x6C defined:True
+_gDryfieldNightR08DirectionalLights = 0x80181794; // size:0x108 defined:True
+_gDryfieldNightR08RoomLights = 0x8018189C; // size:0x18 defined:True
+_gDryfieldNightR08Variant1Resources = 0x801818B4; // size:0x24 defined:True
+gDryfieldNightR08AreaVariants = 0x801818D8; // size:0x58 defined:True
+_gDryfieldNightR08FootstepSounds = 0x80181930; // size:0xC defined:True
+_gDryfieldNightR08BlockingSurface = 0x8018193C; // size:0x8 defined:True
+_gDryfieldNightR08Class4BlockingSurface = 0x80181944; // size:0x8 defined:True
+_gDryfieldNightR08ProbePassSurface = 0x8018194C; // size:0x8 defined:True
+_gDryfieldNightR08BlockingFootstepSurface = 0x80181954; // size:0x8 defined:True
+gDryfieldNightR08SurfacePropertiesByClass = 0x8018195C; // size:0x20 defined:True
+gActor535700EveWalkerTaskDesc = 0x8013DADC; // absolute:True owner=actor_535700
+gActor535700PawnGolemTasks = 0x80146810; // absolute:True owner=actor_535700
+gMapDryfieldFullR08Variant1Placements = 0x8017B508; // absolute:True owner=map_dryfield_full
+
+dryfieldNightR08DrawGlowsTask = 0x8017D718; // type:func
+
+dryfieldNightR08RoomVisualEffectsFlashTask = 0x8017E5B0; // type:func
+
+dryfieldNightR08RoomVisualEffectsTwinTrailTask = 0x8017F014; // type:func
+
+dryfieldNightR08RoomVisualEffectsSparkBurstTask = 0x8017F8FC; // type:func
+_roomVisualEffectsDrawFlashRing = 0x8017E854; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x8017EC80; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x8017F504; // type:func
+_roomVisualEffectsDrawBurstStar = 0x8017FB84; // type:func
+_glowDrawBeam = 0x8017DB4C; // type:func
+glowDrawFlareClipped = 0x8017E334; // type:func
+_dryfieldNightR08RejectKeyItemUse = 0x8017d5f0; // type:func
+_dryfieldNightR08ResolveRoomEvent = 0x8017d5f8; // type:func
+_dryfieldNightR08IgnoreCommandMessage = 0x8017d620; // type:func
+_dryfieldNightR08IgnoreActionMessage = 0x8017d628; // type:func
+_dryfieldNightR08IdleState = 0x8017d6b0; // type:func
+dryfieldNightR08RoomTask = 0x8017d6c0; // type:func
+_dryfieldNightR08InitializeRoom = 0x8017d630; // type:func
+_gDryfieldNightR08RoomStates = 0x8017d5c4;

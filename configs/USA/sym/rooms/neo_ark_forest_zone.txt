@@ -1,0 +1,147 @@
+// Overlay-local symbols for neo_ark_forest_zone.
+_gRoamerCooldownFrames = 0x80182D62; // size:0x2 defined:True
+_gRoamerPendingSpawnPoint = 0x80182D66; // size:0x2 defined:True
+_gRoamerBattleReleasePending = 0x80182D6A; // size:0x2 defined:True
+gRoomEventLatched = 0x80182E48; // size:0xC defined:True
+_gRoamerPoolBArmCounts = 0x80182D44; // size:0x10 defined:True
+_gRoamerPoolAArmCounts = 0x80182D54; // size:0xE defined:True
+_gRoamerReserveCount = 0x80182D64; // size:0x2 defined:True
+_gRoamerLastActionId = 0x80182D68; // size:0x2 defined:True
+gRoamerCommand = 0x80182E44; // size:0x4 defined:True
+_gRoamerPoolAMessages = 0x80182D6C; // size:0x20 defined:True
+_gRoamerPoolASpawnPoints = 0x80182D8C; // size:0x38 defined:True
+_gRoamerPreviousBattleRefs = 0x80182DC4; // size:0x2 defined:True
+_gRoamerPoolBMessages = 0x80182DC8; // size:0x20 defined:True
+_gNeoArkForestZoneRoamerPoolBSpawnPoints = 0x80182DE8; // size:0x28 defined:True
+_gRoamerParams = 0x80182D1C; // size:0x10 defined:True
+_gNeoArkForestZoneUnusedHornedStrangerVariants = 0x80182D2C; // size:0x18 defined:True
+gNeoArkForestZoneRoomCollisionResources = 0x801820A4; // size:0x10 defined:True
+gNeoArkForestZoneRoomLighting = 0x801820B4; // size:0x8 defined:True
+gNeoArkForestZoneViewMaps = 0x801820BC; // size:0x4 defined:True
+gNeoArkForestZoneViewCounts = 0x801820C0; // size:0x2 defined:True
+gNeoArkForestZoneWarpEntries = 0x801820C4; // size:0xA8 defined:True
+_gNeoArkForestZoneCollisionGridNormals = 0x8018216C; // size:0x30 defined:True
+_gNeoArkForestZoneCollisionGridVerts = 0x8018219C; // size:0x40 defined:True
+_gNeoArkForestZoneCollisionGridFaces = 0x801821DC; // size:0x48 defined:True
+_gNeoArkForestZoneCollisionGridCells = 0x80182224; // size:0x3C defined:True
+_gNeoArkForestZoneCollisionGridTable = 0x80182260; // size:0x14 defined:True
+_gNeoArkForestZoneCollisionGrid = 0x80182274; // size:0x24 defined:True
+gNeoArkForestZoneViewCameras = 0x80182298; // size:0xD8 defined:True
+_gNeoArkForestZoneView1SpriteBatches = 0x80182370; // size:0x10 defined:True
+_gNeoArkForestZoneView2SpriteSources = 0x80182380; // size:0x50 defined:True
+_gNeoArkForestZoneView2SpriteBatches = 0x801823D0; // size:0x18 defined:True
+_gNeoArkForestZoneView3SpriteSources = 0x801823E8; // size:0x64 defined:True
+_gNeoArkForestZoneView3SpriteBatches = 0x8018244C; // size:0x18 defined:True
+_gNeoArkForestZoneView4SpriteSources = 0x80182464; // size:0x64 defined:True
+_gNeoArkForestZoneView4SpriteBatches = 0x801824C8; // size:0x18 defined:True
+_gNeoArkForestZoneView5SpriteSources = 0x801824E0; // size:0x8C defined:True
+_gNeoArkForestZoneView5SpriteBatches = 0x8018256C; // size:0x18 defined:True
+_gNeoArkForestZoneView6SpriteBatches = 0x80182584; // size:0x10 defined:True
+gNeoArkForestZoneSpriteViews = 0x80182594; // size:0x48 defined:True
+_gNeoArkForestZonePointLights = 0x801825DC; // size:0xC0 defined:True
+_gNeoArkForestZoneRoomLights = 0x8018269C; // size:0x18 defined:True
+_gNeoArkForestZoneViewBoundaryTriggers = 0x801826B4; // size:0x1C8 defined:True
+_gNeoArkForestZoneVariant1Resources = 0x8018287C; // size:0x24 defined:True
+_gNeoArkForestZoneVariant2Resources = 0x801828A0; // size:0x18 defined:True
+_gNeoArkForestZoneVariant3Resources = 0x801828B8; // size:0x18 defined:True
+_gNeoArkForestZoneVariant4Resources = 0x801828D0; // size:0x18 defined:True
+_gNeoArkForestZoneVariant5Resources = 0x801828E8; // size:0x24 defined:True
+_gNeoArkForestZoneVariant11Resources = 0x8018290C; // size:0x24 defined:True
+_gNeoArkForestZoneVariant10Resources = 0x80182930; // size:0x18 defined:True
+_gNeoArkForestZoneVariant10Placements = 0x80182948; // size:0x20 defined:True
+gNeoArkForestZoneAreaVariants = 0x80182968; // size:0x68 defined:True
+_gNeoArkForestZoneActionTriggers = 0x801829D0; // size:0x2F8 defined:True
+_gNeoArkForestZoneFootstepSounds = 0x80182CC8; // size:0xC defined:True
+_gNeoArkForestZoneSolidSurface = 0x80182CD4; // size:0x8 defined:True
+_gNeoArkForestZoneSolidFootstepSurface = 0x80182CDC; // size:0x8 defined:True
+gNeoArkForestZoneSurfaceProperties = 0x80182CE4; // size:0x20 defined:True
+_gNeoArkForestZoneRoamerAttacks = 0x80182D04; // size:0x18 defined:True
+gViewIdentityMap = 0x8010CAF8; // absolute:True
+gActor103800BlackBeetleTaskDesc = 0x80137D74; // absolute:True owner=actor_103800
+gActor102000PawnGolemTasks = 0x80147DF0; // absolute:True owner=actor_102000
+gActor401300HornedStrangerTaskDesc = 0x80158A18; // absolute:True owner=actor_401300
+gActor205600PawnGolemTasks = 0x801602C0; // absolute:True owner=actor_205600
+gActor356100HornedStrangerTaskDesc = 0x80173294; // absolute:True owner=actor_356100
+gActor302000PawnGolemTasks = 0x80177DF0; // absolute:True owner=actor_302000
+gMapNeoArkForestZoneVariant1Placements = 0x8017B190; // absolute:True owner=map_neo_ark
+gMapNeoArkForestZoneVariant2Placements = 0x8017B1C0; // absolute:True owner=map_neo_ark
+gMapNeoArkForestZoneVariant3And4Placements = 0x8017B1F0; // absolute:True owner=map_neo_ark
+gMapNeoArkForestZoneVariant5Placements = 0x8017B2C0; // absolute:True owner=map_neo_ark
+gMapNeoArkForestZoneVariant11Placements = 0x8017B300; // absolute:True owner=map_neo_ark
+_gRoomEventStagedMsg = 0x80182E38; // size:0x8 defined:True
+_gNeoArkForestZoneEventStartRequested = 0x80182E40; // size:0x1 defined:True
+D_neo_ark_forest_zone_80182E41 = 0x80182E41; // size:0x1 defined:True
+D_neo_ark_forest_zone_80182E42 = 0x80182E42; // size:0x1 defined:True
+D_neo_ark_forest_zone_80182E43 = 0x80182E43; // size:0x1 defined:True
+gRoomEventFade = 0x80182E30; // size:0x8 defined:True
+gRoamerReserveHp = 0x80182E54; // size:0xA defined:True
+_gNeoArkForestZoneRoamerPoolBSpawnPointEnd = 0x80182E10; // size:0x8 defined:True
+gNeoArkForestZoneRoamerPoolBTaskDesc = 0x80182E18; // size:0xC defined:True
+_gNeoArkForestZoneUnusedRoamerPoolATaskDesc = 0x80182E24; // size:0xC defined:True
+_gNeoArkForestZoneAnimation04364Bank1 = 0x80181580; // size:0x48 defined:True
+_gNeoArkForestZoneAnimation04364Bank4 = 0x801815C8; // size:0x100 defined:True
+_gNeoArkForestZoneAnimation04364Records = 0x801816C8; // size:0x234 defined:True
+_gNeoArkForestZoneAnimation04364Indices = 0x801818FC; // size:0x28 defined:True
+_gNeoArkForestZoneAnimation04364 = 0x80181924; // size:0x28 defined:True
+_gNeoArkForestZoneAnimation047D4Bank1 = 0x8018194C; // size:0x78 defined:True
+_gNeoArkForestZoneAnimation047D4Bank4 = 0x801819C4; // size:0x17C defined:True
+_gNeoArkForestZoneAnimation047D4Records = 0x80181B40; // size:0x22C defined:True
+_gNeoArkForestZoneAnimation047D4Indices = 0x80181D6C; // size:0x28 defined:True
+_gNeoArkForestZoneAnimation047D4 = 0x80181D94; // size:0x28 defined:True
+gNeoArkForestZoneStagedEventTaskDesc = 0x80181DBC; // size:0xC defined:True
+gNeoArkForestZoneRoomMessages = 0x80181DC8; // size:0x30 defined:True
+_gNeoArkForestZoneFirstVisitAnimationSets = 0x80181DF8; // size:0x8 defined:True
+_gNeoArkForestZoneFirstVisitAnimationBankCopy = 0x80181E00; // size:0x8 defined:True
+_gNeoArkForestZoneFirstVisitAnimation47 = 0x80181E08; // size:0x14 defined:True
+_gNeoArkForestZoneFirstVisitAnimation48 = 0x80181E1C; // size:0x14 defined:True
+gNeoArkForestZoneFirstVisitPauseCommand = 0x80181E30; // size:0x4 defined:True
+_gNeoArkForestZoneScriptedDeathCommand = 0x80181E34; // size:0x4 defined:True
+gNeoArkForestZoneStartAmbushCommand = 0x80181E38; // size:0x4 defined:True
+_gNeoArkForestZoneUnusedBank1Clip1ResetRequest = 0x80181E3C; // size:0x14 defined:True
+_gNeoArkForestZoneFirstVisitPlayerTransform = 0x80181E50; // size:0x18 defined:True
+gNeoArkForestZoneRoamerPoolBTask = 0x80181E68; // size:0x4 defined:True
+gNeoArkForestZoneFirstVisitScript = 0x80181E6C; // size:0x228 defined:True
+gRoomVisualEffectsTwinTrailEndpointOffsets = 0x80182094; // size:0x10 defined:True
+
+neoArkForestZoneConfigureEffectsTask = 0x8017E3C0; // type:func
+
+neoArkForestZoneRoomVisualEffectsFlashTask = 0x8017E420; // type:func
+
+neoArkForestZoneRoomVisualEffectsTwinTrailTask = 0x8017EE84; // type:func
+
+neoArkForestZoneRoomVisualEffectsSparkBurstTask = 0x8017F76C; // type:func
+
+neoArkForestZoneLeafFallTask = 0x8017DC20; // type:func
+_roomVisualEffectsDrawFlashRing = 0x8017E6C4; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x8017EAF0; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x8017F374; // type:func
+_roomVisualEffectsDrawBurstStar = 0x8017F9F4; // type:func
+roomEventStagedTask = 0x8017D644; // type:func
+_leafDraw = 0x8017E074; // type:func
+_roamerBankRetreat = 0x801803B4; // type:func
+_roamerArmPoolA = 0x801804B0; // type:func
+_roamerTickPoolA = 0x80180620; // type:func
+_roamerAmbushMsg = 0x80180A60; // type:func
+_roamerArmPoolB = 0x80180BB4; // type:func
+_roamerLatchSpawnRequestPoolA = 0x801813C4; // type:func
+_roamerLatchSpawnRequestPoolB = 0x801814B0; // type:func
+neoArkForestZoneRejectKeyItemMessage = 0x8017d7dc; // type:func
+neoArkForestZoneIgnoreCommandMessage = 0x8017d950; // type:func
+_neoArkForestZoneSetupIdleState = 0x8017dbac; // type:func
+_roamerExtendCooldown = 0x80181494; // type:func
+_neoArkForestZoneIgnorePoolAActorCommand = 0x801813bc; // type:func
+neoArkForestZoneForwardActorEvent = 0x8017da14; // type:func
+neoArkForestZoneStartRoamerAmbush = 0x8017da48; // type:func
+_neoArkForestZonePauseRoamersState = 0x8017db40; // type:func
+_neoArkForestZoneFinishRoamerPoolBState = 0x80181508; // type:func
+neoArkForestZoneRoomTask = 0x8017dbbc; // type:func
+_neoArkForestZoneRoamerPoolBTask = 0x8018151c; // type:func
+neoArkForestZoneResolveTransition = 0x8017d7e4; // type:func
+neoArkForestZoneHandleAction = 0x8017d958; // type:func
+_neoArkForestZoneInitializeRoom = 0x8017da80; // type:func
+_roamerTickPoolB = 0x80180d24; // type:func
+_neoArkForestZoneFinishRoamerPoolAState = 0x8018141c; // type:func
+_neoArkForestZoneRoamerPoolATask = 0x80181430; // type:func
+_gNeoArkForestZoneRoamerPoolAStates = 0x8017d5e8;
+_gNeoArkForestZoneRoamerPoolBStates = 0x8017d634;
+_gNeoArkForestZoneRoomTaskStates = 0x8017d5d8;

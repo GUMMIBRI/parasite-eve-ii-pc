@@ -1,0 +1,85 @@
+// Overlay-local symbols for neo_ark_pyramid.
+_gNeoArkPyramidRoomMessages = 0x8017FBE4; // size:0x28 defined:True
+_gNeoArkPyramidRotationPuzzleTaskDesc = 0x8017FC0C; // size:0xC defined:True
+gNeoArkPyramidRoomCollisionResources = 0x8017FC28; // size:0x20 defined:True
+gNeoArkPyramidRoomLighting = 0x8017FC48; // size:0x10 defined:True
+_gNeoArkPyramidAltarSolvedViewMap = 0x8017FC58; // size:0x8 defined:True
+gNeoArkPyramidViewMaps = 0x8017FC60; // size:0x8 defined:True
+gNeoArkPyramidViewCounts = 0x8017FC68; // size:0x4 defined:True
+gNeoArkPyramidWarpEntries = 0x8017FC6C; // size:0x70 defined:True
+_gNeoArkPyramidCollisionGridNormals = 0x8017FCDC; // size:0x68 defined:True
+_gNeoArkPyramidCollisionGridVerts = 0x8017FD44; // size:0x210 defined:True
+_gNeoArkPyramidCollisionGridFaces = 0x8017FF54; // size:0x1B0 defined:True
+_gNeoArkPyramidCollisionGridCells = 0x80180104; // size:0x184 defined:True
+_gNeoArkPyramidCollisionGridTable = 0x80180288; // size:0x3C defined:True
+_gNeoArkPyramidCollisionGrid = 0x801802C4; // size:0x24 defined:True
+gNeoArkPyramidViewCameras = 0x801802E8; // size:0x120 defined:True
+_gNeoArkPyramidView1SpriteBatches = 0x80180408; // size:0x10 defined:True
+_gNeoArkPyramidView2SpriteBatches = 0x80180418; // size:0x10 defined:True
+_gNeoArkPyramidView3SpriteSources = 0x80180428; // size:0xF0 defined:True
+_gNeoArkPyramidView3SpriteBatches = 0x80180518; // size:0x18 defined:True
+_gNeoArkPyramidView4SpriteSources = 0x80180530; // size:0x35C defined:True
+_gNeoArkPyramidView4SpriteBatches = 0x8018088C; // size:0x20 defined:True
+_gNeoArkPyramidView5SpriteSources = 0x801808AC; // size:0x1E0 defined:True
+_gNeoArkPyramidView5SpriteBatches = 0x80180A8C; // size:0x18 defined:True
+_gNeoArkPyramidView6SpriteSources = 0x80180AA4; // size:0x334 defined:True
+_gNeoArkPyramidView6SpriteBatches = 0x80180DD8; // size:0x20 defined:True
+_gNeoArkPyramidView7SpriteBatches = 0x80180DF8; // size:0x10 defined:True
+_gNeoArkPyramidView8SpriteBatches = 0x80180E08; // size:0x10 defined:True
+gNeoArkPyramidSpriteViews = 0x80180E18; // size:0x60 defined:True
+_gNeoArkPyramidPointLights = 0x80180E78; // size:0x420 defined:True
+_gNeoArkPyramidRoomLights = 0x80181298; // size:0x18 defined:True
+_gNeoArkPyramidViewBoundaryTriggers = 0x801812B0; // size:0x1C8 defined:True
+_gNeoArkPyramidActionTriggers = 0x80181478; // size:0x214 defined:True
+_gNeoArkPyramidVariant1Resources = 0x8018168C; // size:0x18 defined:True
+_gNeoArkPyramidVariant2Resources = 0x801816A4; // size:0x18 defined:True
+_gNeoArkPyramidVariant3Resources = 0x801816BC; // size:0x24 defined:True
+_gNeoArkPyramidVariant4Resources = 0x801816E0; // size:0x24 defined:True
+_gNeoArkPyramidVariant11Resources = 0x80181704; // size:0x24 defined:True
+gNeoArkPyramidPlacementVariants = 0x80181728; // size:0x68 defined:True
+_gNeoArkPyramidSightOccluders = 0x80181790; // size:0xB4 defined:True
+_gNeoArkPyramidSurface3FootstepSounds = 0x80181844; // size:0xC defined:True
+_gNeoArkPyramidStairFootstepSounds = 0x80181850; // size:0xC defined:True
+_gNeoArkPyramidDefaultSurfaceProperties = 0x8018185C; // size:0x8 defined:True
+_gNeoArkPyramidSurface1Properties = 0x80181864; // size:0x8 defined:True
+_gNeoArkPyramidSurface2Properties = 0x8018186C; // size:0x8 defined:True
+_gNeoArkPyramidSurface3Properties = 0x80181874; // size:0x8 defined:True
+_gNeoArkPyramidSurface4Properties = 0x8018187C; // size:0x8 defined:True
+gNeoArkPyramidSurfaceProperties = 0x80181884; // size:0x20 defined:True
+_gNeoArkPyramidRotationPuzzleAngle = 0x801818A4; // size:0x4 defined:True
+gActor103800BlackBeetleTaskDesc = 0x80137D74; // absolute:True owner=actor_103800
+gActor02600MaggotCaterpillarBodyTask = 0x8013A8D4; // absolute:True owner=actor_102600
+gActor102300RookGolemTasks = 0x80147AB8; // absolute:True owner=actor_102300
+gActor202600MaggotCaterpillarBodyTask = 0x801528D4; // absolute:True owner=actor_202600
+gActor401300HornedStrangerTaskDesc = 0x80158A18; // absolute:True owner=actor_401300
+gActor05700RookGolemTasks = 0x801611F8; // absolute:True owner=actor_205700
+gActor302000PawnGolemTasks = 0x80177DF0; // absolute:True owner=actor_302000
+gMapNeoArkPyramidVariant1Placements = 0x8017C580; // absolute:True owner=map_neo_ark
+gMapNeoArkPyramidVariant2Placements = 0x8017C620; // absolute:True owner=map_neo_ark
+gMapNeoArkPyramidVariant3Placements = 0x8017C690; // absolute:True owner=map_neo_ark
+gMapNeoArkPyramidVariant4Placements = 0x8017C720; // absolute:True owner=map_neo_ark
+gMapNeoArkPyramidVariant11Placements = 0x8017C760; // absolute:True owner=map_neo_ark
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x8017FC18; // size:0x10 defined:True
+
+neoArkPyramidRoomVisualEffectsFlashTask = 0x8017DC50; // type:func
+
+neoArkPyramidRoomVisualEffectsTwinTrailTask = 0x8017E6B4; // type:func
+
+neoArkPyramidRoomVisualEffectsSparkBurstTask = 0x8017EF9C; // type:func
+
+neoArkPyramidConfigureEffectsTask = 0x8017DBF0; // type:func
+_roomVisualEffectsDrawFlashRing = 0x8017DEF4; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x8017E320; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x8017EBA4; // type:func
+_roomVisualEffectsDrawBurstStar = 0x8017F224; // type:func
+_neoArkPyramidDrawRotationPuzzleQuad = 0x8017d7f4; // type:func
+_neoArkPyramidRejectKeyItemUse = 0x8017d9f0; // type:func
+_neoArkPyramidIgnoreRoomCommand = 0x8017da3c; // type:func
+_neoArkPyramidResolveRoomVariant = 0x8017d9f8; // type:func
+_neoArkPyramidSetRotationPuzzleAngle = 0x8017dac0; // type:func
+_neoArkPyramidDrawRotationPuzzleState = 0x8017db5c; // type:func
+_neoArkPyramidInitializeRoom = 0x8017db18; // type:func
+neoArkPyramidRoomTask = 0x8017db98; // type:func
+_neoArkPyramidRotationPuzzleTask = 0x8017d600; // type:func
+_neoArkPyramidHandleRoomAction = 0x8017da44; // type:func
+_gNeoArkPyramidRoomStateHandlers = 0x8017d5c4;

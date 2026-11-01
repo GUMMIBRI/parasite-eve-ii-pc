@@ -1,0 +1,72 @@
+// Overlay-local symbols for shelter_1f_bulwark.
+_gShelter1fBulwarkView2GlowPoints = 0x80180378; // size:0x20 defined:True
+_gShelter1fBulwarkView3GlowPoint = 0x80180398; // size:0x8 defined:True
+gShelter1fBulwarkCollisionResources = 0x801803B0; // size:0x10 defined:True
+gShelter1fBulwarkRoomLighting = 0x801803C0; // size:0x8 defined:True
+gShelter1fBulwarkRoomViewMaps = 0x801803C8; // size:0x4 defined:True
+gShelter1fBulwarkRoomViewCounts = 0x801803CC; // size:0x2 defined:True
+gShelter1fBulwarkWarpEntries = 0x801803D0; // size:0x70 defined:True
+_gShelter1fBulwarkCollisionGridNormals = 0x80180440; // size:0x30 defined:True
+_gShelter1fBulwarkCollisionGridVerts = 0x80180470; // size:0xB0 defined:True
+_gShelter1fBulwarkCollisionGridFaces = 0x80180520; // size:0x90 defined:True
+_gShelter1fBulwarkCollisionGridCells = 0x801805B0; // size:0x80 defined:True
+_gShelter1fBulwarkCollisionGridTable = 0x80180630; // size:0x18 defined:True
+_gShelter1fBulwarkCollisionGrid = 0x80180648; // size:0x24 defined:True
+gShelter1fBulwarkCameras = 0x8018066C; // size:0x6C defined:True
+_gShelter1fBulwarkView1SpriteBatches = 0x801806D8; // size:0x10 defined:True
+_gShelter1fBulwarkView2SpriteBatches = 0x801806E8; // size:0x10 defined:True
+_gShelter1fBulwarkView3SpriteSources = 0x801806F8; // size:0xA0 defined:True
+_gShelter1fBulwarkView3SpriteBatches = 0x80180798; // size:0x18 defined:True
+gShelter1fBulwarkSpriteViews = 0x801807B0; // size:0x24 defined:True
+_gShelter1fBulwarkPointLights = 0x801807D4; // size:0x2A0 defined:True
+_gShelter1fBulwarkRoomLights = 0x80180A74; // size:0x18 defined:True
+_gShelter1fBulwarkViewBoundaries = 0x80180A8C; // size:0x98 defined:True
+_gShelter1fBulwarkActionTriggers = 0x80180B24; // size:0x260 defined:True
+_gShelter1fBulwarkStagedEventTaskDesc = 0x80180320; // size:0xC defined:True
+_gShelter1fBulwarkRoomMessages = 0x8018032C; // size:0x28 defined:True
+_gShelter1fBulwarkHeliportDepartureTaskDesc = 0x80180354; // size:0xC defined:True
+_gShelter1fBulwarkDepartureMovieTaskDescs = 0x80180360; // size:0x18 defined:True
+_gShelter1fBulwarkVariant1Resources = 0x80180D84; // size:0x24 defined:True
+gShelter1fBulwarkAreaVariants = 0x80180DA8; // size:0x60 defined:True
+_gShelter1fBulwarkOccluders = 0x80180E08; // size:0x78 defined:True
+_gShelter1fBulwarkFloorFootstepSounds = 0x80180E80; // size:0xC defined:True
+_gShelter1fBulwarkSilentSurface = 0x80180E8C; // size:0x8 defined:True
+_gShelter1fBulwarkFloorSurface = 0x80180E94; // size:0x8 defined:True
+gShelter1fBulwarkSurfaceProperties = 0x80180E9C; // size:0x20 defined:True
+gRoomEventFade = 0x80180EBC; // size:0x4 defined:True
+_gShelter1fBulwarkHeliportFade = 0x80180EC0; // size:0x4 defined:True
+_gRoomEventStagedMsg = 0x80180EC4; // size:0x8 defined:True
+gActor102300RookGolemTasks = 0x80147AB8; // absolute:True owner=actor_102300
+gActor05700RookGolemTasks = 0x801611F8; // absolute:True owner=actor_205700
+gMapNeoArkBulwarkDefaultPlacements = 0x8017AF00; // absolute:True owner=map_neo_ark
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x801803A0; // size:0x10 defined:True
+_gShelter1fBulwarkStagedEventStarted = 0x80180ECC; // size:0x1 defined:True
+D_shelter_1f_bulwark_80180ECD = 0x80180ECD; // size:0x1 defined:True
+D_shelter_1f_bulwark_80180ECE = 0x80180ECE; // size:0x1 defined:True
+D_shelter_1f_bulwark_80180ECF = 0x80180ECF; // size:0x1 defined:True
+gRoomEventLatched = 0x80180ED0; // size:0xC defined:True
+
+shelter1fBulwarkRoomVisualEffectsFlashTask = 0x8017E38C; // type:func
+
+shelter1fBulwarkRoomVisualEffectsTwinTrailTask = 0x8017EDF0; // type:func
+
+shelter1fBulwarkRoomVisualEffectsSparkBurstTask = 0x8017F6D8; // type:func
+
+shelter1fBulwarkDrawGlowsTask = 0x8017E2A4; // type:func
+_roomVisualEffectsDrawFlashRing = 0x8017E630; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x8017EA5C; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x8017F2E0; // type:func
+_roomVisualEffectsDrawBurstStar = 0x8017F960; // type:func
+roomEventStagedTask = 0x8017D61C; // type:func
+_glowDrawFactorDisc = 0x8017DF00; // type:func
+_shelter1fBulwarkRejectKeyItem = 0x8017dbbc; // type:func
+_shelter1fBulwarkIgnoreRoomCommand = 0x8017dbc4; // type:func
+_shelter1fBulwarkIgnoreRoomAction = 0x8017dbcc; // type:func
+_shelter1fBulwarkIdle = 0x8017dc18; // type:func
+_shelter1fBulwarkPlayDepartureMovieTask = 0x8017dc78; // type:func
+_shelter1fBulwarkInitializeRoom = 0x8017dbd4; // type:func
+shelter1fBulwarkRoomTask = 0x8017dc20; // type:func
+_shelter1fBulwarkReloadAfterDepartureMovieTask = 0x8017de04; // type:func
+_shelter1fBulwarkResolveRoomEvent = 0x8017d7b4; // type:func
+_shelter1fBulwarkHeliportDepartureTask = 0x8017da60; // type:func
+_gShelter1fBulwarkRoomStateHandlers = 0x8017d5d8;

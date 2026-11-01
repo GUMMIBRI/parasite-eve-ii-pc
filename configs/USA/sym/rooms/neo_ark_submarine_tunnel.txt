@@ -1,0 +1,118 @@
+// Overlay-local symbols for neo_ark_submarine_tunnel.
+_gScreenWaveAmplitude = 0x80181A4C; // size:0x4 defined:True
+_gNeoArkSubmarineTunnelRoomMessages = 0x80181A50; // size:0x28 defined:True
+_gScreenWaveTaskDescs = 0x80181A34; // size:0x18 defined:True
+_gNeoArkSubmarineTunnelEncounterAnimationSets = 0x80181A78; // size:0x8 defined:True
+_gNeoArkSubmarineTunnelEncounterAnimationBankCopy = 0x80181A80; // size:0x8 defined:True
+_gNeoArkSubmarineTunnelEncounterPlayerClip47Request = 0x80181A88; // size:0x14 defined:True
+_gNeoArkSubmarineTunnelEncounterPlayerClip48Request = 0x80181A9C; // size:0x14 defined:True
+_gRoomVisualEffectsGlowDiscShades = 0x80181DF4; // size:0xC defined:True
+gNeoArkSubmarineTunnelRoomLighting = 0x80181E00; // size:0x8 defined:True
+gNeoArkSubmarineTunnelRoomCollisionResources = 0x80181E08; // size:0x10 defined:True
+gNeoArkSubmarineTunnelViewMaps = 0x80181E18; // size:0x4 defined:True
+gNeoArkSubmarineTunnelViewCounts = 0x80181E1C; // size:0x2 defined:True
+gNeoArkSubmarineTunnelWarpEntries = 0x80181E20; // size:0x70 defined:True
+gViewIdentityMap = 0x8010CAF8; // absolute:True
+gNeoArkSubmarineTunnelEntryActionHandled = 0x80181DF0; // size:0x1 defined:True
+gNeoArkSubmarineTunnelWaterRefractionTaskDesc = 0x801810E4; // size:0x18 defined:True
+_gNeoArkSubmarineTunnelAnimation03EE0Bank1 = 0x801810FC; // size:0x48 defined:True
+_gNeoArkSubmarineTunnelAnimation03EE0Bank4 = 0x80181144; // size:0x100 defined:True
+_gNeoArkSubmarineTunnelAnimation03EE0Records = 0x80181244; // size:0x234 defined:True
+_gNeoArkSubmarineTunnelAnimation03EE0Indices = 0x80181478; // size:0x28 defined:True
+_gNeoArkSubmarineTunnelAnimation03EE0 = 0x801814A0; // size:0x28 defined:True
+_gNeoArkSubmarineTunnelAnimation0444CBank1 = 0x801814C8; // size:0x78 defined:True
+_gNeoArkSubmarineTunnelAnimation0444CBank4 = 0x80181540; // size:0x1F8 defined:True
+_gNeoArkSubmarineTunnelAnimation0444CRecords = 0x80181738; // size:0x2AC defined:True
+_gNeoArkSubmarineTunnelAnimation0444CIndices = 0x801819E4; // size:0x28 defined:True
+_gNeoArkSubmarineTunnelAnimation0444C = 0x80181A0C; // size:0x28 defined:True
+gNeoArkSubmarineTunnelDiverWaterY = 0x80181E90; // size:0x2 defined:True
+_gNeoArkSubmarineTunnelDiverPatrolWaypoints0 = 0x80181E94; // size:0x40 defined:True
+_gNeoArkSubmarineTunnelDiverPatrolWaypoints1 = 0x80181ED4; // size:0x40 defined:True
+_gNeoArkSubmarineTunnelDiverPatrolWaypoints2 = 0x80181F14; // size:0x40 defined:True
+_gNeoArkSubmarineTunnelDiverPatrolWaypoints3 = 0x80181F54; // size:0x40 defined:True
+gNeoArkSubmarineTunnelDiverWaypointSets = 0x80181F94; // size:0x10 defined:True
+_gNeoArkSubmarineTunnelCollisionGridNormals = 0x80181FA4; // size:0xD8 defined:True
+_gNeoArkSubmarineTunnelCollisionGridVerts = 0x8018207C; // size:0x208 defined:True
+_gNeoArkSubmarineTunnelCollisionGridFaces = 0x80182284; // size:0x174 defined:True
+_gNeoArkSubmarineTunnelCollisionGridCells = 0x801823F8; // size:0x26 defined:True
+_gNeoArkSubmarineTunnelCollisionGridTable = 0x801824C4; // size:0x18 defined:True
+_gNeoArkSubmarineTunnelCollisionGrid = 0x801824DC; // size:0x24 defined:True
+gNeoArkSubmarineTunnelViewCameras = 0x80182500; // size:0x168 defined:True
+_gNeoArkSubmarineTunnelView1SpriteBatches = 0x80182668; // size:0x10 defined:True
+_gNeoArkSubmarineTunnelView2SpriteSources = 0x80182678; // size:0xB18 defined:True
+_gNeoArkSubmarineTunnelView2SpriteBatches = 0x80183190; // size:0x30 defined:True
+_gNeoArkSubmarineTunnelView3SpriteSources = 0x801831C0; // size:0xB40 defined:True
+_gNeoArkSubmarineTunnelView3SpriteBatches = 0x80183D00; // size:0x30 defined:True
+_gNeoArkSubmarineTunnelView4SpriteSources = 0x80183D30; // size:0xB04 defined:True
+_gNeoArkSubmarineTunnelView4SpriteBatches = 0x80184834; // size:0x30 defined:True
+_gNeoArkSubmarineTunnelView5SpriteSources = 0x80184864; // size:0xA28 defined:True
+_gNeoArkSubmarineTunnelView5SpriteBatches = 0x8018528C; // size:0x30 defined:True
+_gNeoArkSubmarineTunnelView6SpriteBatches = 0x801852BC; // size:0x10 defined:True
+_gNeoArkSubmarineTunnelView7SpriteSources = 0x801852CC; // size:0x76C defined:True
+_gNeoArkSubmarineTunnelView7SpriteBatches = 0x80185A38; // size:0x28 defined:True
+_gNeoArkSubmarineTunnelView8SpriteSources = 0x80185A60; // size:0x898 defined:True
+_gNeoArkSubmarineTunnelView8SpriteBatches = 0x801862F8; // size:0x28 defined:True
+_gNeoArkSubmarineTunnelView9SpriteSources = 0x80186320; // size:0x820 defined:True
+_gNeoArkSubmarineTunnelView9SpriteBatches = 0x80186B40; // size:0x28 defined:True
+_gNeoArkSubmarineTunnelView10SpriteBatches = 0x80186B68; // size:0x10 defined:True
+gNeoArkSubmarineTunnelSpriteViews = 0x80186B78; // size:0x78 defined:True
+_gNeoArkSubmarineTunnelDirectionalLights = 0x80186BF0; // size:0x160 defined:True
+_gNeoArkSubmarineTunnelPointLights = 0x80186D50; // size:0x4E0 defined:True
+_gNeoArkSubmarineTunnelRoomLights = 0x80187230; // size:0x18 defined:True
+_gNeoArkSubmarineTunnelViewBoundaryTriggers = 0x80187248; // size:0x1C8 defined:True
+_gNeoArkSubmarineTunnelVariant1Resources = 0x80187410; // size:0x18 defined:True
+_gNeoArkSubmarineTunnelVariant2Resources = 0x80187428; // size:0x18 defined:True
+_gNeoArkSubmarineTunnelVariant3Resources = 0x80187440; // size:0x24 defined:True
+_gNeoArkSubmarineTunnelVariant4Resources = 0x80187464; // size:0xC defined:True
+gNeoArkSubmarineTunnelAreaVariants = 0x80187470; // size:0x68 defined:True
+_gNeoArkSubmarineTunnelActionTriggers = 0x801874D8; // size:0x344 defined:True
+_gNeoArkSubmarineTunnelSightOccluders = 0x8018781C; // size:0xB4 defined:True
+_gNeoArkSubmarineTunnelSurface4FootstepSounds = 0x801878D0; // size:0xC defined:True
+_gNeoArkSubmarineTunnelDefaultSurfaceProperties = 0x801878DC; // size:0x8 defined:True
+_gNeoArkSubmarineTunnelSurface4Properties = 0x801878E4; // size:0x8 defined:True
+gNeoArkSubmarineTunnelSurfaceProperties = 0x801878EC; // size:0x20 defined:True
+gScreenWaveContext = 0x8018790C; // size:0x4 defined:True
+gScreenWaveColumnWaves = 0x80187910; // size:0x4E defined:True
+gActor102400Tasks = 0x8013647C; // absolute:True owner=actor_102400
+gActor451100QuietWalkTaskDesc = 0x8013F734; // absolute:True owner=actor_451100
+gActor100400Tasks = 0x80147E48; // absolute:True owner=actor_100400
+gActor451100PairWalkTaskDescs = 0x8014E6E4; // absolute:True owner=actor_451100
+gMapNeoArkSubmarineTunnelVariant1Placements = 0x8017B330; // absolute:True owner=map_neo_ark
+gMapNeoArkSubmarineTunnelVariant2Placements = 0x8017B360; // absolute:True owner=map_neo_ark
+gMapNeoArkSubmarineTunnelVariant3Placements = 0x8017B390; // absolute:True owner=map_neo_ark
+gMapNeoArkSubmarineTunnelVariant4Placements = 0x8017B3C0; // absolute:True owner=map_neo_ark
+D_neo_ark_submarine_tunnel_80181AB0 = 0x80181AB0; // size:0x4 defined:True
+_gNeoArkSubmarineTunnelDiverSwimCommand = 0x80181AB4; // size:0x4 defined:True
+_gNeoArkSubmarineTunnelDiverPatrolCommand = 0x80181AB8; // size:0x4 defined:True
+_gNeoArkSubmarineTunnelEncounterPlayerResetRequest = 0x80181ABC; // size:0x14 defined:True
+_gNeoArkSubmarineTunnelEncounterPlayerPlacement = 0x80181AD0; // size:0x18 defined:True
+_gNeoArkSubmarineTunnelDiverEncounterSceneKey = 0x80181AE8; // size:0x6 defined:True
+_gNeoArkSubmarineTunnelDiverEncounterScript = 0x80181AF0; // size:0x300 defined:True
+gScreenWaveRowWaves = 0x80187960; // size:0xC0 defined:True
+gScreenWaveSpawnCtx = 0x80187A20; // size:0xC defined:True
+
+neoArkSubmarineTunnelRoomVisualEffectsGlowDiscTask = 0x8017F4DC; // type:func
+
+neoArkSubmarineTunnelRoomVisualEffectsFlyingSparkTask = 0x8017FA34; // type:func
+
+neoArkSubmarineTunnelRoomVisualEffectsFlyingOrangeBurstTask = 0x80180694; // type:func
+
+neoArkSubmarineTunnelConfigureEffectsTask = 0x8017F48C; // type:func
+_roomVisualEffectsDrawFlyingSpark = 0x8017FC58; // type:func
+_roomVisualEffectsDrawFlyingRing = 0x8017FEDC; // type:func
+_roomVisualEffectsDrawFlyingDisc = 0x80180300; // type:func
+_roomVisualEffectsDrawFlyingBurstGlow = 0x80180840; // type:func
+_roomVisualEffectsDrawFlyingBurstGroundQuad = 0x80180D6C; // type:func
+_screenWaveTask = 0x8017E828; // type:func
+waterDistortBandTask = 0x8017E288; // type:func
+waterRefractionTask = 0x8017D634; // type:func
+_screenWaveRun = 0x8017F318; // type:func
+_neoArkSubmarineTunnelRejectKeyItemUse = 0x8017f27c; // type:func
+_neoArkSubmarineTunnelResolveRoomEvent = 0x8017f284; // type:func
+_neoArkSubmarineTunnelSetEventSeen = 0x8017f398; // type:func
+_neoArkSubmarineTunnelMessageTaskIdle = 0x8017f414; // type:func
+_neoArkSubmarineTunnelInitializeRoom = 0x8017f3bc; // type:func
+neoArkSubmarineTunnelRoomTask = 0x8017f434; // type:func
+_neoArkSubmarineTunnelHandleRoomAction = 0x8017f064; // type:func
+_neoArkSubmarineTunnelHandleCapCommand = 0x8017f2c8; // type:func
+_gNeoArkSubmarineTunnelRoomStateHandlers = 0x8017d614;

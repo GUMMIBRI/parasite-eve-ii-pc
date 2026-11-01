@@ -1,0 +1,1806 @@
+# Parasite Eve 2 — asset & stage formats
+
+What we know about on-disc stage data (`STAGE0.HED` / `STAGE*.CDF`), chunk
+types, sector packing, compression, and image load paths. Derived from the
+retail USA discs, the matching decomp (`src/main/fs.c`, hasm decompressors),
+and the extract/pack tools under `tools/peassets/`.
+
+Implementation references:
+
+| Area | Code |
+|---|---|
+| Binary layout constants | `tools/peassets/format.py` |
+| Extract / pack | `tools/peassets/extract.py`, `pack.py` |
+| Shared inflate/decode | `tools/peassets/asset_decode.py` (extract + viewer) |
+| LZSS decode / format | `tools/peassets/lzss.py`, `src/main/hasm/fsDecompressStream.s` |
+| LZSS encode (policies, identity) | `doc/LZSS_ENCODER.md`, `lzss.py` / `lzss_clut.py` / `lzss_cascading.py` |
+| Images / CLUT | `tools/peassets/image_codec.py`, `src/main/fs.c` |
+| Asset database | `tools/peassets/asset_db.py`, `asset_data.py` |
+| Runtime FS loader | `src/main/fs.c`, `include/main/fs.h` |
+| **CD streams (MTS audio + STR movie)** | [`STREAM_FORMATS.md`](STREAM_FORMATS.md), `mts_codec.py`, `str_codec.py` |
+| **Overlays (RAM slots, rooms, models)** | [`OVERLAYS.md`](OVERLAYS.md) |
+| **Models (TMD)** | [`TMD_FORMAT.md`](TMD_FORMAT.md), `tools/peassets/model/tmd.py`, `src/main/tmd.c` |
+| **Resource bundles** | [`BUNDLE_FORMAT.md`](BUNDLE_FORMAT.md), `tools/peassets/bundle.py`, `src/main/fs.c` |
+| **Dialogue (CAP)** | [`CAP_FORMAT.md`](CAP_FORMAT.md), `src/gameplay/cap_reloc.c`, `src/gameplay/captions.c` |
+| Animation in packages | `tools/peassets/pkg_anim.py`, `src/gameplay/scene_runtime.c` |
+| Assets embedded in the executables | `tools/peassets/exe_assets.py` |
+
+---
+
+## 1. Discs and stage containers
+
+USA PE2 is two discs. Stage content lives in ISO files such as:
+
+| File | Role |
+|---|---|
+| `STAGE0.HED` | Stage 0 file table + streaming list (fixed size `0x1B80`) |
+| `STAGE0.CDF` | Stage 0 file payloads (flat file list) |
+| `STAGE1.CDF` … `STAGE5.CDF` | Per-stage **folders** (rooms / areas), each with its own file table |
+
+Tooling layout after extract (`assets/USA/`):
+
+```text
+raw/pe2pkg/ pe2img/ …   deduplicated **on-disc** clean payloads, one per content
+                         name = an ASSETS id holding it (sha1), else {type}_{n}
+pe2pkg/ pe2img/ …        **inflated** edit forms, one per asset name
+                         pe2pkg = LZSS-decoded; pe2img/pe2clut/bs = PNG
+weapons/m4a1/ …          the inflated forms of the assets whose `group` is
+                         `weapons/m4a1`, in place of their type directory (§13)
+raw/audio/ audio/        MTS CD streams (not file chunks)
+raw/movie/ movie/        STR movies from INTER*.STR / STAGE*.CDF
+stage0/ stageN/          pack sidecars only (trailer.bin, layout.json, …)
+stages.json              pack manifest (the paths of the inflated forms)
+```
+
+Duplicate payloads are stored once under `raw/{type}/`. Inflate walks unique
+raw files only. Extract’s in-memory chunk map is folded into `stages.json`
+(no separate `assets_map.json`).
+
+Pack matching mode prefers `raw/{type}/` for LZSS types; edit inflated dirs
+for hybrid/decoded packs.
+
+---
+
+## 2. STAGE0 vs STAGE1–5
+
+### STAGE0 (`STAGE0.HED` + `STAGE0.CDF`)
+
+- Flat list of files in HED order (`file_id`, sector-aligned `file_offset`).
+- **Streaming list** (movies / audio): first `3 × 0x28` bytes of the HED —
+  see [`STREAM_FORMATS.md`](STREAM_FORMATS.md).
+- Also: `INTER0.STR` / `INTER1.STR` on the ISO for FMV (not in the CDF).
+- Chunks land in type dirs; pack sidecars under `stage0/<fileName>/`
+  (default `file{id}`, or a friendly name from `TREE`).
+
+### STAGE1–5 (`STAGEn.CDF`)
+
+- Leading folder table: up to `0x100` entries of `(folder_id, folder_size)`.
+- Each folder is a sector-aligned block:
+  - file list (`0xA2` slots)
+  - **streaming list** at folder + `0x514` (`18 × 0x28`)
+  - then file payloads (and often stream data after the last file)
+- Chunks land in type dirs; pack sidecars under `stageN/<folderName>/file…/`.
+
+Folder and file **keys** in `stages.json` use friendly names when set in
+`TREE`; otherwise `file12` / decimal folder id. Order is always on-disc
+order so pack recovers numeric ids.
+
+---
+
+## 3. Chunk layout (on-disc)
+
+Each stage **file** is a sequence of **chunks**. Chunks are the units that
+become individual assets (`.pe2pkg`, `.pe2img`, `.bs`, …). Implementation:
+`tools/peassets/format.py` (`FileChunkHeader`, `unpack_chunk_payload`,
+`pack_chunk_payload`).
+
+### 3.1 Hierarchy
+
+```text
+STAGE*.CDF / stage0 file table
+  └── file  (sector-aligned offset in container)
+        └── chunk 0   [header @ sector0][payload sectors…]
+        └── chunk 1   …
+        └── chunk N   (end_flag = 0xFF)
+```
+
+- A **file** may contain one or many chunks back-to-back (on-disc `end_flag`
+  chains them; pack sets last chunk → End, others → Continue).
+- Chunk **byte size** on disc is always a multiple of the CD sector size
+  **`0x800`**. On-disc size is **inferred** from clean payload length and
+  `sector_len` at pack time (not stored in `stages.json`).
+
+### 3.2 Chunk header (`0x10` bytes)
+
+Little-endian. Present only once, at the start of the **first CD sector** of
+that chunk (not repeated on continuation sectors):
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| `0x0` | `u8` | `type` | Chunk type (see §3.5) |
+| `0x1` | `u8` | `end_flag` | `0x01` = another chunk follows this one in the file; `0xFF` = last chunk |
+| `0x2` | `u16` | `sector_len` | Exclusive end of **valid** data in each sector buffer |
+| `0x4` | `u32` | `sector_count` | Chunk length in CD sectors, including the header sector |
+| `0x8` | `u32` | `load_addr` | RAM load address for room packages / bundles; else `0` |
+| `0xC` | `u32` | unused | Unread by the loader; zero in extracted retail headers |
+
+The on-disc word at `0x4` is a sector count. The tool's
+`FileChunkHeader.chunk_size` stores the same length in bytes (`sector_count
+× 0x800`; 7 sectors is `0x3800`). Pack derives it from the clean payload and
+`sector_len` via `format.pack_chunk_payload` — it is **not** a `stages.json`
+field. The loader adds the sector count to the header sector
+(`_gFsPayloadEndSector = gFsNextReadSector - 1 + sectorCount`).
+
+### 3.3 Multi-sector payload layout and `sector_len`
+
+CD sector size is **`0x800`**. The loader maps each sector into `gFsSectorBuffers.sector`
+and only treats bytes **below `sector_len`** as valid payload.
+
+`sector_len` is an **exclusive end offset** inside the sector buffer. It must
+cover the header on sector 0:
+
+- Valid range: **`(0x10, 0x800]`** (`format.parse_sector_len` /
+  `validate_sector_len`).
+- Default when omitted from `stages.json` is **`0x800`**; extract only writes
+  the field when retail differs from that default.
+
+```text
+Sector 0 of a chunk (first sector only carries the header):
+  [0x00 .. 0x10)           16-byte chunk header
+  [0x10 .. sector_len)     valid payload  (“first_cap” bytes)
+  [sector_len .. 0x800)    padding (ignored by the game)
+
+Sector 1, 2, … of the same chunk:
+  [0x00 .. sector_len)     valid payload  (“cont_cap” bytes)
+  [sector_len .. 0x800)    padding
+```
+
+Common `sector_len` values:
+
+| `sector_len` | Valid bytes / first sector (`first_cap`) | Valid bytes / later sector (`cont_cap`) |
+|---|---|---|
+| `0x800` (most chunks) | `0x7F0` | `0x800` |
+| `0x600` | `0x5F0` | `0x600` |
+| `0x500` | `0x4F0` | `0x500` |
+
+```text
+first_cap = sector_len - 0x10
+cont_cap  = sector_len
+```
+
+**Clean payload** (sector strip before inflate/store; what pack re-pads) is the
+concatenation of every valid range **with the header stripped**:
+
+```text
+clean_len = first_cap + (n_sectors - 1) * cont_cap
+          = (sector_len - 0x10) + (n_sectors - 1) * sector_len
+```
+
+where `n_sectors` is derived from the on-disc blob (extract) or from the
+minimum sectors needed for the clean payload (pack).
+
+Runtime: `gFsLzssInputEnd = gFsSectorBuffers.sector.bytes + sector_len` marks the decompress input boundary
+(`src/main/fs.c`).
+
+### 3.4 Extract vs pack
+
+| Direction | Function | Behaviour |
+|-----------|----------|-----------|
+| **Extract** | `unpack_chunk_payload` | Read full multi-sector blob → strip header + pad → inflate → **type store** |
+| **Pack** | `pack_chunk_payload` | Clean payload + `sector_len` → re-stride into sectors with pad; set header `chunk_size` |
+
+How many sectors a clean payload needs (pack):
+
+```text
+if len(payload) <= first_cap:
+    n_sectors = 1
+else:
+    n_sectors = 1 + ceil( (len(payload) - first_cap) / cont_cap )
+chunk_size = n_sectors * 0x800
+```
+
+If re-encode grows the payload, pack uses **more** sectors than retail as needed.
+
+**Legacy naive extract** stored `sec0[0x10:0x800] + sec1[0:0x800] + …`, which
+embeds pad when `sector_len < 0x800`. Prefer re-extract, or
+`format.ensure_clean_payload` / `strip_naive_payload_padding`.
+
+Measure production re-encode vs retail sector counts:
+
+```text
+python3 tools/peassets/lzss_roundtrip_report.py --log layout_diff.log
+```
+
+### 3.5 Chunk types
+
+| `type` | Name | Extension | Loader (main) | Notes |
+|---|---|---|---|---|
+| `0x0` | Room package | `.pe2pkg` | `fsDecompressStream` | LZSS body; overlays load at `load_addr` |
+| `0x1` | Image | `.pe2img` | `fsBeginImageColumns` + `fsUploadImageStrips` | Sequential LZSS strips → VRAM |
+| `0x2` | Color lookup table | `.pe2clut` | `fsUploadImageChunk` + `fsDecompressImagePayload` | 16-byte image header + LZSS → ABGR1555 |
+| `0x4` | Resource bundle | `.pe2bundle` | (package-like) | Has a load address |
+| `0x5` | Room background | `.bs` | MDEC path | PSX BS v2 → PNG (320×240) |
+| `0x6` | Music | `.spk` | SndLoad / SPU | `hSPK` bank → WAV samples |
+| `0x7` | Ascii | `.txt` | | |
+
+There is no type `0x3` in the tables we use.
+
+### 3.6 What the clean payload is (by type)
+
+After sector unpack, the clean bytes are:
+
+| Type | Clean payload contents |
+|------|------------------------|
+| Room package | One LZSS stream (entire body) |
+| Image | Column table + sequential independent LZSS strips |
+| CLUT | 16-byte image-chunk header + one LZSS colour stream |
+| Others | Opaque bytes (music, text, `.bs`, …) as stored |
+
+LZSS bitstream details: §4. Encode policies: [`LZSS_ENCODER.md`](LZSS_ENCODER.md).
+
+---
+
+## 4. LZSS compression
+
+Used by:
+
+- `.pe2pkg` room packages (entire body after sector strip)
+- `.pe2img` strips (each strip is its own stream)
+- `.pe2clut` colour data after the 16-byte image-chunk header
+
+Algorithm family (same as `fsDecompressStream` / md_hyena-style):
+
+- 256-byte ring dictionary
+- Flag bit: `1` = literal byte, `0` = back-reference
+- Back-ref: 8-bit offset, 4-bit length; copy `length + 2` bytes
+- Offset `0` = end of stream
+- The offline decoder starts its ring write cursor at 0 and decrements stored
+  offsets by 1; the runtime starts at 1 and uses absolute ring indices.
+
+Implementation: `tools/peassets/lzss.py` (decode / trim / pack / production
+encode). Runtime: `fsDecompressStream.s` (resumable, package/image-strip payloads) and
+`fsDecompressImagePayload.s` (non-resumable, in-memory). Same bitstream for both.
+
+`fsDecompressImagePayload` decodes into RAM and leaves both global byte
+cursors unchanged. Its 256-byte scratchpad ring is not cleared, and its
+eight-bit reads can fetch one byte beyond the end token. The caller must
+provide readable lookahead, valid history for any unwritten ring slots and
+enough output storage; the decoder checks scratch-stack clearance only.
+
+**Encode policies, identity scores, multi_max research, and tool map:** see
+[`LZSS_ENCODER.md`](LZSS_ENCODER.md).
+
+## 5. Room packages (`.pe2pkg`)
+
+- Chunk type `0x0`.
+- Body is one LZSS stream (after sector_len strip).
+- `load_addr` is the RAM load address when non-zero (e.g. title / gameplay
+  overlays at `0x80093800`).
+- Unique inflated bodies live under `pe2pkg/` (stem from `ASSETS` or
+  `pe2pkg_N`); decomp overlays use those files directly (e.g.
+  `pe2pkg/title.pe2pkg`).
+
+“Room package” is the on-disc type name. Only stages 1–5 actually use these
+as **per-room** overlays (`0x8017D5C0`). Stage 0 uses the same type for
+gameplay, title, Aya, weapons, actors, maps, and menus — see
+[`OVERLAYS.md`](OVERLAYS.md).
+
+Examples:
+
+| Friendly name | Canonical id | Role |
+|---|---|---|
+| `gameplay` | `stage0/file0/1.pe2pkg` | Resident in-game overlay |
+| `title` | `stage0/file1/5.pe2pkg` | Title / demo / menu overlay |
+
+---
+
+## 6. Images (`.pe2img`) — type 1
+
+### 6.1 On-disk structure
+
+```text
+Column table (`FsImageColumn`, 8 bytes each), until x == 0xFFFF:
+  u16 x          VRAM X (column origin, in halfwords)
+  u16 y          VRAM Y
+  u32 offset     only the *first* entry’s offset is used as stream start;
+                 later offsets are not seeks in the load path we reverse
+
+Terminator:
+  u16 0xFFFF
+  u16 term_y     may override column height when this is the *second* slot
+  u32 0
+
+Then: sequential LZSS strips (see below)
+```
+
+### 6.2 Load path (`fs.c`)
+
+1. `fsBeginImageColumns` copies the table, including its terminator, into `_gFsImageColumns`.
+2. Primes a 64-halfword by 32-row strip rectangle from the first column.
+   High-VRAM columns or mode 2 apply the X-page shift; mode 2 adds 128 rows
+   to the first column only.
+3. Sets remaining height `_gFsImageColumnRowsRemaining = 0x100` (unless single-column
+   terminator special-cases `0x40` or `term_y & 0x7FFF` when `term_y & 0x8000`).
+4. Points the decompress cursor at `table + entry0.dataOffset` in bytes.
+5. `fsUploadImageStrips` loop:
+   - Decompress one strip into `_gFsImageUploadBuffer` (4480-byte capacity).
+   - `LoadImage2` 4096 bytes from that buffer to VRAM, retaining any unwritten tail.
+   - `y += 0x20`, `_gFsImageColumnRowsRemaining -= 0x20`.
+   - Set `_gFsStripDecodeResetPending` for the next strip's decoder reset;
+     the scratchpad history itself is not cleared.
+   - When a column is finished, advance to the next column record for a new
+     VRAM `x` / `y`, **without** seeking; the compressed stream continues.
+
+So: **columns are sequential in the compressed stream**, not stored as
+independent blobs at each entry’s `offset`.
+
+### 6.3 Geometry
+
+| Quantity | Value |
+|---|---|
+| Strip width | `0x40` halfwords |
+| Strip height | `0x20` lines |
+| Strip payload | `0x1000` bytes |
+| Default column height | `0x100` lines → **8 strips** |
+| Pixel width of one column | halfwords × (16 / bpp) |
+
+### 6.4 BPP and colour
+
+VRAM transfer is always halfword-oriented. Texture depth is separate:
+
+| BPP | Pixels per halfword | Typical use |
+|---|---|---|
+| 16 | 1 (ABGR1555) | Direct colour |
+| 8 | 2 (indices) | Textures / UI with 256-colour CLUT |
+| 4 | 4 (indices) | Fonts / small UI with 16-colour CLUT |
+
+BPP is **not stored** on disc. Extract and the viewer default to `guess_bpp()`
+(halfword chroma + unique-count). Override on the unique blob in `ASSETS`
+(one depth, or one per column record):
+
+```python
+ASSETS["pe2img_455"]["bpp"] = [4, 8]  # font column + 8-bit bitmap column
+```
+
+The viewer Image tab has a **BPP** combo per column (`Auto` / `4` / `8` /
+`16`). Auto uses `ASSETS[id].bpp` when set, else the guess. The depth an
+image keeps is its `bpp` in the asset table.
+
+When a neighbouring `.pe2clut` exists (`N±1` by chunk index), the PNG exporter
+applies it for 4/8 bpp (see §7.4 for multi-row selection). Examples:
+
+- the title chrome (`title/chrome_image`, 8 bpp, two columns at x=768,
+  palette at `(0, 255)`), now declared by `title/screen_file`
+- `stage0/file30500/1.pe2img` + `0.pe2clut` → NEO ARK map (needs CLUT **row 1**,
+  not row 0 — row 0 is a green monochrome palette)
+
+Decoded form: `pe2img/<stem>.png` only. What a re-encode needs besides the
+pixels - the column table, height and size - is read from the stored chunk,
+`raw/pe2img/<stem>.pe2img` (`image_codec.pe2img_info`), and the depth from the
+asset table.
+
+---
+
+## 7. Colour lookup tables (`.pe2clut`) — type 2
+
+### 7.1 On-disk structure
+
+```text
+FsImageChunk (0x10 bytes) — runtime struct in include/main/fs_types.h:
+  u16 x, y      VRAM destination (x in halfwords, y in rows)
+  u16 h, w      height in rows, then width in halfwords
+  u8  unused[8] unread by the loader; zero in every retail CLUT payload and bundle image
+
+Then: LZSS-compressed ABGR1555 colour data
+  uploaded size = w * h * 2 bytes
+```
+
+Example: `w=256, h=6` → 1536 colours (six 256-colour palettes), common for
+8 bpp textures. `w=16` / small heights → 4 bpp palettes.
+
+### 7.2 Load path
+
+`fsUploadImageChunk`:
+
+1. Build `RECT` from `x, y, w, h`. Rows 245 through 255 receive the active Y shift, and chunk mode 2 adds one row.
+2. `fsDecompressImagePayload` from bytes after the header.
+3. `LoadImage2` the palette into VRAM.
+
+The end token determines the decoded byte count; the loader does not compare
+it with the rectangle size or clear its 4480-byte staging buffer. Retail CLUT
+streams produce either the uploaded byte count or two extra bytes. Some bundle
+and scene palettes end one byte short, so their final uploaded byte retains
+the previous staging-buffer contents. The GPU source transfer rounds up to
+whole 32-bit words. A complete compressed stream and its decoder lookahead,
+decoded bytes, and word-rounded upload must all fit their backing storage.
+
+Do **not** treat the bytes after the header as raw colours without LZSS.
+
+### 7.3 How the game uses CLUTs (draw time)
+
+Image and CLUT chunks are **independent**. There is no on-disk “this texture
+uses that palette” link. The runtime:
+
+1. Loads the texture into a VRAM region (from the pe2img column records' `x,y`
+   and the strip path).
+2. Loads the CLUT into another VRAM region (`FsImageChunk.x/y`, often
+   `(0, 255)` for UI).
+3. When building a primitive (`SPRT`, `POLY_FT4`, …), sets:
+   - `tpage` → which texture page (where the pixels live)
+   - `clut` → which **palette row**, via `getClut(x, y)` /
+     `GetClut(x, y)` from `libgpu.h`:
+
+   ```c
+   #define getClut(x, y)  (((y)<<6)|(((x)>>4)&0x3f))
+   ```
+
+   That encodes the VRAM coordinates of the **start of one CLUT row**.
+   For a multi-row CLUT loaded at `(cx, cy)` with height `h`:
+   - row 0 → `getClut(cx, cy)`
+   - row 1 → `getClut(cx, cy + 1)`
+   - …
+   - row `h-1` → `getClut(cx, cy + h - 1)`
+
+Different draw sites can pick different rows of the **same** CLUT block
+(e.g. a full-colour map palette vs a monochrome overlay). Example in main:
+`_loadUiDrawDiskSwapMessage` selects VRAM `(0, 255)` with `GetClut`, which is
+exactly where several stage0 CLUTs load.
+
+### 7.4 Offline PNG colourisation
+
+The exporter does **not** know which `getClut` Y a given texture will use.
+Heuristic:
+
+- Prefer a neighbouring `.pe2clut` (`N±1` by chunk index in the same file).
+- If the CLUT has multiple rows (`h > 1`), score each row and pick the most
+  **varied** one (avoid monochrome / single-hue rows that make maps look
+  “all green”).
+
+Concrete case — `stage0/file30500`:
+
+| Chunk | Role |
+|---|---|
+| `0.pe2clut` | VRAM `(0, 255)`, `w=256`, `h=6` (six 256-colour rows) |
+| `1.pe2img` | 8 bpp NEO ARK map texture (two columns at x=896, 960) |
+
+- **Row 0**: ~27 unique greens → monochrome green map if used alone.
+- **Row 1**: 255 varied colours → correct full-colour map (labels, water, UI).
+- Rows 2–5: sparse / empty.
+
+An earlier exporter that always used row 0 produced the all-green PNG; picking
+the highest-scoring row recovers the real map.
+
+### 7.5 Title STAGE0 occupancy
+
+HED file order (`stages.json` TREE names): **gameplay** (file 0), **title**
+(file 1), **title_screen** (file 2, still + chrome), and **ui** (file 20162,
+the two UI textures alone). Boot brings in the title overlay from file 1;
+`_titleInitializeScreenTask` then queues the category-2 display resource 20100
+with `cdCmdEnqueueDisplayResource(1, 0, CD_COMMAND_DISPLAY_LOAD_MENU)` and
+calls `textUploadPalettes`.
+
+| Chunk | Asset | VRAM (halfwords) | Declared as |
+|---|---|---|---|
+| `title/sounds` | `sounds/common/bank` | SPU | `sound_bank`, its sounds named by entry |
+| `title/font_image` | `ui/font/image` | `(960, 256)` 64×256 | `ui/font/texture`, 4 bpp; its palettes are main's `ui/font/glyph_palettes` (`palettes_from`) |
+| `title/dialogue_palette` | `dialogue/palette` | `(256, 243)` 64×6 | raw: the dialogue's glyph and plate colors, for the dialogue font page at `(384, 0)`, not yet declared |
+| `title/sheet_image` | `ui/sheet/image` | `(896, 256)` 64×256 | an atlas of 51 sprites, `ui/sheet/atlas` |
+| `title/sheet_palette` | `ui/sheet/palette` | `(0, 240)` 256×3 | rows 240 and 242: the sprites' palettes; row 241: the portrait's |
+| `title/package` | `title/package` | RAM `0x80093800` | the title overlay |
+| `title_screen/background` | `title/background` | draw band 320×240 | `bs` |
+| `title_screen/chrome_palette` | `title/chrome_palette` | `(0, 255)` 256×6 | uploads six rows, fills row 0 |
+| `title_screen/chrome_image` | `title/chrome_image` | `(768, 256)` 128×256 | `title/chrome_left`, `chrome_right`, 8 bpp |
+
+The UI font is never drawn from the block stored after it: its glyphs use
+the fill and two outline palettes `textUploadPalettes` writes at
+`(976, 511)`. `textUploadPalettes` also writes row 243 of the dialogue block
+(`text_clut0`), which nothing draws with; row 247 holds colors nothing draws
+with either. See §7.6.
+
+Chrome clut `(0, 255)` `h=6` sits on the last draw-band line and the 32-line
+CLUT gutter (`y=240…271`). Do not `isbg` a 256-high env at `y=240`.
+
+**Chrome is a sprite atlas**, not C-string labels. `_titleDrawChromeRow`:
+
+| | |
+|---|---|
+| SPRT | `x0=-0x80`, `w=0x100`, `h=0x10`, `u0=0`, `v0=atlasV`, code `0x66` (shaded + semi-transparent) |
+| clut | `0x3FC0` = `GetClut(0, 255)` |
+| tpage | `0xE10002BC` — 8bpp, ABR 1, **dtd=1**, page origin `(768, 256)` |
+
+`brightness` supplies the same byte to red, green and blue: 0 contributes
+nothing under additive blending, and 0x80 gives the unscaled texture colour.
+The draw-mode packet is prepended after the sprite so it executes first.
+
+Atlas `atlasV` (texel Y in the chrome page):
+
+| `atlasV` | Row |
+|---|---|
+| `0x00` | PRESS START BUTTON prompt |
+| `0x10` | (c)1999,2000 SQUARE copyright |
+| `0x20` | Cursor highlight |
+| `0x30` | New Game |
+| `0x40` | Continue |
+| `0x50` | Option |
+
+### 7.6 UI font (main EXE) and `textUploadPalettes`
+
+Glyph metrics are **not** a CDF chunk. They live in `SLUS_010.42`:
+
+| Table | VA | Count | `glyphTable` | `vBias` (`textDrawString`) |
+|---|---|---|---|---|
+| `_gFontGlyphsMedium` | `0x8005EFB0` | 224 (`0x20`…`0xFF`) | 0 (`TEXT_GLYPH_TABLE_MEDIUM`) | 38 (`TEXT_GLYPH_V_BIAS_MEDIUM`) |
+| `_gFontGlyphsLarge` | `0x8005FA30` | 224 (`0x20`…`0xFF`) | any value other than `TEXT_GLYPH_TABLE_MEDIUM` (0) and `TEXT_GLYPH_TABLE_SMALL` (5) | `-128` (byte `0x80`) |
+| `_gFontGlyphsSmall` | `0x800604B0` | 91 (`0x20`…`0x7A`) | 5 (`TEXT_GLYPH_TABLE_SMALL`) | 0 (`TEXT_GLYPH_V_BIAS_SMALL`) |
+
+`_uiDrawUnderlinedLabel` sets `glyphTable` to `TEXT_GLYPH_TABLE_SMALL`.
+Medium-face drawing adds `TEXT_GLYPH_V_BIAS_MEDIUM` (38 texels) to each glyph's
+V coordinate before storing it in the unsigned sprite byte. Its metric V
+origins 0..112 become page-local rows 38..150. Inline `\sM` commands (either
+letter's case) select the same bias without changing `glyphTable`.
+Large-face drawing adds `TEXT_GLYPH_V_BIAS_LARGE` to each glyph's V coordinate
+and stores the result in an unsigned sprite byte: `-128` is equivalent to
+adding 128 modulo 256. The large-face metrics have V origins 0..116, which
+therefore become page-local rows 128..244. Inline `\sL` commands (either
+letter's case) select the same bias without changing `glyphTable`.
+
+Small-face drawing uses `TEXT_GLYPH_V_BIAS_SMALL` (0 texels), leaving its
+metric V origins 0..114 unchanged in the unsigned sprite byte. Initial
+`TEXT_GLYPH_TABLE_SMALL` selection and inline `\sS` commands (either letter's
+case) use this bias; inline commands leave `glyphTable` unchanged.
+
+`_FontGlyph` `u`/`v` are **page-local texels** in the 4bpp page at
+`(960, 256)`, with `vBias` added to `v`. SPRT `w`/`h` are
+`glyph.widthMinusOne+1` / `glyph.heightMinusOne+1`. Pair kerning tightens the
+pen by 2 pixels, or by 1 when `glyphTable` is `TEXT_GLYPH_TABLE_SMALL`.
+`xOffset` / `yOffset` are signed pixel offsets.
+
+`textUploadPalettes` (`src/main/textutil.c`):
+
+| Source | Size | `LoadImage` dest | GPU clut |
+|---|---|---|---|
+| `_gTextFontPaletteWords` | 32 packed 32-bit words / 64 colors (4×16) | `(0x100, 0xF3)` = `(256, 243)`, `w=0x40`, `h=1` | `0x3CD0` / `0x3CD1` / `0x3CD2` / `0x3CD3` |
+| `_gTextGlyphPaletteWords` | 24 packed 32-bit words / 48 colors (3×16) | `(0x3D0, 0x1FF)`, `w=0x30`, `h=1` | glyph fill `0x7FFD` / translucent-text outline `0x7FFE` / ordinary outline `0x7FFF` |
+
+Both transfers cover their complete resident arrays. Rectangle widths count
+16-bit VRAM colors, rather than the packed `u_long` source elements. The
+uploader queues the copies without waiting for GPU completion.
+
+The unused `_gTextFontPaletteUploadList` and `_gTextGlyphPaletteUploadList`
+each contain one copy record and one terminator. The font list describes the
+live font-row destination, but the retained glyph list names `(256,240)` rather
+than the live glyph-row destination `(976,511)`; that unused position's original
+purpose is unproven. Both lists reference the same resident packed words as the
+live uploader.
+
+Opaque UI glyph fills (`_textDrawGlyphImmediate` / `_textDrawGlyphFill`) use **`0x7FFD` only**.
+Indices 0–10 are transparent; 11–15 are the letter. Dual SPRT (`0x7FFD` +
+`0x7FFF`) is a second layer (`0x64` + `0x67`). Index 5 in the 4bpp page is
+cell padding: the TIM/fill clut at `(256, 243)` maps it to mid-grey (one
+box per glyph); `0x7FFD` keys it out.
+
+---
+
+### 7.7 Assets embedded in the executables
+
+A few things are baked into `SLUS_010.42` rather than shipped as CDF chunks.
+Nothing on disc references them, so the chunk walker cannot reach them - they
+are cataloged by **address** in `asset_db.EMBEDDED_ASSETS` (source binary,
+load-time VA, exact size, extension) and then go through the normal store like
+any other asset:
+
+```text
+raw/mcsave/mc_save_header.mcsave        512 bytes, byte-identical to the
+                                        main.exe slice, SHA-1 deduped
+mcsave/mc_save_header/meta.json         inflated form in the type dir
+                     /clut.png
+                     /icon0.png … icon2.png
+```
+
+`extract.py` slices them right after `main.exe` is copied, so every mode gets
+them, minimal included; the decoded form is produced by the usual
+`materialize_inflated` pass, so a `--raw-only` run stores the bytes and stops.
+`--skip-embedded` turns it off and a missing Pillow degrades to a warning.
+`exe_assets.py` holds the slicing and the decoder.
+
+Separately, the *build* gets the same bytes through a splat `databin` segment
+writing to `asm/USA/incbin/` — a per-worktree build input regenerated by every
+split, not a catalog asset. Both trees are gitignored, so game data stays out of git
+either way.
+
+#### Memory-card save header (`main.exe` `0x0516FC`, VA `0x80060EFC`)
+
+One mutable 512-byte PlayStation save header, written when creating a save file.
+`_gMcFileHeader` owns the complete object and `_gMcSaveSections[0]` points to it.
+The initial corrupted-data title is replaced before normal saves; checksums
+cover the complete header, including palette and icons. The disassembly label
+`Mc_SaveHeaderBody` marks the title at byte 4 within that object.
+
+| Off | Size | Field |
+|---|---|---|
+| 0x00 | 2 | `"SC"` magic |
+| 0x02 | 1 | icon flag `0x11`-`0x13`; low nibble is the frame count (3 here) |
+| 0x03 | 1 | block count (1) |
+| 0x04 | 0x40 | Shift-JIS title, NUL-terminated - `ＰＥ２　Ｄａｔａ　Ｃｏｒｒｕｐｔｅｄ．` |
+| 0x44 | 0x1C | retained bytes between title and CLUT; role unproven |
+| 0x60 | 0x20 | 16-entry 5-5-5 CLUT; entry 0 transparent |
+| 0x80 | 0x80 x3 | icon frames, 16x16 4bpp, low nibble = left pixel |
+
+The title builder keeps its unchecked appends: a current title can span 66 bytes,
+extending into the retained bytes after the nominal 64-byte title without
+reaching the CLUT. The three frames animate a portrait dissolving into the teal
+PE energy effect.
+
+Overlay packages carry assets the same way, as records whose `source` is the
+package and whose `include` width makes the build write the initializer the C
+declaration includes (`build/include/assets/<id>.inc`). The id is
+`<package>_<kind>_<offset>`; content several packages carry has one record, in
+the first package by name, and the others include that id.
+
+| `ext` | `type` | What it is |
+|---|---|---|
+| `.img` | `image` | packed texture words uploaded by a `GpuImageUpload` list |
+| `.clut` | `clut` | a palette row: uploaded, or blended into the row that is |
+| `.morph` | `morph_deltas`, `morph_normals` | a `ModelMorph`'s per-vertex deltas and target normals |
+| `.path` | `movie_path`, `camera_path` | one position (or camera transform) per movie or scene frame |
+| `.motion` | `motion_curve` | baked per-frame motion of a prop or figure: positions, angles |
+| `.motion` | `sprite_schedule` | which sprites a prop shows on each frame of a state: `actor_341700`'s four slots per frame, indexing its hand-placed offset table, which stays in C |
+
+A track can carry a per-step flag in a coordinate's spare bit:
+`dryfield_night_gas_station_motion_0AFC0` is 100 `SVECTOR` steps whose `vx`
+bit 0 is the visibility flag of the room's flicker sprites on that step, so the
+position and the flag are one sample and extract as one asset.
+
+`include` is the element width the initializer is spelled in - `'u8'`, `'u16'`
+or `'u32'`, whichever the object's C element type is made of - and the list is
+flat, so brace elision fills any array or struct of that one width. A record
+whose members differ in width takes `"include": 'layout'` and a `layout`: a
+Python `struct` format for **one** record, limited to `b B h H i I` and `x`
+padding. `tools/buildsteps/gen_asset_inc.py` then writes one line of member values per
+record, still without braces, so the same include serves the record type at any
+array nesting (`ViewCamera x[400][2]` is `'9h 2x 3i I'`: a `MATRIX` and a
+`u32`). Padding has no initializer and compiles to zero, so the generator
+refuses a record whose padding bytes are not zero. The layout reaches the
+generator on the `asset-inc` rule's command line, so changing it rebuilds the
+include.
+
+A shaped asset (below) can instead write C itself: one with `include =
+true` has its codec's `c_source` generated as `assets/<name>.inc`
+(`tools/buildsteps/gen_shape_inc.py`), which a source includes whole, outside
+any definition.
+
+#### Shaped assets
+
+Data that has structure is declared by its **shape**, as a class declares an
+object: `tools/peassets/shape/<family>.toml` lists each shape's fields (type,
+default, doc), the shape it extends (`base`) and the stored places it is
+written to (`outputs`); `shape/<family>.py` is its codec, which decodes an
+instance from those places and encodes it back exactly. An asset of type
+`shaped` names its `shape` and, per output, the stored asset it is:
+
+```toml
+[item]
+type = "shaped"
+shape = "effect_item"
+outputs = { catalog = "catalog", info = "text" }
+```
+
+An output names its own group's asset by local name, and another group's or
+an ungrouped one by path, `{ asset = "items/battery/catalog" }`, as a
+file's entries do.
+
+Its instance, `<group>/<local name>.toml`, is the decoded form, the one that
+is edited. It states its `shape` first, which must be its asset's, then only
+the fields that differ from their defaults. The
+extractor writes it from the outputs, which a group owns and so are not
+decoded on their own, and fails when it does not encode back to them;
+`python3 tools/peassets/shape check` compares every instance with the disc.
+An output a C object holds is built from the instance.
+
+The item family (`shape/item.toml`) is the first: `item`, with an item's name,
+description and unidentified form, its price and restrictions, and
+six shapes extending it, one per kind of information panel - `effect_item`
+(ids 0x01..0x5F, an effect sheet of USE/ATTACHMENT headings and effects),
+`parasite_energy` (0x0F..0x32, a level of an energy: `pe/<energy>`'s
+`level<n>_item`, whose shop-row panel is blank and whose PE menu description
+is a fourth output, `menu`, the text of its PE menu preview file), `armor`
+(0x60..0x7F, its special features), `weapon` (0x80..0x9F, the stat sheet and
+the rounds and modes it fires), `ammunition` (0xA0..0xBF, the weapons that
+load it) and `key_item` (the long description). Each writes three outputs:
+
+- `catalog`: its name and description fields in gameplay, an embedded
+  `txt` located by address;
+- `info`: the information text of its preview file, where it has one (the two
+  rescue bonuses, key items 0x12F and 0x130, have none);
+- `descriptor`: its row of gameplay's descriptor table (`ItemDesc`), whose
+  classification is the shape's `category` (0, 2, 3 or 4) over a nibble
+  each shape names - an ammunition's `caliber`, an effect item's
+  `medicine`, a weapon's `weapon_class` (which, like flag 0x08, no code
+  reads in any release) - and whose text pointer is its catalog text. An unused id that
+  still has a preview file states `blank_row`: its row is the empty one.
+
+The sheet's line offsets (`\U`/`\D`) are not stored: every sheet on the disc
+follows four fixed advances, which the codec applies (`shape/item.py`); nor is
+an ammunition list's column spacing, but for one row of the 9mm P.B.
+(`column_gaps`). A weapon lives in its own group (`weapons/m93r/item`, a
+variant's `weapons/p08/snail_item`), with its preview file, texture and text
+beside its package. Every item group owns all it holds, under local names,
+even where the bytes equal another's (the four batteries' catalog texts, the
+placeholder files' copies of the 5.56 Rifle's picture, the blank panels the
+Parasite Energies' files hold too): only the raw store is shared.
+
+The catalog, `inventory/catalog` (shape `item_catalog`), lists every
+item by id and writes both descriptor tables, `gItemDescriptors` (0x00..0xBF)
+and `gItemKeyDescriptors` (0x100..0x17F), each an embedded
+`item_descriptor_table` in the `inventory` group, and owns the empty catalog
+text the rows without an item point at (`empty`). With `include = true` it
+writes all of it as C, `assets/inventory/catalog.inc`, which
+`src/gameplay/item_catalog.c` includes whole: every catalog text, in address
+order, then both tables. That is an object of its own and data only, as in the
+original build, whose `.rodata` ends in one byte past the last text (`junk`):
+a different value in every release (0x97 US, 0xDF Europe, 0xA6 Japan) where
+every other alignment gap is zero, so the catalog looks generated by a tool
+that wrote its object from an uncleared buffer. The link starts each object's
+sections on a word (`SUBALIGN(4)`), so the byte is the object's own, written
+as a `u8` scalar - an array would be word-aligned. The texts stay separate arrays, named by gameplay's
+symbol map, rather than string literals in the rows: GCC merges identical
+literals (the four batteries' texts are four objects), places them after the
+table in reverse order, and gives each a terminator the Soldier Rescue
+Bonus's object does not have.
+Its instance lists the ids by kind, not by table - `items` (0x01..0x0E and
+0x33..0x5F), `parasite_energy` (0x0F..0x32), `armor`, `weapons`,
+`ammunition`, `key_items` - and the codec places each section's ids in their
+table, refusing an id outside its section. An id maps to its item, whose
+instance gives the row; an id not listed is the empty row (an inline row,
+`{ price, classification, flags, text }`, is still read, for an id whose item
+has no group). A
+codec may read other instances through its context (`shape.Context`): the
+catalog's tables are assembled from the items', so its instance is decoded
+after theirs and every shape include depends on every instance.
+
+A new record needs a re-extraction (`python3 ninja_config.py -iso_min`) before
+the build can read its `raw/` file.
+
+Adding another embedded asset means one `EMBEDDED_ASSETS` entry plus, if it is
+a new format, an extension in `TYPE_DIR_BY_EXT` and a branch in the materialize
+dispatch. `exe_assets.scan_for_save_headers` is the signature scan that found
+this block and can find it again if a version moves it; extraction itself
+trusts the catalog rather than scanning.
+
+---
+
+## 8. Room backgrounds (`.bs`)
+
+- Chunk type `0x5`.
+- PSX **BS version 2** MDEC bitstream (same demuxed frame format as STR v2):
+
+  | Offset | Size | Field |
+  |--------|------|--------|
+  | 0 | u16 | `mdec_code_count_div2` |
+  | 2 | u16 | magic `0x3800` |
+  | 4 | u16 | frame quantisation scale |
+  | 6 | u16 | version (`2`) |
+  | 8 | … | VLC bitstream (16-bit LE words, MSB-first after byte-swap) |
+
+- Macroblocks are 16×16, ordered **column-major** (top→bottom, then next
+  column). Each MB is Cr, Cb, Y1, Y2, Y3, Y4 (8×8 blocks). PE2 retail
+  backgrounds are **320×240** (20×15 MBs).
+- Extract: `raw/bs/*.bs` (on-disc) → `bs/*.png` via
+  `tools/peassets/bs_codec.py` / `asset_decode.materialize_bs_asset`. A
+  re-encode takes its quantiser from the stored chunk's header.
+- Pack **matching** prefers `raw/bs/` for bit-identity. Hybrid/decoded (or
+  matching with missing raw) re-encodes PNG→BS v2 via `encode_bs_v2` (lossy
+  DCT; uses meta `quant_scale` when present).
+- Often appear with a CLUT and/or image overlay in the same stage file.
+
+---
+
+## 9. Models and animation
+
+There is **no separate model or animation chunk type**. Both live inside the
+`.pe2pkg` overlay packages, alongside the room/actor code that uses them — see
+[`OVERLAYS.md`](OVERLAYS.md) for which package is which.
+
+### 9.1 Where they live
+
+The index is in one binary and the content is in another. `gPlayerActorWeaponAnimationBanks`
+and `gCompanionAnimationBanks` sit in the **gameplay** overlay's `.data`, but the addresses
+they hold point into *other* RAM slots — the packages that get loaded on top:
+
+| Table | VA | Entries | Targets | Slot |
+|---|---|---|---|---|
+| `gPlayerActorWeaponAnimationBanks` | `0x80112D6C` | 34 | `0x8012A0D8`–`0x8012EDD0` | weapons, `0x8011D1C0` |
+| `gCompanionAnimationBanks` | `0x80113368` | 8 | `0x8016CB98`–`0x801772E8` | Kyle, `0x80167A70` |
+
+`gPlayerActorWeaponAnimationBanks` is indexed by `GameActor.animationBankIndex`
+(`gPlayerActorWeaponAnimationBankBases[...] + gPlayerStatus.weapon`), so an entry is only
+meaningful while *that weapon's* package is loaded. Two consequences:
+
+- The same VA means different things depending on which package is resident.
+- An entry whose pointers all resolve inside a given package is that package's
+  entry. Validating in-range identifies the owner with no signature guessing,
+  which is how `pkg_anim.py` attributes blocks to packages.
+
+### 9.2 Animation blocks
+
+Layout, from `animationBindModelContext` / `animationResetSlot` / `animationResetRemappedSlot` in
+`src/gameplay/scene_runtime.c`:
+
+```text
+table entry ─→ AnimationSet*[]        slot 0 unused; NULL entries are holes
+
+AnimationSet (types in include/gameplay/animation.h):
+  0x00  const AnimationRecord* records            shared 4-byte keyframe/control records
+  0x04  const u16*             trackStartIndices  absolute first-record index per model-part track
+  0x08  const void*            poseBanks[8]       banks indexed by the track's encoding (1 or 4)
+
+AnimationRecord (4 bytes):
+  0x00  u16 wordOffset     pose-bank word offset, or absolute record index for a jump;
+                           ignored by an end record
+  0x02  u8  durationFrames frames allotted to interpolate to the keyframe;
+                           ignored by control records
+  0x03  u8  flags          low nibble picks the pose bank, 0x30 the cue bits;
+                           0x80 marks a control entry, values 0xC0..0xFF end the track
+```
+
+Pose bank formats, dispatched by `animationTickSlotPose` on `AnimationSlot.poseEncoding`:
+
+| `flags & 0xF` | Bank type | Layout |
+|---|---|---|
+| 1 | `AnimationPackedPose` | six signed halfwords: local XYZ translation, then XYZ Euler angles |
+| 4 | `AnimationPackedRotation` | `s32 rx:11, ry:10, rz:11` |
+
+**Clip walk.** Entry *n* of the index table gives the first record of model-part track *n*;
+records run on until one has `flags >= 0xC0`. The index table has no explicit
+terminator, and stopping at the first non-ascending value is *not* enough — past
+the real end it keeps finding plausible ascending `u16`s and over-runs. The
+record array is the bound: it runs from `records` up to `trackStartIndices`, so no index
+may reach the byte distance between them divided by four.
+
+Worked example — `pe2pkg_2` (a weapon), set at `0x8011DAD8`:
+
+```text
+records  0x8011D980
+index    0x8011DAB0   ->  gap 0x130 = 304 bytes = 76 records
+index table   0 4 8 12 ... 72, then 0  ->  19 clips of 4 records
+last clip starts at 72, 72 + 4 = 76    ->  exactly the record count
+```
+
+That "last clip ends exactly where the record array does" property holds for
+**1767 of 1767** sets across all packages, and is emitted as `walk_consistent`
+in the tool output so a regression shows up rather than passing silently.
+
+Totals: 45 blocks, 1767 sets, 33 723 clips. Weapon packages are uniform at
+44 sets / 836 clips each, consistent with a shared player skeleton carrying
+per-weapon clip data.
+
+### 9.3 Model streams (TMD)
+
+**→ [`TMD_FORMAT.md`](TMD_FORMAT.md)** — the container (`TmdSource`), the
+packet stream, element layouts, the opcode bit structure and a per-opcode
+reference grouped by draw family.
+
+A packaged model's arrays are laid out as
+`[skeleton][part vertex counts][vertices][normals][face stream][TmdSource]`,
+with the record pointing at each array. The skeleton holds one `TmdBone` per
+part: its initial local matrix and parent index. The stream is packets of
+`[id][handler slot][dims][payload]` terminated by `TMD_STREAM_END`
+(`0xFFFFFFFF`). Geometry is solved for the `0x38` (triangle) and `0x78`
+(quad) families; texture
+coordinates and the remaining 21 families are open.
+
+Streams are carved to `raw/tmd/*.tmd` (type `tmd`) and stored raw only. A model
+a group declares whole, with its texture slots, is type `model` instead: its bytes
+from the first array to the end of its record are `raw/model/<name>.model`, and
+`tools/peassets/model` writes it as USD.
+
+### 9.3.1 Animation tracks bind to model parts one-for-one
+
+An animation set's index table has exactly one entry per **model part**
+([`TMD_FORMAT.md` §2.2](TMD_FORMAT.md)), so what `pkg_anim.py` reports as
+"clips" are per-bone tracks. Measured across every package holding an
+animation block:
+
+| Package | Parts | Tracks per set | Sets |
+|---|---:|---:|---:|
+| `actor_800200`, `actor_800300` | 19 | 19 | 34 |
+| `kyle_800101`–`kyle_800104` | 20 | 20 | 34 |
+| every weapon | 1 | 19 | 44 |
+
+Actors and Kyle's packages match their own part count exactly, 7 blocks out of 7.
+The weapons look like an exception and are the clearest confirmation: a weapon
+is a single part, its blocks come from `gPlayerActorWeaponAnimationBanks`, and 19 is **Aya's**
+part count — the weapon package carries the *player's* animation for that
+weapon, driving Aya's skeleton, not its own geometry.
+
+That fixes the model ↔ animation binding. The rest pose itself does not come
+from here — it ships in the `TmdSource` ([`TMD_FORMAT.md` §2.2](TMD_FORMAT.md)),
+so a static model can be posed without touching the animation data at all.
+Animation then replaces each bone's local matrix and reuses the same parent
+links.
+
+### 9.3.2 Playing a clip
+
+A set has one track per bone; a track is a run of 4-byte records:
+
+| Field | Meaning |
+|---|---|
+| `wordOffset` | pose-bank offset in four-byte words, or an absolute record index for a jump; ignored by an end record |
+| `durationFrames` | positive segment duration in frames, used to interpolate toward this keyframe; ignored by control records |
+| `flags` | `0x80` marks a control entry; unsigned values `0xC0..0xFF` end the track (control and stop bits both set) |
+
+**Two of the records are control, not keyframes**, and reading them as poses
+turns a 63-tick clip into a 320-frame one that sits still after the first
+quarter: the trailing `0x80`/`0xC0` pair holds 129 + 128 in `durationFrames`, which
+is never read on a control entry — it continues at `wordOffset` or ends the track
+instead. Corrected, Kyle's clips are 3–391 ticks.
+
+**The pose encoding belongs to the track, not the record.** `animationInitDirectSlot` takes
+it once (`slot->poseEncoding = recordFlags & ANIMATION_RECORD_POSE_ENCODING_MASK`) and
+`animationTickSlotPose` reads `poseEncoding = slot->poseEncoding` for every record after that. The control records carry 0
+in those bits, so reading the encoding per record throws away the final keyframe.
+Encoding **1** is `AnimationPackedPose`, six `s16` — local XYZ translation followed
+by XYZ Euler angles, with 4096 angle units per turn. A pose takes three words;
+its record's word offset must identify the start of the full 12-byte pose.
+Playback uses byte views for these word offsets. Encoding **4**
+is `AnimationPackedRotation`, one word split 11/10/11 with each component shifted `<< 3`;
+it has no translation, so the bone keeps its rest offset. The root comes out
+encoding 1 and the limbs encoding 4. The mask retains all four bits (values
+0–15); it does not validate a bank index. Playback indexes the eight-entry
+bank table before dispatching the decoder, so the selected encoding must be
+below `ANIMATION_POSE_BANK_COUNT` even when its decoder is unsupported.
+
+**Playback interpolates.** `_animationBlendTranslationRotation` / `_animationBlendPackedRotation` decode
+the current and next poses and pass their angles to `_animationBlendRotation`.
+For two bank keyframes, it blends the Euler components with a GTE `GPF`/`GPL`
+pair, using `timeLeft / timeSpan` as the current pose's weight. When either
+endpoint is the context's buffered pose, it caches next * inverse(current) as
+Euler angles on entry to that transition, scales those angles by the next
+pose's weight, and composes the resulting rotation with the current pose.
+The local coordinate's rotation is updated and its composition marked stale,
+or the result is returned as an unpacked pose; the decoders separately write
+any requested encoded pose. `sample_animation` blends bank keyframes and takes
+a fractional frame, so motion is smooth rather than stepped. A track shorter
+than its set holds its last pose; the set loops as a whole.
+
+A frame is then: sample each bone's track, build a local matrix, and run the
+same parent composition the rest pose uses. The viewer's Model tab has an
+**Animation** selector, play/pause and a frame slider, running one tick per
+16 ms — the game's 60 Hz — at about 79 fps on Kyle.
+
+Angles use `4096` for a full turn and the rotation order is PsyQ's `RotMatrix`
+— Z, then Y, then X, so `M = Rx·Ry·Rz`.
+
+### 9.4 What is still open
+
+- **Model opcodes.** Arity and element layout are settled for two of the 23
+  draw families; the rest are open, tracked per family in
+  [`TMD_FORMAT.md` §5](TMD_FORMAT.md#5-opcode-reference) with what is still
+  missing in [§6](TMD_FORMAT.md#6-what-is-still-open).
+- **The `flags` cue bits.** `0x10` and `0x20` appear on some keyframes and
+  are not decoded; a frame handler reads them off the record `animationGetCurrentRecord`
+  hands it, so what each one means is the handler's own.
+- **Pose banks.** The per-model bone count is now available — it is the number
+  of `0xFFFFFFFE`-delimited parts in the model stream
+  ([`TMD_FORMAT.md` §2.2](TMD_FORMAT.md)), and §9.3.1 binds tracks to parts —
+  but the per-part block that `tmdDrawModelStream` consumes is a
+  `GfxCoord` (0x50 bytes, `workm` at `+0x24`) whose parent links
+  (`.parent`) are built at runtime. Animation writes the local rotation as
+  described above; encoding 1 also writes translation. `0xC8` turned out
+  to be a vertex transform pass rather than bone data
+  ([`TMD_FORMAT.md` §3.0](TMD_FORMAT.md#35-the-transform-pre-pass--0xc0--0xc4--0xc8)), so the count has
+  to come from somewhere else — the animation side, or one of the remaining
+  transform opcodes.
+- **Import.** Round-tripping OBJ back to a stream needs byte-exact re-encoding
+  of the tail words, so export has to come first.
+
+### 9.5 Where they end up
+
+| Kind | Store | Why |
+|---|---|---|
+| Model streams | `raw/tmd/{pkg}_model_{off}.tmd` | contiguous byte ranges, so each is a self-contained asset; the map entry carries the `TmdSource` vertex/normal arrays where one is found |
+| Animation blocks | *not stored* | not contiguous — see below |
+
+`.tmd` is in `RAW_ONLY_EXTS`: located but not decoded, so there is no type-store
+form and nothing implies a decoder that does not exist. Drop the extension from
+that set once a materialize branch lands.
+
+**Models are named by content, in `asset_data.MODELS`.** A stream is deduped by
+SHA-1, so without a catalog the first package scanned names the mesh — and
+that is alphabetical order, not meaning: Kyle's body would be stored as
+`actor_120400_model_015D8` because that package sorts before his. `MODELS` maps
+the stream's SHA-1 to a name, so the name follows the mesh into every package
+that shares it, and the viewer's overlay tree shows it there too. It is
+hand-written and preserved across `dump_asset_db.py` regeneration, the same way
+extra `ASSETS` fields are.
+
+The generated initializers a C unit includes for a model it owns
+(`build/include/assets/<name>_{skeleton,partVerts,verts,normals,stream}.inc`)
+take the same name, so a source reads `desert_chaser_body_stream.inc` and every
+package carrying the mesh shares one set of files. A model missing from the
+manifest stops the build until `dump_asset_db.py` adds it.
+
+A model carried unchanged by several enemy types has a coarse name, the
+family's common word (`stalker_burst_torso`, `golem_beam_sword`,
+`stinger_body`), not every type's. A handful of streams are shared by meshes
+whose vertices differ (the Gray, Ivory and Zebra Stalkers' burst arms): those
+are not duplicates, so each version's includes take its own type's name
+(`gray_stalker_burst_arm_left`), and a second version within one package adds
+its record offset (`tools/buildsteps/gen_model_inc.py`, `include_names`).
+
+572 streams are located across 212 packages; SHA-1 dedup in the store collapses
+them to **298 unique** files, so 274 are meshes shared between packages. (Both
+figures dropped once the scanner stopped accepting zero padding as a stream —
+see [`TMD_FORMAT.md` §2.1](TMD_FORMAT.md#21-rejecting-false-streams).)
+
+**Animation blocks cannot be carved the same way.** A block's pieces are spread
+across the package rather than sitting in one range: the `AnimationSet*[]` table is
+near the end, the sets and their record arrays near the start. Measured spans
+are 91–99% of the whole package (e.g. `pe2pkg_11`: pieces from `0x00004` to
+`0x0CF18` of a 53 332-byte file), so a byte range holding "the animation" would
+be a near-copy of the package that already exists in the store. The clip
+structure is readable — `pkg_anim.py` walks it — but there is no blob to store
+until the individual pose banks can be delimited, which needs the per-model
+bone count from the model stream.
+
+| Tool | Role |
+|---|---|
+| `tools/peassets/model/tmd.py` | locates streams, carves them into `raw/tmd/` |
+| `tools/peassets/pkg_anim.py` | walks clip structure; reports, stores nothing |
+| `tools/peassets/pkg_overlay.py` | family → overlay → embedded asset, for the viewer's Overlays tree |
+| `tools/peassets/mesh_view.py` | software-rendered mesh viewport (Tk canvas) |
+
+The first two run from `extract.py`, need the full package set, and no-op after
+a minimal extract, which materialises only the two overlays the build splits.
+
+### 9.6 Browsing them
+
+The viewer's **Overlays** tab is the second tree, next to the CDF one. The CDF
+tree browses the disc — stage → file → chunk; an overlay *is* one of those
+chunks, and the assets inside it sit at raw offsets that no chunk boundary
+describes. So the Overlays tree goes family → overlay → embedded asset, read
+straight out of the package:
+
+- selecting the **overlay** node gives the usual `.pe2pkg` hex/strings preview;
+- a **model** node draws the mesh in the **Model** tab — drag to rotate, wheel
+  to zoom, right-drag to pan, with solid / wireframe / points shading and
+  backface culling on by default — and
+  writes the `TmdSource` arrays, the undecoded opcodes and the Euler
+  characteristic `V - E + F` into Txt/hex as a sanity check on the face decode;
+- an **anim** node lists the block's sets and clips.
+
+A package's models are the ones the overlay manifest declares - or, for the
+resident images, `configs/USA/resident.toml` (gameplay's five effect meshes) -
+each read from its `TmdSource` record (`model.tmd.declared_records` /
+`read_source`); nothing is searched for. Animation blocks are still located when a package's node is
+first expanded, and cached per package.
+
+The mesh comes from the model codec (`tools/peassets/model/mesh.py`), the same
+decoder `model preview` writes USD from, so a model that looks upright in the
+viewport looks upright in Blender. Only faces are drawn — no textures and no UVs.
+
+**Characters are posed with their rest skeleton.** A model stream is split by
+`0xFFFFFFFE` into parts, one per bone, and each part's vertices are in that
+bone's local frame; the skeleton that places them ships in the `TmdSource`
+([`TMD_FORMAT.md` §2.2](TMD_FORMAT.md)). The viewer composes it, so characters
+stand up. The **Part** selector isolates one bone's geometry when you want to
+look at a single limb. The last part holds the pre-transformed primitives and
+is positioned by the earlier parts, so it does not stand alone.
+
+Visibility and shading come from two different places, as they do on the
+hardware (see [`TMD_FORMAT.md` §7](TMD_FORMAT.md)). Backface culling is
+`NCLIP` on the projected points, exactly what `tmdDrawStreamGt3` does;
+the stored normals feed `NCCT`, which is lighting only, and culling on them
+removes real surface — that is what made heads and legs vanish. Depth sorts
+descending, because `SZ3` grows with distance and negating Y does not touch Z.
+
+---
+
+## 10. Music (`.spk`) and other types
+
+### 10.1 SPK sound banks (`.spk`)
+
+- Chunk type `0x6`. Magic **`hSPK`**. Fed to `SndLoad_*` then `SpuWritePartly`.
+- Clean payload layout (see `tools/peassets/spk_codec.py`):
+
+  | Offset | Field |
+  |--------|--------|
+  | 0 | `u32` `tag`, the `hSPK` FourCC `0x4B505368`; the loader copies it and does not validate it |
+  | 4 | `u16` `bankId` (high nibble = bank type for `sndBankAllocTables`) |
+  | 6 | `u8` `imageKind` (`SOUND_BANK_IMAGE_SEQUENCE` 0, `SOUND_BANK_IMAGE_SCRIPT` 2) |
+  | 7 | `u8` `groupCount` |
+  | 8 | `u8` `layerCount` (sample-layer records; copied to `SndBank::layerCount`) |
+  | 9 | `u8` `unknown_9` (no loader reader) |
+  | 0xA | `u16` `waveBlockOffset` (sample upload start, in 64-byte blocks, added to the SPU base) |
+  | 0xC | `u8` `transferSectors` (sector count at which a failed load finishes waiting) |
+  | 0xD | `u8` `unknown_D` (no loader reader) |
+  | 0xE | `u16` `imageBytes` (program-image bytes; the loader rounds the copy up to 4) |
+  | 0x10 | `s32` `waveBytes` (SPU-ADPCM pool size) |
+  | 0x14 | group table (`4 × groupCount`) + layer table (`0x14 × layerCount`) |
+  | 0x800 | program: the `hONE` header, its entry-offset table, then each entry's script (`oneC` + `oneV` … + `endC`) |
+  | `align16(0x800+align4(imageBytes))` | SPU-ADPCM sample pool |
+
+- Each serialized `SndBankLayer.waveAddr` is a byte offset into the sample pool
+  (16-byte ADPCM frames, ~22050 Hz mono). The game rebases it to an absolute SPU
+  byte address after uploading that pool.
+- **A bank is a container; a sample is an asset.** The distinct runs of the
+  pool, one per `waveAddr` in address order, are the bank's sample slots. A
+  sample is identified by the SHA-1 of its stored ADPCM bytes, and the same
+  sound sits in many banks: 2,932 slots in 472 banks hold 2,289 distinct
+  samples. So `asset_data.ASSETS` has one `sample` entry per distinct sound,
+  and a bank's `samples` field names the sample in each slot, in slot order.
+  Names survive regeneration by SHA-1, as model names do; a new sample is
+  named `<bank>_sample_<slot>` after the first bank holding it. What a slot
+  adds - root key, envelope, volume, pan - is the bank's, in its layer records.
+- Extract: `raw/spk/*.spk` → `spk/{stem}/meta.json`, whose `samples` list the
+  slots by name, and each sample once as `sample/{name}.wav`. A bank and a
+  sample are separate assets, each filed by its own `group` (§13), so a slot's
+  `file` is the path from the bank's directory to the sample's file:
+  `../../sample/{name}.wav` when neither has a group.
+- Pack uses `raw/spk/` for a raw bank; a declared bank (§10.1.1) is built from its files.
+
+#### 10.1.1 Declared sound banks (`sound_bank`, `sound`)
+
+A raw bank stays as above. A bank a group declares in full is a `sound_bank`, in place of its `spk` record (the same
+name and sha1), and each sample of its pool a `sound` (`tools/peassets/sound/`):
+
+```toml
+[sounds]
+type = "sound_bank"
+samples = ["weapons/m93r/click", "weapons/m93r/reload_load", "weapons/m93r/reload_start", "weapons/m93r/shot"]
+sha1 = "92ff39f0b183a60d2c4b2e60461e251c8ac790ae"
+
+[shot]
+type = "sound"
+mode = "high"
+sha1 = "6307ddb049b24f1f320226769d5a19a662fd376b"
+```
+
+- `samples` names the sound at each position of the pool, in pool order: unreferenced samples included, `None`
+  where the pool holds bytes that are not a sample (only `spk_217`, a slot its tool reserved and filled with its own
+  memory). A sound states the sha1 of its stored body, and `mode` where normal mode does not reproduce it. The
+  record's `sounds` names the bank's slots, the sound ids the game plays (`{ shot = 4 }`): a sample is a recording
+  and a slot a sound made from it, so one sample can stand under several slots at different pitches (329 of the
+  1244 samples the scripts play are played at more than one; 141 only by different slots, such as a footstep bank's
+  walk and run steps a semitone apart). The `.sfx` shows each name on its slot line (`slot 0x04 = 3 shot`).
+- Decoded (`decode_declared`) to `<dir>/<name>.sfz` - programs as SFZ `<group>`s, layers as `<region>`s, what a
+  sampler plays plus the exact values as `psx_*` opcodes - and `<dir>/<name>.sfx` - the bank id, the effect scripts
+  as indented text (`entry`, `voice`, `loop`, `wait`, `end`, `adsr`, `envelope`, `slot`) and any raw pool bytes - and
+  each sound as `<dir>/<name>.wav`: 16-bit mono, its loop a `smpl` loop, at the rate the game plays it. A bank
+  stores no recording rate - the SPU plays a sample at 44 100 Hz on the layer's root key - so the decoder picks the
+  octave of 44 100 Hz nearest the median pitch every bank's script voices play the sample at (`sound/pitch.py`:
+  22 050 Hz for 987 of the 1244 samples the scripts play, 11 025 Hz for 192, 44 100 Hz for 46). The region's
+  `pitch_keycenter` moves by the same octaves, so a sampler plays it as the game does; the stored root key is
+  `psx_root_key`, and a region without it takes the root key from `pitch_keycenter` and its WAV's rate.
+- Sony's encoder (ENCVAG `EncVag`, identical to AIFF2VAG 3.2 and 3.3; `sound/adpcm.py`) turns each WAV back into
+  the stored body in its mode. Decoding finds such input: with Y = clamped input + quantization error, the
+  encoder's arithmetic gives the decoder's recursion, so each input lies in an interval fixed by the codes and the
+  saturation of each code 7, and only each frame's filter and shift selection couples them. A search per frame
+  (two defaults, local repair, an exact polygon solve over up to three frames, annealing, backing up) meets it for
+  every sample on the disc, and the result is re-encoded to check. The search runs in the most restrictive mode
+  whose filters cover the body's, then again in normal mode from that input; a sound needs a mode only where the
+  second fails. The filters alone do not show the mode: most samples that never use filter 2 or 4 are plain
+  normal-mode conversions, while a `high` sound runs hundreds of frames on which normal would pick filter 2 or 3.
+  The decoder also checks the declaration: each sound's sha1, and its mode against the one decoding needed.
+- Pack builds the bank from those files; `sound/codec.py` gives every bank's parts back byte for byte (all 2,155
+  banks of the Japanese, US and European discs).
+
+#### What works today
+
+| Piece | Status |
+|--------|--------|
+| `hSPK` header + group/layer tables | Parsed (`spk_codec.parse_spk`) |
+| SPU-ADPCM sample pool → WAV | Working (~22 050 Hz mono) |
+| Extract materialize + viewer meta/waveform | Working |
+| Pack bit-identity | Via `raw/spk/` only |
+
+#### What is still missing (sequence / full audio)
+
+All retail SPK program regions use Square’s **`hONE` SndScript**, not SMF
+MIDI (`MThd` never appears in SPK blobs). The game’s `_midiStartSequence` path
+expects SMF; SPK playback goes through **`_sndScriptExecCommand`** (`one*` opcodes).
+
+| Gap | Notes |
+|-----|--------|
+| **`hONE` header** | Layout known from the loader: 4-byte magic, `u16` bank id, `u16` entry count, then that many `u16` offsets of entry blocks relative to the header |
+| **Tagged script stream** | `oneC` / `oneV` / `oneE` / `oneA` / `endC` / `Loop` / `Wait` / `endL` — the command structs are typed beside the interpreter in `src/main/sndscript.c` (`oneC` in `src/main/sound_types.h`); still need a stream walker |
+| **`_sndScriptExecCommand`** | Decompiled in `src/main/sndscript.c` — authoritative interpreter for timing and opcodes |
+| **Timed event list** | Needs Wait/Loop stack + timebase (script ticks vs frame rate) |
+| **Audio mix / “play the song”** | Needs timed events + pitch (root/fine/`oneV`, `oneE` envelope) + vol/pan + ADSR (`oneA`) + polyphony; samples alone are not enough |
+| **WAV → SPK encoder** | Not planned; matching packs use raw |
+| **SMF export** | Optional convenience only — not native format |
+
+Suggested roadmap: (1) structural `hONE` → JSON events, (2) timed events after
+`_sndScriptExecCommand` reverse, (3) naive mixer to a single WAV, (4) closer SPU model.
+
+### 10.2 Other types
+
+- **`.pe2bundle`**: a resource bundle (CDF chunk opcode 4): a directory of fifty
+  numbered resources, then their bytes. Room bundles hold the views' palettes
+  and the room's CAP dialogue; the replay bonus bundle holds STF credits and
+  MDEC still pictures; three hold the attract demos. Bundle layout, every
+  resource type in [`BUNDLE_FORMAT.md`](BUNDLE_FORMAT.md); the extractor stores
+  each resource as an asset of its own, and the dialogue format is
+  [`CAP_FORMAT.md`](CAP_FORMAT.md).
+  May carry a RAM load address in `load_addr`.
+- **`.txt`**: ASCII (type `0x7`). On-disc clean payload is CRLF text
+  (usually ending in `\Z` or `\Z\r\n`) zero-padded to chunk capacity.
+  Inflated `txt/` is the text only (no trailing NUL / zero pad).
+
+### 10.3–10.4 CD streams (MTS audio + STR movie)
+
+Not file chunks — **streaming list** descriptors (`STAGE0.HED` or folder
+`+0x514`) plus CD payloads. Full field tables (what each movie header
+byte means / confidence), disc layout (`INTER0` vs `INTER1`, stage‑3 dual
+descriptors), seek/play path, extract pitfalls:
+
+**→ [`STREAM_FORMATS.md`](STREAM_FORMATS.md)** (§3 movies, §2 audio)
+
+Full `extract.py` (and `ninja_config.py --iso_extract`) writes these after
+stage chunks. `--raw-only` keeps `raw/audio` + `raw/movie` without WAV/MP4;
+`--minimal-inflate` skips streams (CI). Standalone tools still work for a
+re-extract:
+
+```bash
+python3 tools/peassets/extract.py ... -o assets/USA          # includes streams
+python3 tools/peassets/extract_streams.py --rom rom/USA --out assets/USA   # audio only
+python3 tools/peassets/extract_movies.py  --rom rom/USA --out assets/USA -j 16  # movie only
+```
+
+```text
+raw/audio/*.mts   audio/*.wav
+raw/movie/*.str   movie/{stem}.mp4  movie/{stem}.json   # lossless H.264 4:4:4 + ALAC (use VLC)
+```
+
+---
+
+## 11. Asset database (`asset_db.py` / `asset_data.py`)
+
+Two tables:
+
+* **`ASSETS`** — unique raw blobs. Key is a stable id (type-store stem).
+  Value: `sha1` of the on-disc payload, `type`, and the properties code needs
+  to use the asset. `tools/peassets/asset_schema.py` defines which a type has:
+  an image's and a CLUT's place in video memory (`x`, `y`, `w`, `h`, read from
+  the payload), `bpp`, the assets it directly requires (`deps`) and the ways it
+  is used (`variants`).
+  A model lists the `[texture page, CLUT]` pairs its faces name (`textures`),
+  as stored: the draw handlers add the object's displacement, so a model
+  whose textures are relocated at load names a slot rather than a place.
+* **`EMBEDDED_ASSETS`** — assets inside a package or the executable, located
+  by address. An image or CLUT has the rectangle of the upload record that
+  points at it - its size always, its position only when the record fixes one.
+  An animation bank (`type: animation`, one per `animation` object of
+  `overlays.toml`) has its clip count (`clips`).
+
+Which constant in the code states which of these properties is recorded
+outside git, in `local/asset_journal.sqlite` (`tools/peassets/asset_journal.py`).
+* **`TREE`** — STAGE*.CDF file tree. Stages are keyed by number; folders and
+  files by name, each carrying its disc `id`. A file's `chunks` maps the name
+  each chunk is emitted under to the asset placed there, and the chunk's index
+  is its position. The key names the placement, not the asset, because one
+  asset sits in several files: within its folder and file the short name is
+  enough. The default is the asset's name less what the folder and file
+  already say; one written by hand is kept.
+
+```text
+ASSETS["gameplay"] = {sha1, type: pe2pkg, required: True}
+ASSETS["pe2img_455"] = {sha1, type: pe2img, bpp: [4, 8], x: [...], y: ..., w: 64, h: 256}
+
+TREE[0]["files"]["gameplay"] = {id: 0, chunks: {"sounds": "sounds/common/bank", "package": "gameplay"}}
+TREE[2]["folders"]["dryfield_garage"]["files"]["file0"]["chunks"]["package"] = "dryfield_garage"
+```
+
+Regenerate hashes and placement after extract (preserves extra fields and
+names, matched by sha1):
+
+```bash
+python3 tools/peassets/dump_asset_db.py
+```
+
+Rules of thumb:
+
+- Canonical extract-map keys always use numeric ids (`stage0/file0/1.pe2pkg`).
+- `stages.json` file/folder keys use TREE `name` when set (else `file0` /
+  `101`). Chunk keys stay disc-index based unless the asset id is a
+  friendly (non-`type_N`) name. Dict order is still disc order.
+- Type-store stems are asset ids: sha1 lookup in `ASSETS`, else `{type}_{n}`.
+  Duplicates share the same store path in `stages.json`.
+- pe2img `bpp` lives on the unique blob (`ASSETS[id]["bpp"]`): an int, or a
+  list of 4/8/16 — one per column record (VRAM page). Not the CDF slot.
+
+---
+
+## 12. `stages.json` schema
+
+Pack manifest under the assets root. Validated by
+`format.validate_stages_manifest` at pack time: **only known keys** are
+allowed at each level; unknown keys (e.g. `chunk_size`, `end_flag`) fail.
+
+### 12.1 Top level
+
+```text
+{
+  "stage0": { "files": { … } },
+  "stage1": { "folders": { … } },
+  …
+}
+```
+
+| Rule | Detail |
+|------|--------|
+| Keys | Only `"stageN"` (`stage0` …) |
+| Stage body | Exactly one of `"files"` or `"folders"` (not both, not empty) |
+
+### 12.2 Files stages (`stage0`)
+
+```text
+"stage0": {
+  "files": {
+    "<file_key>": {
+      "<chunk_key>": { …content… },
+      …
+    },
+    …
+  }
+}
+```
+
+- **file_key**: `names.stages_file_key` — friendly name or `file{id}`.
+- **chunk_key**: `names.stages_chunk_key` — friendly stem + ext or `{idx}{ext}`.
+- Object order of files and of chunks = on-disc order.
+
+### 12.3 Folder stages (`stage1`…)
+
+```text
+"stage1": {
+  "folders": {
+    "<folder_key>": {
+      "<file_key>": {
+        "<chunk_key>": { …content… }
+      }
+    }
+  }
+}
+```
+
+- **folder_key**: friendly name or decimal folder id.
+
+### 12.4 Chunk content object
+
+| Key | Required | Allowed on | Notes |
+|-----|----------|------------|--------|
+| `path` | **yes** | all | Relative to assets root: the inflated file, under its type directory or its group (§13) |
+| `type` | **yes** | all | See type table below |
+| `sector_len` | no | all | Omit if `0x800`. Range `(0x10, 0x800]` |
+| `load_addr` | **yes** (non-zero) | **`room_pkg`, `bundle` only** | RAM load address; retail never uses `0` |
+
+**Never in `stages.json`** (inferred or on-disc only):
+
+| Field | How pack handles it |
+|-------|---------------------|
+| `end_flag` | Last chunk in a file → End (`0xFF`); earlier → Continue (`0x01`) |
+| `chunk_size` | `n_sectors × 0x800` from clean payload + `sector_len` |
+
+**`type` values** (and allowed keys):
+
+| `type` | Extension | Keys |
+|--------|-----------|------|
+| `room_pkg` | `.pe2pkg` | `path`, `type`, **`load_addr`**, `sector_len?` |
+| `image` | `.pe2img` / `.png` | `path`, `type`, `sector_len?` |
+| `clut` | `.pe2clut` / `.png` | `path`, `type`, `sector_len?` |
+| `bundle` | `.pe2bundle` | `path`, `type`, **`load_addr`**, `sector_len?` |
+| `room_background` | `.bs` / `.png` | `path`, `type`, `sector_len?` |
+| `music` | `.spk` | `path`, `type`, `sector_len?` |
+| `ascii` | `.txt` | `path`, `type`, `sector_len?` |
+| `raw` | `raw.bin` | `path`, `type` only (non-chunked file) |
+
+Example:
+
+```json
+{
+  "stage0": {
+    "files": {
+      "gameplay": {
+        "sounds.spk": {
+          "path": "sounds/common/bank.sfz",
+          "type": "music"
+        },
+        "gameplay.pe2pkg": {
+          "path": "pe2pkg/gameplay.pe2pkg",
+          "type": "room_pkg",
+          "load_addr": "0x80093800"
+        }
+      }
+    }
+  },
+  "stage1": {
+    "folders": {
+      "101": {
+        "file0": {
+          "0.bs": {
+            "path": "bs/bs_0.png",
+            "type": "room_background",
+            "sector_len": "0x500"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+## 13. Type store + overlays
+
+### Type directories
+
+Every chunk type has directories under `raw/` (on-disc) and at the assets
+root (inflated). Dedup is by SHA-1 of the **raw** clean payload, and only
+there. A name belongs to a place - a chunk slot of a disc file (its TREE
+entry) or an embedded object's address - so several assets may hold one
+content: a placeholder preview file's copy of another item's picture is the
+placeholder item's own asset, with its own record and decoded form. Their
+bytes are stored once, under the canonical name for that content
+(`asset_schema.canonical_names`: the asset outside the groups if there is
+one, of which there may be at most one, else the first name in sorted order),
+and `asset_schema.raw_rel` answers that file for any of them.
+`dump_asset_db.py` keeps every name a content has.
+
+| Type | `raw/{type}/` | inflated `{type}/` |
+|---|---|---|
+| pe2pkg | trim_lzss on-disc stream | LZSS-decoded package |
+| pe2img / pe2clut / bs | clean on-disc blob | PNG; a re-encode reads placement and size from the blob |
+| audio | MTS sector payload (`.mts`) | stereo WAV + JSON (§10.3) |
+| movie | STR 2048-byte sector blob (`.str`) | PNG frames + WebP + meta (§10.4) |
+| other | clean on-disc payload | hardlink/copy of raw |
+
+Pack sees them via `stages.json` content entries, each with its own name's
+decoded path, and reads raw bytes through the stored name. A text a shaped
+asset is written to has no decoded file: pack encodes it from the instance.
+See §12 for the full schema.
+
+### Groups
+
+An asset in `asset_data.py` (`ASSETS` or `EMBEDDED_ASSETS`) may carry a
+`group`, a path of lower-case names such as `'group': 'weapons/m4a1'`. Its
+inflated form is then written under that subtree of the extraction instead of
+its type directory; an asset without a group keeps the type directory, which
+is the fallback for everything.
+
+A grouped asset of `ASSETS` is not in `asset_data.py`: each group is a TOML
+file, `tools/peassets/groups/<group>.toml`, one table per asset keyed by its
+**local name**. The asset's name is the group's path without its first part,
+then the local name: `[view3_background]` in
+`groups/rooms/akropolis/square.toml` is `rooms/akropolis/square/view3_background`.
+A table lists the asset's type, its other fields by name, and its `sha1` last.
+TOML has no null and only string keys, so an empty slot of `resources` is `""`
+and the cells of `glyphs` are written as keys. `asset_data.py` reads the group
+files when it is imported and merges them into `ASSETS`, giving each record its
+name and `group`, so every tool reads one flat table; a name in both raises.
+`apply_groups.py` and `dump_asset_db.py` write the group files, and the
+generator stops on a grouped asset whose name does not start with its group's
+prefix. A placement's short name in the `TREE` follows from the same names
+(`view3_background` in the folder `akropolis_square`).
+
+A package filed in a room's group is `<room>_package`, local name `package`.
+Its `package_name` is the overlay's name - `akropolis_square` - which its
+decoded copy in `pe2pkg/`, the overlay manifest, the configs, the symbol maps
+and an embedded asset's `source` keep; `asset_schema.package_name` and
+`package_asset` translate, and the schema rejects two packages with one
+overlay name. A package without `package_name` is named like its overlay.
+
+A package is a container: its `embedded` says what is located inside it
+(models, animation banks, collision grids, …), as a bundle lists its
+`resources` and a bank its `samples`. It has two forms while the table moves
+to the group files:
+
+- **In a group file, placements.** The package says where each asset sits:
+  `embedded = [{ name = "collision", offset = 0x06784, size = 0x1458 }]`, the
+  name local and the offset into the decoded package. The asset itself is an
+  ordinary table of the group (`[collision]`, its type and `sha1`). Placement
+  belongs to the container - the same mesh sits at different offsets in
+  different packages - and what the asset is belongs to the asset.
+  A placement of a type the code reaches by its address in memory - a model
+  (pointers in the code), an image or a CLUT (its upload record) - also
+  states `address`; the schema requires it, and that all of a package's
+  addresses less their offsets agree. `asset_groups.py` turns each placement
+  into an `EMBEDDED_ASSETS` record with its source, `offset`, size and any
+  `address`; its extension follows from its type (`asset_schema.EXT_BY_TYPE`).
+  Tools read where an embedded asset starts through
+  `asset_schema.embedded_offset` (an older record's `vram` less the load
+  address), and an address through `embedded_address` (`address`, or an older
+  record's `vram`).
+- **Elsewhere, names.** The embedded records carry `source` and `vram`, and
+  the package's `embedded` lists their names by address; `dump_asset_db.py`
+  derives the list and the schema checks that the two agree.
+
+An asset several packages carry - Aya's clips, which every weapon package
+holds, or a model a weapon shares with its variant - is placed by each of
+them, from another group by path (`{ asset = "characters/aya/idle", offset =
+…, size = …, address = … }`). Its `EMBEDDED_ASSETS` record is its first
+placement in the groups' order (by path); the others hold the same asset,
+which `animation check` compares in every package and the build's checksum
+confirms. The build reads each package's own placements: a bank's words are
+its clips' addresses in its own package, and a declared asset's symbol is in
+the generated symbol map of every package placing it. Packages of one source
+built with different parameters may share a group (the P08 and its
+snail-magazine variant, the MP5A5 and its upgrades): the variant's records
+are `<variant>_package`, `<variant>_file` and `<variant>_sounds`, and its
+clips are generated to `<group>/<variant>_clips.inc`.
+
+A file names its chunks by local name, or another group's by path (`asset =
+"weapons/m4a1/palette"` in place of `chunk`). In the extraction a chunk is
+emitted under the name the TREE gives it in its file (`asset_db.chunk_stem`),
+which is unique there: file 1 holds the UI font's and the UI sheet's `image`,
+as its `font_image` and `sheet_image`. A chunk several files hold is
+declared by each of them where it uploads for that file's own texture (the
+Bayonet's file declares the M4A1's palette again, for the Bayonet's texture),
+and the declarations agree; a file that only carries another group's chunks
+lists them as plain entries. Each texture a file uploads pages of has its
+palettes uploaded with it, by the file itself or by the declaration of a
+chunk it names.
+
+A region may be `within` another, as part of it: its `at` is then relative to
+the other's corner, it must fit inside it, and only regions of the same parent
+must not overlap - unless one `shares` the other: the same VRAM used at other
+times (`engine/vram/screen_palettes`, the six rows a full-screen file uploads,
+shares the row the item previews' palettes use). An image chunk stores the rows of its page's outermost
+region, from the page down; the texture is the part of them it occupies, the
+rest zero, as the texels right of its width are (`declaration.stored_rows`).
+The item previews upload 128 rows (`engine/vram/preview_sheet`), of which the
+menu draws the top 96 (`preview_picture`, `itemMenuDrawPreview`): their pages
+are placed in `preview_picture`, so their textures are 128×96. A page whose
+chunk uploads less than its outermost region names the region it does upload,
+`upload`: the PE menu pictures store just the 96 rows of `preview_picture`,
+and are 80×64 within them (`energy_picture`, of which the PE panels' small
+mode samples the top 60). A palette entry may name its `upload` too: the
+chunk then stores that region's whole rectangle, zero where no palette is
+placed - the title chrome's palette chunk clears six rows and fills one.
+
+A page holds one texture or one `atlas`. An atlas is the layout of a page
+packed with several textures: its record lists `sprites`, each a texture at
+a texel `at` of its own depth, inside one page and overlapping no other.
+
+```toml
+# groups/ui/sheet.toml
+[atlas]
+type = "atlas"
+sprites = [{ texture = "cursor", at = [0xE8, 0x30] }, { texture = "portrait", at = [0, 0x80] }, ...]
+
+# groups/ui.toml: the file uploads it and places the sprites' palettes
+pages = [{ atlas = "ui/sheet/atlas", region = "engine/vram/ui_sheet" }]
+```
+
+A texture's `cells` name the parts its code samples one at a time - the
+cursor's six frames, the lock-on reticle's eight, each status icon, each
+P.E. icon, the frame's corners, edges and separators: a `grid` of [w, h]
+read row by row, with `names` or numbered, or named `[x, y, w, h]`
+rectangles in the texture's texels. They are layout only; the bytes and the
+PNGs do not change.
+
+A font is a `font` record: one face of a texture and the glyph table in an
+executable that lays it out. It names the `texture`, the embedded `table`, its
+record `layout` (`font_glyph`, the 12-byte `_FontGlyph`, or `glyph_cell`, the
+4-byte `TextGlyphCell`), the code of its first record (`first`), the rows the
+face is shifted by on the page (`v`, the code's `TEXT_GLYPH_V_BIAS_*`), the
+pixels kerning tightens a pair by (`kerning`, 1 for the small face), its text
+`encoding` and the `family` and `style` it is named by. The UI font is the
+faces `ui/font/small`, `medium` and `large`; the load-screen caption font is
+`ui/caption_font/face`. The texture's cells come from its fonts: each record
+is the cell `<face>_<code>`, one of no size none.
+
+A font is decoded to UFO 3 (`ui/font/medium.ufo`), which encodes back to the
+table's exact bytes and is what the build's include is generated from
+(`tools/buildsteps/gen_font_inc.py`). Each record is a glyph named for its
+character in the font's encoding (`text_encoding.py`: Windows-1252 with the
+controller's buttons at 0x7B-0x7E for the UI font; an index per glyph for the
+caption font), its code and cell in the glyph's lib. What UFO states natively
+is the source of the rest: the advance width is the pen's advance
+(`xOffset + widthMinusOne + advanceExtraX`), the image's offset
+`(xOffset, -yOffset)` places the glyph where the code draws it, and the
+kerning groups are the classes (`public.kern1.*` by right class,
+`public.kern2.*` by left), with `kerning.plist` the pairs they tighten. The
+images are the glyphs' cells cut from the texture's first variant, there to
+show the face in a font editor; they are never read back, as the texture's
+PNGs are the pixels. `python3 tools/peassets/font decode|check` writes the
+UFOs and compares their bytes with the tables.
+
+The small face draws lowercase as small caps: its `a`-`z` records point at
+its capitals. Seventeen records point at fragments of other glyphs or empty
+space - small `" # ' + - : ; < > @ _`, medium `$ * ; < > @` - leftovers for
+characters no text uses; their glyphs keep them. Every release has the same
+small face and caption table, and Europe the same medium and large; Japan's
+medium and large are 91 records (0x20-0x7A), the Western releases adding the
+133 accented and symbol records after them, real glyphs for `#` and `%`
+(strays in Japan) and parenthesis aliases for `[` and `]`. The texture check
+verifies every cell lies inside its texture. The extraction writes the cells
+of a texture outside any atlas to `<texture>.cells.toml` where they are
+stated by hand; a font's texture has none, its cells being in the UFO's
+glyphs.
+
+The dialogue's font has no page: each dialogue packs the glyphs it uses into
+an atlas of its own (`font_atlas`, doc/CAP_FORMAT.md §9), so its two `font`
+records state `layout = "images"` and their UFOs (`dialogue/font.ufo`,
+`dialogue/speakers.ufo`) are the pixels too, read back by the CAP encoder.
+
+The page stays the pixel source because it is a drawn sheet the cells were
+measured onto, not glyphs packed by a tool: around them it is index 5, the
+transparent padding, but for zero rows between the faces (33-37, 126-127),
+and 63 texels of strokes run up to two pixels past a cell, which the game
+never draws. A glyph whose cell cuts strokes off says so in its UFO note
+(`font/declared.py`, `clipped`): large `3 8 y Œ œ`, medium `3 8 C G &`,
+small `?`.
+
+The extraction writes each atlas's layout beside its sprites' PNGs
+(`ui/sheet/atlas.toml`: each sprite's texture, position, depth, size,
+variants and cells), so the decoded folder describes its page; the asset table's
+record is what the tools read.
+
+The resident UI sheet is one: 51 sprites in subgroups (`ui/sheet/panel`, `buttons`, `menu`, `icons`, `hud`, `radar`, `unused`) - cursor, frame,
+gauges, radar, icons, captions, 4-bit, and the 8-bit portrait at `(0, 128)` -
+each with the palettes its draw code selects. An atlas's page stores zero
+outside its sprites, so decoding fails on texels no sprite holds; art nothing
+draws is a sprite that states `no_palette` (written with a gray ramp), and
+colors no declared texture is drawn with are a palette entry with a `name` and
+its `entries` instead of a texture, written as `<chunk>.<name>.png`: the
+dialogue's text and plate palettes (`dialogue/palette`, and the translucent
+copy the game-over and ending files restore), the palettes gameplay draws with
+at (256, 240), and the one only dead code selects (`ui/sheet/palette.row_inactive`). A texture whose palettes an executable uploads names that embedded
+palette as `palettes_from`, one variant per palette in order: the UI font's
+`fill`, `translucent_outline` and `opaque_outline` are main's
+`ui/font/glyph_palettes`, and the check compares each variant's PNG palette with those bytes.
+
+```text
+weapons/m4a1/texture.png                a declared texture (its image and palette chunks)
+weapons/m4a1/model.usda                 a declared model, bound to it (binding.usda)
+weapons/m4a1/fire.usda                  a clip of the group
+weapons/m4a1/sounds.sfz                 a declared sound bank: its instruments,
+weapons/m4a1/sounds.sfx                 its scripts,
+weapons/m4a1/shot.wav                   and a sound of the group
+weapons/m4a1/p1_sounds.sfz              the bank of a variant in the group (m4a1_p1)
+characters/aya/rifle/walk.usda          a clip of the carry style's layer
+pe2img/acropolis_bridge_dialogue_0_atlas.png   an image without a group
+pe2pkg/m4a1.pe2pkg                      the package: never moved
+raw/pe2img/weapons/m4a1/image.pe2img    the stored bytes: under raw/, by the same path
+```
+
+One function decides the directory, `asset_dir` in
+`tools/peassets/asset_schema.py`, with `decoded_rel` / `decoded_files` for the
+files in it; the extractor, `regroup.py`, the asset map and the viewer all ask
+it, and nothing else spells `<type>/<name>`. What a group does **not** move:
+
+- everything under `raw/`. Pack, `dump_asset_db.py` and every tool that reads
+  bytes address `raw/<type>/<name><ext>`, and so does the build for an
+  `include`-marked embedded asset (§7.7).
+- an inflated package, `pe2pkg/<name>.pe2pkg`: the overlay configs and the
+  generated model, collision and animation initializers are built from that
+  path.
+- a type that is located but not decoded (models, animation banks): `raw/` is
+  its only form.
+- what is not an asset of the table: `main.exe`, the CD streams in `audio/` and
+  `movie/`, the pack sidecars in `stage*/`, `stages.json`, the ISO manifests.
+
+So the build reads the same files whatever the groups are. A group may not
+start with a name the extraction uses at its root (a type directory, `raw`,
+`incbin`, `audio`, `movie`, `stage<N>`), and two assets may not resolve to the
+same file; `asset_schema.py --check` reports both, and
+`asset_schema.py --where KEY` prints where an asset is filed.
+
+Groups are written into the table by `apply_groups.py`. An extraction follows
+the table as it is written; an existing one is brought into line without
+extracting again:
+
+```bash
+python3 tools/peassets/regroup.py --dry-run     # what would move
+python3 tools/peassets/regroup.py               # move it
+```
+
+`regroup.py` moves each asset's inflated files between its type directory and
+its group directory, in either direction or from one group to another, then
+rewrites the two records of those places: the `file` of each slot in a bank's
+`meta.json`, and the `path` of each chunk in `stages.json`. It is idempotent,
+removes a group directory it emptied, and does not overwrite: a file whose
+destination holds different bytes is left where it is, with its records
+unchanged, and the run exits 1.
+
+### Overlays (pe2pkg store)
+
+Room packages used by the decomp build live under `pe2pkg/` and are listed
+in `stages.json` (`type: room_pkg`, `path`, `load_addr`).
+
+- Title and gameplay share `0x80093800` (mutually exclusive).
+- Stage 1–5 **room** overlays load at `0x8017D5C0`. Other high addresses
+  (`0x80115770`, `0x8011D1C0`, `0x80131E20`, …) are Aya / weapon / actor
+  slots, not rooms — see [`OVERLAYS.md`](OVERLAYS.md).
+- Splat targets point at the store file (e.g.
+  `target_path: assets/USA/pe2pkg/title.pe2pkg`).
+
+---
+
+## 14. Tooling workflow
+
+```text
+Extract:
+  STAGE*.CDF  →  raw/{type}/ (unique on-disc payloads)
+              →  pe2pkg|pe2img|…/ (inflate unique raw only; an asset with a
+                                    group goes to <group>/ instead, §13)
+              →  raw/audio + audio/  (MTS from STAGE*.CDF)
+              →  raw/movie + movie/  (STR from INTER*.STR / CDF)
+              →  stage*/ (pack sidecars) + stages.json
+  extract.py --raw-only          →  raw/{type}/ + raw/audio + raw/movie
+  extract.py --minimal-inflate   →  raw/ + pe2pkg/{title,gameplay} only (CI; no streams)
+  extract.py --skip-streams      →  stage chunks only (no MTS/STR)
+
+Pack:
+  matching  raw/{type}/ LZSS + inflated non-LZSS  →  STAGE*
+  raw       raw/{type}/ only                        →  STAGE*
+  hybrid/decoded  inflated files, by their stages.json path (re-encode)  →  STAGE*
+```
+
+Commands (from repo root):
+
+```bash
+# extract (needs disc paths; see extract.py --help)
+python3 tools/peassets/extract.py ... -o assets/USA
+python3 tools/peassets/extract.py ... -o assets/USA --raw-only
+python3 tools/peassets/extract.py ... -o assets/USA --minimal-inflate
+
+# browse extracted assets (by type, CDF stage tree, or overlay tree with the
+# assets embedded in each package; audio/movie playable, models in the Model tab)
+python3 tools/peassets/viewer.py assets/USA
+
+# CD streams only (already included in a full extract.py run; see STREAM_FORMATS.md)
+python3 tools/peassets/extract_streams.py --rom rom/USA --out assets/USA
+python3 tools/peassets/extract_movies.py  --rom rom/USA --out assets/USA
+
+# pack (default: matching)
+python3 tools/peassets/pack.py \
+  --stages assets/USA/stages.json \
+  --assets assets/USA \
+  --output /tmp/pe2-out
+
+# pack from edited type-store assets
+python3 tools/peassets/pack.py \
+  --stages assets/USA/stages.json \
+  --assets assets/USA \
+  --source hybrid \
+  --output /tmp/pe2-out
+```
+
+Dependencies: see `requirements.txt` (includes **Pillow** for PNG).
+
+---
+
+## 15. Known gaps / open questions
+
+- **`.bs` BS v2 MDEC** backgrounds: decoded to PNG on extract (see §8).
+- **Exact bpp** is not stored in the image chunk; exporters **guess** unless
+  `ASSETS[id]["bpp"]` says otherwise (the viewer's BPP combo previews
+  other depths); a re-encode uses `ASSETS[id]["bpp"]`.
+- **Which CLUT row** an 8 bpp texture uses when `h > 1` is not known offline
+  (game picks via `getClut(x,y)`). Exporter scores rows and picks the most
+  varied; wrong for textures that intentionally use a monochrome row.
+  Title chrome is `GetClut(0, 255)`. UI text is `0x7FFD` (EXE outline
+  palettes), not the font TIM clut — see §7.5 / §7.6.
+- **Cap2 / dialogue** container, relocation, event records and the five
+  interpreter opcodes are documented in [`CAP_FORMAT.md`](CAP_FORMAT.md).
+  Still open there: the `u16*` text encoding and the `0x13F0` message contract
+  used by opcode 3.
+- **Streaming movies (STR/MDEC)** and **audio (MTS)**: documented in
+  [`STREAM_FORMATS.md`](STREAM_FORMATS.md). A full `extract.py` run writes
+  them (or re-run `extract_movies.py` / `extract_streams.py`). INTER movies
+  mux XA as ALAC in the MP4.
+- Runtime image path has mode-dependent Y adjustments (`gFsChunkLoadPolicy`,
+  `gFsImageXPageOffset`/`gFsImageHeaderYShiftRows`) that do not affect off-line PNG export.
+
+---
+
+## 16. Quick reference — endianness and colour
+
+- All multi-byte integers: **little-endian**.
+- VRAM halfword colours: **ABGR1555**
+  - bits `0–4` R, `5–9` G, `10–14` B, bit `15` STP/semi-trans.
+- Sizes in headers that are “sector counts” are multiplied by `0x800` for
+  byte sizes in tools and docs.

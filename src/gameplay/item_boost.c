@@ -1,0 +1,1139 @@
+#include "gameplay/items.h"
+
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+
+#include "common.h"
+
+#include "gameplay/area_flags.h"
+#include "area_flags.h"
+#include "gameplay/attachment_state.h"
+#include "gameplay/attachments.h"
+#include "attachments.h"
+#include "gameplay/inventory.h"
+#include "inventory.h"
+#include "item_menu.h"
+#include "items.h"
+#include "scene_runtime.h"
+
+#include "main/areas.h"
+#include "main/gameflag.h"
+#include "main/mc.h"
+#include "main/pad.h"
+#include "main/session.h"
+#include "main/text.h"
+#include "main/ui.h"
+#include "main/wipsys.h"
+
+/// Collection-bit packing and the bit that starts the Ice Bag's age timer.
+enum {
+    INVENTORY_COLLECTION_ID_MASK       = 0x7F,
+    INVENTORY_COLLECTION_BITS_PER_WORD = 32,
+    INVENTORY_COLLECTED_ICE_BAG_BIT    = INVENTORY_COLLECTION_ID_ICE_BAG & INVENTORY_COLLECTION_ID_MASK
+};
+
+/// Number of saved rows selected when resetting the carried range.
+enum { INVENTORY_INITIAL_CARRIED_ROWS = 20 };
+
+/// Permanent-boost limits and Notice text selectors used by the item panels.
+enum {
+    ITEM_MENU_BOOST_STATE_INIT                = 0,
+    ITEM_MENU_BOOST_BONUS_LIMIT               = 250,
+    ITEM_MENU_BOOST_HP_INCREMENT              = 5,
+    ITEM_MENU_BOOST_MP_INCREMENT              = 1,
+    ITEM_MENU_BOOST_NOTICE_HP_INCREASED       = 0x1C,
+    ITEM_MENU_BOOST_NOTICE_MP_INCREASED       = 0x1D,
+    ITEM_MENU_BOOST_STATS_OPENING_DELAY_TICKS = 1
+};
+
+/// Layout of the packed saved object states addressed by an object id.
+enum {
+    AREA_OBJECT_STATE_BITS       = 2,
+    AREA_OBJECT_STATE_INDEX_MASK = 0xF,
+    AREA_OBJECT_STATE_WORD_SHIFT = 4
+};
+
+/// Catalog ids tested for armour attachment effects in this translation unit.
+enum {
+    INVENTORY_ITEM_LIPSTICK       = 0x0B,
+    INVENTORY_ITEM_MD_PLAYER      = 0x0E,
+    INVENTORY_ITEM_SKULL_CRYSTAL  = 0x36,
+    INVENTORY_ITEM_MEDICINE_WHEEL = 0x37,
+    INVENTORY_ITEM_HOLY_WATER     = 0x38,
+    INVENTORY_ITEM_OFUDA          = 0x39,
+    INVENTORY_ITEM_HUNTER_GOGGLES = 0x3F,
+    INVENTORY_ITEM_GPS            = 0x40
+};
+
+static inline InventoryItemRow* _gpScanTable(const InventoryItemRange* scan);
+
+static inline void _gpClearEquipSlot(s32 item);
+
+/// Prefix before the equipped armor's name in the successful Belt Pouch notice.
+static u8 _gItemMenuPouchMoreText[] = "More ";
+/// Second line of the successful Belt Pouch attachment-capacity notice.
+static u8 _gItemMenuPouchAttachmentsAvailableText[] = "attachments available.";
+/// Player HP/MP summary panel opened by a permanent HP or MP boost.
+///
+/// Borrows the boost notice as its owner and animates the displayed pre-boost
+/// vitals toward the updated player stats; its content argument is unused.
+static UiObjectDesc _gItemMenuBoostStatsPanelDesc = { USER_INTERFACE_PANEL_TITLE_STYLE, { 10, 20, 30, 40 }, 12, 0, TASK_BODY_NONE, 192, itemMenuPlayerStatsPanelTask, 0 };
+
+/* Item table a scan window lies in. */
+static inline InventoryItemRow* _gpScanTable(const InventoryItemRange* scan)
+{
+    InventoryItemRow* table;
+
+    switch (scan->tableId) {
+        case INVENTORY_ITEM_TABLE_AREA_GRANTS:
+            table = gInventoryBattleRewardRows;
+            break;
+        case INVENTORY_ITEM_TABLE_INDIRECT:
+            table = gInventoryIndirectRows;
+            break;
+        default:
+            table = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.itemRows;
+            break;
+    }
+    return table;
+}
+static inline void _gpClearEquipSlot(s32 item)
+{
+    EquipmentWeaponLoad* slot;
+    s32                  found = 0;
+    s32                  i;
+
+    if ((u32)(item - 0x80) >= 0x20) {
+        return;
+    }
+
+    slot = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems[item - EQUIPMENT_WEAPON_ITEM_FIRST];
+    for (i = 0; i < EQUIPMENT_WEAPON_SUPPLY_COUNT; i++) {
+        if (item == gEquipmentWeaponSupplies[i].weaponItemId) {
+            found = 1;
+            break;
+        }
+    }
+
+    if ((found == 0) || (gEquipmentWeaponSupplies[i].supplyLoad != EQUIPMENT_WEAPON_SUPPLY_PRIMARY)) {
+        slot->primaryItemId = INVENTORY_ITEM_NONE;
+        slot->primaryQty    = 0;
+    }
+
+    if ((found == 0) || (gEquipmentWeaponSupplies[i].supplyLoad != EQUIPMENT_WEAPON_SUPPLY_SECONDARY)) {
+        if (slot->secondaryItemId != EQUIPMENT_WEAPON_SECONDARY_UNAVAILABLE) {
+            slot->secondaryItemId = INVENTORY_ITEM_NONE;
+        }
+        slot->secondaryQty = 0;
+    }
+}
+/// Marks a writable inventory row empty and resets its quantity and attachment.
+///
+/// Weapon loads and player equipment selections are left intact.
+static inline void _inventoryClearItemRow(InventoryItemRow* row)
+{
+    row->itemId     = INVENTORY_ITEM_NONE;
+    row->qty        = 0;
+    row->attachSlot = INVENTORY_ATTACHMENT_NONE;
+}
+
+/// Consumes units from the first row with `itemId` in a writable range.
+///
+/// A negative quantity removes that row's whole quantity; excess consumption
+/// clamps to zero. A zero remainder clears the id, quantity and attachment.
+/// The range must fit its table; a missing item leaves every row unchanged.
+static inline void _inventoryConsumeFirstStack(InventoryItemRange* range, s32 itemId, s32 quantity)
+{
+    InventoryItemRow* table;
+    s32               stackQuantity;
+    s32               rowIndex;
+    s32               remainingQuantity;
+
+    table         = _gpScanTable(range);
+    stackQuantity = 0;
+    for (rowIndex = range->firstRow; rowIndex < range->firstRow + range->rowCount; rowIndex++) {
+        if (table[rowIndex].itemId == itemId) {
+            stackQuantity = table[rowIndex].qty;
+            break;
+        }
+    }
+    if (rowIndex != range->firstRow + range->rowCount) {
+        if (quantity < 0) {
+            quantity = stackQuantity;
+        }
+        remainingQuantity = stackQuantity - quantity;
+        if (remainingQuantity < 0) {
+            remainingQuantity = 0;
+        }
+        if (remainingQuantity == 0) {
+            _inventoryClearItemRow(&table[rowIndex]);
+        } else {
+            table[rowIndex].qty = remainingQuantity;
+        }
+    }
+}
+/// Clears a separate item row or consumes its first matching quantity stack.
+///
+/// Ids below `INVENTORY_CONSUMABLE_ITEM_FIRST` clear `row` regardless of
+/// `quantity`, and permit NULL `range`. Other ids require a valid writable
+/// range and consume its first matching row, which need not be `row`.
+static __inline void _inventoryRemoveItemRow(InventoryItemRange* range, InventoryItemRow* row, s32 quantity)
+{
+    s32 itemId;
+
+    itemId = row->itemId;
+    if (itemId < INVENTORY_CONSUMABLE_ITEM_FIRST) {
+        _inventoryClearItemRow(row);
+    } else {
+        _inventoryConsumeFirstStack(range, itemId, quantity);
+    }
+}
+/// Returns an armour's base plus saved bonus attachment slots, capped at ten.
+///
+/// Armour item ids 0x60..0x7F index the live save; other ids return zero.
+static inline s32 _equipmentGetArmorAttachmentSlotCount(s32 armorItemId)
+{
+    enum { EQUIPMENT_ARMOR_ITEM_FIRST = 0x60,
+           EQUIPMENT_ARMOR_ITEM_COUNT = 0x20 };
+    s32               slotCount;
+    s32               armorIndex;
+    const ArmorStats* armorStats;
+
+    armorIndex = armorItemId - EQUIPMENT_ARMOR_ITEM_FIRST;
+    slotCount  = 0;
+    if ((u32)armorIndex < EQUIPMENT_ARMOR_ITEM_COUNT) {
+        armorStats = &gEquipmentArmorStats[armorItemId - EQUIPMENT_ARMOR_ITEM_FIRST];
+        slotCount  = armorStats->baseAttachmentSlots;
+        slotCount += gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.itemLevelBonus[armorIndex];
+        if (slotCount > ARMOR_ATTACHMENT_SLOT_MAX) {
+            slotCount = ARMOR_ATTACHMENT_SLOT_MAX;
+        }
+    }
+    return slotCount;
+}
+/// Draws an encoded prefix followed by an item's name on one panel text line.
+///
+/// X/Y are content pixels under `textDrawUiLine`'s contract. The name starts
+/// four pixels beyond the prefix's measured width and uses a fixed packed RGB
+/// colour. `prefixColorRgb` is packed RGB; `drawMode` narrows to a signed byte
+/// selecting `TEXT_DRAW_*`. Text and object are borrowed without modification.
+static inline void _itemMenuDrawPrefixedItemName(const UiObject* object, s32 x, s32 y, const u8* prefixText, s32 itemId, u32 prefixColorRgb, s32 drawMode)
+{
+    enum { ITEM_MENU_ITEM_NAME_COLOR_RGB = 0x037A78 };
+    s32 itemNameOffsetX;
+
+    textDrawUiLine(object, x, y, prefixText, prefixColorRgb, drawMode, TEXT_ALIGNMENT_LEFT);
+    itemNameOffsetX = textMeasureLineWidth(prefixText) + 4;
+    textDrawUiLine(object, x + itemNameOffsetX, y, itemGetText(itemId, ITEM_TEXT_NAME, 0), ITEM_MENU_ITEM_NAME_COLOR_RGB, drawMode, TEXT_ALIGNMENT_LEFT);
+}
+/// Fits the two-line pouch success notice and centers it above the screen midpoint.
+///
+/// Borrows a live UI object with writable panel bounds; armorItemId selects
+/// the item name under `itemGetText`'s catalog contract. Sizes are in pixels.
+static inline void _itemMenuSizePouchNotice(UiObject* object, s32 armorItemId)
+{
+    s32 contentWidth;
+    s32 secondLineWidth;
+
+    contentWidth    = textMeasureLineWidth(itemGetText(armorItemId, ITEM_TEXT_NAME, 0)) + textMeasureLineWidth(_gItemMenuPouchMoreText) + 4;
+    secondLineWidth = textMeasureLineWidth(_gItemMenuPouchAttachmentsAvailableText);
+    if (contentWidth < secondLineWidth) {
+        contentWidth = secondLineWidth;
+    }
+    uiSetPanelContentSize(&object->panel, contentWidth + 5, uiGetTextRowsHeight(2) + 1);
+    object->panel.bounds.rect.x = (-object->panel.bounds.rect.w) >> 1;
+    object->panel.bounds.rect.y = ((-object->panel.bounds.rect.h) >> 1) - 20;
+}
+
+/// Returns whether a carried row of `itemId` occupies a positive armour slot.
+///
+/// Searches the carried range's selected table. Quantity is not tested; the
+/// equipped-armour marker and unattached rows do not qualify.
+static inline s32 _inventoryHasAttachedItem(s32 itemId)
+{
+    const InventoryItemRange* range;
+    const InventoryItemRow*   row;
+    s32                       rowIndex;
+    s32                       hasAttachedItem;
+    s32                       rowCount;
+
+    range           = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems;
+    hasAttachedItem = 0;
+    switch (range->tableId) {
+        case INVENTORY_ITEM_TABLE_AREA_GRANTS:
+            row = gInventoryBattleRewardRows;
+            break;
+        case INVENTORY_ITEM_TABLE_INDIRECT:
+            row = gInventoryIndirectRows;
+            break;
+        default:
+            row = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.itemRows;
+            break;
+    }
+    rowIndex = 0;
+    row     += range->firstRow;
+    rowCount = range->rowCount;
+    for (; rowIndex < rowCount; rowIndex++) {
+        if (row->attachSlot > INVENTORY_ATTACHMENT_NONE) {
+            if (row->itemId == itemId) {
+                hasAttachedItem = 1;
+                break;
+            }
+        }
+        row++;
+    }
+    return hasAttachedItem;
+}
+/// Clears each row's item, attachment and quantity in a writable range.
+///
+/// The descriptor is unchanged and must select rows within its backing table.
+/// Weapon loads and player equipment selections are left intact.
+static inline void _inventoryClearItems(const InventoryItemRange* range)
+{
+    InventoryItemRow* table;
+    s32               clearedRowCount;
+    s32               tableRowIndex;
+
+    table = _gpScanTable(range);
+    for (clearedRowCount = 0, tableRowIndex = range->firstRow; clearedRowCount < range->rowCount; clearedRowCount++, tableRowIndex++) {
+        table[tableRowIndex].itemId     = INVENTORY_ITEM_NONE;
+        table[tableRowIndex].attachSlot = INVENTORY_ATTACHMENT_NONE;
+        table[tableRowIndex].qty        = 0;
+    }
+}
+/// Sums the quantities of every matching item row in a readable range.
+///
+/// The borrowed range must fit its live backing table; its count is in rows,
+/// including free rows. Zero rows returns zero. itemId is compared without
+/// narrowing against each row's byte id, so values outside 0..255 return zero.
+/// Quantities include loaded ammunition. The maximum 255 unsigned-halfword
+/// quantities fit the signed-word result. No collection-bit lookup occurs.
+static inline s32 _inventorySumMatchingRowQuantities(const InventoryItemRange* range, s32 itemId)
+{
+    InventoryItemRow*       table;
+    const InventoryItemRow* row;
+    s32                     rowIndex;
+    s32                     quantity;
+    s32                     rowCount;
+    s32                     firstRow;
+    s32                     scanRowCount;
+
+    quantity = 0;
+    table    = _gpScanTable(range);
+    rowIndex = 0;
+    rowCount = range->rowCount;
+    firstRow = range->firstRow;
+    if (rowCount != 0) {
+        scanRowCount = rowCount;
+
+        row = INVENTORY_ROW_AT(table, firstRow);
+        do {
+            if (row->itemId == itemId) {
+                quantity += row->qty;
+            }
+            rowIndex++;
+            row++;
+        } while (rowIndex < scanRowCount);
+    }
+    return quantity;
+}
+/// Recomputes maximum HP from the mode, permanent bonus and equipped armour.
+///
+/// The save mode must index the base-stat table and armour must be 0..32.
+/// Each addend narrows through the unsigned 16-bit accumulator before the
+/// signed maximum is capped at 250. Current HP is reduced only if above it.
+static inline void _equipmentRecalculateMaxHp(void)
+{
+    PlayerStatus*              status;
+    const McSaveData*          save;
+    const PlayerModeBaseStats* modeStats;
+    u16                        maximumHp;
+
+    status        = &gPlayerStatus;
+    modeStats     = gEquipmentModeBaseStats;
+    save          = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+    maximumHp     = modeStats[save->state.gameMode].baseHp.hp;
+    status->hpMax = maximumHp;
+    maximumHp    += save->state.hpBonus;
+    status->hpMax = maximumHp;
+    if (status->armor != PLAYER_STATUS_EQUIPMENT_NONE) {
+        maximumHp    += gEquipmentArmorStats[status->armor - 1].hpBonus;
+        status->hpMax = maximumHp;
+    }
+    if (status->hpMax >= PLAYER_STATUS_STAT_MAX + 1) {
+        status->hpMax = PLAYER_STATUS_STAT_MAX;
+    }
+    if (status->hp > status->hpMax) {
+        status->hp = status->hpMax;
+    }
+}
+/// Sets the live carried range to saved rows starting at zero.
+///
+/// The row count is stored as a byte; callers supply 0..255. The range's
+/// unproven fourth byte and the rows themselves are left intact.
+static inline void _inventorySetCarriedRange(s32 rowCount)
+{
+    McSaveData* save;
+
+    save                              = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+    save->state.carriedItems.firstRow = 0;
+    save->state.carriedItems.rowCount = rowCount;
+    save->state.carriedItems.tableId  = INVENTORY_ITEM_TABLE_SAVED;
+}
+/// Seeds listed object slots from the low two bits of each placement's state.
+///
+/// NULL rooms or place lists are skipped. Non-NULL room and placement tables
+/// require their respective end markers. Every listed index must fit the
+/// writable state words; slots absent from the lists keep their saved values.
+static inline void _areaSeedObjectStates(const AreaObjectRoom* rooms, u32* objectStates)
+{
+    const AreaObjectPlace* place;
+    u32*                   stateWord;
+    u32                    stateMask;
+
+    if (rooms == NULL) {
+        return;
+    }
+    place = rooms->places.list;
+    if (rooms->places.sentinel == AREA_OBJECT_ROOM_END) {
+        return;
+    }
+    do {
+        if (place != NULL) {
+            for (; place->flagIndex != AREA_OBJECT_PLACE_END; place++) {
+                stateMask   = AREA_OBJECT_PLACE_STATE_MASK << ((place->flagIndex & AREA_OBJECT_STATE_INDEX_MASK) * AREA_OBJECT_STATE_BITS);
+                stateWord   = &objectStates[place->flagIndex >> AREA_OBJECT_STATE_WORD_SHIFT];
+                *stateWord &= ~stateMask;
+                stateMask   = (place->state & AREA_OBJECT_PLACE_STATE_MASK) << ((place->flagIndex & AREA_OBJECT_STATE_INDEX_MASK) * AREA_OBJECT_STATE_BITS);
+                *stateWord |= stateMask;
+            }
+        }
+        rooms++;
+        place = rooms->places.list;
+    } while (rooms->places.sentinel != AREA_OBJECT_ROOM_END);
+}
+void itemMenuApplyPouchPanel(UiObject* object, Task* task)
+{
+    enum {
+        ITEM_MENU_POUCH_STATE_INIT          = 0,
+        ITEM_MENU_POUCH_STATUS_APPLIED      = 0xFF,
+        ITEM_MENU_POUCH_NOTICE_NO_MORE_MODS = 0x1A,
+        ITEM_MENU_POUCH_ARMOR_ITEM_FIRST    = 0x60,
+        ITEM_MENU_POUCH_DISPLAY_UPDATES     = 188,
+        ITEM_MENU_POUCH_COMPLETED_COUNTDOWN = 0x7FFF,
+        ITEM_MENU_POUCH_TEXT_COLOR_RGB      = 0x606060,
+        ITEM_MENU_POUCH_LINE_HEIGHT_PIXELS  = 15
+    };
+    s32 armorItemId;
+    s32 savedSpawnArg;
+    s32 textX;
+    s32 contentTop;
+    u32 textColorRgb;
+    s32 lineY;
+
+    armorItemId = gPlayerStatus.armor + (ITEM_MENU_POUCH_ARMOR_ITEM_FIRST - 1);
+    // Apply the permanent bonus once, consuming the pouch only below the cap.
+    if (task->state == ITEM_MENU_POUCH_STATE_INIT) {
+        task->status = ITEM_MENU_POUCH_STATUS_APPLIED;
+        if (_equipmentGetArmorAttachmentSlotCount(armorItemId) < ARMOR_ATTACHMENT_SLOT_MAX) {
+            gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.itemLevelBonus[armorItemId - ITEM_MENU_POUCH_ARMOR_ITEM_FIRST]++;
+        } else {
+            task->status = ITEM_MENU_POUCH_NOTICE_NO_MORE_MODS;
+        }
+        if (task->status == ITEM_MENU_POUCH_STATUS_APPLIED) {
+            _itemMenuSizePouchNotice(object, armorItemId);
+            _inventoryRemoveItemRow(&gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems, gItemMenuSelectedRow, 1);
+            task->killCountdown = ITEM_MENU_POUCH_DISPLAY_UPDATES;
+            task->state++;
+        }
+    }
+    if (task->status != ITEM_MENU_POUCH_STATUS_APPLIED) {
+        // Temporarily replace the item-id payload with the failure notice id.
+        savedSpawnArg         = task->spawnArg1.value;
+        task->spawnArg1.value = task->status;
+        itemMenuNoticeTask(task);
+        task->spawnArg1.value = savedSpawnArg;
+        return;
+    }
+
+    textX      = object->panel.contentLeft.signedValue + 2;
+    contentTop = object->panel.contentTop.signedValue;
+    uiDrawPanelLabel(&object->panel, gItemMenuPouchNoticeLabel);
+    textColorRgb = ITEM_MENU_POUCH_TEXT_COLOR_RGB;
+    lineY        = contentTop + ITEM_MENU_POUCH_LINE_HEIGHT_PIXELS;
+    _itemMenuDrawPrefixedItemName(object, textX, lineY, _gItemMenuPouchMoreText, armorItemId, textColorRgb, TEXT_DRAW_OUTLINED);
+    lineY += ITEM_MENU_POUCH_LINE_HEIGHT_PIXELS;
+    textDrawUiLine(object, textX, lineY, _gItemMenuPouchAttachmentsAvailableText, textColorRgb, TEXT_DRAW_OUTLINED, TEXT_ALIGNMENT_LEFT);
+
+    // Opening and inactive panels draw the notice without advancing its timeout.
+    if (object->panel.control.word == USER_INTERFACE_PANEL_ACTIVE) {
+        task->killCountdown--;
+        if ((task->killCountdown <= 0) || (padCheckButtons(0, PAD_BUTTON_QUERY_PRESSED, gPadConfirmButtonMask | gPadCancelButtonMask) != 0)) {
+            object->result      = USER_INTERFACE_RESULT_DISMISS;
+            task->killCountdown = ITEM_MENU_POUCH_COMPLETED_COUNTDOWN;
+        } else if (padCheckButtons(0, PAD_BUTTON_QUERY_PRESSED, gPadMenuButtonMask) != 0) {
+            object->result      = USER_INTERFACE_RESULT_CANCEL;
+            task->killCountdown = ITEM_MENU_POUCH_COMPLETED_COUNTDOWN;
+        }
+    }
+}
+
+void itemMenuApplyMpBoostPanel(UiObject* object, Task* task)
+{
+    PlayerStatus* status;
+    McSaveData*   save;
+    s32           savedSpawnArg;
+
+    if (task->state == ITEM_MENU_BOOST_STATE_INIT) {
+        // Capture the before-values, then apply and consume this one-time boost.
+        status                 = &gPlayerStatus;
+        gHudDisplayedVitals.hp = status->hp;
+        save                   = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+        gHudDisplayedVitals.mp = status->mp;
+        if (save->state.mpBonus < ITEM_MENU_BOOST_BONUS_LIMIT) {
+            save->state.mpBonus = save->state.mpBonus + ITEM_MENU_BOOST_MP_INCREMENT;
+        }
+        equipmentRecalculateMaxMp();
+        status->mp = status->mpMax;
+        _inventoryRemoveItemRow(NULL, gItemMenuSelectedRow, 1);
+        uiSpawnObject(&_gItemMenuBoostStatsPanelDesc, 0, USER_INTERFACE_PANEL_INACTIVE, ITEM_MENU_BOOST_STATS_OPENING_DELAY_TICKS, object);
+    }
+    // The notice advances this task; restore the caller's item argument afterwards.
+    savedSpawnArg         = task->spawnArg1.value;
+    task->spawnArg1.value = ITEM_MENU_BOOST_NOTICE_MP_INCREASED;
+    itemMenuNoticeTask(task);
+    task->spawnArg1.value = savedSpawnArg;
+}
+
+void itemMenuApplyHpBoostPanel(UiObject* object, Task* task)
+{
+    PlayerStatus* status;
+    McSaveData*   save;
+    s32           savedSpawnArg;
+    s32           previousHp;
+
+    if (task->state == ITEM_MENU_BOOST_STATE_INIT) {
+        // Preserve the displayed before-values; the bonus threshold precedes addition.
+        status                 = &gPlayerStatus;
+        previousHp             = status->hp;
+        gHudDisplayedVitals.hp = previousHp;
+        save                   = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+        gHudDisplayedVitals.mp = status->mp;
+        if (save->state.hpBonus < ITEM_MENU_BOOST_BONUS_LIMIT) {
+            save->state.hpBonus = save->state.hpBonus + ITEM_MENU_BOOST_HP_INCREMENT;
+        }
+        _equipmentRecalculateMaxHp();
+        status->hp = status->hpMax;
+        _inventoryRemoveItemRow(NULL, gItemMenuSelectedRow, 1);
+        uiSpawnObject(&_gItemMenuBoostStatsPanelDesc, 0, USER_INTERFACE_PANEL_INACTIVE, ITEM_MENU_BOOST_STATS_OPENING_DELAY_TICKS, object);
+    }
+    // The notice advances this task; restore the caller's item argument afterwards.
+    savedSpawnArg         = task->spawnArg1.value;
+    task->spawnArg1.value = ITEM_MENU_BOOST_NOTICE_HP_INCREASED;
+    itemMenuNoticeTask(task);
+    task->spawnArg1.value = savedSpawnArg;
+}
+
+s32 equipmentHasEffect(s32 effectSelector)
+{
+    const PlayerStatus* status;
+    const ArmorStats*   armorStats;
+    s32                 armorFeatures;
+    s32                 effectActive;
+    s32                 bodyProtected;
+    s32                 mindProtected;
+
+    effectActive  = 0;
+    armorFeatures = 0;
+    bodyProtected = 0;
+    mindProtected = 0;
+    status        = &gPlayerStatus;
+    if (status->armor != PLAYER_STATUS_EQUIPMENT_NONE) {
+        armorStats    = &gEquipmentArmorStats[status->armor - 1];
+        armorFeatures = armorStats->features;
+    }
+    // Metabolism and the two wards protect different groups of status effects.
+    if ((gAttachmentState.metabolismTicks > 0) || (gAttachmentState.bodyWard != 0)) {
+        bodyProtected = 1;
+    }
+    if ((gAttachmentState.metabolismTicks > 0) || (gAttachmentState.mindWard != 0)) {
+        mindProtected = 1;
+    }
+
+    switch (effectSelector) {
+        case EQUIPMENT_EFFECT_RESIST_DARKNESS:
+            if (_inventoryHasAttachedItem(INVENTORY_ITEM_HUNTER_GOGGLES) || bodyProtected) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_RESIST_PARALYSIS:
+            if (bodyProtected || (armorFeatures & ARMOR_FEATURE_RESIST_PARALYSIS)) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_RESIST_POISON:
+            if (bodyProtected || (armorFeatures & ARMOR_FEATURE_RESIST_POISON)) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_RESIST_SILENCE:
+            effectActive = _inventoryHasAttachedItem(INVENTORY_ITEM_LIPSTICK);
+            if (mindProtected || (armorFeatures & ARMOR_FEATURE_RESIST_SILENCE)) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_RESIST_TIMED_STATUS_20:
+            break;
+        case EQUIPMENT_EFFECT_RESIST_CONFUSION:
+            effectActive = _inventoryHasAttachedItem(INVENTORY_ITEM_MD_PLAYER);
+            if (mindProtected || (armorFeatures & ARMOR_FEATURE_RESIST_CONFUSION)) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_RESIST_BERSERKER:
+            if (mindProtected || _inventoryHasAttachedItem(INVENTORY_ITEM_MD_PLAYER)) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_RESIST_IMPACT:
+            if (armorFeatures & ARMOR_FEATURE_RESIST_IMPACT) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_ARMOR_MOTION_DETECTOR:
+            if (armorFeatures & ARMOR_FEATURE_MOTION_DETECTOR) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_MP_GENERATION:
+            if (armorFeatures & ARMOR_FEATURE_MP_GENERATION) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_HP_RECOVERY:
+            if (armorFeatures & ARMOR_FEATURE_HP_RECOVERY) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_QUICK_FIRE:
+            if (armorFeatures & ARMOR_FEATURE_QUICK_FIRE) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_MEDICAL_INSPECTION:
+            if (armorFeatures & ARMOR_FEATURE_MEDICAL_INSPECTION) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_MP_RECOVERY:
+            if (armorFeatures & ARMOR_FEATURE_MP_RECOVERY) {
+                effectActive = 1;
+            }
+            break;
+        case EQUIPMENT_EFFECT_SKULL_CRYSTAL:
+            effectActive = _inventoryHasAttachedItem(INVENTORY_ITEM_SKULL_CRYSTAL);
+            break;
+        case EQUIPMENT_EFFECT_OFUDA:
+            effectActive = _inventoryHasAttachedItem(INVENTORY_ITEM_OFUDA);
+            break;
+        case EQUIPMENT_EFFECT_HOLY_WATER:
+            effectActive = _inventoryHasAttachedItem(INVENTORY_ITEM_HOLY_WATER);
+            break;
+        case EQUIPMENT_EFFECT_MEDICINE_WHEEL:
+            effectActive = _inventoryHasAttachedItem(INVENTORY_ITEM_MEDICINE_WHEEL);
+            break;
+        case EQUIPMENT_EFFECT_MOTION_DETECTOR:
+            if (_inventoryHasAttachedItem(INVENTORY_ITEM_GPS) || (armorFeatures & ARMOR_FEATURE_MOTION_DETECTOR)) {
+                effectActive = 1;
+            }
+            break;
+    }
+    return effectActive;
+}
+
+void inventoryInitializeShootingGalleryLoadout(void)
+{
+    enum {
+        INVENTORY_SHOOTING_GALLERY_ARMOR_ITEM_ID = 0x6C,
+        ATTACHMENT_TRAINING_SPELLS_PER_ELEMENT   = 3,
+        ATTACHMENT_TRAINING_ELEMENT_COUNT        = ATTACHMENT_SPELL_COUNT / ATTACHMENT_TRAINING_SPELLS_PER_ELEMENT,
+        ATTACHMENT_TRAINING_INITIAL_LEVEL        = 1
+    };
+    PlayerStatus* status;
+    s32           elementIndex;
+    s32           spellIndex;
+
+    status = &gPlayerStatus;
+    if (status->weapon != PLAYER_STATUS_EQUIPMENT_NONE) {
+        _gpClearEquipSlot(status->weapon + EQUIPMENT_WEAPON_ITEM_FIRST - 1);
+        status->weapon = PLAYER_STATUS_EQUIPMENT_NONE;
+    }
+
+    // Use the separate saved range so normal carried items survive training.
+    _inventoryClearItems(&gInventoryTrainingCarriedRange);
+    gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems = gInventoryTrainingCarriedRange;
+    inventoryAddItem(&gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems, INVENTORY_SHOOTING_GALLERY_ARMOR_ITEM_ID, 1);
+    equipmentEquipCarriedArmor(INVENTORY_SHOOTING_GALLERY_ARMOR_ITEM_ID);
+
+    gPlayerStatus.hp = gPlayerStatus.hpMax;
+    gPlayerStatus.mp = gPlayerStatus.mpMax;
+    equipmentInitializeWeaponSupplies();
+
+    // Reset only the twelve wheel spells, leaving the six item-cast slots intact.
+    for (elementIndex = 0; elementIndex < ATTACHMENT_TRAINING_ELEMENT_COUNT; elementIndex++) {
+        for (spellIndex = 0; spellIndex < ATTACHMENT_TRAINING_SPELLS_PER_ELEMENT; spellIndex++) {
+            gAttachmentTrainingLevels[spellIndex + elementIndex * ATTACHMENT_TRAINING_SPELLS_PER_ELEMENT] = 0;
+        }
+    }
+    gAttachmentTrainingLevels[ATTACHMENT_INDEX_PYROKINESIS] = ATTACHMENT_TRAINING_INITIAL_LEVEL;
+
+    gAttachmentState.activeIndex = ATTACHMENT_INDEX_PYROKINESIS;
+    gAttachmentState.wheelIndex  = ATTACHMENT_INDEX_PYROKINESIS;
+}
+
+void inventoryRestoreCarriedLoadout(void)
+{
+    enum { EQUIPMENT_ARMOR_ITEM_FIRST = 0x60 };
+    PlayerStatus*             status;
+    const InventoryItemRange* range;
+    const InventoryItemRow*   row;
+    s32                       rowIndex;
+
+    status = &gPlayerStatus;
+    if (status->weapon != PLAYER_STATUS_EQUIPMENT_NONE) {
+        _gpClearEquipSlot(status->weapon + EQUIPMENT_WEAPON_ITEM_FIRST - 1);
+        status->weapon = PLAYER_STATUS_EQUIPMENT_NONE;
+    }
+
+    // Discard temporary rows, then recover the armor marked in normal inventory.
+    _inventoryClearItems(&gInventoryTrainingCarriedRange);
+    _inventorySetCarriedRange(INVENTORY_INITIAL_CARRIED_ROWS);
+    range = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems;
+
+    row = &_gpScanTable(range)[range->firstRow];
+    for (rowIndex = 0; rowIndex < range->rowCount; rowIndex++, row++) {
+        if (row->attachSlot == INVENTORY_ATTACHMENT_EQUIPPED_ARMOR && (u32)(row->itemId - EQUIPMENT_ARMOR_ITEM_FIRST) < ARRAY_SIZE(gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.itemLevelBonus)) {
+            status->armor = row->itemId - (EQUIPMENT_ARMOR_ITEM_FIRST - 1);
+            _equipmentRecalculateMaxHp();
+            equipmentRecalculateMaxMp();
+            break;
+        }
+    }
+
+    gAttachmentState.wheelIndex  = ATTACHMENT_INDEX_PYROKINESIS;
+    gAttachmentState.activeIndex = ATTACHMENT_INDEX_PYROKINESIS;
+    gPlayerStatus.hp             = gPlayerStatus.hpMax;
+    gPlayerStatus.mp             = gPlayerStatus.mpMax;
+    equipmentInitializeWeaponSupplies();
+}
+
+void equipmentEnsureM93rEquipped(void)
+{
+    enum {
+        EQUIPMENT_M93R_ITEM_ID        = 0x81,
+        EQUIPMENT_M93R_SELECTOR       = EQUIPMENT_M93R_ITEM_ID - EQUIPMENT_WEAPON_ITEM_FIRST + 1,
+        EQUIPMENT_M93R_9MM_PB_ITEM_ID = 0xA0
+    };
+    PlayerStatus*             status;
+    const InventoryItemRange* range;
+    s32                       weaponQuantity;
+    s32                       weaponItemId;
+    u8                        primaryItemId;
+
+    status = &gPlayerStatus;
+    if (status->weapon == PLAYER_STATUS_EQUIPMENT_NONE) {
+        range          = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems;
+        weaponItemId   = EQUIPMENT_M93R_ITEM_ID;
+        weaponQuantity = _inventorySumMatchingRowQuantities(range, weaponItemId);
+        if (weaponQuantity != 0) {
+            equipmentEquipCarriedWeapon(EQUIPMENT_M93R_ITEM_ID);
+        }
+    }
+    // Keep an already selected alternate ammunition type intact.
+    if (status->weapon == EQUIPMENT_M93R_SELECTOR) {
+        weaponItemId  = EQUIPMENT_M93R_ITEM_ID;
+        primaryItemId = _equipmentGetWeaponLoad(weaponItemId)->primaryItemId;
+        if ((primaryItemId == INVENTORY_ITEM_NONE) || (primaryItemId == EQUIPMENT_M93R_9MM_PB_ITEM_ID)) {
+            equipmentLoadWeaponConsumable(&gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems, EQUIPMENT_M93R_ITEM_ID, EQUIPMENT_M93R_9MM_PB_ITEM_ID, EQUIPMENT_WEAPON_LOAD_TO_CAPACITY);
+        }
+    }
+}
+
+void areaSeedStageObjectStates(s32 stageId)
+{
+    const AreaObjectRoom* rooms;
+    u32*                  objectStates;
+
+    rooms        = gAreaObjectStages[stageId].rooms;
+    objectStates = gAreaObjectStages[stageId].objectStates;
+    // Night Dryfield shares the daytime words, so its first visit must keep them.
+    if (stageId == GAME_STAGE_DRYFIELD_NIGHT) {
+        return;
+    }
+    _areaSeedObjectStates(rooms, objectStates);
+}
+
+void areaSetCurrentObjectState(s32 objectId, u8 state)
+{
+    s32  stateShift;
+    u32  stateMask;
+    u32* stateWord;
+    s32  stageId;
+
+    stateShift  = (objectId & AREA_OBJECT_STATE_INDEX_MASK) * AREA_OBJECT_STATE_BITS;
+    stateMask   = AREA_OBJECT_PLACE_STATE_MASK << stateShift;
+    stageId     = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.stage;
+    stateWord   = &gAreaObjectStages[stageId].objectStates[objectId >> AREA_OBJECT_STATE_WORD_SHIFT];
+    *stateWord &= ~stateMask;
+    stateMask   = state << stateShift;
+    *stateWord |= stateMask;
+}
+
+void inventoryClearItems(const InventoryItemRange* range)
+{
+    _inventoryClearItems(range);
+}
+
+InventoryItemRow* inventoryGiveItem(const InventoryItemRange* range, s32 itemId, s32 quantity)
+{
+    return inventoryAddItem(range, itemId, quantity);
+}
+
+s32 inventoryRemoveItemRow(InventoryItemRange* range, InventoryItemRow* row, s32 quantity)
+{
+    _inventoryRemoveItemRow(range, row, quantity);
+    return 0;
+}
+
+void inventoryClearCollectedBits(void)
+{
+    s32  wordIndex;
+    s32* collectionWord;
+
+    collectionWord = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.collectedBits;
+    for (wordIndex = ARRAY_SIZE(gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.collectedBits) - 1; wordIndex >= 0; wordIndex--) {
+        *collectionWord++ = 0;
+    }
+}
+
+void inventorySetCollectedBit(s32 collectionId)
+{
+    s32* word;
+    s32  bitIndex;
+
+    word      = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.collectedBits;
+    bitIndex  = collectionId & INVENTORY_COLLECTION_ID_MASK;
+    word     += bitIndex / INVENTORY_COLLECTION_BITS_PER_WORD;
+    bitIndex %= INVENTORY_COLLECTION_BITS_PER_WORD;
+    *word    |= 1 << bitIndex;
+    // Refresh the age marker even when the Ice Bag bit was already set.
+    if ((collectionId & INVENTORY_COLLECTION_ID_MASK) == INVENTORY_COLLECTED_ICE_BAG_BIT) {
+        gGameFlagNibbleBanks[GAME_FLAG_NIBBLE_BANK_LIVE].payload.state.playTimeMark = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.playTime;
+    }
+}
+
+void inventoryClearCollectedBit(s32 collectionId)
+{
+    s32* word;
+
+    word          = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.collectedBits;
+    collectionId &= INVENTORY_COLLECTION_ID_MASK;
+    word         += collectionId / INVENTORY_COLLECTION_BITS_PER_WORD;
+    collectionId %= INVENTORY_COLLECTION_BITS_PER_WORD;
+    *word        &= ~(1 << collectionId);
+}
+
+s32 inventoryCountCollectedBits(void)
+{
+    s32        collectedCount;
+    const s32* collectionWord;
+    s32        wordIndex;
+    s32        bitIndex;
+    s32        packedBits;
+    s32        bitMaskBase;
+
+    collectionWord = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.collectedBits;
+    collectedCount = 0;
+    bitMaskBase    = 1;
+    for (wordIndex = ARRAY_SIZE(gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.collectedBits) - 1; wordIndex >= 0; wordIndex--) {
+        bitIndex   = 0;
+        packedBits = *collectionWord;
+        do {
+            if (packedBits & (bitMaskBase << bitIndex)) {
+                collectedCount++;
+            }
+            bitIndex++;
+        } while (bitIndex < INVENTORY_COLLECTION_BITS_PER_WORD);
+        collectionWord++;
+    }
+    return collectedCount;
+}
+
+s32 inventoryCountOccupiedRows(const InventoryItemRange* range)
+{
+    InventoryItemRow*       table;
+    const InventoryItemRow* row;
+    s32                     rangeIndex;
+    s32                     occupiedRows;
+    s32                     rowCount;
+    s32                     firstRow;
+    s32                     rowLimit;
+
+    table        = _gpScanTable(range);
+    rangeIndex   = 0;
+    rowCount     = range->rowCount;
+    firstRow     = range->firstRow;
+    occupiedRows = rangeIndex;
+    if (rowCount != 0) {
+        rowLimit = rowCount;
+
+        row = INVENTORY_ROW_AT(table, firstRow);
+        do {
+            if (row->itemId != INVENTORY_ITEM_NONE) {
+                occupiedRows++;
+            }
+            rangeIndex++;
+            row++;
+        } while (rangeIndex < rowLimit);
+    }
+    return occupiedRows;
+}
+
+EquipmentWeaponLoad* equipmentGetWeaponLoad(s32 weaponItemId)
+{
+    return &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems[weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST];
+}
+
+s32 equipmentGetLoadedConsumableQuantity(const InventoryItemRange* range, s32 consumableItemId)
+{
+    const InventoryItemRow*    table;
+    const EquipmentWeaponLoad* weaponLoad;
+    s32                        loadedQuantity;
+    s32                        rowIndex;
+    s32                        endRow;
+    s32                        weaponItemId;
+
+    table          = inventoryGetRangeTable(range);
+    loadedQuantity = 0;
+    if ((u32)(consumableItemId - INVENTORY_CONSUMABLE_ITEM_FIRST) < INVENTORY_CONSUMABLE_ITEM_COUNT) {
+        rowIndex = range->firstRow;
+        endRow   = rowIndex + range->rowCount;
+        if (rowIndex < endRow) {
+            for (; rowIndex < range->firstRow + range->rowCount; rowIndex++) {
+                weaponItemId = table[rowIndex].itemId;
+                if ((u32)(weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST) < ARRAY_SIZE(gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems)) {
+                    weaponLoad = _equipmentGetWeaponLoad(weaponItemId);
+                    if (weaponLoad->primaryItemId == consumableItemId) {
+                        loadedQuantity += weaponLoad->primaryQty;
+                    }
+                    if (weaponLoad->secondaryItemId == consumableItemId) {
+                        loadedQuantity += weaponLoad->secondaryQty;
+                    }
+                }
+            }
+            return loadedQuantity;
+        }
+    }
+    return loadedQuantity;
+}
+
+void equipmentClearRemovableLoads(s32 weaponItemId)
+{
+    EquipmentWeaponLoad* load;
+    s32                  hasBuiltInSupply = 0;
+    s32                  supplyIndex;
+
+    if ((u32)(weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST) >= ARRAY_SIZE(gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems)) {
+        return;
+    }
+
+    load = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems[weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST];
+    for (supplyIndex = 0; supplyIndex < EQUIPMENT_WEAPON_SUPPLY_COUNT; supplyIndex++) {
+        if (weaponItemId == gEquipmentWeaponSupplies[supplyIndex].weaponItemId) {
+            hasBuiltInSupply = 1;
+            break;
+        }
+    }
+
+    // A built-in supply keeps both its selection and its remaining charge.
+    if ((hasBuiltInSupply == 0) || (gEquipmentWeaponSupplies[supplyIndex].supplyLoad != EQUIPMENT_WEAPON_SUPPLY_PRIMARY)) {
+        load->primaryItemId = INVENTORY_ITEM_NONE;
+        load->primaryQty    = 0;
+    }
+
+    if ((hasBuiltInSupply == 0) || (gEquipmentWeaponSupplies[supplyIndex].supplyLoad != EQUIPMENT_WEAPON_SUPPLY_SECONDARY)) {
+        if (load->secondaryItemId != EQUIPMENT_WEAPON_SECONDARY_UNAVAILABLE) {
+            load->secondaryItemId = INVENTORY_ITEM_NONE;
+        }
+        load->secondaryQty = 0;
+    }
+}
+
+void equipmentClearSelectedRemovableLoads(s32 weaponItemId, s32 loadSelection)
+{
+    EquipmentWeaponLoad* load;
+    s32                  hasBuiltInSupply = 0;
+    s32                  supplyIndex;
+
+    if ((u32)(weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST) >= ARRAY_SIZE(gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems)) {
+        return;
+    }
+
+    load = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems[weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST];
+    for (supplyIndex = 0; supplyIndex < EQUIPMENT_WEAPON_SUPPLY_COUNT; supplyIndex++) {
+        if (weaponItemId == gEquipmentWeaponSupplies[supplyIndex].weaponItemId) {
+            hasBuiltInSupply = 1;
+            break;
+        }
+    }
+
+    if (loadSelection != EQUIPMENT_CLEAR_LOAD_SECONDARY) {
+        if ((hasBuiltInSupply == 0) || (gEquipmentWeaponSupplies[supplyIndex].supplyLoad != EQUIPMENT_WEAPON_SUPPLY_PRIMARY)) {
+            load->primaryItemId = INVENTORY_ITEM_NONE;
+            load->primaryQty    = 0;
+        }
+    }
+
+    if (loadSelection != EQUIPMENT_CLEAR_LOAD_PRIMARY) {
+        if ((hasBuiltInSupply == 0) || (gEquipmentWeaponSupplies[supplyIndex].supplyLoad != EQUIPMENT_WEAPON_SUPPLY_SECONDARY)) {
+            if (load->secondaryItemId != EQUIPMENT_WEAPON_SECONDARY_UNAVAILABLE) {
+                load->secondaryItemId = INVENTORY_ITEM_NONE;
+            }
+            load->secondaryQty = 0;
+        }
+    }
+}
+
+s32 inventoryGetConsumableStackQuantity(const InventoryItemRange* range, s32 consumableItemId)
+{
+    s32                     rowIndex;
+    s32                     quantity;
+    const InventoryItemRow* table;
+
+    rowIndex = range->firstRow;
+    table    = inventoryGetRangeTable(range);
+    if ((u32)(consumableItemId - INVENTORY_CONSUMABLE_ITEM_FIRST) < INVENTORY_CONSUMABLE_ITEM_COUNT) {
+        quantity = inventoryFindStackQuantity(table, range, &rowIndex, consumableItemId);
+    } else {
+        quantity = 0;
+    }
+    return quantity;
+}
+
+void inventoryConsumeFirstStack(InventoryItemRange* range, s32 itemId, s32 quantity)
+{
+    _inventoryConsumeFirstStack(range, itemId, quantity);
+}
+
+s32 equipmentReloadSelectedWeaponConsumable(s32 weaponItemId, s32 loadSelection)
+{
+    const EquipmentWeaponLoad* weaponLoad;
+    const u8*                  primaryItemId;
+    s32                        loadedQuantity;
+
+    weaponLoad    = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems[weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST];
+    primaryItemId = &weaponLoad->primaryItemId;
+    if (loadSelection != EQUIPMENT_WEAPON_SUPPLY_PRIMARY) {
+        loadedQuantity = equipmentLoadWeaponConsumable(&gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems, weaponItemId, weaponLoad->secondaryItemId, EQUIPMENT_WEAPON_LOAD_TO_CAPACITY);
+    } else {
+        loadedQuantity = equipmentLoadWeaponConsumable(&gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems, weaponItemId, *primaryItemId, EQUIPMENT_WEAPON_LOAD_TO_CAPACITY);
+    }
+    return loadedQuantity;
+}
+
+s32 equipmentCanReloadSelectedWeaponConsumable(s32 weaponItemId, s32 loadSelection)
+{
+    const EquipmentWeaponLoad* weaponLoad;
+    const EquipmentWeaponLoad* secondaryLoad;
+    s32                        checkResult;
+
+    weaponLoad    = &gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.weaponItems[weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST];
+    secondaryLoad = weaponLoad;
+    if (loadSelection == EQUIPMENT_WEAPON_SUPPLY_PRIMARY) {
+        checkResult = equipmentLoadWeaponConsumable(&gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems, weaponItemId, weaponLoad->primaryItemId, EQUIPMENT_WEAPON_LOAD_CHECK_ONLY);
+    } else {
+        checkResult = equipmentLoadWeaponConsumable(&gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems, weaponItemId, secondaryLoad->secondaryItemId, EQUIPMENT_WEAPON_LOAD_CHECK_ONLY);
+    }
+    return checkResult == EQUIPMENT_WEAPON_LOAD_CHECK_ONLY;
+}
+
+s32 areaGetCurrentObjectState(s32 objectId)
+{
+    s32        stageId;
+    const u32* stateWord;
+    u32        packedStates;
+    s32        stateShift;
+
+    stageId       = gGameSession->location.stage;
+    stateWord     = &gAreaObjectStages[stageId].objectStates[objectId >> 4];
+    stateShift    = (objectId & 0xF) * 2;
+    packedStates  = *stateWord;
+    packedStates &= AREA_OBJECT_PLACE_STATE_MASK << stateShift;
+    return packedStates >> stateShift;
+}
+
+s32 inventoryHasCollectedBit(s32 collectionId)
+{
+    const s32* word;
+    s32        maskedBit;
+
+    word          = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.collectedBits;
+    collectionId &= INVENTORY_COLLECTION_ID_MASK;
+    word         += collectionId / INVENTORY_COLLECTION_BITS_PER_WORD;
+    collectionId %= INVENTORY_COLLECTION_BITS_PER_WORD;
+    maskedBit     = *word & (1 << collectionId);
+    return maskedBit != 0;
+}
+
+InventoryItemRow* inventoryGetRangeTable(const InventoryItemRange* range)
+{
+    switch (range->tableId) {
+        case INVENTORY_ITEM_TABLE_AREA_GRANTS:
+            return gInventoryBattleRewardRows;
+        case INVENTORY_ITEM_TABLE_INDIRECT:
+            return gInventoryIndirectRows;
+        default:
+            return gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.itemRows;
+    }
+}
+
+s32 inventoryIndexOfRow(const InventoryItemRange* range, const InventoryItemRow* row)
+{
+    const InventoryItemRow* rangeRow;
+    s32                     rowIndex;
+    s32                     foundIndex;
+
+    rangeRow   = _gpScanTable(range);
+    foundIndex = INVENTORY_ROW_NOT_FOUND;
+    rangeRow  += range->firstRow;
+    for (rowIndex = 0; rowIndex < range->rowCount; rowIndex++) {
+        if (rangeRow == row) {
+            foundIndex = rowIndex;
+            break;
+        }
+        rangeRow++;
+    }
+    return foundIndex;
+}
+
+InventoryItemRow* inventoryGetRow(const InventoryItemRange* range, s32 rowIndex, s32 unused)
+{
+    InventoryItemRow* table;
+
+    table = _gpScanTable(range);
+    return &table[range->firstRow + rowIndex];
+}
+
+/// Returns the one-byte item id at a zero-based row position in a range.
+///
+/// Zero denotes a free row. The descriptor and selected table are borrowed;
+/// the position must be within the range, which must fit readable storage.
+static s32 _inventoryGetRowItemId(const InventoryItemRange* range, s32 rowIndex)
+{
+    const InventoryItemRow* table;
+    const InventoryItemRow* row;
+
+    table = _gpScanTable(range);
+    row   = &table[range->firstRow + rowIndex];
+    return row->itemId;
+}

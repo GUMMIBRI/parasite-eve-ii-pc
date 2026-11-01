@@ -1,0 +1,877 @@
+<title>PE2 Asset Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a navigator on the left (the overlay tree, or assets by type), one subject on the right built from stacked sections. */
+:root {
+  --bg: #eef1f2; --panel: #f8fafa; --ink: #16242b; --muted: #5b6d75; --line: #c9d3d6; --grid: #dde4e6;
+  --accent: #0b6b7a; --accent-soft: #d5e8ea; --clash: #b3402a; --clut: #7a5a0b;
+  --sans: "IBM Plex Sans", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #10181c; --panel: #162126; --ink: #dfe8ea; --muted: #8fa3aa; --line: #2c3c43; --grid: #1f2d33;
+  --accent: #56c0cf; --accent-soft: #173940; --clash: #f08a6e; --clut: #e0bd62; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #10181c; --panel: #162126; --ink: #dfe8ea; --muted: #8fa3aa; --line: #2c3c43; --grid: #1f2d33;
+  --accent: #56c0cf; --accent-soft: #173940; --clash: #f08a6e; --clut: #e0bd62; color-scheme: dark }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.45; }
+.app { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); height: 100%; }
+@media (max-width: 800px) { .app { grid-template-columns: minmax(0, 1fr); height: auto; } .nav { max-height: 45vh; } }
+.nav { display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--panel); min-height: 0; }
+.nav header { padding: 12px 16px 8px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--line); }
+h1 { font-size: 16px; font-weight: 600; margin: 0; }
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.seg button { font: 500 11px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--panel); border: 0; padding: 5px 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg button small { display: block; font: 10px var(--mono); letter-spacing: 0; text-transform: none; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--ink); }
+input, select { font: 13px var(--mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 3px; padding: 5px 8px; min-width: 0; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.list { overflow: auto; padding: 6px 0 16px; flex: 1; min-height: 0; font: 12px var(--mono); }
+.list a, .list summary { display: block; padding: 2px 16px; color: var(--ink); text-decoration: none; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list a:hover, .list summary:hover { background: var(--grid); }
+.list a.cur { background: var(--accent-soft); }
+.list details > div { padding-left: 12px; border-left: 1px solid var(--grid); margin-left: 16px; }
+.list details > div a, .list details > div summary { padding-left: 6px; }
+.badge { color: var(--clash); font-weight: 500; } .note { margin-top: 6px; max-width: 80ch; } .rename { font: inherit; width: 26ch; max-width: 100%; padding: 1px 4px; color: var(--ink); background: transparent; border: 1px solid var(--muted); border-radius: 3px; } textarea.mono { width: 100%; max-width: 100ch; font-family: ui-monospace, monospace; color: var(--ink); background: transparent; } .dim { color: var(--muted); }
+main { overflow: auto; min-width: 0; }
+.subject { padding-inline: 20px; padding-block: 16px 48px; display: flex; flex-direction: column; gap: 22px; max-width: 1400px; }
+.subject > header h2 { font-size: 20px; font-weight: 600; margin: 0 0 4px; font-family: var(--mono); overflow-wrap: anywhere; }
+.crumbs { font: 12px var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 6px; }
+a.lnk { color: var(--accent); text-decoration: none; cursor: pointer; } a.lnk:hover { text-decoration: underline; }
+section > h3 { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+section > p { color: var(--muted); font-size: 12px; margin: 0 0 8px; max-width: 80ch; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(256px * var(--scale, 2))), 1fr)); gap: 14px; }
+label.row { flex-direction: row; align-items: center; gap: 8px; }
+.tile { display: flex; flex-direction: column; gap: 4px; min-width: 0; font: 11px var(--mono); }
+.tile canvas, .shot canvas, .shot img { image-rendering: pixelated; border: 1px solid var(--line); max-width: 100%; background: repeating-conic-gradient(var(--grid) 0 25%, var(--bg) 0 50%) 0 0 / 16px 16px; }
+.tile canvas { max-width: none; } .tile { overflow-x: auto; }
+.shot { overflow-x: auto; } .shot canvas, .shot img { max-width: none; }
+.tile.miss canvas { border-color: var(--clash); border-width: 2px; }
+.tile div { overflow-wrap: anywhere; } .tile .what { color: var(--muted); } .flag { color: var(--clash); font-weight: 500; }
+.shots { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; } .shot { display: flex; flex-direction: column; gap: 4px; font: 11px var(--mono); min-width: 0; max-width: 100%; }
+table { border-collapse: collapse; font: 12px var(--mono); font-variant-numeric: tabular-nums; }
+th { text-align: left; font: 500 11px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 4px 14px 4px 0; border-bottom: 1px solid var(--line); }
+td { padding: 3px 14px 3px 0; border-bottom: 1px solid var(--grid); vertical-align: top; }
+pre.mono { font: 12px var(--mono); margin: 0; overflow-x: auto; }
+.scrollx { overflow-x: auto; } table.wide td { white-space: normal; min-width: 90px; max-width: 360px; overflow-wrap: anywhere; }
+button { font: 12px var(--sans); color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 3px; padding: 3px 10px; margin-top: 6px; cursor: pointer; }
+.seg button { margin-top: 0; }
+video { max-width: 100%; border: 1px solid var(--line); background: #000; }
+ul.plain { margin: 0; padding-left: 18px; font: 12px var(--mono); } ul.plain li { margin: 2px 0; overflow-wrap: anywhere; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: end; margin-bottom: 10px; }
+label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.sheet { position: relative; border: 1px solid var(--line); background: var(--bg); }
+.sheet canvas { display: block; image-rendering: pixelated; } .sheetbox { overflow-x: auto; } .sheet { width: max-content; }
+.sheet svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.sheet .reg { fill: none; stroke: var(--muted); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; } .sheet text { font: 9px var(--sans); fill: var(--muted); }
+.ev { font: 12px var(--mono); border: 1px solid var(--line); background: var(--panel); } .ev > div { padding: 1px 6px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ev .cur { background: var(--accent-soft); }
+.ev .k-dim, .ev .k-raw { color: var(--muted); } .ev .k-mark { font-weight: 600; } .ev .k-load { color: var(--accent); } .ev .k-sound { color: var(--clut); } .ev .k-room { font-weight: 600; color: var(--accent); } .ev .k-view { font-weight: 600; }
+.ev > .k-note { white-space: normal; overflow-wrap: anywhere; font-style: italic; color: var(--clut); border-left: 3px solid var(--clut); background: var(--bg); } .ev > .k-note.cur { background: var(--accent-soft); }
+.jumps { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; align-items: center; margin-top: 8px; } .jumps button { margin-top: 0; min-width: 76px; } button:disabled { color: var(--muted); cursor: default; opacity: .6; } .jumps .to { font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 560px) { .jumps { grid-template-columns: minmax(0, 1fr); } .jumps .to { margin-bottom: 6px; } }
+kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; background: var(--panel); }
+.sheet .live { fill: none; stroke: var(--accent); vector-effect: non-scaling-stroke; } .sheet .movie { fill: none; stroke: var(--clash); stroke-dasharray: 6 3; vector-effect: non-scaling-stroke; } .sheet text { paint-order: stroke; stroke: var(--bg); stroke-width: 2px; }
+audio { height: 28px; max-width: 100%; } iframe { width: 100%; height: 320px; border: 1px solid var(--line); background: var(--panel); }
+</style>
+<div class="app">
+  <nav class="nav">
+    <header>
+      <h1>PE2 Asset Map</h1>
+      <span class="seg"><button id="nav-o" aria-pressed="true">Overlays</button><button id="nav-a" aria-pressed="false">Assets</button><button id="nav-f" aria-pressed="false">Files</button><button id="nav-n" aria-pressed="false">Names</button><button id="nav-g" aria-pressed="false">Groups</button><button id="nav-t" aria-pressed="false">Traces</button></span><datalist id="grouplist"></datalist>
+      <label for="scale" class="row">Scale<select id="scale"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></label>
+      <input id="filter" placeholder="filter by name or what it is; ? = name in question" autocomplete="off" spellcheck="false" aria-label="Filter the list">
+    </header>
+    <div class="list" id="list"></div>
+  </nav>
+  <main><div class="subject" id="subject"></div></main>
+</div>
+<script>
+const D = /*DATA*/;
+// Where an asset's decoded files are: under its group if the extraction filed it there (D.dirs, from the asset table's
+// groups by tools/peassets/asset_schema.py), else under its type's directory.
+const at = (key, type) => `${D.pictures}/${(D.dirs || {})[key] || type}`;
+// A declared texture is shown as the extraction decoded it, its texture's PNG (tools/peassets/texture/), which is
+// what `texture check` encodes back to the stored chunks; any other image is composed from its words and palette.
+const declaredPicture = (key, bpp, clut, row, pal, col) => { const png = (D.texturePictures || {})[[key, bpp, clut, row, pal, col].join("|")];
+  if (!png || !D.pictures) return null; const img = h("img", { src: `${D.pictures}/${png}`, alt: png, class: "pix" }); img.addEventListener("load", () => zoom(img)); return img; };
+const $ = id => document.getElementById(id);
+const h = (tag, props, ...kids) => { const e = document.createElement(tag); for (const k in (props || {})) { if (k === "class") e.className = props[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), props[k]); else if (k === "text") e.textContent = props[k]; else e.setAttribute(k, props[k]); } for (const kid of kids.flat()) if (kid != null && kid !== false) e.append(kid); return e; };
+const link = (kind, name, text) => h("a", { class: "lnk", href: "#" + kind + "." + name, text: text || name });
+// Pixels are shown at a whole multiple of their size, never smoothed.
+let S = 2; try { S = +localStorage.getItem("asset-map-scale") || 2; } catch (e) {}
+const zoom = (node, k) => { const w = node.width || node.naturalWidth, hh = node.height || node.naturalHeight; if (w) { node.style.width = w * (k || S) + "px"; node.style.height = hh * (k || S) + "px"; } return node; };
+const sign = (p, r) => `${p >= 0 ? "+" : ""}${p}/${r >= 0 ? "+" : ""}${r}`;
+const TYPE = { movie: "movies", stream: "streamed audio", pe2pkg: "overlays", pe2img: "images", pe2clut: "palettes", model: "models", animation: "animation banks", bs: "backgrounds", spk: "sound banks", txt: "text", pe2bundle: "resource bundles", cap: "dialogue", stf: "credits", demo: "attract demos", sample: "samples", image: "embedded images", clut: "embedded palettes" };
+
+// ---- pixels: each image and palette has its video-memory words in a small script beside the page ----
+const pix = new Map(), waiting = new Map();
+window.PIX = (asset, columns) => { pix.set(asset, columns.map(([x, y, w, hh, b64]) => { const bin = atob(b64), u = new Uint16Array(bin.length >> 1); for (let i = 0; i < u.length; i++) u[i] = bin.charCodeAt(2 * i) | bin.charCodeAt(2 * i + 1) << 8; return { x, y, w, h: hh, u }; })); (waiting.get(asset) || []).forEach(f => f()); waiting.delete(asset); };
+const need = asset => pix.has(asset) || !D.pixels ? Promise.resolve() : new Promise(done => {
+  if (waiting.has(asset)) return waiting.get(asset).push(done);
+  waiting.set(asset, [done]); const tag = document.createElement("script"); tag.src = `${D.pixels}/${asset}.js`;
+  tag.onerror = () => { pix.set(asset, []); (waiting.get(asset) || []).forEach(f => f()); waiting.delete(asset); }; document.head.append(tag);
+});
+const needFiles = fs => Promise.all([...new Set(fs.flatMap(f => (D.fp[f] || []).map(r => r[0])))].map(need));
+// Meshes and sampled tracks come the same way, one script each.
+const side = new Map(), sideWaiting = new Map();
+window.MESH = (key, verts, faces, tex, pairs, parts, bones) => { side.set(key, { verts, faces, tex: tex || [], pairs: pairs || [], parts: parts || [], bones: bones || [] }); (sideWaiting.get(key) || []).forEach(f => f()); sideWaiting.delete(key); };
+window.TRACK = (key, unit, b64) => { const bin = atob(b64), n = Math.floor(bin.length / unit), v = new Array(n); for (let i = 0; i < n; i++) { let x = 0; for (let b = unit - 1; b >= 0; b--) x = x * 256 + bin.charCodeAt(i * unit + b); const top = 2 ** (unit * 8 - 1); v[i] = unit < 4 && x >= top ? x - 2 * top : x; } side.set(key, { values: v, unit }); (sideWaiting.get(key) || []).forEach(f => f()); sideWaiting.delete(key); };
+const needSide = key => side.has(key) || !D.side ? Promise.resolve() : new Promise(done => { if (sideWaiting.has(key)) return sideWaiting.get(key).push(done); sideWaiting.set(key, [done]); const tag = document.createElement("script"); tag.src = `${D.side}/${key}.js`; tag.onerror = () => { side.set(key, null); (sideWaiting.get(key) || []).forEach(f => f()); sideWaiting.delete(key); }; document.head.append(tag); });
+// A mesh in its rest pose, drawn back to front and turned by dragging, in one of several views:
+//   textured  each face with its texture page, mapped straight per triangle (no perspective, as the console draws it)
+//   flat      shaded by how much a face turns toward the viewer
+//   wire      edges only
+//   parts     one colour per part; a part is the run of faces drawn with one bone
+//   normals   a face's direction as a colour (x, y, z to red, green, blue), from its corners, not from the stored normals
+//   bones     the rest skeleton over the edges: a line from each bone to its parent
+function renderMesh(key, pages) {
+  const m = side.get(key); if (!m) return h("div", { class: "dim", text: "no mesh was decoded for this model" });
+  const N = 560, cv = h("canvas", { width: N, height: N, style: "cursor:grab;touch-action:none;image-rendering:auto" }), ctx = cv.getContext("2d"), n = m.verts.length / 3; let yaw = 0.6, pitch = 0.25, lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+  for (let i = 0; i < n; i++) for (let k = 0; k < 3; k++) { const v = m.verts[i * 3 + k]; if (v < lo[k]) lo[k] = v; if (v > hi[k]) hi[k] = v; }
+  const mid = lo.map((v, k) => (v + hi[k]) / 2), size = Math.max(1, Math.hypot(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2])), css = getComputedStyle(document.documentElement), ink = css.getPropertyValue("--ink") || "#000", accent = css.getPropertyValue("--clash") || "#c00";
+  const img = m.pairs.map(([t, c]) => (pages || new Map()).get(t + "|" + c) || null), has = img.some(Boolean), nparts = new Set(m.parts).size;
+  const modes = [...(has ? ["textured"] : []), "flat", "wire", ...(nparts > 1 ? ["parts"] : []), "normals", ...(m.bones.length ? ["bones"] : [])], pick = h("select", { id: "meshview" }, modes.map(x => h("option", { text: x })));
+  // A face's direction in the model's own space, as a colour.
+  const facing = m.faces.map(f => { const a = f[0] * 3, b = f[1] * 3, c = f[2] * 3, V = m.verts, ux = V[b] - V[a], uy = V[b + 1] - V[a + 1], uz = V[b + 2] - V[a + 2], vx = V[c] - V[a], vy = V[c + 1] - V[a + 1], vz = V[c + 2] - V[a + 2];
+    let x = uy * vz - uz * vy, y = uz * vx - ux * vz, z = ux * vy - uy * vx; const l = Math.hypot(x, y, z) || 1; return `rgb(${Math.round((x / l * .5 + .5) * 255)},${Math.round((y / l * .5 + .5) * 255)},${Math.round((z / l * .5 + .5) * 255)})`; });
+  // A face whose corners share a texel, or lie on one line of them, has no area on the page: it is that texel's colour.
+  const texels = new Map(), texel = (im, u, v) => { let d = texels.get(im); if (!d) { d = im.getContext("2d").getImageData(0, 0, 256, 256).data; texels.set(im, d); } const k = ((Math.round(v) & 255) * 256 + (Math.round(u) & 255)) * 4; return d[k + 3] ? `rgb(${d[k]},${d[k + 1]},${d[k + 2]})` : null; };
+  const tri = (im, x0, y0, x1, y1, x2, y2, u0, v0, u1, v1, u2, v2) => { const det = (u1 - u0) * (v2 - v0) - (u2 - u0) * (v1 - v0);
+    if (!det) { const colour = texel(im, (u0 + u1 + u2) / 3, (v0 + v1 + v2) / 3) || texel(im, u0, v0); if (!colour) return false; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath(); ctx.fillStyle = colour; ctx.fill(); return true; }
+    const a = ((x1 - x0) * (v2 - v0) - (x2 - x0) * (v1 - v0)) / det, b = ((y1 - y0) * (v2 - v0) - (y2 - y0) * (v1 - v0)) / det, c = ((x2 - x0) * (u1 - u0) - (x1 - x0) * (u2 - u0)) / det, d = ((y2 - y0) * (u1 - u0) - (y1 - y0) * (u2 - u0)) / det;
+    ctx.save(); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath(); ctx.clip(); ctx.setTransform(a, b, c, d, x0 - a * u0 - c * v0, y0 - b * u0 - d * v0); ctx.drawImage(im, 0, 0); ctx.restore(); return true; };
+  const draw = () => { const mode = pick.value, cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), sc = (N - 40) / size;
+    const turn = (x, y, z) => { x -= mid[0]; y -= mid[1]; z -= mid[2]; const x1 = x * cy + z * sy, z1 = -x * sy + z * cy; return [N / 2 + x1 * sc, N / 2 + (y * cp - z1 * sp) * sc, y * sp + z1 * cp]; };
+    const P = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const p = turn(m.verts[i * 3], m.verts[i * 3 + 1], m.verts[i * 3 + 2]); P[i * 3] = p[0]; P[i * 3 + 1] = p[1]; P[i * 3 + 2] = p[2]; }
+    const order = m.faces.map((f, i) => [i, f.reduce((a, v) => a + P[v * 3 + 2], 0) / f.length]).sort((a, b) => b[1] - a[1]);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, N, N); ctx.imageSmoothingEnabled = false; ctx.lineWidth = 0.5; ctx.strokeStyle = ink; ctx.globalAlpha = mode === "bones" ? 0.25 : 1;
+    for (const [i] of order) { const f = m.faces[i], t = m.tex[i], im = mode === "textured" && t ? img[t[0]] : null, X = k => P[f[k] * 3], Y = k => P[f[k] * 3 + 1];
+      if (im) { let ok = tri(im, X(0), Y(0), X(1), Y(1), X(2), Y(2), t[1], t[2], t[3], t[4], t[5], t[6]); if (f.length === 4) ok = tri(im, X(0), Y(0), X(2), Y(2), X(3), Y(3), t[1], t[2], t[5], t[6], t[7], t[8]) && ok; if (ok) continue; }
+      ctx.beginPath(); f.forEach((v, k) => k ? ctx.lineTo(P[v * 3], P[v * 3 + 1]) : ctx.moveTo(P[v * 3], P[v * 3 + 1])); ctx.closePath();
+      if (mode !== "wire" && mode !== "bones") { const a = f[0] * 3, b = f[1] * 3, c = f[2] * 3, nz = Math.abs((P[b] - P[a]) * (P[c + 1] - P[a + 1]) - (P[b + 1] - P[a + 1]) * (P[c] - P[a])), area = Math.hypot(P[b] - P[a], P[b + 1] - P[a + 1]) * Math.hypot(P[c] - P[a], P[c + 1] - P[a + 1]) || 1, lit = Math.min(1, nz / area), g = Math.round(90 + 150 * lit);
+        ctx.fillStyle = mode === "parts" ? `hsl(${(m.parts[i] * 47) % 360} 60% ${35 + 30 * lit}%)` : mode === "normals" ? facing[i] : `rgb(${g},${g},${Math.min(255, g + 12)})`; ctx.fill(); }
+      ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    if (mode === "bones") { const B = m.bones.map(b => turn(b[0], b[1], b[2])); ctx.strokeStyle = accent; ctx.fillStyle = accent; ctx.lineWidth = 2;
+      m.bones.forEach((b, i) => { if (b[3] !== i && B[b[3]]) { ctx.beginPath(); ctx.moveTo(B[i][0], B[i][1]); ctx.lineTo(B[b[3]][0], B[b[3]][1]); ctx.stroke(); } });
+      B.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], 3, 0, 6.3); ctx.fill(); }); } };
+  let from = null; cv.addEventListener("pointerdown", e => { from = [e.clientX, e.clientY]; cv.setPointerCapture && cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener("pointermove", e => { if (!from) return; yaw += (e.clientX - from[0]) * 0.01; pitch = Math.max(-1.5, Math.min(1.5, pitch + (e.clientY - from[1]) * 0.01)); from = [e.clientX, e.clientY]; draw(); });
+  cv.addEventListener("pointerup", () => { from = null; }); pick.addEventListener("change", draw); draw();
+  const untex = m.tex.filter((t, i) => !t || !img[t[0]]).length;
+  return h("div", { class: "shot" }, cv, h("label", { for: "meshview", class: "row" }, "view", pick),
+    h("div", { class: "dim", text: `${n} vertices, ${m.faces.length} faces, ${nparts} part${nparts === 1 ? "" : "s"}, ${m.bones.length} bone${m.bones.length === 1 ? "" : "s"}, rest pose · drag to turn` + (has ? ` · ${m.faces.length - untex} faces textured` : " · no texture at hand") }));
+}
+// Where a model's faces sit on a texture page: the page, with each face's outline in texture coordinates.
+function renderUV(key, pairIndex, page) {
+  const m = side.get(key), cv = h("canvas", { width: 256, height: 256 }), ctx = cv.getContext("2d"), css = getComputedStyle(document.documentElement); let count = 0;
+  if (page) ctx.drawImage(page, 0, 0); ctx.strokeStyle = css.getPropertyValue("--clash") || "#c00"; ctx.lineWidth = 0.5;
+  m.tex.forEach((t, i) => { if (!t || t[0] !== pairIndex) return; count++; ctx.beginPath(); for (let k = 0; k < m.faces[i].length; k++) { const x = t[1 + k * 2] + .5, y = t[2 + k * 2] + .5; k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.closePath(); ctx.stroke(); });
+  return { cv: zoom(cv), count };
+}
+// A sampled track as its numbers in file order. Samples usually come in rows of a few values (x, y, z, an angle):
+// choosing how many values make a row draws one line per column.
+function renderTrack(key) {
+  const t = side.get(key); if (!t) return h("div", { class: "dim", text: "no raw data in the local extraction" });
+  const v = t.values, W = 900, H = 260, cv = h("canvas", { width: W, height: H, style: "image-rendering:auto" }), ctx = cv.getContext("2d"), css = getComputedStyle(document.documentElement), hues = ["--accent", "--clash", "--clut", "--ink", "--muted"].map(n => css.getPropertyValue(n) || "#066");
+  const pick = h("select", { id: "rowwidth" }, [1, 2, 3, 4, 6, 8, 12, 16].map(n => h("option", { text: n }))), note = h("div", { class: "dim" });
+  const draw = () => { const k = +pick.value || 1, rows = Math.floor(v.length / k); ctx.clearRect(0, 0, W, H); ctx.lineWidth = 1;
+    for (let c = 0; c < k; c++) { let lo = Infinity, hi = -Infinity; for (let r = 0; r < rows; r++) { const x = v[r * k + c]; if (x < lo) lo = x; if (x > hi) hi = x; } if (hi === lo) hi = lo + 1;
+      ctx.strokeStyle = hues[c % hues.length]; ctx.globalAlpha = c < hues.length ? 1 : 0.5; ctx.beginPath(); for (let r = 0; r < rows; r++) { const px = r / Math.max(1, rows - 1) * (W - 2) + 1, py = H - 1 - (v[r * k + c] - lo) / (hi - lo) * (H - 2); r ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.stroke(); }
+    ctx.globalAlpha = 1; note.textContent = `${v.length} values of ${t.unit * 8} bits, as ${rows} rows of ${k}; each column is scaled to its own range. What a column stands for is not decoded here.`; };
+  pick.addEventListener("change", draw); draw();
+  return h("div", { class: "shot" }, cv, h("label", { for: "rowwidth", class: "row" }, "values per row", pick), note);
+}
+// ---- a room in space: its collision grid, cameras, regions and placements, read by tools/peassets/room_scene.py ----
+// World units as stored; +Y is down. A quad's corners are in strip order, so its outline is corners 1, 0, 2, 3.
+// A camera is a rotation M (rows: right, down, forward; 4096 = 1) and a position: p' = M (p - position) / 4096,
+// and a point lands at (160 + H x'/z', 120 + H y'/z') on the 320 x 240 screen, H being the screen distance.
+const scenes = new Map(), sceneWaiting = new Map();
+window.SCENE = (room, s) => { scenes.set(room, s); (sceneWaiting.get(room) || []).forEach(f => f()); sceneWaiting.delete(room); };
+const needScene = room => scenes.has(room) || !D.side ? Promise.resolve() : new Promise(done => { if (sceneWaiting.has(room)) return sceneWaiting.get(room).push(done); sceneWaiting.set(room, [done]); const tag = document.createElement("script"); tag.src = `${D.side}/scene_${room}.js`; tag.onerror = () => { scenes.set(room, null); (sceneWaiting.get(room) || []).forEach(f => f()); sceneWaiting.delete(room); }; document.head.append(tag); });
+const ACTION_HUE = { WARP: 140, CAP: 280, CAP_WEAPON: 300, CALLBACK: 30, ROOM: 200, FACING: 60, CLEAR: 0, CANCEL: 0 };
+function renderRoom(name, want) {
+  const s = scenes.get(name); if (!s || !s.rooms.length) return h("div", { class: "dim", text: "no scene was read for this room" });
+  const W = 640, H = 480, cv = h("canvas", { width: W, height: H, style: "cursor:grab;touch-action:none;image-rendering:auto;max-width:100%" }), ctx = cv.getContext("2d"), css = getComputedStyle(document.documentElement), ink = css.getPropertyValue("--ink") || "#000", accent = css.getPropertyValue("--clash") || "#c00";
+  const opt = (list, id) => h("select", { id }, list.map(([v, t]) => h("option", { value: v, text: t })));
+  const roomSel = opt(s.rooms.map((r, i) => [i, "room index " + r.i]), "rs-room"), viewSel = h("select", { id: "rs-view" }), vars = s.vars.filter(v => !v.empty), varSel = opt([["", "no placements"], ...vars.map(v => [v.n, `variant ${v.n}` + (v.set ? "" : " (no setter found)")])], "rs-var");
+  if (vars.length) varSel.value = String((vars.find(v => v.n === 1) || vars[0]).n);
+  if (want) { const ri = s.rooms.findIndex(r => r.i === want.room); if (ri >= 0) roomSel.value = String(ri); varSel.value = vars.some(v => v.n === want.variant) ? String(want.variant) : ""; }
+  const layers = [["grid", "floor and walls"], ["bnd", "view boundaries"], ["trg", "action regions"], ["warp", "entries and exits"], ["cam", "cameras"], ["act", "placements"], ["mesh", "models"], ["bg", "background"], ["lab", "labels"]], on = {};
+  const boxes = layers.map(([k, t]) => { const b = h("input", { type: "checkbox", id: "rs-" + k }); b.checked = true; on[k] = b; return h("label", { class: "row", for: "rs-" + k }, b, t); });
+  const info = h("div", { class: "dim" }), lists = h("div", {});
+  let yaw = 0.6, pitch = 0.95, zoomK = 1, bgKey = null, bgImg = null;
+  const viewsOf = r => (s.views.find(v => v.i === r.i) || { views: [] }).views;
+  const fillViews = () => { const r = s.rooms[+roomSel.value || 0], keep = viewSel.value; viewSel.replaceChildren(h("option", { value: "", text: "free view (drag to turn)" }), ...viewsOf(r).filter(v => v[3]).map(v => h("option", { value: v[0], text: `view ${v[0]} (file ${v[1]})` + (v[3][3] ? " · plan" : "") }))); viewSel.value = keep || ""; };
+  const quad = c => c.length >= 12 ? [[c[3], c[4], c[5]], [c[0], c[1], c[2]], [c[6], c[7], c[8]], [c[9], c[10], c[11]]] : [[c[0], c[1], c[2]], [c[3], c[4], c[5]], [c[6], c[7], c[8]]];
+  const draw = () => {
+    const r = s.rooms[+roomSel.value || 0], g = s.grids[r.grid], views = viewsOf(r), view = views.find(v => String(v[0]) === viewSel.value), cam = view && view[3], variant = vars.find(v => String(v.n) === varSel.value);
+    // The bounds of what is drawn, for the free view.
+    let lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9]; const grow = (x, y, z) => { if (x < lo[0]) lo[0] = x; if (y < lo[1]) lo[1] = y; if (z < lo[2]) lo[2] = z; if (x > hi[0]) hi[0] = x; if (y > hi[1]) hi[1] = y; if (z > hi[2]) hi[2] = z; };
+    if (g) for (let i = 0; i < g.v.length; i += 3) grow(g.v[i], g.v[i + 1], g.v[i + 2]); else { s.entries.forEach(e => grow(e[1], e[2], e[3])); if (lo[0] > hi[0]) grow(0, 0, 0); grow(lo[0] - 2000, lo[1] - 2000, lo[2] - 2000); grow(hi[0] + 2000, hi[1] + 2000, hi[2] + 2000); }
+    const mid = lo.map((v, k) => (v + hi[k]) / 2), size = Math.max(1, Math.hypot(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2])), cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), sc = (H - 30) / size * zoomK;
+    // World to view space (x right, y down, z away), then to the canvas.
+    const toView = cam ? p => { const m = cam[0], x = p[0] - cam[1][0], y = p[1] - cam[1][1], z = p[2] - cam[1][2]; return [(m[0] * x + m[1] * y + m[2] * z) / 4096, (m[3] * x + m[4] * y + m[5] * z) / 4096, (m[6] * x + m[7] * y + m[8] * z) / 4096]; }
+      : p => { const x = p[0] - mid[0], y = p[1] - mid[1], z = p[2] - mid[2], x1 = x * cy + z * sy, z1 = -x * sy + z * cy; return [x1, y * cp - z1 * sp, y * sp + z1 * cp]; };
+    const toScreen = cam ? v => [(160 + cam[2] * v[0] / v[2]) * 2, (120 + cam[2] * v[1] / v[2]) * 2] : v => [W / 2 + v[0] * sc, H / 2 + v[1] * sc];
+    const NEAR = 32, clip = pts => { if (!cam) return pts; const out = []; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], ia = a[2] >= NEAR, ib = b[2] >= NEAR; if (ia) out.push(a); if (ia !== ib) { const t = (NEAR - a[2]) / (b[2] - a[2]); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, NEAR]); } } return out; };
+    const prims = [], labels = [];
+    const poly = (world, fill, stroke, width) => { const v = clip(world.map(toView)); if (v.length < 2) return null; prims.push({ p: v.map(toScreen), z: v.reduce((a, q) => a + q[2], 0) / v.length, fill, stroke, width: width || 1 }); return v; };
+    const tag = (world, text, colour) => { const v = toView(world); if (cam && v[2] < NEAR) return; labels.push([toScreen(v), text, colour || ink]); };
+    const centre = pts => pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length, a[2] + p[2] / pts.length], [0, 0, 0]);
+    const arrow = (x, y, z, ang, len, colour, text) => { const fx = Math.sin(ang / 4096 * 2 * Math.PI), fz = Math.cos(ang / 4096 * 2 * Math.PI), w = len * 0.4; poly([[x + fx * len, y, z + fz * len], [x - fz * w, y, z + fx * w], [x + fz * w, y, z - fx * w]], colour, ink, 1); if (text) tag([x, y - 120, z], text, colour); };
+    if (g && on.grid.checked) for (const f of g.f) { const n = f.length - 2, idx = f.slice(0, n), pts = (n === 4 ? [idx[1], idx[0], idx[2], idx[3]] : idx).map(i => [g.v[i * 3], g.v[i * 3 + 1], g.v[i * 3 + 2]]), cls = f[n], floor = f[n + 1];
+      poly(pts, floor ? `hsla(${(200 + cls * 47) % 360},45%,55%,${cam ? 0.28 : 0.55})` : `hsla(${(200 + cls * 47) % 360},25%,50%,${cam ? 0.07 : 0.14})`, floor ? "rgba(0,0,0,.45)" : "rgba(0,0,0,.22)", 0.5); }
+    if (on.bnd.checked && r.bnd >= 0) for (const [c, a, b] of s.bnd[r.bnd] || []) { const q = quad(c); poly(q, "hsla(200,90%,50%,.07)", "hsl(200,90%,45%)", 1.2); tag(centre(q), `${a}↔${b}`, "hsl(200,90%,35%)"); }
+    if (on.trg.checked && r.trg >= 0) for (const [c, action, text] of s.trg[r.trg] || []) { if (action === "WARP") continue; const q = quad(c), hue = ACTION_HUE[action] === undefined ? 0 : ACTION_HUE[action]; poly(q, `hsla(${hue},80%,50%,.18)`, `hsl(${hue},80%,40%)`, 1.2); tag(centre(q), (action + " " + text).trim(), `hsl(${hue},80%,32%)`); }
+    if (on.warp.checked) { for (const [c, dest, , , ris] of s.exits) { if (ris && ris.length && !ris.includes(r.i)) continue; const q = quad(c); poly(q, "hsla(140,70%,45%,.25)", "hsl(140,70%,32%)", 1.5); tag(centre(q), "→ " + dest, "hsl(140,70%,26%)"); }
+      for (const [slot, x, y, z, ang] of s.entries) arrow(x, y, z, ang === null ? 0 : ang, 260, "hsla(140,70%,45%,.8)", "in " + slot); }
+    if (on.cam.checked && !cam) { const seen = new Set(); for (const v of views) { if (!v[3] || seen.has(v[1])) continue; seen.add(v[1]); const m = v[3][0], p = v[3][1], cur = String(v[0]) === viewSel.value, L = size * 0.05, tip = [p[0] + m[6] / 4096 * L, p[1] + m[7] / 4096 * L, p[2] + m[8] / 4096 * L];
+        poly([p, tip], null, v[3][3] ? "rgba(120,120,120,.6)" : accent, cur ? 3 : 1.2); tag(p, "" + views.filter(w => w[1] === v[1]).map(w => w[0]).join(","), v[3][3] ? "rgb(120,120,120)" : accent); } }
+    const body = (key, x, y, z, ang, hue) => { const m = key && on.mesh.checked ? side.get(key) : null; if (!m) return false; const ca = Math.cos(ang / 4096 * 2 * Math.PI), sa = Math.sin(ang / 4096 * 2 * Math.PI), P = [];
+      for (let i = 0; i < m.verts.length; i += 3) { const vx = m.verts[i], vz = m.verts[i + 2]; P.push([x + vx * ca + vz * sa, y + m.verts[i + 1], z - vx * sa + vz * ca]); }
+      for (const f of m.faces) { const pts = f.map(i => P[i]), a = pts[0], b = pts[1], c = pts[2], nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]), ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]), nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]), lit = Math.abs(ny) / (Math.hypot(nx, ny, nz) || 1); poly(pts, `hsl(${hue},35%,${30 + 40 * lit}%)`, null, 0); }
+      return true; };
+    if (variant && on.act.checked) variant.placed.forEach(([x, y, z, ang, own, pkg, key, mode, entry], i) => { if (own) return; if (!body(key, x, y, z, ang, 15)) arrow(x, y, z, ang, 220, "hsla(15,85%,50%,.85)"); tag([x, y - (side.get(key) ? 1900 : 260), z], `${i} ${key || pkg || "entry " + entry}`, "hsl(15,85%,35%)"); });
+    if (on.act.checked) for (const [x, y, z, ang, key, kind] of s.items) { if (!body(key, x, y, z, ang, 50)) arrow(x, y, z, ang, 160, "hsla(50,85%,45%,.85)"); tag([x, y - 200, z], key || "object kind " + kind, "hsl(50,85%,28%)"); }
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W, H);
+    if (cam && on.bg.checked && bgImg && bgImg.naturalWidth) { ctx.imageSmoothingEnabled = false; ctx.drawImage(bgImg, 0, 0, W, H); }
+    prims.sort((a, b) => b.z - a.z);
+    for (const q of prims) { ctx.beginPath(); q.p.forEach((p, k) => k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); if (q.p.length > 2) ctx.closePath(); if (q.fill && q.p.length > 2) { ctx.fillStyle = q.fill; ctx.fill(); } if (q.stroke) { ctx.strokeStyle = q.stroke; ctx.lineWidth = q.width; ctx.stroke(); } }
+    if (on.lab.checked && ctx.fillText) { ctx.font = "11px sans-serif"; ctx.textAlign = "center"; for (const [p, text, colour] of labels) { ctx.fillStyle = "rgba(255,255,255,.75)"; const w = ctx.measureText ? ctx.measureText(text).width : text.length * 6; ctx.fillRect(p[0] - w / 2 - 2, p[1] - 10, w + 4, 13); ctx.fillStyle = colour; ctx.fillText(text, p[0], p[1]); } }
+    info.textContent = (g ? `${g.f.length} faces in ${g.id}` : "this room index has no collision grid") + (cam ? ` · through the camera of view ${view[0]}` + (view[2] ? ` over ${view[2]}` : ", whose file has no background") + (view[3][3] ? " · a straight-down plan camera" : "") : " · drag to turn, wheel to zoom") + (variant ? ` · ${variant.placed.length} placed in variant ${variant.n}` + (variant.set ? "" : ", which nothing was found to set") : "");
+    const want = cam && view[2] ? view[2] : null; if (want !== bgKey) { bgKey = want; bgImg = null; if (want && D.pictures) { const im = h("img", {}); im.onload = () => { if (bgKey === want) { bgImg = im; draw(); } }; im.src = `${at(want, "bs")}/${want}.png`; } }
+  };
+  const tell = () => { const r = s.rooms[+roomSel.value || 0], variant = vars.find(v => String(v.n) === varSel.value), parts = [];
+    if (variant) { parts.push(h("p", {}, h("b", { text: `Variant ${variant.n}: ` }), variant.n === 1 ? "the default. " : "", variant.by.length ? "set by " + variant.by.join("; ") : variant.n === 1 ? "" : "no setter found"));
+      if (variant.placed.length) parts.push(h("div", { class: "scrollx" }, h("table", {}, h("tr", {}, ["#", "Package", "Model drawn", "Position", "Yaw", "Mode"].map(t => h("th", { text: t }))), variant.placed.map((p, i) => h("tr", {}, h("td", { text: i }), h("td", {}, p[5] && D.overlays[p[5]] ? link("o", p[5]) : p[5] || `entry ${p[8]} (no file)`), h("td", {}, p[6] && D.assets[p[6]] ? link("a", p[6]) : p[6]), h("td", { text: p[4] ? "places itself" : p.slice(0, 3).join(", ") }), h("td", { text: p[3] }), h("td", { text: p[7] })))))); }
+    const exits = s.exits.filter(e => !e[4] || !e[4].length || e[4].includes(r.i)); if (exits.length) parts.push(h("p", {}, h("b", { text: "Exits: " }), exits.map((e, k) => [k ? ", " : "", D.overlays[e[1]] ? link("o", e[1]) : e[1], ` (from slot ${e[2]} to its slot ${e[3]})`])));
+    if (s.entries.length) parts.push(h("p", {}, h("b", { text: "Entries: " }), s.entries.map(e => `slot ${e[0]}` + (e[5] ? ` in view ${e[5]}` : "")).join(", ")));
+    if (s.open.length) parts.push(h("details", {}, h("summary", { class: "dim", text: `Notes and unresolved (${s.open.length})` }), h("ul", { class: "plain" }, s.open.map(t => h("li", { text: t })))));
+    lists.replaceChildren(...parts); };
+  const models = async () => { const variant = vars.find(v => String(v.n) === varSel.value), keys = [...new Set([...(variant ? variant.placed.map(p => p[6]) : []), ...s.items.map(o => o[4])].filter(k => k && D.mesh.includes(k)))]; await Promise.all(keys.map(needSide)); draw(); };
+  let from = null; cv.addEventListener("pointerdown", e => { from = [e.clientX, e.clientY]; cv.setPointerCapture && cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener("pointermove", e => { if (!from || viewSel.value) return; yaw += (e.clientX - from[0]) * 0.01; pitch = Math.max(-1.55, Math.min(1.55, pitch + (e.clientY - from[1]) * 0.01)); from = [e.clientX, e.clientY]; draw(); });
+  cv.addEventListener("pointerup", () => { from = null; }); cv.addEventListener("wheel", e => { if (viewSel.value) return; e.preventDefault(); zoomK = Math.max(0.3, Math.min(12, zoomK * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); draw(); }, { passive: false });
+  roomSel.addEventListener("change", () => { fillViews(); draw(); tell(); }); viewSel.addEventListener("change", draw); varSel.addEventListener("change", () => { draw(); tell(); models(); }); Object.values(on).forEach(b => b.addEventListener("change", draw));
+  fillViews(); if (want && viewsOf(s.rooms[+roomSel.value || 0]).some(v => v[0] === want.view && v[3])) viewSel.value = String(want.view); draw(); tell(); models();
+  return h("div", { class: "shot" }, cv, h("div", { class: "row" }, h("label", { for: "rs-room", class: "row" }, roomSel), h("label", { for: "rs-view", class: "row" }, viewSel), h("label", { for: "rs-var", class: "row" }, varSel)), h("div", { class: "row", style: "flex-wrap:wrap" }, boxes), info, lists);
+}
+// A list that may be long: the first rows, and a button for the rest.
+function capped(rows, limit, wrap) { if (rows.length <= limit) return wrap(rows); const box = h("div", {}), more = h("button", { text: `show all ${rows.length}`, onclick: () => box.replaceChildren(wrap(rows)) }); box.append(wrap(rows.slice(0, limit)), more); return box; }
+// Where an upload lands under a load's offsets, as src/main/fs.c moves it.
+function landed(kind, part, x, y, page, row, relocate) {
+  if (kind === "c") y += (y >= 245 && y <= 255 ? row : 0) + (relocate ? 1 : 0);
+  else { if (relocate || y >= 256) x += page * 64; if (relocate && (part === "" || part === "column 0")) y += 128; }
+  return [x, y];
+}
+// Video memory as a list of loads leaves it: the words, and which asset put each there.
+// An entry is [file, page offset, row offset, relocate, label, only]: `only` lists the assets a partial load took. The
+// entry ["movie"] is a movie's workspace backup, (320,0)-(479,511) copied over (704,0)-(1023,255) (src/main/stream.c).
+// Given the memory of an earlier call, the loads are added to it.
+function compose(ups, mem) {
+  const vram = mem ? mem.vram : new Uint16Array(1024 * 512), owner = mem ? mem.owner : new Uint16Array(1024 * 512), names = mem ? mem.names : [""], ids = mem ? mem.ids : new Map(), idOf = n => ids.get(n) || (ids.set(n, names.push(n) - 1), ids.get(n));
+  for (const [f, page, row, rel, , only] of ups) { if (f === "movie") { const id = idOf("a movie's workspace backup"); for (const [sy, dx] of [[0, 704], [256, 864]]) for (let yy = 0; yy < 256; yy++) for (let xx = 0; xx < 160; xx++) { vram[yy * 1024 + dx + xx] = vram[(sy + yy) * 1024 + 320 + xx]; owner[yy * 1024 + dx + xx] = id; } continue; }
+    const seen = new Set(); for (const r of (D.fp[f] || [])) { if (seen.has(r[0]) || (only && !only.includes(r[0]))) continue; seen.add(r[0]);
+    const id = idOf(r[0]); (pix.get(r[0]) || []).forEach((col, n) => { const [ax, ay] = landed(r[1], n ? "column " + n : "column 0", col.x, col.y, page, row, rel);
+      for (let yy = 0; yy < col.h; yy++) { const y = ay + yy; if (y < 0 || y > 511) continue; for (let xx = 0; xx < col.w; xx++) { const x = ax + xx; if (x < 0 || x > 1023) continue; vram[y * 1024 + x] = col.u[yy * col.w + xx]; owner[y * 1024 + x] = id; } } }); } }
+  return { vram, owner, names, ids };
+}
+const geo = (t, c) => { const bpp = [4, 8, 16][(t >> 7) & 3] || 16; return { bpp, tx: (t & 15) * 64, ty: (t & 16) ? 256 : 0, cx: (c & 63) * 16, cy: c >> 6, n: bpp === 4 ? 16 : 256 }; };
+const put = (d, k, col, alpha) => { d[k] = (col & 31) * 255 / 31; d[k + 1] = ((col >> 5) & 31) * 255 / 31; d[k + 2] = ((col >> 10) & 31) * 255 / 31; d[k + 3] = alpha; };
+let warn = null;
+const warnColour = () => warn || (warn = (() => { const c = document.createElement("canvas").getContext("2d"); c.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--clash"); c.fillRect(0, 0, 1, 1); return c.getImageData(0, 0, 1, 1).data; })());
+// One texture page read at a depth through a palette. What the faces do not cover is another face's, with its own palette: faded.
+function renderPage(mem, t, c, box) {
+  const { bpp, tx, ty, cx, cy, n } = geo(t, c), { vram, owner, names } = mem, bad = warnColour();
+  const cv = h("canvas", { width: 256, height: 256 }), ctx = cv.getContext("2d"), im = ctx.createImageData(256, 256), d = im.data, bx = box && box.length ? box : [0, 0, 255, 255];
+  let filled = 0, palFilled = 0, lacking = 0; const from = new Set(), pal = new Set();
+  if (bpp < 16 && cy < 512) for (let i = 0; i < n; i++) { const o = owner[cy * 1024 + ((cx + i) & 1023)]; if (o) { palFilled++; pal.add(names[o]); } }
+  for (let v = 0; v < 256; v++) for (let u = 0; u < 256; u++) {
+    const at = (ty + v) * 1024 + ((tx + (bpp === 4 ? u >> 2 : bpp === 8 ? u >> 1 : u)) & 1023), o = owner[at], k = (v * 256 + u) * 4; if (!o) continue;
+    const inside = u >= bx[0] && u <= bx[2] && v >= bx[1] && v <= bx[3], alpha = inside ? 255 : 32; if (inside) { filled++; from.add(names[o]); } let col;
+    if (bpp === 16) col = vram[at]; else { const idx = bpp === 4 ? (vram[at] >> ((u & 3) * 4)) & 15 : (vram[at] >> ((u & 1) * 8)) & 255, pa = cy * 1024 + ((cx + idx) & 1023);
+      if (cy > 511 || !owner[pa]) { if (inside) lacking++; d[k] = bad[0]; d[k + 1] = bad[1]; d[k + 2] = bad[2]; d[k + 3] = alpha; continue; } col = vram[pa]; }
+    if (col) put(d, k, col, alpha);
+  }
+  ctx.putImageData(im, 0, 0); zoom(cv);
+  const flags = []; if (!filled) flags.push("page not supplied"); if (bpp < 16 && !palFilled) flags.push("palette not supplied"); else if (bpp < 16 && palFilled < n) flags.push(`palette ${palFilled} of ${n} entries supplied`); if (lacking && palFilled) flags.push("texels use entries that are not supplied");
+  return { cv, flags, from: [...from], pal: [...pal], bpp, tx, ty, cx, cy };
+}
+function tile(mem, t, c, box, who, src) {
+  const r = renderPage(mem, t, c, box);
+  return h("div", { class: "tile" + (r.flags.length ? " miss" : "") }, r.cv, h("div", { text: who }),
+    h("div", { class: "what" }, `page (${r.tx}, ${r.ty}) ${r.bpp}-bit · `, r.from.length ? r.from.map((a, i) => [i ? ", " : "", link("a", a)]) : "nothing"),
+    r.bpp < 16 ? h("div", { class: "what" }, `palette (${r.cx}, ${r.cy}) · `, r.pal.length ? r.pal.map((a, i) => [i ? ", " : "", link("a", a)]) : "nothing") : h("div", { class: "what", text: "direct colour" }),
+    src ? h("div", { class: "what", text: src }) : null, r.flags.length ? h("div", { class: "flag", text: r.flags.join("; ") }) : null);
+}
+// An image on its own: every column side by side, at a depth, through one palette row, or in grey without one.
+function renderImage(asset, bpp, clut, row, pal, only) {
+  const cols = pix.get(asset) || [], per = bpp === 4 ? 4 : bpp === 8 ? 2 : 1, x0 = Math.min(...cols.map(c => c.x)), x1 = Math.max(...cols.map(c => c.x + c.w)), hh = Math.max(...cols.map(c => c.h), 1);
+  if (!cols.length) return h("div", { class: "dim", text: "no pixels in the local extraction" });
+  const cv = h("canvas", { width: (x1 - x0) * per, height: hh }), ctx = cv.getContext("2d"), im = ctx.createImageData(cv.width, hh), d = im.data;
+  const cl = clut && (pix.get(clut) || [])[0], n = bpp === 4 ? 16 : 256;
+  cols.forEach((col, ci) => { for (let y = 0; y < col.h; y++) for (let x = 0; x < col.w; x++) { const w = col.u[y * col.w + x]; for (let s = 0; s < per; s++) {
+    const k = (y * cv.width + (col.x - x0 + x) * per + s) * 4, alpha = only == null || only === ci ? 255 : 40;
+    if (bpp === 16) { if (w) put(d, k, w, alpha); continue; }
+    const idx = bpp === 4 ? (w >> (s * 4)) & 15 : (w >> (s * 8)) & 255;
+    if (cl) { const colr = cl.u[row * cl.w + pal * 16 + idx]; if (colr) put(d, k, colr, alpha); }
+    else { const g = idx * 255 / (n - 1); d[k] = d[k + 1] = d[k + 2] = g; d[k + 3] = alpha; } } } });
+  ctx.putImageData(im, 0, 0); return zoom(cv);
+}
+function renderClut(asset) {
+  const c = (pix.get(asset) || [])[0]; if (!c) return h("div", { class: "dim", text: "no pixels in the local extraction" });
+  const cv = h("canvas", { width: c.w, height: c.h }), ctx = cv.getContext("2d"), im = ctx.createImageData(c.w, c.h);
+  for (let i = 0; i < c.w * c.h; i++) if (c.u[i]) put(im.data, i * 4, c.u[i], 255); ctx.putImageData(im, 0, 0); return zoom(cv, Math.max(S * 2, c.w <= 64 ? 12 : 4));
+}
+
+// ---- who loads what ----
+const carriedBy = new Map();             // overlay -> files that carry it
+for (const [name, o] of Object.entries(D.overlays)) for (const f of (o.carrier || [])) carriedBy.set(f, name);
+const loadersOf = new Map();             // file -> [[loader, layer, condition, page, row]]
+for (const [loader, groups] of Object.entries(D.loads)) for (const [layer, cond, , , members] of groups) for (const [f, page, row] of members) { const l = loadersOf.get(f) || []; l.push([loader, layer, cond, page, row]); loadersOf.set(f, l); }
+const placedIn = new Map();              // asset -> files
+for (const [f, list] of Object.entries(D.chunks)) for (const [, key] of list) { const l = placedIn.get(key) || []; l.push(+f); placedIn.set(key, l); }
+const children = new Map();
+for (const [name, o] of Object.entries(D.overlays)) for (const p of o.parents) { const l = children.get(p) || []; l.push(name); children.set(p, l); }
+const usersOf = new Map();               // image or palette -> overlays whose requests it supplies (from the pairings)
+const openFindings = name => (D.findings[name] || []).length;
+
+// What the uses show a thing to be, and a question about its name where there is one (D.notes: key -> [summary, question]).
+const noteOf = k => D.notes[k] || null, asked = k => !!(D.notes[k] && D.notes[k][1]);
+const noteBox = k => { const n = noteOf(k); return n ? h("div", { class: "note" }, h("div", { text: n[0] }), n[1] ? h("div", { class: "flag", text: "Name in question: " + n[1] }) : null) : null; };
+const qmark = k => asked(k) ? h("span", { class: "badge", title: D.notes[k][1], text: "  ?" }) : null;
+
+// ---- navigator ----
+let navMode = "o", current = "";
+function drawNav() {
+  const box = $("list"), raw = $("filter").value.trim().toLowerCase(), only = raw.startsWith("?"), q = raw.replace(/^\?\s*/, ""); box.replaceChildren();
+  const hit = window.__hit = k => (!only || asked(k)) && (!q || k.toLowerCase().includes(q) || (D.notes[k] && D.notes[k][0].toLowerCase().includes(q)));
+  for (const m of "oafngt") $("nav-" + m).setAttribute("aria-pressed", navMode === m);
+  if (navMode === "n") {
+    // The names proposed so far; each opens what it would rename.
+    const keys = Object.keys(proposed).filter(k => !q || k.toLowerCase().includes(q) || proposed[k].toLowerCase().includes(q)).sort();
+    box.append(h("a", { href: "#n.", class: current === "n." ? "cur" : "", text: "all names, export and import" }));
+    box.append(capped(keys, 400, part => h("div", {}, part.map(k => { const to = k.startsWith("file:") ? "#f." + D.files.indexOf(k.slice(5)) : (D.overlays[k] ? "#o." : "#a.") + k; return h("a", { href: to, title: k + " → " + proposed[k] }, k.replace(/^file:/, ""), h("span", { class: "dim", text: " → " + proposed[k] })); }))));
+    if (!keys.length) box.append(h("p", { class: "dim", style: "padding:0 16px", text: "no names proposed yet" }));
+    return; }
+  if (navMode === "t") {
+    // Each trace and its sessions; a session opens its playback.
+    box.append(h("a", { href: "#t.", class: current === "t." ? "cur" : "", text: "all traces" }));
+    for (const [name, sessions] of D.traces || []) { if (q && !name.toLowerCase().includes(q) && !sessions.some(s => s[0].toLowerCase().includes(q))) continue;
+      box.append(h("details", { open: "" }, h("summary", { class: "dim", text: `${name} (${sessions.length})` }), h("div", {}, sessions.map(s => h("a", { href: `#t.${name}/${s[1]}`, class: current === `t.${name}/${s[1]}` ? "cur" : "" }, s[0], s[3] ? h("span", { class: "badge", text: "  dropped" }) : null, h("span", { class: "dim", text: `  ${s[4]}–${s[5]}` })))))); }
+    if (!(D.traces || []).length) box.append(h("p", { class: "dim", style: "padding:0 16px", text: "no traces" }));
+    return; }
+  if (navMode === "g") {
+    // The groups as a tree of their path parts; each opens its members.
+    const rows = [...allGroups()].filter(([g]) => !q || g.includes(q)).sort((a, b) => a[0].localeCompare(b[0]));
+    box.append(h("a", { href: "#g.", class: current === "g." ? "cur" : "", text: "all groups, export and import" }));
+    for (const [g, list] of rows) box.append(h("a", { href: "#g." + g, class: current === "g." + g ? "cur" : "", style: `padding-left:${8 + 12 * (g.split("/").length - 1)}px` }, g, h("span", { class: "dim", text: ` (${list.length})` })));
+    if (!rows.length) box.append(h("p", { class: "dim", text: "no groups yet" }));
+    return; }
+  if (navMode === "f") {
+    // The disc as the stage archives hold it: stage, folder, file. A folder or file opens its chunks.
+    // A file opens to the assets stored in it, in stored order; they are made when it is first opened.
+    const flink = (i, text) => { const chunks = D.chunks[i] || [], inner = h("div", {}), to = "f." + i;
+      const node = h("details", {}, h("summary", {}, h("a", { href: "#" + to, class: current === to ? "cur" : "", title: chunks.map(c => c[1]).join(", "), onclick: e => { e.preventDefault(); location.hash = to; } }, text), h("span", { class: "dim", text: ` (${chunks.length})` }), proposed["file:" + D.files[i]] ? h("span", { class: "dim", text: " → " + proposed["file:" + D.files[i]] }) : null), inner);
+      const fill = () => { if (inner.childNodes.length) return; inner.append(...chunks.map(c => { const k = c[1], t = (D.overlays[k] ? "o." : "a.") + k; return D.overlays[k] || D.assets[k] ? h("a", { href: "#" + t, class: current === t ? "cur" : "" }, k, D.assets[k] ? h("span", { class: "dim", text: "  " + D.assets[k][0] }) : null) : h("a", { class: "dim", text: k }); })); if (!chunks.length) inner.append(h("a", { class: "dim", text: "no chunks" })); };
+      node.addEventListener("toggle", () => { if (node.open) fill(); }); if (current === to) { fill(); node.open = true; }
+      return node; };
+    if (q) { const hits = D.files.map((n, i) => [n, i]).filter(([n, i]) => n.toLowerCase().includes(q) || (D.chunks[i] || []).some(c => c[1].toLowerCase().includes(q))); box.append(capped(hits, 400, part => h("div", {}, part.map(([n, i]) => flink(i, n))))); return; }
+    const stages = new Map(); D.files.forEach((n, i) => { const p = n.split("/"), st = stages.get(p[0]) || stages.set(p[0], new Map()).get(p[0]), dir = p.length > 2 ? p[1] : ""; (st.get(dir) || st.set(dir, []).get(dir)).push(i); });
+    // Folders and files in disc order, by their ids; a file without one (a bundle's or a stream's) by name after them.
+    const byId = (a, b) => { const x = D.fileIds[a], y = D.fileIds[b]; return x == null || y == null ? (x == null) - (y == null) || natural(a, b) : x - y; };
+    const folderId = (st, dir) => { const id = (D.folderIds || {})[st + "/" + dir]; return id == null ? Infinity : id; };
+    for (const [st, dirs] of [...stages].sort((a, b) => a[0] - b[0])) { const total = [...dirs.values()].reduce((a, l) => a + l.length, 0), inner = h("div", {});
+      for (const [dir, list] of [...dirs].sort((a, b) => folderId(st, a[0]) - folderId(st, b[0]) || a[0].localeCompare(b[0]))) { list.sort(byId); if (!dir) inner.append(capped(list, 300, part => h("div", {}, part.map(i => flink(i, fileBase(i)))))); else inner.append(h("details", {}, h("summary", {}, h("a", { href: "#d." + st + "/" + dir, class: current === "d." + st + "/" + dir ? "cur" : "", onclick: e => { e.preventDefault(); location.hash = "d." + st + "/" + dir; } }, dir), h("span", { class: "dim", text: ` (${list.length})` })), h("div", {}, list.map(i => flink(i, fileBase(i)))))); }
+      box.append(h("details", st === "1" ? { open: "" } : {}, h("summary", { class: "dim", text: `stage ${st} (${total} files)` }), inner)); }
+    return; }
+  if (navMode === "o") {
+    const entry = (name, inSummary) => h("a", { href: "#o." + name, class: current === "o." + name ? "cur" : "", onclick: inSummary ? e => { e.preventDefault(); location.hash = "o." + name; } : () => {} }, name, D.swept[name] ? h("span", { class: "dim", text: "  ✓" }) : null, qmark(name), openFindings(name) ? h("span", { class: "badge", text: "  " + openFindings(name) }) : null);
+    if (q || only) { Object.keys(D.overlays).filter(hit).sort().slice(0, 400).forEach(n => box.append(entry(n))); return; }
+    const node = (name, depth) => { const kids = (children.get(name) || []).sort(); if (!kids.length) return entry(name);
+      const groups = new Map(); for (const k of kids) { const fam = D.overlays[k].family; (groups.get(fam) || groups.set(fam, []).get(fam)).push(k); }
+      const inner = h("div", {}); for (const [fam, list] of [...groups].sort()) { if (list.length > 6 && groups.size > 1 || list.length > 12) inner.append(h("details", {}, h("summary", { class: "dim", text: `${fam} (${list.length})` }), h("div", {}, list.map(k => node(k, depth + 1)))));
+        else list.forEach(k => inner.append(node(k, depth + 1))); }
+      return h("details", depth < 2 ? { open: "" } : {}, h("summary", {}, entry(name, true)), inner); };
+    box.append(node("main", 0));
+  } else {
+    const byType = new Map(); for (const [key, [type]] of Object.entries(D.assets)) (byType.get(type) || byType.set(type, []).get(type)).push(key);
+    for (const [type, keys] of [...byType].sort((a, b) => b[1].length - a[1].length)) { const hit = q || only ? keys.filter(k => window.__hit(k)) : keys; if (!hit.length) continue;
+      box.append(h("details", (q || only) && hit.length < 60 ? { open: "" } : {}, h("summary", { class: "dim", text: `${TYPE[type] || type.replace(/_/g, " ")} (${hit.length})` }), h("div", {}, capped(hit, 400, part => h("div", {}, part.map(k => h("a", { href: "#" + (type === "pe2pkg" ? "o." : "a.") + k, class: current === "a." + k ? "cur" : "", title: D.notes[k] ? D.notes[k][0] : "" }, k, qmark(k), proposed[k] ? h("span", { class: "dim", text: " → " + proposed[k] }) : null))))))); }
+  }
+}
+
+function markNav() { const want = "#" + current, alt = "#" + current.replace(/^o\./, "a."); for (const a of $("list").querySelectorAll("a")) { const href = a.getAttribute("href"); a.classList.toggle("cur", href === want || href === alt); } }
+
+// Usage records: [overlay swept, part, user, how, when, evidence, status, note], with the asset in front when listed by overlay.
+function useTable(list, byAsset) {
+  const row = u => h("tr", {}, byAsset ? null : h("td", {}, D.assets[u.asset] ? link("a", u.asset) : u.asset), h("td", { text: u[1] }), h("td", { text: u[2] }), h("td", { text: u[3] }), h("td", { text: u[4] }), h("td", { class: "dim", text: u[5] }), h("td", { class: u[6] === "open" ? "flag" : "", text: u[6] }), h("td", { class: "dim", text: u[7] }));
+  return capped(list, 60, part => h("div", { class: "scrollx" }, h("table", { class: "wide" }, h("tr", {}, [...(byAsset ? [] : ["Asset"]), "Part", "User", "How", "When", "Evidence", "Status", "Note"].map(t => h("th", { text: t }))), part.map(row))));
+}
+const usesByOverlay = new Map();
+for (const [asset, list] of Object.entries(D.usage)) for (const u of list) { const l = usesByOverlay.get(u[0]) || []; l.push(Object.assign([...u], { asset })); usesByOverlay.set(u[0], l); }
+
+// ---- proposed names: typed into the page, kept in this browser, exported as a list for a bulk rename ----
+// A key is an asset or overlay name, or "file:<path>" for a disc file. Nothing here renames anything: the export is
+// the input of a later rename.
+// The repository's list (tools/peassets/asset_names.tsv, D.names) is the base; this browser holds only what differs
+// from it: a name added or changed, or "" for one taken out. Saving the export over that file makes them agree.
+let edits = {}; try { edits = JSON.parse(localStorage.getItem("asset-map-names") || "{}") || {}; } catch (e) {}
+let proposed = {}; const settle = () => { proposed = Object.assign({}, D.names || {}, edits); for (const k in proposed) if (!proposed[k]) delete proposed[k]; for (const k in edits) if ((D.names || {})[k] === edits[k] || (!edits[k] && !(D.names || {})[k])) delete edits[k]; }; settle();
+const setName = (k, v) => { edits[k] = v || ""; settle(); };
+const namesTSV = () => Object.keys(proposed).sort().map(k => `${k}\t${proposed[k]}`).join("\n") + (Object.keys(proposed).length ? "\n" : "");
+const saveNames = () => { try { localStorage.setItem("asset-map-names", JSON.stringify(edits)); } catch (e) {} const n = Object.keys(proposed).length, u = Object.keys(edits).length, b = $("nav-n"); if (b) b.replaceChildren("Names", h("small", { text: `${n}${u ? ", " + u + " unsaved" : ""}` })); };
+const nameProblem = (key, v) => !v || v === key ? "" : !/^[a-z][a-z0-9_]*$/.test(v) ? "lower-case letters, digits and underscores, starting with a letter" : !key.includes(":") && (D.assets[v] || D.overlays[v]) ? "already the name of something else" : Object.entries(proposed).some(([k, n]) => k !== key && n === v && k.split(":")[0] === key.split(":")[0] && k.includes(":") === key.includes(":")) ? "already proposed for another" : "";
+function nameInput(key) {
+  const box = h("input", { class: "rename", placeholder: "new name", spellcheck: "false", autocomplete: "off", "aria-label": "new name for " + key.replace(/^(file|sample):/, "") }), warn = h("span", { class: "flag" }); box.value = proposed[key] || "";
+  const check = () => { const p = nameProblem(key, box.value.trim()); warn.textContent = p ? " " + p : ""; return p; };
+  box.addEventListener("input", check); box.addEventListener("change", () => { const v = box.value.trim(); if (!v || v === key.replace(/^file:.*\//, "")) setName(key, ""); else if (!check()) setName(key, v); else return; saveNames(); });
+  check(); return h("span", { class: "renamebox" }, box, warn);
+}
+// ---- groups: an asset's group ("weapons/m4a1") files it under that subtree of the extraction ----
+// The asset table holds each asset's group (D.assets[key][1].group). This browser holds only what was changed here,
+// until the export is applied with tools/peassets/apply_groups.py and the map regenerated.
+let gedits = {}; try { gedits = JSON.parse(localStorage.getItem("asset-map-groups") || "{}") || {}; } catch (e) {}
+const GROUP_OK = /^[a-z0-9_]+(\/[a-z0-9_]+)*$/;
+const baseGroup = k => (D.assets[k] && D.assets[k][1].group) || "", groupOf = k => k in gedits ? gedits[k] : baseGroup(k);
+const setGroup = (k, g) => { if (!D.assets[k]) return; if (g === baseGroup(k)) delete gedits[k]; else gedits[k] = g; };
+const allGroups = () => { const m = new Map(); for (const k in D.assets) { const g = groupOf(k); if (g) (m.get(g) || m.set(g, []).get(g)).push(k); } return m; };
+const groupsTSV = () => Object.keys(gedits).sort().map(k => `${k}\t${gedits[k]}`).join("\n") + (Object.keys(gedits).length ? "\n" : "");
+const saveGroups = () => { for (const k in gedits) if (gedits[k] === baseGroup(k)) delete gedits[k]; try { localStorage.setItem("asset-map-groups", JSON.stringify(gedits)); } catch (e) {}
+  const b = $("nav-g"), u = Object.keys(gedits).length; if (b) b.replaceChildren("Groups", h("small", { text: `${allGroups().size}${u ? ", " + u + " unsaved" : ""}` }));
+  const dl = $("grouplist"); if (dl && dl.replaceChildren) dl.replaceChildren(...[...allGroups().keys()].sort().map(g => h("option", { value: g }))); };
+function groupInput(key) {
+  const box = h("input", { class: "rename", list: "grouplist", placeholder: "group, e.g. weapons/m4a1", spellcheck: "false", autocomplete: "off", "aria-label": "group of " + key }), warn = h("span", { class: "flag" }); box.value = groupOf(key);
+  box.addEventListener("change", () => { const v = box.value.trim().replace(/^\/+|\/+$/g, ""); if (v && !GROUP_OK.test(v)) { warn.textContent = " lower-case names separated by /"; return; } warn.textContent = ""; setGroup(key, v); saveGroups(); });
+  return h("span", { class: "renamebox" }, box, warn);
+}
+// A batch: tick assets, type a group once, apply it to all of them.
+const picked = new Set();
+const tick = key => { const b = h("input", { type: "checkbox", "aria-label": "select " + key }); b.checked = picked.has(key); b.addEventListener("change", () => { b.checked ? picked.add(key) : picked.delete(key); }); b.dataset && (b.dataset.key = key); b._key = key; return b; };
+function batchBar(keys, redraw) {
+  const box = h("input", { class: "rename", list: "grouplist", placeholder: "group for the ticked assets", spellcheck: "false", autocomplete: "off", "aria-label": "group for the ticked assets" }), said = h("span", { class: "dim" });
+  const here = () => keys().filter(k => D.assets[k]);
+  const apply = h("button", { text: "set group of ticked", onclick: () => { const v = box.value.trim().replace(/^\/+|\/+$/g, ""), list = here().filter(k => picked.has(k)); if (v && !GROUP_OK.test(v)) { said.textContent = " lower-case names separated by /"; return; } if (!list.length) { said.textContent = " nothing ticked here"; return; } list.forEach(k => setGroup(k, v)); saveGroups(); redraw(); } });
+  const all = h("button", { text: "tick all here", onclick: () => { here().forEach(k => picked.add(k)); redraw(); } }), none = h("button", { text: "untick all", onclick: () => { here().forEach(k => picked.delete(k)); redraw(); } });
+  return h("div", { class: "row", style: "flex-wrap:wrap" }, box, apply, all, none, said);
+}
+// What an overlay owns: the chunks of its own files, what is cut out of its package, and the samples of its banks.
+function ownedBy(name) { const o = D.overlays[name], out = new Set(); if (!o) return [];
+  for (const f of o.own) for (const [, key] of D.chunks[f] || []) { if (D.assets[key] && D.assets[key][0] !== "pe2pkg") out.add(key); for (const s of (D.sampleIds || {})[key] || []) out.add(s); }
+  for (const [key, [, attrs]] of Object.entries(D.assets)) if (attrs.source === name + ".pe2pkg") out.add(key);
+  return [...out]; }
+const memberTable = (keys, withTick) => h("div", { class: "scrollx" }, h("table", { class: "wide" }, h("tr", {}, [...(withTick ? [""] : []), "Asset", "Kind", "What the uses show it is", "New name", "Group"].map(t => h("th", { text: t }))), keys.map(key => { const a = D.assets[key]; return h("tr", {}, withTick ? h("td", {}, tick(key)) : null, h("td", {}, link("a", key), qmark(key)), h("td", { class: "dim", text: (TYPE[a[0]] || a[0]).replace(/s$/, "") }), h("td", { text: D.notes[key] ? D.notes[key][0] : "" }), h("td", {}, nameInput(key)), h("td", {}, groupInput(key))); })));
+function showGroups(name) {
+  const box = $("subject"), groups = allGroups();
+  if (name) { const keys = [...groups].filter(([g]) => g === name || g.startsWith(name + "/")).flatMap(([, list]) => list).sort();
+    box.replaceChildren(h("header", {}, h("h2", { text: name }), h("div", { class: "crumbs", text: `group · ${keys.length} asset${keys.length === 1 ? "" : "s"}, sub-groups included · extracted under ${name}/` })),
+      batchBar(() => keys, () => showGroups(name)), keys.length ? capped(keys, 300, part => memberTable(part, true)) : h("p", { text: "No asset is in this group." })); return; }
+  const out = h("textarea", { class: "mono", rows: 10, readonly: "", spellcheck: "false", "aria-label": "the changed groups, one per line" }), inp = h("textarea", { class: "mono", rows: 5, spellcheck: "false", placeholder: "paste lines of: asset <tab> group", "aria-label": "groups to import" }), said = h("span", { class: "dim" });
+  out.value = groupsTSV(); const save = h("a", { class: "lnk", download: "asset_groups.tsv", text: "save as asset_groups.tsv" }); try { save.href = URL.createObjectURL(new Blob([out.value], { type: "text/tab-separated-values" })); } catch (e) { save.hidden = true; }
+  const copy = h("button", { text: "copy", onclick: () => { out.select && out.select(); (navigator.clipboard ? navigator.clipboard.writeText(out.value) : Promise.reject()).then(() => { said.textContent = " copied"; }, () => { said.textContent = " selected: copy it with the keyboard"; }); } });
+  const take = h("button", { text: "import", onclick: () => { let n = 0, bad = 0; for (const line of inp.value.split("\n")) { const [k, v] = line.split("\t").map(x => (x || "").trim()); if (!k) continue; if (!D.assets[k] || (v && !GROUP_OK.test(v))) { bad++; continue; } setGroup(k, v || ""); n++; } saveGroups(); showGroups(""); $("subject").append(h("p", { class: "dim", text: `${n} taken` + (bad ? `, ${bad} refused (no such asset, or not a group path)` : "") })); } });
+  let armed = false; const drop = h("button", { text: "discard changes", onclick: () => { if (!armed) { armed = true; drop.textContent = "really discard the changes made here?"; return; } gedits = {}; saveGroups(); showGroups(""); } });
+  const rows = [...groups].sort((a, b) => a[0].localeCompare(b[0])), grouped = rows.reduce((a, r) => a + r[1].length, 0);
+  box.replaceChildren(h("header", {}, h("h2", { text: `Groups (${rows.length})` }), h("div", { class: "crumbs", text: `${grouped} of ${Object.keys(D.assets).length} assets are in a group; the rest extract under their type's directory. ${Object.keys(gedits).length} changed here, kept in this browser until applied.` })),
+    sec("Changed here", "One line per changed asset: the asset, a tab, its group (nothing after the tab takes it out of its group). Save it and run tools/peassets/apply_groups.py on it; that writes the groups into the asset table.", out, h("div", { class: "row" }, copy, save, said)),
+    sec("Import", "Adds to the changes here.", inp, h("div", { class: "row" }, take, drop)),
+    sec(`All groups (${rows.length})`, "", rows.length ? h("table", {}, h("tr", {}, ["Group", "Assets"].map(t => h("th", { text: t }))), rows.map(([g, list]) => h("tr", {}, h("td", {}, h("a", { class: "lnk", href: "#g." + g, text: g })), h("td", { text: list.length })))) : h("p", { text: "None yet. Give an asset a group on its page, tick several in the Files view, or group everything an overlay owns from its page." })));
+}
+const fileBase = f => D.files[f].split("/").pop(), natural = (a, b) => D.files[a].localeCompare(D.files[b], undefined, { numeric: true });
+// The chunks of some disc files, one table per file, each chunk with what it is and a box for a new name.
+function chunkTables(fileIndexes) {
+  return fileIndexes.map(f => { const chunks = D.chunks[f] || [], by = [...new Set((loadersOf.get(f) || []).map(l => l[0]))];
+    return h("section", {}, h("h3", {}, D.files[f], " ", nameInput("file:" + D.files[f])), h("p", { class: "dim" }, by.length ? ["loaded by ", by.slice(0, 8).map((o, i) => [i ? ", " : "", link("o", o)]), by.length > 8 ? ` and ${by.length - 8} more` : ""] : "no load of it is in the graph"),
+      chunks.length ? h("div", { class: "scrollx" }, h("table", { class: "wide" }, h("tr", {}, ["", "#", "Chunk", "Kind", "What the uses show it is", "New name", "Group"].map(t => h("th", { text: t }))), chunks.map(([n, key]) => { const a = D.assets[key], pkg = a && a[0] === "pe2pkg"; return h("tr", {}, h("td", {}, a && !pkg ? tick(key) : null), h("td", { text: n }), h("td", {}, a || D.overlays[key] ? link(pkg ? "o" : "a", key) : key, qmark(key)), h("td", { class: "dim", text: a ? (TYPE[a[0]] || a[0]).replace(/s$/, "") : "" }), h("td", { text: D.notes[key] ? D.notes[key][0] : "" }), h("td", {}, nameInput(key)), h("td", {}, a && !pkg ? groupInput(key) : null)); }))) : h("p", { class: "dim", text: "no chunk of it is cataloged" })); });
+}
+const filesUnder = path => D.files.map((n, i) => [n, i]).filter(([n]) => n === path || n.startsWith(path + "/")).map(([, i]) => i).sort((a, b) => { const x = D.fileIds[a], y = D.fileIds[b]; return x == null || y == null ? natural(a, b) : x - y; });
+function showFiles(path) {
+  const box = $("subject"), list = /^\d+$/.test(path) && D.files[+path] ? [+path] : filesUnder(path), title = list.length === 1 ? D.files[list[0]] : path, parts = title.split("/");
+  if (!list.length) { box.replaceChildren(h("p", { text: `No disc file under ${path}.` })); return; }
+  const head = h("header", {}, h("h2", { text: title }), h("div", { class: "crumbs" }, `stage ${parts[0]}`, parts.length > 2 || list.length > 1 && parts.length > 1 ? [" · folder ", D.overlays[parts[1]] ? link("o", parts[1]) : parts[1]] : "", ` · ${list.length} file${list.length === 1 ? "" : "s"}, ${list.reduce((a, f) => a + (D.chunks[f] || []).length, 0)} chunks`));
+  box.replaceChildren(head, h("p", { class: "dim", text: "The disc's files as the stage archives hold them, each with its chunks in stored order. A name typed here is kept in this browser and exported from Names; it renames nothing by itself. Tick chunks and set their group in one go below." }), batchBar(() => list.flatMap(f => (D.chunks[f] || []).map(c => c[1])).filter(k => D.assets[k] && D.assets[k][0] !== "pe2pkg"), () => showFiles(path)), ...(list.length <= 60 ? chunkTables(list) : [capped(list, 60, part => h("div", {}, chunkTables(part)))]));
+}
+function showNames() {
+  const box = $("subject"), keys = Object.keys(proposed).sort(), out = h("textarea", { class: "mono", rows: 12, readonly: "", spellcheck: "false", "aria-label": "the proposed names, one per line" }), inp = h("textarea", { class: "mono", rows: 6, spellcheck: "false", placeholder: "paste lines of: current name <tab> new name", "aria-label": "names to import" }), said = h("span", { class: "dim" });
+  out.value = namesTSV(); const save = h("a", { class: "lnk", download: "asset_names.tsv", text: "save as asset_names.tsv" }); try { save.href = URL.createObjectURL(new Blob([out.value], { type: "text/tab-separated-values" })); } catch (e) { save.hidden = true; }
+  const copy = h("button", { text: "copy", onclick: () => { out.select && out.select(); (navigator.clipboard ? navigator.clipboard.writeText(out.value) : Promise.reject()).then(() => { said.textContent = " copied"; }, () => { said.textContent = " selected: copy it with the keyboard"; }); } });
+  const take = h("button", { text: "import", onclick: () => { let n = 0, bad = 0; for (const line of inp.value.split("\n")) { const [k, v] = line.split("\t").map(x => (x || "").trim()); if (!k || !v) continue; if (nameProblem(k, v)) { bad++; continue; } setName(k, v); n++; } saveNames(); showNames(); $("subject").append(h("p", { class: "dim", text: `${n} taken` + (bad ? `, ${bad} refused (not a valid name, or taken)` : "") })); } });
+  let armed = false; const clear = h("button", { text: "clear all", onclick: () => { if (!armed) { armed = true; clear.textContent = "really clear all?"; return; } for (const k of Object.keys(proposed)) setName(k, ""); saveNames(); showNames(); } });
+  const where = k => k.startsWith("file:") ? h("span", { text: k.slice(5) }) : D.overlays[k] ? link("o", k) : link("a", k);
+  box.replaceChildren(h("header", {}, h("h2", { text: `Proposed names (${keys.length})` }), h("div", { class: "crumbs", text: `${Object.keys(D.names || {}).length} from tools/peassets/asset_names.tsv, ${Object.keys(edits).length} changed here and kept only in this browser until the export is saved over that file; nothing is renamed until the list is applied` })),
+    sec("Export", "One line per name: the current name, a tab, the new name. A disc file is \"file:\" and its path.", out, h("div", { class: "row" }, copy, save, said)),
+    sec("Import", "Adds to what is here; a line whose new name is invalid or taken is refused.", inp, h("div", { class: "row" }, take, clear)),
+    sec(`Names (${keys.length})`, "", keys.length ? capped(keys, 300, part => h("table", {}, h("tr", {}, ["Current", "What it is", "New name"].map(t => h("th", { text: t }))), part.map(k => h("tr", {}, h("td", {}, where(k)), h("td", { class: "dim", text: D.notes[k] ? D.notes[k][0] : "" }), h("td", {}, nameInput(k)))))) : h("p", { text: "None yet. Type a name on an asset's page, an overlay's page, or in the Files view." })));
+}
+
+// ---- an overlay ----
+const sec = (title, note, ...body) => h("section", {}, h("h3", {}, title), note ? h("p", { text: note }) : null, ...body);
+const fileLink = f => { const o = carriedBy.get(f); return h("span", {}, D.files[f], o ? [" (", link("o", o), ")"] : null); };
+let turn = 0;
+async function showOverlay(name) {
+  const mine = ++turn, o = D.overlays[name], box = $("subject"); if (!o) { box.replaceChildren(h("p", { text: `No overlay named ${name}.` })); return; }
+  const chain = []; (function up(n) { for (const p of (D.overlays[n] || { parents: [] }).parents) if (!chain.includes(p)) { chain.push(p); up(p); } })(name);
+  const reqs = D.requests[name] || [], loads = D.loads[name] || [];
+  const head = h("header", {}, h("h2", { text: name }), h("div", { class: "crumbs" }, o.family, o.addr ? ` · loads at 0x${o.addr.toString(16)}` : "", chain.length ? [" · under ", chain.map((c, i) => [i ? " › " : "", link("o", c)])] : ""));
+  if (noteBox(name)) head.append(noteBox(name));
+  if (name !== "main") head.append(h("div", { class: "row" }, "rename to ", nameInput(name)));
+  { const owned = ownedBy(name); if (owned.length) { const gb = h("input", { class: "rename", list: "grouplist", placeholder: "group, e.g. weapons/" + name, spellcheck: "false", autocomplete: "off", "aria-label": "group for everything this overlay owns" }), gs = h("span", { class: "dim" }), in0 = new Map(); owned.forEach(k => in0.set(groupOf(k), (in0.get(groupOf(k)) || 0) + 1));
+      gs.textContent = " now: " + [...in0].map(([g, n]) => `${n} in ${g || "no group"}`).join(", ");
+      head.append(h("div", { class: "row", style: "flex-wrap:wrap" }, `group all ${owned.length} assets it owns `, gb, h("button", { text: "apply", onclick: () => { const v = gb.value.trim().replace(/^\/+|\/+$/g, ""); if (v && !GROUP_OK.test(v)) { gs.textContent = " lower-case names separated by /"; return; } owned.forEach(k => setGroup(k, v)); saveGroups(); gs.textContent = ` ${owned.length} set to ${v || "no group"}`; } }), gs)); } }
+  box.replaceChildren(head, h("p", { class: "dim", text: "reading pixels…" }));
+  const ownFiles = o.own, borrowedFiles = reqs.filter(r => r[4][0] !== "own" && r[4][0] !== "none").flatMap(r => (r[4][2] || []).filter(Boolean).map(v => v[0]));
+  await needFiles([...ownFiles.filter(() => !o.room), ...reqs.filter(r => r[4][0] === "own").flatMap(r => r[4][1]), ...borrowedFiles]); if (mine !== turn) return;
+  const alone = new Map(), fileMem = (f, page, row, rel) => { const k = [f, page, row, rel].join(); return alone.get(k) || (alone.set(k, compose([[f, page || 0, row || 0, rel || 0]])), alone.get(k)); };
+  const group = list => { const m = new Map(); for (const [k, v] of list) { const e = m.get(k) || { ...v, who: new Set(), box: null }; e.who.add(v.model); if (v.b && v.b.length) e.box = e.box ? [Math.min(e.box[0], v.b[0]), Math.min(e.box[1], v.b[1]), Math.max(e.box[2], v.b[2]), Math.max(e.box[3], v.b[3])] : v.b; m.set(k, e); } return [...m.values()]; };
+  const sections = [head];
+  if (o.room && (D.scenes || []).includes(name)) { await needScene(name); if (mine !== turn) return;
+    sections.push(sec("Room", "The room in space, from its own tables: the collision grid (floors filled, by surface class), the regions that switch the view, action regions, entries and exits, and what a placement variant puts where. Choose a view to look through its camera over its background; the grid is the only room geometry there is, the picture is the background.", renderRoom(name))); }
+  // Textures: the overlay's own models against its own files, as stored. A model and its file are displaced together.
+  const ownTiles = group(reqs.filter(r => r[4][0] === "own").flatMap(([model, t, c, b, how]) => how[1].map((f, k) => [`${f}|${t}|${c}`, { model, t, c, b, f, n: how[1].length, best: k === 0, settled: how[2] }])));
+  if (ownTiles.length) sections.push(sec(`Textures (${ownTiles.length})`, "Each texture page as this overlay's models use it, read from its own file through the palette the faces name. This does not depend on what else is loaded. Faded parts of a page belong to other faces. Where several of its files fit, the one used is the file of the room entry that spawns the model; where no entry names the model, that is left open and listed under Findings.",
+    h("div", { class: "tiles" }, ownTiles.sort((a, b) => a.f - b.f || a.t - b.t || a.c - b.c).map(e => tile(fileMem(e.f), e.t, e.c, e.box, [...e.who].join(", "), `from ${D.files[e.f]}` + (e.n > 1 ? (!e.settled ? ` (one of ${e.n} files that fit; which is used is not established)` : e.best ? " (the file of the entry that spawns this model)" : " (also fits, but belongs to another entry)") : ""))))));
+  // Borrowed: what an ancestor's files supply.
+  const lent = group(reqs.filter(r => r[4][0] === "ancestor").flatMap(([model, t, c, b, how]) => (how[2].filter(Boolean).length ? how[2].filter(Boolean) : [null]).map(v => [`${how[1]}|${v ? v.join() : ""}|${t}|${c}`, { model, t, c, b, by: how[1], v }])));
+  if (lent.length) sections.push(sec(`Borrowed (${lent.length})`, "Textures its models name that an ancestor's files supply. One tile per file of the ancestor that can supply it, as that file is loaded; for a room, which of them is in memory depends on the view.",
+    h("div", { class: "tiles" }, lent.map(e => e.v ? tile(fileMem(...e.v), e.t, e.c, e.box, [...e.who].join(", "), h("span", {}, "from ", link("o", e.by), " · ", D.files[e.v[0]], e.v[1] || e.v[2] ? ` at ${sign(e.v[1], e.v[2])}` : "").textContent)
+      : h("div", { class: "tile" }, h("div", { text: [...e.who].join(", ") }), h("div", { class: "what" }, "supplied by ", link("o", e.by), ", page and palette from different files of it"))))));
+  // A room: memory under a view and an enemy set.
+  if (o.room) sections.push(await memorySection(name, o, reqs, () => mine === turn));
+  if (mine !== turn) return;
+  const cons = D.consts[name] || [];
+  if (cons.length && !o.room) { await needFiles(cons.filter(c => c[3][0] !== "none").map(c => c[3][2][0])); if (mine !== turn) return;
+    sections.push(sec(`Constants (${cons.length})`, "A texture page and a palette value declared together in one of its functions. A constant states a place in memory, so it is read from the first file of the overlay or an ancestor that puts both there, as that file is loaded.",
+      h("div", { class: "tiles" }, cons.map(([label, t, c, how]) => how[0] === "none" ? h("div", { class: "tile miss" }, h("div", { text: label }), h("div", { class: "flag", text: "supplied by nothing in its chain" }))
+        : tile(fileMem(...how[2]), t, c, null, label, (how[0] === "own" ? "from " : `from ${how[1]} · `) + D.files[how[2][0]] + (how[2][1] || how[2][2] ? ` at ${sign(how[2][1], how[2][2])}` : "")))))); }
+  const swept = usesByOverlay.get(name) || [];
+  if (swept.length) { const open = swept.filter(u => u[6] === "open");
+    sections.push(sec(`Uses (${swept.length}, ${open.length} open)`, "How this overlay's code uses its assets and its ancestors', read out of the sources. Open lines first.", useTable([...open, ...swept.filter(u => u[6] !== "open")], false))); }
+  else sections.push(sec("Uses", "This overlay has not been swept yet: how its code uses its assets is not recorded."));
+  if (o.room) sections.push(observedRoom(name)); else { const seen = await observedSection(name, "pe2pkg", () => mine === turn); if (mine !== turn) return; sections.push(seen); }
+  const said = D.remarks[name] || [];
+  if (said.length) sections.push(sec(`Remarks (${said.length})`, "What the sweep recorded about this overlay as a whole: things no single asset line carries, such as what was searched and not found.", h("ul", { class: "plain" }, said.map(t => h("li", { text: t })))));
+  const finds = D.findings[name] || [];
+  sections.push(sec(`Findings (${finds.length})`, finds.length ? "What the model of the overlays and of video memory does not explain. Each is a wrong parent, a model in the wrong package, a load that is missing, or a wrong line in the region table." : "Nothing unexplained.", finds.length ? h("ul", { class: "plain" }, finds.map(f => h("li", { text: f }))) : null));
+  const by = [...new Set((o.carrier || []).flatMap(f => (loadersOf.get(f) || []).map(l => `${l[0]}\t${D.layers[l[1]]}\t${l[2] || "always"}\t${sign(l[3], l[4])}`)))].map(s => s.split("\t"));
+  sections.push(sec(`Loaded by (${by.length})`, "", by.length ? h("div", { class: "scrollx" }, h("table", {}, h("tr", {}, ["Overlay", "Layer", "When", "Page / row offset"].map(t => h("th", { text: t }))), by.map(r => h("tr", {}, h("td", {}, link("o", r[0])), h("td", { text: r[1] }), h("td", { text: r[2] }), h("td", { text: r[3] }))))) : h("p", { text: name === "main" ? "The executable: the console loads it." : "No load of it is in the graph." })));
+  if (loads.length) { const rows = loads.filter(g => !/^(view|room \d+ view) /.test(g[1])).sort((a, b) => a[0] - b[0]);
+    const loadRow = g => h("tr", {}, h("td", { text: D.layers[g[0]] }), h("td", { text: g[1] || "always" }), h("td", {}, g[4].map((m, k) => [k ? h("br") : null, fileLink(m[0]), m[1] || m[2] ? ` at ${sign(m[1], m[2])}` : ""])));
+    const loadTable = part => h("div", { class: "scrollx" }, h("table", {}, h("tr", {}, ["Layer", "When", "Files"].map(t => h("th", { text: t }))), part.map(loadRow)));
+    sections.push(sec(`Loads (${loads.length})`, o.room ? "Its views are listed under Memory." : "", capped(rows, 120, loadTable))); }
+  const fileRow = f => h("tr", {}, h("td", { text: D.files[f] }), h("td", {}, (D.chunks[f] || []).map(([n, key], k) => [k ? ", " : "", link(D.assets[key] && D.assets[key][0] === "pe2pkg" ? "o" : "a", key)])));
+  const fileTable = part => h("div", { class: "scrollx" }, h("table", {}, h("tr", {}, ["File", "Holds"].map(t => h("th", { text: t }))), part.map(fileRow)));
+  sections.push(sec(`Files (${ownFiles.length})`, "Its own files and what each holds.", capped(ownFiles, 80, fileTable)));
+  box.replaceChildren(...sections);
+}
+async function memorySection(name, o, reqs, alive) {
+  const views = (D.loads[name] || []).filter(g => /^(room \d+ )?view \d+$/.test(g[1])), variants = (D.loads[name] || []).filter(g => /^variant \d+$/.test(g[1]));
+  const pickOf = (list, id, label) => h("label", { for: id }, label, h("select", { id }, h("option", { value: "", text: "none" }), list.map(g => h("option", { text: g[1] }))));
+  const vs = pickOf(views, "mview", "View"), es = pickOf(variants, "mvar", "Enemy set"), out = h("div", {});
+  const firstWith = list => (list.find(g => g[4].some(m => (D.fp[m[0]] || []).length)) || [0, ""])[1];
+  vs.lastChild.value = firstWith(views); es.lastChild.value = firstWith(variants);
+  const draw = async () => {
+    const v = views.find(g => g[1] === vs.lastChild.value), e = variants.find(g => g[1] === es.lastChild.value), ups = [];
+    const chainUp = []; (function up(n) { for (const p of (D.overlays[n] || { parents: [] }).parents) if (!chainUp.includes(p)) { chainUp.push(p); up(p); } })(name);
+    for (const a of chainUp.reverse()) for (const g of (D.loads[a] || [])) if (g[2] === "a" || (a === "gameplay" && g[4].some(m => m[0] === D.stagemap[o.stage]))) for (const m of g[4]) ups.push([m[0], m[1], m[2], m[3], a]);
+    for (const f of (o.carrier || [])) ups.push([f, 0, 0, 0, name]);
+    if (e) for (const m of e[4]) ups.push([m[0], m[1], m[2], m[3], e[1]]);
+    if (v) for (const m of v[4]) { ups.push([m[0], m[1], m[2], m[3], v[1]]); const n = +(/file(\d+)$/.exec(D.files[m[0]]) || [0, -1])[1], pal = (D.viewpal[name] || {})[n]; if (pal !== undefined) ups.push([pal, 0, 0, 0, `${v[1]}: its palette, from the caption bundle`]); }
+    await needFiles(ups.map(u => u[0])); if (!alive()) return; const mem = compose(ups);
+    // The sheet: every resident image through the palette its own pairing names when that palette is resident too, else in grey.
+    const cv = h("canvas", { width: 1024, height: 512 }), ctx = cv.getContext("2d"), im = ctx.createImageData(1024, 512), d = im.data, depth = new Map(), palAt = new Map();
+    for (const [f, page, row, rel] of ups) for (const r of (D.fp[f] || [])) { if (r[1] === "c") { const [x, y] = landed("c", "", r[3], r[4], page, row, rel); palAt.set(r[0], [x, y]); } }
+    for (const [f, page, row, rel] of ups) for (const r of (D.fp[f] || [])) if (r[1] === "i") (pix.get(r[0]) || []).forEach((col, n) => { const [ax, ay] = landed("i", n ? "column " + n : "column 0", col.x, col.y, page, row, rel), of = (D.pairs[r[0]] || []).filter(p => p[4] === n), pr = of.find(p => p[1] && palAt.has(p[1])) || of[0] || (D.pairs[r[0]] || [])[0];   // of the ways the column is read, one whose palette is loaded here
+      const bpp = pr ? pr[0] : (r[7] || 8), at = pr && pr[1] && palAt.get(pr[1]); for (let xx = 0; xx < col.w; xx++) for (let yy = 0; yy < col.h; yy++) depth.set((ay + yy) * 1024 + ax + xx, [bpp, at ? (at[1] + pr[2]) * 1024 + at[0] + pr[3] * 16 : -1]); });
+    for (let i = 0; i < 1024 * 512; i++) { if (!mem.owner[i]) continue; const w = mem.vram[i], k = i * 4, dd = depth.get(i);
+      if (!dd) { if (w) put(d, k, w, 255); continue; } const [bpp, pa] = dd;
+      if (bpp === 16) { if (w) put(d, k, w, 255); } else { const idx = bpp === 4 ? w & 15 : w & 255; if (pa >= 0) { const col = mem.vram[pa + idx]; if (col) put(d, k, col, 255); } else { const g = idx * 255 / (bpp === 4 ? 15 : 255); d[k] = d[k + 1] = d[k + 2] = g; d[k + 3] = 255; } } }
+    ctx.putImageData(im, 0, 0); zoom(cv, Math.min(S, 2));
+    const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 1024 512"); svg.setAttribute("preserveAspectRatio", "none");
+    for (const [kind, rname, x, y, w, hh] of D.regions) { if (kind !== "i") continue; const r = document.createElementNS(NS, "rect"); r.setAttribute("class", "reg"); for (const [k, val] of [["x", x], ["y", y], ["width", w], ["height", hh]]) r.setAttribute(k, val); const t = document.createElementNS(NS, "text"); t.setAttribute("x", x + 3); t.setAttribute("y", y + 10); t.textContent = rname; svg.append(r, t); }
+    // What depends on the state: the room's own models, displaced by an actor that binds them if that is what resolves.
+    const offs = [[0, 0], ...(e ? e[5].map(s => [s[1], s[2]]) : [])], seen = new Map();
+    const whole = (t, c) => { const r = renderPage(mem, t, c, null); return !r.flags.length; };
+    for (const [model, t, c, b, how] of reqs) { if (how[0] === "own") continue; let pick = offs[0]; for (const cand of offs) if (whole((t + cand[0]) & 0x19F, c + (cand[1] << 6))) { pick = cand; break; }
+      const tt = (t + pick[0]) & 0x19F, cc = c + (pick[1] << 6), k = tt + "|" + cc, eItem = seen.get(k) || { t: tt, c: cc, who: new Set(), b }; eItem.who.add(model + (pick[0] || pick[1] ? ` (displaced ${sign(pick[0], pick[1])} with an actor of this enemy set)` : "")); seen.set(k, eItem); }
+    for (const [label, t, c] of (D.consts[name] || [])) { const k = t + "|" + c, eItem = seen.get(k) || { t, c, who: new Set(), b: null }; eItem.who.add(label); seen.set(k, eItem); }
+    const residents = [...new Map(ups.map(u => [u[0] + "|" + u[1] + "|" + u[2], u])).values()];
+    out.replaceChildren(h("div", { class: "sheetbox" }, h("div", { class: "sheet" }, cv, svg)),
+      h("p", { class: "dim", text: "Images are drawn through the palette their own pairing names when it is in memory, otherwise in grey. Dashed outlines are the regions of residency_regions.tsv; palettes are the thin rows from y 240 to 271 at the left." }),
+      seen.size ? h("div", { class: "tiles" }, [...seen.values()].map(s => tile(mem, s.t, s.c, s.b, [...s.who].join(", "), "from what is in memory"))) : null,
+      h("div", { class: "scrollx" }, h("table", {}, h("tr", {}, ["In memory", "Brought by", "Offset"].map(t => h("th", { text: t }))), residents.map(u => h("tr", {}, h("td", {}, fileLink(u[0])), h("td", { text: u[4] }), h("td", { text: u[1] || u[2] ? sign(u[1], u[2]) : "" }))))));
+  };
+  vs.lastChild.addEventListener("change", draw); es.lastChild.addEventListener("change", draw); await draw();
+  return sec("Memory", "Video memory while this room runs: what its ancestors always load, the stage map, the room's base file, then the enemy set and the view chosen here, later ones replacing earlier ones.", h("div", { class: "bar" }, vs, es), out);
+}
+
+// ---- an asset ----
+// Which script entries of a bank play the sample in a slot, and what the sweep recorded about those entries (a use line names its entries as 0xNN).
+const hex2 = n => "0x" + n.toString(16).padStart(2, "0");
+const samplePlayedBy = (bank, slot) => ((D.scripts[bank] || [0, []])[1]).map((e, n) => e && e.some(v => v[1] === slot) ? n : -1).filter(n => n >= 0);
+const sampleSaid = (bank, ns) => (D.usage[bank] || []).filter(u => (u[1].match(/0x[0-9a-f]{1,2}\b/gi) || []).some(t => ns.includes(parseInt(t, 16)))).slice(0, 3);
+async function showAsset(key) {
+  const mine = ++turn, a = D.assets[key], box = $("subject"); if (!a) { box.replaceChildren(h("p", { text: `No asset named ${key}.` })); return; }
+  const [type, attrs] = a, files = placedIn.get(key) || [], sections = [];
+  if (!files.length && attrs.source && placedIn.get(attrs.source)) files.push(...placedIn.get(attrs.source));   // inside a bundle that is a chunk
+  const head = h("header", {}, h("h2", { text: key }), h("div", { class: "crumbs" }, (TYPE[type] || type.replace(/_/g, " ")).replace(/s$/, ""), attrs.source ? [" · inside ", D.overlays[attrs.source.replace(/\.pe2pkg$/, "")] ? link("o", attrs.source.replace(/\.pe2pkg$/, "")) : D.assets[attrs.source] ? link("a", attrs.source) : attrs.source] : ""));
+  if (noteBox(key)) head.append(noteBox(key));
+  if (type !== "pe2pkg") head.append(h("div", { class: "row" }, "rename to ", nameInput(key)), h("div", { class: "row" }, "group ", groupInput(key), groupOf(key) ? h("a", { class: "lnk", href: "#g." + groupOf(key), text: "members" }) : null));
+  if (type === "pe2img" || type === "image") { const pairs = D.pairs[key] || []; await Promise.all([need(key), ...pairs.filter(p => p[1]).map(p => need(p[1]))]); if (mine !== turn) return;
+    const bpps = [].concat(attrs.bpp || 8);
+    sections.push(sec(`As used (${pairs.length})`, pairs.length ? "Each way something is known to read this image: a column of it, at a depth, through a palette row. Under each picture is who reads it so, and how that is known: a model's faces, a room view's sprite table, constants in the source, or a draw call that was read. The other columns are faded." : "Nothing is known to read this image - no model's faces, no view's sprite table, no draw call on record - so there is no palette to show it with.",
+      h("div", { class: "shots" }, pairs.map(([bpp, clut, row, pal, col, users, how]) => h("div", { class: "shot" }, declaredPicture(key, bpp, clut, row, pal, col) || renderImage(key, bpp, clut, row, pal, col), h("div", {}, `column ${col} · ${bpp}-bit · `, clut ? [link("a", clut), ` row ${row}` + (pal ? `, palette ${pal}` : "")] : "direct colour"), h("div", { class: "dim", text: users.join(", ") }), (how || []).map(t => h("div", { class: "dim", text: "known from " + t })))))));
+    sections.push(sec("Without a palette", "The indices as grey, at the depth the manifest records.", h("div", { class: "shots" }, h("div", { class: "shot" }, renderImage(key, bpps[0], null, 0, 0, null), h("div", { text: `${bpps.join(", ")}-bit` })))));
+  } else if (type === "pe2clut" || type === "clut") { await need(key); if (mine !== turn) return;
+    const used = Object.entries(D.pairs).flatMap(([img, list]) => list.filter(p => p[1] === key).map(p => [img, p]));
+    sections.push(sec("Colours", "One cell per entry; a row is one palette line of video memory.", h("div", { class: "shots" }, h("div", { class: "shot" }, renderClut(key)))));
+    sections.push(sec(`Used with (${used.length})`, "", used.length ? h("ul", { class: "plain" }, used.map(([img, p]) => h("li", {}, link("a", img), ` column ${p[4]}, ${p[0]}-bit, row ${p[2]}` + (p[3] ? `, palette ${p[3]}` : "") + ((p[6] || []).length ? " - known from " + p[6].map(t => t.split(": ")[0].split("; ")[0]).filter((t, i, all) => all.indexOf(t) === i).join(", ") : "")))) : h("p", { text: "No pairing with an image is known." })));
+  } else if (type === "model") { const reqs = Object.entries(D.requests).flatMap(([pkg, list]) => list.filter(r => r[0] === key).map(r => [pkg, r]));
+    await needFiles(reqs.flatMap(([, r]) => r[4][0] === "own" ? r[4][1] : (r[4][2] || []).filter(Boolean).map(v => v[0]))); if (mine !== turn) return;
+    await needSide(key); if (mine !== turn) return;
+    const pages = new Map(); for (const [, [, t, c, , how]] of reqs) { const v = how[0] === "own" ? (how[2] ? [how[1][0], 0, 0, 0] : null) : how[0] === "none" ? null : (how[2] || []).filter(Boolean)[0]; if (!v || pages.has(t + "|" + c)) continue; const r = renderPage(compose([v]), t, c, null); if (!r.flags.includes("page not supplied")) pages.set(t + "|" + c, r.cv); }
+    sections.push(sec("Mesh", "Views: textured, flat, wire, parts (one colour per bone's run of faces), normals (a face's direction as a colour) and bones (the rest skeleton).", h("div", { class: "shots" }, renderMesh(key, pages))));
+    const mesh = side.get(key); if (mesh && mesh.pairs.length) sections.push(sec(`Texture coordinates (${mesh.pairs.length})`, "Each page its faces name, with every face's outline where it reads the page.",
+      h("div", { class: "shots" }, mesh.pairs.map(([t, c], i) => { const g = geo(t, c), r = renderUV(key, i, pages.get(t + "|" + c)); return h("div", { class: "shot" }, r.cv, h("div", { text: `page (${g.tx}, ${g.ty}) ${g.bpp}-bit, palette (${g.cx}, ${g.cy})` }), h("div", { class: "dim", text: `${r.count} faces` + (pages.get(t + "|" + c) ? "" : " · page not at hand") })); }))));
+    sections.push(sec(`Textures (${reqs.length})`, "The pages its faces name.", h("div", { class: "tiles" }, reqs.flatMap(([pkg, [, t, c, b, how]]) => how[0] === "own" ? how[1].map(f => tile(compose([[f, 0, 0, 0]]), t, c, b, `in ${pkg}`, `from ${D.files[f]}`))
+      : how[0] === "none" ? [h("div", { class: "tile miss" }, h("div", { text: `in ${pkg}` }), h("div", { class: "flag", text: "supplied by nothing in its chain" }))]
+      : (how[2].filter(Boolean).slice(0, 3)).map(v => tile(compose([v]), t, c, b, `in ${pkg}`, `from ${how[1]} · ${D.files[v[0]]}`))))));
+  } else if (type === "bs" && D.pictures) sections.push(sec("Picture", "", h("div", { class: "shots" }, h("div", { class: "shot" }, h("img", { src: `${at(key, "bs")}/${key}.png`, alt: key, onload: e => zoom(e.target) })))));
+  else if (type === "spk" && D.pictures) { const ids = (D.sampleIds || {})[key] || [];
+    sections.push(sec(`Samples (${D.sounds[key] || 0})`, "The bank is a container: each slot names a sample, and a sample that sits in several banks is one asset with one name. Under each: the script entries of this bank that play it, what the uses say about those entries, and the other banks holding it.",
+      h("div", { class: "shots" }, Array.from({ length: D.sounds[key] || 0 }, (_, i) => { const id = ids[i], homes = id ? (D.sampleHomes[id] || []).filter(([b, n]) => b !== key || n !== i) : [], ns = samplePlayedBy(key, i);
+        return h("div", { class: "shot" }, h("audio", { controls: "", preload: "none", src: id ? `${at(id, "sample")}/${id}.wav` : `${at(key, "spk")}/${key}/sample_${String(i).padStart(2, "0")}.wav` }), h("div", {}, `slot ${i}: `, id ? link("a", id) : "unnamed", proposed[id] ? h("span", { class: "dim", text: " → " + proposed[id] }) : null), id ? h("div", {}, nameInput(id)) : null,
+          h("div", { class: "dim", text: ns.length ? "played by entry " + ns.map(hex2).join(", ") : "no script entry of this bank plays it" }),
+          sampleSaid(key, ns).map(u => h("div", { class: "what", text: `${u[1].slice(0, 80)} — ${u[3].slice(0, 140)}` })),
+          homes.length ? h("div", { class: "dim" }, "also in ", homes.slice(0, 6).map(([b, n], k) => [k ? ", " : "", link("a", b), " slot " + n]), homes.length > 6 ? ` and ${homes.length - 6} more` : "") : null); })))); }
+  else if (type === "sample") { const homes = (D.sampleHomes || {})[key] || [];
+    if (D.pictures) sections.push(sec("Sound", "The sample as decoded: SPU-ADPCM at the SPU's native rate. The pitch, envelope and volume it is played with belong to each bank's slot, not to the sample.", h("div", { class: "shots" }, h("div", { class: "shot" }, h("audio", { controls: "", preload: "none", src: `${at(key, "sample")}/${key}.wav` })))));
+    sections.push(sec(`In banks (${homes.length})`, "Every bank slot that holds this sample, the script entries of that bank that play it, and what the uses say about those entries.",
+      h("div", { class: "scrollx" }, h("table", { class: "wide" }, h("tr", {}, ["Bank", "Slot", "Played by entry", "What the uses say"].map(t => h("th", { text: t }))), homes.map(([b, n]) => { const ns = samplePlayedBy(b, n); return h("tr", {}, h("td", {}, link("a", b)), h("td", { text: n }), h("td", { text: ns.map(hex2).join(", ") || "none" }), h("td", {}, sampleSaid(b, ns).map(u => h("div", { text: `${u[1].slice(0, 90)} — ${u[3].slice(0, 200)}` })))); }))))); }
+  if (type === "spk" && D.scripts[key]) { const [bank, entries] = D.scripts[key];
+    sections.push(sec(`Script entries (${entries.length})`, `What each entry of the bank plays. A sound id in the code is 0x${bank.toString(16).padStart(4, "0")} in its high half and the entry in its low byte.`,
+      capped(entries.map((e, i) => [i, e]), 80, part => h("table", {}, h("tr", {}, ["Entry", "Sound id", "Plays"].map(t => h("th", { text: t }))), part.map(([i, e]) => h("tr", {}, h("td", { text: "0x" + i.toString(16).padStart(2, "0") }), h("td", { text: "0x" + ((bank * 65536 + i) >>> 0).toString(16).padStart(8, "0") }),
+        h("td", { text: e === null ? "empty" : e.map(([other, sample, program, layer]) => sample !== null ? `sample ${sample}` : other ? `bank 0x${other.toString(16)} program ${program} layer ${layer}` : `program ${program} layer ${layer}`).join(", ") || "no voice" }))))))); }
+  if (type === "dialogue" && D.dialogue[key]) sections.push(sec(`Commands (${D.dialogue[key].filter(l => /^  command/.test(l)).length})`, "The dialogue's commands and the records each plays: lines of text (by length; the text is glyph cells, not characters) and scene steps that select a view or send a message. Code runs a command by its number.",
+    capped(D.dialogue[key], 200, part => h("pre", { class: "mono" }, part.join("\n")))));
+  if (type === "txt" && D.pictures) sections.push(sec("Text", "", h("iframe", { src: `${at(key, "txt")}/${key}.txt`, title: key })));
+  else if (type === "movie" && D.pictures) sections.push(sec("Movie", "As the extraction encoded it. If the browser cannot play that encoding, open the file in a player.", h("div", { class: "shots" }, h("div", { class: "shot" }, h("video", { controls: "", preload: "none", width: 640, src: `${D.pictures}/${D.streams[key]}` }), h("div", { text: D.streams[key] })))));
+  else if (type === "stream" && D.pictures) sections.push(sec("Audio", "", h("div", { class: "shots" }, h("div", { class: "shot" }, h("audio", { controls: "", preload: "none", src: `${D.pictures}/${D.streams[key]}` }), h("div", { text: D.streams[key] })))));
+  else if (type === "mcsave" && D.pictures) sections.push(sec("Decoded", "The save header's palette and icon frames.", h("div", { class: "shots" }, D.saves.map(f => h("div", { class: "shot" }, h("img", { src: `${at("mc_save_header", "mcsave")}/mc_save_header/${f}`, alt: f, onload: e => zoom(e.target, S * 3) }), h("div", { text: f }))))));
+  else if (type === "animation" && D.banks[key]) { const b = D.banks[key];
+    sections.push(sec(`Clips (${b.sets.length})`, "Each set in the bank, in address order. Playback is not decoded; this is the bank's structure.", capped(b.sets.map((x, i) => [i, ...x]), 60, part => h("table", {}, h("tr", {}, ["Set", "Records", "Tracks"].map(t => h("th", { text: t }))), part.map(r => h("tr", {}, r.map(v => h("td", { text: v }))))))));
+    sections.push(sec(`Played through (${b.tables.length})`, "The package's tables of set pointers that index this bank: a clip constant is an index into one of these. A dash is an empty slot; \"other\" is a set of another bank.", b.tables.map(([tname, entries]) => h("p", {}, h("b", { text: tname + ": " }), entries.map((e, i) => `${i}→${e === -1 ? "–" : e === -2 ? "other" : "set " + e}`).join("  ")))));
+  } else if (D.track[key] !== undefined) { await needSide(key); if (mine !== turn) return; sections.push(sec("Samples", "", h("div", { class: "shots" }, renderTrack(key)))); }
+  const uses = D.usage[key] || [];
+  if (uses.length) sections.push(sec(`Uses (${uses.length})`, "How the code uses this asset, read out of the sources. An open line says what is still missing.", useTable(uses, true)));
+  { const seen = type === "model" ? await observedModel(key, () => mine === turn) : await observedSection(key, type, () => mine === turn); if (mine !== turn) return; sections.push(seen); }
+  const rows = Object.entries(attrs).filter(([k]) => k !== "notes");
+  sections.push(sec("Properties", attrs.notes || "", rows.length ? h("table", {}, rows.map(([k, v]) => h("tr", {}, h("th", { text: k }), h("td", {}, k === "parent" ? [].concat(v).map((p, i) => [i ? ", " : "", link("o", p)]) : k === "vram" ? "0x" + v.toString(16) : String(JSON.stringify(v)).replace(/^"|"$/g, ""))))) : h("p", { text: "None recorded." })));
+  const loaders = files.flatMap(f => (loadersOf.get(f) || []).map(l => [f, ...l]));
+  sections.push(sec(`In files (${files.length})`, "", files.length ? h("ul", { class: "plain" }, files.map(f => h("li", {}, fileLink(f)))) : h("p", { text: attrs.source ? "Not a chunk of a disc file: it sits inside the package." : "Not placed in any file." })));
+  const byRow = l => h("tr", {}, h("td", {}, link("o", l[1])), h("td", { text: D.layers[l[2]] }), h("td", { text: l[3] || "always" }), h("td", { text: D.files[l[0]] }), h("td", { text: l[4] || l[5] ? sign(l[4], l[5]) : "" }));
+  const byTable = part => h("div", { class: "scrollx" }, h("table", {}, h("tr", {}, ["Overlay", "Layer", "When", "File", "Offset"].map(t => h("th", { text: t }))), part.map(byRow)));
+  sections.push(sec(`Loaded by (${loaders.length})`, "The loads that bring one of those files in.", loaders.length ? capped(loaders, 80, byTable) : null));
+  box.replaceChildren(head, ...sections);
+}
+
+// ---- traces: what the running game was recorded doing (tools/gametrace), replayed by tools/peassets/trace_replay.py ----
+// A trace's side file holds its records as readable lines, its loads, and every thing a load put somewhere with the
+// record it arrived at and the record it was displaced at. Residency ends by overwrite: whatever lands on any part
+// of a thing ends it. State at a record is therefore a filter over that list, and video memory is the loads so far.
+//   sessions [name, number, started, dropped, first, last]        ev [kind, text, extra]
+//   loads    [record, file, page, row, relocate, only, mode]      places [record, stage, area, room index, view, warp, variant, room, view file, background]
+//   things   [asset, memory (v, m or s), load, from record, to record or -1, displaced by, where, note]
+//   rooms    [record where the room is complete, room, variant, view, room index, where its arrival began, 1 when the
+//             trace has no room_start/view_ready pair for it, loads of its first view]
+//   views    [record of a view_ready, room, variant, view, room index]      notes [record, ...]
+// The keys of the playback that is open; one listener for the page, so opening another session replaces them.
+let traceKeys = null;
+window.addEventListener("keydown", e => { if (traceKeys) traceKeys(e); });
+const traces = new Map(), traceWaiting = new Map(), fileIndex = new Map(D.files.map((n, i) => [n, i]));
+window.TRACE = (name, t) => { t.ops = []; t.loads.forEach((l, i) => { const f = fileIndex.get(l[1]); if (f !== undefined && !(l[5] && !l[5].length)) t.ops.push([l[0], [f, l[2], l[3], l[4], "", l[5]], i]); }); for (const n of t.movies) t.ops.push([n, ["movie"], -1]); t.ops.sort((a, b) => a[0] - b[0]);
+  traces.set(name, t); (traceWaiting.get(name) || []).forEach(f => f()); traceWaiting.delete(name); };
+const needTrace = name => traces.has(name) || !D.side ? Promise.resolve() : new Promise(done => { if (traceWaiting.has(name)) return traceWaiting.get(name).push(done); traceWaiting.set(name, [done]); const tag = document.createElement("script"); tag.src = `${D.side}/trace_${name}.js`; tag.onerror = () => { traces.set(name, null); (traceWaiting.get(name) || []).forEach(f => f()); traceWaiting.delete(name); }; document.head.append(tag); });
+const upTo = (list, n) => { let lo = 0, hi = list.length; while (lo < hi) { const mid = (lo + hi) >> 1; if (list[mid][0] <= n) lo = mid + 1; else hi = mid; } return lo; };
+const MEMORY = { v: "Video memory", m: "Main memory", s: "Sound memory" };
+const assetLink = k => D.overlays[k] ? link("o", k) : D.assets[k] ? link("a", k) : h("span", { text: k });
+const hexRange = w => `0x${w[0].toString(16)}–0x${(w[1] - 1).toString(16)}`;
+// Video memory at a record: every upload so far, in order (kept from the last call when stepping forward).
+function traceMemory(t, count) { const c = t.cache; if (c && c.count <= count) { compose(t.ops.slice(c.count, count).map(o => o[1]), c.mem); c.count = count; return c.mem; } t.cache = { count, mem: compose(t.ops.slice(0, count).map(o => o[1])) }; return t.cache.mem; }
+// The sheet. "raw": each word as a 15-bit colour. "as used": what is resident, an image through the palette its faces
+// name (D.pairs) read from where that palette sits now; what was displaced is still in memory, so it stays, faded.
+function traceSheet(t, mem, live, used) {
+  const cv = h("canvas", { width: 1024, height: 512 }), ctx = cv.getContext("2d"), im = ctx.createImageData(1024, 512), d = im.data;
+  for (let i = 0; i < 1024 * 512; i++) if (mem.owner[i] && mem.vram[i]) put(d, i * 4, mem.vram[i], used ? 70 : 255);
+  if (used) for (const x of live) { if (x[1] !== "v") continue; const load = t.loads[x[2]], f = load && fileIndex.get(load[1]), r = (D.fp[f] || []).find(q => q[0] === x[0]);
+    if (!r || r[1] === "c") { for (const [rx, ry, rw, rh] of x[6]) for (let yy = ry; yy < ry + rh && yy < 512; yy++) for (let xx = rx; xx < rx + rw && xx < 1024; xx++) { const w = mem.vram[yy * 1024 + xx]; if (w) put(d, (yy * 1024 + xx) * 4, w, 255); } continue; }
+    (pix.get(x[0]) || []).forEach((col, n) => { const [ax, ay] = landed("i", n ? "column " + n : "column 0", col.x, col.y, load[2], load[3], load[4]), of = (D.pairs[x[0]] || []).filter(p => p[4] === n), pr = of.find(p => p[1] && live.some(q => q[1] === "v" && q[0] === p[1])) || of[0] || (D.pairs[x[0]] || [])[0], bpp = pr ? pr[0] : (r[7] || 8);
+      const pals = pr && pr[1] ? live.filter(q => q[1] === "v" && q[0] === pr[1]) : [], pal = pals.find(q => q[2] === x[2]) || pals[pals.length - 1], pa = pal ? (pal[6][0][1] + pr[2]) * 1024 + pal[6][0][0] + pr[3] * 16 : -1;
+      for (let yy = 0; yy < col.h; yy++) { const y = ay + yy; if (y < 0 || y > 511) continue; for (let xx = 0; xx < col.w; xx++) { const xp = ax + xx; if (xp < 0 || xp > 1023) continue; const w = col.u[yy * col.w + xx], k = (y * 1024 + xp) * 4;
+        if (bpp === 16) { if (w) put(d, k, w, 255); else d[k + 3] = 0; continue; } const idx = bpp === 4 ? w & 15 : w & 255;
+        if (pa >= 0) { const c = mem.vram[pa + idx]; if (c) put(d, k, c, 255); else d[k + 3] = 0; } else { const g = idx * 255 / (bpp === 4 ? 15 : 255); d[k] = d[k + 1] = d[k + 2] = g; d[k + 3] = 255; } } } }); }
+  ctx.putImageData(im, 0, 0); return cv;
+}
+function listTraces() {
+  const box = $("subject"); box.replaceChildren(h("header", {}, h("h2", { text: `Traces (${D.traces.length})` }), h("div", { class: "crumbs", text: "recordings of the running game (tools/gametrace), under local/gametrace when the page was generated" })),
+    D.traces.length ? sec("Sessions", "A session is a stretch of a recording its maker named. Open one to play it back: what was loaded, where it went in memory, what it displaced.", h("table", {}, h("tr", {}, ["Trace", "Session", "Started", "Records"].map(x => h("th", { text: x }))),
+      D.traces.flatMap(([name, sessions]) => (sessions.length ? sessions : [["the whole trace", 0, "", 0, 0, 0]]).map(s => h("tr", {}, h("td", { text: name }), h("td", {}, link("t", `${name}/${s[1]}`, s[0]), s[3] ? h("span", { class: "flag", text: " dropped" }) : null), h("td", { text: s[2] }), h("td", { text: `${s[4]}–${s[5]}` }))))))
+    : h("p", { text: "No trace was found when this page was generated. Record one with tools/gametrace/gametrace.py and generate the page again." }));
+}
+async function showTrace(arg) {
+  const mine = ++turn, box = $("subject"), [path, start] = arg.split("@"), cut = path.lastIndexOf("/"), name = cut < 0 ? path : path.slice(0, cut), number = cut < 0 ? -1 : +path.slice(cut + 1);
+  if (!name) { listTraces(); return; }
+  box.replaceChildren(h("p", { class: "dim", text: "reading the trace…" })); await needTrace(name); if (mine !== turn) return;
+  const t = traces.get(name); if (!t) { box.replaceChildren(h("p", { text: `No trace named ${name} beside this page.` })); return; }
+  const s = t.sessions.find(x => x[1] === number) || t.sessions[0] || ["the whole trace", 0, "", 0, 0, t.ev.length - 1], lo = s[4], hi = Math.max(s[4], s[5]);
+  let pos = Math.min(hi, Math.max(lo, start ? +start : lo)), timer = null, seq = 0, roomKey = null, memKey = null, hover = null;
+  const slider = h("input", { type: "range", min: lo, max: hi, step: 1, id: "tr-pos", style: "flex:1;min-width:200px", "aria-label": "position in the session" }), said = h("span", { class: "dim" });
+  const mode = h("select", { id: "tr-mode" }, h("option", { value: "used", text: "as used" }), h("option", { value: "raw", text: "raw 15-bit colour" })), boxes = h("input", { type: "checkbox", id: "tr-box" }); boxes.checked = true;
+  const whereBox = h("div", {}), memBox = h("div", {}), memSaid = h("div", { class: "dim", text: "point at video memory to name what is there" }), liveBox = h("div", {}), evBox = h("div", { class: "ev" }), roomBox = h("div", {});
+  const big = k => { let n = pos + k; while (n >= lo && n <= hi && !/^(load|where|mark)$/.test(t.ev[n][0])) n += k; return n < lo || n > hi ? pos : n; };
+  const jump = n => h("a", { class: "lnk", text: n, onclick: () => go(n) });
+  // The three levels of jump. A level's stops are records; from the last one forward, or the first one back, there is none.
+  const inside = list => (list || []).filter(x => (x.length ? x[0] : x) >= lo && (x.length ? x[0] : x) <= hi), roomStops = inside(t.rooms), viewStops = inside(t.views), noteStops = inside(t.notes);
+  const stopAt = (list, k) => { const i = upTo(list, k > 0 ? pos : pos - 1); return (k > 0 ? list[i] : list[i - 1]) || null; };
+  const loadAt = k => { const n = big(k); return n === pos ? null : [n]; };
+  const LEVELS = [["room", k => stopAt(roomStops, k), "the record where a room is complete: the first view ready after the room starts"], ["view", k => stopAt(viewStops, k), "a view change is complete"], ["load", loadAt, "a load, location change or marker"]];
+  const stopText = (level, x) => !x ? "none" : level === "load" ? `record ${x[0]}: ${t.ev[x[0]][1]}` : `${x[1]} · variant ${x[2]} · view ${x[3]}` + (level === "view" ? ` of room index ${x[4]}` : "") + ` (record ${x[0]}` + (level === "room" && x[6] ? "; no room start and view ready here: the end of its first view's load" : "") + ")";
+  const leap = (level, k) => { const x = LEVELS.find(l => l[0] === level)[1](k); stop(); return x ? go(x[0]) : Promise.resolve(); };
+  const jumpRows = LEVELS.map(([level, , what]) => ({ level, said: h("div", { class: "to", id: `tr-to-${level}` }), back: h("button", { id: `tr-${level}-back`, text: `⏮ ${level}`, title: `back to the previous stop: ${what}`, onclick: () => leap(level, -1) }), on: h("button", { id: `tr-${level}-on`, text: `${level} ⏭`, title: `on to the next stop: ${what}`, onclick: () => leap(level, 1) }) }));
+  const from = l => l ? l[1] + (l[2] || l[3] ? ` at ${sign(l[2], l[3])}` : "") + (l[6] ? ` mode ${l[6]}` : "") : "";
+  const drawMemory = async live => {
+    const count = upTo(t.ops, pos), key = count + "|" + mode.value + "|" + boxes.checked + "|" + live.filter(x => x[1] === "v").length + "|" + S, my = ++seq; if (key === memKey) return; 
+    await needFiles([...new Set(t.ops.slice(0, count).map(o => o[1][0]).filter(f => f !== "movie"))]); if (mine !== turn || my !== seq) return; memKey = key;
+    const mem = traceMemory(t, count), k = Math.min(S, 2), cv = zoom(traceSheet(t, mem, live, mode.value === "used"), k), NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 1024 512"); svg.setAttribute("preserveAspectRatio", "none");
+    const rect = (x, y, w, hh, cls, label) => { const r = document.createElementNS(NS, "rect"); r.setAttribute("class", cls); for (const [a, v] of [["x", x], ["y", y], ["width", w], ["height", hh]]) r.setAttribute(a, v); svg.append(r); if (label) { const tx = document.createElementNS(NS, "text"); tx.setAttribute("x", x + 2); tx.setAttribute("y", y + 9); tx.textContent = label; svg.append(tx); } };
+    if (boxes.checked) for (const x of live) if (x[1] === "v") x[6].forEach((r, n) => rect(r[0], r[1], r[2], r[3], "live", !n && r[2] >= 48 && r[3] >= 12 ? x[0] : ""));
+    const movie = t.movies.filter(n => n <= pos).pop(); if (movie !== undefined) rect(704, 0, 320, 256, "movie", `overwritten by a movie's workspace backup at record ${movie}`);
+    const at = e => { const x = Math.floor(e.offsetX / k), y = Math.floor(e.offsetY / k); return x >= 0 && x < 1024 && y >= 0 && y < 512 ? [x, y] : null; };
+    const what = p => { const o = mem.names[mem.owner[p[1] * 1024 + p[0]]], x = live.find(q => q[1] === "v" && q[6].some(r => p[0] >= r[0] && p[0] < r[0] + r[2] && p[1] >= r[1] && p[1] < r[1] + r[3])); return { o, x }; };
+    cv.addEventListener("mousemove", e => { const p = at(e); if (!p) return; const { o, x } = what(p), gone = !x && o ? t.things.filter(q => q[0] === o && q[1] === "v" && q[4] >= 0 && q[4] <= pos).pop() : null; hover = x ? x[0] : o || null;
+      memSaid.textContent = `(${p[0]}, ${p[1]}): ` + (x ? `${x[0]}, resident since record ${x[3]}` + (t.loads[x[2]] ? `, from ${t.loads[x[2]][1]}` : "") + " · click to open it" : o ? `${o}, no longer resident` + (gone ? `: ${gone[5]} at record ${gone[4]}` : "") + "; its words are still here" : "nothing was uploaded here"); });
+    cv.addEventListener("click", () => { if (hover && (D.assets[hover] || D.overlays[hover])) location.hash = (D.overlays[hover] ? "o." : "a.") + hover; }); cv.style.cursor = "crosshair";
+    memBox.replaceChildren(h("div", { class: "sheetbox" }, h("div", { class: "sheet" }, cv, svg)));
+  };
+  const drawRoom = async p => { const key = p && p[7] ? [p[7], p[3], p[6], p[4]].join("|") : ""; if (key === roomKey) return; roomKey = key;
+    if (!key) { roomBox.replaceChildren(h("p", { class: "dim", text: "The player is in no room at this record." })); return; }
+    if (!(D.scenes || []).includes(p[7])) { roomBox.replaceChildren(h("p", { class: "dim", text: `No scene was read for ${p[7]}.` })); return; }
+    await needScene(p[7]); if (mine !== turn || key !== roomKey) return; roomBox.replaceChildren(renderRoom(p[7], { room: p[3], variant: p[6], view: p[4] })); };
+  const update = async () => {
+    const p = t.places[upTo(t.places, pos) - 1], live = t.things.filter(x => x[3] <= pos && (x[4] < 0 || x[4] > pos)), has = k => live.some(x => x[0] === k);
+    slider.value = String(pos); said.textContent = `record ${pos} of ${lo}–${hi}`;
+    for (const row of jumpRows) { const find = LEVELS.find(l => l[0] === row.level)[1], a = find(-1), b = find(1); row.back.disabled = !a; row.on.disabled = !b;
+      row.said.replaceChildren(h("span", { class: "dim", text: "back: " }), stopText(row.level, a), h("br", {}), h("span", { class: "dim", text: "on: " }), stopText(row.level, b)); }
+    whereBox.replaceChildren(p && p[7] ? h("div", {}, D.overlays[p[7]] ? link("o", p[7]) : p[7], ` · stage ${p[1]} area ${p[2]} · room index ${p[3]} · variant ${p[6]} · view ${p[4]}` + (p[8] ? ` (file ${p[8]} is the last view file loaded)` : " (no view file loaded yet)") + ` · warp ${p[5]}`) : h("div", { class: "dim", text: "In no room: the title, or a load that has not named its room yet." }),
+      p && p[9] ? h("div", { class: "shot" }, D.pictures && has(p[9]) ? h("img", { src: `${at(p[9], "bs")}/${p[9]}.png`, alt: p[9], width: 320, height: 240 }) : null, h("div", {}, "background ", link("a", p[9]), has(p[9]) ? "" : " · displaced since: no longer in the image workspace")) : h("div", { class: "dim", text: p && p[7] ? "The last view file loaded has no background." : "" }));
+    const table = m => { const rows = live.filter(x => x[1] === m); return h("details", { open: "" }, h("summary", { class: "dim", text: `${MEMORY[m]} (${rows.length})` }), rows.length ? capped(rows, 60, part => h("div", { class: "scrollx" }, h("table", {}, h("tr", {}, ["Asset", "Where", "Brought by", "Since"].map(x => h("th", { text: x }))),
+      part.map(x => h("tr", {}, h("td", {}, assetLink(x[0]), x[7] && x[7] !== "bundle" ? h("span", { class: "dim", text: " " + x[7] }) : null), h("td", { text: m === "v" ? x[6].map(r => `(${r[0]}, ${r[1]}) ${r[2]}×${r[3]}`).join(" ") : hexRange(x[6]) }), h("td", { text: from(t.loads[x[2]]) }), h("td", {}, jump(x[3]))))))) : h("p", { class: "dim", text: "nothing" })); };
+    const gone = t.things.filter(x => x[4] >= lo && x[4] <= pos).sort((a, b) => b[4] - a[4]);
+    liveBox.replaceChildren(table("v"), table("m"), table("s"), h("details", { open: "" }, h("summary", { class: "dim", text: `Displaced so far in this session (${gone.length})` }), gone.length ? capped(gone, 25, part => h("div", { class: "scrollx" }, h("table", {}, h("tr", {}, ["Asset", "Memory", "What displaced it", "At", "Had been there since"].map(x => h("th", { text: x }))),
+      part.map(x => h("tr", {}, h("td", {}, assetLink(x[0])), h("td", { text: MEMORY[x[1]].split(" ")[0].toLowerCase() }), h("td", { text: x[5] }), h("td", {}, jump(x[4])), h("td", {}, jump(x[3]))))))) : h("p", { class: "dim", text: "nothing yet" })));
+    const first = Math.max(lo, pos - 10), rows = []; for (let n = first; n <= Math.min(hi, pos + 16); n++) { const e = t.ev[n]; rows.push(h("div", { class: `k-${e[0]}` + (n === pos ? " cur" : ""), onclick: () => go(n), title: e[1] }, h("span", { class: "dim", text: String(n).padStart(6, " ") + "  " }), e[0] === "note" ? h("span", { class: "flag", text: "note  " }) : null, e[1],
+      e[2] && e[2].play && D.pictures ? e[2].play.map(id => h("button", { text: "▶ " + id, style: "margin:0 0 0 8px;padding:0 6px", onclick: ev => { ev.stopPropagation && ev.stopPropagation(); try { new Audio(`${at(id, "sample")}/${id}.wav`).play(); } catch (x) {} } })) : null)); }
+    evBox.replaceChildren(...rows);
+    await Promise.all([drawMemory(live), drawRoom(p)]);
+  };
+  const go = n => { pos = Math.min(hi, Math.max(lo, n)); return update(); };
+  const stop = () => { if (timer) { clearInterval(timer); timer = null; play.textContent = "play"; } };
+  const play = h("button", { text: "play", onclick: () => { if (timer) return stop(); play.textContent = "pause"; timer = setInterval(() => { if (mine !== turn || pos >= hi) return stop(); let n = pos + 1; while (n < hi && /^(dim|raw)$/.test(t.ev[n][0])) n++; go(n); }, 450); } });
+  slider.addEventListener("input", () => { stop(); go(+slider.value); }); mode.addEventListener("change", update); boxes.addEventListener("change", update);
+  // Keys. Not while the reader types (a text field, a list); on the slider the plain arrows are the slider's own.
+  traceKeys = e => { if (mine !== turn) { traceKeys = null; return; } if (e.ctrlKey || e.metaKey || e.altKey) return; const el = e.target || {}, tag = (el.tagName || "").toUpperCase(), range = tag === "INPUT" && el.type === "range";
+    if (!range && (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable)) return;
+    const arrow = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0, act = arrow ? (e.shiftKey ? () => leap("view", arrow) : range ? null : () => { stop(); return go(pos + arrow); })
+      : e.key === "[" ? () => leap("room", -1) : e.key === "]" ? () => leap("room", 1) : e.key === "," ? () => leap("load", -1) : e.key === "." ? () => leap("load", 1) : null;
+    if (!act) return; e.preventDefault && e.preventDefault(); return act(); };
+  const key = text => h("kbd", { text });
+  window.__trace = { go, big, leap, pos: () => pos, lo, hi, trace: t, stops: { room: roomStops, view: viewStops, note: noteStops } };
+  box.replaceChildren(...[h("header", {}, h("h2", { text: `${s[0]}` }), h("div", { class: "crumbs" }, `session ${s[1]} of `, link("t", "", name), s[2] ? ` · started ${s[2]}` : "", ` · records ${lo}–${hi}`, s[3] ? h("span", { class: "flag", text: " · dropped: its records still count, since what was loaded is loaded" }) : "",
+      t.sessions.length > 1 ? [" · ", t.sessions.map((x, i) => [i ? ", " : "", x[1] === s[1] ? x[0] : link("t", `${name}/${x[1]}`, x[0])])] : "")),
+    sec("Playback", "Step through the session's records; everything below is the state at the chosen record. Three levels of jump, each back and on: to where a room is complete (its first view is ready), to where a view change is complete, and to the next load, location change or marker. Beside each is where it will land; from the last stop on, or the first back, it does nothing.",
+      h("div", { class: "row", style: "display:flex;flex-wrap:wrap;gap:8px;align-items:center" }, h("button", { text: "◀ record", title: "one record back", onclick: () => { stop(); go(pos - 1); } }), play, h("button", { text: "record ▶", title: "one record on", onclick: () => { stop(); go(pos + 1); } }), slider, said),
+      h("div", { class: "jumps" }, jumpRows.flatMap(r => [h("div", { style: "display:flex;gap:8px" }, r.back, r.on), r.said])),
+      h("p", { class: "dim", style: "margin:8px 0 0" }, "Keys: ", key("←"), " ", key("→"), " one record · ", key("Shift"), "+", key("←"), " ", key("→"), " view · ", key("["), " ", key("]"), " room · ", key(","), " ", key("."), " load. They are left alone while a text field or a list has the focus.")),
+    sec(`Notes (${noteStops.length})`, "Annotations of the trace: written while recording, by a hook, by the tracer, or by a tool afterwards. Not events of the game: they change nothing in memory.",
+      noteStops.length ? h("ul", { class: "plain", id: "tr-notes" }, noteStops.map(n => h("li", {}, "record ", jump(n), " · ", t.ev[n][1]))) : h("p", { class: "dim", id: "tr-notes", text: "This session has none." })),
+    sec("Where", "", whereBox),
+    sec("Video memory", "All 1024 × 512 of it, from every upload up to this record. Outlined: what is resident. An upload that lands on any part of an image or palette ends it; its remaining words stay in memory and are drawn faded in the \"as used\" view, where a resident image is read through the palette its faces name, taken from where that palette sits now (grey where none is resident). Uploads the trace does not record are not here: the frame buffers at the left, a movie's frames, MoveImage copies.",
+      h("div", { class: "bar" }, h("label", { for: "tr-mode" }, "Colours", mode), h("label", { class: "row", for: "tr-box" }, boxes, "outline what is resident")), memBox, memSaid),
+    sec("Resident", "What is in memory at this record, and where. Main memory: a package at its load address, each slot of a caption bundle, the background in the image workspace. Sound memory: a bank's samples.", liveBox),
+    sec("Records", "The records around this one, the current one marked. Click one to go there; a sound request plays its samples.", evBox),
+    sec("Room", "The room the player is in, set to the trace's room index, variant and view.", roomBox),
+    t.unknown.length ? sec(`Not established (${t.unknown.length})`, "What the replay could not place or identify in this trace.", capped(t.unknown, 30, part => h("ul", { class: "plain" }, part.map(x => h("li", { text: x }))))) : null].filter(Boolean));
+  await update();
+}
+
+// ---- observed residency (tools/peassets/observed.tsv): where the traces showed an asset, and how ----
+// A row: [how, trace, session, stage, room, room index, variant, view, where, file, page, row, mode, note, ended].
+const obsCtx = r => r.slice(1, 7).join("|");
+const obsWhere = r => r[4] ? [D.overlays[r[4]] ? link("o", r[4]) : r[4], ` (stage ${r[3]}, room index ${r[5]}, variant ${r[6]}` + (r[7] ? `, view ${r[7]}` : "") + `) · ${r[2]}`] : [h("span", { class: "dim", text: "in no room (title or loading)" }), ` · ${r[2]}`];
+let obsPalettes = null;
+const palettesIn = ctx => { if (!obsPalettes) { obsPalettes = new Map(); for (const [asset, rows] of Object.entries(D.observed)) { const ty = (D.assets[asset] || [""])[0]; if (ty !== "pe2clut" && ty !== "clut") continue;
+  for (const r of rows) if (r[0] === "video memory") for (const part of r[8].split(";")) { const [x, y, w, hh] = part.split(",").map(Number), k = obsCtx(r); (obsPalettes.get(k) || obsPalettes.set(k, []).get(k)).push([asset, x, y, w, hh]); } } } return obsPalettes.get(ctx) || []; };
+// Rows that differ only in context are one landing seen in several places.
+function obsGroups(rows) { const m = new Map(); for (const r of rows) { const k = [r[0], r[8], r[9], r[10], r[11], r[12], r[13]].join("|"), g = m.get(k) || m.set(k, { r, seen: [] }).get(k); g.seen.push(r); } return [...m.values()]; }
+function obsTable(rows) {
+  const groups = obsGroups(rows), traceCount = new Set(rows.map(r => r[1])).size;
+  return capped(groups, 40, part => h("div", { class: "scrollx" }, h("table", { class: "wide" }, h("tr", {}, ["How", "Where", "Brought by", "Seen in", "Displaced"].map(x => h("th", { text: x }))), part.map(({ r, seen }) => { const ended = seen.filter(q => q[14]);
+    return h("tr", {}, h("td", { text: r[0] + (r[13] ? ` · ${r[13]}` : "") }), h("td", { text: r[0] === "video memory" ? r[8].split(";").map(q => { const [x, y, w, hh] = q.split(","); return `(${x}, ${y}) ${w}×${hh}`; }).join(" ") : r[8].replace("-", "–") }),
+      h("td", { text: r[9] ? r[9] + (+r[10] || +r[11] ? ` at ${sign(+r[10], +r[11])}` : "") + (+r[12] ? ` mode ${r[12]}` : "") : "" }),
+      h("td", {}, seen.slice(0, 8).map((q, i) => [i ? h("br") : null, obsWhere(q), traceCount > 1 ? h("span", { class: "dim", text: " · " + q[1] }) : null]), seen.length > 8 ? h("div", { class: "dim", text: `and ${seen.length - 8} more contexts` }) : null),
+      h("td", { class: "dim" }, ended.slice(0, 4).map((q, i) => [i ? h("br") : null, q[14] + (q[4] ? ` (in ${q[4]})` : "")]))); }))));
+}
+async function observedSection(key, type, alive) {
+  const rows = D.observed[key] || [], extra = [];
+  if (!rows.length) return sec("Observed", (D.traces || []).length || Object.keys(D.observed).length ? "Not observed: no trace so far has this in memory, or playing." : "No trace has been observed yet (tools/peassets/trace_replay.py observe --write).");
+  if (type === "pe2img" || type === "image") {
+    // Each landing through the palette that was resident, in that context, at the place the faces' palette lands with the image's own offsets.
+    const shots = [], pairs = D.pairs[key] || [];
+    for (const { r, seen } of obsGroups(rows.filter(q => q[0] === "video memory")).slice(0, 6)) for (const [bpp, clut, prow, pal, col] of pairs.slice(0, 4)) {
+      if (!clut || bpp === 16 || !D.assets[clut]) continue; const a = D.assets[clut][1], base = landed("c", "", a.x, a.y, +r[10], +r[11], +r[12] === 3), px = base[0] + pal * 16, py = base[1] + prow, by = new Map();
+      for (const q of seen) { const hit = palettesIn(obsCtx(q)).find(c => px >= c[1] && px < c[1] + c[3] && py >= c[2] && py < c[2] + c[4]), k = hit ? hit.join() : ""; (by.get(k) || by.set(k, { hit, seen: [] }).get(k)).seen.push(q); }
+      for (const { hit, seen: where } of by.values()) shots.push({ r, bpp, col, hit, px, py, where }); }
+    await Promise.all([need(key), ...shots.filter(x => x.hit).map(x => need(x.hit[0]))]); if (!alive()) return null;
+    if (shots.length) extra.push(h("div", { class: "shots" }, shots.slice(0, 12).map(x => h("div", { class: "shot" }, renderImage(key, x.bpp, x.hit ? x.hit[0] : null, x.hit ? x.py - x.hit[2] : 0, x.hit ? Math.floor((x.px - x.hit[1]) / 16) : 0, x.col),
+      h("div", {}, `column ${x.col} · landed at ${x.r[8].split(";")[x.col] ? "(" + x.r[8].split(";")[x.col].split(",").slice(0, 2).join(", ") + ")" : x.r[8]} · `, x.hit ? [link("a", x.hit[0]), ` at (${x.px}, ${x.py})`] : h("span", { class: "flag", text: `no palette observed resident at (${x.px}, ${x.py})` })),
+      h("div", { class: "dim" }, x.where.slice(0, 3).map((q, i) => [i ? "; " : "", obsWhere(q)]), x.where.length > 3 ? ` and ${x.where.length - 3} more` : "")))));
+  }
+  return sec(`Observed (${rows.length})`, "Where the traces showed this, and how. Residency ends by overwrite: \"displaced\" names what landed on it.", ...extra, obsTable(rows));
+}
+// A model: the pages its faces name, from what the traces showed in video memory wherever its package was resident.
+async function observedModel(key, alive) {
+  // A mesh can sit in several packages (D.holds): it was seen wherever any of them was, and names the same pages in each.
+  const holders = [...new Set([(D.assets[key][1].source || "").replace(/\.pe2pkg$/, ""), ...Object.keys(D.holds).filter(p => D.holds[p].includes(key))])].filter(Boolean);
+  const rows = holders.flatMap(p => (D.observed[p] || []).filter(r => r[0] === "main memory").map(r => Object.assign([...r], { pkg: p })));
+  if (!rows.length) return sec("Observed", holders.length ? `Not observed: no trace so far has a package holding it (${holders.slice(0, 6).join(", ")}${holders.length > 6 ? ", …" : ""}) in memory.` : "Not observed.");
+  const ctxs = [...new Map(rows.filter(r => r[4]).map(r => [r.pkg + "|" + obsCtx(r), r])).values()], tiles = [], pkg = [...new Set(rows.map(r => r.pkg))].join(", ");
+  for (const r of ctxs.slice(0, 3)) { const own = (D.requests[r.pkg] || []).filter(q => q[0] === key), reqs = own.length ? own : [...new Map(Object.values(D.requests).flat().filter(q => q[0] === key).map(q => [q[1] + "|" + q[2], q])).values()]; const ups = new Map(); for (const [asset, list] of Object.entries(D.observed)) for (const q of list) if (q[0] === "video memory" && !q[14] && obsCtx(q) === obsCtx(r) && fileIndex.has(q[9])) { const k = [q[9], q[10], q[11], q[12]].join("|"); (ups.get(k) || ups.set(k, [fileIndex.get(q[9]), +q[10], +q[11], +(+q[12] === 3), "", []]).get(k))[5].push(asset); }
+    await needFiles([...ups.values()].map(u => u[0])); if (!alive()) return null; const mem = compose([...ups.values()]);
+    for (const [, t, c, b] of reqs) tiles.push(tile(mem, (t + +r[10]) & 0x19F, c + (+r[11] << 6), b, `in ${r.pkg} · ` + h("span", {}, obsWhere(r)).textContent, `as resident there at the end, displaced ${sign(+r[10], +r[11])} with its package's file`)); }
+  return sec(`Observed (${ctxs.length} contexts)`, `${pkg} was seen in memory in these contexts. The tiles are its texture pages read from what the traces showed still resident in video memory there (first three contexts).`, tiles.length ? h("div", { class: "tiles" }, tiles) : null, obsTable(rows));
+}
+// A room: which of its room indices, variants and views were seen, against which exist.
+function observedRoom(name) {
+  const rows = D.observed[name] || [], s = scenes.get(name), here = rows.filter(r => r[4] === name), views = here.filter(r => r[0] === "view");
+  if (!rows.length) return sec("Observed", "Not observed: no trace so far has this room in memory.");
+  const seenVar = new Set(here.map(r => +r[6])), seenRoom = new Set(here.map(r => +r[5])), seenView = new Set(views.map(r => r[5] + "|" + r[7]));
+  const mark = (list, seen, label) => h("p", {}, h("b", { text: `${label}: ` }), `${list.filter(x => seen.has(x[0])).length} of ${list.length} observed · `, list.map((x, i) => [i ? ", " : "", seen.has(x[0]) ? h("b", { text: x[1] + " ✓" }) : h("span", { class: "dim", text: x[1] })]));
+  const parts = [];
+  if (s) { parts.push(mark(s.rooms.map(r => [r.i, String(r.i)]), seenRoom, "Room indices"), mark(s.vars.filter(v => !v.empty).map(v => [v.n, String(v.n)]), seenVar, "Variants"));
+    for (const v of s.views) parts.push(mark(v.views.map(w => [v.i + "|" + w[0], `${w[0]}` + (w[1] !== w[0] ? ` (file ${w[1]})` : "")]), seenView, `Views of room index ${v.i}`)); }
+  else parts.push(h("p", {}, `Seen: room indices ${[...seenRoom].join(", ")}; variants ${[...seenVar].join(", ")}; views ${[...seenView].map(x => x.replace("|", ":")).join(", ")}. No scene was read for this room, so what exists is not listed.`));
+  return sec(`Observed (${rows.length})`, "What the traces showed of this room; what exists and was not seen is dim.", ...parts, obsTable(rows));
+}
+
+// ---- routing ----
+function route() {
+  const hash = location.hash.slice(1), dot = hash.indexOf("."), kind = hash.slice(0, dot), name = hash.slice(dot + 1);
+  current = hash; if (kind === "a") { showAsset(name); } else if (kind === "f" || kind === "d") { turn++; showFiles(name); } else if (kind === "n") { turn++; showNames(); } else if (kind === "g") { turn++; showGroups(name); } else if (kind === "t") { showTrace(name); } else { current = "o." + (D.overlays[name] ? name : "gameplay"); showOverlay(D.overlays[name] ? name : "gameplay"); }
+  markNav(); const m = document.querySelector("main"); if (m && m.scrollTo) m.scrollTo(0, 0);
+}
+$("nav-o").addEventListener("click", () => { navMode = "o"; drawNav(); }); $("nav-a").addEventListener("click", () => { navMode = "a"; drawNav(); }); $("nav-f").addEventListener("click", () => { navMode = "f"; drawNav(); }); $("nav-n").addEventListener("click", () => { navMode = "n"; drawNav(); if (current !== "n.") location.hash = "n."; }); saveNames(); $("nav-g").addEventListener("click", () => { navMode = "g"; drawNav(); if (!/^g\./.test(current)) location.hash = "g."; }); saveGroups();
+$("nav-t").addEventListener("click", () => { navMode = "t"; drawNav(); if (!/^t\./.test(current)) location.hash = "t."; });
+$("scale").value = String(S); document.documentElement.style.setProperty("--scale", S);
+$("scale").addEventListener("change", e => { S = +e.target.value || 2; try { localStorage.setItem("asset-map-scale", S); } catch (x) {} document.documentElement.style.setProperty("--scale", S); route(); });
+$("filter").addEventListener("input", drawNav); window.addEventListener("hashchange", route); drawNav(); route();
+</script>

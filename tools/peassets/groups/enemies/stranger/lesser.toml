@@ -1,0 +1,101 @@
+# The assets of the group enemies/stranger/lesser, each named enemies/stranger/lesser/<table name>.
+# Written by tools/peassets/dump_asset_db.py; hand-written fields are kept, matched by sha1.
+
+[bank]
+type = "animation_bank"
+clips = { idle = "enemies/stranger/lesser/idle", hit = "enemies/stranger/down_back" }
+schema = "enemies/stranger/lesser/schema"
+symbol = "_gLesserStrangerAnimationSets"
+
+[body]
+type = "model"
+rig = "enemies/stranger/rig"
+slots = ["page_1", "page_2"]
+symbol = "_gStrangerLesserBody"
+sha1 = "e8723bd04a41b738b987dde0439ac85b6db752fe"
+
+[idle]
+type = "clip"
+rig = "enemies/stranger/rig"
+symbol = "gStrangerLesserIdleClip"
+
+[schema]
+type = "animation_schema"
+slots = ["idle", "hit"]
+
+[package]
+type = "package"
+embedded = [
+    { asset = "rooms/akropolis/cafeteria/boss_stranger_body", offset = 0x01894, size = 0x5568, address = 0x801636B4 },
+    { asset = "enemies/stranger/down_back", offset = 0x06DFC, size = 0x3B4, address = 0x80168C1C },
+    { name = "idle", offset = 0x071B0, size = 0x2E8, address = 0x80168FD0 },
+    { name = "bank", offset = 0x074D4, size = 0x8, address = 0x801692F4 },
+    { name = "collision_patch", offset = 0x074DC, size = 0x34 },
+]
+exports = { tasks = { at = 0x07518, symbol = "gLesserStrangerTaskDesc" } }
+load = { slot = "actor_3" }
+package_name = "lesser_stranger"
+required = true
+requires = ["gameplay", "rooms/akropolis/fire_escape/package"]
+sha1 = "b6b94075f3abcdbfd2f57b4977e4230c27622dd0"
+
+[body_binding]
+type = "binding"
+model = "enemies/stranger/lesser/body"
+
+[body_binding.textures]
+page_1 = "enemies/stranger/lesser/texture_page_1.default"
+page_2 = "enemies/stranger/lesser/texture_page_2.default"
+
+[package_file]
+type = "file"
+
+[[package_file.contents]]
+asset = "enemies/stranger/sounds"
+
+[[package_file.contents]]
+chunk = "image"
+sha1 = "ccf80335ac038783f8cea5057060cc41c92fdcd3"
+pages = [
+    { texture = "texture_page_1", region = "engine/vram/actor_sheet", offset = [0x00000, 0x00000] },
+    { texture = "texture_page_2", region = "engine/vram/actor_sheet", offset = [0x00040, 0x00000] },
+]
+slots = 6
+
+[[package_file.contents]]
+chunk = "palette"
+sha1 = "a8b8567607cf175ca07752caab3cef8ae61d72c6"
+
+[[package_file.contents.palettes]]
+texture = "texture_page_1"
+variant = "default"
+region = "engine/vram/actor_palettes"
+offset = [0x00000, 0x00000]
+
+[[package_file.contents.palettes]]
+texture = "texture_page_2"
+variant = "default"
+region = "engine/vram/actor_palettes"
+offset = [0x00000, 0x00001]
+
+[[package_file.contents]]
+chunk = "package"
+
+[texture_page_1]
+type = "texture"
+bpp = 8
+height = 256
+variants = ["default"]
+width = 128
+
+[texture_page_2]
+type = "texture"
+bpp = 8
+height = 256
+variants = ["default"]
+width = 128
+
+[collision_patch]
+type = "collision"
+pieces = ["vectors 1", "vectors 4", "faces 1"]
+sha1 = "11e73d331ef39cc08675092a0266b4f66941d260"

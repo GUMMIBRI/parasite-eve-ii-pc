@@ -1,0 +1,1652 @@
+#include "rooms/dryfield_motel_balcony.h"
+
+#include <psyq/sys/types.h>
+#include <psyq/libgte.h>
+#include <psyq/libgpu.h>
+#include <psyq/inline_c.h>
+#include <psyq/libgs.h>
+
+#include "common.h"
+#include "gte.h"
+
+#include "actors/actor_00300.h"
+#include "actors/actor_02500.h"
+#include "actors/actor_05600.h"
+#include "actors/actor_05700.h"
+#include "actors/actor_401800.h"
+
+#include "gameplay/display.h"
+#include "gameplay/actor_render.h"
+#include "gameplay/area.h"
+#include "gameplay/captions.h"
+#include "gameplay/actor_presentation.h"
+#include "gameplay/gameflag.h"
+#include "gameplay/sound.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/effect_tasks.h"
+#include "gameplay/effects.h"
+#include "gameplay/hud_sprites.h"
+#include "gameplay/items.h"
+#include "gameplay/light.h"
+#include "gameplay/message.h"
+#include "gameplay/room.h"
+#include "gameplay/room_effects.h"
+#include "gameplay/scene.h"
+#include "gameplay/scene_combat.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+#include "gameplay/world_coords.h"
+
+#include "main/coord.h"
+#include "main/display.h"
+#include "main/display_types.h"
+#include "main/gameflag.h"
+#include "main/gamemain.h"
+#include "main/gfx.h"
+#include "main/gfx_types.h"
+#include "main/mc.h"
+#include "main/mc_types.h"
+#include "main/mem.h"
+#include "main/scratch.h"
+#include "main/session.h"
+#include "main/session_types.h"
+#include "main/sound.h"
+#include "main/task.h"
+#include "main/task_types.h"
+#include "main/tmd_types.h"
+
+#include "mapui/map_dryfield.h"
+
+#include "rooms/room.h"
+
+#include "rooms/room_common.h"
+
+#include "../../shared/room/room_visual_effects.h"
+// The flag symbol is four bytes; the gate writes the first.
+#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+/// Selects the gate's TU-local room-transition task descriptor.
+///
+/// Addressable `TaskDesc` lvalue; see `room_events.h` for the spawn contract.
+/// Bind before that header and keep through `room_event.inc.c`.
+#define ROOM_EVENT_TASK_DESC (_gRoomEventTaskDesc)
+#include "../../shared/room/room_events.h"
+#include "../../shared/room/room_variants.h"
+
+static s32 _roomVariantMotelBalconyDoorsMsg(Task* task, s32 messageId, const RoomEventMsg* request, RoomEventMsg* reply);
+static s32 _motelBalconyCueSoundMsg(Task* task, s32 messageId, s32 cueKey, s32 secondArg);
+
+extern RoomEventActiveBytes gRoomEventActive;
+
+/// Descriptor of the event task the gate spawns.
+
+/// Per-tint channel shifts for the halo task, indexed by the tint the spawn
+/// argument selects.
+
+/// The beam's two anchor offsets, relative to the effect's parent. The second
+/// is also reached by its own name.
+
+/// The request the event gate latched for the event task.
+extern RoomEventReq gRoomEventReq;
+
+/// Set by the event gate when its last call latched a request and spawned the
+/// event task; every call clears it first.
+
+static WorldCollisionGrid         _gDryfieldMotelBalconyCollisionGrid;
+static WorldCollisionOccluder     _gDryfieldMotelBalconySightOccluders[2];
+static WorldCollisionTrigger      _gDryfieldMotelBalconyViewBoundaries[8];
+static WorldCollisionTrigger      _gDryfieldMotelBalconyWarpTriggers[4];
+static WorldCoordRoomAmbientEntry _gDryfieldMotelBalconyViewAmbientLevels[23];
+static WorldCoordRoomLights       _gDryfieldMotelBalconyRoomLights[1];
+
+static s32 _dryfieldMotelBalconyUseKeyItemMsg(Task* task, s32 messageId, s32 itemId, s32 secondArg);
+static s32 _dryfieldMotelBalconyCommandMsg(Task* task, s32 messageId, s32 commandId, s32 secondArg);
+static s32 _dryfieldMotelBalconyRoomActionMsg(Task* task, s32 messageId, s32 firstArg, s32 secondArg);
+
+/// Bodyless transition task spawned by this room's event gate at priority 32.
+///
+/// Uses the latched request and destination to play CAP and optional sounds,
+/// then reload the session. Spawn payloads and metadata are unused. The gate
+/// reads the recipe synchronously; room snapshots and callback code must remain
+/// live through the deferred transition.
+static TaskDesc _gRoomEventTaskDesc = { { { TASK_BODY_NONE, TASK_PRIORITY_SCENE } }, roomEventTask, { .value = 0 } };
+
+/// Five room-message handlers followed by the unsupported-message terminator.
+///
+/// Resolves departures and door events, returns zero for key-item/command/action
+/// messages, and handles CAP sound cues. The room task borrows the callbacks
+/// through teardown; payload types follow each handler's synchronous message ABI.
+static TaskMessageEntry _gDryfieldMotelBalconyRoomMessages[6] = {
+    { ROOM_EVENT_MESSAGE_RESOLVE, _roomVariantMotelBalconyDoorsMsg },
+    { ROOM_MESSAGE_USE_KEY_ITEM, _dryfieldMotelBalconyUseKeyItemMsg },
+    { DIRECTION_MESSAGE_ROOM_ACTION, _dryfieldMotelBalconyRoomActionMsg },
+    { ROOM_MESSAGE_COMMAND, _dryfieldMotelBalconyCommandMsg },
+    { ROOM_MESSAGE_SOUND, _motelBalconyCueSoundMsg },
+    { TASK_MESSAGE_TABLE_END, NULL },
+};
+
+/// Initializes this overlay's three halo tint rows and retained trailing halfword.
+///
+/// Rows 0..2 give RGB right shifts of brightness (0 full, 1 half, 2 quarter).
+/// Requires `ROOM_VISUAL_EFFECTS_HALO_STORAGE_TYPE` = `RoomFxHaloStorage` and an empty
+/// `ROOM_VISUAL_EFFECTS_HALO_STORAGE_BOUND`. The trailing u16 is preserved
+/// verbatim; its role is unproven and it is not a fourth tint row.
+/// Bind around `room_visual_effects_halo_data.inc.c`, then undefine.
+/// Expands to a constant braced initializer, with no arguments or side effects.
+#define ROOM_VISUAL_EFFECTS_HALO_STORAGE_INITIALIZER { \
+    .entries = {                                       \
+        { .rShift = 0, .gShift = 1, .bShift = 2 },     \
+        { .rShift = 2, .gShift = 1, .bShift = 0 },     \
+        { .rShift = 0, .gShift = 2, .bShift = 1 },     \
+    },                                                 \
+    .alignmentFill = 0xF3BC,                           \
+}
+/// Selects the halo tint storage record, including its retained trailing halfword.
+///
+/// Expands to the `RoomFxHaloStorage` type token; requires an empty
+/// `ROOM_VISUAL_EFFECTS_HALO_STORAGE_BOUND` and a
+/// `ROOM_VISUAL_EFFECTS_HALO_STORAGE_INITIALIZER` for `entries` and `alignmentFill`.
+/// Only the three RGB-shift rows are read, at indices 0..2; the halfword's
+/// role is unproven. Include `room_visual_effects.h` first, bind around
+/// `room_visual_effects_halo_data.inc.c`, then undefine.
+#define ROOM_VISUAL_EFFECTS_HALO_STORAGE_TYPE RoomFxHaloStorage
+/// Declares one halo storage record, retaining the halfword after its tint rows.
+///
+/// This empty suffix requires `ROOM_VISUAL_EFFECTS_HALO_STORAGE_TYPE` to be
+/// `RoomFxHaloStorage`. Bind around `room_visual_effects_halo_data.inc.c`.
+#define ROOM_VISUAL_EFFECTS_HALO_STORAGE_BOUND
+#include "../../shared/room/room_visual_effects_halo_data.inc.c"
+
+/// Returns this overlay's three read-only halo tint rows for spawn indices 0..2.
+static inline const RoomFxShade* _roomVisualEffectsGetHaloShades(void)
+{
+    return _gRoomVisualEffectsHaloShades.entries;
+}
+#undef ROOM_VISUAL_EFFECTS_HALO_STORAGE_INITIALIZER
+#undef ROOM_VISUAL_EFFECTS_HALO_STORAGE_TYPE
+#undef ROOM_VISUAL_EFFECTS_HALO_STORAGE_BOUND
+
+#include "../../shared/room/room_visual_effects_trail_data.inc.c"
+
+WorldCollisionRoomResources gDryfieldMotelBalconyRoomCollisionResources[1] = {
+    {
+        .grid                 = &_gDryfieldMotelBalconyCollisionGrid,
+        .viewBoundaryTriggers = _gDryfieldMotelBalconyViewBoundaries,
+        .actionTriggers       = _gDryfieldMotelBalconyWarpTriggers,
+        .occluders            = _gDryfieldMotelBalconySightOccluders,
+    },
+};
+
+u8* gDryfieldMotelBalconyViewMaps[1] = {
+    gViewIdentityMap,
+};
+
+ViewCount gDryfieldMotelBalconyRoomViewCounts[1] = { ARRAY_SIZE(gDryfieldMotelBalconyViewCameras) };
+
+WorldCoordRoomLighting gDryfieldMotelBalconyRoomLighting[1] = {
+    { _gDryfieldMotelBalconyRoomLights, _gDryfieldMotelBalconyViewAmbientLevels },
+};
+
+/// One-based endpoint IDs also packed into the warp triggers' departure nibble.
+enum {
+    DRYFIELD_MOTEL_BALCONY_WARP_PARKING_LOT = 1,
+    DRYFIELD_MOTEL_BALCONY_WARP_ROOM_5      = 2,
+    DRYFIELD_MOTEL_BALCONY_WARP_ROOM_6      = 3,
+    DRYFIELD_MOTEL_BALCONY_WARP_LOFT        = 4,
+};
+
+/// Arrival marker nibbles for the three doors, independent of their unlock flags.
+enum {
+    DRYFIELD_MOTEL_BALCONY_ROOM_5_MAP_FLAG = 464,
+    DRYFIELD_MOTEL_BALCONY_ROOM_6_MAP_FLAG = 465,
+    DRYFIELD_MOTEL_BALCONY_LOFT_MAP_FLAG   = 466,
+};
+
+/// Balcony-bank sound requests stored in the endpoint records.
+enum {
+    DRYFIELD_MOTEL_BALCONY_ARRIVE_FROM_PARKING_SOUND = SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_MOTEL_BALCONY, 6),
+    DRYFIELD_MOTEL_BALCONY_DEPART_TO_PARKING_SOUND   = SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_MOTEL_BALCONY, 5),
+    DRYFIELD_MOTEL_BALCONY_ARRIVE_FROM_DOOR_SOUND    = SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_MOTEL_BALCONY, 2),
+    DRYFIELD_MOTEL_BALCONY_BLOCKED_WARP_SOUND        = SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_MOTEL_BALCONY, 9),
+};
+
+DirectionWarpEntry gDryfieldMotelBalconyWarpEntries[4] = {
+    { { { .word = 0 }, -0x315E, -3198, 1396 }, { 0, 0, 0, 0 }, { { .word = 0 }, -0x315E, -3198, 1396 }, { 0, 0, 0, 0 }, DRYFIELD_MOTEL_BALCONY_ARRIVE_FROM_PARKING_SOUND, DRYFIELD_MOTEL_BALCONY_DEPART_TO_PARKING_SOUND, DRYFIELD_MOTEL_BALCONY_BLOCKED_WARP_SOUND, 2, DIRECTION_WARP_FLAG_NONE, DIRECTION_WARP_MAP_FLAG_NONE },
+    { { { .word = 1024 }, -6572, -3200, -2869 }, { 0, 0, 0, 0 }, { { .word = 1024 }, -6572, -3200, -2869 }, { 0, 0, 0, 0 }, DRYFIELD_MOTEL_BALCONY_ARRIVE_FROM_DOOR_SOUND, SOUND_MOTEL_BALCONY_DOOR_OPEN, DRYFIELD_MOTEL_BALCONY_BLOCKED_WARP_SOUND, 6, DIRECTION_WARP_FLAG_NONE, DRYFIELD_MOTEL_BALCONY_ROOM_5_MAP_FLAG },
+    { { { .word = 1024 }, -6669, -3200, 4477 }, { 0, 0, 0, 0 }, { { .word = 1024 }, -6669, -3200, 4477 }, { 0, 0, 0, 0 }, DRYFIELD_MOTEL_BALCONY_ARRIVE_FROM_DOOR_SOUND, SOUND_MOTEL_BALCONY_DOOR_OPEN, DRYFIELD_MOTEL_BALCONY_BLOCKED_WARP_SOUND, 5, DIRECTION_WARP_FLAG_NONE, DRYFIELD_MOTEL_BALCONY_ROOM_6_MAP_FLAG },
+    { { { .word = 2048 }, -1990, -3200, 0x29A8 }, { 0, 0, 0, 0 }, { { .word = 2048 }, -1990, -3200, 0x29A8 }, { 0, 0, 0, 0 }, DRYFIELD_MOTEL_BALCONY_ARRIVE_FROM_DOOR_SOUND, SOUND_MOTEL_BALCONY_DOOR_OPEN, DRYFIELD_MOTEL_BALCONY_BLOCKED_WARP_SOUND, 4, DIRECTION_WARP_FLAG_NONE, DRYFIELD_MOTEL_BALCONY_LOFT_MAP_FLAG },
+};
+
+/// Seven room-space collision normals, with 4096 for unit length.
+static SVECTOR _gDryfieldMotelBalconyCollisionGridNormals[7] = {
+#include "assets/dryfield_motel_balcony_collision_0559C_normals.inc"
+};
+
+/// Sixty-nine room-space mesh vertices in signed game-coordinate units.
+static SVECTOR _gDryfieldMotelBalconyCollisionGridVerts[69] = {
+#include "assets/dryfield_motel_balcony_collision_0559C_verts.inc"
+};
+
+/// Thirty-two indexed collision faces, carrying room-local surface classes 0..4.
+static WorldCollisionGridFace _gDryfieldMotelBalconyCollisionGridFaces[32] = {
+#include "assets/dryfield_motel_balcony_collision_0559C_faces.inc"
+};
+
+/// Packed signed face-index lists for the 64 grid cells, each terminated by -1.
+static s16 _gDryfieldMotelBalconyCollisionGridCells[342] = {
+#include "assets/dryfield_motel_balcony_collision_0559C_cells.inc"
+};
+
+/// Selects a collision cell's face-index list for the generated directory.
+///
+/// Captures `_gDryfieldMotelBalconyCollisionGridCells` (342 s16 elements).
+/// `halfwordOffset` must be a constant s16-element offset to a list start
+/// within that pool; the list must also end there at
+/// `WORLD_COLLISION_GRID_CELL_END`. Evaluates the offset once and returns a
+/// borrowed `s16*` without reading or changing the list.
+/// The pool must stay loaded while the directory is used.
+/// This grid's `cell_face_list_macro` manifest setting selects the binding;
+/// it is defined only around the table include.
+#define DRYFIELD_MOTEL_BALCONY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldMotelBalconyCollisionGridCells[(halfwordOffset)])
+
+/// X-major pointers into the cell-list pool for the mesh's 8 by 8 cells.
+static s16* _gDryfieldMotelBalconyCollisionGridTable[64] = {
+#include "assets/dryfield_motel_balcony_collision_0559C_table.inc"
+};
+#undef DRYFIELD_MOTEL_BALCONY_CELL_FACE_LIST_AT_OFFSET
+
+/// The balcony's collision mesh and its 8 by 8 XZ cell index.
+///
+/// Cells are 4000 game units wide, with origin (-12990, -13340) on XZ.
+/// Room setup binds the writable descriptor to the current view coordinate;
+/// the mesh pools and cell lists remain borrowed while this room is loaded.
+static WorldCollisionGrid _gDryfieldMotelBalconyCollisionGrid = {
+    .viewCoord   = NULL,
+    .normals     = _gDryfieldMotelBalconyCollisionGridNormals,
+    .vertices    = _gDryfieldMotelBalconyCollisionGridVerts,
+    .faces       = _gDryfieldMotelBalconyCollisionGridFaces,
+    .cellFaceIds = _gDryfieldMotelBalconyCollisionGridTable,
+    .xBias       = 0x32BE,
+    .zBias       = 0x341C,
+    .cellCountX  = 8,
+    .cellCountZ  = 8,
+    .cellSize    = 4000,
+    .faceCount   = ARRAY_SIZE(_gDryfieldMotelBalconyCollisionGridFaces),
+};
+
+ViewCamera gDryfieldMotelBalconyViewCameras[22] = {
+    { { { { ONE, 0, 0 }, { 0, 0, -ONE }, { 0, ONE, 0 } }, { 4112, 0x88B8, -2748 } }, 380 },
+    { { { { -559, 0, -4057 }, { -963, 3978, 132 }, { 3941, 972, -543 } }, { 0x4437, 4754, -1733 } }, 230 },
+    { { { { 1192, 0, 3918 }, { 526, 4058, -160 }, { -3883, 550, 1181 } }, { 3977, 4660, -1257 } }, 230 },
+    { { { { 3968, 0, -1013 }, { -310, 3898, -1217 }, { 964, 1256, 3777 } }, { 5913, 5512, -3603 } }, 230 },
+    { { { { 3980, 0, -964 }, { 9, 4095, 40 }, { 964, -42, 3980 } }, { 6137, 4498, 2582 } }, 230 },
+    { { { { 3960, 0, -1044 }, { 83, 4082, 317 }, { 1040, -328, 3947 } }, { 6205, 4066, 7032 } }, 230 },
+    { { { { 257, 0, -4087 }, { -569, 4056, -35 }, { 4048, 570, 255 } }, { 0x3EDF, 4634, -1649 } }, 230 },
+    { { { { 543, 0, -4059 }, { 386, 4077, 51 }, { 4041, -389, 540 } }, { 0x2C23, 4037, -1767 } }, 230 },
+    { { { { -1629, 0, 3757 }, { 362, 4076, 157 }, { -3740, 395, -1622 } }, { -2180, 4664, -0x298C } }, 230 },
+    { { { { 3791, 0, -1548 }, { 139, 4079, 341 }, { 1542, -369, 3776 } }, { 6606, 4183, 7528 } }, 230 },
+    { { { { 3674, 0, -1810 }, { -1285, 2883, -2609 }, { 1274, 2908, 2586 } }, { 5542, 9403, -3532 } }, 230 },
+    { { { { 3475, 0, -2168 }, { -803, 3804, -1288 }, { 2013, 1518, 3227 } }, { 4659, 7233, 2080 } }, 230 },
+    { { { { 2289, 0, -3396 }, { -1745, 3513, -1176 }, { 2913, 2104, 1963 } }, { 6624, 8520, 6055 } }, 230 },
+    { { { { -3895, 0, -1265 }, { 436, 3844, -1344 }, { 1187, -1413, -3656 } }, { 6016, 3919, -0x2A09 } }, 230 },
+    { { { { 3347, 0, -2360 }, { 1258, 3465, 1784 }, { 1997, -2183, 2831 } }, { 6606, 3324, 1736 } }, 230 },
+    { { { { 3538, 0, -2062 }, { 822, 3756, 1411 }, { 1891, -1633, 3244 } }, { 6146, 3144, 8006 } }, 230 },
+    { { { { -4087, 0, 270 }, { -89, 3867, -1344 }, { -255, -1347, -3859 } }, { 5661, 3313, -134 } }, 289 },
+    { { { { -3824, 0, 1466 }, { -419, 3924, -1094 }, { -1405, -1172, -3664 } }, { 1367, 798, 24 } }, 230 },
+    { { { { 3637, 0, -1883 }, { 328, 4033, 634 }, { 1854, -714, 3581 } }, { 6173, 491, 4712 } }, 230 },
+    { { { { 3836, 0, -1434 }, { -416, 3919, -1114 }, { 1372, 1189, 3671 } }, { 6259, 5350, 2341 } }, 230 },
+    { { { { 3850, 0, -1396 }, { -587, 3715, -1621 }, { 1266, 1725, 3492 } }, { 6333, 5485, 6887 } }, 230 },
+    { { { { -3931, 0, -1147 }, { 191, 4038, -654 }, { 1131, -682, -3876 } }, { 6478, 3912, -2373 } }, 230 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 1.
+///
+/// The zero-count first record enables background image strips; no sources are read.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView1Batches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Unit RGB modulation for colour-modulated sprite emission (Q7, 128 is 1.0).
+enum { DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION = 128 };
+
+/// Mutable source rectangles for dryfield motel balcony view 2.
+///
+/// Batch ranges count these 155 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView2Sources[155] = {
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -120, 2261, { .fields = { 0, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -120, 2394, { .fields = { 0, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 88, -112, 1332, { .fields = { 0, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -112, 1338, { .fields = { 0, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -112, 1344, { .fields = { 0, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, -112, 1351, { .fields = { 0, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, -112, 1357, { .fields = { 0, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -112, 1364, { .fields = { 0, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, -112, 1370, { .fields = { 0, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, -112, 1377, { .fields = { 0, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, -112, 1383, { .fields = { 0, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 88, -104, 1353, { .fields = { 120, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -104, 1360, { .fields = { 0, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -104, 1366, { .fields = { 0, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, -104, 1373, { .fields = { 0, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, -104, 1379, { .fields = { 0, 192 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -104, 1386, { .fields = { 0, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, -104, 1393, { .fields = { 0, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, -104, 1398, { .fields = { 8, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, -104, 1405, { .fields = { 8, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 88, -96, 1364, { .fields = { 8, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -96, 1371, { .fields = { 8, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -96, 1377, { .fields = { 8, 192 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, -96, 1384, { .fields = { 8, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, -96, 1391, { .fields = { 8, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -96, 1397, { .fields = { 8, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, -96, 1404, { .fields = { 8, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, -96, 1411, { .fields = { 0, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, -96, 1418, { .fields = { 0, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 88, -88, 1376, { .fields = { 0, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -88, 1382, { .fields = { 0, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -88, 1389, { .fields = { 0, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, -88, 1396, { .fields = { 8, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, -88, 1402, { .fields = { 8, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -88, 1409, { .fields = { 0, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, -88, 1416, { .fields = { 8, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 144, -88, 1423, { .fields = { 112, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 152, -88, 1430, { .fields = { 112, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 88, -80, 1387, { .fields = { 112, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 96, -80, 1394, { .fields = { 112, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 104, -80, 1400, { .fields = { 112, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 112, -80, 1407, { .fields = { 120, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 120, -80, 1410, { .fields = { 120, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 128, -80, 1416, { .fields = { 120, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 136, -80, 1428, { .fields = { 120, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 144, -80, 1435, { .fields = { 112, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 152, -80, 1443, { .fields = { 112, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 88, -72, 1399, { .fields = { 112, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 96, -72, 1405, { .fields = { 112, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 104, -72, 1412, { .fields = { 112, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 112, -72, 1419, { .fields = { 112, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 120, -72, 1432, { .fields = { 112, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 128, -72, 1443, { .fields = { 112, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 136, -72, 1450, { .fields = { 112, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 144, -72, 1456, { .fields = { 120, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 152, -72, 1455, { .fields = { 120, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 88, -64, 1410, { .fields = { 120, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 96, -64, 1417, { .fields = { 120, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 104, -64, 1424, { .fields = { 120, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 112, -64, 1431, { .fields = { 120, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 120, -64, 1446, { .fields = { 120, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 128, -64, 1456, { .fields = { 120, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 136, -64, 1463, { .fields = { 120, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 144, -64, 1468, { .fields = { 120, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 152, -64, 1468, { .fields = { 120, 192 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 88, -56, 1422, { .fields = { 120, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 96, -56, 1429, { .fields = { 120, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 104, -56, 1437, { .fields = { 120, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 112, -56, 1444, { .fields = { 120, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 120, -56, 1461, { .fields = { 120, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 128, -56, 1468, { .fields = { 120, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, 136, -56, 1476, { .fields = { 120, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, -56, 1478, { .fields = { 8, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, -56, 1481, { .fields = { 64, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 88, -48, 1435, { .fields = { 72, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -48, 1442, { .fields = { 64, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -48, 1449, { .fields = { 64, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, -48, 1456, { .fields = { 72, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, -48, 1483, { .fields = { 80, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -48, 1491, { .fields = { 72, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, -48, 1499, { .fields = { 72, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, -48, 1487, { .fields = { 64, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, -48, 1494, { .fields = { 48, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 88, -40, 1447, { .fields = { 48, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -40, 1454, { .fields = { 48, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -40, 1462, { .fields = { 48, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, -40, 1469, { .fields = { 56, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, -40, 1496, { .fields = { 56, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -40, 1504, { .fields = { 56, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, -40, 1512, { .fields = { 56, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, -40, 1495, { .fields = { 80, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, -40, 1508, { .fields = { 104, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 88, -32, 1460, { .fields = { 104, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -32, 1467, { .fields = { 96, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -32, 1475, { .fields = { 104, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, -32, 1482, { .fields = { 112, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, -32, 1451, { .fields = { 120, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -32, 1427, { .fields = { 104, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, -32, 1456, { .fields = { 112, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, -32, 1513, { .fields = { 96, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, -32, 1521, { .fields = { 88, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 88, -24, 1472, { .fields = { 88, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -24, 1480, { .fields = { 80, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -24, 1488, { .fields = { 80, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, -24, 1495, { .fields = { 96, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, -24, 1502, { .fields = { 96, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -24, 1418, { .fields = { 88, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, -24, 1511, { .fields = { 88, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, -24, 1519, { .fields = { 16, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, -24, 1535, { .fields = { 16, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 88, -16, 1486, { .fields = { 8, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -16, 1493, { .fields = { 16, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -16, 1501, { .fields = { 16, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, -16, 1509, { .fields = { 16, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, -16, 1516, { .fields = { 16, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -16, 1524, { .fields = { 16, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, -16, 1533, { .fields = { 8, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, -16, 1541, { .fields = { 8, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, -16, 1550, { .fields = { 8, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, -8, 1507, { .fields = { 8, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, -8, 1515, { .fields = { 8, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, -8, 1522, { .fields = { 8, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, -8, 1527, { .fields = { 8, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, -8, 1532, { .fields = { 8, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, -8, 1537, { .fields = { 8, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, -8, 1543, { .fields = { 16, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, -8, 1552, { .fields = { 32, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, 0, 1513, { .fields = { 40, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, 0, 1518, { .fields = { 32, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, 0, 1524, { .fields = { 32, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, 0, 1533, { .fields = { 40, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, 0, 1541, { .fields = { 40, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, 0, 1549, { .fields = { 40, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, 0, 1558, { .fields = { 40, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, 0, 1566, { .fields = { 32, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, 8, 1533, { .fields = { 16, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 104, 8, 1532, { .fields = { 16, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 112, 8, 1547, { .fields = { 16, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 120, 8, 1555, { .fields = { 16, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 128, 8, 1555, { .fields = { 32, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 136, 8, 1571, { .fields = { 32, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 144, 8, 1578, { .fields = { 16, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 152, 8, 1579, { .fields = { 24, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 80 } }, -64, -88, 2408, { .fields = { 24, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 88 } }, -72, -96, 2077, { .fields = { 24, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 96 } }, -80, -104, 1750, { .fields = { 32, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 104 } }, -88, -112, 1500, { .fields = { 40, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 72, 112 } }, -160, -120, 1250, { .fields = { 56, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -24, -88, 2400, { .fields = { 112, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -24, -40, 2400, { .fields = { 120, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 112 } }, -16, -120, 2087, { .fields = { 120, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 112 } }, -8, -120, 1510, { .fields = { 48, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 112 } }, 0, -120, 1400, { .fields = { 32, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 72 } }, -104, -32, 1000, { .fields = { 48, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 80 } }, 0, -32, 1000, { .fields = { 16, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 2.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView2Batches[4] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 153, 0, 0, { 1, 0 } },
+    { 153, 2, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 3.
+///
+/// The zero-count first record enables background image strips; no sources are read.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView3Batches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 4.
+///
+/// Batch ranges count these 12 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView4Sources[12] = {
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -32, 0, 1479, { .fields = { 120, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, -24, 0, 1295, { .fields = { 112, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, -8, 0, 1481, { .fields = { 112, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 32 } }, 8, -8, 1508, { .fields = { 104, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 32, -8, 1537, { .fields = { 112, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 48, -8, 1567, { .fields = { 112, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 64, -8, 1600, { .fields = { 112, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 80, -8, 1633, { .fields = { 112, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 96, -8, 1669, { .fields = { 112, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 112, -16, 1682, { .fields = { 104, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 128, -16, 1719, { .fields = { 112, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 144, -8, 1755, { .fields = { 104, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 4.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView4Batches[3] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 12, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 5.
+///
+/// Batch ranges count these 30 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView5Sources[30] = {
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 96, 112, 478, { .fields = { 104, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -40, 16, 2861, { .fields = { 80, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -32, 16, 2146, { .fields = { 56, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -24, 24, 1679, { .fields = { 56, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -16, 32, 1381, { .fields = { 56, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -8, 32, 1203, { .fields = { 64, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 0, 40, 1034, { .fields = { 64, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 8, 48, 909, { .fields = { 64, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, 16, 48, 857, { .fields = { 72, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 48 } }, 24, 56, 746, { .fields = { 88, 192 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 48 } }, 32, 64, 686, { .fields = { 72, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 48 } }, 40, 72, 635, { .fields = { 72, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 48 } }, 48, 72, 618, { .fields = { 80, 192 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, 56, 80, 591, { .fields = { 72, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 64, 88, 558, { .fields = { 64, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 72, 96, 528, { .fields = { 56, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 80, 96, 511, { .fields = { 56, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 88, 104, 494, { .fields = { 88, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 88 } }, -160, -120, 675, { .fields = { 96, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 88 } }, -128, -120, 750, { .fields = { 112, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 80 } }, -160, -32, 675, { .fields = { 96, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 80 } }, -128, -32, 750, { .fields = { 96, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 72 } }, -160, 48, 675, { .fields = { 64, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 72 } }, -128, 48, 750, { .fields = { 80, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 48 } }, -160, -120, 495, { .fields = { 80, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 40 } }, -144, -112, 451, { .fields = { 56, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, -128, -96, 526, { .fields = { 48, 24 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, -40, 16, 2862, { .fields = { 56, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 16 } }, -24, 16, 2861, { .fields = { 24, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 16 } }, 16, 16, 2861, { .fields = { 16, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 5.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView5Batches[6] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 18, 0, 0, { 3, 0 } },
+    { 18, 6, 0, 0, { 0, 0 } },
+    { 24, 3, 0, 0, { 2, 0 } },
+    { 27, 3, 0, 0, { 1, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 6.
+///
+/// Batch ranges count these 30 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView6Sources[30] = {
+    { 143, 0x3FC0, { .fields = { 56, 40 } }, -160, 80, 351, { .fields = { 72, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 48 } }, -104, 72, 369, { .fields = { 120, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 48 } }, -40, 72, 394, { .fields = { 0, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 56 } }, 24, 64, 427, { .fields = { 112, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, 104, 80, 451, { .fields = { 120, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -48, 24, 3466, { .fields = { 72, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -40, 24, 2408, { .fields = { 40, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -32, 24, 1884, { .fields = { 40, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -24, 24, 1517, { .fields = { 48, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -16, 32, 1267, { .fields = { 80, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, -8, 32, 1089, { .fields = { 112, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, 0, 40, 957, { .fields = { 104, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, 8, 40, 847, { .fields = { 96, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, 16, 40, 821, { .fields = { 88, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 24, 48, 752, { .fields = { 72, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 32, 48, 683, { .fields = { 40, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 40, 48, 637, { .fields = { 48, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 48, 56, 592, { .fields = { 40, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 56, 56, 574, { .fields = { 56, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 64, 56, 519, { .fields = { 48, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, -48, 24, 3724, { .fields = { 8, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, -16, 24, 3720, { .fields = { 16, 64 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, 8, 24, 3720, { .fields = { 16, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 176 } }, -160, -120, 951, { .fields = { 88, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 176 } }, -120, -120, 1344, { .fields = { 80, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 168 } }, -112, -112, 1416, { .fields = { 72, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 152 } }, -104, -96, 1714, { .fields = { 64, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 128 } }, -96, -72, 1739, { .fields = { 56, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 96 } }, -88, -48, 1794, { .fields = { 64, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -80, -32, 1632, { .fields = { 48, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 6.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView6Batches[7] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 5, 0, 0, { 0, 0 } },
+    { 5, 15, 0, 0, { 3, 0 } },
+    { 20, 0, 0, 0, { 2, 0 } },
+    { 20, 3, 0, 0, { 4, 0 } },
+    { 23, 7, 0, 0, { 1, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 7.
+///
+/// Batch ranges count these 19 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView7Sources[19] = {
+    { 141, 0x3FC0, { .fields = { 16, 80 } }, -88, 0, 750, { .fields = { 104, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 40, 72 } }, -72, 0, 750, { .fields = { 64, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 80 } }, -32, 0, 750, { .fields = { 8, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 40, 72 } }, -24, 0, 750, { .fields = { 64, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 72 } }, 24, 0, 750, { .fields = { 72, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 8, 88 } }, 16, 0, 750, { .fields = { 120, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 208 } }, -160, -112, 1750, { .fields = { 40, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 200 } }, -56, -104, 1750, { .fields = { 16, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 112, 216 } }, 48, -120, 1750, { .fields = { 16, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 56 } }, 24, -112, 1750, { .fields = { 16, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 24, 136 } }, 24, -40, 1750, { .fields = { 104, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, 32, -56, 1750, { .fields = { 112, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 176 } }, -32, -80, 2075, { .fields = { 0, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 32, 48 } }, -24, -16, 2750, { .fields = { 80, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 32, 48 } }, 8, -16, 2750, { .fields = { 112, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 24 } }, -24, 32, 2500, { .fields = { 64, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 24 } }, 8, 32, 2500, { .fields = { 32, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 32, 24 } }, -24, 56, 2250, { .fields = { 48, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 24 } }, 8, 56, 2250, { .fields = { 96, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 7.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView7Batches[5] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 6, 0, 0, { 1, 0 } },
+    { 6, 7, 0, 0, { 2, 0 } },
+    { 13, 6, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 8.
+///
+/// Batch ranges count these 24 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView8Sources[24] = {
+    { 142, 0x3FC0, { .fields = { 112, 240 } }, -160, -120, 1000, { .fields = { 56, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 40 } }, -48, -104, 1000, { .fields = { 24, 40 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -32, -80, 1000, { .fields = { 80, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 56 } }, -48, 24, 1000, { .fields = { 40, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 40 } }, -48, 80, 1000, { .fields = { 24, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 40 } }, 64, -96, 1000, { .fields = { 16, 40 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 240 } }, 72, -120, 1000, { .fields = { 40, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 40 } }, -48, -64, 1000, { .fields = { 8, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 48 } }, -48, -24, 1000, { .fields = { 40, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 40, 48 } }, -40, 32, 1500, { .fields = { 16, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 40, 48 } }, 0, 32, 1500, { .fields = { 16, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 40, 48 } }, 40, 32, 1500, { .fields = { 16, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 16 } }, -40, 80, 1250, { .fields = { 88, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 16 } }, 0, 80, 1250, { .fields = { 0, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 16 } }, 40, 80, 1250, { .fields = { 40, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 24 } }, -40, 96, 1250, { .fields = { 0, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 24 } }, 0, 96, 1250, { .fields = { 0, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 24 } }, 40, 96, 1250, { .fields = { 8, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 24 } }, 16, 96, 1250, { .fields = { 8, 40 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 24 } }, 24, 96, 1250, { .fields = { 24, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 24 } }, -24, 96, 1250, { .fields = { 8, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 24 } }, -16, 96, 1250, { .fields = { 0, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 24 } }, 56, 96, 1250, { .fields = { 8, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 24 } }, 64, 96, 1250, { .fields = { 0, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 8.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView8Batches[4] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 9, 0, 0, { 1, 0 } },
+    { 9, 15, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 9.
+///
+/// Batch ranges count these 62 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView9Sources[62] = {
+    { 143, 0x3FC0, { .fields = { 48, 8 } }, -160, 72, 300, { .fields = { 0, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, -112, 72, 300, { .fields = { 8, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, -72, 64, 300, { .fields = { 40, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -56, 64, 300, { .fields = { 112, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, -40, 56, 300, { .fields = { 32, 16 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, -24, 48, 300, { .fields = { 48, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, -8, 40, 300, { .fields = { 40, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, 8, 32, 300, { .fields = { 32, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, 24, 24, 300, { .fields = { 40, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 40, 16, 300, { .fields = { 48, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 48, 8, 300, { .fields = { 48, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, 56, 0, 300, { .fields = { 40, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 72, -16, 300, { .fields = { 56, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 88, -24, 300, { .fields = { 48, 16 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 96, -32, 300, { .fields = { 64, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 104, -48, 300, { .fields = { 88, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 112, -56, 300, { .fields = { 64, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 120, -64, 300, { .fields = { 56, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 128, -80, 300, { .fields = { 56, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 136, -88, 300, { .fields = { 64, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 144, -104, 300, { .fields = { 80, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 152, -112, 300, { .fields = { 64, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 48 } }, -160, 72, 389, { .fields = { 112, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 40 } }, -144, 80, 426, { .fields = { 112, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 40 } }, -128, 80, 471, { .fields = { 80, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 32 } }, -112, 88, 507, { .fields = { 64, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 56 } }, -64, 64, 682, { .fields = { 88, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 56 } }, -24, 64, 682, { .fields = { 96, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 48 } }, 8, 72, 646, { .fields = { 88, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 40 } }, 48, 80, 613, { .fields = { 56, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 32 } }, 96, 88, 474, { .fields = { 32, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 144, 96, 371, { .fields = { 48, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, -64, 64, 797, { .fields = { 96, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -48, 56, 914, { .fields = { 48, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -40, 56, 1022, { .fields = { 48, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -32, 48, 1243, { .fields = { 56, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -24, 40, 1385, { .fields = { 72, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -16, 40, 1385, { .fields = { 80, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, -8, 32, 1520, { .fields = { 80, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, 0, 32, 1513, { .fields = { 88, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 40, 8, 1750, { .fields = { 72, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 48, 8, 1875, { .fields = { 56, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, 8, 24, 1519, { .fields = { 96, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, 16, 16, 1536, { .fields = { 104, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 24, 16, 1575, { .fields = { 64, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, 32, 8, 1625, { .fields = { 104, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 48, 8, 1875, { .fields = { 104, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 48, 80, 875, { .fields = { 80, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 8 } }, 40, 16, 1750, { .fields = { 88, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 8 } }, 8, 40, 1502, { .fields = { 8, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 56, 8 } }, 0, 48, 1493, { .fields = { 0, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, -8, 56, 1243, { .fields = { 24, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, 24, 56, 1243, { .fields = { 56, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, -16, 64, 1031, { .fields = { 8, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, 24, 64, 1034, { .fields = { 16, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 8 } }, -32, 72, 881, { .fields = { 0, 64 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, 16, 72, 881, { .fields = { 8, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, 24, 32, 1518, { .fields = { 16, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, 32, 24, 1625, { .fields = { 24, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 32 } }, -88, 80, 616, { .fields = { 72, 40 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 32 } }, -72, 88, 584, { .fields = { 72, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -56, 104, 532, { .fields = { 48, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 9.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView9Batches[8] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 22, 0, 0, { 3, 0 } },
+    { 22, 4, 0, 0, { 0, 0 } },
+    { 26, 6, 0, 0, { 5, 0 } },
+    { 32, 14, 0, 0, { 1, 0 } },
+    { 46, 13, 0, 0, { 4, 0 } },
+    { 59, 3, 0, 0, { 2, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 10.
+///
+/// Batch ranges count these 34 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView10Sources[34] = {
+    { 143, 0x3FC0, { .fields = { 48, 40 } }, -160, 80, 446, { .fields = { 72, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 40 } }, -112, 80, 469, { .fields = { 72, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 48 } }, -72, 72, 502, { .fields = { 80, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 48 } }, -24, 72, 540, { .fields = { 88, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 56 } }, 16, 64, 585, { .fields = { 80, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 48 } }, 64, 72, 620, { .fields = { 112, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, -80, 32, 4027, { .fields = { 80, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -72, 24, 3360, { .fields = { 120, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -64, 24, 2581, { .fields = { 64, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -56, 32, 2045, { .fields = { 64, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -48, 32, 1763, { .fields = { 72, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -40, 32, 1522, { .fields = { 64, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -32, 40, 1299, { .fields = { 72, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 32, 56, 775, { .fields = { 64, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 40, 64, 624, { .fields = { 104, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 48, 64, 633, { .fields = { 112, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 56, 64, 639, { .fields = { 96, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 40 } }, -16, 40, 1189, { .fields = { 120, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -24, 40, 1197, { .fields = { 80, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, -8, 48, 985, { .fields = { 72, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 0, 48, 906, { .fields = { 72, 64 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 8, 48, 838, { .fields = { 72, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 16, 56, 823, { .fields = { 64, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 24, 56, 776, { .fields = { 64, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, -80, 32, 3273, { .fields = { 48, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, -80, 40, 2358, { .fields = { 40, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 8 } }, -80, 48, 1771, { .fields = { 24, 192 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, -80, 56, 1418, { .fields = { 40, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 8 } }, -48, 56, 1376, { .fields = { 64, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, -80, 64, 1182, { .fields = { 56, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, -40, 64, 1156, { .fields = { 72, 192 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, -72, 72, 1013, { .fields = { 32, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, -32, 72, 1025, { .fields = { 32, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, -56, 80, 1000, { .fields = { 32, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 10.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView10Batches[5] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 6, 0, 0, { 1, 0 } },
+    { 6, 18, 0, 0, { 2, 0 } },
+    { 24, 10, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 11.
+///
+/// The zero-count first record enables background image strips; no sources are read.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView11Batches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 12.
+///
+/// The zero-count first record enables background image strips; no sources are read.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView12Batches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 13.
+///
+/// The zero-count first record enables background image strips; no sources are read.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView13Batches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 14.
+///
+/// Batch ranges count these 20 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView14Sources[20] = {
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, -48, 112, 478, { .fields = { 112, 40 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, -40, 112, 506, { .fields = { 112, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, -32, 112, 522, { .fields = { 112, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, -24, 112, 553, { .fields = { 112, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -16, 104, 602, { .fields = { 120, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, -8, 104, 657, { .fields = { 120, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 0, 104, 724, { .fields = { 120, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 8, 96, 811, { .fields = { 120, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 16, 96, 897, { .fields = { 120, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 24, 96, 963, { .fields = { 120, 64 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 32, 96, 1129, { .fields = { 120, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 40, 88, 1380, { .fields = { 120, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 32 } }, 48, 88, 1687, { .fields = { 120, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, 56, 88, 2347, { .fields = { 120, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 16 } }, 64, 88, 3478, { .fields = { 88, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 8 } }, 48, 96, 2719, { .fields = { 56, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 8 } }, 32, 112, 1369, { .fields = { 80, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 56, 8 } }, 80, 112, 1345, { .fields = { 64, 8 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, 40, 104, 1821, { .fields = { 80, 24 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, 80, 104, 1821, { .fields = { 80, 16 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 14.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView14Batches[4] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 15, 0, 0, { 1, 0 } },
+    { 15, 5, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 15.
+///
+/// Batch ranges count these 6 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView15Sources[6] = {
+    { 143, 0x3FC0, { .fields = { 40, 8 } }, -56, 112, 742, { .fields = { 88, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 16 } }, -16, 104, 587, { .fields = { 88, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 24 } }, 24, 96, 477, { .fields = { 80, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 32 } }, 72, 88, 381, { .fields = { 88, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 40 } }, 112, 80, 333, { .fields = { 88, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 48 } }, 152, 72, 311, { .fields = { 120, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 15.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView15Batches[3] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 6, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 16.
+///
+/// Batch ranges count these 5 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView16Sources[5] = {
+    { 143, 0x3FC0, { .fields = { 48, 80 } }, -160, 40, 529, { .fields = { 80, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 72 } }, -112, 48, 571, { .fields = { 88, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 72 } }, -72, 48, 620, { .fields = { 88, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 40 } }, -32, 56, 667, { .fields = { 72, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 24 } }, -32, 96, 644, { .fields = { 120, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 16.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView16Batches[3] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 5, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 17.
+///
+/// Batch ranges count these 38 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView17Sources[38] = {
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -144, -120, 1000, { .fields = { 24, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, -64, -120, 1000, { .fields = { 16, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -48, -112, 1000, { .fields = { 24, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, 32, -112, 1000, { .fields = { 16, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 88, 8 } }, 48, -104, 1000, { .fields = { 16, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 48 } }, 136, -120, 1000, { .fields = { 88, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 24 } }, 144, -72, 1000, { .fields = { 112, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 32 } }, -160, -120, 1000, { .fields = { 112, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 8 } }, -144, -96, 1000, { .fields = { 40, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, -80, -96, 1000, { .fields = { 0, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 8 } }, -64, -88, 1000, { .fields = { 24, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, 16, -88, 1000, { .fields = { 0, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 8 } }, 32, -80, 1000, { .fields = { 0, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 48, 8 } }, -160, -24, 750, { .fields = { 56, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 48, 8 } }, -112, -24, 750, { .fields = { 56, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 48, 8 } }, -64, -24, 750, { .fields = { 56, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 48, 8 } }, -16, -24, 750, { .fields = { 56, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 48, 8 } }, 32, -24, 750, { .fields = { 56, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 40, 8 } }, 80, -24, 848, { .fields = { 64, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 40, 8 } }, 120, -24, 633, { .fields = { 64, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, 32, -16, 975, { .fields = { 8, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 104 } }, -160, 16, 280, { .fields = { 112, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 96 } }, -144, 24, 319, { .fields = { 112, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 88 } }, -128, 32, 370, { .fields = { 48, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 80 } }, -112, 40, 441, { .fields = { 56, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 64 } }, -96, 56, 546, { .fields = { 112, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 56 } }, -80, 64, 784, { .fields = { 104, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 104, 40 } }, -56, 80, 1000, { .fields = { 0, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 72 } }, 40, -40, 975, { .fields = { 24, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 32 } }, 48, -72, 975, { .fields = { 32, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 64 } }, 64, -104, 950, { .fields = { 0, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 80 } }, 80, -120, 811, { .fields = { 16, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 80 } }, 120, -120, 607, { .fields = { 72, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 72 } }, 64, -40, 915, { .fields = { 0, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 48, 72 } }, 112, -40, 648, { .fields = { 104, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 64, 88 } }, 48, 32, 973, { .fields = { 48, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 88 } }, 112, 32, 640, { .fields = { 64, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 24, 56 } }, 48, 56, 925, { .fields = { 104, 144 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 17.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView17Batches[5] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 20, 0, 0, { 1, 0 } },
+    { 20, 17, 0, 0, { 2, 0 } },
+    { 37, 1, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 18.
+///
+/// Batch ranges count these 111 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView18Sources[111] = {
+    { 141, 0x3FC0, { .fields = { 8, 8 } }, -104, 104, 1153, { .fields = { 72, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 16, 16 } }, -128, -120, 1338, { .fields = { 112, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 32, 24 } }, -144, -104, 1292, { .fields = { 24, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 24, 16 } }, -136, -80, 1276, { .fields = { 104, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 32 } }, -144, -64, 1219, { .fields = { 64, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 48 } }, -152, -32, 1153, { .fields = { 64, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 48 } }, -160, 16, 1087, { .fields = { 56, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 56 } }, -160, 64, 1038, { .fields = { 96, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 56 } }, -96, 56, 1236, { .fields = { 80, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 24 } }, -96, 32, 1297, { .fields = { 32, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 56 } }, -88, -24, 1363, { .fields = { 80, 192 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 16 } }, -88, -40, 1430, { .fields = { 56, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 56 } }, -80, -96, 1425, { .fields = { 112, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 8 } }, -104, -120, 1425, { .fields = { 112, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 40, 24 } }, -88, -120, 1425, { .fields = { 8, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 24, 8 } }, -48, -104, 1425, { .fields = { 88, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 40, 8 } }, -32, -96, 1425, { .fields = { 40, 16 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 40, 8 } }, 0, -88, 1425, { .fields = { 40, 8 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 40, 8 } }, 40, -80, 1425, { .fields = { 72, 56 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 40, 8 } }, 72, -72, 1425, { .fields = { 72, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 48, 8 } }, 104, -64, 1425, { .fields = { 88, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 8 } }, 144, -56, 1425, { .fields = { 56, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, 32, -120, 1425, { .fields = { 80, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 24, 8 } }, 56, -112, 1425, { .fields = { 56, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, 72, -104, 1425, { .fields = { 48, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, 96, -96, 1425, { .fields = { 40, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, 120, -88, 1425, { .fields = { 48, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 16, 8 } }, 144, -80, 1425, { .fields = { 64, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, 80, -120, 1425, { .fields = { 48, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 24, 8 } }, 104, -112, 1425, { .fields = { 64, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, 120, -104, 1425, { .fields = { 56, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 16, 8 } }, 144, -96, 957, { .fields = { 64, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 48, 16 } }, 112, -120, 1425, { .fields = { 72, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 72, 40 } }, 88, -104, 1090, { .fields = { 112, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 88, 56 } }, 72, -64, 1361, { .fields = { 8, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 32 } }, 56, -48, 1425, { .fields = { 8, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 24 } }, 40, -40, 1425, { .fields = { 56, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 32 } }, 48, -16, 1425, { .fields = { 72, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 16 } }, 72, -8, 1425, { .fields = { 120, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 88 } }, 48, 16, 1429, { .fields = { 96, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 64, 24 } }, 96, -8, 1425, { .fields = { 0, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 56, 40 } }, 104, 16, 1425, { .fields = { 0, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 80, 48 } }, 80, 56, 1418, { .fields = { 112, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 96, 16 } }, 64, 104, 1200, { .fields = { 64, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 8, 8 } }, -120, 16, 1391, { .fields = { 80, 16 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 8, 8 } }, -104, 24, 1428, { .fields = { 80, 88 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 8, 8 } }, -120, 40, 1348, { .fields = { 80, 8 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 8, 8 } }, -64, 40, 1425, { .fields = { 80, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 8, 8 } }, -40, 40, 1425, { .fields = { 96, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, -112, 48, 1367, { .fields = { 56, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 8, 8 } }, -160, 64, 1050, { .fields = { 88, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 8, 8 } }, -112, 64, 1335, { .fields = { 80, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 8, 8 } }, -16, 88, 1425, { .fields = { 80, 224 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 32 } }, -144, 8, 1425, { .fields = { 80, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 32, 32 } }, -152, 40, 1305, { .fields = { 56, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 48 } }, -160, 72, 1425, { .fields = { 56, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 8 } }, -136, 80, 1425, { .fields = { 8, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 16 } }, -136, 104, 1425, { .fields = { 96, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 48, 32 } }, -120, 88, 1425, { .fields = { 64, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, -88, 24, 1425, { .fields = { 72, 128 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 40, 8 } }, -96, 48, 1425, { .fields = { 64, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 40, 8 } }, -96, 64, 1410, { .fields = { 64, 24 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 96 } }, -56, 16, 1452, { .fields = { 112, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 24, 8 } }, -80, 80, 1385, { .fields = { 80, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 16, 16 } }, -72, 96, 1188, { .fields = { 120, 200 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 56, 8 } }, -40, 24, 1425, { .fields = { 48, 40 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 56, 8 } }, -40, 48, 1425, { .fields = { 72, 64 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 56, 8 } }, -40, 64, 1425, { .fields = { 80, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 56, 8 } }, -40, 80, 1425, { .fields = { 56, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 80 } }, 16, 24, 1425, { .fields = { 88, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 8 } }, 40, 32, 1425, { .fields = { 8, 152 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 8 } }, 40, 48, 1425, { .fields = { 80, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, 40, 64, 1425, { .fields = { 64, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 40, 8 } }, 40, 80, 1425, { .fields = { 56, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 32 } }, 64, 24, 1425, { .fields = { 96, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 24 } }, 72, 56, 1425, { .fields = { 48, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 16, 24 } }, 80, 80, 1425, { .fields = { 56, 104 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, 80, 32, 1425, { .fields = { 64, 168 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, 80, 48, 1425, { .fields = { 64, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 32, 8 } }, 88, 64, 1425, { .fields = { 72, 192 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x3FC0, { .fields = { 24, 8 } }, 96, 80, 1425, { .fields = { 80, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 24 } }, 112, 32, 1425, { .fields = { 56, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 16, 40 } }, 120, 56, 1425, { .fields = { 40, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 40 } }, 136, 32, 1425, { .fields = { 16, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x3FC0, { .fields = { 24, 16 } }, 136, 80, 1260, { .fields = { 0, 184 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x4000, { .fields = { 64, 16 } }, -160, 104, 1088, { .fields = { 72, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x4000, { .fields = { 88, 24 } }, -96, 96, 1149, { .fields = { 88, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x4000, { .fields = { 80, 24 } }, -8, 96, 1128, { .fields = { 88, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x4000, { .fields = { 40, 16 } }, 72, 104, 1043, { .fields = { 96, 216 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x4000, { .fields = { 32, 8 } }, 112, 112, 797, { .fields = { 56, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 56, 16 } }, -136, 80, 2775, { .fields = { 0, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 64, 24 } }, -80, 72, 2775, { .fields = { 72, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 16, 32 } }, -16, 64, 2775, { .fields = { 96, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 32, 24 } }, 0, 72, 2775, { .fields = { 48, 208 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x4000, { .fields = { 24, 16 } }, 32, 80, 2775, { .fields = { 104, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 8, 8 } }, -72, 104, 1318, { .fields = { 80, 248 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 48, 16 } }, -136, 96, 1172, { .fields = { 64, 32 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x4000, { .fields = { 16, 16 } }, -104, 80, 1247, { .fields = { 104, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 40, 24 } }, -88, 80, 1425, { .fields = { 40, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 64, 40 } }, -48, 80, 1425, { .fields = { 80, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x4000, { .fields = { 40, 32 } }, 16, 72, 1425, { .fields = { 24, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 48, 24 } }, 56, 72, 1313, { .fields = { 32, 136 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x4000, { .fields = { 16, 8 } }, 104, 80, 1425, { .fields = { 72, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 72, 32 } }, -160, 80, 2775, { .fields = { 64, 48 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x4000, { .fields = { 88, 24 } }, -88, 80, 2775, { .fields = { 104, 24 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x4000, { .fields = { 72, 24 } }, 0, 80, 2775, { .fields = { 112, 96 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 141, 0x4000, { .fields = { 88, 24 } }, 72, 72, 2775, { .fields = { 96, 160 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 24, 16 } }, -128, 88, 1210, { .fields = { 88, 240 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 24, 32 } }, -96, 80, 1163, { .fields = { 112, 80 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 40, 32 } }, -72, 72, 1425, { .fields = { 88, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 142, 0x4000, { .fields = { 24, 24 } }, 32, 80, 1425, { .fields = { 8, 72 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 18.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView18Batches[10] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 32, 0, 0, { 6, 0 } },
+    { 32, 12, 0, 0, { 1, 0 } },
+    { 44, 41, 0, 0, { 4, 0 } },
+    { 85, 5, 0, 0, { 0, 0 } },
+    { 90, 5, 0, 0, { 5, 0 } },
+    { 95, 8, 0, 0, { 3, 0 } },
+    { 103, 4, 0, 0, { 7, 0 } },
+    { 107, 4, 0, 0, { 2, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable source rectangles for dryfield motel balcony view 19.
+///
+/// Batch ranges count these 8 elements; positions/sizes are draw pixels,
+/// UVs are texels and depth is the unscaled sprite sorting value.
+/// Storage stays live with the room overlay while packets are built and linked.
+static SpriteSource _gDryfieldMotelBalconyView19Sources[8] = {
+    { 143, 0x3FC0, { .fields = { 48, 48 } }, -40, 56, 525, { .fields = { 48, 112 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 16 } }, -64, 64, 550, { .fields = { 104, 232 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 56 } }, 8, 64, 500, { .fields = { 88, 176 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 24, 56 } }, 136, 64, 450, { .fields = { 104, 64 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 48, 48 } }, 48, 72, 475, { .fields = { 48, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 40, 48 } }, 96, 72, 450, { .fields = { 64, 64 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 64 } }, -72, -96, 1110, { .fields = { 96, 0 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+    { 143, 0x3FC0, { .fields = { 32, 56 } }, -72, -32, 1088, { .fields = { 96, 120 } }, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, DRYFIELD_MOTEL_BALCONY_SPRITE_NEUTRAL_MODULATION, 0 },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 19.
+///
+/// Nonterminal ranges index the view's source array in elements.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView19Batches[4] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { 0, 6, 0, 0, { 1, 0 } },
+    { 6, 2, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 20.
+///
+/// The zero-count first record enables background image strips; no sources are read.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView20Batches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 21.
+///
+/// The zero-count first record enables background image strips; no sources are read.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView21Batches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+/// Mutable sprite batches for dryfield motel balcony view 22.
+///
+/// The zero-count first record enables background image strips; no sources are read.
+/// The last record is SPRITE_BATCH_END. Hidden and excluded flags remain writable
+/// while the room is loaded; identical empty lists belong to different views.
+static SpriteBatch _gDryfieldMotelBalconyView22Batches[2] = {
+    { 0, 0, 0, 0, { 0, 0 } },
+    { SPRITE_BATCH_END, 0, 0, 0, { 0, 0 } },
+};
+
+SpriteView gDryfieldMotelBalconySpriteViews[22] = {
+    { { .empty = _gDryfieldMotelBalconyView1Batches }, _gDryfieldMotelBalconyView1Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView2Sources }, _gDryfieldMotelBalconyView2Batches, NULL },
+    { { .empty = _gDryfieldMotelBalconyView3Batches }, _gDryfieldMotelBalconyView3Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView4Sources }, _gDryfieldMotelBalconyView4Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView5Sources }, _gDryfieldMotelBalconyView5Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView6Sources }, _gDryfieldMotelBalconyView6Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView7Sources }, _gDryfieldMotelBalconyView7Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView8Sources }, _gDryfieldMotelBalconyView8Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView9Sources }, _gDryfieldMotelBalconyView9Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView10Sources }, _gDryfieldMotelBalconyView10Batches, NULL },
+    { { .empty = _gDryfieldMotelBalconyView11Batches }, _gDryfieldMotelBalconyView11Batches, NULL },
+    { { .empty = _gDryfieldMotelBalconyView12Batches }, _gDryfieldMotelBalconyView12Batches, NULL },
+    { { .empty = _gDryfieldMotelBalconyView13Batches }, _gDryfieldMotelBalconyView13Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView14Sources }, _gDryfieldMotelBalconyView14Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView15Sources }, _gDryfieldMotelBalconyView15Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView16Sources }, _gDryfieldMotelBalconyView16Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView17Sources }, _gDryfieldMotelBalconyView17Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView18Sources }, _gDryfieldMotelBalconyView18Batches, NULL },
+    { { .elements = _gDryfieldMotelBalconyView19Sources }, _gDryfieldMotelBalconyView19Batches, NULL },
+    { { .empty = _gDryfieldMotelBalconyView20Batches }, _gDryfieldMotelBalconyView20Batches, NULL },
+    { { .empty = _gDryfieldMotelBalconyView21Batches }, _gDryfieldMotelBalconyView21Batches, NULL },
+    { { .empty = _gDryfieldMotelBalconyView22Batches }, _gDryfieldMotelBalconyView22Batches, NULL },
+};
+
+/// Eight directed camera boundaries joining views 5/6, 5/3, 4/5 and 3/2.
+///
+/// Each pair supplies both directions. Origins and relative corners use room
+/// game units; normals use 4096 per unit. Room setup binds and links the mutable
+/// array through its LAST record, and collision scans latch view-change hits.
+static WorldCollisionTrigger _gDryfieldMotelBalconyViewBoundaries[8] = {
+    { NULL, NULL, NULL, { -6032, -4416, 320, 0 }, { { -1360, 3008, 0, 0 }, { 1360, 3008, 0, 0 }, { -1360, -3008, 0, 0 }, { 1360, -3008, 0, 0 } }, { 0, 0, 4100, 0 }, { 0, 0, ONE, 0 }, 3298, 0, 5, 6, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { -6176, -3968, 480, 0 }, { { 1360, 2272, 0, 0 }, { -1360, 2272, 0, 0 }, { 1360, -2272, 0, 0 }, { -1360, -2272, 0, 0 } }, { 0, 0, -4110, 0 }, { 0, 0, ONE, 0 }, 2635, 0, 6, 5, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { -7168, -4000, 1952, 0 }, { { 66, 2304, 1358, 0 }, { -67, 2304, -1359, 0 }, { 66, -2304, 1358, 0 }, { -67, -2304, -1359, 0 } }, { 4102, 0, -202, 0 }, { 0, 0, ONE, 0 }, 2672, 0, 5, 3, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { -7073, -4096, 1855, 0 }, { { -66, 2528, -1358, 0 }, { 67, 2528, 1359, 0 }, { -66, -2528, -1358, 0 }, { 67, -2528, 1359, 0 } }, { -4091, 0, 200, 0 }, { 0, 0, ONE, 0 }, 2862, 0, 3, 5, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { -6181, -4400, 6107, 0 }, { { -1319, 2576, 330, 0 }, { 1320, 2576, -329, 0 }, { -1319, -2576, 330, 0 }, { 1320, -2576, -329, 0 } }, { 992, 0, 3980, 0 }, { 0, 0, ONE, 0 }, 2907, 0, 4, 5, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { -6176, -4656, 6238, 0 }, { { 1316, 2704, -332, 0 }, { -1323, 2704, 327, 0 }, { 1316, -2704, -332, 0 }, { -1323, -2704, 327, 0 } }, { -996, 0, -3982, 0 }, { 0, 0, ONE, 0 }, 3018, 0, 5, 4, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { -0x2EB7, -4032, 2043, 0 }, { { 1, 2480, 1361, 0 }, { 0, 2480, -1361, 0 }, { 1, -2480, 1361, 0 }, { 0, -2480, -1361, 0 } }, { 4103, 0, -3, 0 }, { 0, 0, ONE, 0 }, 2827, 0, 3, 2, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY, 0 },
+    { NULL, NULL, NULL, { -0x2E15, -3936, 2013, 0 }, { { 0, 2480, -1361, 0 }, { 1, 2480, 1361, 0 }, { 0, -2480, -1361, 0 }, { 1, -2480, 1361, 0 } }, { -4106, 0, 1, 0 }, { 0, 0, ONE, 0 }, 2827, 0, 2, 3, WORLD_COLLISION_TRIGGER_VIEW_BOUNDARY | WORLD_COLLISION_TRIGGER_LAST, 0 },
+};
+
+/// Facing-gated departure quads for the parking lot, room 5, room 6 and loft.
+///
+/// parameter1 packs the 1-based balcony departure slot above the destination's
+/// arrival slot: parking uses arrival 5, the doors arrival 1. Room setup binds
+/// and links all four mutable records, including the final LAST element.
+static WorldCollisionTrigger _gDryfieldMotelBalconyWarpTriggers[4] = {
+    { NULL, NULL, NULL, { -0x3100, -3264, 1248, 0 }, { { -608, 0, -224, 0 }, { 608, 0, -224, 0 }, { -608, 0, 224, 0 }, { 608, 0, 224, 0 } }, { 0, 4098, 0, 0 }, { 401, 0, 4076, 0 }, 646, WORLD_COLLISION_TRIGGER_ACTION_WARP, GAME_AREA_DRYFIELD_PARKING_LOT, (DRYFIELD_MOTEL_BALCONY_WARP_PARKING_LOT << 4) | 5, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { -6816, -3264, -2816, 0 }, { { 224, 0, -608, 0 }, { 224, 0, 608, 0 }, { -224, 0, -608, 0 }, { -224, 0, 608, 0 } }, { 0, 4098, 0, 0 }, { 4076, 0, -401, 0 }, 646, WORLD_COLLISION_TRIGGER_ACTION_WARP, GAME_AREA_DRYFIELD_MOTEL_ROOM_5, (DRYFIELD_MOTEL_BALCONY_WARP_ROOM_5 << 4) | 1, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { -6752, -3280, 4416, 0 }, { { 224, 0, -608, 0 }, { 224, 0, 608, 0 }, { -224, 0, -608, 0 }, { -224, 0, 608, 0 } }, { 0, 4098, 0, 0 }, { 4076, 0, -401, 0 }, 646, WORLD_COLLISION_TRIGGER_ACTION_WARP, GAME_AREA_DRYFIELD_MOTEL_ROOM_6, (DRYFIELD_MOTEL_BALCONY_WARP_ROOM_6 << 4) | 1, WORLD_COLLISION_TRIGGER_FACING_QUAD, 0 },
+    { NULL, NULL, NULL, { -1984, -3248, 0x2970, 0 }, { { 928, 0, 368, 0 }, { -928, 0, 368, 0 }, { 928, 0, -368, 0 }, { -928, 0, -368, 0 } }, { 0, 4101, 0, 0 }, { -51, 0, -ONE, 0 }, 997, WORLD_COLLISION_TRIGGER_ACTION_WARP, GAME_AREA_DRYFIELD_MOTEL_LOFT, (DRYFIELD_MOTEL_BALCONY_WARP_LOFT << 4) | 1, WORLD_COLLISION_TRIGGER_FACING_QUAD | WORLD_COLLISION_TRIGGER_LAST, 0 },
+};
+
+/// Two room-space quads blocking enemy line-of-sight queries across the balcony.
+///
+/// Room setup links and enables both mutable records; LAST marks the second.
+/// Origins, corner offsets and radii use game units, normals 4096 per unit.
+/// The stored low flag bit has no established role and remains unchanged.
+static WorldCollisionOccluder _gDryfieldMotelBalconySightOccluders[2] = {
+    { NULL, NULL, { -0x2840, -4064, 7440, 0 }, { { -3104, -2624, 4336, 0 }, { 3104, -2624, -4336, 0 }, { -3104, 2624, 4336, 0 }, { 3104, 2624, -4336, 0 } }, { -3332, 0, -2385, 0 }, 5926, 1, 0 },
+    { NULL, NULL, { -0x2B61, -4016, -2561, 0 }, { { 4011, -2640, 3514, 0 }, { -4010, -2640, -3513, 0 }, { 4011, 2640, 3514, 0 }, { -4010, 2640, -3513, 0 } }, { -2701, 0, 3082, 0 }, 5948, 1 | WORLD_COLLISION_OCCLUDER_LAST, 0 },
+};
+
+/// Empty resource list for the default balcony placement variant 1.
+static AreaResource _gDryfieldMotelBalconyVariant1Resources[1] = {
+    { AREA_PLACEMENT_END, 0, 0, 0, { 0, 0 }, NULL },
+};
+
+/// Resource keys matched by the map overlay's placement lists for this balcony.
+enum {
+    DRYFIELD_MOTEL_BALCONY_RESOURCE_ODD_STRANGER  = 18,
+    DRYFIELD_MOTEL_BALCONY_RESOURCE_SCORPION      = 25,
+    DRYFIELD_MOTEL_BALCONY_RESOURCE_BRAIN_STINGER = 3,
+    DRYFIELD_MOTEL_BALCONY_RESOURCE_PAWN_GOLEM    = 56,
+    DRYFIELD_MOTEL_BALCONY_RESOURCE_ROOK_GOLEM    = 57,
+};
+
+/// Variant 2's Odd Stranger file and task recipe, followed by the list terminator.
+///
+/// Entry 18 loads global file 401800 and supplies task index 0 for the three
+/// matching placements. Loading and spawning borrow the list and loaded actor.
+static AreaResource _gDryfieldMotelBalconyVariant2Resources[2] = {
+    { DRYFIELD_MOTEL_BALCONY_RESOURCE_ODD_STRANGER, 18, AREA_RESOURCE_FILE_GROUP_BASE_40, 0, { 0, 0 }, &gActor401800OddStrangerTaskDesc },
+    { AREA_PLACEMENT_END, 0, 0, 0, { 0, 0 }, NULL },
+};
+
+/// Variant 3's Scorpion file and task recipe, followed by the list terminator.
+///
+/// Entry 25 loads global file 102500 and selects task index 0 for the six
+/// matching placements. Loading and spawning borrow the list and loaded actor.
+static AreaResource _gDryfieldMotelBalconyVariant3Resources[2] = {
+    { DRYFIELD_MOTEL_BALCONY_RESOURCE_SCORPION, 25, LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR, 0, { 0, 0 }, gActor102500Tasks },
+    { AREA_PLACEMENT_END, 0, 0, 0, { 0, 0 }, NULL },
+};
+
+/// Variant 7's Brain Stinger file and task recipe, followed by the list terminator.
+///
+/// Entry 3 loads global file 100300 and selects task index 0 for the two
+/// matching placements. Loading and spawning borrow the list and loaded actor.
+static AreaResource _gDryfieldMotelBalconyVariant7Resources[2] = {
+    { DRYFIELD_MOTEL_BALCONY_RESOURCE_BRAIN_STINGER, 3, LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR, 0, { 0, 0 }, gActor100300Tasks },
+    { AREA_PLACEMENT_END, 0, 0, 0, { 0, 0 }, NULL },
+};
+
+/// Variant 8's Pawn/Rook GOLEM file and task recipes, then the list terminator.
+///
+/// Keys 56 and 57 load global files 105600 and 205700 and select each package's
+/// task index 0. The two placements supply their own texture relocations;
+/// loading and spawning borrow this list and the loaded actor descriptors.
+static AreaResource _gDryfieldMotelBalconyVariant8Resources[3] = {
+    { DRYFIELD_MOTEL_BALCONY_RESOURCE_PAWN_GOLEM, 56, LOADING_AREA_FILE_GROUP_BASE_10_SELECTOR, 0, { 0, 0 }, gActor105600PawnGolemTasks },
+    { DRYFIELD_MOTEL_BALCONY_RESOURCE_ROOK_GOLEM, 57, AREA_RESOURCE_FILE_GROUP_BASE_20, 0, { 0, 0 }, gActor05700RookGolemTasks },
+    { AREA_PLACEMENT_END, 0, 0, 0, { 0, 0 }, NULL },
+};
+
+AreaVariant gDryfieldMotelBalconyAreaVariants[13] = {
+    [1] = { .placements = gMapDryfieldMotelBalconyVariant1Placements, .resources = _gDryfieldMotelBalconyVariant1Resources },
+    [2] = { .placements = gMapDryfieldMotelBalconyVariant2Placements, .resources = _gDryfieldMotelBalconyVariant2Resources },
+    [3] = { .placements = gMapDryfieldMotelBalconyVariant3Placements, .resources = _gDryfieldMotelBalconyVariant3Resources },
+    [7] = { .placements = gMapDryfieldMotelBalconyVariant7Placements, .resources = _gDryfieldMotelBalconyVariant7Resources },
+    [8] = { .placements = gMapDryfieldMotelBalconyVariant8Placements, .resources = _gDryfieldMotelBalconyVariant8Resources },
+};
+
+/// Nine mutable all-view point lights for the daytime motel balcony.
+///
+/// RGB intensities use Q12; distances use game units in the composed light frame.
+/// World-coordinate lighting parents, composes and attenuates them while loaded.
+static WorldCoordPointLight _gDryfieldMotelBalconyPointLights[9] = {
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -3546, -5261, 222 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 4003, 3928, 3859 }, { 0, 0 } }, 4002, 7298 },
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -0x3377, -5250, 2697 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 4918, ONE, 4097 }, { 0, 0 } }, 500, 3000 },
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -3303, -5000, 3148 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 4122, 3865, 4223 }, { 0, 0 } }, 2940, 5583 },
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -2000, -5000, -6710 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 5740, 5668, 5680 }, { 0, 0 } }, 5399, 0x2EE0 },
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -3200, -5250, 8480 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 4944, 4100, 4099 }, { 0, 0 } }, 3323, 5204 },
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -9995, -5250, 2697 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 4940, ONE, ONE }, { 0, 0 } }, 500, 3000 },
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -4050, -5250, 5400 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 4902, 4064, 4085 }, { 0, 0 } }, 3565, 5064 },
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -0x2EC7, -5250, 2697 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 4805, 4204, 4145 }, { 0, 0 } }, 500, 3000 },
+    { { { .lighting = { GRAPHICS_COORD_DIRTY, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { -7035, -5250, 2697 } }, { { { ONE, 0, 0 }, { 0, ONE, 0 }, { 0, 0, ONE } }, { 0, 0, 0 } }, WORLD_COORDINATE_LIGHT_ALL_VIEWS, { 0, 0, 0, 0 }, 0, NULL } }, { 5401, 4327, 4285 }, { 0, 0 } }, 1121, 3000 },
+};
+
+/// The balcony room's light collection: nine point lights, no directional or cone lights.
+static WorldCoordRoomLights _gDryfieldMotelBalconyRoomLights[1] = {
+    { 0, NULL, ARRAY_SIZE(_gDryfieldMotelBalconyPointLights), _gDryfieldMotelBalconyPointLights, 0, NULL },
+};
+
+/// Minimum ambient levels for the balcony's 22 logical views, after a count header.
+///
+/// Entries 1..22 use sixteen units per 8-bit RGB level; entry zero is the count.
+/// Storage is read through the room-lighting descriptor while the overlay is loaded.
+static WorldCoordRoomAmbientEntry _gDryfieldMotelBalconyViewAmbientLevels[23] = {
+    { .viewCount = ARRAY_SIZE(_gDryfieldMotelBalconyViewAmbientLevels) - 1 },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 823, 820, 838, 823 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 1481, 1461, 1422, 1463 } },
+    { .color = { 676, 659, 633, 662 } },
+    { .color = { 558, 480, 533, 515 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+    { .color = { 16, 16, 16, 16 } },
+};
+
+/// Cue-2 script entry numbers in the currently loaded type-1 footstep bank.
+enum {
+    DRYFIELD_MOTEL_BALCONY_DEFAULT_WALK_ENTRY = 0x49,
+    DRYFIELD_MOTEL_BALCONY_DEFAULT_RUN_ENTRY  = 0x4B,
+    DRYFIELD_MOTEL_BALCONY_CLASS_2_WALK_ENTRY = 0x2D,
+    DRYFIELD_MOTEL_BALCONY_CLASS_2_RUN_ENTRY  = 0x2F,
+    DRYFIELD_MOTEL_BALCONY_CLASS_3_WALK_ENTRY = 0x51,
+    DRYFIELD_MOTEL_BALCONY_CLASS_3_RUN_ENTRY  = 0x53,
+    DRYFIELD_MOTEL_BALCONY_CLASS_3_JUMP_ENTRY = 0x55,
+};
+
+/// Footstep requests shared by surface classes 0, 1 and 4..7.
+///
+/// Walk and scripted jump share a base. Cue 1 adds one; companion steps add
+/// 100. The surface records borrow this read-only table while the room is loaded.
+/// The balcony bank has no entries at either base or its cue-1 partner, so
+/// these requests produce no sound; retain the stored requests.
+/// Keep the original data-section placement despite the read-only declaration.
+static const WorldCollisionFootstepSounds _gDryfieldMotelBalconyDefaultFootstepSounds SECTION(".data") = {
+    .walk         = SOUND_SCRIPT_REQUEST_TYPE_1 | DRYFIELD_MOTEL_BALCONY_DEFAULT_WALK_ENTRY,
+    .run          = SOUND_SCRIPT_REQUEST_TYPE_1 | DRYFIELD_MOTEL_BALCONY_DEFAULT_RUN_ENTRY,
+    .scriptedJump = SOUND_SCRIPT_REQUEST_TYPE_1 | DRYFIELD_MOTEL_BALCONY_DEFAULT_WALK_ENTRY,
+};
+
+/// Class 2's footstep requests, with the walk base also used for scripted jumps.
+///
+/// Cue 1 adds one; companion steps add 100. The room's surface record borrows
+/// this read-only table. Data-section placement preserves the loaded asset layout.
+static const WorldCollisionFootstepSounds _gDryfieldMotelBalconyClass2FootstepSounds SECTION(".data") = {
+    .walk         = SOUND_SCRIPT_REQUEST_TYPE_1 | DRYFIELD_MOTEL_BALCONY_CLASS_2_WALK_ENTRY,
+    .run          = SOUND_SCRIPT_REQUEST_TYPE_1 | DRYFIELD_MOTEL_BALCONY_CLASS_2_RUN_ENTRY,
+    .scriptedJump = SOUND_SCRIPT_REQUEST_TYPE_1 | DRYFIELD_MOTEL_BALCONY_CLASS_2_WALK_ENTRY,
+};
+
+/// Class 3's distinct walk, run and scripted-jump footstep requests.
+///
+/// Cue 1 adds one; companion steps add 100. The room's surface record borrows
+/// this read-only table. The balcony bank has no script for the retained jump
+/// base or its cue-1 partner. Data-section placement preserves the asset layout.
+static const WorldCollisionFootstepSounds _gDryfieldMotelBalconyClass3FootstepSounds SECTION(".data") = {
+    .walk         = SOUND_SCRIPT_REQUEST_TYPE_1 | DRYFIELD_MOTEL_BALCONY_CLASS_3_WALK_ENTRY,
+    .run          = SOUND_SCRIPT_REQUEST_TYPE_1 | DRYFIELD_MOTEL_BALCONY_CLASS_3_RUN_ENTRY,
+    .scriptedJump = SOUND_SCRIPT_REQUEST_TYPE_1 | DRYFIELD_MOTEL_BALCONY_CLASS_3_JUMP_ENTRY,
+};
+
+/// Blocking, impact-enabled surface shared by classes 0 and 4..7.
+static WorldCollisionSurfaceProperties _gDryfieldMotelBalconyDefaultSurface = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gDryfieldMotelBalconyDefaultFootstepSounds,
+};
+
+/// Class 1's probe-pass surface, with no weapon impacts but ordinary pushback.
+static WorldCollisionSurfaceProperties _gDryfieldMotelBalconyProbePassSurface = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_PASS_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_IGNORE_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gDryfieldMotelBalconyDefaultFootstepSounds,
+};
+
+/// Class 2's blocking, impact-enabled surface and its distinct footstep requests.
+static WorldCollisionSurfaceProperties _gDryfieldMotelBalconyClass2Surface = {
+    .field_0             = 0,
+    .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+    .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+    .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+    .footstepSounds      = &_gDryfieldMotelBalconyClass2FootstepSounds,
+};
+
+/// Class 3's blocking surface at entry zero and an unreferenced second record.
+///
+/// The class directory selects only entry zero. Entry one's default-footstep
+/// record is retained in place; its role and relationship to entry zero are
+/// unproven. Neither record is a surface-class-indexed array or a terminator.
+static WorldCollisionSurfaceProperties _gDryfieldMotelBalconyClass3Surfaces[2] = {
+    {
+        .field_0             = 0,
+        .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+        .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+        .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+        .footstepSounds      = &_gDryfieldMotelBalconyClass3FootstepSounds,
+    },
+    {
+        .field_0             = 0,
+        .probePassThrough    = WORLD_COLLISION_SURFACE_BLOCK_PROBES,
+        .weaponImpactEnabled = WORLD_COLLISION_SURFACE_ALLOW_WEAPON_IMPACTS,
+        .suppressPushback    = WORLD_COLLISION_SURFACE_APPLY_PUSHBACK,
+        .footstepSounds      = &_gDryfieldMotelBalconyDefaultFootstepSounds,
+    },
+};
+
+WorldCollisionSurfaceProperties* gDryfieldMotelBalconySurfaceClasses[8] = {
+    &_gDryfieldMotelBalconyDefaultSurface,
+    &_gDryfieldMotelBalconyProbePassSurface,
+    &_gDryfieldMotelBalconyClass2Surface,
+    &_gDryfieldMotelBalconyClass3Surfaces[0],
+    &_gDryfieldMotelBalconyDefaultSurface,
+    &_gDryfieldMotelBalconyDefaultSurface,
+    &_gDryfieldMotelBalconyDefaultSurface,
+    &_gDryfieldMotelBalconyDefaultSurface,
+};
+
+/// Snapshot of the accepted transition for the deferred room event.
+///
+/// The gate copies all eight bytes before spawning; another accepted start
+/// replaces them. The task commits area, arrival and the room byte on reload.
+/// Keep this room loaded and the snapshot unchanged until that task finishes.
+static RoomEventMsg _gRoomEventMsg = { 0 };
+
+RoomEventActiveBytes gRoomEventActive = { 0, { 238, 254, 37 } };
+
+RoomEventReq gRoomEventReq;
+
+static void _dryfieldMotelBalconyInitRoomTask(Task* task);
+static void _dryfieldMotelBalconyIdleState(Task* task);
+
+#include "../../shared/room/room_event.inc.c"
+
+#include "../../shared/room/room_variants_motel_balcony_doors.inc.c"
+
+#include "../../shared/room/room_variants_motel_balcony_sound.inc.c"
+
+/// Rejects key-item use in this room by returning zero; all arguments are unused.
+static s32 _dryfieldMotelBalconyUseKeyItemMsg(Task* task, s32 messageId, s32 itemId, s32 secondArg)
+{
+    return 0;
+}
+
+/// Ignores room commands and returns zero without reading either payload word.
+static s32 _dryfieldMotelBalconyCommandMsg(Task* task, s32 messageId, s32 commandId, s32 secondArg)
+{
+    return 0;
+}
+
+/// Ignores trigger actions and returns zero without reading the borrowed action request.
+///
+/// The unused first word transports a `DirectionActionRequest` address; retain
+/// the integer message ABI because this handler never accesses the payload.
+static s32 _dryfieldMotelBalconyRoomActionMsg(Task* task, s32 messageId, s32 firstArg, s32 secondArg)
+{
+    return 0;
+}
+
+/// Registers the balcony's room-message receiver and advances state 0 to idle.
+///
+/// The task borrows the room's message table until teardown; keep the overlay
+/// loaded while the registered receiver can be messaged.
+static void _dryfieldMotelBalconyInitRoomTask(Task* task)
+{
+    task->msgTable = _gDryfieldMotelBalconyRoomMessages;
+    gameSetTaskSlot(task, GAME_TASK_SLOT_ROOM);
+    task->state++;
+}
+
+/// Keeps the initialized room task alive while it waits for messages or teardown.
+static void _dryfieldMotelBalconyIdleState(Task* task)
+{
+}
+
+/// Room lifecycle callbacks at state 0 (register messages), 1 (idle) and 2 (kill).
+///
+/// Dispatch copies all three function pointers by value before indexing state;
+/// the state must be in 0..2 and this room's callbacks must remain loaded.
+static const TaskFuncTable3 _gDryfieldMotelBalconyRoomTaskStates = {
+    .funcs = {
+        _dryfieldMotelBalconyInitRoomTask,
+        _dryfieldMotelBalconyIdleState,
+        taskKill,
+    },
+};
+
+void dryfieldMotelBalconyRoomTask(Task* task)
+{
+    TaskFuncTable3 handlers;
+
+    handlers = _gDryfieldMotelBalconyRoomTaskStates;
+    handlers.funcs[task->state](task);
+}
+
+void dryfieldMotelBalconyInitRoomEffectsTask(Task* task)
+{
+    enum { INSTALL_EFFECT_IDS,
+           EFFECT_IDS_INSTALLED };
+
+    if (task->state == INSTALL_EFFECT_IDS) {
+        gRoomEffectMoteId         = EFFECT_DRYFIELD_MOTEL_BALCONY_MOTE;
+        gRoomEffectHaloId         = EFFECT_DRYFIELD_MOTEL_BALCONY_HALO;
+        gRoomEffectOrangeBurstId  = EFFECT_DRYFIELD_MOTEL_BALCONY_ORANGE_BURST;
+        gRoomEffectSparkEmitterId = EFFECT_DRYFIELD_MOTEL_BALCONY_SPARK_EMITTER;
+        gRoomEffectFlashId        = EFFECT_DRYFIELD_MOTEL_BALCONY_FLASH;
+        gRoomEffectTwinTrailId    = EFFECT_DRYFIELD_MOTEL_BALCONY_TWIN_TRAIL;
+        gRoomEffectSparkBurstId   = EFFECT_DRYFIELD_MOTEL_BALCONY_SPARK_BURST;
+        task->state               = EFFECT_IDS_INSTALLED;
+    }
+}
+
+#include "../../shared/room/room_visual_effects.inc.c"
+
+void dryfieldMotelBalconyRoomVisualEffectsMoteTask(Task* task)
+{
+    _roomVisualEffectsMoteTask(task);
+}
+
+#include "../../shared/room/room_visual_effects_halo.inc.c"
+
+void dryfieldMotelBalconyRoomVisualEffectsHaloTask(Task* task)
+{
+    _roomVisualEffectsHaloTask(task);
+}
+
+void dryfieldMotelBalconyRoomVisualEffectsHaloOrangeBurstTask(Task* task)
+{
+    _roomVisualEffectsHaloOrangeBurstTask(task);
+}
+
+#include "../../shared/room/room_visual_effects_glow_quad.inc.c"
+#include "../../shared/room/room_visual_effects_flash.inc.c"
+
+void dryfieldMotelBalconyRoomVisualEffectsSparkEmitterTask(Task* task)
+{
+    _roomVisualEffectsSparkEmitterTask(task);
+}
+
+#include "../../shared/room/room_visual_effects_flash_task.inc.c"
+
+void dryfieldMotelBalconyRoomVisualEffectsFlashTask(Task* task)
+{
+    _roomVisualEffectsFlashTask(task);
+}
+
+#include "../../shared/room/room_visual_effects_trails.inc.c"
+
+void dryfieldMotelBalconyRoomVisualEffectsTwinTrailTask(Task* task)
+{
+#include "../../shared/room/room_visual_effects_trail_task.inc.c"
+
+    void dryfieldMotelBalconyRoomVisualEffectsSparkBurstTask(Task * task)
+    {
+        _roomVisualEffectsSparkBurstTask(task);
+    }
+
+#include "../../shared/room/room_visual_effects_glow.inc.c"

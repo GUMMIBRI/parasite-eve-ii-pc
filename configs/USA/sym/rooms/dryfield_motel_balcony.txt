@@ -1,0 +1,124 @@
+// Overlay-local symbols for dryfield_motel_balcony.
+gDryfieldMotelBalconyRoomCollisionResources = 0x801822D0; // size:0x10 defined:True
+gDryfieldMotelBalconyViewMaps = 0x801822E0; // size:0x4 defined:True
+gDryfieldMotelBalconyRoomViewCounts = 0x801822E4; // size:0x2 defined:True
+gDryfieldMotelBalconyRoomLighting = 0x801822E8; // size:0x8 defined:True
+gDryfieldMotelBalconyWarpEntries = 0x801822F0; // size:0xE0 defined:True
+_gDryfieldMotelBalconyCollisionGridNormals = 0x801823D0; // size:0x38 defined:True
+_gDryfieldMotelBalconyCollisionGridVerts = 0x80182408; // size:0x228 defined:True
+_gDryfieldMotelBalconyCollisionGridFaces = 0x80182630; // size:0x180 defined:True
+_gDryfieldMotelBalconyCollisionGridCells = 0x801827B0; // size:0x2AC defined:True
+_gDryfieldMotelBalconyCollisionGridTable = 0x80182A5C; // size:0x100 defined:True
+_gDryfieldMotelBalconyCollisionGrid = 0x80182B5C; // size:0x24 defined:True
+gDryfieldMotelBalconyViewCameras = 0x80182B80; // size:0x318 defined:True
+_gDryfieldMotelBalconyView1Batches = 0x80182E98; // size:0x10 defined:True
+_gDryfieldMotelBalconyView2Sources = 0x80182EA8; // size:0xC1C defined:True
+_gDryfieldMotelBalconyView2Batches = 0x80183AC4; // size:0x20 defined:True
+_gDryfieldMotelBalconyView3Batches = 0x80183AE4; // size:0x10 defined:True
+_gDryfieldMotelBalconyView4Sources = 0x80183AF4; // size:0xF0 defined:True
+_gDryfieldMotelBalconyView4Batches = 0x80183BE4; // size:0x18 defined:True
+_gDryfieldMotelBalconyView5Sources = 0x80183BFC; // size:0x258 defined:True
+_gDryfieldMotelBalconyView5Batches = 0x80183E54; // size:0x30 defined:True
+_gDryfieldMotelBalconyView6Sources = 0x80183E84; // size:0x258 defined:True
+_gDryfieldMotelBalconyView6Batches = 0x801840DC; // size:0x38 defined:True
+_gDryfieldMotelBalconyView7Sources = 0x80184114; // size:0x17C defined:True
+_gDryfieldMotelBalconyView7Batches = 0x80184290; // size:0x28 defined:True
+_gDryfieldMotelBalconyView8Sources = 0x801842B8; // size:0x1E0 defined:True
+_gDryfieldMotelBalconyView8Batches = 0x80184498; // size:0x20 defined:True
+_gDryfieldMotelBalconyView9Sources = 0x801844B8; // size:0x4D8 defined:True
+_gDryfieldMotelBalconyView9Batches = 0x80184990; // size:0x40 defined:True
+_gDryfieldMotelBalconyView10Sources = 0x801849D0; // size:0x2A8 defined:True
+_gDryfieldMotelBalconyView10Batches = 0x80184C78; // size:0x28 defined:True
+_gDryfieldMotelBalconyView11Batches = 0x80184CA0; // size:0x10 defined:True
+_gDryfieldMotelBalconyView12Batches = 0x80184CB0; // size:0x10 defined:True
+_gDryfieldMotelBalconyView13Batches = 0x80184CC0; // size:0x10 defined:True
+_gDryfieldMotelBalconyView14Sources = 0x80184CD0; // size:0x190 defined:True
+_gDryfieldMotelBalconyView14Batches = 0x80184E60; // size:0x20 defined:True
+_gDryfieldMotelBalconyView15Sources = 0x80184E80; // size:0x78 defined:True
+_gDryfieldMotelBalconyView15Batches = 0x80184EF8; // size:0x18 defined:True
+_gDryfieldMotelBalconyView16Sources = 0x80184F10; // size:0x64 defined:True
+_gDryfieldMotelBalconyView16Batches = 0x80184F74; // size:0x18 defined:True
+_gDryfieldMotelBalconyView17Sources = 0x80184F8C; // size:0x2F8 defined:True
+_gDryfieldMotelBalconyView17Batches = 0x80185284; // size:0x28 defined:True
+_gDryfieldMotelBalconyView18Sources = 0x801852AC; // size:0x8AC defined:True
+_gDryfieldMotelBalconyView18Batches = 0x80185B58; // size:0x50 defined:True
+_gDryfieldMotelBalconyView19Sources = 0x80185BA8; // size:0xA0 defined:True
+_gDryfieldMotelBalconyView19Batches = 0x80185C48; // size:0x20 defined:True
+_gDryfieldMotelBalconyView20Batches = 0x80185C68; // size:0x10 defined:True
+_gDryfieldMotelBalconyView21Batches = 0x80185C78; // size:0x10 defined:True
+_gDryfieldMotelBalconyView22Batches = 0x80185C88; // size:0x10 defined:True
+gDryfieldMotelBalconySpriteViews = 0x80185C98; // size:0x108 defined:True
+_gDryfieldMotelBalconyViewBoundaries = 0x80185DA0; // size:0x260 defined:True
+_gDryfieldMotelBalconyWarpTriggers = 0x80186000; // size:0x130 defined:True
+_gDryfieldMotelBalconySightOccluders = 0x80186130; // size:0x78 defined:True
+_gDryfieldMotelBalconyVariant1Resources = 0x801861A8; // size:0xC defined:True
+_gDryfieldMotelBalconyVariant2Resources = 0x801861B4; // size:0x18 defined:True
+_gDryfieldMotelBalconyVariant3Resources = 0x801861CC; // size:0x18 defined:True
+_gDryfieldMotelBalconyVariant7Resources = 0x801861E4; // size:0x18 defined:True
+_gDryfieldMotelBalconyVariant8Resources = 0x801861FC; // size:0x24 defined:True
+gDryfieldMotelBalconyAreaVariants = 0x80186220; // size:0x68 defined:True
+_gDryfieldMotelBalconyPointLights = 0x80186288; // size:0x360 defined:True
+_gDryfieldMotelBalconyRoomLights = 0x801865E8; // size:0x18 defined:True
+_gDryfieldMotelBalconyViewAmbientLevels = 0x80186600; // size:0xB8 defined:True
+_gDryfieldMotelBalconyDefaultFootstepSounds = 0x801866B8; // size:0xC defined:True
+_gDryfieldMotelBalconyClass2FootstepSounds = 0x801866C4; // size:0xC defined:True
+_gDryfieldMotelBalconyClass3FootstepSounds = 0x801866D0; // size:0xC defined:True
+_gDryfieldMotelBalconyDefaultSurface = 0x801866DC; // size:0x8 defined:True
+_gDryfieldMotelBalconyProbePassSurface = 0x801866E4; // size:0x8 defined:True
+_gDryfieldMotelBalconyClass2Surface = 0x801866EC; // size:0x8 defined:True
+_gDryfieldMotelBalconyClass3Surfaces = 0x801866F4; // size:0x10 defined:True
+gDryfieldMotelBalconySurfaceClasses = 0x80186704; // size:0x20 defined:True
+_gRoomEventMsg = 0x80186724; // size:0x8 defined:True
+gActor102500Tasks = 0x801379A8; // absolute:True owner=actor_102500
+gActor100300Tasks = 0x80148110; // absolute:True owner=actor_100300
+gActor105600PawnGolemTasks = 0x801482C0; // absolute:True owner=actor_105600
+gActor401800OddStrangerTaskDesc = 0x80155AC4; // absolute:True owner=actor_401800
+gActor05700RookGolemTasks = 0x801611F8; // absolute:True owner=actor_205700
+gMapDryfieldMotelBalconyVariant1Placements = 0x8017BA34; // absolute:True owner=map_dryfield
+gMapDryfieldMotelBalconyVariant2Placements = 0x8017BA44; // absolute:True owner=map_dryfield
+gMapDryfieldMotelBalconyVariant3Placements = 0x8017BA84; // absolute:True owner=map_dryfield
+gMapDryfieldMotelBalconyVariant7Placements = 0x8017BAF4; // absolute:True owner=map_dryfield
+gMapDryfieldMotelBalconyVariant8Placements = 0x8017BB24; // absolute:True owner=map_dryfield
+_gRoomVisualEffectsTwinTrailEndpointOffsets = 0x801822C0; // size:0x10 defined:True
+_gRoomEventTaskDesc = 0x80182270; // size:0xC defined:True
+_gDryfieldMotelBalconyRoomMessages = 0x8018227C; // size:0x30 defined:True
+_gRoomVisualEffectsHaloShades = 0x801822AC; // size:0x14 defined:True
+gRoomEventActive = 0x8018672C; // size:0x4 defined:True
+gRoomEventReq = 0x80186730; // size:0x14 defined:True
+
+dryfieldMotelBalconyRoomVisualEffectsFlashTask = 0x801802DC; // type:func
+
+dryfieldMotelBalconyRoomVisualEffectsTwinTrailTask = 0x80180D40; // type:func
+
+dryfieldMotelBalconyRoomVisualEffectsSparkBurstTask = 0x80181628; // type:func
+
+dryfieldMotelBalconyRoomVisualEffectsMoteTask = 0x8017DCB8; // type:func
+
+dryfieldMotelBalconyRoomVisualEffectsHaloTask = 0x8017EA00; // type:func
+
+dryfieldMotelBalconyRoomVisualEffectsHaloOrangeBurstTask = 0x8017ED98; // type:func
+
+dryfieldMotelBalconyRoomVisualEffectsSparkEmitterTask = 0x801801A8; // type:func
+
+dryfieldMotelBalconyInitRoomEffectsTask = 0x8017DC28; // type:func
+_roomVisualEffectsDrawMote = 0x8017DF84; // type:func
+_roomVisualEffectsDrawHaloRing = 0x8017E248; // type:func
+_roomVisualEffectsDrawHaloDisc = 0x8017E66C; // type:func
+_roomVisualEffectsDrawHaloBurstGlow = 0x8017EF44; // type:func
+_roomVisualEffectsDrawHaloBurstGroundQuad = 0x8017F470; // type:func
+_roomVisualEffectsDrawHaloStar = 0x8017F7E8; // type:func
+_roomVisualEffectsDrawFlashRing = 0x80180580; // type:func
+_roomVisualEffectsDrawFlashDisc = 0x801809AC; // type:func
+_roomVisualEffectsDrawTwinTrail = 0x80181230; // type:func
+_roomVisualEffectsDrawBurstStar = 0x801818B0; // type:func
+_roomEventGate = 0x8017D5E8; // type:func
+roomEventTask = 0x8017D74C; // type:func
+_roomVariantMotelBalconyDoorsMsg = 0x8017D8BC; // type:func
+_motelBalconyCueSoundMsg = 0x8017DB1C; // type:func
+_dryfieldMotelBalconyUseKeyItemMsg = 0x8017db6c; // type:func
+_dryfieldMotelBalconyCommandMsg = 0x8017db74; // type:func
+_dryfieldMotelBalconyRoomActionMsg = 0x8017db7c; // type:func
+_dryfieldMotelBalconyIdleState = 0x8017dbc8; // type:func
+_dryfieldMotelBalconyInitRoomTask = 0x8017db84; // type:func
+dryfieldMotelBalconyRoomTask = 0x8017dbd0; // type:func
+_gDryfieldMotelBalconyRoomTaskStates = 0x8017d5dc;

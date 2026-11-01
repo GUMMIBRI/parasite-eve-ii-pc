@@ -1,0 +1,185 @@
+#ifndef INCLUDE_ROOMS_SHELTER_B1_POD_SERVICE_GANTRY_H
+#define INCLUDE_ROOMS_SHELTER_B1_POD_SERVICE_GANTRY_H
+
+#include "types.h"
+
+#include "gameplay/area.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+#include "main/coord.h"
+#include "main/task_types.h"
+
+/// Number of retained placement-variant slots, including absent slots.
+enum { SHELTER_B1_POD_SERVICE_GANTRY_AREA_VARIANT_COUNT = 11 };
+
+/// Shelter B1 pod service gantry placement/resource directory indexed by `GameLocationKey.variant`.
+///
+/// Variant 1 loads scene graphics and places bodyless discard tasks.
+/// All other slots, including 0, are absent (NULL, NULL).
+/// Both lists belong to this room overlay. Keep it and any actors supplying
+/// task descriptors loaded through loading, spawning and model-flag updates.
+/// Selectors must be in 0..10; there is no terminator or bounds check.
+extern AreaVariant gShelterB1PodServiceGantryAreaVariants[SHELTER_B1_POD_SERVICE_GANTRY_AREA_VARIANT_COUNT];
+
+/// Logical-view maps for the pod service gantry's single room.
+///
+/// Room 1 borrows `gViewIdentityMap`: logical views 1..46 select the same
+/// 1-based camera, image and sprite indices. This directory has no terminator
+/// and stays valid only while the room overlay is loaded.
+extern u8* gShelterB1PodServiceGantryRoomViewMaps[1];
+
+/// Logical-view reverse-search limit for this area's sole room.
+///
+/// Room 1 searches 46 entries in its view map. Index zero corresponds to room ID 1.
+/// Counts are signed halfword element counts, independent of map capacity.
+/// The stage map borrows this array while the room overlay is loaded; there
+/// is no terminator.
+extern ViewCount gShelterB1PodServiceGantryRoomViewCounts[1];
+
+/// The pod service gantry's single warp endpoint.
+///
+/// Slot 1 places both actors at (2535, 0, 3220) in view 2, without
+/// arrival, departure or blocked sounds and without a map-marker update.
+/// Index by 1-based warp ID minus one; there is no terminator. Placements
+/// use whole world units and yaw uses 4096 units per turn. The stage map
+/// borrows this array while the room overlay and its sound bank stay loaded.
+extern DirectionWarpEntry gShelterB1PodServiceGantryWarpEntries[1];
+
+/// The pod service gantry's room-space collision mesh and spatial cell index.
+///
+/// Owns 30 faces over 66 vertices and 13 normals, indexed by 5 x 3 cells of
+/// 4000 game units. Cell coordinates use biases (1003, -1010) on room X/Z.
+/// Room setup borrows the mesh and binds its view transform; the grid and
+/// its private pools must remain writable and loaded while active.
+extern WorldCollisionGrid gShelterB1PodServiceGantryRoomCollision;
+
+/// Authored cameras for mapped view indices 1..46, stored at index minus one.
+///
+/// Rotation coefficients use `ONE` (4096) per unit; translation is the negated
+/// world-space camera origin in game units. Projection distance is in pixels.
+/// The stage map borrows this array; keep the room overlay loaded until queued
+/// camera tasks have applied their records. There is no terminator.
+extern ViewCamera gShelterB1PodServiceGantryViewCameras[46];
+
+/// Background and foreground sprite descriptors for all 46 mapped gantry views.
+///
+/// Indexed by mapped 1-based view minus one. Views 1..5, 8, 9, 11, 14 and 45
+/// select source rectangles; other views retain empty batch-list addresses.
+/// Every view retains decoded background strips, and only view 3 supplies a
+/// clipping list. Gameplay borrows these mutable descriptors and their private
+/// lists while the room overlay is loaded, through packet allocation and drawing.
+extern SpriteView gShelterB1PodServiceGantrySpriteViews[46];
+
+/// Model-shading lights for the pod service gantry's single room.
+///
+/// Borrows nine point lights and two cone lights, all admitted in every view;
+/// there are no directional lights. Transforms and attenuation are mutable.
+/// The collection and its private backing arrays stay live with the overlay.
+extern WorldCoordRoomLights gShelterB1PodServiceGantryRoomLights;
+
+/// Pod service gantry collision and footstep policies for surface classes 0..7.
+///
+/// All eight classes share one record: probes block, weapon impacts are enabled,
+/// pushback applies and footsteps are silent. Setup reads every entry; borrow
+/// the directory and record only while this room overlay is loaded.
+extern WorldCollisionSurfaceProperties* gShelterB1PodServiceGantrySurfacePropertiesByClass[8];
+
+/// Runs the pod service gantry's room receiver and two-scene sequence.
+///
+/// Requires a live task with state 0 (register and allocate scene work), 1
+/// (advance the scene sequence), or 2 (kill). Start at 0; the task owns its
+/// allocated work until teardown, and allocation failure kills the receiver.
+/// Keep the room/map overlays and scene resources live while used. Running
+/// state 1 requires the work initialized by state 0; the final sequence step
+/// waits for the area transition to tear down the room.
+void shelterB1PodServiceGantryRoomTask(Task* task);
+
+/// Draws the additive disc at a chain end in its composed coordinate frame.
+///
+/// Borrows `coord` with a current world-space `workm`; transforms local point
+/// (0, -196, 0), retaining signed halfword coordinates, then projects it through
+/// the current view. `chainNumber` modulo eight selects the persistent flicker
+/// phase. The signed low halfword of `radiusScale` gives screen radius
+/// `radiusScale * 64 / (SZ3 / 4)` in pixels; accepted depth must be nonzero.
+///
+/// `packedColor` contains red, green and blue nibbles in bits 8..11, 4..7 and
+/// 0..3, each expanded by 16. Bits 12..15 give the shift of a parity-controlled
+/// increment added to all channels; packet bytes retain the low eight bits.
+/// Requires actor-560800's tick, initialized flicker phases, scratch space for
+/// one `EffectCentreScratch` and frame-arena capacity for four Gouraud quads
+/// plus their additive draw-mode packets. Scratch is released before return;
+/// queued packets remain live until the GPU consumes this frame.
+void shelterB1PodServiceGantryDrawChainGlow(const GfxCoord* coord, s32 chainNumber, s32 radiusScale, s16 packedColor);
+
+/// Seeds the chain-glow flicker offsets and selects the room's water-spray effect.
+///
+/// A live task in state 0 advances the shared random sequence eight times,
+/// storing bits 16..23 as one byte per chain, then enters idle state 1.
+/// Any nonzero state does nothing. Spawn arguments and the coordinate body are
+/// unused; this callback allocates no work and leaves teardown to its owner.
+void shelterB1PodServiceGantryInitEffectsTask(Task* task);
+
+/// Advances and draws one counted eight-cell water-spray particle for this room.
+///
+/// Requires a live coordinate-body task in state 0 with owned, initialized
+/// `EffectWork` in `spawnArg2.pointer`, initially at cell 0, and a live
+/// `gRoomEffectState`. Translation and velocity use the coordinate's parent
+/// space, normally view space. Drawing requires initialized scratch storage
+/// and capacity for one textured-quad packet.
+///
+/// `spawnArg1.value` packs perspective size in bits 0..11, running updates per
+/// cell in 12..15 (0 selects 1), launch speed in 16..23 (0 selects 64), and
+/// velocity kind in 24..27 (0 stationary, 1 upward burst, 2 all-axis spray,
+/// 3 narrow upward jet, 5 the copied `pos` direction; others launch at zero).
+/// Any bits 28..31 select an upright sprite; otherwise the random spin angle
+/// stays fixed, in 4096 units per turn. A supplied nonzero `move` bypasses
+/// direction generation and scaling. Velocity is in parent-coordinate units
+/// per running update and its components retain signed halfword precision.
+///
+/// The first running update initializes without drawing or moving. Subsequent
+/// updates draw before moving, add 6 to moving particles' Y velocity, and
+/// retire after eight cells of the selected period. Suspended control values
+/// below 4 redraw without aging; control >= 4 retires without drawing.
+/// Retirement frees the work, decrements the effect count and tears down the
+/// task and coordinate body; callers must not retain pointers after retirement.
+void shelterB1PodServiceGantryWaterDriftTaskU16(Task* task);
+
+/// Moves and draws the gantry's eight-cell rising sprite with a random palette.
+///
+/// Requires a counted coordinate-body task in state 0 with owned, zero-initialized
+/// `EffectWork` in `spawnArg2.pointer` and a live `gRoomEffectState`. Bits 0..11 of
+/// `spawnArg1.value` select the perspective size numerator; bit 16 reverses Y
+/// motion, and other bits are ignored. The first running update chooses speed
+/// 16..79 parent-coordinate units per update and a fixed screen angle in
+/// 4096 units per turn. `move.vy` holds signed velocity, `scale` the angle,
+/// and `angle` the size; these parameters retain signed halfword precision.
+///
+/// Running updates move along parent-space Y before drawing, dirty the transform
+/// cache, and advance the cell every fourth update. Update 32 moves then releases
+/// without drawing. Drawing uses the existing composed cache, requires scratch
+/// and quad-packet capacity, and selects one of six palettes on every draw.
+/// Controls 1..3 freeze initialization, motion and animation but retain drawing
+/// and random consumption; controls >=4 release before drawing. Retirement frees
+/// the work, decrements the effect count and tears down the task and body.
+void shelterB1PodServiceGantryEffectSpriteRiseTask(Task* task);
+
+/// Advances the pod service gantry's animated drifting sprite and releases it at completion.
+///
+/// Requires a live coordinate-body task with initialized `EffectWork` in
+/// `spawnArg2.pointer`. `spawnArg1.value` packs size in bits 0..11, period in
+/// 12..14 (1 only when bits 12..15 are all zero), speed in 16..23 (0 means 64),
+/// movement kind in 24..27, palette bank in 28..30, and alternate drawer in 31.
+/// A nonzero period nibble must encode a nonzero period. Spin uses 4096 units
+/// per turn; movement uses coordinate units per running update.
+/// Initializes without drawing; later updates draw before moving, accelerating
+/// and advancing through 12 banked or 10 alternate cells. Nonzero effect control
+/// freezes updates but retains the drawer and palette; control >= 4 frees work
+/// and task after that redraw. Drawing needs composed coordinates and scratch
+/// and primitive-packet capacity.
+void shelterB1PodServiceGantrySpriteDriftTask(Task* task);
+
+#endif // INCLUDE_ROOMS_SHELTER_B1_POD_SERVICE_GANTRY_H
