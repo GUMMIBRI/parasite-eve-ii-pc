@@ -40,6 +40,41 @@ def walk(node, path):
 walk(data.TREE, [])
 
 hdr = re.compile(r'/\* Generated from assets/USA/pe2pkg/(\w+)\.pe2pkg; (.+?) at (0x[0-9A-Fa-f]+)\. \*/')
+# Packages the catalog does not name (the type store holds their inflated form): stages.json says which
+# disc file and chunk each stored file stands for.
+try:
+    stages = json.load(open('assets/USA/stages.json'))
+except OSError:
+    stages = {}
+tree_files = {}
+for folder in data.TREE.values():
+    for fname, frec in folder.get('files', {}).items():
+        tree_files[fname] = frec
+stored = {}
+for stage in stages.values():
+    for fname, chunks in stage.get('files', {}).items():
+        for cname, c in chunks.items():
+            path = c.get('path', '')
+            if path.startswith('pe2pkg/') and fname in tree_files:
+                chunk = cname.rsplit('.', 1)[0]
+                stored[path[len('pe2pkg/'):-len('.pe2pkg')]] = (tree_files[fname]['id'], chunk)
+
+tree_folders = {}
+for root in data.TREE.values():
+    for dname, drec in root.get('folders', {}).items():
+        tree_folders[dname] = drec
+for stage in stages.values():
+    for dname, files in stage.get('folders', {}).items():
+        drec = tree_folders.get(dname)
+        if drec is None:
+            continue
+        for fname, chunks in files.items():
+            frec = drec.get('files', {}).get(fname)
+            for cname, c in chunks.items():
+                path = c.get('path', '')
+                if frec is not None and path.startswith('pe2pkg/'):
+                    stored[path[len('pe2pkg/'):-len('.pe2pkg')]] = (frec['id'], cname.rsplit('.', 1)[0], drec['id'])
+
 entries, pkgs, unmapped = [], {}, set()
 for f in sorted(inc_dir.glob('*.inc')):
     with open(f) as fh:
@@ -51,9 +86,11 @@ for f in sorted(inc_dir.glob('*.inc')):
     if pkg not in pkgs:
         rec = data.ASSETS.get(pkg)
         loc = where.get(pkg)
-        if rec is None or loc is None:
-            unmapped.add(pkg)
-        else:
+        if rec is not None and loc is not None:
             pkgs[pkg] = {'sha1': rec['sha1'], 'disc_file': int(loc[1][4:]), 'chunk': loc[2]}
+        elif pkg in stored:
+            pkgs[pkg] = {'disc_file': stored[pkg][0], 'chunk': stored[pkg][1], **({'disc_folder': stored[pkg][2]} if len(stored[pkg]) > 2 else {})}
+        else:
+            unmapped.add(pkg)
 json.dump({'packages': pkgs, 'entries': entries, 'unmapped_packages': sorted(unmapped)}, sys.stdout, indent=1)
 print(f'{len(entries)} entries, {len(pkgs)} packages, {len(unmapped)} unmapped', file=sys.stderr)
