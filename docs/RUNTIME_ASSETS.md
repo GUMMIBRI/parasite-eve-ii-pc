@@ -82,7 +82,7 @@ Comparison builds: `-DPE_EMBED_ASSETS=ON` keeps the build-time includes. `PE2_DU
 binding. For the 33 bindings linked into the executable today (model parts, collision patches, grid faces, cells
 and a pointer table) the embedded build and the disc-loaded build produce **identical dumps**. The other sources are
 not linked yet, so their bindings are covered by `verify_asset_parts.py` (3,655 of 3,655) rather than by a run.
-Still embedded: 39 sites the converter does not match and about 560 includes that no decoder covers yet (measured 2026-11-03, below).
+Still embedded: 39 sites the converter does not match and 553 includes that no decoder covers yet (measured 2026-11-03, below).
 
 ## Plan
 
@@ -123,14 +123,14 @@ These need a per-type decoder that rebuilds the host structs from the disc bytes
 
 ### Recount (2026-11-03, after the clip and model work)
 
-Of the 1,220 `assets/*.inc` includes that no `PE_ASSET_BIND` follows in the including file, 660 are generated sources
-that bind their arrays inside (clips, models, banks), so they already load from the disc. What remains is about 560:
+Counting every `assets/*.inc` include (also those bound with `PE_ASSET_BIND_AUX`, and generated sources that bind
+inside), what no decoder covers yet is **553 includes**:
 
-| Family | Includes | Size | Notes |
-| --- | --- | --- | --- |
-| rooms | 455 | 2.7 MB | `gen_room_inc` structs holding pointers (maps, spawns, placements, tables, music) |
-| `*_collision_*_table` and one motion table | ~100 | ~0.1 MB | small flat tables per room; the next easy win |
-| enemies / weapons / characters / encounters | 105 | ~0.1 MB | non-clip data (struct tables) |
-| inventory | 1 | 44 KB | |
+| Family | Includes | Notes |
+| --- | --- | --- |
+| rooms | 455 | `gen_room_inc` output read from the extracted assets: maps, spawns, placements, tables, music; structs with pointers |
+| animation banks (enemies, weapons, characters, encounters) | ~105 | `AnimationSet*` slot tables that point at the static clips; they hold no disc bytes, only slot layout from the asset table |
+| inventory catalog, one motion table | 2 | |
 
-All dumps match: 4,176 bound arrays, 809 of them models, embedded and disc-loaded builds identical.
+The room includes are the real remaining work. The banks can stay compiled. Dumps match: 4,176 bound arrays, 809 of
+them models, embedded and disc-loaded builds identical.
