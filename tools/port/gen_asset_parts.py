@@ -104,6 +104,22 @@ for _pn, _placed in sorted(_pkgs.items()):
                 raise SystemExit(f'{_pn}: {_q["name"]} {_arr} differs from the package')
             parts.append({'file': f'clip/{_pn}/{_arr}.inc', 'kind': 'clip', 'package': _pn, 'load': 0, 'source': _at,
                           'part': 'data', 'offset': _at, 'size': _size, 'type': _typ, 'elem': _ELEM[_typ], 'op': 'copy'})
+# Declared models (gen_model_source.py): arrays at the model's place in its package; checked against the package bytes.
+from tools.buildsteps import gen_model_source as _gms
+_ELEM.update({'TmdBone': 36, 'SVECTOR': 8, 'u32': 4})
+_cache = {}
+for _name, _usd, _inc in nc.model_source_includes(V):
+    _place = _data.EMBEDDED_ASSETS[_name]
+    _pn = _gms.package_of(_name)
+    _path = Path('assets/USA/main.exe') if _pn == 'main.exe' else Path('assets/USA/pe2pkg') / _place['source']
+    _bytes = _cache.setdefault(_path, _path.read_bytes())
+    _blob = _gms.declared.encode(_name, _data.ASSETS, _data.EMBEDDED_ASSETS, Path('assets/USA'))
+    for _arr, _typ, _off, _size in _gms.model_arrays(_name, Path('assets/USA')):
+        _at = _place['offset'] + _off
+        if _bytes[_at:_at + _size] != _blob[_off:_off + _size]:
+            raise SystemExit(f'{_pn}: model {_name} {_arr} differs from the package')
+        parts.append({'file': f'model/{_pn}/{_arr}.inc', 'kind': 'clip', 'package': _pn, 'load': 0, 'source': _at,
+                      'part': 'data', 'offset': _at, 'size': _size, 'type': _typ, 'elem': _ELEM[_typ], 'op': 'copy'})
 # Font glyph tables (gen_font_inc.py output): the exe holds the same bytes the include spells out.
 import re as _re
 _exe = Path('assets/USA/main.exe').read_bytes()

@@ -254,11 +254,11 @@ enum {
 
 /// Packed open-eye pixels for Rupert's face texture.
 #ifdef PE_EMBED_ASSETS
-static u_long _gHelicopterDepartureRupertEyesOpenPixels[EYE_TEXTURE_WIDTH_WORDS * EYE_TEXTURE_HEIGHT_ROWS / 2] = {
+static u32 _gHelicopterDepartureRupertEyesOpenPixels[EYE_TEXTURE_WIDTH_WORDS * EYE_TEXTURE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/rupert/eyes_open.inc"
 };
 #else
-static u_long _gHelicopterDepartureRupertEyesOpenPixels[192];
+static u32 _gHelicopterDepartureRupertEyesOpenPixels[192];
 #endif
 PE_ASSET_BIND("characters/rupert/eyes_open", _gHelicopterDepartureRupertEyesOpenPixels);
 
@@ -270,11 +270,11 @@ static GpuImageUpload _gHelicopterDepartureRupertEyesOpenUploads[2] = {
 
 /// Packed half-open-eye pixels for Rupert's face texture.
 #ifdef PE_EMBED_ASSETS
-static u_long _gHelicopterDepartureRupertEyesHalfOpenPixels[EYE_TEXTURE_WIDTH_WORDS * EYE_TEXTURE_HEIGHT_ROWS / 2] = {
+static u32 _gHelicopterDepartureRupertEyesHalfOpenPixels[EYE_TEXTURE_WIDTH_WORDS * EYE_TEXTURE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/rupert/eyes_half_open.inc"
 };
 #else
-static u_long _gHelicopterDepartureRupertEyesHalfOpenPixels[192];
+static u32 _gHelicopterDepartureRupertEyesHalfOpenPixels[192];
 #endif
 PE_ASSET_BIND("characters/rupert/eyes_half_open", _gHelicopterDepartureRupertEyesHalfOpenPixels);
 
@@ -286,11 +286,11 @@ static GpuImageUpload _gHelicopterDepartureRupertEyesHalfOpenUploads[2] = {
 
 /// Packed closed-eye pixels for Rupert's face texture.
 #ifdef PE_EMBED_ASSETS
-static u_long _gHelicopterDepartureRupertEyesClosedPixels[EYE_TEXTURE_WIDTH_WORDS * EYE_TEXTURE_HEIGHT_ROWS / 2] = {
+static u32 _gHelicopterDepartureRupertEyesClosedPixels[EYE_TEXTURE_WIDTH_WORDS * EYE_TEXTURE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/rupert/eyes_closed.inc"
 };
 #else
-static u_long _gHelicopterDepartureRupertEyesClosedPixels[192];
+static u32 _gHelicopterDepartureRupertEyesClosedPixels[192];
 #endif
 PE_ASSET_BIND("characters/rupert/eyes_closed", _gHelicopterDepartureRupertEyesClosedPixels);
 
