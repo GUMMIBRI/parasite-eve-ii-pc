@@ -732,10 +732,10 @@ static void _actor521100ResolveContacts(Task* task)
             continue;
         }
         rootX                    = rootCoord->coord.t[0];
-        dx                       = gPlayerStatus.coordMtx->t[0] - rootX;
+        dx                       = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootX;
         scratch->delta.vector.vx = dx;
         scratch->delta.vector.vy = 0;
-        dz                       = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+        dz                       = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
         scratch->delta.vector.vz = dz;
         damage                   = damageComputePlayerAttack(work->bodyContacts[contactIndex].key.value, SquareRoot0(dx * dx + dz * dz), 0, 0);
         hitResponse              = _actor521100GetBaseHitResponse(work->bodyContacts[contactIndex].key.value);
@@ -888,9 +888,9 @@ static void _actor521100ApproachState(Task* task)
     previousScratchTop           = SCRATCH_STACK_CURSOR(VECTOR);
     playerDelta                  = previousScratchTop - 1;
     SCRATCH_STACK_CURSOR(VECTOR) = playerDelta;
-    previousScratchTop[-1].vx    = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+    previousScratchTop[-1].vx    = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
     playerDelta->vy              = 0;
-    playerDelta->vz              = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    playerDelta->vz              = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     work->playerDistance         = SquareRoot0(previousScratchTop[-1].vx * previousScratchTop[-1].vx + playerDelta->vz * playerDelta->vz);
     playerBearing                = ratan2((s16)previousScratchTop[-1].vx, (s16)playerDelta->vz) & ACTOR_TRANSFORM_ANGLE_MASK;
     work->targetYaw              = playerBearing;
@@ -1048,9 +1048,9 @@ static void _actor521100AttackState(Task* task)
     playerDelta        = previousScratchTop - 1;
 
     SCRATCH_STACK_CURSOR(VECTOR) = playerDelta;
-    previousScratchTop[-1].vx    = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+    previousScratchTop[-1].vx    = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
     playerDelta->vy              = 0;
-    playerDelta->vz              = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    playerDelta->vz              = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
 
     work->playerDistance = SquareRoot0(previousScratchTop[-1].vx * previousScratchTop[-1].vx + playerDelta->vz * playerDelta->vz);
     work->targetYaw      = ratan2((s16)previousScratchTop[-1].vx, (s16)playerDelta->vz) & ACTOR_TRANSFORM_ANGLE_MASK;
@@ -1500,7 +1500,7 @@ static void _actor521100GrabState(Task* task)
                 sndEvtRequestScriptStart(soundScript, (s8)worldCoordGetOriginAudioPan(rootCoord),
                                          (s8)worldCoordGetOriginAudioDepth(rootCoord));
             } else if (work->animationFrame == ACTOR_521100_SEIZE_SNAP_FRAME) {
-                phaseValue          = (gPlayerStatus.coordMtx->m[0][2] * rootCoord->coord.m[0][2] + gPlayerStatus.coordMtx->m[1][2] * rootCoord->coord.m[1][2] + gPlayerStatus.coordMtx->m[2][2] * rootCoord->coord.m[2][2]);
+                phaseValue          = (playerStatusCoordMtx(&gPlayerStatus)->m[0][2] * rootCoord->coord.m[0][2] + playerStatusCoordMtx(&gPlayerStatus)->m[1][2] * rootCoord->coord.m[1][2] + playerStatusCoordMtx(&gPlayerStatus)->m[2][2] * rootCoord->coord.m[2][2]);
                 work->grabFromFront = (u32)phaseValue >> 31;
                 ACTOR_521100_PLAY_GRAB_PLAYER_ANIMATION(work->grabFromFront ? ACTOR_521100_PLAYER_ANIM_SEIZE_FRONT : ACTOR_521100_PLAYER_ANIM_SEIZE_BACK)
             } else if (work->animationFrame >= ACTOR_521100_SEIZE_HOLD_FRAME) {
@@ -1808,10 +1808,10 @@ static void _actor521100WalkRouteState(Task* task)
             work->animationId  = ACTOR_521100_ANIM_WALK;
             work->forwardSpeed = ACTOR_521100_ROUTE_WALK_SPEED;
             work->turnSpeed    = ACTOR_521100_ROUTE_TURN_SPEED;
-            scratch->delta.vx  = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+            scratch->delta.vx  = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
             scratch->delta.vy  = 0;
-            scratch->delta.vz  = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
-            if ((SquareRoot0((scratch->delta.vx * scratch->delta.vx) + (scratch->delta.vz * scratch->delta.vz)) < ACTOR_521100_ROUTE_ATTACK_DISTANCE) && (gPlayerStatus.coordMtx->t[2] < ACTOR_521100_ROUTE_PLAYER_Z_LIMIT)) {
+            scratch->delta.vz  = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
+            if ((SquareRoot0((scratch->delta.vx * scratch->delta.vx) + (scratch->delta.vz * scratch->delta.vz)) < ACTOR_521100_ROUTE_ATTACK_DISTANCE) && (playerStatusCoordMtx(&gPlayerStatus)->t[2] < ACTOR_521100_ROUTE_PLAYER_Z_LIMIT)) {
                 work->targetYaw    = ratan2((s16)scratch->delta.vx, (s16)scratch->delta.vz) & ACTOR_TRANSFORM_ANGLE_MASK;
                 work->forwardSpeed = 0;
                 work->turnSpeed    = ACTOR_521100_ROUTE_TURN_SPEED;
@@ -1840,9 +1840,9 @@ static void _actor521100WalkRouteState(Task* task)
             work->animationId  = ACTOR_521100_ANIM_WALK;
             work->forwardSpeed = ACTOR_521100_ROUTE_WALK_SPEED;
             work->turnSpeed    = ACTOR_521100_ROUTE_TURN_SPEED;
-            scratch->delta.vx  = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+            scratch->delta.vx  = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
             scratch->delta.vy  = 0;
-            scratch->delta.vz  = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            scratch->delta.vz  = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             if (SquareRoot0((scratch->delta.vx * scratch->delta.vx) + (scratch->delta.vz * scratch->delta.vz)) < ACTOR_521100_ROUTE_ATTACK_DISTANCE) {
                 work->targetYaw    = ratan2((s16)scratch->delta.vx, (s16)scratch->delta.vz) & ACTOR_TRANSFORM_ANGLE_MASK;
                 work->forwardSpeed = 0;
@@ -1855,9 +1855,9 @@ static void _actor521100WalkRouteState(Task* task)
                 scratch->delta.vz = _gActor521100RouteWaypoints[ACTOR_521100_ROUTE_SECOND].vz - rootCoord->coord.t[2];
                 work->targetYaw   = ratan2((s16)scratch->delta.vx, (s16)scratch->delta.vz) & ACTOR_TRANSFORM_ANGLE_MASK;
                 if (SquareRoot0((scratch->delta.vx * scratch->delta.vx) + (scratch->delta.vz * scratch->delta.vz)) < ACTOR_521100_ROUTE_WAYPOINT_RADIUS) {
-                    scratch->delta.vx  = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+                    scratch->delta.vx  = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
                     scratch->delta.vy  = 0;
-                    scratch->delta.vz  = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+                    scratch->delta.vz  = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
                     work->targetYaw    = ratan2((s16)scratch->delta.vx, (s16)scratch->delta.vz) & ACTOR_TRANSFORM_ANGLE_MASK;
                     work->forwardSpeed = 0;
                     work->turnSpeed    = ACTOR_521100_ROUTE_TURN_SPEED;

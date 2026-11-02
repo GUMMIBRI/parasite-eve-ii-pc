@@ -145,7 +145,7 @@ static void _akropolisForkedRoadOutboundMoviePathTask(Task* task)
             cdQueue->movieFrame = 1;
             padInputChangeSuppression(PAD_INPUT_SUPPRESSION_SET_AND_HOLD, PAD_INPUT_SUPPRESS_ACTIONS_AND_MENU);
             gSceneCombatState.actorControl               = SCENE_COMBAT_ACTORS_HIDDEN;
-            ((RoomMoviePathWork*)task->work)->playerMtx  = gPlayerStatus.coordMtx;
+            ((RoomMoviePathWork*)task->work)->playerMtx  = playerStatusCoordMtx(&gPlayerStatus);
             ((RoomMoviePathWork*)task->work)->playerTask = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
             taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_CAP_CONTROL), CAP_CONTROL_MESSAGE_HIDE_HUD, 0, 0);
             entryPose.rot.vy = YAW;
@@ -241,7 +241,7 @@ static void _akropolisForkedRoadReturnMoviePathTask(Task* task)
                 break;
             }
             ((RoomMoviePathWork*)task->work)->playerTask = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
-            ((RoomMoviePathWork*)task->work)->playerMtx  = gPlayerStatus.coordMtx;
+            ((RoomMoviePathWork*)task->work)->playerMtx  = playerStatusCoordMtx(&gPlayerStatus);
             taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_CAP_CONTROL), CAP_CONTROL_MESSAGE_HIDE_HUD, 0, 0);
             weaponId                              = gPlayerStatus.weapon;
             animationRequest.source.index         = PLAYER_ACTOR_SCENE_WEAPON_BANK(weaponId);

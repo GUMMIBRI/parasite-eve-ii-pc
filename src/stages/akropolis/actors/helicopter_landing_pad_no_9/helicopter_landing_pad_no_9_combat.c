@@ -899,9 +899,9 @@ static void _helicopterLandingPadNo9ResolveBodyContacts(Task* task)
                     damage = (s16)damageComputePlayerAttack(work->bodyContacts[contactIndex].key.value, 0, 0, 0) >> 1;
                     damageAccumulateLifeDrainHp(task->spawnArg2.pointer, work->bodyContacts[contactIndex].key.value, damage, 0);
                 } else {
-                    playerOffset->vx = gPlayerStatus.coordMtx->t[0] - bodyCoord->coord.t[0];
-                    playerOffset->vy = gPlayerStatus.coordMtx->t[1] - bodyCoord->coord.t[1];
-                    playerOffset->vz = gPlayerStatus.coordMtx->t[2] - bodyCoord->coord.t[2];
+                    playerOffset->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - bodyCoord->coord.t[0];
+                    playerOffset->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - bodyCoord->coord.t[1];
+                    playerOffset->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - bodyCoord->coord.t[2];
                     unscaledDamage   = damageComputePlayerAttack(work->bodyContacts[contactIndex].key.value, SquareRoot0(playerOffset->vx * playerOffset->vx + playerOffset->vy * playerOffset->vy + playerOffset->vz * playerOffset->vz), 0, 0);
                     damage           = unscaledDamage;
                     if ((u16)attackAttribute == ATTACK_ATTRIBUTE_DOUBLE_DAMAGE) {
@@ -1377,8 +1377,8 @@ static s32 _helicopterLandingPadNo9TrySelectAttack(Task* task)
         return 0;
     }
     // A negative forward-axis dot product means the player faces the golem.
-    if (gPlayerStatus.coordMtx->m[0][2] * bodyCoord->coord.m[0][2] +
-            gPlayerStatus.coordMtx->m[2][2] * bodyCoord->coord.m[2][2] <
+    if (playerStatusCoordMtx(&gPlayerStatus)->m[0][2] * bodyCoord->coord.m[0][2] +
+            playerStatusCoordMtx(&gPlayerStatus)->m[2][2] * bodyCoord->coord.m[2][2] <
         0) {
         playerDistance = work->playerDistance;
         if (playerDistance < SLASH_RANGE) {
@@ -2181,10 +2181,10 @@ static void _helicopterLandingPadNo9UpdatePlayerRange(Task* task)
 
     // Outside all strips, preserve the last side that contained the player.
     for (stripIndex = 0; stripIndex < ARRAY_SIZE(_gHelicopterLandingPadNo9LapStrips); stripIndex++) {
-        if (_gHelicopterLandingPadNo9LapStrips[stripIndex].minX < gPlayerStatus.coordMtx->t[0] &&
-            gPlayerStatus.coordMtx->t[0] < _gHelicopterLandingPadNo9LapStrips[stripIndex].maxX &&
-            _gHelicopterLandingPadNo9LapStrips[stripIndex].minZ < gPlayerStatus.coordMtx->t[2] &&
-            gPlayerStatus.coordMtx->t[2] < _gHelicopterLandingPadNo9LapStrips[stripIndex].maxZ) {
+        if (_gHelicopterLandingPadNo9LapStrips[stripIndex].minX < playerStatusCoordMtx(&gPlayerStatus)->t[0] &&
+            playerStatusCoordMtx(&gPlayerStatus)->t[0] < _gHelicopterLandingPadNo9LapStrips[stripIndex].maxX &&
+            _gHelicopterLandingPadNo9LapStrips[stripIndex].minZ < playerStatusCoordMtx(&gPlayerStatus)->t[2] &&
+            playerStatusCoordMtx(&gPlayerStatus)->t[2] < _gHelicopterLandingPadNo9LapStrips[stripIndex].maxZ) {
             work->playerSide = stripIndex;
             break;
         }
@@ -2193,10 +2193,10 @@ static void _helicopterLandingPadNo9UpdatePlayerRange(Task* task)
     work->sideTravelled = __builtin_abs(work->lapSide * HELICOPTER_LANDING_PAD_NO_9_LAP_SIDE_LENGTH - work->lapDistance);
     work->sideRemaining = __builtin_abs((work->lapSide + 1) * HELICOPTER_LANDING_PAD_NO_9_LAP_SIDE_LENGTH - work->lapDistance);
 
-    deltaX               = gPlayerStatus.coordMtx->t[0] - bodyCoord->coord.t[0];
+    deltaX               = playerStatusCoordMtx(&gPlayerStatus)->t[0] - bodyCoord->coord.t[0];
     playerOffset->vx     = deltaX;
     playerOffset->vy     = 0;
-    deltaZ               = gPlayerStatus.coordMtx->t[2] - bodyCoord->coord.t[2];
+    deltaZ               = playerStatusCoordMtx(&gPlayerStatus)->t[2] - bodyCoord->coord.t[2];
     playerOffset->vz     = deltaZ;
     work->playerDistance = SquareRoot0(deltaX * deltaX + deltaZ * deltaZ);
     SCRATCH_STACK_RELEASE_BLOCK(VECTOR);
@@ -2673,10 +2673,10 @@ static void _helicopterLandingPadNo9InitGrenade(Enemy* enemy, Task* task)
 
     _helicopterLandingPadNo9PlaceGrenade(grenadeCoord, chestCoord, placement);
 
-    playerDeltaX         = gPlayerStatus.coordMtx->t[0] - grenadeCoord->coord.t[0];
+    playerDeltaX         = playerStatusCoordMtx(&gPlayerStatus)->t[0] - grenadeCoord->coord.t[0];
     placement->offset.vy = 0;
     placement->offset.vx = playerDeltaX;
-    playerDeltaZ         = gPlayerStatus.coordMtx->t[2] - grenadeCoord->coord.t[2];
+    playerDeltaZ         = playerStatusCoordMtx(&gPlayerStatus)->t[2] - grenadeCoord->coord.t[2];
     placement->offset.vz = playerDeltaZ;
     pitchBucket          = SquareRoot0((playerDeltaX * playerDeltaX) + (playerDeltaZ * playerDeltaZ)) / PITCH_BUCKET_DISTANCE;
     if (pitchBucket >= ARRAY_SIZE(_gHelicopterLandingPadNo9GrenadePitchStepsByRange)) {

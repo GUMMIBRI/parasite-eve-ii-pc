@@ -1270,9 +1270,9 @@ static void _actor04000StateLunge(Enemy* enemy, Task* task)
     work->state       = ACTOR_04000_STATE_LUNGE_RECOVER;
     scratch           = SCRATCH_STACK_RESERVE_BLOCK(_Actor04000LungeScratch);
     rootCoord         = task->extra.tmd->coords;
-    scratch->delta.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-    scratch->delta.vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-    scratch->delta.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    scratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+    scratch->delta.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+    scratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     facingCoord       = task->extra.tmd->coords;
     yawDelta          = ratan2(scratch->delta.vx, scratch->delta.vz) - ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
     scratch->turn     = _actorAngleNormalizeYaw(yawDelta);
@@ -1533,9 +1533,9 @@ static void _actor04000StateIdle(Enemy* enemy, Task* task)
     }
     rootCoord           = task->extra.tmd->coords;
     playerOffsetPtr     = &playerOffset;
-    playerOffset.vx     = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-    playerOffsetPtr->vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-    playerOffsetPtr->vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    playerOffset.vx     = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+    playerOffsetPtr->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+    playerOffsetPtr->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     if (!_actorRangeOutsideRadiusXZ(playerOffsetPtr, 2000)) {
         sceneEngageBattle(1);
         work->state = ACTOR_04000_STATE_ROUSE;
@@ -1582,9 +1582,9 @@ static void _actor04000StateChase(Enemy* enemy, Task* task)
     turnScratch = SCRATCH_STACK_RESERVE_BLOCK(ActorTurnScratch);
     _animDriverTick(task);
     rootCoord                = task->extra.tmd->coords;
-    scratchHead[-1].delta.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-    turnScratch->delta.vy    = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-    turnScratch->delta.vz    = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    scratchHead[-1].delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+    turnScratch->delta.vy    = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+    turnScratch->delta.vz    = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     facingCoord              = task->extra.tmd->coords;
     yawDelta                 = ratan2(scratchHead[-1].delta.vx, turnScratch->delta.vz) - ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
     turnScratch->angle       = _actorAngleNormalizeYaw(yawDelta);
@@ -1606,9 +1606,9 @@ static void _actor04000StateChase(Enemy* enemy, Task* task)
         work->state = ACTOR_04000_STATE_RETURN;
     }
     rangeCoord            = task->extra.tmd->coords;
-    turnScratch->delta.vx = gPlayerStatus.coordMtx->t[0] - rangeCoord->coord.t[0];
-    turnScratch->delta.vy = gPlayerStatus.coordMtx->t[1] - rangeCoord->coord.t[1];
-    turnScratch->delta.vz = gPlayerStatus.coordMtx->t[2] - rangeCoord->coord.t[2];
+    turnScratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rangeCoord->coord.t[0];
+    turnScratch->delta.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rangeCoord->coord.t[1];
+    turnScratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rangeCoord->coord.t[2];
     facingCoord           = task->extra.tmd->coords;
     yawDelta              = ratan2(turnScratch->delta.vx, turnScratch->delta.vz) - ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
     turnScratch->angle    = _actorAngleNormalizeYaw(yawDelta);
@@ -2135,9 +2135,9 @@ static void _actor04000StatePatrol(Enemy* enemy, Task* task)
     }
     _actorContactApplyAvoidancePushback(task->extra.tmd->coords, work->hitContacts, ARRAY_SIZE(work->hitContacts), &turnScratch->delta);
     rangeCoord            = task->extra.tmd->coords;
-    turnScratch->delta.vx = gPlayerStatus.coordMtx->t[0] - rangeCoord->coord.t[0];
-    turnScratch->delta.vy = gPlayerStatus.coordMtx->t[1] - rangeCoord->coord.t[1];
-    turnScratch->delta.vz = gPlayerStatus.coordMtx->t[2] - rangeCoord->coord.t[2];
+    turnScratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rangeCoord->coord.t[0];
+    turnScratch->delta.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rangeCoord->coord.t[1];
+    turnScratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rangeCoord->coord.t[2];
     if (!_actorRangeOutsideRadiusXZ(&turnScratch->delta, 2000)) {
         facingCoord = task->extra.tmd->coords;
         yawDelta    = ratan2(turnScratch->delta.vx, turnScratch->delta.vz) - ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
@@ -2207,9 +2207,9 @@ static void _actor04000StateReturn(Enemy* enemy, Task* task)
     }
     _actorContactApplyAvoidancePushback(task->extra.tmd->coords, work->hitContacts, ARRAY_SIZE(work->hitContacts), &turnScratch->delta);
     rangeCoord            = task->extra.tmd->coords;
-    turnScratch->delta.vx = gPlayerStatus.coordMtx->t[0] - rangeCoord->coord.t[0];
-    turnScratch->delta.vy = gPlayerStatus.coordMtx->t[1] - rangeCoord->coord.t[1];
-    turnScratch->delta.vz = gPlayerStatus.coordMtx->t[2] - rangeCoord->coord.t[2];
+    turnScratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rangeCoord->coord.t[0];
+    turnScratch->delta.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rangeCoord->coord.t[1];
+    turnScratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rangeCoord->coord.t[2];
     if (!_actorRangeOutsideRadiusXZ(&turnScratch->delta, 2000)) {
         facingCoord = task->extra.tmd->coords;
         yawDelta    = ratan2(turnScratch->delta.vx, turnScratch->delta.vz) - ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]);
@@ -2736,7 +2736,7 @@ static void _actor04000RefillDropSlots(Task* task)
         for (; poolIndex < ACTOR_04000_HANGING_POOL_COUNT; poolIndex++) {
             if (_gActor04000HangingTasksByPlacement[poolIndex] != NULL && ((_Actor04000Work*)_gActor04000HangingTasksByPlacement[poolIndex]->work)->state == ACTOR_04000_STATE_HANG) {
                 candidateCoord               = _gActor04000HangingTasksByPlacement[poolIndex]->extra.tmd->coords;
-                playerMatrix                 = playerStatus->coordMtx;
+                playerMatrix                 = playerStatusCoordMtx(playerStatus);
                 playerOffset.vx              = playerMatrix->t[0] - candidateCoord->coord.t[0];
                 playerOffset.vy              = playerMatrix->t[1] - candidateCoord->coord.t[1];
                 playerOffset.vz              = playerMatrix->t[2] - candidateCoord->coord.t[2];

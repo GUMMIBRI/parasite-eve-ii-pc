@@ -1244,7 +1244,7 @@ static inline s16 _actorAngleNormalizeYaw(s16 yaw)
 
 /// Writes the translation offset from an actor's root to the live player.
 ///
-/// `playerStatus->coordMtx` and `actorRoot` must be live roots whose local
+/// `playerStatusCoordMtx(playerStatus)` and `actorRoot` must be live roots whose local
 /// matrices use the same parent coordinate frame. Their translations are in
 /// game coordinate units; no hierarchy composition or rotation is performed.
 /// `toPlayer` must supply a writable `SVECTOR`, separate from both inputs and
@@ -1253,14 +1253,14 @@ static inline s16 _actorAngleNormalizeYaw(s16 yaw)
 /// All pointers are borrowed for this call, and no storage is reserved.
 static inline void _actorPositionDeltaToPlayer(const PlayerStatus* playerStatus, const GfxCoord* actorRoot, SVECTOR* toPlayer)
 {
-    toPlayer->vx = playerStatus->coordMtx->t[0] - actorRoot->coord.t[0];
-    toPlayer->vy = playerStatus->coordMtx->t[1] - actorRoot->coord.t[1];
-    toPlayer->vz = playerStatus->coordMtx->t[2] - actorRoot->coord.t[2];
+    toPlayer->vx = playerStatusCoordMtx(playerStatus)->t[0] - actorRoot->coord.t[0];
+    toPlayer->vy = playerStatusCoordMtx(playerStatus)->t[1] - actorRoot->coord.t[1];
+    toPlayer->vz = playerStatusCoordMtx(playerStatus)->t[2] - actorRoot->coord.t[2];
 }
 
 /// Returns the signed horizontal turn from the actor's heading toward the player.
 ///
-/// `actor` must have a live model root, and `playerStatus->coordMtx` must be
+/// `actor` must have a live model root, and `playerStatusCoordMtx(playerStatus)` must be
 /// the live player root matrix in the same parent coordinate frame. No hierarchy
 /// composition is performed. `toPlayer` must supply a writable `SVECTOR`, separate
 /// from both inputs; its XYZ components receive player minus actor translation

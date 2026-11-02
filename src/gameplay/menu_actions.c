@@ -1352,10 +1352,10 @@ static void _menuMapDrawPlayerCursor(const Task* mapTask)
     // Project the live player X/Z into this area's map-screen coordinates.
     centre           = SCRATCH_STACK_RESERVE_BLOCK(_MenuMapCentreScratch);
     centre->field_10 = centre->field_12 = centre->field_14 = 0;
-    mapOffset                                              = (area->originX - playerStatus->coordMtx->t[0]) / area->scaleX;
+    mapOffset                                              = (area->originX - playerStatusCoordMtx(playerStatus)->t[0]) / area->scaleX;
     mapBase                                                = area->mapX;
     centre->x                                              = mapBase - mapOffset;
-    mapOffset                                              = (area->originZ - playerStatus->coordMtx->t[2]) / area->scaleZ;
+    mapOffset                                              = (area->originZ - playerStatusCoordMtx(playerStatus)->t[2]) / area->scaleZ;
     mapBase                                                = area->mapY;
     centre->y                                              = mapBase + mapOffset;
 

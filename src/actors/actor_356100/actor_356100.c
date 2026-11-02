@@ -748,9 +748,9 @@ static inline void _actor356100BindLightingMatrices(Task* actor)
 /// live and separate from the writable result. No composition is performed.
 static inline void _actorPositionDeltaToLivePlayer(const GfxCoord* coord, SVECTOR* toPlayer)
 {
-    toPlayer->vx = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
-    toPlayer->vy = gPlayerStatus.coordMtx->t[1] - coord->coord.t[1];
-    toPlayer->vz = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+    toPlayer->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
+    toPlayer->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - coord->coord.t[1];
+    toPlayer->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
 }
 
 /// The overlay's only message-0x3E9 instance; all eight words are zero in the
@@ -1598,9 +1598,9 @@ static void _actor356100TurnAround(Task* actor)
         work->lookYawTarget = 0;
         _actor356100UpdateAnimation(actor);
         playerOffsetCoord       = actor->extra.tmd->coords;
-        scratchEnd[-1].delta.vx = gPlayerStatus.coordMtx->t[0] - playerOffsetCoord->coord.t[0];
-        turnScratch->delta.vy   = gPlayerStatus.coordMtx->t[1] - playerOffsetCoord->coord.t[1];
-        turnScratch->delta.vz   = gPlayerStatus.coordMtx->t[2] - playerOffsetCoord->coord.t[2];
+        scratchEnd[-1].delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - playerOffsetCoord->coord.t[0];
+        turnScratch->delta.vy   = playerStatusCoordMtx(&gPlayerStatus)->t[1] - playerOffsetCoord->coord.t[1];
+        turnScratch->delta.vz   = playerStatusCoordMtx(&gPlayerStatus)->t[2] - playerOffsetCoord->coord.t[2];
         bearingCoord            = actor->extra.tmd->coords;
         turnScratch->turn       = _actorAngleTurnToOffset(bearingCoord, scratchEnd[-1].delta.vx, turnScratch->delta.vz);
         headingCoord            = actor->extra.tmd->coords;
@@ -1615,9 +1615,9 @@ static void _actor356100TurnAround(Task* actor)
     turnScratch                             = scratchEnd - 1;
     _actor356100UpdateAnimation(actor);
     playerOffsetCoord       = actor->extra.tmd->coords;
-    scratchEnd[-1].delta.vx = gPlayerStatus.coordMtx->t[0] - playerOffsetCoord->coord.t[0];
-    turnScratch->delta.vy   = gPlayerStatus.coordMtx->t[1] - playerOffsetCoord->coord.t[1];
-    turnScratch->delta.vz   = gPlayerStatus.coordMtx->t[2] - playerOffsetCoord->coord.t[2];
+    scratchEnd[-1].delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - playerOffsetCoord->coord.t[0];
+    turnScratch->delta.vy   = playerStatusCoordMtx(&gPlayerStatus)->t[1] - playerOffsetCoord->coord.t[1];
+    turnScratch->delta.vz   = playerStatusCoordMtx(&gPlayerStatus)->t[2] - playerOffsetCoord->coord.t[2];
     // Test the stored target before advancing this tick, preserving the extra tick.
     if (work->turnYaw == work->turnYawTarget) {
         if (work->circleCount < 2 || _actorRangeOutsideRadiusXZ(&turnScratch->delta, GRAB_MAX_DISTANCE)) {
@@ -1814,9 +1814,9 @@ static void _actor356100GrabReach(Task* task)
         _actor356100UpdateAnimation(task);
         gfxRotMatrixY(&task->extra.tmd->coords->coord, _actorAngleTurnToPlayer(task, &playerOffset, playerStatus), GRAPHICS_ROTATION_COMPOSE);
         _actorRenderRescaleYaw(task->extra.tmd->coords, ACTOR_356100_ROOT_SCALE);
-        playerOffset.vx                       = task->extra.tmd->coords->coord.t[0] - playerStatus->coordMtx->t[0];
+        playerOffset.vx                       = task->extra.tmd->coords->coord.t[0] - playerStatusCoordMtx(playerStatus)->t[0];
         playerOffset.vy                       = 0;
-        playerOffset.vz                       = task->extra.tmd->coords->coord.t[2] - playerStatus->coordMtx->t[2];
+        playerOffset.vz                       = task->extra.tmd->coords->coord.t[2] - playerStatusCoordMtx(playerStatus)->t[2];
         work->lookYawTarget                   = 0;
         work->lookYaw                         = 0;
         task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
@@ -1826,7 +1826,7 @@ static void _actor356100GrabReach(Task* task)
     _actor356100UpdateAnimation(task);
     // Only the reach cue can request a hold from a nonscripted player.
     if ((work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) == ACTOR_356100_GRAB_CUE && playerActor->mode != GAME_ACTOR_MODE_SCRIPTED) {
-        playerTurn = _actorAngleTurnToMatrixPosition(task, &playerOffset, gPlayerStatus.coordMtx);
+        playerTurn = _actorAngleTurnToMatrixPosition(task, &playerOffset, playerStatusCoordMtx(&gPlayerStatus));
         if (abs(playerTurn) < ACTOR_356100_GRAB_TURN_LIMIT && !_actorRangeOutsideRadiusXZ(&playerOffset, ACTOR_356100_GRAB_REACH)) {
             if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.characterId == ACTOR_356100_GRAB_PRIMARY_CHARACTER) {
                 _gActor356100PlayerGrabAnimationRequest.source.sets = &_gActor356100PlayerGrabAnimationSets[ACTOR_356100_GRAB_PRIMARY_BANK_OFFSET];
@@ -1842,9 +1842,9 @@ static void _actor356100GrabReach(Task* task)
     // After the reach cue, step away along the horizontal separation.
     if ((work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) > ACTOR_356100_GRAB_CUE) {
         offsetVector    = &playerOffset;
-        playerOffset.vx = task->extra.tmd->coords->coord.t[0] - playerStatus->coordMtx->t[0];
+        playerOffset.vx = task->extra.tmd->coords->coord.t[0] - playerStatusCoordMtx(playerStatus)->t[0];
         playerOffset.vy = 0;
-        playerOffset.vz = task->extra.tmd->coords->coord.t[2] - playerStatus->coordMtx->t[2];
+        playerOffset.vz = task->extra.tmd->coords->coord.t[2] - playerStatusCoordMtx(playerStatus)->t[2];
         if (!_actorRangeOutsideRadiusXZ(offsetVector, ACTOR_356100_GRAB_RETREAT_RADIUS)) {
             VectorNormalSS(offsetVector, offsetVector);
             gte_lddp(ACTOR_356100_GRAB_RETREAT_STEP);
@@ -2389,10 +2389,10 @@ static void _actor356100BackOff(Task* actor)
     scratchCursor           = SCRATCH_STACK_CURSOR_SLOT;
     playerOffsetCoord       = actor->extra.tmd->coords;
     scratchEnd              = SCRATCH_STACK_CURSOR_AT(scratchCursor, ActorChaseScratch);
-    scratchEnd[-1].delta.vx = gPlayerStatus.coordMtx->t[0] - playerOffsetCoord->coord.t[0];
+    scratchEnd[-1].delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - playerOffsetCoord->coord.t[0];
     backOff                 = (SCRATCH_STACK_CURSOR_AT(scratchCursor, ActorChaseScratch) = scratchEnd - 1);
-    backOff->delta.vy       = gPlayerStatus.coordMtx->t[1] - playerOffsetCoord->coord.t[1];
-    backOff->delta.vz       = gPlayerStatus.coordMtx->t[2] - playerOffsetCoord->coord.t[2];
+    backOff->delta.vy       = playerStatusCoordMtx(&gPlayerStatus)->t[1] - playerOffsetCoord->coord.t[1];
+    backOff->delta.vz       = playerStatusCoordMtx(&gPlayerStatus)->t[2] - playerOffsetCoord->coord.t[2];
     backOff->turn           = _actorAngleTurnToOffset(actor->extra.tmd->coords, scratchEnd[-1].delta.vx, backOff->delta.vz);
     work->lookYawTarget     = backOff->turn;
     if (ABS(backOff->turn) <= ALIGNMENT_LIMIT && work->animId == ACTOR_356100_ANIM_WALK) {

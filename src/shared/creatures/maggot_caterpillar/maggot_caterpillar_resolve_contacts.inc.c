@@ -260,9 +260,9 @@ static void _maggotCaterpillarWaitState(Task* actor)
     coord        = actor->extra.tmd->coords;
     switch (waitStep) {
         case MAGGOT_CATERPILLAR_WAIT_DORMANT:
-            playerOffset->vx = (s32)(gPlayerStatus.coordMtx->t[0] - coord->coord.t[0]);
+            playerOffset->vx = (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0]);
             playerOffset->vy = 0;
-            playerOffsetZ    = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+            playerOffsetZ    = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
             playerOffset->vz = playerOffsetZ;
             playerOffsetX    = playerOffset->vx;
             if ((SquareRoot0((playerOffsetX * playerOffsetX) + (playerOffsetZ * playerOffsetZ)) < MAGGOT_CATERPILLAR_WAKE_RANGE) || (work->struck != 0) || (gSceneCombatState.signals.bytes.enemyAlert == MAGGOT_CATERPILLAR_WAKE_ALERT_CLASS)) {
@@ -318,9 +318,9 @@ static void _maggotCaterpillarAimState(Task* actor)
     SCRATCH_STACK_CURSOR(VECTOR) = delta;
     work                         = actor->work;
     work->yaw                    = ratan2((s32)coord->coord.m[0][2], (s32)coord->coord.m[2][2]) & (ONE - 1);
-    scratchEnd[-1].vx            = (s32)(gPlayerStatus.coordMtx->t[0] - coord->coord.t[0]);
+    scratchEnd[-1].vx            = (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0]);
     delta->vy                    = 0;
-    playerOffsetZ                = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+    playerOffsetZ                = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
     delta->vz                    = playerOffsetZ;
     playerOffsetX                = scratchEnd[-1].vx;
     playerDistance               = SquareRoot0((playerOffsetX * playerOffsetX) + (playerOffsetZ * playerOffsetZ));
@@ -391,9 +391,9 @@ static void _maggotCaterpillarAmbushState(Task* actor)
     switch (step) {
         case MAGGOT_CATERPILLAR_AMBUSH_WAIT:
             if (work->ambushFollower == 0) {
-                scratchEnd[-1].vx = (s32)(gPlayerStatus.coordMtx->t[0] - coord->coord.t[0]);
+                scratchEnd[-1].vx = (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0]);
                 delta->vy         = 0;
-                playerOffsetZ     = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+                playerOffsetZ     = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
                 delta->vz         = playerOffsetZ;
                 playerOffsetX     = scratchEnd[-1].vx;
                 if (SquareRoot0((playerOffsetX * playerOffsetX) + (playerOffsetZ * playerOffsetZ)) < MAGGOT_CATERPILLAR_AMBUSH_RANGE) {
@@ -454,7 +454,7 @@ static void _maggotCaterpillarAmbushState(Task* actor)
         // Keep the upper thread endpoint fixed while the root descends.
         case MAGGOT_CATERPILLAR_AMBUSH_DROP:
             work->vertical.threadRise += work->prevPos.vy - coord->coord.t[1];
-            if (((gPlayerStatus.coordMtx->t[1] - MAGGOT_CATERPILLAR_AMBUSH_LAND_HEIGHT) < coord->coord.t[1]) || (work->struck != 0) || (work->blocked != 0)) {
+            if (((playerStatusCoordMtx(&gPlayerStatus)->t[1] - MAGGOT_CATERPILLAR_AMBUSH_LAND_HEIGHT) < coord->coord.t[1]) || (work->struck != 0) || (work->blocked != 0)) {
                 work->step       = MAGGOT_CATERPILLAR_AMBUSH_LAND;
                 work->animId     = MAGGOT_CATERPILLAR_ANIM_LAND;
                 work->threadFade = MAGGOT_CATERPILLAR_THREAD_FADE_FRAMES;
@@ -556,9 +556,9 @@ static void _maggotCaterpillarRoamState(Task* actor)
             }
             return;
         case MAGGOT_CATERPILLAR_ROAM_CRAWL:
-            scratchEnd[-1].delta.vx = (s32)(gPlayerStatus.coordMtx->t[0] - coord->coord.t[0]);
+            scratchEnd[-1].delta.vx = (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0]);
             scratch->delta.vy       = 0;
-            scratch->delta.vz       = (s32)(gPlayerStatus.coordMtx->t[2] - coord->coord.t[2]);
+            scratch->delta.vz       = (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2]);
             work->targetYaw         = ratan2((s32)(s16)scratchEnd[-1].delta.vx, (s32)(s16)scratch->delta.vz) & (ONE - 1);
             work->turnRate          = MAGGOT_CATERPILLAR_ROAM_TURN_RATE;
             if (work->animFrame >= MAGGOT_CATERPILLAR_ROAM_MOTION_FRAME) {
@@ -582,9 +582,9 @@ static void _maggotCaterpillarRoamState(Task* actor)
                 work->animFrame = MAGGOT_CATERPILLAR_ROAM_MOTION_FRAME;
             }
             if (work->targetYaw == work->yaw) {
-                scratchEnd[-1].delta.vx = (s32)(gPlayerStatus.coordMtx->t[0] - coord->coord.t[0]);
+                scratchEnd[-1].delta.vx = (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0]);
                 scratch->delta.vy       = 0;
-                playerOffsetZ           = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+                playerOffsetZ           = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
                 scratch->delta.vz       = playerOffsetZ;
                 playerOffsetX           = scratchEnd[-1].delta.vx;
                 playerDistance          = SquareRoot0((playerOffsetX * playerOffsetX) + (playerOffsetZ * playerOffsetZ));

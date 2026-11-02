@@ -786,7 +786,7 @@ void akropolisCafeteriaRoomVisualEffectsTwinTrailTask(Task* task)
                     // The matrix snapshot is unused; the discarded random draw still advances rand().
                     scratchEnd[-1] = coord->coord;
                     kickDirection  = &work->kickDirection;
-                    gfxReadMatrixZAxis(gPlayerStatus.coordMtx, kickDirection);
+                    gfxReadMatrixZAxis(playerStatusCoordMtx(&gPlayerStatus), kickDirection);
                     VectorNormalSS(kickDirection, kickDirection);
                     rand();
                     launchMagnitude   = work->kickStrength;

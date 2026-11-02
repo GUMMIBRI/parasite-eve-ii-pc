@@ -843,9 +843,9 @@ static void _actor401800Grab(Task* task)
         turnError = _actorAngleTurnToDirection(task->extra.tmd->coords, &separation);
         gfxRotMatrixY(&task->extra.tmd->coords[0].coord, turnError, GRAPHICS_ROTATION_COMPOSE);
         _actorRenderRescaleYaw(task->extra.tmd->coords, ODD_STRANGER_ROOT_SCALE);
-        separation.vx                         = task->extra.tmd->coords->coord.t[0] - playerStatus->coordMtx->t[0];
+        separation.vx                         = task->extra.tmd->coords->coord.t[0] - playerStatusCoordMtx(playerStatus)->t[0];
         separation.vy                         = 0;
-        separation.vz                         = task->extra.tmd->coords->coord.t[2] - playerStatus->coordMtx->t[2];
+        separation.vz                         = task->extra.tmd->coords->coord.t[2] - playerStatusCoordMtx(playerStatus)->t[2];
         work->lookYawTarget                   = 0;
         work->lookYaw                         = 0;
         task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
@@ -879,9 +879,9 @@ static void _actor401800Grab(Task* task)
     }
     // After the reach, step away along the separation and resolve contacts.
     if ((u32)(work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) >= (u32)ACTOR_401800_GRAB_RETREAT_RECORD) {
-        separation.vx = task->extra.tmd->coords->coord.t[0] - playerStatus->coordMtx->t[0];
+        separation.vx = task->extra.tmd->coords->coord.t[0] - playerStatusCoordMtx(playerStatus)->t[0];
         separation.vy = 0;
-        separation.vz = task->extra.tmd->coords->coord.t[2] - playerStatus->coordMtx->t[2];
+        separation.vz = task->extra.tmd->coords->coord.t[2] - playerStatusCoordMtx(playerStatus)->t[2];
         if (!_oddStrangerOutOfRange(&separation, ACTOR_401800_GRAB_RETREAT_RANGE)) {
             VectorNormalSS(&separation, &separation);
             gte_lddp(ACTOR_401800_GRAB_RETREAT_STEP);

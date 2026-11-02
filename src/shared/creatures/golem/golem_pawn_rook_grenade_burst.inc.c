@@ -105,8 +105,8 @@ static void _golemPawnRookGrenadeBurstState(Task* actor)
             work->forwardSpeed          = GOLEM_PAWN_ROOK_BURST_BACKOFF_SPEED;
             work->turnRate              = GOLEM_PAWN_ROOK_BURST_BACKOFF_TURN;
             work->shieldRaised          = work->shieldHp > 0;
-            scratch->playerDirection.vx = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
-            scratch->playerDirection.vz = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+            scratch->playerDirection.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
+            scratch->playerDirection.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
             work->targetYaw             = ratan2((s16)scratch->playerDirection.vx, (s16)scratch->playerDirection.vz) & ACTOR_TRANSFORM_ANGLE_MASK;
             _golemPawnRookAimLaserSight(actor);
             work->timer++;

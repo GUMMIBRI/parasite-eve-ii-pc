@@ -984,9 +984,9 @@ static void _oddStrangerGrabReach(Task* task)
         task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
         gfxRotMatrixY(&task->extra.tmd->coords->coord, _actorAngleTurnToPlayer(task, &playerOffset, playerStatus), GRAPHICS_ROTATION_COMPOSE);
         _actorRenderRescaleYaw(task->extra.tmd->coords, ODD_STRANGER_ROOT_SCALE);
-        playerOffset.vx                       = task->extra.tmd->coords->coord.t[0] - playerStatus->coordMtx->t[0];
+        playerOffset.vx                       = task->extra.tmd->coords->coord.t[0] - playerStatusCoordMtx(playerStatus)->t[0];
         playerOffset.vy                       = 0;
-        playerOffset.vz                       = task->extra.tmd->coords->coord.t[2] - playerStatus->coordMtx->t[2];
+        playerOffset.vz                       = task->extra.tmd->coords->coord.t[2] - playerStatusCoordMtx(playerStatus)->t[2];
         work->lookYawTarget                   = 0;
         work->lookYaw                         = 0;
         task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
@@ -997,7 +997,7 @@ static void _oddStrangerGrabReach(Task* task)
     _oddStrangerDriveAnimation(task);
     // Only the reach cue can request a hold from a nonscripted player.
     if ((work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) == ODD_STRANGER_GRAB_CUE && playerActor->mode != GAME_ACTOR_MODE_SCRIPTED) {
-        playerTurn = _actorAngleTurnToMatrixPosition(task, &playerOffset, gPlayerStatus.coordMtx);
+        playerTurn = _actorAngleTurnToMatrixPosition(task, &playerOffset, playerStatusCoordMtx(&gPlayerStatus));
         if (abs(playerTurn) < ODD_STRANGER_GRAB_TURN_LIMIT && !_oddStrangerOutOfRange(&playerOffset, ODD_STRANGER_GRAB_REACH)) {
             if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.characterId == ODD_STRANGER_GRAB_PRIMARY_CHARACTER) {
                 _gOddStrangerPlayerGrabAnimationRequest.source.sets = &_gActor401000PlayerGrabAnimSets[ODD_STRANGER_GRAB_PRIMARY_BANK_OFFSET];
@@ -1013,9 +1013,9 @@ static void _oddStrangerGrabReach(Task* task)
     // After the reach cue, step away along the horizontal separation.
     if ((u32)(work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) >= ODD_STRANGER_GRAB_CUE + 1) {
         offsetVector    = &playerOffset;
-        playerOffset.vx = task->extra.tmd->coords->coord.t[0] - playerStatus->coordMtx->t[0];
+        playerOffset.vx = task->extra.tmd->coords->coord.t[0] - playerStatusCoordMtx(playerStatus)->t[0];
         playerOffset.vy = 0;
-        playerOffset.vz = task->extra.tmd->coords->coord.t[2] - playerStatus->coordMtx->t[2];
+        playerOffset.vz = task->extra.tmd->coords->coord.t[2] - playerStatusCoordMtx(playerStatus)->t[2];
         if (!_oddStrangerOutOfRange(offsetVector, ODD_STRANGER_GRAB_RETREAT_RADIUS)) {
             VectorNormalSS(offsetVector, offsetVector);
             gte_lddp(ODD_STRANGER_GRAB_RETREAT_STEP);
@@ -1203,9 +1203,9 @@ static void _actor401000Dormant(Task* task)
     }
     root            = task->extra.tmd->coords;
     playerDelta     = &delta;
-    delta.vx        = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
-    playerDelta->vy = gPlayerStatus.coordMtx->t[1] - root->coord.t[1];
-    playerDelta->vz = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+    delta.vx        = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
+    playerDelta->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - root->coord.t[1];
+    playerDelta->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
     if (!_oddStrangerOutOfRange(playerDelta, work->noticeRadius)) {
         work->state = ODD_STRANGER_STATE_ALERT;
     }

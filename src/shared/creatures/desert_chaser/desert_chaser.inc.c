@@ -107,9 +107,9 @@ static void _desertChaserPatrol(Task* task)
 #endif
     {
         detectionCoord    = task->extra.tmd->coords;
-        scratch->delta.vx = gPlayerStatus.coordMtx->t[0] - detectionCoord->coord.t[0];
-        scratch->delta.vy = gPlayerStatus.coordMtx->t[1] - detectionCoord->coord.t[1];
-        scratch->delta.vz = gPlayerStatus.coordMtx->t[2] - detectionCoord->coord.t[2];
+        scratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - detectionCoord->coord.t[0];
+        scratch->delta.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - detectionCoord->coord.t[1];
+        scratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - detectionCoord->coord.t[2];
 #if !DESERT_CHASER_WATER_TOWER_BEHAVIOR
         /* each chaser looks on its own frame of fifteen */
         if ((enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT) == gDisplayState.animFrame % DESERT_CHASER_SIGHT_FRAME_PERIOD)
@@ -294,9 +294,9 @@ static void _desertChaserPursue(Task* task)
         (work->animId == DESERT_CHASER_CLIP_LUNGE) && (playerActor->mode != GAME_ACTOR_MODE_SCRIPTED)) {
         work->playerButtonHold.pressCount = DESERT_CHASER_CATCH_PRESS_COUNT;
         rootCoord                         = task->extra.tmd->coords;
-        scratch->offset.vx                = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-        scratch->offset.vy                = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-        playerOffsetZ                     = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+        scratch->offset.vx                = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+        scratch->offset.vy                = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+        playerOffsetZ                     = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
         scratch->offset.vz                = playerOffsetZ;
         scratch->catchYaw                 = ratan2(scratch->offset.vx, playerOffsetZ);
         facingCoord                       = task->extra.tmd->coords;
@@ -427,9 +427,9 @@ static void _desertChaserPursue(Task* task)
     }
     if ((work->stateCounter < DESERT_CHASER_LUNGE_TRACK_PLAYER_TICKS) || (abs(scratch->playerBearing) >= DESERT_CHASER_LUNGE_ALIGNED_YAW + 1)) {
         if (work->animId == DESERT_CHASER_CLIP_WINDUP) {
-            work->playerDelta.vx = playerStatus->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0];
-            work->playerDelta.vy = playerStatus->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1];
-            work->playerDelta.vz = playerStatus->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2];
+            work->playerDelta.vx = playerStatusCoordMtx(playerStatus)->t[0] - task->extra.tmd->coords->coord.t[0];
+            work->playerDelta.vy = playerStatusCoordMtx(playerStatus)->t[1] - task->extra.tmd->coords->coord.t[1];
+            work->playerDelta.vz = playerStatusCoordMtx(playerStatus)->t[2] - task->extra.tmd->coords->coord.t[2];
         }
     }
     if (work->animId == DESERT_CHASER_CLIP_LUNGE) {

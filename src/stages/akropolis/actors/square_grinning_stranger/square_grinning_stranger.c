@@ -57,7 +57,7 @@ typedef struct {
     MATRIX         light;            // Light-direction matrix lent to the model object
     MATRIX         color;            // Light-colour matrix lent to the model object; rebuilt each tick from the lights at part 1 and scaled to a third
     Task*          playerTask;       // Player task registered when the block was set up; never read
-    MATRIX*        playerMtx;        // Borrowed player root coordinate matrix (`gPlayerStatus.coordMtx`); its translation is tested against the trigger line
+    MATRIX*        playerMtx;        // Borrowed player root coordinate matrix (`playerStatusCoordMtx(&gPlayerStatus)`); its translation is tested against the trigger line
     u16            sequenceStep;     // `STEP_*` of the scripted sequence; reset to its first step as the player triggers it
     byte           field_486[0x2];   // Never accessed; role unproven
     u16            stepFrames;       // Ticks counted by the step in progress: its two holds and its two-tick wait count it up from 0
@@ -253,7 +253,7 @@ static void _squareGrinningStrangerInitBody(Task* task)
     animationInitContext(&work->rig.anim, _gSquareGrinningStrangerAnimationSets, model, work->rig.poses,
                          &work->rig.slots[0]);
     work->playerTask = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
-    work->playerMtx  = gPlayerStatus.coordMtx;
+    work->playerMtx  = playerStatusCoordMtx(&gPlayerStatus);
     _squareGrinningStrangerStartIdleTracks(task);
     work->headPitch = INITIAL_HEAD_PITCH;
     place           = areaGetVariant(&gGameSession->location)->placements;

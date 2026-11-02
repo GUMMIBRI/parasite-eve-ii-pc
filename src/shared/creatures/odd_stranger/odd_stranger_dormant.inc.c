@@ -50,9 +50,9 @@ static void _oddStrangerDormantScripted(Task* task)
     work->lastCueFrame = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
     root               = task->extra.tmd->coords;
     toPlayerPtr        = &toPlayer;
-    toPlayer.vx        = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
-    toPlayerPtr->vy    = gPlayerStatus.coordMtx->t[1] - root->coord.t[1];
-    toPlayerPtr->vz    = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+    toPlayer.vx        = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
+    toPlayerPtr->vy    = playerStatusCoordMtx(&gPlayerStatus)->t[1] - root->coord.t[1];
+    toPlayerPtr->vz    = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
     if (!_oddStrangerOutOfRange(toPlayerPtr, work->noticeRadius)) {
         sndEvtRequestScriptStop(SOUND_AKROPOLIS_PATIO_STRANGER_DORMANT, SOUND_SCRIPT_STOP_KEEP_RELEASE);
         sceneEngageBattle(1);

@@ -64,9 +64,9 @@ static inline void _actorRenderRescaleYawXZ(GfxCoord* coord, s16 horizontalScale
 /// untouched. The coordinate and player matrix are borrowed only for the call.
 static inline void _gluttonGetPlayerOffset(const GfxCoord* sourceCoord, SVECTOR* playerOffset)
 {
-    playerOffset->vx = gPlayerStatus.coordMtx->t[0] - sourceCoord->coord.t[0];
-    playerOffset->vy = gPlayerStatus.coordMtx->t[1] - sourceCoord->coord.t[1];
-    playerOffset->vz = gPlayerStatus.coordMtx->t[2] - sourceCoord->coord.t[2];
+    playerOffset->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - sourceCoord->coord.t[0];
+    playerOffset->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - sourceCoord->coord.t[1];
+    playerOffset->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - sourceCoord->coord.t[2];
 }
 
 /// Returns the first attack key in a contact-table prefix and copies its point.

@@ -1542,13 +1542,13 @@ static void _desertChaserDamage(Task* task)
                     }
                     break;
             }
-            playerDeltaX                          = playerStatus->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0];
+            playerDeltaX                          = playerStatusCoordMtx(playerStatus)->t[0] - task->extra.tmd->coords->coord.t[0];
             playerDeltaXSquared                   = playerDeltaX * playerDeltaX;
             scratch->toPlayer.vx                  = playerDeltaX;
-            playerDeltaY                          = playerStatus->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1];
+            playerDeltaY                          = playerStatusCoordMtx(playerStatus)->t[1] - task->extra.tmd->coords->coord.t[1];
             playerDeltaYSquared                   = playerDeltaY * playerDeltaY;
             scratch->toPlayer.vy                  = playerDeltaY;
-            playerDeltaZ                          = playerStatus->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2];
+            playerDeltaZ                          = playerStatusCoordMtx(playerStatus)->t[2] - task->extra.tmd->coords->coord.t[2];
             scratch->toPlayer.vz                  = playerDeltaZ;
             playerDistance                        = SquareRoot0(playerDeltaXSquared + playerDeltaYSquared + (playerDeltaZ * playerDeltaZ));
             scratch->playerDistance               = playerDistance;
@@ -2173,9 +2173,9 @@ static void _actor421600WatchRunPlayerState(Task* task)
     _actorContactApplyGridPushback(task->extra.tmd->coords, work->spheres[DESERT_CHASER_SPHERE_ROOT].contacts, ARRAY_SIZE(work->spheres[DESERT_CHASER_SPHERE_ROOT].contacts));
     task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
     positionCoord                         = task->extra.tmd->coords;
-    savedCursor[-2].vx                    = (u16)gPlayerStatus.coordMtx->t[0] - (u16)positionCoord->coord.t[0];
-    toPlayer->vy                          = (u16)gPlayerStatus.coordMtx->t[1] - (u16)positionCoord->coord.t[1];
-    toPlayer->vz                          = (u16)gPlayerStatus.coordMtx->t[2] - (u16)positionCoord->coord.t[2];
+    savedCursor[-2].vx                    = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[0] - (u16)positionCoord->coord.t[0];
+    toPlayer->vy                          = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[1] - (u16)positionCoord->coord.t[1];
+    toPlayer->vz                          = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[2] - (u16)positionCoord->coord.t[2];
     headingCoord                          = task->extra.tmd->coords;
     playerTurn                            = ratan2(savedCursor[-2].vx, toPlayer->vz) - ratan2(-headingCoord->coord.m[2][0], headingCoord->coord.m[2][2]);
     playerTurn                            = _actorAngleNormalizeYaw(playerTurn);
@@ -2462,9 +2462,9 @@ static void _actor421600EntranceLungeState(Task* task)
             playerFacingX          = -gameGetTaskSlot(GAME_TASK_SLOT_PLAYER)->extra.tmd->coords->coord.m[2][0];
             scratch->playerYaw     = ratan2(playerFacingX, gameGetTaskSlot(GAME_TASK_SLOT_PLAYER)->extra.tmd->coords->coord.m[2][2]);
             catchPositionCoord     = task->extra.tmd->coords;
-            scratch->offset.vx     = (s16)(gPlayerStatus.coordMtx->t[0] - catchPositionCoord->coord.t[0]);
-            scratch->offset.vy     = (s16)(gPlayerStatus.coordMtx->t[1] - catchPositionCoord->coord.t[1]);
-            catchOffsetZ           = gPlayerStatus.coordMtx->t[2] - catchPositionCoord->coord.t[2];
+            scratch->offset.vx     = (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - catchPositionCoord->coord.t[0]);
+            scratch->offset.vy     = (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[1] - catchPositionCoord->coord.t[1]);
+            catchOffsetZ           = playerStatusCoordMtx(&gPlayerStatus)->t[2] - catchPositionCoord->coord.t[2];
             scratch->offset.vz     = catchOffsetZ;
             reverseBearing         = ratan2(scratch->offset.vx, catchOffsetZ) + ACTOR_TRANSFORM_ANGLE_HALF_TURN;
             scratch->yawFromPlayer = reverseBearing;
@@ -2903,9 +2903,9 @@ static void _actor421600RouteRoamState(Task* task)
         playerRoot                = gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER]->extra.tmd->coords;
         scratch->playerQuadrant   = _actor421600GetRouteQuadrant(playerRoot->coord.t[0], playerRoot->coord.t[2]);
         entryCoord                = task->extra.tmd->coords;
-        scratch->toPatrolPoint.vx = (s16)(gPlayerStatus.coordMtx->t[0] - entryCoord->coord.t[0]);
-        scratch->toPatrolPoint.vy = gPlayerStatus.coordMtx->t[1] - entryCoord->coord.t[1];
-        playerOffsetZ             = gPlayerStatus.coordMtx->t[2] - entryCoord->coord.t[2];
+        scratch->toPatrolPoint.vx = (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - entryCoord->coord.t[0]);
+        scratch->toPatrolPoint.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - entryCoord->coord.t[1];
+        playerOffsetZ             = playerStatusCoordMtx(&gPlayerStatus)->t[2] - entryCoord->coord.t[2];
         scratch->toPatrolPoint.vz = playerOffsetZ;
         work->lookYawTarget       = _actorAngleTurnToOffset(task->extra.tmd->coords, scratch->toPatrolPoint.vx, playerOffsetZ);
         work->patrolTarget        = 0;
@@ -2923,10 +2923,10 @@ static void _actor421600RouteRoamState(Task* task)
     scratch->toPatrolPoint.vy        = 0;
     scratch->toPatrolPoint.vz        = work->patrolPoints[work->patrolTarget].z - task->extra.tmd->coords->coord.t[2];
     patrolCoord                      = task->extra.tmd->coords;
-    frameCursor[-1].toPlayer.vx      = (s16)(gPlayerStatus.coordMtx->t[0] - patrolCoord->coord.t[0]);
+    frameCursor[-1].toPlayer.vx      = (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - patrolCoord->coord.t[0]);
     playerOffset                     = &frameCursor[-1].toPlayer;
-    playerOffset->vy                 = gPlayerStatus.coordMtx->t[1] - patrolCoord->coord.t[1];
-    playerOffset->vz                 = gPlayerStatus.coordMtx->t[2] - patrolCoord->coord.t[2];
+    playerOffset->vy                 = playerStatusCoordMtx(&gPlayerStatus)->t[1] - patrolCoord->coord.t[1];
+    playerOffset->vz                 = playerStatusCoordMtx(&gPlayerStatus)->t[2] - patrolCoord->coord.t[2];
     if (!actorOutsideRadius(&scratch->toPatrolPoint, DESERT_CHASER_WAYPOINT_RADIUS) || work->stateTimer >= DESERT_CHASER_STUCK_TICKS) {
         work->lookYawTarget = _actorAngleTurnToOffset(task->extra.tmd->coords, frameCursor[-1].toPlayer.vx, playerOffset->vz);
         // Retain the original rotation calculation even though table waypoints do not read it.
@@ -2990,10 +2990,10 @@ static void _actor421600RouteRoamState(Task* task)
     }
     task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
     detectionCoord                        = task->extra.tmd->coords;
-    scratch->toPlayer.vx                  = (s16)(gPlayerStatus.coordMtx->t[0] - detectionCoord->coord.t[0]);
+    scratch->toPlayer.vx                  = (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - detectionCoord->coord.t[0]);
     detectionOffset                       = &scratch->toPlayer;
-    detectionOffset->vy                   = gPlayerStatus.coordMtx->t[1] - detectionCoord->coord.t[1];
-    detectionOffset->vz                   = gPlayerStatus.coordMtx->t[2] - detectionCoord->coord.t[2];
+    detectionOffset->vy                   = playerStatusCoordMtx(&gPlayerStatus)->t[1] - detectionCoord->coord.t[1];
+    detectionOffset->vz                   = playerStatusCoordMtx(&gPlayerStatus)->t[2] - detectionCoord->coord.t[2];
     if (work->stateCounter > work->windupFrames) {
         if (work->chaseHoldoff <= 0) {
 

@@ -738,9 +738,9 @@ static void _actor205200ScanPartHits(Task* task, s32 unusedArg)
                 worldTargetAddReadoutAmount(&enemy->node, 0, 0);
                 break;
             }
-            playerOffset->vx = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
-            playerOffset->vy = gPlayerStatus.coordMtx->t[1] - coord->coord.t[1];
-            playerOffset->vz = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+            playerOffset->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
+            playerOffset->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - coord->coord.t[1];
+            playerOffset->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
             damage           = damageComputePlayerAttack(part->contacts[contactIndex].key.value, SquareRoot0(playerOffset->vx * playerOffset->vx + playerOffset->vy * playerOffset->vy + playerOffset->vz * playerOffset->vz), 0, 0);
             if (damageRollCriticalHit(enemy, part->contacts[contactIndex].key.value, 0) != 0) {
                 damage *= 4;

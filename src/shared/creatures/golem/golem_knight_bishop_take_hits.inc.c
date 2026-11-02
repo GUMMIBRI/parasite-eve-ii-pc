@@ -146,9 +146,9 @@ static void _golemKnightBishopTakeHits(Task* task)
                     work->feintBroken = 1;
                     break;
                 }
-                scratch->delta.vector.vx = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
-                scratch->delta.vector.vy = gPlayerStatus.coordMtx->t[1] - root->coord.t[1];
-                scratch->delta.vector.vz = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+                scratch->delta.vector.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
+                scratch->delta.vector.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - root->coord.t[1];
+                scratch->delta.vector.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
                 // The complement and logical shift yield one for a nonnegative facing dot product.
                 work->hitFromFront = (u32) ~(scratch->delta.vector.vx * root->coord.m[0][2] +
                                              scratch->delta.vector.vy * root->coord.m[1][2] +
@@ -356,8 +356,8 @@ static void _golemKnightBishopRegionScanSeq(Task* task)
             for (regionIndex = 0; regionIndex < work->regionCount; regionIndex++) {
                 switch (work->regions[regionIndex].kind) {
                     case GOLEM_KNIGHT_BISHOP_REGION_CIRCLE:
-                        scratch->offset.vx = work->regions[regionIndex].x - gPlayerStatus.coordMtx->t[0];
-                        scratch->offset.vz = work->regions[regionIndex].z - gPlayerStatus.coordMtx->t[2];
+                        scratch->offset.vx = work->regions[regionIndex].x - playerStatusCoordMtx(&gPlayerStatus)->t[0];
+                        scratch->offset.vz = work->regions[regionIndex].z - playerStatusCoordMtx(&gPlayerStatus)->t[2];
                         if (SquareRoot0(scratch->offset.vx * scratch->offset.vx + scratch->offset.vz * scratch->offset.vz) < work->regions[regionIndex].param.radius) {
                             work->step              = GOLEM_KNIGHT_BISHOP_REGION_SCAN_PROBE;
                             playerRoot              = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER)->extra.tmd->coords;
@@ -369,18 +369,18 @@ static void _golemKnightBishopRegionScanSeq(Task* task)
                             gte_ldv0(&scratch->localOffset);
                             gte_rtv0();
                             gte_stlvnl(&scratch->offset);
-                            work->targetPos.vx = gPlayerStatus.coordMtx->t[0] + scratch->offset.vx;
-                            work->targetPos.vy = gPlayerStatus.coordMtx->t[1];
+                            work->targetPos.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] + scratch->offset.vx;
+                            work->targetPos.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1];
                             SCRATCH_STACK_RELEASE_BYTES(sizeof(_GolemKnightBishopRegionScanScratch));
                             // The retained order reads Z after release, before any nested reservation.
-                            work->targetPos.vz         = gPlayerStatus.coordMtx->t[2] + scratch->offset.vz;
+                            work->targetPos.vz         = playerStatusCoordMtx(&gPlayerStatus)->t[2] + scratch->offset.vz;
                             work->pathProbeBody.flags |= WORLD_COLLISION_BODY_GRID_ENABLED;
                             work->spotProbeBody.flags |= WORLD_COLLISION_BODY_GRID_ENABLED;
                             return;
                         }
                         break;
                     case GOLEM_KNIGHT_BISHOP_REGION_BOX:
-                        if (GOLEM_KNIGHT_BISHOP_PLAYER_INSIDE_BOX(&work->regions[regionIndex], gPlayerStatus.coordMtx)) {
+                        if (GOLEM_KNIGHT_BISHOP_PLAYER_INSIDE_BOX(&work->regions[regionIndex], playerStatusCoordMtx(&gPlayerStatus))) {
                             work->sequence   = GOLEM_KNIGHT_BISHOP_SEQUENCE_BOX_APPROACH;
                             work->step       = 0;
                             work->lastAttack = GOLEM_KNIGHT_BISHOP_SEQUENCE_BOX_APPROACH;
@@ -548,7 +548,7 @@ static s32 _golemKnightBishopPlayerInBox(Task* task)
     regionCount = work->regionCount;
     for (regionIndex = 0; regionIndex < regionCount; regionIndex++) {
         if (work->regions[regionIndex].kind == GOLEM_KNIGHT_BISHOP_REGION_BOX) {
-            if (GOLEM_KNIGHT_BISHOP_PLAYER_INSIDE_BOX(&work->regions[regionIndex], gPlayerStatus.coordMtx)) {
+            if (GOLEM_KNIGHT_BISHOP_PLAYER_INSIDE_BOX(&work->regions[regionIndex], playerStatusCoordMtx(&gPlayerStatus))) {
                 work->boxRegion = regionIndex;
                 return 1;
             }
@@ -602,9 +602,9 @@ static void _golemKnightBishopPlaceTarget(Task* task)
         gte_ldv0(&scratch->operand);
         gte_rtv0();
         gte_stlvnl(&scratch->offset);
-        work->targetPos.vx                = gPlayerStatus.coordMtx->t[0] + scratch->offset.vx;
-        work->targetPos.vy                = gPlayerStatus.coordMtx->t[1];
-        work->targetPos.vz                = gPlayerStatus.coordMtx->t[2] + scratch->offset.vz;
+        work->targetPos.vx                = playerStatusCoordMtx(&gPlayerStatus)->t[0] + scratch->offset.vx;
+        work->targetPos.vy                = playerStatusCoordMtx(&gPlayerStatus)->t[1];
+        work->targetPos.vz                = playerStatusCoordMtx(&gPlayerStatus)->t[2] + scratch->offset.vz;
         work->pathProbeCapsule.ends[0].vy = GOLEM_KNIGHT_BISHOP_PROBE_HEIGHT;
         work->pathProbeCapsule.ends[0].vz = GOLEM_KNIGHT_BISHOP_GRAB_PROBE_BACK;
         work->pathProbeCapsule.ends[0].vx = 0;
@@ -631,9 +631,9 @@ static void _golemKnightBishopPlaceTarget(Task* task)
         work->targetYaw                   = (work->targetYaw + (ratan2(playerRoot->coord.m[0][2], playerRoot->coord.m[2][2]) & GOLEM_KNIGHT_BISHOP_TARGET_YAW_MASK)) & GOLEM_KNIGHT_BISHOP_TARGET_YAW_MASK;
         scratch->operand.vx               = (u32)(rsin(work->targetYaw) * GOLEM_KNIGHT_BISHOP_STRIKE_TARGET_DISTANCE_DIV16) >> GOLEM_KNIGHT_BISHOP_TARGET_PRODUCT_FRACTION_BITS;
         scratch->operand.vz               = (u32)(rcos(work->targetYaw) * GOLEM_KNIGHT_BISHOP_STRIKE_TARGET_DISTANCE_DIV16) >> GOLEM_KNIGHT_BISHOP_TARGET_PRODUCT_FRACTION_BITS;
-        work->targetPos.vx                = gPlayerStatus.coordMtx->t[0] + scratch->operand.vx;
-        work->targetPos.vy                = gPlayerStatus.coordMtx->t[1];
-        work->targetPos.vz                = gPlayerStatus.coordMtx->t[2] + scratch->operand.vz;
+        work->targetPos.vx                = playerStatusCoordMtx(&gPlayerStatus)->t[0] + scratch->operand.vx;
+        work->targetPos.vy                = playerStatusCoordMtx(&gPlayerStatus)->t[1];
+        work->targetPos.vz                = playerStatusCoordMtx(&gPlayerStatus)->t[2] + scratch->operand.vz;
         work->pathProbeBody.flags        |= WORLD_COLLISION_BODY_GRID_ENABLED;
     }
     SCRATCH_STACK_RELEASE_BYTES(sizeof(GolemKnightBishopOffsetScratch));
@@ -1203,14 +1203,14 @@ static void _golemKnightBishopBoxApproachSeq(Task* task)
     switch (step) {
         case GOLEM_KNIGHT_BISHOP_BOX_APPEAR:
             root->coord.t[0]    = work->regions[work->boxRegion].x;
-            root->coord.t[1]    = gPlayerStatus.coordMtx->t[1];
+            root->coord.t[1]    = playerStatusCoordMtx(&gPlayerStatus)->t[1];
             root->coord.t[2]    = work->regions[work->boxRegion].z;
             scratch->operand.vx = 0;
             scratch->operand.vy = work->regions[work->boxRegion].param.heading;
             scratch->operand.vz = 0;
             RotMatrix(&scratch->operand, &root->coord);
-            scratch->offset.vx = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
-            scratch->offset.vz = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+            scratch->offset.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
+            scratch->offset.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
             if ((s16)SquareRoot0(scratch->offset.vx * scratch->offset.vx + scratch->offset.vz * scratch->offset.vz) < 0xDAC) {
                 work->anim  = GOLEM_KNIGHT_BISHOP_ANIM_STAND;
                 work->step  = GOLEM_KNIGHT_BISHOP_BOX_WAIT;
@@ -1258,8 +1258,8 @@ static void _golemKnightBishopBoxApproachSeq(Task* task)
                 work->auxTimer--;
                 _golemKnightBishopAimFromPart(task);
             }
-            scratch->offset.vx = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
-            scratch->offset.vz = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+            scratch->offset.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
+            scratch->offset.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
             if ((s16)SquareRoot0(scratch->offset.vx * scratch->offset.vx + scratch->offset.vz * scratch->offset.vz) < 0xA8C) {
                 work->anim               = GOLEM_KNIGHT_BISHOP_ANIM_CHARGE;
                 work->step               = GOLEM_KNIGHT_BISHOP_BOX_CHARGE;

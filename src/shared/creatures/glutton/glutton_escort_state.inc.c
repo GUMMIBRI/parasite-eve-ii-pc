@@ -175,9 +175,9 @@ static void _gluttonHealState(Task* task)
     // Keep separate position and heading aliases across animation-call lifetimes.
     rootCoord           = task->extra.tmd->coords;
     offset              = &playerOffset;
-    offset->vx          = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-    offset->vy          = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-    offset->vz          = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    offset->vx          = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+    offset->vy          = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+    offset->vz          = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     headingCoord        = task->extra.tmd->coords;
     work->neckYawTarget = _actorAngleTurnToOffset(headingCoord, offset->vx, offset->vz);
     _gluttonTickAnim(task);

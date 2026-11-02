@@ -219,10 +219,10 @@ static void _sucklercephContacts(Task* task)
             work->hitCooldown = 0;
         }
     }
-    playerDx                 = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+    playerDx                 = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
     scratch->delta.vector.vx = playerDx;
-    scratch->delta.vector.vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-    playerDz                 = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    scratch->delta.vector.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+    playerDz                 = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     scratch->delta.vector.vz = playerDz;
     rangeOrOverlap           = SquareRoot0((playerDx * playerDx) + (playerDz * playerDz));
     if (rangeOrOverlap < SUCKLERCEPH_SWELL_PLAYER_RANGE && work->awakeStage == SUCKLERCEPH_AWAKE_STAGE_CRAWL) {
@@ -393,9 +393,9 @@ static void _sucklercephTurnToPlayer(Task* task)
     rootCoord             = task->extra.tmd->coords;
     work                  = task->work;
     turnScratch           = SCRATCH_STACK_RESERVE_BLOCK(ActorFaceScratch);
-    turnScratch->delta.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+    turnScratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
     turnScratch->delta.vy = 0;
-    turnScratch->delta.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    turnScratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     playerHeading         = ratan2((s16)turnScratch->delta.vx, (s16)turnScratch->delta.vz) & ACTOR_TRANSFORM_ANGLE_MASK;
     normalizedHeading     = work->heading & ACTOR_TRANSFORM_ANGLE_MASK;
     headingDelta          = playerHeading - normalizedHeading;

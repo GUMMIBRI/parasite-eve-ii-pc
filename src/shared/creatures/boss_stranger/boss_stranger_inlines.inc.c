@@ -77,9 +77,9 @@ static inline void _bossStrangerStep(BossStrangerWalker* walker, BossStrangerTic
         case BOSS_STRANGER_WALKER_CHASE:
             player   = &gPlayerStatus + (walker->playerId - 1);
             goal     = &scratchEnd[-1].goal;
-            goal->vx = player->coordMtx->t[0];
-            goal->vy = player->coordMtx->t[1];
-            goal->vz = player->coordMtx->t[2];
+            goal->vx = playerStatusCoordMtx(player)->t[0];
+            goal->vy = playerStatusCoordMtx(player)->t[1];
+            goal->vz = playerStatusCoordMtx(player)->t[2];
             break;
         case BOSS_STRANGER_WALKER_CLOSE:
             SCRATCH_STACK_RESERVE_BYTES(BOSS_STRANGER_CLOSE_SCRATCH_RESERVATION_BYTES);

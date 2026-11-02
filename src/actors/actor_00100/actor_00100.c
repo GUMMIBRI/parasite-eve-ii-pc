@@ -1420,11 +1420,11 @@ static void _desertChaserDamage(Task* task)
                     break;
             }
             // Distance damage, critical damage and vulnerable-state damage compose.
-            playerDeltaX            = playerStatus->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0];
+            playerDeltaX            = playerStatusCoordMtx(playerStatus)->t[0] - task->extra.tmd->coords->coord.t[0];
             scratch->toPlayer.vx    = playerDeltaX;
-            playerDeltaY            = playerStatus->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1];
+            playerDeltaY            = playerStatusCoordMtx(playerStatus)->t[1] - task->extra.tmd->coords->coord.t[1];
             scratch->toPlayer.vy    = playerDeltaY;
-            playerDeltaZ            = playerStatus->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2];
+            playerDeltaZ            = playerStatusCoordMtx(playerStatus)->t[2] - task->extra.tmd->coords->coord.t[2];
             scratch->toPlayer.vz    = playerDeltaZ;
             playerDistance          = SquareRoot0((playerDeltaX * playerDeltaX) + (playerDeltaY * playerDeltaY) + (playerDeltaZ * playerDeltaZ));
             scratch->playerDistance = playerDistance;

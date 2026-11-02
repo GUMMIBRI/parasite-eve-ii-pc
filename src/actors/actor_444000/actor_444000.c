@@ -3170,9 +3170,9 @@ static void _actor444000RunArenaRouteState(Task* task)
     work->clip.prevSlot2Cue = work->hostRig.slots[2].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
 
     rootCoord             = task->extra.tmd->coords;
-    runScratch->offset.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-    runScratch->offset.vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-    runScratch->offset.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    runScratch->offset.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+    runScratch->offset.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+    runScratch->offset.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
 
     work->neckYawTarget = _actorAngleTurnToOffset(task->extra.tmd->coords, runScratch->offset.vx, runScratch->offset.vz);
 
@@ -4534,11 +4534,11 @@ body:
     work->groups3To5Cooldown = damageGetPlayerAttackHitCooldown(hitScratch->attackKey);
     damageGetPlayerAttackReaction(hitScratch->attackKey);
 
-    hitScratch->toPlayer.vx    = (playerStatus->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0]) + 0x51F;
+    hitScratch->toPlayer.vx    = (playerStatusCoordMtx(playerStatus)->t[0] - task->extra.tmd->coords->coord.t[0]) + 0x51F;
     distanceXSquared           = hitScratch->toPlayer.vx * hitScratch->toPlayer.vx;
-    hitScratch->toPlayer.vy    = (playerStatus->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1]) - 0xFA;
+    hitScratch->toPlayer.vy    = (playerStatusCoordMtx(playerStatus)->t[1] - task->extra.tmd->coords->coord.t[1]) - 0xFA;
     distanceYSquared           = hitScratch->toPlayer.vy * hitScratch->toPlayer.vy;
-    hitScratch->toPlayer.vz    = (playerStatus->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2]) + 0x25F;
+    hitScratch->toPlayer.vz    = (playerStatusCoordMtx(playerStatus)->t[2] - task->extra.tmd->coords->coord.t[2]) + 0x25F;
     distanceZSquared           = hitScratch->toPlayer.vz * hitScratch->toPlayer.vz;
     hitScratch->playerDistance = SquareRoot0(distanceXSquared + distanceYSquared + distanceZSquared);
     hitScratch->damage         = damageComputePlayerAttack(hitScratch->attackKey, hitScratch->playerDistance, 0, 0);
@@ -4817,9 +4817,9 @@ static void _actor444000InhaleState(Task* task)
     playerStatus           = &gPlayerStatus;
     hostCoord              = task->extra.tmd->coords;
     playerOffset           = &dragScratch->offset;
-    dragScratch->offset.vx = (u16)playerStatus->coordMtx->t[0] - (u16)hostCoord->coord.t[0];
-    playerOffset->vy       = (u16)playerStatus->coordMtx->t[1] - (u16)hostCoord->coord.t[1];
-    playerOffsetZ          = (u16)playerStatus->coordMtx->t[2] - (u16)hostCoord->coord.t[2];
+    dragScratch->offset.vx = (u16)playerStatusCoordMtx(playerStatus)->t[0] - (u16)hostCoord->coord.t[0];
+    playerOffset->vy       = (u16)playerStatusCoordMtx(playerStatus)->t[1] - (u16)hostCoord->coord.t[1];
+    playerOffsetZ          = (u16)playerStatusCoordMtx(playerStatus)->t[2] - (u16)hostCoord->coord.t[2];
     playerOffset->vz       = playerOffsetZ;
     hostYawCoord           = task->extra.tmd->coords;
     neckYaw                = ratan2(dragScratch->offset.vx, playerOffsetZ) - ratan2(-hostYawCoord->coord.m[2][0], hostYawCoord->coord.m[2][2]);
@@ -5882,9 +5882,9 @@ static void _actor444000ChooseAttackState(Task* task)
 
     playerOffsetPointer     = &playerOffset;
     hostCoord               = task->extra.tmd->coords;
-    playerOffsetPointer->vx = gPlayerStatus.coordMtx->t[0] - hostCoord->coord.t[0];
-    playerOffsetPointer->vy = gPlayerStatus.coordMtx->t[1] - hostCoord->coord.t[1];
-    playerOffsetPointer->vz = gPlayerStatus.coordMtx->t[2] - hostCoord->coord.t[2];
+    playerOffsetPointer->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - hostCoord->coord.t[0];
+    playerOffsetPointer->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - hostCoord->coord.t[1];
+    playerOffsetPointer->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - hostCoord->coord.t[2];
     work->neckYawTarget     = _actorAngleTurnToOffset(task->extra.tmd->coords, playerOffsetPointer->vx, playerOffsetPointer->vz);
 
     if (_gGluttonLimbReach >= ACTOR_444000_LIMB_RETRACTION_MIN_REACH) {
@@ -6072,9 +6072,9 @@ static void _actor444000SummonState(Task* task)
     }
     playerStatus               = &gPlayerStatus;
     rootCoord                  = task->extra.tmd->coords;
-    summonScratch->toPlayer.vx = playerStatus->coordMtx->t[0] - rootCoord->coord.t[0];
-    summonScratch->toPlayer.vy = playerStatus->coordMtx->t[1] - rootCoord->coord.t[1];
-    summonScratch->toPlayer.vz = playerStatus->coordMtx->t[2] - rootCoord->coord.t[2];
+    summonScratch->toPlayer.vx = playerStatusCoordMtx(playerStatus)->t[0] - rootCoord->coord.t[0];
+    summonScratch->toPlayer.vy = playerStatusCoordMtx(playerStatus)->t[1] - rootCoord->coord.t[1];
+    summonScratch->toPlayer.vz = playerStatusCoordMtx(playerStatus)->t[2] - rootCoord->coord.t[2];
     work->neckYawTarget        = _actorAngleTurnToOffset(task->extra.tmd->coords, summonScratch->toPlayer.vx, summonScratch->toPlayer.vz);
     if ((work->hostRig.slots[1].status.fields.flags & ANIMATION_SLOT_REACHED_BOUNDARY) && work->animId == ACTOR_444000_SUMMON_CLIP) {
         work->animId   = ACTOR_444000_SUMMON_IDLE_CLIP;

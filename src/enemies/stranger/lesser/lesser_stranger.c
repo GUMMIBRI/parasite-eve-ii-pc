@@ -241,7 +241,7 @@ static void _lesserStrangerInit(Task* actorTask)
     animationInitContext(&work->rig.anim, _gLesserStrangerAnimationSets, model, work->rig.poses,
                          &work->rig.slots[0]);
     work->playerTask     = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
-    work->playerCoordMtx = gPlayerStatus.coordMtx;
+    work->playerCoordMtx = playerStatusCoordMtx(&gPlayerStatus);
     rate                 = ANIMATION_RATE_ONE;
     slotIndex            = 1;
     animationWork        = actorTask->work;

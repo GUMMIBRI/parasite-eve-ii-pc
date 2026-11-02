@@ -364,9 +364,9 @@ static void _mothSteer(Task* task)
             work->yaw   = !(yawDraw & MOTH_YAW_POSITIVE_STEP_BIT) ? previousYaw - yawStep : previousYaw + yawStep;
             break;
         case true:
-            scratch->delta.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+            scratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
             scratch->delta.vy = 0;
-            scratch->delta.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            scratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             playerYaw         = ratan2((s16)scratch->delta.vx, (s16)scratch->delta.vz) & ACTOR_TRANSFORM_ANGLE_MASK;
             yawDifference     = playerYaw - (work->yaw & ACTOR_TRANSFORM_ANGLE_MASK);
             yawDistance       = yawDifference >= 0 ? yawDifference : -yawDifference;
@@ -489,7 +489,7 @@ static void _mothDrift(Task* task)
                            (((RANDOM_LCG_ADVANCE()) >> 16) & MOTH_FLIGHT_JITTER_MASK);
             rootCoord->coord.t[0] += (rootCoord->coord.m[0][2] * forwardSpeed) >> MOTH_FORWARD_BASIS_FRACTION_BITS;
             rootCoord->coord.t[2] += (rootCoord->coord.m[2][2] * forwardSpeed) >> MOTH_FORWARD_BASIS_FRACTION_BITS;
-            targetY                = gPlayerStatus.coordMtx->t[1] - MOTH_PURSUIT_HEIGHT_ABOVE_PLAYER;
+            targetY                = playerStatusCoordMtx(&gPlayerStatus)->t[1] - MOTH_PURSUIT_HEIGHT_ABOVE_PLAYER;
             heightDraw             = (RANDOM_LCG_ADVANCE()) >> 16;
             currentY               = rootCoord->coord.t[1];
             if (currentY >= targetY + MOTH_PURSUIT_HEIGHT_HALF_BAND) {

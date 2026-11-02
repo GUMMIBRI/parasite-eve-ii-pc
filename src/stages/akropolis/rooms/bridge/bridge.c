@@ -3132,7 +3132,7 @@ static void _akropolisBridgeEnemyPatrolSunk(Task* task)
     }
     _bossStrangerTick(&work->walker);
     _akropolisBridgeEnemyUpdateAnimation(task);
-    if (player->coordMtx->t[1] >= ENEMY_CHASE_START_Y) {
+    if (playerStatusCoordMtx(player)->t[1] >= ENEMY_CHASE_START_Y) {
         work->state = ENEMY_STATE_CHASE;
     }
 }
@@ -3230,7 +3230,7 @@ static void _akropolisBridgeEnemyChase(Task* task)
     if (_akropolisBridgeAttackLanded(task)) {
         work->state = ENEMY_STATE_RETREAT;
     }
-    if (player->coordMtx->t[1] < ENEMY_CHASE_KEEP_Y) {
+    if (playerStatusCoordMtx(player)->t[1] < ENEMY_CHASE_KEEP_Y) {
         work->state = ENEMY_STATE_PATROL_SUNK;
     }
 }
@@ -3276,7 +3276,7 @@ static void _akropolisBridgeEnemyRetreat(Task* task)
     _akropolisBridgeEnemyUpdateAnimation(task);
     // Finish retreat only after the patrol route has advanced.
     if (work->walker.routeData.cursor != 0) {
-        if (player->coordMtx->t[1] < ENEMY_CHASE_KEEP_Y) {
+        if (playerStatusCoordMtx(player)->t[1] < ENEMY_CHASE_KEEP_Y) {
             work->state = ENEMY_STATE_PATROL_SUNK;
         } else {
             work->state = ENEMY_STATE_CHASE;
@@ -3555,10 +3555,10 @@ static void _akropolisBridgeEnemyDefeatedBob(Task* task)
     // Player or companion contact triggers a push away from the player root.
     if (_akropolisBridgeEnemyHasPlayerContact(work->bodyContacts) != 0) {
         coord               = task->extra.tmd->coords;
-        displacement.vx     = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
+        displacement.vx     = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
         displacementPtr     = &displacement;
-        displacementPtr->vy = gPlayerStatus.coordMtx->t[1] - coord->coord.t[1];
-        displacementPtr->vz = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+        displacementPtr->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - coord->coord.t[1];
+        displacementPtr->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
         gfxRotMatrixY(&task->extra.tmd->coords->coord, 0x10, 0);
         VectorNormalSS(displacementPtr, displacementPtr);
         gte_lddp(-0x10);

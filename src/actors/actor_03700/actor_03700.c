@@ -1168,10 +1168,10 @@ static void _actor03700BackOffPerch(Task* task)
 static inline void _actor03700PickPlayerTarget(_Actor03700Work* work, u32 heightMask)
 {
     enum { ACTOR_03700_PLAYER_TARGET_HEIGHT = 800 };
-    work->targetPos.vx = gPlayerStatus.coordMtx->t[0];
+    work->targetPos.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0];
     RANDOM_LCG_ADVANCE();
-    work->targetPos.vy = gPlayerStatus.coordMtx->t[1] - ((RANDOM_LCG_DRAW() & heightMask) + ACTOR_03700_PLAYER_TARGET_HEIGHT);
-    work->targetPos.vz = gPlayerStatus.coordMtx->t[2];
+    work->targetPos.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - ((RANDOM_LCG_DRAW() & heightMask) + ACTOR_03700_PLAYER_TARGET_HEIGHT);
+    work->targetPos.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2];
 }
 
 /// Turns toward a point above the player and dashes until contact or timeout.
@@ -1384,10 +1384,10 @@ static void _actor03700Retreat(Task* task)
             }
             break;
         case ACTOR_03700_RETREAT_BACK_AWAY:
-            work->targetPos.vx = gPlayerStatus.coordMtx->t[0];
+            work->targetPos.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0];
             RANDOM_LCG_ADVANCE();
-            work->targetPos.vy = gPlayerStatus.coordMtx->t[1] - ((RANDOM_LCG_DRAW() & 0x3FF) + 800);
-            work->targetPos.vz = gPlayerStatus.coordMtx->t[2];
+            work->targetPos.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - ((RANDOM_LCG_DRAW() & 0x3FF) + 800);
+            work->targetPos.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2];
             work->turnRate     = _gActor03700TurnRates[((Enemy*)task->spawnArg2.pointer)->place->rowIndex];
             if (--work->retreatTimer > 0) {
                 work->speed = -50;
@@ -1402,10 +1402,10 @@ static void _actor03700Retreat(Task* task)
             }
             break;
         case ACTOR_03700_RETREAT_RETURN:
-            work->targetPos.vx = gPlayerStatus.coordMtx->t[0];
+            work->targetPos.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0];
             RANDOM_LCG_ADVANCE();
-            work->targetPos.vy = gPlayerStatus.coordMtx->t[1] - ((RANDOM_LCG_DRAW() & 0x1FF) + 800);
-            work->targetPos.vz = gPlayerStatus.coordMtx->t[2];
+            work->targetPos.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - ((RANDOM_LCG_DRAW() & 0x1FF) + 800);
+            work->targetPos.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2];
             work->turnRate     = _gActor03700TurnRates[((Enemy*)task->spawnArg2.pointer)->place->rowIndex];
             work->speed        = 5;
             _actor03700StepSway(task, 20);
@@ -1517,8 +1517,8 @@ static s32 _actor03700NoticePlayer(Task* task)
     scratchTop                                   = SCRATCH_STACK_CURSOR_AT(cursorSlot, SVECTOR);
     playerOffset                                 = scratchTop - 1;
     coord                                        = task->extra.tmd->coords;
-    playerOffset->vx                             = (u16)gPlayerStatus.coordMtx->t[0] - (u16)coord->coord.t[0];
-    offsetZ                                      = (u16)gPlayerStatus.coordMtx->t[2] - (u16)coord->coord.t[2];
+    playerOffset->vx                             = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[0] - (u16)coord->coord.t[0];
+    offsetZ                                      = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[2] - (u16)coord->coord.t[2];
     SCRATCH_STACK_CURSOR_AT(cursorSlot, SVECTOR) = playerOffset;
     playerOffset->vz                             = offsetZ;
     offsetX                                      = (scratchTop - 1)->vx;

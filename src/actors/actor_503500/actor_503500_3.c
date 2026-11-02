@@ -652,9 +652,9 @@ static void _actor503500BossUpkeep(Task* task)
     RANDOM_LCG_ADVANCE();
     work->randomRoll = RANDOM_LCG_DRAW();
     rootCoord        = task->extra.tmd->coords;
-    playerOffset.vx  = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+    playerOffset.vx  = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
     playerOffset.vy  = 0;
-    playerOffset.vz  = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    playerOffset.vz  = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     targetYaw        = work->targetYawOffset + ratan2(playerOffset.vx, playerOffset.vz);
     while (targetYaw >= ACTOR_TRANSFORM_ANGLE_HALF_TURN) {
         targetYaw -= ACTOR_TRANSFORM_ANGLE_TURN;
@@ -758,19 +758,19 @@ static inline void _actor503500ClassifyAttackHeight(Actor503500Work* work)
     };
     switch (work->previousHeightBand) {
         case ACTOR_503500_HEIGHT_BAND_UPPER:
-            if (gPlayerStatus.coordMtx->t[1] >= ACTOR_503500_HEIGHT_UPPER_EXIT_Y) {
+            if (playerStatusCoordMtx(&gPlayerStatus)->t[1] >= ACTOR_503500_HEIGHT_UPPER_EXIT_Y) {
                 work->heightBand = ACTOR_503500_HEIGHT_BAND_MIDDLE;
             }
             break;
         case ACTOR_503500_HEIGHT_BAND_MIDDLE:
-            if (gPlayerStatus.coordMtx->t[1] >= ACTOR_503500_HEIGHT_LOWER_ENTER_Y) {
+            if (playerStatusCoordMtx(&gPlayerStatus)->t[1] >= ACTOR_503500_HEIGHT_LOWER_ENTER_Y) {
                 work->heightBand = ACTOR_503500_HEIGHT_BAND_LOWER;
-            } else if (gPlayerStatus.coordMtx->t[1] < ACTOR_503500_HEIGHT_UPPER_ENTER_Y) {
+            } else if (playerStatusCoordMtx(&gPlayerStatus)->t[1] < ACTOR_503500_HEIGHT_UPPER_ENTER_Y) {
                 work->heightBand = ACTOR_503500_HEIGHT_BAND_UPPER;
             }
             break;
         case ACTOR_503500_HEIGHT_BAND_LOWER:
-            if (gPlayerStatus.coordMtx->t[1] < ACTOR_503500_HEIGHT_LOWER_EXIT_Y) {
+            if (playerStatusCoordMtx(&gPlayerStatus)->t[1] < ACTOR_503500_HEIGHT_LOWER_EXIT_Y) {
                 work->heightBand = ACTOR_503500_HEIGHT_BAND_MIDDLE;
             }
             break;
@@ -806,7 +806,7 @@ static void _actor503500StepAttackState(Task* task)
 
     work          = task->work;
     coord         = task->extra.tmd->coords;
-    playerBearing = ratan2(gPlayerStatus.coordMtx->t[0] - coord->coord.t[0], gPlayerStatus.coordMtx->t[2] - coord->coord.t[2]) - work->yaw;
+    playerBearing = ratan2(playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0], playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2]) - work->yaw;
     while (playerBearing >= ACTOR_TRANSFORM_ANGLE_HALF_TURN) {
         playerBearing -= ACTOR_TRANSFORM_ANGLE_TURN;
     }
@@ -1891,7 +1891,7 @@ static void _actor503500UpdateSlotTargetEligibility(Task* task)
 
     work          = task->work;
     rootCoord     = task->extra.tmd->coords;
-    playerBearing = ratan2(gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0], gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2]) - work->yaw;
+    playerBearing = ratan2(playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0], playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2]) - work->yaw;
     while (playerBearing >= ACTOR_TRANSFORM_ANGLE_HALF_TURN) {
         playerBearing -= ACTOR_TRANSFORM_ANGLE_TURN;
     }
@@ -1907,7 +1907,7 @@ static void _actor503500UpdateSlotTargetEligibility(Task* task)
     } else if (playerBearing < -ACTOR_503500_TARGET_SIDE_MIN && playerBearing > -ACTOR_503500_TARGET_SIDE_MAX) {
         bearingMask = ACTOR_503500_TARGET_BEARING_NEGATIVE_SIDE;
     }
-    playerY    = gPlayerStatus.coordMtx->t[1];
+    playerY    = playerStatusCoordMtx(&gPlayerStatus)->t[1];
     heightMask = ACTOR_503500_TARGET_HEIGHT_LOWER;
     if (playerY < ACTOR_503500_TARGET_LOWER_BOUNDARY_Y) {
         heightMask = ACTOR_503500_TARGET_HEIGHT_MIDDLE;
@@ -2276,9 +2276,9 @@ s16 actor503500MeasurePlayerBearing(Task* task)
     s16       playerBearing;
 
     coord           = task->extra.tmd->coords;
-    playerOffset.vx = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
+    playerOffset.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
     playerOffset.vy = 0;
-    playerOffset.vz = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+    playerOffset.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
     playerBearing   = ratan2(playerOffset.vx, playerOffset.vz) - ratan2(coord->coord.m[0][2], coord->coord.m[2][2]);
     while (playerBearing >= ACTOR_TRANSFORM_ANGLE_HALF_TURN) {
         playerBearing -= ACTOR_TRANSFORM_ANGLE_TURN;
@@ -3945,9 +3945,9 @@ static void _actor503500LargeChainStepShoot(Task* task)
             // Convert the elevated player position from world into the attachment frame.
             attachmentMatrix = &worldMatrix;
             gfxComposeNodeWorldTransform(chainCoords->parent, attachmentMatrix, &offset);
-            position.vx = gPlayerStatus.coordMtx->t[0] - offset.vx;
-            position.vy = gPlayerStatus.coordMtx->t[1] - offset.vy - ACTOR_503500_CHAIN_SHOOT_TARGET_HEIGHT;
-            position.vz = gPlayerStatus.coordMtx->t[2] - offset.vz;
+            position.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - offset.vx;
+            position.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - offset.vy - ACTOR_503500_CHAIN_SHOOT_TARGET_HEIGHT;
+            position.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - offset.vz;
             gte_TransposeMatrix(attachmentMatrix, &attachmentInverse);
             gte_SetRotMatrix(&attachmentInverse);
             gte_ldv0(&position);
@@ -3956,8 +3956,8 @@ static void _actor503500LargeChainStepShoot(Task* task)
             break;
         case ACTOR_503500_CHAIN_SHOOT_STEP_FIRE:
             if (++work->stateFrames >= ACTOR_503500_CHAIN_SHOOT_FIRE_MIN_FRAME) {
-                position.vx    = gPlayerStatus.coordMtx->t[0] - work->linkPoints[ACTOR_503500_LARGE_CHAIN_TIP_PART].vx;
-                position.vz    = gPlayerStatus.coordMtx->t[2] - work->linkPoints[ACTOR_503500_LARGE_CHAIN_TIP_PART].vz;
+                position.vx    = playerStatusCoordMtx(&gPlayerStatus)->t[0] - work->linkPoints[ACTOR_503500_LARGE_CHAIN_TIP_PART].vx;
+                position.vz    = playerStatusCoordMtx(&gPlayerStatus)->t[2] - work->linkPoints[ACTOR_503500_LARGE_CHAIN_TIP_PART].vz;
                 playerDistance = SquareRoot0(position.vx * position.vx + position.vz * position.vz);
                 if (playerDistance < ACTOR_503500_CHAIN_SHOOT_RANGE) {
                     shotTask = taskSpawnFromTable(gActor503500AttackTaskDescs, ACTOR_503500_CHAIN_SHOOT_BALLISTIC_TASK, 0, playerDistance * ACTOR_503500_CHAIN_SHOOT_SPEED_PER_DISTANCE);

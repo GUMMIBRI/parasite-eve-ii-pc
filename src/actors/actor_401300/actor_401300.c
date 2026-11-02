@@ -2070,11 +2070,11 @@ static void _actor401300TakeHit(Task* actor)
                 actor->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
             }
             // Range damage, critical rolls and rear-hit scaling precede reactions.
-            playerDeltaX               = playerStatus->coordMtx->t[0] - actor->extra.tmd->coords->coord.t[0];
+            playerDeltaX               = playerStatusCoordMtx(playerStatus)->t[0] - actor->extra.tmd->coords->coord.t[0];
             hitScratch->toPlayer.vx    = playerDeltaX;
-            playerDeltaY               = playerStatus->coordMtx->t[1] - actor->extra.tmd->coords->coord.t[1];
+            playerDeltaY               = playerStatusCoordMtx(playerStatus)->t[1] - actor->extra.tmd->coords->coord.t[1];
             hitScratch->toPlayer.vy    = playerDeltaY;
-            playerDeltaZ               = playerStatus->coordMtx->t[2] - actor->extra.tmd->coords->coord.t[2];
+            playerDeltaZ               = playerStatusCoordMtx(playerStatus)->t[2] - actor->extra.tmd->coords->coord.t[2];
             hitScratch->toPlayer.vz    = playerDeltaZ;
             hitScratch->playerDistance = SquareRoot0(playerDeltaX * playerDeltaX + playerDeltaY * playerDeltaY + playerDeltaZ * playerDeltaZ);
             hitScratch->damage         = damageComputePlayerAttack(hitScratch->hitKey, hitScratch->playerDistance, 0, 0);
@@ -2616,9 +2616,9 @@ static void _actor401300StateChase(Task* actor)
     scratchTop                                   = SCRATCH_STACK_CURSOR(_Actor401300RunScratch);
     playerOffset                                 = &scratchTop[-1].delta;
     rootBeforePush                               = actor->extra.tmd->coords;
-    scratchTop[-1].delta.vx                      = gPlayerStatus.coordMtx->t[0] - rootBeforePush->coord.t[0];
-    playerOffset->vy                             = gPlayerStatus.coordMtx->t[1] - rootBeforePush->coord.t[1];
-    playerOffset->vz                             = gPlayerStatus.coordMtx->t[2] - rootBeforePush->coord.t[2];
+    scratchTop[-1].delta.vx                      = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootBeforePush->coord.t[0];
+    playerOffset->vy                             = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootBeforePush->coord.t[1];
+    playerOffset->vz                             = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootBeforePush->coord.t[2];
     SCRATCH_STACK_CURSOR(_Actor401300RunScratch) = scratchTop - 1;
     run                                          = scratchTop - 1;
     actor->extra.tmd->coords->composeStamp       = GRAPHICS_COORD_DIRTY;
@@ -2639,9 +2639,9 @@ static void _actor401300StateChase(Task* actor)
     } else if (run->turn < -ACTOR_401300_RUN_TURN_LIMIT) {
         run->turn = -ACTOR_401300_RUN_TURN_LIMIT;
     } else {
-        run->offset.vx = playerDeltaX = playerStatus->coordMtx->t[0] - actor->extra.tmd->coords->coord.t[0];
-        run->offset.vy = playerDeltaY = playerStatus->coordMtx->t[1] - actor->extra.tmd->coords->coord.t[1];
-        run->offset.vz = playerDeltaZ = playerStatus->coordMtx->t[2] - actor->extra.tmd->coords->coord.t[2];
+        run->offset.vx = playerDeltaX = playerStatusCoordMtx(playerStatus)->t[0] - actor->extra.tmd->coords->coord.t[0];
+        run->offset.vy = playerDeltaY = playerStatusCoordMtx(playerStatus)->t[1] - actor->extra.tmd->coords->coord.t[1];
+        run->offset.vz = playerDeltaZ = playerStatusCoordMtx(playerStatus)->t[2] - actor->extra.tmd->coords->coord.t[2];
         playerDistance                = SquareRoot0(playerDeltaX * playerDeltaX + playerDeltaY * playerDeltaY + playerDeltaZ * playerDeltaZ);
         run->distance                 = playerDistance;
         if (player->mode != GAME_ACTOR_MODE_SCRIPTED && work->stateTimer >= ACTOR_401300_ATTACK_WAIT_TICKS) {
@@ -3122,9 +3122,9 @@ static void _actor401300StateGrab(Task* actor)
         _actor401300UpdateAnimationEffects(actor);
         gfxRotMatrixY(&actor->extra.tmd->coords->coord, _actorAngleTurnToPlayer(actor, &playerOffset, playerStatus), GRAPHICS_ROTATION_COMPOSE);
         _actorRenderRescaleYaw(actor->extra.tmd->coords, ACTOR_401300_ROOT_SCALE);
-        playerOffset.vx                        = actor->extra.tmd->coords->coord.t[0] - playerStatus->coordMtx->t[0];
+        playerOffset.vx                        = actor->extra.tmd->coords->coord.t[0] - playerStatusCoordMtx(playerStatus)->t[0];
         playerOffset.vy                        = 0;
-        playerOffset.vz                        = actor->extra.tmd->coords->coord.t[2] - playerStatus->coordMtx->t[2];
+        playerOffset.vz                        = actor->extra.tmd->coords->coord.t[2] - playerStatusCoordMtx(playerStatus)->t[2];
         work->lookYawTarget                    = 0;
         work->lookYaw                          = 0;
         actor->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
@@ -3134,7 +3134,7 @@ static void _actor401300StateGrab(Task* actor)
     _actor401300UpdateAnimationEffects(actor);
     // The player can reject the hold while its recovery window is active.
     if ((work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) == ACTOR_401300_GRAB_CUE && player->mode != GAME_ACTOR_MODE_SCRIPTED) {
-        playerTurn = _actorAngleTurnToMatrixPosition(actor, &playerOffset, gPlayerStatus.coordMtx);
+        playerTurn = _actorAngleTurnToMatrixPosition(actor, &playerOffset, playerStatusCoordMtx(&gPlayerStatus));
         if (abs(playerTurn) < ACTOR_401300_GRAB_TURN_LIMIT && !_actorRangeOutsideRadiusXZ(&playerOffset, ACTOR_401300_GRAB_RADIUS)) {
             _actor401300StartPlayerGrab(work);
         }
@@ -3144,9 +3144,9 @@ static void _actor401300StateGrab(Task* actor)
     }
     if ((work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK) > ACTOR_401300_GRAB_CUE) {
         separation      = &playerOffset;
-        playerOffset.vx = actor->extra.tmd->coords->coord.t[0] - playerStatus->coordMtx->t[0];
+        playerOffset.vx = actor->extra.tmd->coords->coord.t[0] - playerStatusCoordMtx(playerStatus)->t[0];
         playerOffset.vy = 0;
-        playerOffset.vz = actor->extra.tmd->coords->coord.t[2] - playerStatus->coordMtx->t[2];
+        playerOffset.vz = actor->extra.tmd->coords->coord.t[2] - playerStatusCoordMtx(playerStatus)->t[2];
         if (!_actorRangeOutsideRadiusXZ(separation, ACTOR_401300_GRAB_SEPARATION_RADIUS)) {
             VectorNormalSS(separation, separation);
             gte_lddp(ACTOR_401300_GRAB_SEPARATION_STEP);
@@ -3559,9 +3559,9 @@ static void _actor401300StateDeathBurn(Task* actor)
     {                                                                                      \
         (rootCoord)    = (actor)->extra.tmd->coords;                                       \
         (toPlayer)     = &(delta);                                                         \
-        (delta).vx     = gPlayerStatus.coordMtx->t[0] - (rootCoord)->coord.t[0];           \
-        (toPlayer)->vy = gPlayerStatus.coordMtx->t[1] - (rootCoord)->coord.t[1];           \
-        (toPlayer)->vz = gPlayerStatus.coordMtx->t[2] - (rootCoord)->coord.t[2];           \
+        (delta).vx     = playerStatusCoordMtx(&gPlayerStatus)->t[0] - (rootCoord)->coord.t[0];           \
+        (toPlayer)->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - (rootCoord)->coord.t[1];           \
+        (toPlayer)->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - (rootCoord)->coord.t[2];           \
         if (!_actorRangeOutsideRadiusXZ((toPlayer), ACTOR_401300_DORMANT_NOTICE_RADIUS)) { \
             (work)->state = ACTOR_401300_STATE_ALERT;                                      \
         }                                                                                  \
@@ -3653,9 +3653,9 @@ static void _actor401300StateDormant(Task* actor)
     {                                                                                                        \
         (rootCoord)    = (actor)->extra.tmd->coords;                                                         \
         (toPlayer)     = &(delta);                                                                           \
-        (delta).vx     = gPlayerStatus.coordMtx->t[0] - (rootCoord)->coord.t[0];                             \
-        (toPlayer)->vy = gPlayerStatus.coordMtx->t[1] - (rootCoord)->coord.t[1];                             \
-        (toPlayer)->vz = gPlayerStatus.coordMtx->t[2] - (rootCoord)->coord.t[2];                             \
+        (delta).vx     = playerStatusCoordMtx(&gPlayerStatus)->t[0] - (rootCoord)->coord.t[0];                             \
+        (toPlayer)->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - (rootCoord)->coord.t[1];                             \
+        (toPlayer)->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - (rootCoord)->coord.t[2];                             \
         if (!_actorRangeOutsideRadiusXZ((toPlayer), ACTOR_401300_DORMANT_NOTICE_RADIUS)) {                   \
             sndEvtRequestScriptStop(SOUND_AKROPOLIS_PATIO_STRANGER_DORMANT, SOUND_SCRIPT_STOP_KEEP_RELEASE); \
             sceneEngageBattle(1);                                                                            \
@@ -4453,9 +4453,9 @@ static inline void _actor401300ReadStalkPlayerBearings(Task* actor, const Player
     stalk->playerYaw         = ratan2(-(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER))->extra.tmd->coords->coord.m[2][0],
                                       (gameGetTaskSlot(GAME_TASK_SLOT_PLAYER))->extra.tmd->coords->coord.m[2][2]);
     updatedRoot              = actor->extra.tmd->coords;
-    savedCursor[-1].delta.vx = playerStatus->coordMtx->t[0] - updatedRoot->coord.t[0];
-    stalk->delta.vy          = playerStatus->coordMtx->t[1] - updatedRoot->coord.t[1];
-    stalk->delta.vz          = playerStatus->coordMtx->t[2] - updatedRoot->coord.t[2];
+    savedCursor[-1].delta.vx = playerStatusCoordMtx(playerStatus)->t[0] - updatedRoot->coord.t[0];
+    stalk->delta.vy          = playerStatusCoordMtx(playerStatus)->t[1] - updatedRoot->coord.t[1];
+    stalk->delta.vz          = playerStatusCoordMtx(playerStatus)->t[2] - updatedRoot->coord.t[2];
     yawFromPlayer            = ratan2(savedCursor[-1].delta.vx, stalk->delta.vz) + ACTOR_TRANSFORM_ANGLE_HALF_TURN;
     stalk->yawFromPlayer     = yawFromPlayer;
     stalk->yawFromPlayer     = _actorAngleNormalizeYaw(yawFromPlayer);
@@ -4516,9 +4516,9 @@ static void _actor401300StateStalk(Task* actor)
     }
     playerStatus                           = &gPlayerStatus;
     offsetRoot                             = actor->extra.tmd->coords;
-    savedCursor[-1].delta.vx               = playerStatus->coordMtx->t[0] - offsetRoot->coord.t[0];
-    stalk->delta.vy                        = playerStatus->coordMtx->t[1] - offsetRoot->coord.t[1];
-    stalk->delta.vz                        = playerStatus->coordMtx->t[2] - offsetRoot->coord.t[2];
+    savedCursor[-1].delta.vx               = playerStatusCoordMtx(playerStatus)->t[0] - offsetRoot->coord.t[0];
+    stalk->delta.vy                        = playerStatusCoordMtx(playerStatus)->t[1] - offsetRoot->coord.t[1];
+    stalk->delta.vz                        = playerStatusCoordMtx(playerStatus)->t[2] - offsetRoot->coord.t[2];
     actor->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
     _actor401300UpdateAnimationEffects(actor);
     _actor401300ReadStalkPlayerBearings(actor, playerStatus, savedCursor, stalk);
@@ -4918,10 +4918,10 @@ static void _actor401300StateCharge(Task* actor)
     work->stateTimer++;
     offsetRoot               = actor->extra.tmd->coords;
     savedCursor              = SCRATCH_STACK_CURSOR_AT(cursorSlot, _Actor401300ChargeScratch);
-    savedCursor[-1].delta.vx = playerStatus->coordMtx->t[0] - offsetRoot->coord.t[0];
+    savedCursor[-1].delta.vx = playerStatusCoordMtx(playerStatus)->t[0] - offsetRoot->coord.t[0];
     charge                   = (SCRATCH_STACK_CURSOR_AT(cursorSlot, _Actor401300ChargeScratch) = savedCursor - 1);
-    charge->delta.vy         = playerStatus->coordMtx->t[1] - offsetRoot->coord.t[1];
-    charge->delta.vz         = playerStatus->coordMtx->t[2] - offsetRoot->coord.t[2];
+    charge->delta.vy         = playerStatusCoordMtx(playerStatus)->t[1] - offsetRoot->coord.t[1];
+    charge->delta.vz         = playerStatusCoordMtx(playerStatus)->t[2] - offsetRoot->coord.t[2];
     save                     = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
     _actor401300UpdateAnimationEffects(actor);
     // Clip changes reset the counter used for proximity, blockage and recoil.
@@ -5156,11 +5156,11 @@ static void _actor401300StateLeap(Task* actor)
     work->stateTimer++;
     offsetRoot               = actor->extra.tmd->coords;
     savedCursor              = SCRATCH_STACK_CURSOR_AT(cursorSlot, _Actor401300LeapScratch);
-    savedCursor[-1].delta.vx = playerStatus->coordMtx->t[0] - offsetRoot->coord.t[0];
+    savedCursor[-1].delta.vx = playerStatusCoordMtx(playerStatus)->t[0] - offsetRoot->coord.t[0];
     playerOffset             = &savedCursor[-1].delta;
-    playerOffset->vy         = playerStatus->coordMtx->t[1] - offsetRoot->coord.t[1];
+    playerOffset->vy         = playerStatusCoordMtx(playerStatus)->t[1] - offsetRoot->coord.t[1];
     leap                     = (SCRATCH_STACK_CURSOR_AT(cursorSlot, _Actor401300LeapScratch) = savedCursor - 1);
-    playerOffset->vz         = playerStatus->coordMtx->t[2] - offsetRoot->coord.t[2];
+    playerOffset->vz         = playerStatusCoordMtx(playerStatus)->t[2] - offsetRoot->coord.t[2];
     _actor401300UpdateAnimationEffects(actor);
     switch (work->animId) {
         case ACTOR_401300_LEAP_CROUCH_ANIM:
@@ -5174,9 +5174,9 @@ static void _actor401300StateLeap(Task* actor)
                 work->animId      = ACTOR_401300_ANIM_LEAP;
                 work->animRequest = ACTOR_401300_ANIM_REQUEST_BLEND;
                 // Measure full-width XYZ once; subsequent movement uses the stored step.
-                leap->offset.vx    = playerStatus->coordMtx->t[0] - actor->extra.tmd->coords->coord.t[0];
-                leap->offset.vy    = playerStatus->coordMtx->t[1] - actor->extra.tmd->coords->coord.t[1];
-                leap->offset.vz    = playerStatus->coordMtx->t[2] - actor->extra.tmd->coords->coord.t[2];
+                leap->offset.vx    = playerStatusCoordMtx(playerStatus)->t[0] - actor->extra.tmd->coords->coord.t[0];
+                leap->offset.vy    = playerStatusCoordMtx(playerStatus)->t[1] - actor->extra.tmd->coords->coord.t[1];
+                leap->offset.vz    = playerStatusCoordMtx(playerStatus)->t[2] - actor->extra.tmd->coords->coord.t[2];
                 leap->leapDistance = SquareRoot0(leap->offset.vx * leap->offset.vx + leap->offset.vy * leap->offset.vy + leap->offset.vz * leap->offset.vz) + ACTOR_401300_LEAP_DISTANCE_EXTRA;
                 if (leap->leapDistance > ACTOR_401300_LEAP_DISTANCE_MAX) {
                     leap->leapDistance = ACTOR_401300_LEAP_DISTANCE_MAX;
@@ -5373,10 +5373,10 @@ static void _actor401300StateLeapIn(Task* actor)
     work->stateTimer++;
     offsetRoot                                                     = actor->extra.tmd->coords;
     savedCursor                                                    = SCRATCH_STACK_CURSOR_AT(cursorSlot, _Actor401300LeapInScratch);
-    savedCursor[-1].playerOffset.vx                                = playerStatus->coordMtx->t[0] - offsetRoot->coord.t[0];
+    savedCursor[-1].playerOffset.vx                                = playerStatusCoordMtx(playerStatus)->t[0] - offsetRoot->coord.t[0];
     playerOffset                                                   = &savedCursor[-1].playerOffset;
-    playerOffset->vy                                               = playerStatus->coordMtx->t[1] - offsetRoot->coord.t[1];
-    playerOffset->vz                                               = playerStatus->coordMtx->t[2] - offsetRoot->coord.t[2];
+    playerOffset->vy                                               = playerStatusCoordMtx(playerStatus)->t[1] - offsetRoot->coord.t[1];
+    playerOffset->vz                                               = playerStatusCoordMtx(playerStatus)->t[2] - offsetRoot->coord.t[2];
     SCRATCH_STACK_CURSOR_AT(cursorSlot, _Actor401300LeapInScratch) = savedCursor - 1;
     // The driver refreshes color before this cumulative-looking scale is applied.
     if (work->stateTimer < ACTOR_401300_LEAP_IN_COLOR_END_TICK) {

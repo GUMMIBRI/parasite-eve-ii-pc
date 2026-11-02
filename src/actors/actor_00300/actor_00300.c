@@ -1454,9 +1454,9 @@ static void _actor00300TickPursuit(Task* task)
             timer          = (u16)work->timer - 1;
             work->timer    = timer;
             if (timer <= 0) {
-                playerDelta->vx  = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
+                playerDelta->vx  = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
                 playerDelta->vy  = 0;
-                playerDelta->vz  = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+                playerDelta->vz  = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
                 playerDistance   = SquareRoot0(playerDelta->vx * playerDelta->vx + playerDelta->vz * playerDelta->vz);
                 targetYaw        = ratan2((s16)playerDelta->vx, (s16)playerDelta->vz) & ACTOR_TRANSFORM_ANGLE_MASK;
                 work->targetYaw  = targetYaw;
@@ -1484,9 +1484,9 @@ static void _actor00300TickPursuit(Task* task)
             work->turnRate     = ACTOR_00300_PURSUIT_TURN_RATE;
             work->speed        = ACTOR_00300_PURSUIT_SPEED;
             work->anim         = ACTOR_00300_ANIM_MOVE;
-            playerDelta->vx    = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
+            playerDelta->vx    = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
             playerDelta->vy    = 0;
-            playerDelta->vz    = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+            playerDelta->vz    = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
             playerDistance     = SquareRoot0(playerDelta->vx * playerDelta->vx + playerDelta->vz * playerDelta->vz);
             targetYaw          = ratan2((s16)playerDelta->vx, (s16)playerDelta->vz) & ACTOR_TRANSFORM_ANGLE_MASK;
             work->targetYaw    = targetYaw;
@@ -1571,9 +1571,9 @@ static void _actor00300SelectAttack(Task* task)
             work->timer      = ((RANDOM_LCG_ADVANCE()) >> 16 & 31) + ACTOR_00300_ATTACK_TURN_MIN_TICKS;
         }
     } else {
-        scratch->delta.vx = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
+        scratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
         scratch->delta.vy = 0;
-        scratch->delta.vz = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+        scratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
         if (SquareRoot0(scratch->delta.vx * scratch->delta.vx + scratch->delta.vz * scratch->delta.vz) < ACTOR_00300_CLOSE_RANGE) {
             work->action     = ACTOR_00300_ACTION_DRAIN;
             work->actionStep = ACTOR_00300_ACTION_BEGIN;
@@ -1654,9 +1654,9 @@ static void _actor00300TickFireballAttack(Task* task)
             work->speed    = 0;
             work->anim     = ACTOR_00300_ANIM_TURN;
             stackTop[-1].delta.vx =
-                (s32)(gPlayerStatus.coordMtx->t[0] - coord->coord.t[0]);
+                (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0]);
             scratch->delta.vy = 0;
-            scratch->delta.vz = (s32)(gPlayerStatus.coordMtx->t[2] - coord->coord.t[2]);
+            scratch->delta.vz = (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2]);
             targetYaw         = ratan2((s16)stackTop[-1].delta.vx, (s16)scratch->delta.vz) &
                         ACTOR_TRANSFORM_ANGLE_MASK;
             work->targetYaw = targetYaw;
@@ -1685,9 +1685,9 @@ static void _actor00300TickFireballAttack(Task* task)
             gSceneCombatState.actor00300AttackAlert = 0;
             work->turnRate                          = ACTOR_00300_FIREBALL_CHARGE_TURN_RATE;
             stackTop[-1].delta.vx =
-                (s32)(gPlayerStatus.coordMtx->t[0] - coord->coord.t[0]);
+                (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0]);
             scratch->delta.vy = 0;
-            scratch->delta.vz = (s32)(gPlayerStatus.coordMtx->t[2] - coord->coord.t[2]);
+            scratch->delta.vz = (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2]);
             work->targetYaw =
                 ratan2((s16)stackTop[-1].delta.vx, (s16)scratch->delta.vz) &
                 ACTOR_TRANSFORM_ANGLE_MASK;
@@ -1833,9 +1833,9 @@ static void _actor00300TickDrainAttack(Task* task)
             work->turnRate  = ACTOR_00300_DRAIN_AIM_RATE;
             work->speed     = 0;
             work->anim      = ACTOR_00300_ANIM_TURN;
-            playerDelta->vx = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
+            playerDelta->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
             playerDelta->vy = 0;
-            playerDelta->vz = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+            playerDelta->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
             targetYaw       = ratan2((s16)playerDelta->vx, (s16)playerDelta->vz) & ACTOR_TRANSFORM_ANGLE_MASK;
             work->targetYaw = targetYaw;
             yawDelta        = (u16)targetYaw - (u16)work->yaw;
@@ -2914,9 +2914,9 @@ static void _actor00300TurnFireballTowardPlayer(Task* task)
 
     coord             = task->extra.coordBody->coord;
     scratch           = SCRATCH_STACK_RESERVE_BLOCK(ActorFaceScratch);
-    scratch->delta.vx = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
+    scratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
     scratch->delta.vy = 0;
-    scratch->delta.vz = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+    scratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
     targetYaw         = ratan2((s16)scratch->delta.vx, (s16)scratch->delta.vz) & ACTOR_TRANSFORM_ANGLE_MASK;
     matrixYaw         = ratan2(coord->coord.m[0][2], coord->coord.m[2][2]) & ACTOR_TRANSFORM_ANGLE_MASK;
     nextYaw           = matrixYaw;

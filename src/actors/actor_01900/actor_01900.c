@@ -1295,11 +1295,11 @@ static void _actor01900TakeHit(Task* task)
                 task->extra.tmd->coords->coord.t[2]  += hitScratch->hitOffset.vz;
                 task->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
             }
-            playerDeltaX               = playerStatus->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0];
+            playerDeltaX               = playerStatusCoordMtx(playerStatus)->t[0] - task->extra.tmd->coords->coord.t[0];
             hitScratch->toPlayer.vx    = playerDeltaX;
-            playerDeltaY               = playerStatus->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1];
+            playerDeltaY               = playerStatusCoordMtx(playerStatus)->t[1] - task->extra.tmd->coords->coord.t[1];
             hitScratch->toPlayer.vy    = playerDeltaY;
-            playerDeltaZ               = playerStatus->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2];
+            playerDeltaZ               = playerStatusCoordMtx(playerStatus)->t[2] - task->extra.tmd->coords->coord.t[2];
             hitScratch->toPlayer.vz    = playerDeltaZ;
             hitScratch->playerDistance = SquareRoot0(playerDeltaX * playerDeltaX + playerDeltaY * playerDeltaY + playerDeltaZ * playerDeltaZ);
             hitScratch->damage         = damageComputePlayerAttack(hitScratch->hitKey, hitScratch->playerDistance, 0, 0);
@@ -2633,9 +2633,9 @@ static void _actor01900StateDormantScripted(Task* task)
     work->dormantAnimFrame = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
     rootCoord              = task->extra.tmd->coords;
     playerOffset           = &delta;
-    delta.vx               = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-    playerOffset->vy       = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-    playerOffset->vz       = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    delta.vx               = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+    playerOffset->vy       = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+    playerOffset->vz       = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     if (!_actorRangeOutsideRadiusXZ(playerOffset, work->noticeRange)) {
         sndEvtRequestScriptStop(SOUND_AKROPOLIS_PATIO_STRANGER_DORMANT, SOUND_SCRIPT_STOP_KEEP_RELEASE);
         if (_actor01900EngageBattleIfPlayerLevel(task) == 1) {

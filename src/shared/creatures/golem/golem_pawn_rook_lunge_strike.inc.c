@@ -38,9 +38,9 @@ static void _golemPawnRookLauncherStrikeState(Task* actor)
     }
     blendFrames = _gGolemPawnRookAnimBlendFrames[work->anim];
     if ((work->animFrame >= blendFrames + GOLEM_PAWN_ROOK_LAUNCHER_STRIKE_START_FRAME) && (blendFrames + GOLEM_PAWN_ROOK_LAUNCHER_STRIKE_ADVANCE_END_FRAME >= work->animFrame)) {
-        playerOffsetX  = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
+        playerOffsetX  = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
         toPlayer->vx   = playerOffsetX;
-        playerOffsetZ  = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+        playerOffsetZ  = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
         toPlayer->vz   = playerOffsetZ;
         playerDistance = SquareRoot0((toPlayer->vx * toPlayer->vx) + (toPlayer->vz * toPlayer->vz));
         if (playerDistance < GOLEM_PAWN_ROOK_LAUNCHER_STRIKE_STOP_RANGE) {

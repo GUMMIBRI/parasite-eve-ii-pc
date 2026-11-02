@@ -1744,7 +1744,7 @@ static void _actor403600UpdateFightAction(Task* task)
                     if ((_gActor403600SlamTarget.vy - 0x3E8) < work->worldCoord.coord.t[1]) {
                         padScriptSpawnVariableMotorRamp(0xA, 0xFF, 0x50);
                         slamHitResponse = ACTOR_403600_SLAM_RESPONSE_NONE;
-                        if (gPlayerStatus.coordMtx->t[1] < -0xF3B) {
+                        if (playerStatusCoordMtx(&gPlayerStatus)->t[1] < -0xF3B) {
                             slamCoord                       = &work->worldCoord;
                             _gActor403600PlayerDamage.power = gActor403600BossAttacks[ACTOR_403600_BOSS_ATTACK_SLAM].power;
                             _actor403600MeasurePlayerRangeBearing(slamCoord, &playerRange, &playerBearing);
@@ -1869,7 +1869,7 @@ static void _actor403600UpdateFightAction(Task* task)
                     work->forwardSpeed  = 0x4B0U;
                     work->verticalSpeed = 0;
                     if (work->step == 1) {
-                        work->targetPos.vy = (s32)(gPlayerStatus.coordMtx->t[1] - 0x258);
+                        work->targetPos.vy = (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[1] - 0x258);
                     }
                     work->aimMode = ACTOR_403600_AIM_TARGET;
                     if (_actor403600TurnToAim(task) < 0x7D1) {
@@ -2027,11 +2027,11 @@ static void _actor403600UpdateFightAction(Task* task)
                     }
                     work->aimMode      = ACTOR_403600_AIM_TARGET;
                     flightResult       = _actor403600TurnToAim(task);
-                    swoopDeltaX        = gPlayerStatus.coordMtx->t[0] - work->worldCoord.coord.t[0];
+                    swoopDeltaX        = playerStatusCoordMtx(&gPlayerStatus)->t[0] - work->worldCoord.coord.t[0];
                     swoopDeltaXSquared = swoopDeltaX * swoopDeltaX;
-                    swoopDeltaY        = gPlayerStatus.coordMtx->t[1] - work->worldCoord.coord.t[1];
+                    swoopDeltaY        = playerStatusCoordMtx(&gPlayerStatus)->t[1] - work->worldCoord.coord.t[1];
                     swoopDeltaYSquared = swoopDeltaY * swoopDeltaY;
-                    swoopDeltaZ        = gPlayerStatus.coordMtx->t[2] - work->worldCoord.coord.t[2];
+                    swoopDeltaZ        = playerStatusCoordMtx(&gPlayerStatus)->t[2] - work->worldCoord.coord.t[2];
                     swoopPlayerRange   = SquareRoot0(swoopDeltaXSquared + swoopDeltaYSquared + (swoopDeltaZ * swoopDeltaZ));
                     playerRange        = swoopPlayerRange;
                     if (swoopPlayerRange < 0x76DU) {
@@ -2091,7 +2091,7 @@ static void _actor403600UpdateFightAction(Task* task)
                 case ACTOR_403600_RUSH_STEP_APPROACH:
                     work->aimMode       = ACTOR_403600_AIM_TARGET;
                     work->forwardSpeed  = 0xC8U;
-                    rushPlayerHeight    = gPlayerStatus.coordMtx->t[1] + 0x1F4;
+                    rushPlayerHeight    = playerStatusCoordMtx(&gPlayerStatus)->t[1] + 0x1F4;
                     work->verticalSpeed = (s16)((rushPlayerHeight - work->worldCoord.coord.t[1]) / 25);
                     if (_actor403600TurnYawToAim(task, 0xB0) < 0x3E9) {
                         work->forwardSpeed  = 0U;
@@ -2121,9 +2121,9 @@ static void _actor403600UpdateFightAction(Task* task)
                         ACTOR_403600_PLAY_PLACED_ENEMY_SOUND(task, ACTOR_403600_SOUND_RUSH_WINDUP, rushWindupSoundCoord, soundKey, rushWindupPan, rushWindupDepth);
                     }
                     if (work->phaseFrame < 0x14) {
-                        work->targetPos.vx = (s32)gPlayerStatus.coordMtx->t[0];
-                        work->targetPos.vy = (s32)(gPlayerStatus.coordMtx->t[1] - 0x3E8);
-                        work->targetPos.vz = (s32)gPlayerStatus.coordMtx->t[2];
+                        work->targetPos.vx = (s32)playerStatusCoordMtx(&gPlayerStatus)->t[0];
+                        work->targetPos.vy = (s32)(playerStatusCoordMtx(&gPlayerStatus)->t[1] - 0x3E8);
+                        work->targetPos.vz = (s32)playerStatusCoordMtx(&gPlayerStatus)->t[2];
                     }
                     if (work->phaseFrame >= 0x32) {
                         work->animId     = (u32)ACTOR_403600_ANIM_DIVE_WINDUP;
@@ -2250,11 +2250,11 @@ static void _actor403600UpdateFightAction(Task* task)
                         _actor403600TurnToAim(task);
                         taskSpawnFromTable(gActor403600ChildTaskTable, ACTOR_403600_RUSH_EFFECT_TASK, 2, task);
                     }
-                    rushDeltaX        = gPlayerStatus.coordMtx->t[0] - work->worldCoord.coord.t[0];
+                    rushDeltaX        = playerStatusCoordMtx(&gPlayerStatus)->t[0] - work->worldCoord.coord.t[0];
                     rushDeltaXSquared = rushDeltaX * rushDeltaX;
-                    rushDeltaY        = gPlayerStatus.coordMtx->t[1] - work->worldCoord.coord.t[1];
+                    rushDeltaY        = playerStatusCoordMtx(&gPlayerStatus)->t[1] - work->worldCoord.coord.t[1];
                     rushDeltaYSquared = rushDeltaY * rushDeltaY;
-                    rushDeltaZ        = gPlayerStatus.coordMtx->t[2] - work->worldCoord.coord.t[2];
+                    rushDeltaZ        = playerStatusCoordMtx(&gPlayerStatus)->t[2] - work->worldCoord.coord.t[2];
                     playerRange       = SquareRoot0(rushDeltaXSquared + rushDeltaYSquared + (rushDeltaZ * rushDeltaZ));
                     if (work->phaseFrame >= 8) {
                         work->phaseFrame = 0;
@@ -2301,7 +2301,7 @@ static void _actor403600UpdateFightAction(Task* task)
                     work->aimMode = ACTOR_403600_AIM_PLAYER;
                     _actor403600TurnYawToAim(task, 0xA0);
                     work->forwardSpeed  = 0x12CU;
-                    summonPlayerHeight  = gPlayerStatus.coordMtx->t[1] + 0x1F4;
+                    summonPlayerHeight  = playerStatusCoordMtx(&gPlayerStatus)->t[1] + 0x1F4;
                     work->verticalSpeed = (s16)((summonPlayerHeight - work->worldCoord.coord.t[1]) / 25);
                     _actor403600MeasurePlayerRangeBearing(&work->worldCoord, &playerRange, &playerBearing);
                     if ((playerRange < 0x1389U) && (work->verticalSpeed < 0x12D)) {
@@ -2457,7 +2457,7 @@ static void _actor403600UpdateFightAction(Task* task)
                         work->forwardSpeed = 0x50U;
                     }
                     meleeReferenceHeight = work->worldCoord.coord.t[1] + 0x3E8;
-                    chaseVerticalSpeed   = (gPlayerStatus.coordMtx->t[1] - meleeReferenceHeight) / 25;
+                    chaseVerticalSpeed   = (playerStatusCoordMtx(&gPlayerStatus)->t[1] - meleeReferenceHeight) / 25;
                     work->verticalSpeed  = chaseVerticalSpeed;
                     if (playerRange < 0x7D1U) {
                         meleeBearingMagnitude = playerBearing;
@@ -2564,7 +2564,7 @@ static inline void _actor403600PlaceOnRushCircle(Actor403600Work* work, _Actor40
     gte_rtv0();
     gte_stsv(&scratch->offset);
     work->worldCoord.coord.t[0] = scratch->offset.vx + _gActor403600ArenaHighAnchor.vx;
-    work->worldCoord.coord.t[1] = gPlayerStatus.coordMtx->t[1] - ACTOR_403600_RUSH_PLAYER_HEIGHT_OFFSET;
+    work->worldCoord.coord.t[1] = playerStatusCoordMtx(&gPlayerStatus)->t[1] - ACTOR_403600_RUSH_PLAYER_HEIGHT_OFFSET;
     work->worldCoord.coord.t[2] = scratch->offset.vz + _gActor403600ArenaHighAnchor.vz;
 }
 
@@ -2596,27 +2596,27 @@ static void _actor403600PlaceRushPass(Task* task)
     }
     scratch = SCRATCH_STACK_RESERVE_BLOCK(_Actor403600RushPassScratch);
     if (!(work->actionParam & 1)) {
-        scratch->offset.vx = gPlayerStatus.coordMtx->t[0] - (u16)_gActor403600ArenaHighAnchor.vx;
-        scratch->offset.vz = gPlayerStatus.coordMtx->t[2] - (u16)_gActor403600ArenaHighAnchor.vz;
+        scratch->offset.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - (u16)_gActor403600ArenaHighAnchor.vx;
+        scratch->offset.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - (u16)_gActor403600ArenaHighAnchor.vz;
         scratch->bearing   = ratan2(scratch->offset.vx, scratch->offset.vz);
         if (ABS(scratch->bearing) > ACTOR_TRANSFORM_ANGLE_HALF_TURN) {
             scratch->bearing = (scratch->bearing > 0) ? scratch->bearing - ACTOR_TRANSFORM_ANGLE_TURN : ACTOR_TRANSFORM_ANGLE_TURN - scratch->bearing;
         }
-        if ((u32)(gPlayerStatus.coordMtx->t[0] - ACTOR_403600_RUSH_INNER_X) < ACTOR_403600_RUSH_INNER_X_SPAN &&
-            (u32)(gPlayerStatus.coordMtx->t[2] - ACTOR_403600_RUSH_INNER_Z) < ACTOR_403600_RUSH_INNER_Z_SPAN) {
+        if ((u32)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - ACTOR_403600_RUSH_INNER_X) < ACTOR_403600_RUSH_INNER_X_SPAN &&
+            (u32)(playerStatusCoordMtx(&gPlayerStatus)->t[2] - ACTOR_403600_RUSH_INNER_Z) < ACTOR_403600_RUSH_INNER_Z_SPAN) {
             scratch->bearing = -scratch->bearing;
         }
         _actor403600InitRushArm(scratch);
         RotMatrixY(scratch->bearing, &scratch->rotation);
         _actor403600PlaceOnRushCircle(work, scratch);
-        if ((u32)(gPlayerStatus.coordMtx->t[0] - ACTOR_403600_RUSH_INNER_X) < ACTOR_403600_RUSH_INNER_X_SPAN &&
-            (u32)(gPlayerStatus.coordMtx->t[2] - ACTOR_403600_RUSH_INNER_Z) < ACTOR_403600_RUSH_INNER_Z_SPAN) {
-            work->targetPos.vx = gPlayerStatus.coordMtx->t[0];
-            work->targetPos.vy = gPlayerStatus.coordMtx->t[1] - ACTOR_403600_RUSH_PLAYER_HEIGHT_OFFSET;
-            work->targetPos.vz = gPlayerStatus.coordMtx->t[2];
+        if ((u32)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - ACTOR_403600_RUSH_INNER_X) < ACTOR_403600_RUSH_INNER_X_SPAN &&
+            (u32)(playerStatusCoordMtx(&gPlayerStatus)->t[2] - ACTOR_403600_RUSH_INNER_Z) < ACTOR_403600_RUSH_INNER_Z_SPAN) {
+            work->targetPos.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0];
+            work->targetPos.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - ACTOR_403600_RUSH_PLAYER_HEIGHT_OFFSET;
+            work->targetPos.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2];
         } else {
             work->targetPos.vx = _gActor403600ArenaHighAnchor.vx;
-            work->targetPos.vy = gPlayerStatus.coordMtx->t[1] - ACTOR_403600_RUSH_PLAYER_HEIGHT_OFFSET;
+            work->targetPos.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - ACTOR_403600_RUSH_PLAYER_HEIGHT_OFFSET;
             work->targetPos.vz = _gActor403600ArenaHighAnchor.vz;
         }
         work->rushAngle = scratch->bearing + ACTOR_TRANSFORM_ANGLE_HALF_TURN;
@@ -2647,8 +2647,8 @@ static inline s32 _actor403600MeasureFlightPoint(_Actor403600NearestPointScratch
     s32 deltaX;
     s32 deltaZ;
 
-    scratch->deltaX = gPlayerStatus.coordMtx->t[0] - _gActor403600FlightPoints[pointIndex].vx;
-    deltaZ          = gPlayerStatus.coordMtx->t[2] - _gActor403600FlightPoints[pointIndex].vz;
+    scratch->deltaX = playerStatusCoordMtx(&gPlayerStatus)->t[0] - _gActor403600FlightPoints[pointIndex].vx;
+    deltaZ          = playerStatusCoordMtx(&gPlayerStatus)->t[2] - _gActor403600FlightPoints[pointIndex].vz;
     scratch->deltaZ = deltaZ;
     deltaX          = scratch->deltaX;
     return SquareRoot0((deltaX * deltaX) + (deltaZ * deltaZ));
@@ -2705,7 +2705,7 @@ static void _actor403600ChooseFlightTarget(Task* task, s32 useRushReferences)
     points             = _gActor403600FlightPoints;
     destination        = (destinationIndex & 0xFF) + points;
     work->targetPos.vx = destination->vx;
-    work->targetPos.vy = gPlayerStatus.coordMtx->t[1] - ACTOR_403600_FLIGHT_PLAYER_HEIGHT_OFFSET;
+    work->targetPos.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - ACTOR_403600_FLIGHT_PLAYER_HEIGHT_OFFSET;
     SCRATCH_STACK_RELEASE_BLOCK(_Actor403600NearestPointScratch);
     work->targetPos.vz = destination->vz;
 }
@@ -2816,12 +2816,12 @@ static void _actor403600ProcessContacts(Task* task)
         if (work->hitCooldown != 0) {
             continue;
         }
-        playerDeltaX             = gPlayerStatus.coordMtx->t[0] - work->worldCoord.coord.t[0];
+        playerDeltaX             = playerStatusCoordMtx(&gPlayerStatus)->t[0] - work->worldCoord.coord.t[0];
         scratch->delta.vector.vx = playerDeltaX;
-        playerDeltaY             = gPlayerStatus.coordMtx->t[1] - ACTOR_403600_HIT_DISTANCE_HEIGHT_OFFSET;
+        playerDeltaY             = playerStatusCoordMtx(&gPlayerStatus)->t[1] - ACTOR_403600_HIT_DISTANCE_HEIGHT_OFFSET;
         playerDeltaY            -= work->worldCoord.coord.t[1];
         scratch->delta.vector.vy = playerDeltaY;
-        playerDeltaZ             = gPlayerStatus.coordMtx->t[2] - work->worldCoord.coord.t[2];
+        playerDeltaZ             = playerStatusCoordMtx(&gPlayerStatus)->t[2] - work->worldCoord.coord.t[2];
         hitKind                  = ACTOR_403600_HIT_NORMAL;
         scratch->delta.vector.vz = playerDeltaZ;
         damage                   = damageComputePlayerAttack(work->hitContacts[contactIndex].key.value,
@@ -3187,9 +3187,9 @@ static s32 _actor403600TurnYawToAim(Task* task, s16 turnStep)
 
     switch (work->aimMode) {
         case ACTOR_403600_AIM_PLAYER:
-            scratch->delta.vx = gPlayerStatus.coordMtx->t[0] - work->worldCoord.coord.t[0];
+            scratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - work->worldCoord.coord.t[0];
             scratch->delta.vy = 0;
-            scratch->delta.vz = gPlayerStatus.coordMtx->t[2] - work->worldCoord.coord.t[2];
+            scratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - work->worldCoord.coord.t[2];
             break;
         case ACTOR_403600_AIM_TARGET:
             scratch->delta.vx = work->targetPos.vx - work->worldCoord.coord.t[0];
@@ -3314,11 +3314,11 @@ static s32 _actor403600TurnToAim(Task* task)
     switch (aimMode) {
         case ACTOR_403600_AIM_PLAYER:
             scratch->direction.vx =
-                (s16)(gPlayerStatus.coordMtx->t[0] - work->worldCoord.coord.t[0]);
+                (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - work->worldCoord.coord.t[0]);
             scratch->direction.vy =
-                (s16)(gPlayerStatus.coordMtx->t[1] - work->worldCoord.coord.t[1]);
+                (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[1] - work->worldCoord.coord.t[1]);
             scratch->direction.vz =
-                (s16)(gPlayerStatus.coordMtx->t[2] - work->worldCoord.coord.t[2]);
+                (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[2] - work->worldCoord.coord.t[2]);
             break;
         case ACTOR_403600_AIM_TARGET:
         case ACTOR_403600_AIM_TARGET_SNAP:
@@ -3327,11 +3327,11 @@ static s32 _actor403600TurnToAim(Task* task)
             scratch->direction.vz = (s16)(work->targetPos.vz - work->worldCoord.coord.t[2]);
             break;
         case ACTOR_403600_AIM_PLAYER_LEVEL:
-            levelDeltaX           = (s16)(gPlayerStatus.coordMtx->t[0] - work->worldCoord.coord.t[0]);
+            levelDeltaX           = (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - work->worldCoord.coord.t[0]);
             scratch->direction.vy = 0;
             scratch->direction.vx = levelDeltaX;
             scratch->direction.vz =
-                (s16)(gPlayerStatus.coordMtx->t[2] - work->worldCoord.coord.t[2]);
+                (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[2] - work->worldCoord.coord.t[2]);
             break;
     }
     deltaX        = scratch->direction.vx;
@@ -3391,10 +3391,10 @@ static void _actor403600MeasurePlayerRangeBearing(const GfxCoord* referenceCoord
     } else if (*bearingOut < -ACTOR_TRANSFORM_ANGLE_HALF_TURN) {
         *bearingOut += ACTOR_TRANSFORM_ANGLE_TURN;
     }
-    deltaX             = gPlayerStatus.coordMtx->t[0] - referenceCoord->coord.t[0];
+    deltaX             = playerStatusCoordMtx(&gPlayerStatus)->t[0] - referenceCoord->coord.t[0];
     scratch->offset.vx = deltaX;
-    scratch->offset.vy = gPlayerStatus.coordMtx->t[1] - referenceCoord->coord.t[1];
-    deltaZ             = gPlayerStatus.coordMtx->t[2] - referenceCoord->coord.t[2];
+    scratch->offset.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - referenceCoord->coord.t[1];
+    deltaZ             = playerStatusCoordMtx(&gPlayerStatus)->t[2] - referenceCoord->coord.t[2];
     scratch->offset.vz = deltaZ;
     *rangeOut          = SquareRoot0((deltaX * deltaX) + (deltaZ * deltaZ));
     SCRATCH_STACK_RELEASE_BLOCK(ActorRangeBearingScratch);
@@ -3549,7 +3549,7 @@ static void _actor403600ChooseAttack(Task* task)
             attackPick = ACTOR_403600_ATTACK_PICK_SWOOP;
         }
     } else {
-        playerY = gPlayerStatus.coordMtx->t[1];
+        playerY = playerStatusCoordMtx(&gPlayerStatus)->t[1];
         if (playerY >= ACTOR_403600_PLAYER_FLOOR_Y) {
             s32 roll;
 
@@ -3569,8 +3569,8 @@ static void _actor403600ChooseAttack(Task* task)
                 }
             }
         } else if (playerY >= ACTOR_403600_PLAYER_MIDDLE_Y) {
-            if (((u32)(gPlayerStatus.coordMtx->t[0] - ACTOR_403600_PLAYER_CENTRE_X) < (u32)ACTOR_403600_PLAYER_CENTRE_SPAN) &&
-                ((u32)(gPlayerStatus.coordMtx->t[2] - ACTOR_403600_PLAYER_CENTRE_Z) < (u32)ACTOR_403600_PLAYER_CENTRE_SPAN)) {
+            if (((u32)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - ACTOR_403600_PLAYER_CENTRE_X) < (u32)ACTOR_403600_PLAYER_CENTRE_SPAN) &&
+                ((u32)(playerStatusCoordMtx(&gPlayerStatus)->t[2] - ACTOR_403600_PLAYER_CENTRE_Z) < (u32)ACTOR_403600_PLAYER_CENTRE_SPAN)) {
                 s32 roll;
 
                 work->playerZone = ACTOR_403600_PLAYER_ZONE_CENTRE;
@@ -3647,13 +3647,13 @@ static void _actor403600ChooseAttack(Task* task)
             work->action      = ACTOR_403600_ACTION_VOLLEY;
             return;
         case ACTOR_403600_ATTACK_PICK_SWOOP - ACTOR_403600_ATTACK_PICK_SLAM:
-            cornerDelta         = gPlayerStatus.coordMtx->t[0] - _gActor403600SwoopHighCorners[0].vx;
+            cornerDelta         = playerStatusCoordMtx(&gPlayerStatus)->t[0] - _gActor403600SwoopHighCorners[0].vx;
             highCornerAXSquared = cornerDelta * cornerDelta;
-            cornerDelta         = gPlayerStatus.coordMtx->t[2] - _gActor403600SwoopHighCorners[0].vz;
+            cornerDelta         = playerStatusCoordMtx(&gPlayerStatus)->t[2] - _gActor403600SwoopHighCorners[0].vz;
             highCornerARange    = SquareRoot0(highCornerAXSquared + (cornerDelta * cornerDelta));
-            cornerDelta         = gPlayerStatus.coordMtx->t[0] - _gActor403600SwoopHighCorners[1].vx;
+            cornerDelta         = playerStatusCoordMtx(&gPlayerStatus)->t[0] - _gActor403600SwoopHighCorners[1].vx;
             highCornerBXSquared = cornerDelta * cornerDelta;
-            cornerDelta         = gPlayerStatus.coordMtx->t[2] - _gActor403600SwoopHighCorners[1].vz;
+            cornerDelta         = playerStatusCoordMtx(&gPlayerStatus)->t[2] - _gActor403600SwoopHighCorners[1].vz;
             highCornerBRange    = SquareRoot0(highCornerBXSquared + (cornerDelta * cornerDelta));
             if (work->playerZone == ACTOR_403600_PLAYER_ZONE_CENTRE) {
                 if (highCornerARange < highCornerBRange) {
@@ -3679,13 +3679,13 @@ static void _actor403600ChooseAttack(Task* task)
                     work->targetPos.vy = _gActor403600SwoopHighCorners[1].vy;
                     work->targetPos.vz = _gActor403600SwoopHighCorners[1].vz;
                 }
-                cornerDelta        = gPlayerStatus.coordMtx->t[0] - _gActor403600SwoopLowCorners[0].vx;
+                cornerDelta        = playerStatusCoordMtx(&gPlayerStatus)->t[0] - _gActor403600SwoopLowCorners[0].vx;
                 lowCornerAXSquared = cornerDelta * cornerDelta;
-                cornerDelta        = gPlayerStatus.coordMtx->t[2] - _gActor403600SwoopLowCorners[0].vz;
+                cornerDelta        = playerStatusCoordMtx(&gPlayerStatus)->t[2] - _gActor403600SwoopLowCorners[0].vz;
                 lowCornerARange    = SquareRoot0(lowCornerAXSquared + (cornerDelta * cornerDelta));
-                cornerDelta        = gPlayerStatus.coordMtx->t[0] - _gActor403600SwoopLowCorners[1].vx;
+                cornerDelta        = playerStatusCoordMtx(&gPlayerStatus)->t[0] - _gActor403600SwoopLowCorners[1].vx;
                 lowCornerBXSquared = cornerDelta * cornerDelta;
-                cornerDelta        = gPlayerStatus.coordMtx->t[2] - _gActor403600SwoopLowCorners[1].vz;
+                cornerDelta        = playerStatusCoordMtx(&gPlayerStatus)->t[2] - _gActor403600SwoopLowCorners[1].vz;
                 if (SquareRoot0(lowCornerBXSquared + (cornerDelta * cornerDelta)) < lowCornerARange) {
                     work->swoopCorners = (u16)(work->swoopCorners | 2);
                 }
@@ -4306,7 +4306,7 @@ static void _actor403600UpdateDoubleAction(Task* task)
             _actor403600TurnYawToAim(task, 0);
             work->animId        = ACTOR_403600_ANIM_FLY;
             work->forwardSpeed  = work->chaseSpeed;
-            playerY             = gPlayerStatus.coordMtx->t[1];
+            playerY             = playerStatusCoordMtx(&gPlayerStatus)->t[1];
             followHeight        = work->worldCoord.coord.t[1] + 0x3E8;
             work->verticalSpeed = (s16)((playerY - followHeight) / 25);
             _actor403600MeasurePlayerRangeBearing(&work->worldCoord, &playerRange, &playerBearing);

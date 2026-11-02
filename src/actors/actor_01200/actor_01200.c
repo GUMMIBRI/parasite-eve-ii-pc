@@ -736,9 +736,9 @@ static void _actor01200StateIdle(Enemy* enemy, Task* task)
     }
     rootCoord       = task->extra.tmd->coords;
     playerDelta     = &playerOffset;
-    playerOffset.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-    playerDelta->vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-    playerDelta->vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    playerOffset.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+    playerDelta->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+    playerDelta->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     if (!_actorRangeOutsideRadiusXZ(playerDelta, ACTOR_01200_NOTICE_RADIUS)) {
         sceneEngageBattle(1);
         work->state = ACTOR_01200_STATE_ROUSE;
@@ -785,9 +785,9 @@ static void _actor01200StateChase(Enemy* enemy, Task* task)
     turn = SCRATCH_STACK_RESERVE_BLOCK(ActorTurnScratch);
     _animDriverTick(task);
     rootCoord      = task->extra.tmd->coords;
-    turn->delta.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-    turn->delta.vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-    turn->delta.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    turn->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+    turn->delta.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+    turn->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     facingCoord    = task->extra.tmd->coords;
     turn->angle    = _actorAngleNormalizeYaw(ratan2(turn->delta.vx, turn->delta.vz) - ratan2(-facingCoord->coord.m[2][0], facingCoord->coord.m[2][2]));
     if (turn->angle > ACTOR_01200_CHASE_YAW_STEP) {
@@ -1345,9 +1345,9 @@ static void _actor01200StatePatrol(Enemy* enemy, Task* task)
         work->state = ACTOR_01200_STATE_DEATH_BURST;
     }
     playerReferenceCoord = task->extra.tmd->coords;
-    turn->delta.vx       = gPlayerStatus.coordMtx->t[0] - playerReferenceCoord->coord.t[0];
-    turn->delta.vy       = gPlayerStatus.coordMtx->t[1] - playerReferenceCoord->coord.t[1];
-    turn->delta.vz       = gPlayerStatus.coordMtx->t[2] - playerReferenceCoord->coord.t[2];
+    turn->delta.vx       = playerStatusCoordMtx(&gPlayerStatus)->t[0] - playerReferenceCoord->coord.t[0];
+    turn->delta.vy       = playerStatusCoordMtx(&gPlayerStatus)->t[1] - playerReferenceCoord->coord.t[1];
+    turn->delta.vz       = playerStatusCoordMtx(&gPlayerStatus)->t[2] - playerReferenceCoord->coord.t[2];
     // The signed bearing test deliberately accepts the whole negative half-turn.
     if (!_actorRangeOutsideRadiusXZ(&turn->delta, ACTOR_01200_NOTICE_RADIUS)) {
         rootCoord = task->extra.tmd->coords;

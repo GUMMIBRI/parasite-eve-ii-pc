@@ -5342,7 +5342,7 @@ static void _actor560800HandlePlayerCue(Task* task)
                 case 1:
                     if (work->playerCue.counter < 100) {
                         work->playerCue.counter      += 5;
-                        gPlayerStatus.coordMtx->t[0] -= 5;
+                        playerStatusCoordMtx(&gPlayerStatus)->t[0] -= 5;
                         return;
                     }
                     _actor560800BlendPlayerAnimation(task, 0xC, ACTOR_560800_ANIMATION_BLEND_FRAMES);
@@ -5698,7 +5698,7 @@ static void _actor560800HandleKyleCue(Task* task)
                 case 1:
                     if (work->kyleCue.counter < 300) {
                         work->kyleCue.counter        += 5;
-                        gPlayerStatus.coordMtx->t[0] -= 5;
+                        playerStatusCoordMtx(&gPlayerStatus)->t[0] -= 5;
                         return;
                     }
                     _actor560800BlendPlayerAnimation(task, 2, ACTOR_560800_ANIMATION_BLEND_FRAMES);

@@ -412,3 +412,5 @@ void Psyz_PadsOverride(int port, char* frame, int len)
     }
     padFrame++;
 }
+
+MATRIX* gHostPlayerCoordMtx;

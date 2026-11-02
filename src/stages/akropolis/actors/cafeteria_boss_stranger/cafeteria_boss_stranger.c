@@ -1430,9 +1430,9 @@ static void _cafeteriaBossStrangerAlertState(Task* task)
     }
     rootCoord           = task->extra.tmd->coords;
     offset              = &playerOffset;
-    playerOffset.vx     = (u16)gPlayerStatus.coordMtx->t[0] - (u16)rootCoord->coord.t[0];
-    offset->vy          = (u16)gPlayerStatus.coordMtx->t[1] - (u16)rootCoord->coord.t[1];
-    offset->vz          = (u16)gPlayerStatus.coordMtx->t[2] - (u16)rootCoord->coord.t[2];
+    playerOffset.vx     = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[0] - (u16)rootCoord->coord.t[0];
+    offset->vy          = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[1] - (u16)rootCoord->coord.t[1];
+    offset->vz          = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[2] - (u16)rootCoord->coord.t[2];
     playerTurn          = _actorAngleTurnToOffset(task->extra.tmd->coords, playerOffset.vx, offset->vz);
     work->lookYawTarget = playerTurn;
     _cafeteriaBossStrangerTickAnimation(task);
@@ -1691,11 +1691,11 @@ static void _cafeteriaBossStrangerApplyDamage(Task* task)
         if ((priorState == STATE_PATROL) || (priorState == STATE_IDLE) || (priorState == STATE_LURK)) {
             work->state = STATE_ALERT;
         }
-        playerOffsetX           = player->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0];
+        playerOffsetX           = playerStatusCoordMtx(player)->t[0] - task->extra.tmd->coords->coord.t[0];
         scratch->toPlayer.vx    = playerOffsetX;
-        playerOffsetY           = player->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1];
+        playerOffsetY           = playerStatusCoordMtx(player)->t[1] - task->extra.tmd->coords->coord.t[1];
         scratch->toPlayer.vy    = playerOffsetY;
-        playerOffsetZ           = player->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2];
+        playerOffsetZ           = playerStatusCoordMtx(player)->t[2] - task->extra.tmd->coords->coord.t[2];
         scratch->toPlayer.vz    = playerOffsetZ;
         playerDistance          = SquareRoot0((playerOffsetX * playerOffsetX) + (playerOffsetY * playerOffsetY) + (playerOffsetZ * playerOffsetZ));
         scratch->playerDistance = playerDistance;
@@ -2220,9 +2220,9 @@ static void _cafeteriaBossStrangerLurkState(Task* task)
     work->lastCueIndex = work->rig.slots[1].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
     rootCoord          = task->extra.tmd->coords;
     offset             = &playerOffset;
-    playerOffset.vx    = (u16)gPlayerStatus.coordMtx->t[0] - (u16)rootCoord->coord.t[0];
-    offset->vy         = (u16)gPlayerStatus.coordMtx->t[1] - (u16)rootCoord->coord.t[1];
-    offset->vz         = (u16)gPlayerStatus.coordMtx->t[2] - (u16)rootCoord->coord.t[2];
+    playerOffset.vx    = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[0] - (u16)rootCoord->coord.t[0];
+    offset->vy         = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[1] - (u16)rootCoord->coord.t[1];
+    offset->vz         = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[2] - (u16)rootCoord->coord.t[2];
     if (!actorOutsideRadius(offset, LURK_NOTICE_RADIUS)) {
         work->state = STATE_LURK_ALERT;
     }
@@ -2255,9 +2255,9 @@ static void _cafeteriaBossStrangerLurkAlertState(Task* task)
     }
     rootCoord           = task->extra.tmd->coords;
     offset              = &playerOffset;
-    playerOffset.vx     = (u16)gPlayerStatus.coordMtx->t[0] - (u16)rootCoord->coord.t[0];
-    offset->vy          = (u16)gPlayerStatus.coordMtx->t[1] - (u16)rootCoord->coord.t[1];
-    offset->vz          = (u16)gPlayerStatus.coordMtx->t[2] - (u16)rootCoord->coord.t[2];
+    playerOffset.vx     = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[0] - (u16)rootCoord->coord.t[0];
+    offset->vy          = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[1] - (u16)rootCoord->coord.t[1];
+    offset->vz          = (u16)playerStatusCoordMtx(&gPlayerStatus)->t[2] - (u16)rootCoord->coord.t[2];
     playerTurn          = _actorAngleTurnToOffset(task->extra.tmd->coords, playerOffset.vx, offset->vz);
     work->lookYawTarget = playerTurn;
     _cafeteriaBossStrangerTickAnimation(task);

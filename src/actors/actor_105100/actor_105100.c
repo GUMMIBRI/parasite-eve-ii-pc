@@ -765,9 +765,9 @@ static void _actor105100TakeHits(Task* task)
     // A cooldown armed by one entry also gates later entries in this pass.
     for (contactIndex = 0; contactIndex < (s32)ARRAY_SIZE(work->hitContacts); contactIndex++) {
         if ((u16)(work->hitContacts[contactIndex].key.value >> 16) == (WORLD_COLLISION_CONTACT_ATTACK >> 16) && work->hitCooldown == 0) {
-            scratch->toPlayer.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-            scratch->toPlayer.vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-            scratch->toPlayer.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            scratch->toPlayer.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+            scratch->toPlayer.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+            scratch->toPlayer.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             damage               = damageComputePlayerAttack(work->hitContacts[contactIndex].key.value,
                                                              SquareRoot0(scratch->toPlayer.vx * scratch->toPlayer.vx + scratch->toPlayer.vy * scratch->toPlayer.vy +
                                                                          scratch->toPlayer.vz * scratch->toPlayer.vz),
@@ -1961,9 +1961,9 @@ static void _actor105100FireballTick(Enemy* unusedEnemy, Task* task)
             break;
         case ACTOR_105100_FIREBALL_AIM:
             if (++work->timer >= ACTOR_105100_FIREBALL_AIM_TICKS) {
-                scratch->toPlayer.vx = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
-                scratch->toPlayer.vy = gPlayerStatus.coordMtx->t[1] - coord->coord.t[1];
-                scratch->toPlayer.vz = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+                scratch->toPlayer.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
+                scratch->toPlayer.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - coord->coord.t[1];
+                scratch->toPlayer.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
                 gfxBuildDirectionRotation(&scratch->toPlayer, &coord->coord, 0);
                 work->step  = ACTOR_105100_FIREBALL_FLY;
                 work->timer = 0;
@@ -2277,9 +2277,9 @@ static void _actor105100BeamSeekPlayer(Task* task)
 
     scratch           = SCRATCH_STACK_RESERVE_BLOCK(ActorFaceScratch);
     coord             = task->extra.coordBody->coord;
-    scratch->delta.vx = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
+    scratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
     scratch->delta.vy = 0;
-    scratch->delta.vz = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+    scratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
     playerHeading     = ratan2((s16)scratch->delta.vx, (s16)scratch->delta.vz) & ACTOR_105100_ANGLE_MASK;
     snapHeading       = playerHeading;
     currentHeading    = ratan2(coord->coord.m[0][2], coord->coord.m[2][2]) & ACTOR_105100_ANGLE_MASK;

@@ -118,9 +118,9 @@ static void _golemPawnRookCheckPlayerNoise(Task* actor)
     root                         = actor->extra.tmd->coords;
     work                         = actor->work;
     toPlayer                     = SCRATCH_STACK_CURSOR(VECTOR) - 1;
-    toPlayer->vx                 = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
+    toPlayer->vx                 = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
     toPlayer->vy                 = 0;
-    playerDz                     = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+    playerDz                     = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
     toPlayer->vz                 = playerDz;
     playerDx                     = toPlayer->vx;
     heardDistantAction           = 0;

@@ -1030,9 +1030,9 @@ static void _actor03800ActionCharge(Task* task)
             work->turnRate  = 0;
             work->speed     = 0;
             work->accel     = 0;
-            toPlayer.vx     = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+            toPlayer.vx     = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
             toPlayer.vy     = 0;
-            toPlayer.vz     = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            toPlayer.vz     = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             work->targetYaw = ratan2((s16)toPlayer.vx, (s16)toPlayer.vz) & ACTOR_TRANSFORM_ANGLE_MASK;
             work->anim      = ACTOR_03800_ANIM_CHARGE;
             if (work->stepSoundTimer == 0) {
@@ -1108,9 +1108,9 @@ static void _actor03800ActionKnockedOver(Task* task)
         case ACTOR_03800_KNOCKED_OVER_SLIDE:
             if (work->animFrame >= ACTOR_03800_KNOCKED_OVER_SLIDE_FIRST_TICK && work->animFrame < ACTOR_03800_KNOCKED_OVER_SLIDE_END_TICK) {
                 // Slide along the ground, straight away from the player.
-                scratch->fromPlayer.vx = rootCoord->coord.t[0] - gPlayerStatus.coordMtx->t[0];
-                scratch->fromPlayer.vy = rootCoord->coord.t[1] - gPlayerStatus.coordMtx->t[1];
-                scratch->fromPlayer.vz = rootCoord->coord.t[2] - gPlayerStatus.coordMtx->t[2];
+                scratch->fromPlayer.vx = rootCoord->coord.t[0] - playerStatusCoordMtx(&gPlayerStatus)->t[0];
+                scratch->fromPlayer.vy = rootCoord->coord.t[1] - playerStatusCoordMtx(&gPlayerStatus)->t[1];
+                scratch->fromPlayer.vz = rootCoord->coord.t[2] - playerStatusCoordMtx(&gPlayerStatus)->t[2];
                 VectorNormalS(&scratch->fromPlayer, &scratch->direction);
                 rootCoord->coord.t[0] += (scratch->direction.vx * 17) >> ACTOR_03800_KNOCKED_OVER_DIRECTION_SHIFT;
                 rootCoord->coord.t[2] += (scratch->direction.vz * 17) >> ACTOR_03800_KNOCKED_OVER_DIRECTION_SHIFT;
@@ -1588,9 +1588,9 @@ static void _actor03800ActionLeapAway(Task* task)
 
     switch (work->actionStep) {
         case ACTOR_03800_ACTION_BEGIN:
-            toPlayer.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+            toPlayer.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
             toPlayer.vy = 0;
-            toPlayer.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            toPlayer.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             work->anim  = ACTOR_03800_ANIM_LEAP;
             if (work->hitWall != 0) {
                 work->hitWall    = 0;

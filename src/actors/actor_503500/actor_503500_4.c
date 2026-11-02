@@ -2790,7 +2790,7 @@ static void _actor503500SmallOrbEmitterStepAttack(Task* emitterTask)
         case ACTOR_503500_SMALL_ORB_ATTACK_VOLLEY:
             // The live delay step falls through and indexes the six-shot volley.
             shotIndex   = work->stateFrames - ACTOR_503500_SMALL_ORB_EMITTER_ATTACK_LAUNCH_FRAME;
-            launchSpeed = (gActor503500SmallOrbEmitterLaunchSpeeds[shotIndex] << ACTOR_503500_SMALL_ORB_SPEED_TABLE_SHIFT) + (-gPlayerStatus.coordMtx->t[1] << ACTOR_503500_SMALL_ORB_HEIGHT_SPEED_SHIFT) / ACTOR_503500_SMALL_ORB_HEIGHT_SPEED_DIVISOR;
+            launchSpeed = (gActor503500SmallOrbEmitterLaunchSpeeds[shotIndex] << ACTOR_503500_SMALL_ORB_SPEED_TABLE_SHIFT) + (-playerStatusCoordMtx(&gPlayerStatus)->t[1] << ACTOR_503500_SMALL_ORB_HEIGHT_SPEED_SHIFT) / ACTOR_503500_SMALL_ORB_HEIGHT_SPEED_DIVISOR;
             shotTask    = taskSpawnFromTable(gActor503500AttackTaskDescs, ACTOR_503500_SMALL_ORB_BALLISTIC_TASK, ACTOR_503500_SMALL_ORB_KIND, launchSpeed);
             if (shotTask != NULL) {
                 gfxComposeNodeWorldTransform(emitterCoord, &rotationMatrix, &worldPosition);
@@ -3875,9 +3875,9 @@ static void _actor503500LungingChainStepLunge(Task* task)
     switch (work->stateStep) {
         case ACTOR_503500_LUNGING_CHAIN_LUNGE_AIM:
             // Latch the player in world space, then aim above that point in the root parent's frame.
-            work->lungeTarget.vx = gPlayerStatus.coordMtx->t[0];
-            work->lungeTarget.vy = gPlayerStatus.coordMtx->t[1];
-            work->lungeTarget.vz = gPlayerStatus.coordMtx->t[2];
+            work->lungeTarget.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0];
+            work->lungeTarget.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1];
+            work->lungeTarget.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2];
             ACTOR_503500_LUNGING_CHAIN_AIM_AT_WORLD_TARGET(rootCoord->parent, work->lungeTarget, -ACTOR_503500_LUNGING_CHAIN_LUNGE_WINDUP_HEIGHT, work->tipTarget, targetOffset, parentWorldRotation, parentWorldPosition, worldToParentRotation);
             actor503500PlayAnimationPreset(task->parent, ACTOR_503500_LUNGING_CHAIN_LUNGE_ANIMATION_PRESET, ANIMATION_RATE_ONE);
             work->stateStep++;

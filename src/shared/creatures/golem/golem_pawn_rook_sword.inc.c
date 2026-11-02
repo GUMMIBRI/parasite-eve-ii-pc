@@ -74,8 +74,8 @@ static void _golemPawnRookSwordChargeState(Task* actor)
         case GOLEM_PAWN_ROOK_CHARGE_WINDUP:
             if (work->animFrame >= GOLEM_PAWN_ROOK_CHARGE_ADVANCE_FRAME) {
                 work->shieldRaised = (work->shieldHp > 0);
-                toPlayer->vx       = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
-                windupDz           = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+                toPlayer->vx       = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
+                windupDz           = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
                 toPlayer->vz       = windupDz;
                 windupDx           = toPlayer->vx;
                 if (SquareRoot0((windupDx * windupDx) + (windupDz * windupDz)) >= GOLEM_PAWN_ROOK_CHARGE_STOP_RANGE) {
@@ -103,8 +103,8 @@ static void _golemPawnRookSwordChargeState(Task* actor)
         case GOLEM_PAWN_ROOK_CHARGE_RUN:
             work->forwardSpeed = GOLEM_PAWN_ROOK_CHARGE_SPEED;
             work->turnRate     = GOLEM_PAWN_ROOK_SWORD_CHARGE_TURN_RATE;
-            toPlayer->vx       = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
-            toPlayer->vz       = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+            toPlayer->vx       = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
+            toPlayer->vz       = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
             work->targetYaw    = ratan2((s16)toPlayer->vx, (s16)toPlayer->vz) & ACTOR_TRANSFORM_ANGLE_MASK;
             chargeDx           = toPlayer->vx;
             chargeDz           = toPlayer->vz;
@@ -148,9 +148,9 @@ static void _golemPawnRookSwordChargeState(Task* actor)
             }
             if (work->animFrame >= GOLEM_PAWN_ROOK_CHARGE_SLASH_FRAMES) {
                 work->shieldRaised = 0;
-                followupDx         = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
+                followupDx         = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
                 toPlayer->vx       = followupDx;
-                followupDz         = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+                followupDz         = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
                 toPlayer->vz       = followupDz;
                 if (SquareRoot0((followupDx * followupDx) + (followupDz * followupDz)) < GOLEM_PAWN_ROOK_CHARGE_FOLLOWUP_RANGE) {
                     work->behavior = GOLEM_PAWN_ROOK_BEHAVIOR_SWORD_SWING;
@@ -209,8 +209,8 @@ static void _golemPawnRookSwordSwingState(Task* actor)
     // The strike window begins after the animation blend; recovery uses absolute frames.
     switch (step) {
         case GOLEM_PAWN_ROOK_SWING_STRIKE:
-            toPlayer->vx = gPlayerStatus.coordMtx->t[0] - root->coord.t[0];
-            playerDz     = gPlayerStatus.coordMtx->t[2] - root->coord.t[2];
+            toPlayer->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - root->coord.t[0];
+            playerDz     = playerStatusCoordMtx(&gPlayerStatus)->t[2] - root->coord.t[2];
             toPlayer->vz = playerDz;
             blendFrames  = _gGolemPawnRookAnimBlendFrames[work->anim];
             animFrame    = work->animFrame;

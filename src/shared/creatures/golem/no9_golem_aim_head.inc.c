@@ -42,10 +42,10 @@ static void _no9GolemAimHead(const Task* actor)
 
     // Remove the view before measuring the world-space target offset.
     gfxMakeRelativeTransform(&gGfxViewCoord.workm, &headCoord->workm, &scratch->headWorld);
-    scratch->toTarget.vx = gPlayerStatus.coordMtx->t[0] - scratch->headWorld.t[0];
+    scratch->toTarget.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - scratch->headWorld.t[0];
     headTargetBaseY      = scratch->headWorld.t[1] + NO9_GOLEM_HEAD_TARGET_RISE;
-    scratch->toTarget.vy = gPlayerStatus.coordMtx->t[1] - headTargetBaseY;
-    scratch->toTarget.vz = gPlayerStatus.coordMtx->t[2] - scratch->headWorld.t[2];
+    scratch->toTarget.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - headTargetBaseY;
+    scratch->toTarget.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - scratch->headWorld.t[2];
     // Clamp the direction in the root frame before rebuilding the head rotation.
     ApplyTransposeMatrixLV(&rootCoord->coord, &scratch->toTarget, &scratch->aim);
 

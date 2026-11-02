@@ -948,9 +948,9 @@ static void _actor02500Chase(Task* actor)
             break;
         case ACTOR_02500_CHASE_STEP_RUN:
             work->speed      = _gActor02500ChaseSpeeds[((Enemy*)actor->spawnArg2.pointer)->place->rowIndex];
-            targetOffset->vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+            targetOffset->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
             targetOffset->vy = 0;
-            targetOffset->vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            targetOffset->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             work->targetYaw  = ratan2((s16)targetOffset->vx, (s16)targetOffset->vz) & ACTOR_TRANSFORM_ANGLE_MASK;
             playerDx         = targetOffset->vx;
             playerDz         = targetOffset->vz;
@@ -973,9 +973,9 @@ static void _actor02500Chase(Task* actor)
                 chaseTicks  = (u16)work->timer - 1;
                 work->timer = chaseTicks;
                 if (chaseTicks <= 0) {
-                    targetOffset->vx = gPlayerStatus.coordMtx->t[0] - work->home.vx;
+                    targetOffset->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - work->home.vx;
                     targetOffset->vy = 0;
-                    homeDz           = gPlayerStatus.coordMtx->t[2] - work->home.vz;
+                    homeDz           = playerStatusCoordMtx(&gPlayerStatus)->t[2] - work->home.vz;
                     targetOffset->vz = homeDz;
                     homeDx           = targetOffset->vx;
                     if (SquareRoot0((homeDx * homeDx) + (homeDz * homeDz)) >= ACTOR_02500_GIVE_UP_RADIUS) {
@@ -1104,10 +1104,10 @@ static void _actor02500Ambush(Task* actor)
         case ACTOR_02500_AMBUSH_STEP_WAIT_NEAR:
             model->flags                                               = TMD_OBJECT_SKIP_ACTIVE_DRAW;
             ((Enemy*)actor->spawnArg2.pointer)->node.state.parts.flags = WORLD_TARGET_NOT_LOCKABLE;
-            playerDx                                                   = gPlayerStatus.coordMtx->t[0] - work->home.vx;
+            playerDx                                                   = playerStatusCoordMtx(&gPlayerStatus)->t[0] - work->home.vx;
             scratch->delta.vy                                          = 0;
             scratch->delta.vx                                          = playerDx;
-            playerDz                                                   = gPlayerStatus.coordMtx->t[2] - work->home.vz;
+            playerDz                                                   = playerStatusCoordMtx(&gPlayerStatus)->t[2] - work->home.vz;
             scratch->delta.vz                                          = playerDz;
             distance                                                   = SquareRoot0((playerDx * playerDx) + (playerDz * playerDz));
             if (distance < ACTOR_02500_AMBUSH_NOTICE_RADIUS || gSceneCombatState.actor02500EntranceReady != 0 || gSceneCombatState.expReward != 0) {

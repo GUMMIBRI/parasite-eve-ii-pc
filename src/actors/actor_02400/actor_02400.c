@@ -775,9 +775,9 @@ static void _actor02400UpdateDormant(Task* task)
             shouldWake = 1;
         }
     }
-    delta->vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+    delta->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
     delta->vy = 0;
-    dz        = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    dz        = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     delta->vz = dz;
     dx        = delta->vx;
     if (SquareRoot0((dx * dx) + (dz * dz)) < ACTOR_02400_WAKE_DISTANCE) {
@@ -837,9 +837,9 @@ static void _actor02400UpdateCrawl(Task* task)
     // Turning and straight surges use separate waits; waking swells in Q12 pulses.
     switch (work->phase) {
         case ACTOR_02400_CRAWL_PHASE_TURN:
-            scratch->delta.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+            scratch->delta.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
             scratch->delta.vy = 0;
-            scratch->delta.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            scratch->delta.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             work->targetYaw   = ratan2((s16)scratch->delta.vx, (s16)scratch->delta.vz) & ACTOR_TRANSFORM_ANGLE_MASK;
             work->turnRate    = ACTOR_02400_CRAWL_TURN_RATE;
             work->targetSpeed = ACTOR_02400_CRAWL_TURN_SPEED;
@@ -1045,9 +1045,9 @@ static void _actor02400UpdateCast(Task* task)
             break;
         case ACTOR_02400_CAST_PHASE_AIM:
             work->turnRate  = ACTOR_02400_CAST_TURN_RATE;
-            playerDelta->vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+            playerDelta->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
             playerDelta->vy = 0;
-            playerDelta->vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            playerDelta->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             work->targetYaw = ratan2((s16)playerDelta->vx, (s16)playerDelta->vz) & ACTOR_TRANSFORM_ANGLE_MASK;
             if (work->swingDown == 0) {
                 work->scale.vy += ACTOR_02400_CAST_SCALE_STEP;

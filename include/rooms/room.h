@@ -188,7 +188,7 @@ STATIC_ASSERT_SIZEOF(RoomCompactWaterSurface, 0xA);
 ///
 /// The block's last two bytes are alignment padding.
 typedef struct {
-    MATRIX* playerMtx;       // Borrowed player root coordinate matrix (`gPlayerStatus.coordMtx`); only its translation is written
+    MATRIX* playerMtx;       // Borrowed player root coordinate matrix (`playerStatusCoordMtx(&gPlayerStatus)`); only its translation is written
     Task*   playerTask;      // Borrowed player task, captured when the task starts; receives the scene's animation, placement and release messages
     Task*   skipFadeTask;    // Fade-out task spawned when the player skips; valid only while `skipFadeStarted` is set
     Task*   padScriptTask;   // Pad script task started with the movie and made a child of this block's task; stored unchecked and not read back

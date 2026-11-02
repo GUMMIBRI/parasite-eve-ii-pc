@@ -121,9 +121,9 @@ static u8 _bossStrangerNodeNearestPlayer(const BossStrangerWalker* walker, s16 p
     scan->bestDistSq = BOSS_STRANGER_NODE_DISTANCE_NONE;
     // Bound the translation to its low halfword before subtracting a node.
     for (scan->node = 0; scan->node < walker->nav->nodeCount; scan->node++) {
-        scan->dx     = (u16)scan->player->coordMtx->t[0] - walker->nav->nodes[scan->node].x;
-        scan->dy     = (u16)scan->player->coordMtx->t[1] - walker->nav->nodes[scan->node].y;
-        scan->dz     = (u16)scan->player->coordMtx->t[2] - walker->nav->nodes[scan->node].z;
+        scan->dx     = (u16)playerStatusCoordMtx(scan->player)->t[0] - walker->nav->nodes[scan->node].x;
+        scan->dy     = (u16)playerStatusCoordMtx(scan->player)->t[1] - walker->nav->nodes[scan->node].y;
+        scan->dz     = (u16)playerStatusCoordMtx(scan->player)->t[2] - walker->nav->nodes[scan->node].z;
         scan->distSq = scan->dx * scan->dx + scan->dz * scan->dz;
         if (scan->distSq < scan->bestDistSq || scan->bestDistSq == BOSS_STRANGER_NODE_DISTANCE_NONE) {
             scan->bestDistSq = scan->distSq;

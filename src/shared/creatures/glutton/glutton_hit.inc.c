@@ -48,11 +48,11 @@ static void _gluttonHitGroup0(Task* task)
 #endif
         damageGetPlayerAttackReaction(scratch->attackKey);
 
-        scratch->toPlayer.vx    = playerStatus->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0];
+        scratch->toPlayer.vx    = playerStatusCoordMtx(playerStatus)->t[0] - task->extra.tmd->coords->coord.t[0];
         playerDxSquared         = scratch->toPlayer.vx * scratch->toPlayer.vx;
-        scratch->toPlayer.vy    = playerStatus->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1];
+        scratch->toPlayer.vy    = playerStatusCoordMtx(playerStatus)->t[1] - task->extra.tmd->coords->coord.t[1];
         playerDySquared         = scratch->toPlayer.vy * scratch->toPlayer.vy;
-        scratch->toPlayer.vz    = playerStatus->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2];
+        scratch->toPlayer.vz    = playerStatusCoordMtx(playerStatus)->t[2] - task->extra.tmd->coords->coord.t[2];
         playerDzSquared         = scratch->toPlayer.vz * scratch->toPlayer.vz;
         scratch->playerDistance = SquareRoot0(playerDxSquared + playerDySquared + playerDzSquared);
         scratch->damage         = damageComputePlayerAttack(scratch->attackKey, scratch->playerDistance, 0, 0);
@@ -252,11 +252,11 @@ static void _gluttonHitGroups1To2(Task* task)
                 break;
         }
 
-        scratch->toPlayer.vx    = playerStatus->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0];
+        scratch->toPlayer.vx    = playerStatusCoordMtx(playerStatus)->t[0] - task->extra.tmd->coords->coord.t[0];
         playerDxSquared         = scratch->toPlayer.vx * scratch->toPlayer.vx;
-        scratch->toPlayer.vy    = playerStatus->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1];
+        scratch->toPlayer.vy    = playerStatusCoordMtx(playerStatus)->t[1] - task->extra.tmd->coords->coord.t[1];
         playerDySquared         = scratch->toPlayer.vy * scratch->toPlayer.vy;
-        scratch->toPlayer.vz    = playerStatus->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2];
+        scratch->toPlayer.vz    = playerStatusCoordMtx(playerStatus)->t[2] - task->extra.tmd->coords->coord.t[2];
         playerDzSquared         = scratch->toPlayer.vz * scratch->toPlayer.vz;
         scratch->playerDistance = SquareRoot0(playerDxSquared + playerDySquared + playerDzSquared);
         scratch->damage         = damageComputePlayerAttack(scratch->attackKey, scratch->playerDistance, 0, 0);

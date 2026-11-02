@@ -170,10 +170,10 @@ enum {
     ({                                                                                      \
         SVECTOR*  offsetPointer = &(offset);                                                \
         GfxCoord* hostRoot      = (hostTask)->extra.tmd->coords;                            \
-        offsetPointer->vx       = gPlayerStatus.coordMtx->t[0] - hostRoot->coord.t[0];      \
-        offsetPointer->vy       = gPlayerStatus.coordMtx->t[1] - hostRoot->coord.t[1];      \
+        offsetPointer->vx       = playerStatusCoordMtx(&gPlayerStatus)->t[0] - hostRoot->coord.t[0];      \
+        offsetPointer->vy       = playerStatusCoordMtx(&gPlayerStatus)->t[1] - hostRoot->coord.t[1];      \
         (distanceOut)           = (offset).vx * (offset).vx;                                \
-        offsetPointer->vz       = gPlayerStatus.coordMtx->t[2] - hostRoot->coord.t[2];      \
+        offsetPointer->vz       = playerStatusCoordMtx(&gPlayerStatus)->t[2] - hostRoot->coord.t[2];      \
         (distanceOut)          += (offset).vy * (offset).vy;                                \
         (distanceOut)           = SquareRoot0((distanceOut) + ((offset).vz * (offset).vz)); \
     })
@@ -4231,11 +4231,11 @@ static void _actor403200HitGroups3To5(Task* hostTask)
         work->groups1To2Cooldown = hitCooldown;
         damageGetPlayerAttackReaction(scratch->attackKey);
 
-        scratch->toPlayer.vx    = (playerStatus->coordMtx->t[0] - hostTask->extra.tmd->coords->coord.t[0]) + 0x51F;
+        scratch->toPlayer.vx    = (playerStatusCoordMtx(playerStatus)->t[0] - hostTask->extra.tmd->coords->coord.t[0]) + 0x51F;
         dxSquared               = scratch->toPlayer.vx * scratch->toPlayer.vx;
-        scratch->toPlayer.vy    = (playerStatus->coordMtx->t[1] - hostTask->extra.tmd->coords->coord.t[1]) - 0xFA;
+        scratch->toPlayer.vy    = (playerStatusCoordMtx(playerStatus)->t[1] - hostTask->extra.tmd->coords->coord.t[1]) - 0xFA;
         dySquared               = scratch->toPlayer.vy * scratch->toPlayer.vy;
-        scratch->toPlayer.vz    = (playerStatus->coordMtx->t[2] - hostTask->extra.tmd->coords->coord.t[2]) + 0x25F;
+        scratch->toPlayer.vz    = (playerStatusCoordMtx(playerStatus)->t[2] - hostTask->extra.tmd->coords->coord.t[2]) + 0x25F;
         dzSquared               = scratch->toPlayer.vz * scratch->toPlayer.vz;
         scratch->playerDistance = SquareRoot0(dxSquared + dySquared + dzSquared);
         scratch->damage         = damageComputePlayerAttack(scratch->attackKey, scratch->playerDistance, 0, 0);

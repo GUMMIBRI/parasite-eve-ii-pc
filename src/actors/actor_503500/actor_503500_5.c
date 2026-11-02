@@ -1563,7 +1563,7 @@ static void _actor503500YellowFlashAttackUpdatePhase(Task* task)
                 work->phaseFrames++;
                 if (work->phaseFrames >= ACTOR_503500_YELLOW_FLASH_ATTACK_CHARGE_FRAMES) {
                     // The strike only lands on a player standing this high (Y is negative upwards).
-                    if (gPlayerStatus.coordMtx->t[1] < ACTOR_503500_YELLOW_FLASH_ATTACK_STRIKE_PLAYER_Y) {
+                    if (playerStatusCoordMtx(&gPlayerStatus)->t[1] < ACTOR_503500_YELLOW_FLASH_ATTACK_STRIKE_PLAYER_Y) {
                         work->body.flags |= WORLD_COLLISION_BODY_PAIR_ENABLED;
                     }
                     work->phaseFrames = 0;

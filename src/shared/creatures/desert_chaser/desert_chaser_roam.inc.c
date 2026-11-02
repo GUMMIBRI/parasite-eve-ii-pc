@@ -87,9 +87,9 @@ static void _desertChaserRoam(Task* task)
         work->stateTimer          = 0;
         work->stateCounter        = 0;
         entryCoord                = task->extra.tmd->coords;
-        scratch->toPatrolPoint.vx = (s16)(gPlayerStatus.coordMtx->t[0] - entryCoord->coord.t[0]);
-        scratch->toPatrolPoint.vy = gPlayerStatus.coordMtx->t[1] - entryCoord->coord.t[1];
-        playerOffsetZ             = gPlayerStatus.coordMtx->t[2] - entryCoord->coord.t[2];
+        scratch->toPatrolPoint.vx = (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - entryCoord->coord.t[0]);
+        scratch->toPatrolPoint.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - entryCoord->coord.t[1];
+        playerOffsetZ             = playerStatusCoordMtx(&gPlayerStatus)->t[2] - entryCoord->coord.t[2];
         scratch->toPatrolPoint.vz = playerOffsetZ;
         work->lookYawTarget       = _actorAngleTurnToOffset(task->extra.tmd->coords, scratch->toPatrolPoint.vx, playerOffsetZ);
         waypointRotation          = &scratch->rotation;
@@ -114,10 +114,10 @@ static void _desertChaserRoam(Task* task)
     scratch->toPatrolPoint.vy        = 0;
     scratch->toPatrolPoint.vz        = work->patrolPoints[work->patrolTarget].z - task->extra.tmd->coords->coord.t[2];
     patrolCoord                      = task->extra.tmd->coords;
-    frameCursor[-1].toPlayer.vx      = (s16)(gPlayerStatus.coordMtx->t[0] - patrolCoord->coord.t[0]);
+    frameCursor[-1].toPlayer.vx      = (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - patrolCoord->coord.t[0]);
     playerOffset                     = &frameCursor[-1].toPlayer;
-    playerOffset->vy                 = gPlayerStatus.coordMtx->t[1] - patrolCoord->coord.t[1];
-    playerOffset->vz                 = gPlayerStatus.coordMtx->t[2] - patrolCoord->coord.t[2];
+    playerOffset->vy                 = playerStatusCoordMtx(&gPlayerStatus)->t[1] - patrolCoord->coord.t[1];
+    playerOffset->vz                 = playerStatusCoordMtx(&gPlayerStatus)->t[2] - patrolCoord->coord.t[2];
     if (!actorOutsideRadius(&scratch->toPatrolPoint, DESERT_CHASER_WAYPOINT_RADIUS) || work->stateTimer >= DESERT_CHASER_STUCK_TICKS) {
         work->lookYawTarget = _actorAngleTurnToOffset(task->extra.tmd->coords, frameCursor[-1].toPlayer.vx, playerOffset->vz);
         if (work->patrolTarget == 0) {
@@ -190,10 +190,10 @@ static void _desertChaserRoam(Task* task)
 #endif
     {
         detectionCoord       = task->extra.tmd->coords;
-        scratch->toPlayer.vx = (s16)(gPlayerStatus.coordMtx->t[0] - detectionCoord->coord.t[0]);
+        scratch->toPlayer.vx = (s16)(playerStatusCoordMtx(&gPlayerStatus)->t[0] - detectionCoord->coord.t[0]);
         detectionOffset      = &scratch->toPlayer;
-        detectionOffset->vy  = gPlayerStatus.coordMtx->t[1] - detectionCoord->coord.t[1];
-        detectionOffset->vz  = gPlayerStatus.coordMtx->t[2] - detectionCoord->coord.t[2];
+        detectionOffset->vy  = playerStatusCoordMtx(&gPlayerStatus)->t[1] - detectionCoord->coord.t[1];
+        detectionOffset->vz  = playerStatusCoordMtx(&gPlayerStatus)->t[2] - detectionCoord->coord.t[2];
         if (work->stateCounter > work->roamLookDelay) {
             if (work->chaseHoldoff <= 0) {
 #if !DESERT_CHASER_WATER_TOWER_BEHAVIOR

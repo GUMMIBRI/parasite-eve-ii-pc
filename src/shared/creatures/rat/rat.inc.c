@@ -506,9 +506,9 @@ static void _ratStagger(Task* actor)
             gRandomLcgState     = durationRandom;
             // Capture the full 3D direction; knockback later applies only X/Z.
             rootX       = rootCoord->coord.t[0];
-            toPlayer.vx = gPlayerStatus.coordMtx->t[0] - rootX;
-            toPlayer.vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-            toPlayer.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            toPlayer.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootX;
+            toPlayer.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+            toPlayer.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             VectorNormalS(&toPlayer, &work->staggerDir);
             break;
         case RAT_STAGGER_STEP_KNOCKBACK:

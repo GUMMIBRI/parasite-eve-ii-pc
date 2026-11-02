@@ -1347,9 +1347,9 @@ static void _dryfieldMotelRoom1ExecuteEventAction(Task* task)
             switch (work->actionStep) {
                 case DRYFIELD_MOTEL_ROOM_1_EVENT_TURN_BEGIN:
                     playerStatus                 = &gPlayerStatus;
-                    work->playerPlacement.pos.vx = playerStatus->coordMtx->t[0];
-                    work->playerPlacement.pos.vy = playerStatus->coordMtx->t[1];
-                    work->playerPlacement.pos.vz = playerStatus->coordMtx->t[2];
+                    work->playerPlacement.pos.vx = playerStatusCoordMtx(playerStatus)->t[0];
+                    work->playerPlacement.pos.vy = playerStatusCoordMtx(playerStatus)->t[1];
+                    work->playerPlacement.pos.vz = playerStatusCoordMtx(playerStatus)->t[2];
                     work->playerPlacement.rot.vx = 0;
                     work->playerPlacement.rot.vy = 0;
                     work->playerPlacement.rot.vz = 0;
@@ -1535,9 +1535,9 @@ static void _dryfieldMotelRoom1RestorePlayerAfterSkip(void)
     work = _gDryfieldMotelRoom1OpeningEventTask->work;
     _dryfieldMotelRoom1PlayPlayerAnimation(PLAYER_ANIMATION_AIM_IDLE, ANIMATION_BLEND_RESET, 0);
     playerStatus                 = &gPlayerStatus;
-    work->playerPlacement.pos.vx = playerStatus->coordMtx->t[0];
-    work->playerPlacement.pos.vy = playerStatus->coordMtx->t[1];
-    work->playerPlacement.pos.vz = playerStatus->coordMtx->t[2];
+    work->playerPlacement.pos.vx = playerStatusCoordMtx(playerStatus)->t[0];
+    work->playerPlacement.pos.vy = playerStatusCoordMtx(playerStatus)->t[1];
+    work->playerPlacement.pos.vz = playerStatusCoordMtx(playerStatus)->t[2];
     work->playerPlacement.rot.vx = 0;
     work->playerPlacement.rot.vy = DRYFIELD_MOTEL_ROOM_1_SKIP_PLAYER_YAW;
     work->playerPlacement.rot.vz = 0;

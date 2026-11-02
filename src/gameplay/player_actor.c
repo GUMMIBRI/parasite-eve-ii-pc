@@ -5175,7 +5175,7 @@ static void _playerActorInitWork(Task* task)
     task->exitCallback                          = _playerActorTeardown;
     actor->animationSlotCount                   = GAME_ACTOR_NORMAL_ANIMATION_SLOTS;
     gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER] = task;
-    gPlayerStatus.coordMtx                      = &rootCoord->coord;
+    playerStatusSetCoordMtx(&gPlayerStatus, &rootCoord->coord);
     rootCoord->parent                           = &gGfxViewCoord;
     rootCoord->composeStamp                     = GRAPHICS_COORD_DIRTY;
     model->flags                                = 0;

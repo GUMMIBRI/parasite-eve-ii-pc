@@ -1010,11 +1010,11 @@ static void _actor07000SlouchContacts(Task* task)
         switch (contactKind) {
             case WORLD_COLLISION_CONTACT_ATTACK:
                 if (work->hitCooldown == 0) {
-                    playerDx                 = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+                    playerDx                 = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
                     scratch->delta.vector.vx = playerDx;
-                    playerDy                 = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
+                    playerDy                 = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
                     scratch->delta.vector.vy = playerDy;
-                    playerDz                 = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+                    playerDz                 = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
                     scratch->delta.vector.vz = playerDz;
                     hitDamage                = damageComputePlayerAttack(work->contacts[contactIndex].key.value, SquareRoot0((playerDx * playerDx) + (playerDy * playerDy) + (playerDz * playerDz)), 0, 0);
                     if (damageRollCriticalHit(task->spawnArg2.pointer, work->contacts[contactIndex].key.value, 0) != 0) {

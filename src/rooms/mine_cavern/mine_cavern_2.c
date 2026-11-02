@@ -3822,11 +3822,11 @@ static void _mineCavernTargetCheckHit(Enemy* enemy, Task* task)
     // Stage the player offset before publishing the reserved scratch block.
     rootCoord                                         = task->extra.tmd->coords;
     scratchTop                                        = SCRATCH_STACK_CURSOR(_MineCavernTargetHitScratch);
-    scratchTop[-1].offset.vx                          = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+    scratchTop[-1].offset.vx                          = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
     playerOffset                                      = &scratchTop[-1].offset;
-    playerOffset->vy                                  = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
+    playerOffset->vy                                  = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
     SCRATCH_STACK_CURSOR(_MineCavernTargetHitScratch) = scratchTop - 1;
-    playerOffset->vz                                  = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    playerOffset->vz                                  = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     hitScratch                                        = scratchTop - 1;
 
     if (_actorRangeOutsideRadiusXZ(playerOffset, MINE_CAVERN_TARGET_LOCK_ON_RADIUS) || gSceneCombatState.signals.bytes.battlePhase != SCENE_COMBAT_BATTLE_ENGAGED ||

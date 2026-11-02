@@ -335,9 +335,9 @@ static void _skullStalkerProcessContacts(Task* task)
                 task->state         = SKULL_STALKER_TASK_DEATH;
                 break;
             case WORLD_COLLISION_CONTACT_ATTACK:
-                scratch->delta.vector.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-                scratch->delta.vector.vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-                scratch->delta.vector.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+                scratch->delta.vector.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+                scratch->delta.vector.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+                scratch->delta.vector.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
                 damage                   = damageComputePlayerAttack(work->bodyContacts[contactIndex].key.value,
                                                                      SquareRoot0(scratch->delta.vector.vx * scratch->delta.vector.vx +
                                                                                  scratch->delta.vector.vy * scratch->delta.vector.vy +

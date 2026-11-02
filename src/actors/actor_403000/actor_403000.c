@@ -2447,11 +2447,11 @@ static void _actor403000ApplyDamage(Task* actorTask)
                     }
                     break;
             }
-            playerDx                = playerStatus->coordMtx->t[0] - actorTask->extra.tmd->coords->coord.t[0];
+            playerDx                = playerStatusCoordMtx(playerStatus)->t[0] - actorTask->extra.tmd->coords->coord.t[0];
             scratch->playerDelta.vx = playerDx;
-            playerDy                = playerStatus->coordMtx->t[1] - actorTask->extra.tmd->coords->coord.t[1];
+            playerDy                = playerStatusCoordMtx(playerStatus)->t[1] - actorTask->extra.tmd->coords->coord.t[1];
             scratch->playerDelta.vy = playerDy;
-            playerDz                = playerStatus->coordMtx->t[2] - actorTask->extra.tmd->coords->coord.t[2];
+            playerDz                = playerStatusCoordMtx(playerStatus)->t[2] - actorTask->extra.tmd->coords->coord.t[2];
             scratch->playerDelta.vz = playerDz;
             scratch->playerDistance = SquareRoot0(playerDx * playerDx + playerDy * playerDy + playerDz * playerDz);
             scratch->damage         = damageComputePlayerAttack(scratch->hitKey, scratch->playerDistance, 0, 0);
@@ -3177,9 +3177,9 @@ static void _actor403000ChaseState(Task* actorTask)
         _actor403000AdvanceChaseRoot(movementCoord, ACTOR_403000_CHASE_WALK_STEP);
         actorTask->extra.tmd->coords->composeStamp = GRAPHICS_COORD_DIRTY;
         // Choose attacks from the horizontal range after the forward step.
-        scratch->playerDelta.vx = playerStatus->coordMtx->t[0] - actorTask->extra.tmd->coords->coord.t[0];
+        scratch->playerDelta.vx = playerStatusCoordMtx(playerStatus)->t[0] - actorTask->extra.tmd->coords->coord.t[0];
         scratch->playerDelta.vy = 0;
-        scratch->playerDelta.vz = playerStatus->coordMtx->t[2] - actorTask->extra.tmd->coords->coord.t[2];
+        scratch->playerDelta.vz = playerStatusCoordMtx(playerStatus)->t[2] - actorTask->extra.tmd->coords->coord.t[2];
         scratch->playerDistance = lungeRangeError = SquareRoot0(scratch->playerDelta.vx * scratch->playerDelta.vx + scratch->playerDelta.vy * scratch->playerDelta.vy + scratch->playerDelta.vz * scratch->playerDelta.vz);
         lungeRangeError                          -= ACTOR_403000_CHASE_LUNGE_DISTANCE;
         if (lungeRangeError < 0) {

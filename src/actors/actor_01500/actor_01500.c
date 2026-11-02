@@ -416,9 +416,9 @@ static inline void _actor01500AimChaseAtPlayer(_Actor01500Work* work, GfxCoord* 
 {
     enum { ACTOR_01500_CHASE_TURN_RATE = 100 };
 
-    playerOffset->vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+    playerOffset->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
     playerOffset->vy = 0;
-    playerOffset->vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    playerOffset->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     work->targetYaw  = ratan2((s16)playerOffset->vx, (s16)playerOffset->vz) & ACTOR_TRANSFORM_ANGLE_MASK;
     work->turnRate   = ACTOR_01500_CHASE_TURN_RATE;
 }
@@ -876,9 +876,9 @@ static void _actor01500PerchAction(Task* actor)
         work->timer          = takeOffAnim;
     }
     work->turnRate   = 0;
-    playerOffset->vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+    playerOffset->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
     playerOffset->vy = 0;
-    playerOffset->vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+    playerOffset->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
     if (SquareRoot0(playerOffset->vx * playerOffset->vx + playerOffset->vz * playerOffset->vz) < ACTOR_01500_PERCH_ALERT_DISTANCE) {
         work->action = ACTOR_01500_ACTION_ALERT;
         alertAnim    = ACTOR_01500_ANIM_ALERT_WALL;
@@ -1017,7 +1017,7 @@ static void _actor01500ChaseAction(Task* actor)
     switch (work->actionStep) {
         case ACTOR_01500_CHASE_SETTLE:
             settleHeight    = work->hoverOffset + 1800;
-            settleDeltaY    = gPlayerStatus.coordMtx->t[1] - settleHeight - rootCoord->coord.t[1];
+            settleDeltaY    = playerStatusCoordMtx(&gPlayerStatus)->t[1] - settleHeight - rootCoord->coord.t[1];
             settleDistanceY = abs(settleDeltaY);
             if (settleDistanceY < 30 || --work->timer <= 0) {
                 work->actionStep = ACTOR_01500_CHASE_HOVER;
@@ -1057,9 +1057,9 @@ static void _actor01500ChaseAction(Task* actor)
             }
             // Each advance arms at most one dive; the dive exit disarms it.
             if (work->lunged == 0) {
-                playerOffset->vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
+                playerOffset->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
                 playerOffset->vy = 0;
-                playerOffset->vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+                playerOffset->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
                 if (SquareRoot0(playerOffset->vx * playerOffset->vx + playerOffset->vz * playerOffset->vz) < 1000) {
                     work->anim              = ACTOR_01500_ANIM_DIVE;
                     work->actionStep        = ACTOR_01500_CHASE_DIVE;
@@ -1070,7 +1070,7 @@ static void _actor01500ChaseAction(Task* actor)
             }
             break;
         case ACTOR_01500_CHASE_DIVE:
-            heightY             = gPlayerStatus.coordMtx->t[1] - 1600;
+            heightY             = playerStatusCoordMtx(&gPlayerStatus)->t[1] - 1600;
             work->speed         = 100;
             work->verticalSpeed = 180;
             if (heightY < rootCoord->coord.t[1] || work->attackLanded != 0) {
@@ -1084,7 +1084,7 @@ static void _actor01500ChaseAction(Task* actor)
             break;
         case ACTOR_01500_CHASE_CLIMB:
             climbHeightReference = rootCoord->coord.t[1] + 1800;
-            heightY              = gPlayerStatus.coordMtx->t[1] - climbHeightReference;
+            heightY              = playerStatusCoordMtx(&gPlayerStatus)->t[1] - climbHeightReference;
             climbDistanceY       = abs(heightY);
             if (climbDistanceY < 96 || --work->timer <= 0) {
                 work->actionStep = ACTOR_01500_CHASE_ADVANCE;
@@ -1115,12 +1115,12 @@ static void _actor01500GroundedAction(Task* actor)
     work->loopSound     = 0;
     work->verticalSpeed = 128;
     awayFromPlayer      = SCRATCH_STACK_RESERVE_BLOCK(VECTOR);
-    awayFromPlayer->vx  = rootCoord->coord.t[0] - gPlayerStatus.coordMtx->t[0];
+    awayFromPlayer->vx  = rootCoord->coord.t[0] - playerStatusCoordMtx(&gPlayerStatus)->t[0];
     awayFromPlayer->vy  = 0;
-    awayFromPlayer->vz  = rootCoord->coord.t[2] - gPlayerStatus.coordMtx->t[2];
+    awayFromPlayer->vz  = rootCoord->coord.t[2] - playerStatusCoordMtx(&gPlayerStatus)->t[2];
     work->targetYaw     = ratan2((s16)awayFromPlayer->vx, (s16)awayFromPlayer->vz) & ACTOR_TRANSFORM_ANGLE_MASK;
-    if (rootCoord->coord.t[1] > gPlayerStatus.coordMtx->t[1] + 500 ||
-        rootCoord->coord.t[1] < gPlayerStatus.coordMtx->t[1] - 1800 ||
+    if (rootCoord->coord.t[1] > playerStatusCoordMtx(&gPlayerStatus)->t[1] + 500 ||
+        rootCoord->coord.t[1] < playerStatusCoordMtx(&gPlayerStatus)->t[1] - 1800 ||
         ++work->timer > 1800) {
         work->deathPending = 1;
     }
@@ -1280,7 +1280,7 @@ static void _actor01500Move(Task* actor)
     rootCoord->coord.t[1] += work->verticalSpeed + bobOffset;
     rootCoord->coord.t[2] += (rootCoord->coord.m[2][2] * work->speed) >> ACTOR_01500_FACING_FRACTION_BITS;
     // Retire a lost actor through the delayed teardown path.
-    if (rootCoord->coord.t[1] - gPlayerStatus.coordMtx->t[1] > ACTOR_01500_RETIRE_DROP) {
+    if (rootCoord->coord.t[1] - playerStatusCoordMtx(&gPlayerStatus)->t[1] > ACTOR_01500_RETIRE_DROP) {
         actor->state     = 2;
         work->action     = ACTOR_01500_ACTION_DIE;
         work->actionStep = ACTOR_01500_DEATH_LOST;
@@ -1543,7 +1543,7 @@ static void _actor01500ScriptedAction(Task* actor)
             break;
     }
     // Crossing both bounds switches from the fixed room point to the player.
-    if (gPlayerStatus.coordMtx->t[0] > _gActor01500ChaseTriggerBounds.vx && gPlayerStatus.coordMtx->t[2] < _gActor01500ChaseTriggerBounds.vz) {
+    if (playerStatusCoordMtx(&gPlayerStatus)->t[0] > _gActor01500ChaseTriggerBounds.vx && playerStatusCoordMtx(&gPlayerStatus)->t[2] < _gActor01500ChaseTriggerBounds.vz) {
         work->action         = ACTOR_01500_ACTION_CHASE;
         settleTicks          = (((RANDOM_LCG_ADVANCE()) >> 16) & 0x3F) + 60;
         work->anim           = ACTOR_01500_ANIM_HOVER;

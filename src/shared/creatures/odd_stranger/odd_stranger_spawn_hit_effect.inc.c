@@ -228,11 +228,11 @@ static void _oddStrangerTakeHit(Task* task)
                 _oddStrangerApplyHitRecoil(task, work, hitScratch);
             }
             // Apply distance damage, critical/rear bonuses and readout before reaction.
-            playerDeltaX               = playerStatus->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0];
+            playerDeltaX               = playerStatusCoordMtx(playerStatus)->t[0] - task->extra.tmd->coords->coord.t[0];
             hitScratch->toPlayer.vx    = playerDeltaX;
-            playerDeltaY               = playerStatus->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1];
+            playerDeltaY               = playerStatusCoordMtx(playerStatus)->t[1] - task->extra.tmd->coords->coord.t[1];
             hitScratch->toPlayer.vy    = playerDeltaY;
-            playerDeltaZ               = playerStatus->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2];
+            playerDeltaZ               = playerStatusCoordMtx(playerStatus)->t[2] - task->extra.tmd->coords->coord.t[2];
             hitScratch->toPlayer.vz    = playerDeltaZ;
             hitScratch->playerDistance = SquareRoot0(playerDeltaX * playerDeltaX + playerDeltaY * playerDeltaY + playerDeltaZ * playerDeltaZ);
             hitScratch->damage         = damageComputePlayerAttack(hitScratch->hitKey, hitScratch->playerDistance, 0, 0);

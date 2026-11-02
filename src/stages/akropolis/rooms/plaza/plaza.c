@@ -763,7 +763,7 @@ static void _akropolisPlazaTraversalTask(Task* task)
             } else {
                 queue->movieAtEnd = 0;
             }
-            ((_TraversalWork*)task->work)->playerMtx = gPlayerStatus.coordMtx;
+            ((_TraversalWork*)task->work)->playerMtx = playerStatusCoordMtx(&gPlayerStatus);
             work->frameStep                          = FRAME_STEP_FINE;
             task->state                              = task->state + 1;
             break;

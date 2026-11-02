@@ -3571,7 +3571,7 @@ static void _shelterB3DumpingHoleDebrisEventTask(Task* directorTask)
             if (capIsBusy() != 0) {
                 break;
             }
-            if (gAttachmentState.mode == ATTACHMENT_MODE_WHEEL || gDisplayState.pendingMode != DISPLAY_MODE_NONE || gPlayerStatus.coordMtx->t[0] < SHELTER_B3_DUMPING_HOLE_DEBRIS_EVENT_TRIGGER_X) {
+            if (gAttachmentState.mode == ATTACHMENT_MODE_WHEEL || gDisplayState.pendingMode != DISPLAY_MODE_NONE || playerStatusCoordMtx(&gPlayerStatus)->t[0] < SHELTER_B3_DUMPING_HOLE_DEBRIS_EVENT_TRIGGER_X) {
                 break;
             }
             animationWork  = directorTask->work;

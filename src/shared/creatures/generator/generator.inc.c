@@ -82,9 +82,9 @@ static void _generatorBodyHit(Task* task)
                 continue;
             }
             // Measure damage in the player and root coordinates' common parent frame.
-            scratch->toPlayer.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-            scratch->toPlayer.vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-            scratch->toPlayer.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            scratch->toPlayer.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+            scratch->toPlayer.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+            scratch->toPlayer.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             damage               = damageComputePlayerAttack(work->contacts[contactIndex].key.value, SquareRoot0(scratch->toPlayer.vx * scratch->toPlayer.vx + scratch->toPlayer.vy * scratch->toPlayer.vy + scratch->toPlayer.vz * scratch->toPlayer.vz), 0, 0);
             if (work->lifeSupportDestroyed == 0) {
                 damage /= GENERATOR_PROTECTED_DAMAGE_DIVISOR;
@@ -569,9 +569,9 @@ static void _generatorLifeSupportHit(Enemy* enemy, Task* task)
         if (part->contacts[0].key.value & GENERATOR_LIFE_SUPPORT_ATTACHMENT_ATTACK) {
             worldTargetAddReadoutAmount(&enemy->node, 0, 0);
         } else {
-            toPlayer->vx = gPlayerStatus.coordMtx->t[0] - coord->coord.t[0];
-            toPlayer->vy = gPlayerStatus.coordMtx->t[1] - coord->coord.t[1];
-            toPlayer->vz = gPlayerStatus.coordMtx->t[2] - coord->coord.t[2];
+            toPlayer->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - coord->coord.t[0];
+            toPlayer->vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - coord->coord.t[1];
+            toPlayer->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - coord->coord.t[2];
             damage       = damageComputePlayerAttack(part->contacts[0].key.value, SquareRoot0(toPlayer->vx * toPlayer->vx + toPlayer->vy * toPlayer->vy + toPlayer->vz * toPlayer->vz), 0, 0);
             if (damageRollCriticalHit(enemy, part->contacts[0].key.value, 0) != 0) {
                 damage *= 4;

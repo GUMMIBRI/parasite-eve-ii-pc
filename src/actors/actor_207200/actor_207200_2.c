@@ -885,9 +885,9 @@ static void _actor207200CreepingStrangerScanContacts(Task* task)
                 if (work->hitCooldown != 0) {
                     break;
                 }
-                scratch->delta.vector.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-                scratch->delta.vector.vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-                scratch->delta.vector.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+                scratch->delta.vector.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+                scratch->delta.vector.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+                scratch->delta.vector.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
                 contactMagnitude         = SquareRoot0(scratch->delta.vector.vx * scratch->delta.vector.vx +
                                                        scratch->delta.vector.vy * scratch->delta.vector.vy +
                                                        scratch->delta.vector.vz * scratch->delta.vector.vz);
@@ -959,9 +959,9 @@ static void _actor207200CreepingStrangerScanContacts(Task* task)
             if (work->hitCooldown != 0) {
                 break;
             }
-            scratch->delta.vector.vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-            scratch->delta.vector.vy = gPlayerStatus.coordMtx->t[1] - rootCoord->coord.t[1];
-            scratch->delta.vector.vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            scratch->delta.vector.vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+            scratch->delta.vector.vy = playerStatusCoordMtx(&gPlayerStatus)->t[1] - rootCoord->coord.t[1];
+            scratch->delta.vector.vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             contactMagnitude         = SquareRoot0(scratch->delta.vector.vx * scratch->delta.vector.vx + scratch->delta.vector.vy * scratch->delta.vector.vy +
                                                    scratch->delta.vector.vz * scratch->delta.vector.vz);
             hitReaction              = damageGetPlayerAttackReaction(work->headContacts[contactIndex].key.value);

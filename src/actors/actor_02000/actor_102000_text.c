@@ -935,8 +935,8 @@ static void _golemPawnRookEngageState(Task* task)
             }
             work->forwardSpeed = forwardSpeed;
             work->turnRate     = GOLEM_PAWN_ROOK_ENGAGE_TRACK_TURN_RATE;
-            toPlayer->vx       = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-            toPlayer->vz       = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            toPlayer->vx       = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+            toPlayer->vz       = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             GOLEM_PAWN_ROOK_MEASURE_PLAYER_YAW_GAP(work, rootCoord, toPlayer, currentYaw, yawDelta, absoluteYawDelta, wrappedYawDelta, yawError);
             if (yawError >= GOLEM_PAWN_ROOK_ENGAGE_TURN_THRESHOLD) {
                 if (work->turnedAround == 0) {
@@ -962,8 +962,8 @@ static void _golemPawnRookEngageState(Task* task)
         case GOLEM_PAWN_ROOK_ENGAGE_PICK_ATTACK:
             work->forwardSpeed = 0;
             work->turnRate     = 0;
-            toPlayer->vx       = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-            playerOffsetZ      = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+            toPlayer->vx       = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+            playerOffsetZ      = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
             toPlayer->vz       = playerOffsetZ;
             playerOffsetX      = toPlayer->vx;
             if (SquareRoot0((playerOffsetX * playerOffsetX) + (playerOffsetZ * playerOffsetZ)) < GOLEM_PAWN_ROOK_CLOSE_ATTACK_RANGE) {
@@ -988,8 +988,8 @@ static void _golemPawnRookEngageState(Task* task)
                 work->anim            = GOLEM_PAWN_ROOK_ANIM_WALK;
                 work->step            = GOLEM_PAWN_ROOK_ENGAGE_TRACK;
             } else if (work->animFrame >= GOLEM_PAWN_ROOK_ENGAGE_LISTEN_FRAMES) {
-                toPlayer->vx = gPlayerStatus.coordMtx->t[0] - rootCoord->coord.t[0];
-                toPlayer->vz = gPlayerStatus.coordMtx->t[2] - rootCoord->coord.t[2];
+                toPlayer->vx = playerStatusCoordMtx(&gPlayerStatus)->t[0] - rootCoord->coord.t[0];
+                toPlayer->vz = playerStatusCoordMtx(&gPlayerStatus)->t[2] - rootCoord->coord.t[2];
                 GOLEM_PAWN_ROOK_MEASURE_PLAYER_YAW_GAP(work, rootCoord, toPlayer, listenYaw, listenYawDelta, absoluteListenYawDelta, wrappedListenYawDelta, yawError);
                 if (yawError >= GOLEM_PAWN_ROOK_ENGAGE_TURN_THRESHOLD) {
                     work->anim = GOLEM_PAWN_ROOK_ENGAGE_ANIM_TURN;

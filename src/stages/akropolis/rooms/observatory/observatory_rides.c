@@ -101,7 +101,7 @@ static void _akropolisObservatoryForkedRoadArrivalMoviePathTask(Task* task)
             }
             taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_CAP_CONTROL), CAP_CONTROL_MESSAGE_HIDE_HUD, 0, 0);
             ((RoomMoviePathWork*)task->work)->playerTask = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
-            ((RoomMoviePathWork*)task->work)->playerMtx  = gPlayerStatus.coordMtx;
+            ((RoomMoviePathWork*)task->work)->playerMtx  = playerStatusCoordMtx(&gPlayerStatus);
             weaponId                                     = gPlayerStatus.weapon;
             animationRequest.source.index                = PLAYER_ACTOR_SCENE_WEAPON_BANK(weaponId);
             animationRequest.animationId                 = PLAYER_ANIMATION_IDLE;
@@ -193,7 +193,7 @@ static void _akropolisObservatoryPromenadeArrivalMoviePathTask(Task* task)
             }
             taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_CAP_CONTROL), CAP_CONTROL_MESSAGE_HIDE_HUD, 0, 0);
             ((RoomMoviePathWork*)task->work)->playerTask = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
-            ((RoomMoviePathWork*)task->work)->playerMtx  = gPlayerStatus.coordMtx;
+            ((RoomMoviePathWork*)task->work)->playerMtx  = playerStatusCoordMtx(&gPlayerStatus);
             weaponId                                     = gPlayerStatus.weapon;
             animationRequest.source.index                = PLAYER_ACTOR_SCENE_WEAPON_BANK(weaponId);
             animationRequest.animationId                 = PLAYER_ANIMATION_IDLE;

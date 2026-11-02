@@ -80,11 +80,11 @@ static void _gluttonHitGroups6To8(Task* task)
         damageGetPlayerAttackReaction(scratch->attackKey);
 
         // Range is measured from a fixed point in the host's parent frame.
-        scratch->toPlayer.vx    = (playerStatus->coordMtx->t[0] - task->extra.tmd->coords->coord.t[0]) - GLUTTON_GROUPS6_TO8_RANGE_X;
+        scratch->toPlayer.vx    = (playerStatusCoordMtx(playerStatus)->t[0] - task->extra.tmd->coords->coord.t[0]) - GLUTTON_GROUPS6_TO8_RANGE_X;
         playerDxSquared         = scratch->toPlayer.vx * scratch->toPlayer.vx;
-        scratch->toPlayer.vy    = (playerStatus->coordMtx->t[1] - task->extra.tmd->coords->coord.t[1]) - GLUTTON_GROUPS6_TO8_RANGE_Y;
+        scratch->toPlayer.vy    = (playerStatusCoordMtx(playerStatus)->t[1] - task->extra.tmd->coords->coord.t[1]) - GLUTTON_GROUPS6_TO8_RANGE_Y;
         playerDySquared         = scratch->toPlayer.vy * scratch->toPlayer.vy;
-        scratch->toPlayer.vz    = (playerStatus->coordMtx->t[2] - task->extra.tmd->coords->coord.t[2]) - GLUTTON_GROUPS6_TO8_RANGE_Z;
+        scratch->toPlayer.vz    = (playerStatusCoordMtx(playerStatus)->t[2] - task->extra.tmd->coords->coord.t[2]) - GLUTTON_GROUPS6_TO8_RANGE_Z;
         playerDzSquared         = scratch->toPlayer.vz * scratch->toPlayer.vz;
         scratch->playerDistance = SquareRoot0(playerDxSquared + playerDySquared + playerDzSquared);
         scratch->damage         = damageComputePlayerAttack(scratch->attackKey, scratch->playerDistance, 0, 0);

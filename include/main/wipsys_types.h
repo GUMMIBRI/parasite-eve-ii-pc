@@ -80,7 +80,7 @@ enum {
 typedef struct {
     u16       checksum;                                    // Sum of signed payload bytes, modulo 65536, excluding the four-byte header
     u16       checksumComplement;                          // Bitwise complement of checksum
-    MATRIX*   coordMtx;                                    // Borrowed root coordinate matrix; valid while the player actor is live
+    u32       coordMtxRef;                                 // Nonzero while the player actor is live; the host matrix pointer is `gHostPlayerCoordMtx` (a pointer does not fit the 32-bit save image)
     s32       exp;                                         // Unspent experience used to unlock and raise Parasite Energy levels
     s32       bp;                                          // Bounty points available to spend in shops
     PlayerPos pos;                                         // Captured room-entry position and facing, independent of the live matrix
@@ -99,6 +99,20 @@ typedef struct {
     u8        saveBackup[PLAYER_STATUS_SAVE_RECORD_BYTES]; // Serialized backup of the entire live image, including its checksum header
 } PlayerStatus;
 STATIC_ASSERT_SIZEOF(PlayerStatus, 0x80);
+
+/// Borrowed root coordinate matrix of the live player actor (see `PlayerStatus::coordMtxRef`).
+extern MATRIX* gHostPlayerCoordMtx;
+
+static inline MATRIX* playerStatusCoordMtx(const PlayerStatus* status)
+{
+    return status->coordMtxRef ? gHostPlayerCoordMtx : NULL;
+}
+
+static inline void playerStatusSetCoordMtx(PlayerStatus* status, MATRIX* mtx)
+{
+    gHostPlayerCoordMtx = mtx;
+    status->coordMtxRef = mtx != NULL;
+}
 STATIC_ASSERT(OFFSET_OF(PlayerStatus, saveBackup) == PLAYER_STATUS_SAVE_RECORD_BYTES, player_status_backup_offset);
 
 #endif // MAIN_WIPSYS_TYPES_H
