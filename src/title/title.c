@@ -415,6 +415,12 @@ static void _titleUpdateScreenTask(Task* task)
                 _titlePrependScreenFadeDrawMode();
             }
         } else {
+#ifdef __psyz
+            // The attract demos play in Dryfield, whose actor packages are not linked yet:
+            // stay on the title screen instead of launching one.
+            work->idleFrames = 0;
+            return;
+#endif
             gGameMainPersistentState.skipTitleIntro = 0;
             if (gGameMainPersistentState.discNumber == GAME_MAIN_DISC_1) {
                 taskCallExit(task);
