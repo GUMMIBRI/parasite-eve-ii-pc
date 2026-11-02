@@ -190,11 +190,15 @@ def parse_asm(path):
         if m:
             cur = Blob()
             name = m.group(1)
-            if name in blobs:
-                dup.add(name)
-            blobs[name] = cur
+            pending = (name, cur)
             continue
         if line.startswith('enddlabel'):
+            name, b = pending
+            o = blobs.get(name)
+            if o is None:
+                blobs[name] = b
+            elif bytes(o.data) != bytes(b.data) or o.reloc != b.reloc:
+                dup.add(name)  # the same label with different contents is ambiguous
             cur = None
             continue
         if cur is None:

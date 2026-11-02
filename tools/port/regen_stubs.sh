@@ -27,7 +27,7 @@ while [ $pass -lt 5 ]; do
     python3 tools/port/gen_globals.py < "$T/pe2_all_undef.txt"
     (cd build-port && sh -c "$CMD -w -Xclang -ast-dump=json -fsyntax-only ../src/port/globals.c" > "$T/pe2_ast.json")
     # data symbols the compiled C already defines (the link must not see them twice)
-    find build-port/CMakeFiles/game_overlays.dir build-port/CMakeFiles/game_main.dir -name '*.o' | xargs nm -gU 2>/dev/null |
+    find build-port/CMakeFiles -name '*.o' -not -path '*/parasite-eve-ii-pc.dir/*' | xargs nm -gU 2>/dev/null |
         awk '$2 ~ /^[DSdsRr]$/ {sub(/^_/, "", $3); print $3}' | sort -u > "$T/pe2_cdefs.txt"
     : > src/port/asm_data.c
     python3 tools/port/gen_asm_data.py "$T/pe2_ast.json" "$T/pe2_cdefs.txt"
