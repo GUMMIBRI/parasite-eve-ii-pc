@@ -30,6 +30,11 @@ pointer (then the generator already emits symbol references).
 - The bulk (model `verts`/`normals`/`partVerts`/`skeleton`/`stream`, area `records`/`indices`/`faces`/`cells`) is
   written per model or room from a `.pe2pkg` package at a recorded offset (the first line of each include says
   e.g. `model at 0x7FC4`). The runtime reads the same package from the disc and the same offset.
+- Header census of the 4,834 generated includes: 1,804 `animation at 0x…`, 1,030 `grid header at 0x…`,
+  798 `model at 0x…`, 23 `collision patch array at 0x…` (all from a named `.pe2pkg` at an offset, so manifestable
+  as (package, kind, offset)), and 33 from raw files in the asset store. The per-kind body (nested records, pointer
+  fields in animation and grid tables) is written by the generators in `tools/peassets`; the loader has to
+  reproduce each one, which is the real work of step 2.
 - A runtime lookup needs the disc location of each `.pe2pkg`/`main.exe`; the CDF tree in `asset_data.py` carries the
   disc ids and sha1s (no data), so the manifest can be generated without game data.
 
