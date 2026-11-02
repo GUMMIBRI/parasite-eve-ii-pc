@@ -1,0 +1,30 @@
+name: Bug report
+description: Something in the port behaves differently from the original game
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach game files, disc images or extracted data. Screenshots of your own game are fine.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [macOS, Linux, Windows, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did the original game do instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce (disc, room, input)
