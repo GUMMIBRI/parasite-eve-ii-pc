@@ -47,6 +47,15 @@ name; the sha1 of the on-disc payload where the catalog has one). 146 resolve th
 `stages.json` (stored file name -> TREE file id); 25 room packages (`akropolis_*`, `mist_*`, `shelter_*`) through
 `stages.json` folder entries -> TREE folder id plus file. Next: the C reader and the per-kind body writers.
 
+## Disc reader (done, verified)
+
+`src/port/disc_assets.c` (`include/port/disc_assets.h`) reads the game's CDF containers straight from a disc image:
+cue sheet -> BIN (raw 2352-byte sectors) -> ISO 9660 root -> `STAGE0.HED` / `STAGEn.CDF` tables -> chunk chain ->
+package chunk -> one-shot LZSS decode. It is synchronous and independent of the game's asynchronous CD queue.
+`tools/port/verify_disc_packages.py` compares every package of the manifest with the extraction
+(`assets/USA/pe2pkg/`): **all 203 packages read from the two disc images are byte-identical** (disc 1 and disc 2).
+Build the tool with `cmake --build build-port --target pe2_discread`.
+
 ## Plan
 
 1. **Manifest instead of bytes.** At configure time, `peassets` emits for each include a manifest entry

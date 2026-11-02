@@ -1,0 +1,22 @@
+#ifndef PORT_DISC_ASSETS_H
+#define PORT_DISC_ASSETS_H
+#include <stddef.h>
+#include <stdint.h>
+
+/* Synchronous, read-only access to the game's CDF containers on a user's disc image. It parses the cue sheet, the
+ * ISO 9660 root directory and the STAGE0/STAGEn CDF tables itself, so it works before the game's asynchronous CD
+ * queue runs and never touches it. */
+typedef struct PeDisc PeDisc;
+
+PeDisc* peDiscOpen(const char* cuePath);
+void    peDiscClose(PeDisc* disc);
+
+/* Reads the package chunk (LZSS room package, chunk type 0) of one CDF file and returns its decoded bytes
+ * (malloc'd, caller frees). stage 0: `folder` is ignored and `file` is the full STAGE0 file id (e.g. 120300).
+ * stages 1..5: `folder` is the folder id (e.g. 101) and `file` the index inside it. Returns NULL if the file or
+ * chunk is not present on this disc. */
+uint8_t* peDiscReadPackage(PeDisc* disc, int stage, int folder, int file, size_t* size);
+
+/* One-shot LZSS decoder for the game's package/image streams (see tools/peassets/lzss.py). */
+uint8_t* peLzssDecode(const uint8_t* in, size_t inSize, size_t* outSize);
+#endif

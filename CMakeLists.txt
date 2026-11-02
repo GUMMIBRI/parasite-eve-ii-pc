@@ -227,6 +227,10 @@ target_include_directories(gte_compat_test PRIVATE include include/decomp)
 target_compile_definitions(gte_compat_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(gte_compat_test PRIVATE psyz)
 
+# Development tool: reads one package straight from a disc image (src/port/disc_assets.c).
+add_executable(pe2_discread EXCLUDE_FROM_ALL tools/port/discread.c src/port/disc_assets.c)
+target_include_directories(pe2_discread PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 add_executable(lzss_test EXCLUDE_FROM_ALL tests/lzss_test.c src/port/lzss.c)
 target_include_directories(lzss_test PRIVATE include include/decomp src/main)
 target_compile_definitions(lzss_test PRIVATE __psyz SKIP_ASM)
