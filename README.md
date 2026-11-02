@@ -5,7 +5,7 @@ matching decompilation of the original game code and
 [PsyZ](https://github.com/khasinski/parasite-eve-psyz), a drop-in replacement
 for the PlayStation runtime library (Psy-Q) on top of SDL3.
 
-> **Status: pre-alpha, work in progress.** Nothing is playable yet. The port is
+> **Status: pre-alpha, work in progress.** New Game reaches the Mist shooting gallery; the rest is not verified. The port is
 > modelled on [parasite-eve-pc](https://github.com/khasinski/parasite-eve-pc),
 > our port of the first game.
 
@@ -52,12 +52,29 @@ and is not affiliated with or endorsed by Square Enix.
 
 ## Building
 
-Not yet buildable. The build will use CMake and the PsyZ submodule:
+Status: builds and runs on macOS (arm64); other hosts are untested. The build currently still needs game data on
+disk, because generated sources are produced from your disc at build time (this goes away with the runtime loader,
+see [docs/RUNTIME_ASSETS.md](docs/RUNTIME_ASSETS.md)). Nothing from your disc is committed.
+
+1. Prepare the extracted data once, following [docs/decomp/README.md](docs/decomp/README.md)
+   (`python3 ninja_config.py --iso_extract`); this fills the git-ignored `assets/`, `asm/` and `rom/`.
+2. Configure and build:
 
 ```sh
 git submodule update --init third_party/psyz
 git -C third_party/psyz submodule update --init external/SDL
+cmake -S . -B build-port -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build-port -j8
 ```
+
+3. Run with your disc 1 image: `./build-port/parasite-eve-ii-pc "path/to/Parasite Eve II (Disc 1).cue"`
+   (or set `PE2_DISC`).
+
+Development switches: `PE2_SKIPINTRO=1` (skip the opening movie), `PE2_FAST=1` (no frame limiter during movies),
+`PE2_AUTOPRESS=<tick>` (scripted Start/Cross), `PE2_PAD_REPLAY=<file>` (recorded input, see
+`tools/port/make_gallery_input.py`). Regenerate placeholders and asm-derived data with `tools/port/regen_stubs.sh`.
+Known limits: Dryfield and other stages are not linked yet, attract demos are disabled, audio and saves are
+incomplete.
 
 ## License
 
