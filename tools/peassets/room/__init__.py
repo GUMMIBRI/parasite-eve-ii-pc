@@ -603,6 +603,33 @@ def _cell_macro(package: str, header: int) -> str:
     raise SystemExit(f"{package}: no collision grid declared with its header at 0x{header:X}")
 
 
+def flat(kind: str) -> bool:
+    """Whether a layout holds only numbers: no pointer, text or union, so the disc's bytes are the host's bytes."""
+    def plain(k) -> bool:
+        if isinstance(k, str):
+            return k in LAYOUTS and all(plain(f[1]) for f in LAYOUTS[k][1]) or k in "bBhHiI" and len(k) == 1
+        if k[0] == "bytes":
+            return True
+        if k[0] == "named":
+            return plain(k[1])
+        return k[0] == "arr" and plain(k[1])
+    return all(plain(f[1]) for f in LAYOUTS[kind][1])
+
+
+def bound_arrays(name: str, assets: dict, embedded: dict, assets_root: Path) -> list[tuple[str, int, int]]:
+    """(symbol, byte offset in the package, byte size) of each array c_files binds to the disc."""
+    room = read(name, assets, assets_root)
+    im, _area = images(name, assets, embedded, assets_root)
+    load = package_decl.load_address(name, assets)
+    out = []
+    for module in room["modules"].values():
+        for sym, r in module.items():
+            if "value" in r or _is_rows(r) or r["kind"] in GEOMETRY or not r.get("values") or not flat(r["kind"]):
+                continue
+            out.append((sym, im.addresses[sym] - load, len(r["values"]) * size(r["kind"])))
+    return out
+
+
 def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[str, str]:
     """`<module>.inc` for each module and `declarations.inc`: file name -> C."""
     room = read(name, assets, assets_root)
@@ -672,7 +699,11 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
         if _is_rows(r):
             rows = ["{ " + ", ".join(c_value(v, r["kind"], pointer) for v in row) + " }" for row in r["values"]]
             return [f"{declarator(s)} = {{"] + [f"    {e}," for e in rows] + ["};"]
-        return [f"{declarator(s)} = {{"] + [f"    {c_value(v, r['kind'], pointer)}," for v in r["values"]] + ["};"]
+        rows = [f"    {c_value(v, r['kind'], pointer)}," for v in r["values"]]
+        if flat(r["kind"]) and s not in rodata:           # the disc's bytes: loaded at start, not compiled in
+            return ["#ifdef PE_EMBED_ASSETS", f"{declarator(s)} = {{"] + rows + ["};", "#else", f"{declarator(s)};", "#endif",
+                    '#include "port/asset_bind.h"', f'PE_ASSET_BIND("room/{package}/{s}", {s});']
+        return [f"{declarator(s)} = {{"] + rows + ["};"]
 
     others = sorted(a for a in im.names if im.in_room(a) and im.names[a] not in objects
                     and not any(at[s] < a < end[s] for s in objects))

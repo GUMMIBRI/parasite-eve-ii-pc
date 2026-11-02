@@ -120,6 +120,27 @@ for _name, _usd, _inc in nc.model_source_includes(V):
             raise SystemExit(f'{_pn}: model {_name} {_arr} differs from the package')
         parts.append({'file': f'model/{_pn}/{_arr}.inc', 'kind': 'clip', 'package': _pn, 'load': 0, 'source': _at,
                       'part': 'data', 'offset': _at, 'size': _size, 'type': _typ, 'elem': _ELEM[_typ], 'op': 'copy'})
+# Room data (gen_room_inc.py): flat arrays (no pointers) of rooms, actors and stage overlays, at their address in the
+# package they live in.
+sys.path.insert(0, 'tools/peassets')
+import room as _room
+_ELEM_R = {}
+for _name in _room.declared(_data.ASSETS):
+    _pn = _data.ASSETS[_name]['package_name']
+    _pkg = Path('assets/USA/pe2pkg') / f'{_pn}.pe2pkg'
+    if not _pkg.exists():
+        continue
+    _limit = len(_pkg.read_bytes())
+    _rd = _room.read(_name, _data.ASSETS, Path('assets/USA'))
+    _kinds = {s_: r_['kind'] for m_ in _rd['modules'].values() for s_, r_ in m_.items()}
+    for _sym, _off, _size in _room.bound_arrays(_name, _data.ASSETS, _data.EMBEDDED_ASSETS, Path('assets/USA')):
+        if not 0 <= _off and _off + _size <= _limit:
+            raise SystemExit(f'{_name}: {_sym} outside its package')
+        _k = _kinds[_sym]
+        _ELEM[_room.LAYOUTS[_k][0]] = _room.size(_k)
+        parts.append({'file': f'room/{_pn}/{_sym}.inc', 'kind': 'clip', 'package': _pn, 'load': 0, 'source': _off,
+                      'part': 'data', 'offset': _off, 'size': _size, 'type': _room.LAYOUTS[_k][0],
+                      'elem': _room.size(_k), 'op': 'copy'})
 # Font glyph tables (gen_font_inc.py output): the exe holds the same bytes the include spells out.
 import re as _re
 _exe = Path('assets/USA/main.exe').read_bytes()

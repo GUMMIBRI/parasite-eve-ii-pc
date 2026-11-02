@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rewrite the generated declared-clip includes (build/include/assets/<group>/*clips*.inc) with registry-bound arrays.
+"""Rewrite the generated declared-clip, model and room includes with registry-bound arrays.
 
 The build rule (ninja_config.py, rule animation-source) writes the same files; this regenerates just those from the
 user's extraction. Run with the project's venv Python."""
@@ -17,3 +17,9 @@ models = nc.model_source_includes('USA')
 for name, _usd, inc in models:
     Path(inc).write_text(gms.source(name, Path('assets/USA')))
 print(f'{len(clips)} clip and {len(models)} model includes written', file=sys.stderr)
+import subprocess
+rooms = nc.room_includes('USA')
+for key, _instance, files in rooms:
+    if files:
+        subprocess.run([sys.executable, 'tools/buildsteps/gen_room_inc.py', key, str(Path(files[0]).parent), '--assets', 'assets/USA'], check=True)
+print(f'{len(rooms)} room units written', file=sys.stderr)
