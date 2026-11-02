@@ -82,7 +82,7 @@ Comparison builds: `-DPE_EMBED_ASSETS=ON` keeps the build-time includes. `PE2_DU
 binding. For the 33 bindings linked into the executable today (model parts, collision patches, grid faces, cells
 and a pointer table) the embedded build and the disc-loaded build produce **identical dumps**. The other sources are
 not linked yet, so their bindings are covered by `verify_asset_parts.py` (3,655 of 3,655) rather than by a run.
-Still embedded: 39 sites the converter does not match and about 1,100 includes without a package header.
+Still embedded: 39 sites the converter does not match and about 560 includes that no decoder covers yet (measured 2026-11-03, below).
 
 ## Plan
 
@@ -120,3 +120,17 @@ Still compiled from generated C text in `build/include/assets/` (not flat byte r
 | ui | 5 | 43 KB |
 
 These need a per-type decoder that rebuilds the host structs from the disc bytes (pointer fields become host pointers into the loaded blobs), not another `PE_ASSET_BIND`. Group by type (room descriptors, spawn tables, enemy model sets, weapon sets) and do one decoder per type, verified against the embedded build as above.
+
+### Recount (2026-11-03, after the clip and model work)
+
+Of the 1,220 `assets/*.inc` includes that no `PE_ASSET_BIND` follows in the including file, 660 are generated sources
+that bind their arrays inside (clips, models, banks), so they already load from the disc. What remains is about 560:
+
+| Family | Includes | Size | Notes |
+| --- | --- | --- | --- |
+| rooms | 455 | 2.7 MB | `gen_room_inc` structs holding pointers (maps, spawns, placements, tables, music) |
+| `*_collision_*_table` and one motion table | ~100 | ~0.1 MB | small flat tables per room; the next easy win |
+| enemies / weapons / characters / encounters | 105 | ~0.1 MB | non-clip data (struct tables) |
+| inventory | 1 | 44 KB | |
+
+All dumps match: 4,176 bound arrays, 809 of them models, embedded and disc-loaded builds identical.
