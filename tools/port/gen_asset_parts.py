@@ -81,6 +81,16 @@ for raw, out, width in nc.asset_includes(V):
     parts.append({'file': aid + '.inc', 'kind': 'asset', 'package': 'main.exe' if src == 'main.exe' else src.removesuffix('.pe2pkg'),
                   'load': 0, 'source': at, 'part': 'data', 'offset': at, 'size': len(blob), 'type': typ,
                   'elem': elem, 'op': 'copy'})
+# Font glyph tables (gen_font_inc.py output): the exe holds the same bytes the include spells out.
+import re as _re
+_exe = Path('assets/USA/main.exe').read_bytes()
+for _id in ('ui/font/small_glyphs', 'ui/font/medium_glyphs', 'ui/font/large_glyphs', 'ui/caption_font/glyphs'):
+    _blob = bytes(int(x, 16) for x in _re.findall(r'0x([0-9A-Fa-f]{2})\b', Path(f'build/include/assets/{_id}.inc').read_text()))
+    _at = _exe.find(_blob)
+    if _at < 0 or _exe.find(_blob, _at + 1) >= 0:
+        raise SystemExit(f'{_id}: not found exactly once in main.exe')
+    parts.append({'file': _id + '.inc', 'kind': 'asset', 'package': 'main.exe', 'load': 0, 'source': _at, 'part': 'data',
+                  'offset': _at, 'size': len(_blob), 'type': 'u8', 'elem': 1, 'op': 'copy'})
 ELEM = {'TmdBone': 36, 'SVECTOR': 8, 'u32': 4, 'u16': 2, 's16': 2, 'GridFace': 12, 'AnimationRecord': 4,
         'AnimationPackedPose': 12, 'AnimationPackedRotation': 4, 'GridPointer': 4}
 for p_ in parts:

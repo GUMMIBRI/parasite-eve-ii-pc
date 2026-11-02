@@ -1,4 +1,5 @@
 #include "main/text.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -250,9 +251,14 @@ TaskDesc* gTaskDescBanks[TASK_DESCRIPTOR_BANK_COUNT] = {
 /// `\sM` command, in either letter's case, and adds `TEXT_GLYPH_V_BIAS_MEDIUM`
 /// to each record's texture V. The initializer is the embedded `font_glyphs0`
 /// catalog blob. Bytes below space are not records in this face.
+#ifdef PE_EMBED_ASSETS
 static _FontGlyph _gFontGlyphsMedium[FONT_GLYPH_MEDIUM_COUNT] = {
 #include "assets/ui/font/medium_glyphs.inc"
 };
+#else
+static _FontGlyph _gFontGlyphsMedium[FONT_GLYPH_MEDIUM_COUNT];
+#endif
+PE_ASSET_BIND("ui/font/medium_glyphs", _gFontGlyphsMedium);
 
 /// Large UI-font glyph metrics, one record per character byte from ' ' through 0xFF.
 ///
@@ -264,9 +270,14 @@ static _FontGlyph _gFontGlyphsMedium[FONT_GLYPH_MEDIUM_COUNT] = {
 /// adds `TEXT_GLYPH_V_BIAS_LARGE` to each record's texture V. The initializer
 /// is the embedded `font_glyphs1` catalog blob. Bytes below space are not
 /// records in this face.
+#ifdef PE_EMBED_ASSETS
 static _FontGlyph _gFontGlyphsLarge[FONT_GLYPH_LARGE_COUNT] = {
 #include "assets/ui/font/large_glyphs.inc"
 };
+#else
+static _FontGlyph _gFontGlyphsLarge[FONT_GLYPH_LARGE_COUNT];
+#endif
+PE_ASSET_BIND("ui/font/large_glyphs", _gFontGlyphsLarge);
 
 /// Small UI-font glyph metrics, one record per character byte from ' ' through 0x7A.
 ///
@@ -275,9 +286,14 @@ static _FontGlyph _gFontGlyphsLarge[FONT_GLYPH_LARGE_COUNT] = {
 /// `\sS` command, in either letter's case, and adds `TEXT_GLYPH_V_BIAS_SMALL`
 /// to each record's texture V. The initializer is the embedded `font_glyphs2`
 /// catalog blob. Bytes outside 0x20..0x7A are not records in this face.
+#ifdef PE_EMBED_ASSETS
 static _FontGlyph _gFontGlyphsSmall[FONT_GLYPH_SMALL_COUNT] = {
 #include "assets/ui/font/small_glyphs.inc"
 };
+#else
+static _FontGlyph _gFontGlyphsSmall[FONT_GLYPH_SMALL_COUNT];
+#endif
+PE_ASSET_BIND("ui/font/small_glyphs", _gFontGlyphsSmall);
 
 /// Ordering-table tag seed of the resident vibration panel.
 enum {

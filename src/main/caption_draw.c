@@ -1,4 +1,5 @@
 #include "text.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -24,9 +25,14 @@ static s32 _primDrawTimedDimTile(const RECT* rect, const u8* phase, s16* framesL
 
 static void _primDrawTile(const PrimDrawParams* draw);
 
+#ifdef PE_EMBED_ASSETS
 TextGlyphCell gTextCaptionGlyphCells[TEXT_CAPTION_GLYPH_CELL_COUNT] = {
 #include "assets/ui/caption_font/glyphs.inc"
 };
+#else
+TextGlyphCell gTextCaptionGlyphCells[TEXT_CAPTION_GLYPH_CELL_COUNT];
+#endif
+PE_ASSET_BIND("ui/caption_font/glyphs", gTextCaptionGlyphCells);
 STATIC_ASSERT_SIZEOF(gTextCaptionGlyphCells, 0x118);
 
 s32 textDrawStream(TextStream* stream, u8* phase, s16* framesLeft, s32 skipMarkedGlyphs)

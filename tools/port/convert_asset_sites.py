@@ -31,7 +31,8 @@ for path in glob.glob('src/**/*.c', recursive=True) + glob.glob('src/**/*.h', re
             continue
         head = re.sub(r'\bconst\b\s*', '', m['head'])
         count = part['size'] // part['elem']
-        dim = f"[{count}]" if m['dim'] else ""
+        # keep the declared dimension: the part's element width is the include's, not the C element's
+        dim = (m['dim'] if m['dim'] not in ('[]',) else f"[{count}]") if m['dim'] else ""
         decl = f"{head[:m.start('dim') - m.start('head')] if m['dim'] else head.rstrip()}"
         # rebuild: everything of the head up to the name, then the dimension, then the attributes
         before = re.sub(r'\bconst\b\s*', '', s[m.start('head'):m.start('name')])
