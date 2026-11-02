@@ -214,6 +214,11 @@ target_compile_definitions(game_overlays PUBLIC __psyz SKIP_ASM)
 target_compile_options(game_overlays PRIVATE -w -Wno-incompatible-function-pointer-types -g -fno-omit-frame-pointer -include port/gpu_len.h)
 target_link_libraries(game_overlays PUBLIC psyz)
 
+# src/port/asm_data.c holds game tables converted from the user's disc by tools/port/regen_stubs.sh; it is never
+# committed, so a fresh checkout starts with an empty one.
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/port/asm_data.c)
+    file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/port/asm_data.c "")
+endif()
 add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/fixed_log.c src/port/pad_trace.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c src/port/mdec_vlc.c src/port/tmd_source.c src/port/tmd_layout.c src/port/cap_asset.c src/port/cap_resource.c src/port/asm_data.c src/port/globals.c src/port/unresolved_stubs.c $<TARGET_OBJECTS:game_main>
     $<TARGET_OBJECTS:game_overlays>)
 target_include_directories(parasite-eve-ii-pc PRIVATE include include/decomp src/main)

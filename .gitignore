@@ -69,3 +69,8 @@ build-port/
 /tools/decomp-permuter/
 /tools/m2c/
 /tools/patches/
+
+# Local build trees and data generated from the user's disc (never committed)
+build-all/
+build-*/
+src/port/asm_data.c
