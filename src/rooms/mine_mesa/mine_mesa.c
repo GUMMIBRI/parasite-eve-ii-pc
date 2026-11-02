@@ -788,9 +788,14 @@ static AnimationSet _gMineMesaAnimation06B9C = {
 /// One signed XYZ sample per task tick, in game-coordinate units; all 46 are
 /// consumed unless the scene is skipped. Playback adds (-100, 0, 200) and
 /// supplies yaw separately. Borrowed only while this room overlay is loaded.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineMesaPlayerRunPath[46] = {
 #include "assets/mine_mesa_motion_06BC4.inc"
 };
+#else
+static SVECTOR _gMineMesaPlayerRunPath[46];
+#endif
+PE_ASSET_BIND("mine_mesa_motion_06BC4", _gMineMesaPlayerRunPath);
 
 static void _mineMesaCompanionHeadAimTask(Task* task);
 static void _mineMesaFadeFromBlackTask(Task* task);

@@ -109,7 +109,7 @@ static SVECTOR _gShelterB1GolemFreezer1MeetingObstacleCollisionNormals[SHELTER_B
 #include "assets/shelter_b1_golem_freezer_1_collision_01154_normals.inc"
 };
 #else
-static SVECTOR _gShelterB1GolemFreezer1MeetingObstacleCollisionNormals[1];
+static SVECTOR _gShelterB1GolemFreezer1MeetingObstacleCollisionNormals[SHELTER_B1_GOLEM_FREEZER_1_OBSTACLE_FACE_COUNT];
 #endif
 PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01154_normals", _gShelterB1GolemFreezer1MeetingObstacleCollisionNormals);
 
@@ -119,7 +119,7 @@ static SVECTOR _gShelterB1GolemFreezer1MeetingObstacleCollisionVerts[SHELTER_B1_
 #include "assets/shelter_b1_golem_freezer_1_collision_01154_verts.inc"
 };
 #else
-static SVECTOR _gShelterB1GolemFreezer1MeetingObstacleCollisionVerts[4];
+static SVECTOR _gShelterB1GolemFreezer1MeetingObstacleCollisionVerts[SHELTER_B1_GOLEM_FREEZER_1_OBSTACLE_VERTEX_COUNT];
 #endif
 PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01154_verts", _gShelterB1GolemFreezer1MeetingObstacleCollisionVerts);
 
@@ -129,7 +129,7 @@ static WorldCollisionGridFace _gShelterB1GolemFreezer1MeetingObstacleCollisionFa
 #include "assets/shelter_b1_golem_freezer_1_collision_01154_faces.inc"
 };
 #else
-static WorldCollisionGridFace _gShelterB1GolemFreezer1MeetingObstacleCollisionFaces[1];
+static WorldCollisionGridFace _gShelterB1GolemFreezer1MeetingObstacleCollisionFaces[SHELTER_B1_GOLEM_FREEZER_1_OBSTACLE_FACE_COUNT];
 #endif
 PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01154_faces", _gShelterB1GolemFreezer1MeetingObstacleCollisionFaces);
 

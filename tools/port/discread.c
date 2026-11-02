@@ -7,6 +7,7 @@ int main(int argc, char** argv)
     PeDisc* d = peDiscOpen(argv[1]);
     if (!d) { fprintf(stderr, "cannot open\n"); return 1; }
     size_t n;
+    if (argc > 5) { uint8_t* f = peDiscReadFile(d, argv[5], &n); if (!f) return 3; fwrite(f, 1, n, stdout); return 0; }
     uint8_t* p = peDiscReadPackage(d, atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), &n);
     if (!p) { fprintf(stderr, "not found\n"); return 3; }
     fwrite(p, 1, n, stdout);

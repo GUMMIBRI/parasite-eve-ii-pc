@@ -78,7 +78,7 @@ static SVECTOR _gShelterB6GrowthRoomCollisionBoxTemplateNormals[SHELTER_B6_GROWT
 #include "assets/shelter_b6_growth_room_collision_01C74_normals.inc"
 };
 #else
-static SVECTOR _gShelterB6GrowthRoomCollisionBoxTemplateNormals[4];
+static SVECTOR _gShelterB6GrowthRoomCollisionBoxTemplateNormals[SHELTER_B6_GROWTH_ROOM_BOX_FACE_COUNT];
 #endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_01C74_normals", _gShelterB6GrowthRoomCollisionBoxTemplateNormals);
 
@@ -88,7 +88,7 @@ static SVECTOR _gShelterB6GrowthRoomCollisionBoxTemplateVerts[SHELTER_B6_GROWTH_
 #include "assets/shelter_b6_growth_room_collision_01C74_verts.inc"
 };
 #else
-static SVECTOR _gShelterB6GrowthRoomCollisionBoxTemplateVerts[8];
+static SVECTOR _gShelterB6GrowthRoomCollisionBoxTemplateVerts[SHELTER_B6_GROWTH_ROOM_BOX_VERTEX_COUNT];
 #endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_01C74_verts", _gShelterB6GrowthRoomCollisionBoxTemplateVerts);
 
@@ -98,7 +98,7 @@ static WorldCollisionGridFace _gShelterB6GrowthRoomCollisionBoxTemplateFaces[SHE
 #include "assets/shelter_b6_growth_room_collision_01C74_faces.inc"
 };
 #else
-static WorldCollisionGridFace _gShelterB6GrowthRoomCollisionBoxTemplateFaces[4];
+static WorldCollisionGridFace _gShelterB6GrowthRoomCollisionBoxTemplateFaces[SHELTER_B6_GROWTH_ROOM_BOX_FACE_COUNT];
 #endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_01C74_faces", _gShelterB6GrowthRoomCollisionBoxTemplateFaces);
 

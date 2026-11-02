@@ -16,7 +16,7 @@ ELEM = {'TmdBone': 36, 'SVECTOR': 8, 'u32': 4, 'u16': 2, 's16': 2, 'GridFace': 1
         'AnimationPackedPose': 12, 'AnimationPackedRotation': 4, 'GridPointer': 4}
 pat = re.compile(
     r'^(?P<head>[^\n=;{}#]*\b(?P<name>\w+)\s*(?P<dim>\[[^\]\n]*\])?(?P<attr>(?:\s*(?:SECTION|ALIGN|__attribute__)\([^\n=]*?\))*\s*))=\s*\{[ \t]*\n'
-    r'(?P<mid>(?:[ \t]*#(?:undef|define)[^\n]*\n)*)#include "assets/(?P<key>[A-Za-z0-9_]+)\.inc"\n(?:[ \t]*\n)*\};', re.M)
+    r'(?P<mid>(?:[ \t]*#(?:undef|define)[^\n]*\n)*)#include "assets/(?P<key>[A-Za-z0-9_/]+)\.inc"\n(?:[ \t]*\n)*\};', re.M)
 cellmacro = re.compile(r'#define\s+\w+\((\w+)\)\s*\(&(\w+)\[\(\1\)\]\)')
 done = skipped = 0
 for path in glob.glob('src/**/*.c', recursive=True) + glob.glob('src/**/*.h', recursive=True):
@@ -30,8 +30,8 @@ for path in glob.glob('src/**/*.c', recursive=True) + glob.glob('src/**/*.h', re
             skipped += 1
             continue
         head = re.sub(r'\bconst\b\s*', '', m['head'])
-        count = part['size'] // ELEM[part['type']]
-        dim = f"[{count}]"
+        count = part['size'] // part['elem']
+        dim = f"[{count}]" if m['dim'] else ""
         decl = f"{head[:m.start('dim') - m.start('head')] if m['dim'] else head.rstrip()}"
         # rebuild: everything of the head up to the name, then the dimension, then the attributes
         before = re.sub(r'\bconst\b\s*', '', s[m.start('head'):m.start('name')])

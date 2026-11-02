@@ -578,6 +578,22 @@ def checkpoint_command(debugger, command, result, internal_dict):
 def transition_command(debugger, command, result, internal_dict):
     """Read the retained mode descriptor and session state after a fault."""
     target = debugger.GetSelectedTarget()
+    unavailable = []
+
+    def read(value, unsigned=False):
+        # LLDB returns zero for invalid SBValues too. Keep missing debug info
+        # distinct from a real zero (especially HP and the player task slot).
+        if not value.IsValid() or value.GetError().Fail():
+            unavailable.append(value.GetName() or "<unknown>")
+            return None
+        error = lldb.SBError()
+        number = value.GetValueAsUnsigned(error) if unsigned else value.GetValueAsSigned(error)
+        if error.Fail():
+            unavailable.append(value.GetName() or "<unknown>")
+            return None
+        return number
+
+    import lldb
     # The pointer to this singleton can be folded away in optimized builds.
     state = target.FindFirstGlobalVariable("_gStageTransitionStorage")
     if not state.IsValid() or state.GetError().Fail():
@@ -586,24 +602,23 @@ def transition_command(debugger, command, result, internal_dict):
     descriptor = state.GetChildMemberWithName("taskDesc").Dereference()
     callback = descriptor.GetChildMemberWithName("callback").GetValueAsUnsigned()
     status = target.FindFirstGlobalVariable("gPlayerStatus")
-    snapshot = {name: state.GetChildMemberWithName(name).GetValueAsSigned()
+    snapshot = {name: read(state.GetChildMemberWithName(name))
                 for name in ("entryMode", "spawnArg1", "transitionKind")}
-    snapshot["hp"] = status.GetChildMemberWithName("hp").GetValueAsSigned()
+    snapshot["hp"] = read(status.GetChildMemberWithName("hp"))
     snapshot["callback"] = target.ResolveLoadAddress(callback).GetSymbol().GetName() or ""
     session = target.FindFirstGlobalVariable("gGameSession").Dereference()
-    snapshot["location"] = {name: session.GetChildMemberWithName("location").GetChildMemberWithName(name).GetValueAsSigned()
+    snapshot["location"] = {name: read(session.GetChildMemberWithName("location").GetChildMemberWithName(name))
                             for name in ("stage", "area", "roomState", "variant")}
     display = target.FindFirstGlobalVariable("gDisplayState")
-    snapshot["display"] = {name: display.GetChildMemberWithName(name).GetValueAsSigned()
+    snapshot["display"] = {name: read(display.GetChildMemberWithName(name))
                            for name in ("demoScene", "gameMode", "pendingMode")}
-    snapshot["deathVariant"] = session.GetChildMemberWithName("deathVariant").GetValueAsSigned()
+    snapshot["deathVariant"] = read(session.GetChildMemberWithName("deathVariant"))
     # Keep crash diagnostics usable even when collect() cannot find a player.
-    import lldb
-    snapshot["playerTask"] = session.GetChildMemberWithName("ptrSlots").GetChildAtIndex(3).GetValueAsUnsigned()
-    snapshot["display"].update({name: display.GetChildMemberWithName(name).GetValueAsSigned()
+    snapshot["playerTask"] = read(session.GetChildMemberWithName("ptrSlots").GetChildAtIndex(3), unsigned=True)
+    snapshot["display"].update({name: read(display.GetChildMemberWithName(name))
                                 for name in ("displayOwner", "holdState", "holdCount")})
     combat = target.FindFirstGlobalVariable("gSceneCombatState")
-    snapshot["combat"] = {name: combat.GetChildMemberWithName(name).GetValueAsSigned()
+    snapshot["combat"] = {name: read(combat.GetChildMemberWithName(name))
                           for name in ("actorControl", "battleRefs")}
     for symbol_name in ("Psyz_PadsOverride.padFrame", "_Psyz_PadsOverride.padFrame"):
         symbols = target.FindSymbols(symbol_name)
@@ -634,6 +649,8 @@ def transition_command(debugger, command, result, internal_dict):
                          "address": address})
             node = task.GetChildMemberWithName("node").GetChildMemberWithName("next")
         snapshot["taskLists"][label] = rows
+    if unavailable:
+        snapshot["unavailableDebugValues"] = sorted(set(unavailable))
     result.AppendMessage("PE2_TRANSITION " + json.dumps(snapshot, sort_keys=True))
 
 

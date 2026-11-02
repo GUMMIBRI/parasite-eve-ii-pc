@@ -1315,9 +1315,14 @@ static TmdSource _gDryfieldDilapidatedHouseModel08D0C = {
 ///
 /// The morph applies these signed game-unit deltas with a Q12 weight. Fourth
 /// halfwords are unused; the model's final eight vertices receive no deltas.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldDilapidatedHouseAttachmentMorphVertexDeltas[32] = {
 #include "assets/dryfield_dilapidated_house_morph_08FDC.inc"
 };
+#else
+static SVECTOR _gDryfieldDilapidatedHouseAttachmentMorphVertexDeltas[32];
+#endif
+PE_ASSET_BIND("dryfield_dilapidated_house_morph_08FDC", _gDryfieldDilapidatedHouseAttachmentMorphVertexDeltas);
 
 /// Shared vertex-only deformation of the player's scripted model attachment.
 ///

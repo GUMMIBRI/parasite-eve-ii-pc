@@ -1,4 +1,5 @@
 #include "mc.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <romio.h>
@@ -767,9 +768,14 @@ static u16 _gMcTitleSymbolGlyphs[34] = {
 /// Saving rebuilds the title and checksums all 512 bytes. The SDK writes the
 /// complete header when creating a file; loading checksums a temporary header
 /// without replacing this resident template. Title appends remain unchecked.
+#ifdef PE_EMBED_ASSETS
 static _McCardFileHeader _gMcFileHeader = {
 #include "assets/mc_save_header.inc"
 };
+#else
+static _McCardFileHeader _gMcFileHeader;
+#endif
+PE_ASSET_BIND("mc_save_header", _gMcFileHeader);
 
 /// Resident sections in on-card order: header, save, player, five stage banks and nibble flags.
 ///

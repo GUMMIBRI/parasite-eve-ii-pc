@@ -1,4 +1,5 @@
 #include "stages/akropolis/rooms/plaza.h"
+#include "port/asset_bind.h"
 
 #include "config.h"
 #include "../../room_ids.h"
@@ -310,44 +311,74 @@ enum {
 static s32 _gAkropolisPlazaTraversalCameraSampleCount = CAMERA_TRAVERSAL_FRAME_COUNT * CAMERA_SAMPLES_PER_FRAME;
 
 /// The traversal's camera, frame by frame along both of its movies.
+#ifdef PE_EMBED_ASSETS
 static ViewCamera _gAkropolisPlazaTraversalCameraSamples[CAMERA_TRAVERSAL_FRAME_COUNT * CAMERA_SAMPLES_PER_FRAME] = {
 #include "assets/rooms/akropolis/plaza/traversal_camera_path.inc"
 };
+#else
+static ViewCamera _gAkropolisPlazaTraversalCameraSamples[800];
+#endif
+PE_ASSET_BIND("rooms/akropolis/plaza/traversal_camera_path", _gAkropolisPlazaTraversalCameraSamples);
 
 /// The camera at the helicopter wreck.
+#ifdef PE_EMBED_ASSETS
 static ViewCamera _gAkropolisPlazaHelicopterWreckCameraSamples[CAMERA_HELICOPTER_WRECK_FRAME_COUNT * CAMERA_SAMPLES_PER_FRAME] = {
 #include "assets/rooms/akropolis/plaza/helicopter_wreck_camera_path.inc"
 };
+#else
+static ViewCamera _gAkropolisPlazaHelicopterWreckCameraSamples[240];
+#endif
+PE_ASSET_BIND("rooms/akropolis/plaza/helicopter_wreck_camera_path", _gAkropolisPlazaHelicopterWreckCameraSamples);
 
 /// Unread: the number of samples in the path after it.
 static s32 _gAkropolisPlazaOfficersTalkCameraSampleCount = CAMERA_OFFICERS_TALK_FRAME_COUNT * CAMERA_SAMPLES_PER_FRAME;
 
 /// The camera while the officer and the sergeant talk, after Aya has gone in.
+#ifdef PE_EMBED_ASSETS
 static ViewCamera _gAkropolisPlazaOfficersTalkCameraSamples[CAMERA_OFFICERS_TALK_FRAME_COUNT * CAMERA_SAMPLES_PER_FRAME] = {
 #include "assets/rooms/akropolis/plaza/officers_talk_camera_path.inc"
 };
+#else
+static ViewCamera _gAkropolisPlazaOfficersTalkCameraSamples[300];
+#endif
+PE_ASSET_BIND("rooms/akropolis/plaza/officers_talk_camera_path", _gAkropolisPlazaOfficersTalkCameraSamples);
 
 /// Unread: the number of samples in the path after it.
 static s32 _gAkropolisPlazaEntranceOfficerTalkCameraSampleCount = CAMERA_ENTRANCE_OFFICER_TALK_FRAME_COUNT * CAMERA_SAMPLES_PER_FRAME;
 
 /// The camera while Aya talks to the officer at the entrance.
+#ifdef PE_EMBED_ASSETS
 static ViewCamera _gAkropolisPlazaEntranceOfficerTalkCameraSamples[CAMERA_ENTRANCE_OFFICER_TALK_FRAME_COUNT * CAMERA_SAMPLES_PER_FRAME] = {
 #include "assets/rooms/akropolis/plaza/entrance_officer_talk_camera_path.inc"
 };
+#else
+static ViewCamera _gAkropolisPlazaEntranceOfficerTalkCameraSamples[32];
+#endif
+PE_ASSET_BIND("rooms/akropolis/plaza/entrance_officer_talk_camera_path", _gAkropolisPlazaEntranceOfficerTalkCameraSamples);
 
 /// Unread: the number of samples in the path after it.
 static s32 _gAkropolisPlazaEnteringTowerCameraSampleCount = CAMERA_ENTERING_TOWER_FRAME_COUNT * CAMERA_SAMPLES_PER_FRAME;
 
 /// The camera as Aya walks into the tower.
+#ifdef PE_EMBED_ASSETS
 static ViewCamera _gAkropolisPlazaEnteringTowerCameraSamples[CAMERA_ENTERING_TOWER_FRAME_COUNT * CAMERA_SAMPLES_PER_FRAME] = {
 #include "assets/rooms/akropolis/plaza/entering_tower_camera_path.inc"
 };
+#else
+static ViewCamera _gAkropolisPlazaEnteringTowerCameraSamples[100];
+#endif
+PE_ASSET_BIND("rooms/akropolis/plaza/entering_tower_camera_path", _gAkropolisPlazaEnteringTowerCameraSamples);
 
 /// The traversal's shot positions, one per movie frame: where its collision walls stand and the edges are measured
 /// from.
+#ifdef PE_EMBED_ASSETS
 static VECTOR3 _gAkropolisPlazaTraversalShotPositions[CAMERA_TRAVERSAL_FRAME_COUNT] = {
 #include "assets/rooms/akropolis/plaza/traversal_shot_positions.inc"
 };
+#else
+static VECTOR3 _gAkropolisPlazaTraversalShotPositions[CAMERA_TRAVERSAL_FRAME_COUNT];
+#endif
+PE_ASSET_BIND("rooms/akropolis/plaza/traversal_shot_positions", _gAkropolisPlazaTraversalShotPositions);
 
 #include "assets/rooms/akropolis/plaza/clips.inc"
 #include "assets/rooms/akropolis/plaza/samples.inc"

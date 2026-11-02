@@ -54,5 +54,37 @@ for raw, outs, load, source, extra in nc.collision_includes(V):
                           'source': source, 'part': piece['name'], 'offset': piece['offset'],
                           'size': piece['size'], 'type': 'SVECTOR' if piece['name'] == 'vectors' else 'GridFace',
                           'op': 'copy'})
+# Assets embedded in a unit's data (asset_data.EMBEDDED_ASSETS): a slice of a package, or of the executable.
+import importlib.util, struct
+_spec = importlib.util.spec_from_file_location('asset_data', 'tools/peassets/asset_data.py')
+_data = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_data)
+for raw, out, width in nc.asset_includes(V):
+    aid = out.relative_to('build/include/assets').with_suffix('').as_posix()
+    rec = _data.EMBEDDED_ASSETS[aid]
+    src = rec['source']
+    container = Path('assets/USA/pe2pkg') / src if src.endswith('.pe2pkg') else Path('assets/USA') / src
+    blob, data = raw.read_bytes(), container.read_bytes()
+    at = data.find(blob)
+    if at < 0:
+        raise SystemExit(f'{aid}: not found in {src}')
+    if data.find(blob, at + 1) >= 0:      # several identical slices: the include's own name carries the offset
+        import re
+        m = re.search(r'_([0-9A-F]{4,5})$', aid)
+        at = int(m.group(1), 16) if m and data[int(m.group(1), 16):][:len(blob)] == blob else at
+    if width == 'TmdBone':
+        elem, typ = 36, 'TmdBone'
+    elif isinstance(width, int):
+        elem, typ = width, f'u{width * 8}'
+    else:
+        elem, typ = struct.calcsize('<' + width), 'layout'
+    parts.append({'file': aid + '.inc', 'kind': 'asset', 'package': 'main.exe' if src == 'main.exe' else src.removesuffix('.pe2pkg'),
+                  'load': 0, 'source': at, 'part': 'data', 'offset': at, 'size': len(blob), 'type': typ,
+                  'elem': elem, 'op': 'copy'})
+ELEM = {'TmdBone': 36, 'SVECTOR': 8, 'u32': 4, 'u16': 2, 's16': 2, 'GridFace': 12, 'AnimationRecord': 4,
+        'AnimationPackedPose': 12, 'AnimationPackedRotation': 4, 'GridPointer': 4}
+for p_ in parts:
+    if 'elem' not in p_:
+        p_['elem'] = ELEM[p_['type']]
 json.dump(parts, sys.stdout, indent=0)
 print(f'{len(parts)} parts', file=sys.stderr)

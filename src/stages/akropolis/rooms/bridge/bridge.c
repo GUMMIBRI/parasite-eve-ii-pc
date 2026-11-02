@@ -1,4 +1,5 @@
 #include "stages/akropolis/rooms/bridge.h"
+#include "port/asset_bind.h"
 
 #include "config.h"
 
@@ -447,9 +448,14 @@ static TaskDesc _gAkropolisBridgeKeypadMovieTaskDesc = {
 };
 
 /// Raw movie samples supplying the bridge enemies' presentation height.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gAkropolisBridgeMovieEnemyHeightPath[190] = {
 #include "assets/rooms/akropolis/bridge/keypad_movie_enemy_heights.inc"
 };
+#else
+static SVECTOR _gAkropolisBridgeMovieEnemyHeightPath[190];
+#endif
+PE_ASSET_BIND("rooms/akropolis/bridge/keypad_movie_enemy_heights", _gAkropolisBridgeMovieEnemyHeightPath);
 
 /// Bodyless keypad cursor recipe, borrowed until the keypad closes its cursor.
 static TaskDesc _gAkropolisBridgeKeypadCursorTaskDesc = {

@@ -285,27 +285,42 @@ TmdSource gAya10200SecondPairHand1Model = {
 /// tools/buildsteps/gen_model_source.py.
 #include "assets/characters/aya/10200/body.inc"
 
+#ifdef PE_EMBED_ASSETS
 static u_long _gAya10200Image06AC4[] = {
 #include "assets/aya_10200_image_06AC4.inc"
 };
+#else
+static u_long _gAya10200Image06AC4[200];
+#endif
+PE_ASSET_BIND("aya_10200_image_06AC4", _gAya10200Image06AC4);
 /// One open-eyes frame followed by the upload terminator; the destination is rewritten at playback.
 static GpuImageUpload _gAya10200EyesOpenUploads[] = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, AYA_10200_EYES_FRAME_WIDTH_WORDS, AYA_10200_EYES_FRAME_HEIGHT_ROWS }, _gAya10200Image06AC4 },
     { GPU_IMAGE_UPLOAD_END },
 };
 
+#ifdef PE_EMBED_ASSETS
 static u_long _gAya10200Image06E04[] = {
 #include "assets/aya_10200_image_06E04.inc"
 };
+#else
+static u_long _gAya10200Image06E04[200];
+#endif
+PE_ASSET_BIND("aya_10200_image_06E04", _gAya10200Image06E04);
 /// One half-closed-eyes frame followed by the upload terminator; the destination is rewritten at playback.
 static GpuImageUpload _gAya10200EyesHalfClosedUploads[] = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, AYA_10200_EYES_FRAME_WIDTH_WORDS, AYA_10200_EYES_FRAME_HEIGHT_ROWS }, _gAya10200Image06E04 },
     { GPU_IMAGE_UPLOAD_END },
 };
 
+#ifdef PE_EMBED_ASSETS
 static u_long _gAya10200Image07144[] = {
 #include "assets/aya_10200_image_07144.inc"
 };
+#else
+static u_long _gAya10200Image07144[200];
+#endif
+PE_ASSET_BIND("aya_10200_image_07144", _gAya10200Image07144);
 /// One closed-eyes frame followed by the upload terminator; the destination is rewritten at playback.
 static GpuImageUpload _gAya10200EyesClosedUploads[] = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, AYA_10200_EYES_FRAME_WIDTH_WORDS, AYA_10200_EYES_FRAME_HEIGHT_ROWS }, _gAya10200Image07144 },
@@ -313,9 +328,14 @@ static GpuImageUpload _gAya10200EyesClosedUploads[] = {
 };
 
 /// Default mouth frame: packed 8-bit indices, two texels per VRAM word and four per u_long.
+#ifdef PE_EMBED_ASSETS
 static u_long _gAya10200MouthRestPixels[AYA_10200_MOUTH_FRAME_WIDTH_WORDS * AYA_10200_MOUTH_FRAME_HEIGHT_ROWS / 2] = {
 #include "assets/aya_10200_image_07484.inc"
 };
+#else
+static u_long _gAya10200MouthRestPixels[140];
+#endif
+PE_ASSET_BIND("aya_10200_image_07484", _gAya10200MouthRestPixels);
 /// One default mouth frame followed by the upload terminator; the destination is rewritten at playback.
 static GpuImageUpload _gAya10200MouthRestUploads[] = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, AYA_10200_MOUTH_FRAME_WIDTH_WORDS, AYA_10200_MOUTH_FRAME_HEIGHT_ROWS }, _gAya10200MouthRestPixels },
@@ -323,9 +343,14 @@ static GpuImageUpload _gAya10200MouthRestUploads[] = {
 };
 
 /// Alternate mouth selector's packed 8-bit frame, identical to the default frame in this package.
+#ifdef PE_EMBED_ASSETS
 static u_long _gAya10200MouthAlternatePixels[AYA_10200_MOUTH_FRAME_WIDTH_WORDS * AYA_10200_MOUTH_FRAME_HEIGHT_ROWS / 2] = {
 #include "assets/aya_10200_image_07484.inc"
 };
+#else
+static u_long _gAya10200MouthAlternatePixels[140];
+#endif
+PE_ASSET_BIND("aya_10200_image_07484", _gAya10200MouthAlternatePixels);
 /// One alternate mouth frame followed by the upload terminator; the destination is rewritten at playback.
 static GpuImageUpload _gAya10200MouthAlternateUploads[] = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, AYA_10200_MOUTH_FRAME_WIDTH_WORDS, AYA_10200_MOUTH_FRAME_HEIGHT_ROWS }, _gAya10200MouthAlternatePixels },

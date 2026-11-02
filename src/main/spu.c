@@ -1,4 +1,5 @@
 #include "sound.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libspu.h>
@@ -178,9 +179,14 @@ static void _spuKeyOnSilentBlock(u32 voiceIdx);
 /// Three encoded 16-byte blocks are uploaded once at `SPU_SILENT_BLOCK_ADDRESS`
 /// before voice initialization. Voice resets select that same SPU byte address
 /// for both start and loop; the encoded bytes stay resident for the boot upload.
+#ifdef PE_EMBED_ASSETS
 static u8 _gSpuSilentLoopAdpcm[] = {
 #include "assets/spu_voice_block.inc"
 };
+#else
+static u8 _gSpuSilentLoopAdpcm[48];
+#endif
+PE_ASSET_BIND("spu_voice_block", _gSpuSilentLoopAdpcm);
 STATIC_ASSERT_SIZEOF(_gSpuSilentLoopAdpcm, 48);
 
 /// Selects the same SPU byte address for a queued voice's start and loop.

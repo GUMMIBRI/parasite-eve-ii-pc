@@ -184,18 +184,28 @@ enum { ACTOR_503500_SLIDER_PATH_SAMPLES = 360 };
 /// Signed halfwords are absolute coordinates in the model root's parent frame.
 /// Path selector 1 resets the timer to zero; the update consumes samples 0..359
 /// and then stops. Y is left unchanged; the table remains separate from path 2.
+#ifdef PE_EMBED_ASSETS
 static DVECTOR_XZ _gActor503500SliderPathFirst[ACTOR_503500_SLIDER_PATH_SAMPLES] = {
 #include "assets/actor_503500_motion_15F70.inc"
 };
+#else
+static DVECTOR_XZ _gActor503500SliderPathFirst[ACTOR_503500_SLIDER_PATH_SAMPLES];
+#endif
+PE_ASSET_BIND("actor_503500_motion_15F70", _gActor503500SliderPathFirst);
 
 /// Second slab's 360 X/Z positions for the staff-card scene, one per actor update.
 ///
 /// Signed halfwords are absolute coordinates in the model root's parent frame.
 /// Path selector 2 resets the timer to zero; the update uses path 1's equal extent
 /// as its bound and leaves Y unchanged. Stored separately from the first path.
+#ifdef PE_EMBED_ASSETS
 static DVECTOR_XZ _gActor503500SliderPathSecond[ACTOR_503500_SLIDER_PATH_SAMPLES] = {
 #include "assets/actor_503500_motion_16510.inc"
 };
+#else
+static DVECTOR_XZ _gActor503500SliderPathSecond[ACTOR_503500_SLIDER_PATH_SAMPLES];
+#endif
+PE_ASSET_BIND("actor_503500_motion_16510", _gActor503500SliderPathSecond);
 
 static void _actor503500SliderInit(Task* task);
 

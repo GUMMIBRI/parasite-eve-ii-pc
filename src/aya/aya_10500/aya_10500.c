@@ -347,9 +347,14 @@ TmdSource gAya10500BodyModel = {
     .stream              = _gAya10500BodyModelStream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static u_long _gAya10500Aya10200Image06AC4[] = {
 #include "assets/aya_10200_image_06AC4.inc"
 };
+#else
+static u_long _gAya10500Aya10200Image06AC4[200];
+#endif
+PE_ASSET_BIND("aya_10200_image_06AC4", _gAya10500Aya10200Image06AC4);
 /// One open-eyes upload and its terminator; playback supplies the texture-relative destination.
 ///
 /// Records remain writable, and their packed 8-bit pixels stay loaded until
@@ -359,18 +364,28 @@ static GpuImageUpload _gAya10500EyesOpenUploads[2] = {
     { GPU_IMAGE_UPLOAD_END },
 };
 
+#ifdef PE_EMBED_ASSETS
 static u_long _gAya10500Aya10200Image06E04[] = {
 #include "assets/aya_10200_image_06E04.inc"
 };
+#else
+static u_long _gAya10500Aya10200Image06E04[200];
+#endif
+PE_ASSET_BIND("aya_10200_image_06E04", _gAya10500Aya10200Image06E04);
 /// One half-closed-eyes upload and its terminator, with writable destination and borrowed pixels.
 static GpuImageUpload _gAya10500EyesHalfClosedUploads[2] = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, AYA_10500_EYES_FRAME_WIDTH_WORDS, AYA_10500_EYES_FRAME_HEIGHT_ROWS }, _gAya10500Aya10200Image06E04 },
     { GPU_IMAGE_UPLOAD_END },
 };
 
+#ifdef PE_EMBED_ASSETS
 static u_long _gAya10500Aya10200Image07144[] = {
 #include "assets/aya_10200_image_07144.inc"
 };
+#else
+static u_long _gAya10500Aya10200Image07144[200];
+#endif
+PE_ASSET_BIND("aya_10200_image_07144", _gAya10500Aya10200Image07144);
 /// One closed-eyes upload and its terminator, with writable destination and borrowed pixels.
 static GpuImageUpload _gAya10500EyesClosedUploads[2] = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, AYA_10500_EYES_FRAME_WIDTH_WORDS, AYA_10500_EYES_FRAME_HEIGHT_ROWS }, _gAya10500Aya10200Image07144 },
@@ -378,9 +393,14 @@ static GpuImageUpload _gAya10500EyesClosedUploads[2] = {
 };
 
 /// Resting mouth pixels: packed 8-bit palette indices, four texels per u_long.
+#ifdef PE_EMBED_ASSETS
 static u_long _gAya10500MouthRestPixels[AYA_10500_MOUTH_FRAME_WIDTH_WORDS * AYA_10500_MOUTH_FRAME_HEIGHT_ROWS / 2] = {
 #include "assets/aya_10200_image_07484.inc"
 };
+#else
+static u_long _gAya10500MouthRestPixels[140];
+#endif
+PE_ASSET_BIND("aya_10200_image_07484", _gAya10500MouthRestPixels);
 /// One resting-mouth upload and its terminator, with writable destination and borrowed pixels.
 static GpuImageUpload _gAya10500MouthRestUploads[2] = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, AYA_10500_MOUTH_FRAME_WIDTH_WORDS, AYA_10500_MOUTH_FRAME_HEIGHT_ROWS }, _gAya10500MouthRestPixels },
@@ -388,9 +408,14 @@ static GpuImageUpload _gAya10500MouthRestUploads[2] = {
 };
 
 /// Alternate mouth selector's packed 8-bit pixels, identical here to the resting mouth.
+#ifdef PE_EMBED_ASSETS
 static u_long _gAya10500MouthAlternatePixels[AYA_10500_MOUTH_FRAME_WIDTH_WORDS * AYA_10500_MOUTH_FRAME_HEIGHT_ROWS / 2] = {
 #include "assets/aya_10200_image_07484.inc"
 };
+#else
+static u_long _gAya10500MouthAlternatePixels[140];
+#endif
+PE_ASSET_BIND("aya_10200_image_07484", _gAya10500MouthAlternatePixels);
 /// One alternate-mouth upload and its terminator, with writable destination and borrowed pixels.
 static GpuImageUpload _gAya10500MouthAlternateUploads[2] = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, AYA_10500_MOUTH_FRAME_WIDTH_WORDS, AYA_10500_MOUTH_FRAME_HEIGHT_ROWS }, _gAya10500MouthAlternatePixels },

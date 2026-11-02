@@ -68,9 +68,14 @@ static WorldCoordRoomLights  _gDryfieldBreezewayRoomLights;
 /// Hanging-line palette: 256 RGB555 entries packed two per word (512 bytes).
 ///
 /// Borrowed by the GPU until its complete transfer finishes; keep this room loaded.
+#ifdef PE_EMBED_ASSETS
 static u_long _gDryfieldBreezewayKeyItemLineClut[128] = {
 #include "assets/dryfield_breezeway_clut_05984.inc"
 };
+#else
+static u_long _gDryfieldBreezewayKeyItemLineClut[128];
+#endif
+PE_ASSET_BIND("dryfield_breezeway_clut_05984", _gDryfieldBreezewayKeyItemLineClut);
 
 const GpuImageUpload gDryfieldBreezewayKeyItemLineClutUploads[2] SECTION(".data") = {
     { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 256, ARRAY_SIZE(_gDryfieldBreezewayKeyItemLineClut) * 2, 1 }, _gDryfieldBreezewayKeyItemLineClut },

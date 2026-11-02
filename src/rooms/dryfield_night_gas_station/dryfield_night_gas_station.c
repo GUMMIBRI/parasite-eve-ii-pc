@@ -1033,9 +1033,14 @@ enum { DRYFIELD_NIGHT_GAS_STATION_TRACK_FLICKER_HIDDEN_BIT = 1 };
 /// turn around Y and adding its room-space offset. Independently, the flicker
 /// task loops the same samples: vx bit zero set hides its sprites, clear shows
 /// them. XYZ use game-coordinate units; the fourth halfword is retained zero.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGasStationRedStreakTrack[100] = {
 #include "assets/dryfield_night_gas_station_motion_0AFC0.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGasStationRedStreakTrack[100];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_motion_0AFC0", _gDryfieldNightGasStationRedStreakTrack);
 
 static void _dryfieldNightGasStationTrackRedStreakTask(Task* task);
 static void _dryfieldNightGasStationSpriteFlickerTask(Task* task);

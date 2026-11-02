@@ -523,13 +523,23 @@ static TmdSource _gActor303600Model0814C = {
     _gActor303600Model0814CStream,
 };
 
+#ifdef PE_EMBED_ASSETS
 const Actor303600RotSample gActor303600SceneFigureRotationSamples[ACTOR_303600_ROT_SAMPLE_COUNT] SECTION(".data") = {
 #include "assets/rooms/shelter/b2_pod_bottom/ending_figure_rotation_track.inc"
 };
+#else
+Actor303600RotSample gActor303600SceneFigureRotationSamples[1400] SECTION(".data");
+#endif
+PE_ASSET_BIND("rooms/shelter/b2_pod_bottom/ending_figure_rotation_track", gActor303600SceneFigureRotationSamples);
 
+#ifdef PE_EMBED_ASSETS
 const Actor303600ViewKey gActor303600SceneCameraKeys[ACTOR_303600_VIEW_KEY_COUNT] SECTION(".data") = {
 #include "assets/rooms/shelter/b2_pod_bottom/ending_camera_track.inc"
 };
+#else
+Actor303600ViewKey gActor303600SceneCameraKeys[6840] SECTION(".data");
+#endif
+PE_ASSET_BIND("rooms/shelter/b2_pod_bottom/ending_camera_track", gActor303600SceneCameraKeys);
 
 TaskDesc gActor303600ShaftTaskDescriptors[ACTOR_303600_SHAFT_DESCRIPTOR_COUNT] = {
     [ACTOR_303600_SHAFT_ROOT_DESCRIPTOR] = {

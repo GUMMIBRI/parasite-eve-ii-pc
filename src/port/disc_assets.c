@@ -132,6 +132,17 @@ static uint8_t* readFilePackage(PeDisc* d, uint32_t sector, size_t* size)
     return NULL;
 }
 
+uint8_t* peDiscReadFile(PeDisc* d, const char* name, size_t* size)
+{
+    uint32_t lba, bytes;
+    if (!isoFind(d, name, &lba, &bytes)) return NULL;
+    uint8_t* out = malloc(((size_t)bytes + SECTOR_USER - 1) / SECTOR_USER * SECTOR_USER);
+    for (uint32_t i = 0; i * SECTOR_USER < bytes; i++)
+        if (!readSector(d, lba + i, out + (size_t)i * SECTOR_USER)) { free(out); return NULL; }
+    *size = bytes;
+    return out;
+}
+
 uint8_t* peDiscReadPackage(PeDisc* d, int stage, int folder, int file, size_t* size)
 {
     if (stage < 0 || stage > 5 || !d->cdfStart[stage]) return NULL;

@@ -17,6 +17,9 @@ void    peDiscClose(PeDisc* disc);
  * chunk is not present on this disc. */
 uint8_t* peDiscReadPackage(PeDisc* disc, int stage, int folder, int file, size_t* size);
 
+/* Reads a whole file from the ISO 9660 root directory (e.g. "SLUS_010.42"). malloc'd; caller frees. */
+uint8_t* peDiscReadFile(PeDisc* disc, const char* name, size_t* size);
+
 /* One-shot LZSS decoder for the game's package/image streams (see tools/peassets/lzss.py). */
 uint8_t* peLzssDecode(const uint8_t* in, size_t inSize, size_t* outSize);
 #endif

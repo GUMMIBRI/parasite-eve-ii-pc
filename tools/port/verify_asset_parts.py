@@ -50,6 +50,10 @@ def decode(part, data):
     elif t == 'AnimationPackedRotation':
         for (w,) in struct.iter_unpack('<I', b):
             out += (signed(w, 11), signed(w >> 11, 10), signed(w >> 21, 11))
+    elif t == 'u8':
+        out = list(b)
+    elif t == 'layout':
+        return None
     elif t == 'GridPointer':
         cells = next(q for q in parts if q['package'] == part['package'] and q['source'] == part['source']
                      and q['part'] == 'cells' and q['kind'] == 'collision')
@@ -61,8 +65,12 @@ def decode(part, data):
 
 cache, ok, bad, skipped = {}, 0, 0, 0
 for p in parts:
-    data = cache.setdefault(p['package'], open(f"assets/USA/pe2pkg/{p['package']}.pe2pkg", 'rb').read())
+    path = 'assets/USA/main.exe' if p['package'] == 'main.exe' else f"assets/USA/pe2pkg/{p['package']}.pe2pkg"
+    data = cache.setdefault(p['package'], open(path, 'rb').read())
     want = decode(p, data)
+    if want is None and p['type'] == 'layout':
+        skipped += 1
+        continue
     got = inc_numbers(p['file'])
     if p['type'] == 'u32':
         got = [g & 0xFFFFFFFF for g in got]

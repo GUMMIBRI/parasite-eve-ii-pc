@@ -60,7 +60,8 @@ int peAssetsLoad(struct PeDisc* disc)
         int pi = part->package;
         if (!pkgData[pi]) {
             const PeAssetPackage* pk = &gPeAssetPackages[pi];
-            pkgData[pi] = peDiscReadPackage(disc, pk->stage, pk->folder, pk->file, &pkgSize[pi]);
+            pkgData[pi] = pk->stage < 0 ? peDiscReadFile(disc, "SLUS_010.42", &pkgSize[pi])
+                                        : peDiscReadPackage(disc, pk->stage, pk->folder, pk->file, &pkgSize[pi]);
         }
         if (!pkgData[pi]) { missing++; continue; }
         if ((size_t)part->offset + part->size > pkgSize[pi]) {

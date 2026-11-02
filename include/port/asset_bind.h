@@ -21,7 +21,7 @@ typedef struct PeAssetBinding {
 #endif
 #define PE_ASSET_BIND_AUX(key, array, auxArray)                                                         \
     static const PeAssetBinding PE_ASSET_CAT(_peAssetBinding_, __COUNTER__) PE_ASSET_SECTION __attribute__((used)) = { \
-        key, (void*)(array), sizeof(array), (auxArray) }
+        key, (void*)&(array), sizeof(array), (auxArray) }
 #define PE_ASSET_BIND(key, array) PE_ASSET_BIND_AUX(key, array, NULL)
 
 struct PeDisc;

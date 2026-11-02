@@ -1,4 +1,5 @@
 #include "actors/actor_800100.h"
+#include "port/asset_bind.h"
 #include "actors/companion.h"
 
 #include <psyz.h>
@@ -639,9 +640,14 @@ static u8 _gActor800100AttackRepeatCounts[ACTOR_800100_COMBAT_SHORT_TABLE_OUTCOM
 };
 
 /// Open-eye 8-bit texels, packed as 84 RAM words for a 21-VRAM-word by 8-row upload.
+#ifdef PE_EMBED_ASSETS
 static u_long _gActor800100EyesOpenPixels[ACTOR_800100_TEXTURE_A_WIDTH_WORDS * ACTOR_800100_TEXTURE_A_HEIGHT_ROWS / 2] = {
 #include "assets/characters/kyle/eyes_open.inc"
 };
+#else
+static u_long _gActor800100EyesOpenPixels[84];
+#endif
+PE_ASSET_BIND("characters/kyle/eyes_open", _gActor800100EyesOpenPixels);
 
 /// Terminated open-eye upload; its first destination is rewritten for the live model.
 ///
@@ -653,9 +659,14 @@ static GpuImageUpload _gActor800100EyesOpenUploads[2] = {
 };
 
 /// Half-closed-eye 8-bit texels, packed as 84 RAM words for a 21-word by 8-row upload.
+#ifdef PE_EMBED_ASSETS
 static u_long _gActor800100EyesHalfClosedPixels[ACTOR_800100_TEXTURE_A_WIDTH_WORDS * ACTOR_800100_TEXTURE_A_HEIGHT_ROWS / 2] = {
 #include "assets/characters/kyle/eyes_half_closed.inc"
 };
+#else
+static u_long _gActor800100EyesHalfClosedPixels[84];
+#endif
+PE_ASSET_BIND("characters/kyle/eyes_half_closed", _gActor800100EyesHalfClosedPixels);
 
 /// Terminated half-closed-eye upload to body texture texels (0, 40)..(41, 47).
 ///
@@ -667,9 +678,14 @@ static GpuImageUpload _gActor800100EyesHalfClosedUploads[2] = {
 };
 
 /// Closed-eye 8-bit texels, packed as 84 RAM words for a 21-word by 8-row upload.
+#ifdef PE_EMBED_ASSETS
 static u_long _gActor800100EyesClosedPixels[ACTOR_800100_TEXTURE_A_WIDTH_WORDS * ACTOR_800100_TEXTURE_A_HEIGHT_ROWS / 2] = {
 #include "assets/characters/kyle/eyes_closed.inc"
 };
+#else
+static u_long _gActor800100EyesClosedPixels[84];
+#endif
+PE_ASSET_BIND("characters/kyle/eyes_closed", _gActor800100EyesClosedPixels);
 
 /// Terminated closed-eye upload to body texture texels (0, 40)..(41, 47).
 ///
@@ -681,9 +697,14 @@ static GpuImageUpload _gActor800100EyesClosedUploads[2] = {
 };
 
 /// Closed-mouth 8-bit texels, packed as 78 RAM words for a 13-word by 12-row upload.
+#ifdef PE_EMBED_ASSETS
 static u_long _gActor800100MouthClosedPixels[ACTOR_800100_TEXTURE_B_WIDTH_WORDS * ACTOR_800100_TEXTURE_B_HEIGHT_ROWS / 2] = {
 #include "assets/characters/kyle/mouth_closed.inc"
 };
+#else
+static u_long _gActor800100MouthClosedPixels[78];
+#endif
+PE_ASSET_BIND("characters/kyle/mouth_closed", _gActor800100MouthClosedPixels);
 
 /// Terminated closed-mouth upload to body texture texels (8, 64)..(33, 75).
 ///
@@ -695,9 +716,14 @@ static GpuImageUpload _gActor800100MouthClosedUploads[2] = {
 };
 
 /// Open-mouth 8-bit texels, packed as 78 RAM words for a 13-word by 12-row upload.
+#ifdef PE_EMBED_ASSETS
 static u_long _gActor800100MouthOpenPixels[ACTOR_800100_TEXTURE_B_WIDTH_WORDS * ACTOR_800100_TEXTURE_B_HEIGHT_ROWS / 2] = {
 #include "assets/characters/kyle/mouth_open.inc"
 };
+#else
+static u_long _gActor800100MouthOpenPixels[78];
+#endif
+PE_ASSET_BIND("characters/kyle/mouth_open", _gActor800100MouthOpenPixels);
 
 /// Terminated open-mouth upload to body texture texels (8, 64)..(33, 75).
 ///

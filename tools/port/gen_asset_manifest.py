@@ -97,5 +97,20 @@ for f in sorted(inc_dir.glob('*.inc')):
             pkgs[pkg] = {'stage': stored[pkg][3], 'disc_file': stored[pkg][0], 'chunk': stored[pkg][1], **({'disc_folder': stored[pkg][2]} if stored[pkg][2] is not None else {})}
         else:
             unmapped.add(pkg)
+# Packages named only by assets embedded without an include header (parts.json, optional second argument).
+if len(sys.argv) > 2:
+    for extra in sorted({q['package'] for q in json.load(open(sys.argv[2])) if q['package'] != 'main.exe'} - set(pkgs)):
+        rec, loc = data.ASSETS.get(extra), where.get(extra)
+        if rec is not None and loc is not None:
+            wp = loc[0]
+            e = {'stage': wp[0], 'sha1': rec['sha1'], 'disc_file': int(loc[1][4:]), 'chunk': loc[2]}
+            if 'folders' in wp:
+                e['disc_folder'] = data.TREE[wp[0]]['folders'][wp[wp.index('folders') + 1]]['id']
+            pkgs[extra] = e
+        elif extra in stored:
+            pkgs[extra] = {'stage': stored[extra][3], 'disc_file': stored[extra][0], 'chunk': stored[extra][1],
+                           **({'disc_folder': stored[extra][2]} if stored[extra][2] is not None else {})}
+        else:
+            unmapped.add(extra)
 json.dump({'packages': pkgs, 'entries': entries, 'unmapped_packages': sorted(unmapped)}, sys.stdout, indent=1)
 print(f'{len(entries)} entries, {len(pkgs)} packages, {len(unmapped)} unmapped', file=sys.stderr)

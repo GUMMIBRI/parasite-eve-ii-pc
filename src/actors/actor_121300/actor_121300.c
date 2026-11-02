@@ -532,43 +532,68 @@ static s32 _gScreenWaveAmplitude = 256;
 /// Packed as 250 32-bit transfer words (50 by 20 texels). Sequence 0 installs it; sequence 2
 /// restores it after the half-closed patch. Uploaded at base VRAM (384, 320),
 /// relocated by the double's 64-word texture-page offset.
+#ifdef PE_EMBED_ASSETS
 static u_long _gActor121300EyesOpenPixels[250] = {
 #include "assets/characters/eve/eyes_open.inc"
 };
+#else
+static u_long _gActor121300EyesOpenPixels[250];
+#endif
+PE_ASSET_BIND("characters/eve/eyes_open", _gActor121300EyesOpenPixels);
 
 /// Half-closed-eye patch between the double's open and closed eye states.
 ///
 /// Packed as 250 32-bit transfer words (50 by 20 8-bit texels), uploaded at base VRAM
 /// (384, 320) on the first update of both closing and reopening sequences.
 /// The double's texture-page offset relocates X in 64-word columns.
+#ifdef PE_EMBED_ASSETS
 static u_long _gActor121300EyesHalfClosedPixels[250] = {
 #include "assets/characters/eve/eyes_half_closed.inc"
 };
+#else
+static u_long _gActor121300EyesHalfClosedPixels[250];
+#endif
+PE_ASSET_BIND("characters/eve/eyes_half_closed", _gActor121300EyesHalfClosedPixels);
 
 /// Closed-eye patch completing the double's blink-closing sequence.
 ///
 /// Packed as 250 32-bit transfer words (50 by 20 8-bit texels), uploaded at base VRAM
 /// (384, 320) on sequence 1's second update. The double's texture-page offset
 /// relocates X in 64-word columns.
+#ifdef PE_EMBED_ASSETS
 static u_long _gActor121300EyesClosedPixels[250] = {
 #include "assets/characters/eve/eyes_closed.inc"
 };
+#else
+static u_long _gActor121300EyesClosedPixels[250];
+#endif
+PE_ASSET_BIND("characters/eve/eyes_closed", _gActor121300EyesClosedPixels);
 
 /// Closed-mouth patch installed by the double's initial texture sequence.
 ///
 /// Packed as 140 32-bit transfer words (28 by 20 8-bit texels), uploaded at base VRAM
 /// (396, 416), with X relocated by the double's 64-word texture-page offset.
+#ifdef PE_EMBED_ASSETS
 static u_long _gActor121300MouthClosedPixels[140] = {
 #include "assets/characters/eve/mouth_closed.inc"
 };
+#else
+static u_long _gActor121300MouthClosedPixels[140];
+#endif
+PE_ASSET_BIND("characters/eve/mouth_closed", _gActor121300MouthClosedPixels);
 
 /// Open-mouth patch selected by the double's texture sequences 4 and 5.
 ///
 /// Packed as 140 32-bit transfer words (28 by 20 8-bit texels), uploaded at base VRAM
 /// (396, 416), with X relocated by the double's 64-word texture-page offset.
+#ifdef PE_EMBED_ASSETS
 static u_long _gActor121300MouthOpenPixels[140] = {
 #include "assets/characters/eve/mouth_open.inc"
 };
+#else
+static u_long _gActor121300MouthOpenPixels[140];
+#endif
+PE_ASSET_BIND("characters/eve/mouth_open", _gActor121300MouthOpenPixels);
 
 /// Scene update counter whose low two bits gate drift sprites every fourth update.
 ///

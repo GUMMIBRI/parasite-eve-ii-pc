@@ -697,17 +697,27 @@ AreaVariant gDryfieldToiletAreaVariants[DRYFIELD_TOILET_AREA_VARIANT_COUNT] = {
 };
 
 /// Full-ramp XYZ displacement of each Lesser Stranger vertex in model-local units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldToiletLesserStrangerMorphVertexDeltas[325] = {
 #include "assets/dryfield_toilet_morph_053C0.inc"
 };
+#else
+static SVECTOR _gDryfieldToiletLesserStrangerMorphVertexDeltas[325];
+#endif
+PE_ASSET_BIND("dryfield_toilet_morph_053C0", _gDryfieldToiletLesserStrangerMorphVertexDeltas);
 
 /// Full-ramp Lesser Stranger normal targets, with Q12 XYZ components.
 ///
 /// Only the first 1604 serialized vectors are blended. The final
 /// (0, 0, 0, 1604) record is retained; its purpose is unproven.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldToiletLesserStrangerMorphTargetNormals[1605] = {
 #include "assets/dryfield_toilet_morph_05DE8.inc"
 };
+#else
+static SVECTOR _gDryfieldToiletLesserStrangerMorphTargetNormals[1605];
+#endif
+PE_ASSET_BIND("dryfield_toilet_morph_05DE8", _gDryfieldToiletLesserStrangerMorphTargetNormals);
 
 ModelMorph gDryfieldToiletLesserStrangerMorph = {
     .vertexDeltas     = _gDryfieldToiletLesserStrangerMorphVertexDeltas,

@@ -1,4 +1,5 @@
 #include "stages/akropolis/rooms/west_elevator_hall.h"
+#include "port/asset_bind.h"
 
 #include "config.h"
 #include "../../event_flags.h"
@@ -170,9 +171,14 @@ static TaskMessageEntry _gAkropolisWestElevatorHallViewEffectMessages[2] = {
 static u16 _gAkropolisWestElevatorHallBayUnlitClut[256] = { 0 };
 
 /// The bay's palette lit.
+#ifdef PE_EMBED_ASSETS
 static u16 _gAkropolisWestElevatorHallBayLitClut[256] = {
 #include "assets/rooms/akropolis/west_elevator_hall/bay_lit_palette.inc"
 };
+#else
+static u16 _gAkropolisWestElevatorHallBayLitClut[256];
+#endif
+PE_ASSET_BIND("rooms/akropolis/west_elevator_hall/bay_lit_palette", _gAkropolisWestElevatorHallBayLitClut);
 
 /// The bay's palette between the two, as uploaded.
 static u16 _gAkropolisWestElevatorHallBayBlendedClut[256] = { 0 };

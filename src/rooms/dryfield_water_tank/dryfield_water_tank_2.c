@@ -1186,17 +1186,27 @@ AnimationSet gDryfieldWaterTankAnimation06F48 = {
 /// indices 0..51; all 82 stored samples are retained. Vector fourth halfwords
 /// are unused. The last stored sample matches the second leg's first sample,
 /// but the last consumed sample is a different position.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldWaterTankPlayerFirstLegPositions[82] = {
 #include "assets/dryfield_water_tank_motion_06F70.inc"
 };
+#else
+static SVECTOR _gDryfieldWaterTankPlayerFirstLegPositions[82];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_motion_06F70", _gDryfieldWaterTankPlayerFirstLegPositions);
 
 /// World-space player positions for the second leg of the scripted path.
 ///
 /// All 52 signed XYZ samples are consumed, one per task tick. X moves toward 2170 while
 /// Y stays -12000 and Z stays 972; vector fourth halfwords are unused.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldWaterTankPlayerSecondLegPositions[52] = {
 #include "assets/dryfield_water_tank_motion_07200.inc"
 };
+#else
+static SVECTOR _gDryfieldWaterTankPlayerSecondLegPositions[52];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_motion_07200", _gDryfieldWaterTankPlayerSecondLegPositions);
 
 /// Resumes room presentation after the movie's game resources have been restored.
 ///

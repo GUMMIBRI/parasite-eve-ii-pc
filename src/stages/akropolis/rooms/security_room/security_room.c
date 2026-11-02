@@ -1,4 +1,5 @@
 #include "stages/akropolis/rooms/security_room.h"
+#include "port/asset_bind.h"
 
 #include "config.h"
 #include "../../event_flags.h"
@@ -472,24 +473,44 @@ static TaskDesc _gAkropolisSecurityRoomUnlockSceneTaskDescs[2] = {
 static u16 _gAkropolisSecurityRoomLockIndicatorOffPalette[256] = { 0 };
 
 /// Lit 256-color RGB555 source for the left locked indicator (lamp bit 0).
+#ifdef PE_EMBED_ASSETS
 static u16 _gAkropolisSecurityRoomLeftLockedPalette[256] = {
 #include "assets/rooms/akropolis/security_room/lamp_left_locked.inc"
 };
+#else
+static u16 _gAkropolisSecurityRoomLeftLockedPalette[256];
+#endif
+PE_ASSET_BIND("rooms/akropolis/security_room/lamp_left_locked", _gAkropolisSecurityRoomLeftLockedPalette);
 
 /// Lit 256-color RGB555 source for the left released indicator (lamp bit 1).
+#ifdef PE_EMBED_ASSETS
 static u16 _gAkropolisSecurityRoomLeftReleasedPalette[256] = {
 #include "assets/rooms/akropolis/security_room/lamp_left_released.inc"
 };
+#else
+static u16 _gAkropolisSecurityRoomLeftReleasedPalette[256];
+#endif
+PE_ASSET_BIND("rooms/akropolis/security_room/lamp_left_released", _gAkropolisSecurityRoomLeftReleasedPalette);
 
 /// Lit 256-color RGB555 source for the right locked indicator (lamp bit 2).
+#ifdef PE_EMBED_ASSETS
 static u16 _gAkropolisSecurityRoomRightLockedPalette[256] = {
 #include "assets/rooms/akropolis/security_room/lamp_right_locked.inc"
 };
+#else
+static u16 _gAkropolisSecurityRoomRightLockedPalette[256];
+#endif
+PE_ASSET_BIND("rooms/akropolis/security_room/lamp_right_locked", _gAkropolisSecurityRoomRightLockedPalette);
 
 /// Lit 256-color RGB555 source for the right released indicator (lamp bit 3).
+#ifdef PE_EMBED_ASSETS
 static u16 _gAkropolisSecurityRoomRightReleasedPalette[256] = {
 #include "assets/rooms/akropolis/security_room/lamp_right_released.inc"
 };
+#else
+static u16 _gAkropolisSecurityRoomRightReleasedPalette[256];
+#endif
+PE_ASSET_BIND("rooms/akropolis/security_room/lamp_right_released", _gAkropolisSecurityRoomRightReleasedPalette);
 
 /// Writable 256-color RGB555 blend for the left locked lamp, uploaded to VRAM row 270.
 static u16 _gAkropolisSecurityRoomLeftLockedClut[256] = { 0 };

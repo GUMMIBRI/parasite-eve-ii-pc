@@ -1,4 +1,5 @@
 #include "stages/akropolis/actors/helicopter_departure.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -252,9 +253,14 @@ enum {
 };
 
 /// Packed open-eye pixels for Rupert's face texture.
+#ifdef PE_EMBED_ASSETS
 static u_long _gHelicopterDepartureRupertEyesOpenPixels[EYE_TEXTURE_WIDTH_WORDS * EYE_TEXTURE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/rupert/eyes_open.inc"
 };
+#else
+static u_long _gHelicopterDepartureRupertEyesOpenPixels[192];
+#endif
+PE_ASSET_BIND("characters/rupert/eyes_open", _gHelicopterDepartureRupertEyesOpenPixels);
 
 /// Writable COPY/END list restoring Rupert's open-eye texture patch.
 static GpuImageUpload _gHelicopterDepartureRupertEyesOpenUploads[2] = {
@@ -263,9 +269,14 @@ static GpuImageUpload _gHelicopterDepartureRupertEyesOpenUploads[2] = {
 };
 
 /// Packed half-open-eye pixels for Rupert's face texture.
+#ifdef PE_EMBED_ASSETS
 static u_long _gHelicopterDepartureRupertEyesHalfOpenPixels[EYE_TEXTURE_WIDTH_WORDS * EYE_TEXTURE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/rupert/eyes_half_open.inc"
 };
+#else
+static u_long _gHelicopterDepartureRupertEyesHalfOpenPixels[192];
+#endif
+PE_ASSET_BIND("characters/rupert/eyes_half_open", _gHelicopterDepartureRupertEyesHalfOpenPixels);
 
 /// Writable COPY/END list for Rupert's half-open blink image.
 static GpuImageUpload _gHelicopterDepartureRupertEyesHalfOpenUploads[2] = {
@@ -274,9 +285,14 @@ static GpuImageUpload _gHelicopterDepartureRupertEyesHalfOpenUploads[2] = {
 };
 
 /// Packed closed-eye pixels for Rupert's face texture.
+#ifdef PE_EMBED_ASSETS
 static u_long _gHelicopterDepartureRupertEyesClosedPixels[EYE_TEXTURE_WIDTH_WORDS * EYE_TEXTURE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/rupert/eyes_closed.inc"
 };
+#else
+static u_long _gHelicopterDepartureRupertEyesClosedPixels[192];
+#endif
+PE_ASSET_BIND("characters/rupert/eyes_closed", _gHelicopterDepartureRupertEyesClosedPixels);
 
 /// Writable COPY/END list for Rupert's closed-eye image.
 static GpuImageUpload _gHelicopterDepartureRupertEyesClosedUploads[2] = {
@@ -315,24 +331,44 @@ static SVECTOR _gHelicopterDepartureRupertMuzzleFlashOffset = { -30, 440, 140, 0
 enum { HELICOPTER_SEQUENCE_FRAME_COUNT = 120 };
 
 /// Helicopter hull Euler rotations for sequence frames 0..119.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gHelicopterDepartureHelicopterSequenceRotations[HELICOPTER_SEQUENCE_FRAME_COUNT] = {
 #include "assets/rooms/akropolis/helicopter_landing_pad/helicopter_rotation_track.inc"
 };
+#else
+static SVECTOR _gHelicopterDepartureHelicopterSequenceRotations[HELICOPTER_SEQUENCE_FRAME_COUNT];
+#endif
+PE_ASSET_BIND("rooms/akropolis/helicopter_landing_pad/helicopter_rotation_track", _gHelicopterDepartureHelicopterSequenceRotations);
 
 /// Helicopter hull positions for sequence frames 0..119, in parent game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gHelicopterDepartureHelicopterSequenceTranslations[HELICOPTER_SEQUENCE_FRAME_COUNT] = {
 #include "assets/rooms/akropolis/helicopter_landing_pad/helicopter_translation_track.inc"
 };
+#else
+static SVECTOR _gHelicopterDepartureHelicopterSequenceTranslations[HELICOPTER_SEQUENCE_FRAME_COUNT];
+#endif
+PE_ASSET_BIND("rooms/akropolis/helicopter_landing_pad/helicopter_translation_track", _gHelicopterDepartureHelicopterSequenceTranslations);
 
 /// Searchlight Euler aim relative to the hull for sequence frames 0..119.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gHelicopterDepartureHelicopterSearchlightRotations[HELICOPTER_SEQUENCE_FRAME_COUNT] = {
 #include "assets/rooms/akropolis/helicopter_landing_pad/searchlight_rotation_track.inc"
 };
+#else
+static SVECTOR _gHelicopterDepartureHelicopterSearchlightRotations[HELICOPTER_SEQUENCE_FRAME_COUNT];
+#endif
+PE_ASSET_BIND("rooms/akropolis/helicopter_landing_pad/searchlight_rotation_track", _gHelicopterDepartureHelicopterSearchlightRotations);
 
 /// Lit red-ramp endpoint of the helicopter's sixteen-colour flashing palette.
+#ifdef PE_EMBED_ASSETS
 static u8 _gHelicopterDepartureHelicopterFlashLitPalette[PALETTE_BYTES] = {
 #include "assets/rooms/akropolis/helicopter_landing_pad/helicopter_palette_lit.inc"
 };
+#else
+static u8 _gHelicopterDepartureHelicopterFlashLitPalette[PALETTE_BYTES];
+#endif
+PE_ASSET_BIND("rooms/akropolis/helicopter_landing_pad/helicopter_palette_lit", _gHelicopterDepartureHelicopterFlashLitPalette);
 
 /// Absolute VRAM row rewritten by the helicopter's flashing palette.
 enum { HELICOPTER_FLASH_CLUT_ROW = 264 };
@@ -344,14 +380,24 @@ static GpuImageUpload _gHelicopterDepartureHelicopterFlashPaletteUploads[2] = {
 };
 
 /// Dark endpoint of the helicopter's sixteen-colour flashing palette.
+#ifdef PE_EMBED_ASSETS
 static u8 _gHelicopterDepartureHelicopterFlashDarkPalette[PALETTE_BYTES] = {
 #include "assets/rooms/akropolis/helicopter_landing_pad/helicopter_palette_dark.inc"
 };
+#else
+static u8 _gHelicopterDepartureHelicopterFlashDarkPalette[PALETTE_BYTES];
+#endif
+PE_ASSET_BIND("rooms/akropolis/helicopter_landing_pad/helicopter_palette_dark", _gHelicopterDepartureHelicopterFlashDarkPalette);
 
 /// Camera frames synchronized with the helicopter's view-24 hull and lamp poses.
+#ifdef PE_EMBED_ASSETS
 static ViewCamera _gHelicopterDepartureHelicopterSequenceCameras[HELICOPTER_SEQUENCE_FRAME_COUNT] = {
 #include "assets/rooms/akropolis/helicopter_landing_pad/helicopter_camera_track.inc"
 };
+#else
+static ViewCamera _gHelicopterDepartureHelicopterSequenceCameras[HELICOPTER_SEQUENCE_FRAME_COUNT];
+#endif
+PE_ASSET_BIND("rooms/akropolis/helicopter_landing_pad/helicopter_camera_track", _gHelicopterDepartureHelicopterSequenceCameras);
 
 /// Terminated helicopter messages for sequence restart, placement and drawing.
 static TaskMessageEntry _gHelicopterDepartureHelicopterMessages[4] = {

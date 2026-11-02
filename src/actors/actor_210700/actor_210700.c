@@ -1,4 +1,5 @@
 #include "actors/actor_210700.h"
+#include "port/asset_bind.h"
 #include "actors/actor_210700.h"
 
 #include <psyz.h>
@@ -112,9 +113,14 @@ static TmdSource    _gRupertBody;
 ///
 /// 24 VRAM halfwords per row by 16 rows (192 packed 32-bit words).
 /// The upload list borrows this word-aligned storage until GPU transfer completion.
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor210700OpenEyesPixels[192] __attribute__((aligned(sizeof(u_long)))) = {
 #include "assets/characters/rupert/eyes_open.inc"
 };
+#else
+static u32 _gActor210700OpenEyesPixels[192] __attribute__((aligned(sizeof(u_long))));
+#endif
+PE_ASSET_BIND("characters/rupert/eyes_open", _gActor210700OpenEyesPixels);
 
 /// Model-relative eye-texture location: Y/height count rows, width counts VRAM words.
 enum {
@@ -137,9 +143,14 @@ static GpuImageUpload _gActor210700OpenEyesUploads[2] = {
 ///
 /// 24 VRAM halfwords per row by 16 rows (192 packed 32-bit words).
 /// The upload list borrows this word-aligned storage until GPU transfer completion.
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor210700HalfOpenEyesPixels[192] __attribute__((aligned(sizeof(u_long)))) = {
 #include "assets/characters/rupert/eyes_half_open.inc"
 };
+#else
+static u32 _gActor210700HalfOpenEyesPixels[192] __attribute__((aligned(sizeof(u_long))));
+#endif
+PE_ASSET_BIND("characters/rupert/eyes_half_open", _gActor210700HalfOpenEyesPixels);
 
 /// Writable COPY/END list for the half-open-eye texture band.
 ///
@@ -155,9 +166,14 @@ static GpuImageUpload _gActor210700HalfOpenEyesUploads[2] = {
 ///
 /// 24 VRAM halfwords per row by 16 rows (192 packed 32-bit words).
 /// The upload list borrows this word-aligned storage until GPU transfer completion.
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor210700ClosedEyesPixels[192] __attribute__((aligned(sizeof(u_long)))) = {
 #include "assets/characters/rupert/eyes_closed.inc"
 };
+#else
+static u32 _gActor210700ClosedEyesPixels[192] __attribute__((aligned(sizeof(u_long))));
+#endif
+PE_ASSET_BIND("characters/rupert/eyes_closed", _gActor210700ClosedEyesPixels);
 
 /// Writable COPY/END list for the closed-eye texture band.
 ///

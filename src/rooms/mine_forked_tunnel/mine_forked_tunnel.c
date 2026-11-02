@@ -306,27 +306,42 @@ static TmdSource _gMineForkedTunnelModel03340 = {
 /// Angles use 4096 units per turn and ZYX placement order. Playback samples
 /// entries 0..109, one per updating frame; setup and reset use entry zero.
 /// The full 240-entry track is retained. Fourth components are unused.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelAreaObjectRotationPath[240] = {
 #include "assets/mine_forked_tunnel_motion_03504.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelAreaObjectRotationPath[240];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_motion_03504", _gMineForkedTunnelAreaObjectRotationPath);
 
 /// Authored translations paired with the switch-controlled area object's rotation path.
 ///
 /// XYZ uses integer game units in the model root's parent frame. Playback
 /// samples entries 0..109, one per updating frame; setup and reset use entry
 /// zero. The full 240-entry track is retained. Fourth components are unused.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelAreaObjectPositionPath[240] = {
 #include "assets/mine_forked_tunnel_motion_03C84.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelAreaObjectPositionPath[240];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_motion_03C84", _gMineForkedTunnelAreaObjectPositionPath);
 
 /// Parent-relative Euler rotations for the child model's 54-frame tilt.
 ///
 /// Angles use 4096 units per turn; only pitch varies and fourth components
 /// are unused. A nonnegative task cursor samples every entry once while
 /// motion is enabled, then holds the last placement. Translation stays fixed.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelAreaObjectChildRotationPath[54] = {
 #include "assets/mine_forked_tunnel_motion_04404.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelAreaObjectChildRotationPath[54];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_motion_04404", _gMineForkedTunnelAreaObjectChildRotationPath);
 
 enum {
     MINE_FORKED_TUNNEL_AREA_OBJECT_TASK_PARENT = 0,
@@ -387,7 +402,7 @@ static SVECTOR _gMineForkedTunnelAreaObjectCollisionBoxNormals[MINE_FORKED_TUNNE
 #include "assets/mine_forked_tunnel_collision_0469C_normals.inc"
 };
 #else
-static SVECTOR _gMineForkedTunnelAreaObjectCollisionBoxNormals[3];
+static SVECTOR _gMineForkedTunnelAreaObjectCollisionBoxNormals[MINE_FORKED_TUNNEL_AREA_OBJECT_COLLISION_FACE_COUNT];
 #endif
 PE_ASSET_BIND("mine_forked_tunnel_collision_0469C_normals", _gMineForkedTunnelAreaObjectCollisionBoxNormals);
 
@@ -397,7 +412,7 @@ static SVECTOR _gMineForkedTunnelAreaObjectCollisionBoxVerts[MINE_FORKED_TUNNEL_
 #include "assets/mine_forked_tunnel_collision_0469C_verts.inc"
 };
 #else
-static SVECTOR _gMineForkedTunnelAreaObjectCollisionBoxVerts[8];
+static SVECTOR _gMineForkedTunnelAreaObjectCollisionBoxVerts[MINE_FORKED_TUNNEL_AREA_OBJECT_COLLISION_VERTEX_COUNT];
 #endif
 PE_ASSET_BIND("mine_forked_tunnel_collision_0469C_verts", _gMineForkedTunnelAreaObjectCollisionBoxVerts);
 
@@ -407,7 +422,7 @@ static WorldCollisionGridFace _gMineForkedTunnelAreaObjectCollisionBoxFaces[MINE
 #include "assets/mine_forked_tunnel_collision_0469C_faces.inc"
 };
 #else
-static WorldCollisionGridFace _gMineForkedTunnelAreaObjectCollisionBoxFaces[3];
+static WorldCollisionGridFace _gMineForkedTunnelAreaObjectCollisionBoxFaces[MINE_FORKED_TUNNEL_AREA_OBJECT_COLLISION_FACE_COUNT];
 #endif
 PE_ASSET_BIND("mine_forked_tunnel_collision_0469C_faces", _gMineForkedTunnelAreaObjectCollisionBoxFaces);
 
