@@ -134,3 +134,16 @@ inside), what no decoder covers yet is **553 includes**:
 
 The room includes are the real remaining work. The banks can stay compiled. Dumps match: 4,176 bound arrays, 809 of
 them models, embedded and disc-loaded builds identical.
+
+### After the flat room arrays (2026-11-03)
+
+468 pointer-free room arrays (music, rewards and every other table of numbers in rooms, actors and stage overlays) now
+load from the disc: 4,644 bound arrays, embedded and disc-loaded dumps identical. What remains is **450 includes**:
+
+- ~210 animation banks (`*_bank`, enemies, weapons, characters, encounters and rooms): `AnimationSet*` slot tables
+  that point at the static clips. They hold no disc bytes and can stay compiled.
+- ~230 room includes with pointers: events (38), geometry, lights, surfaces, action triggers, view boundaries and
+  placements (~20 rooms each), per-room declarations, occluders, markers, spawns, jukebox, scores and waves.
+- inventory catalog and one motion table.
+
+These need per-type decoders (disc record with 32-bit addresses to host structure with pointers).
