@@ -81,6 +81,29 @@ for raw, out, width in nc.asset_includes(V):
     parts.append({'file': aid + '.inc', 'kind': 'asset', 'package': 'main.exe' if src == 'main.exe' else src.removesuffix('.pe2pkg'),
                   'load': 0, 'source': at, 'part': 'data', 'offset': at, 'size': len(blob), 'type': typ,
                   'elem': elem, 'op': 'copy'})
+# Declared clips (gen_animation_source.py): each array sits at its clip's place in the package; the include
+# registers it under clip/<package>/<array>. Every part is checked against the package bytes here.
+sys.path.insert(0, str(Path('tools/peassets')))
+from tools.buildsteps import gen_animation_source as _gas
+_pkgs = {}
+for _key, _rec in _data.ASSETS.items():
+    if _rec.get('type') in ('pe2pkg', 'room', 'stage', 'package'):
+        _pn = _rec.get('package_name', _key)
+        _placed = [q for q in _rec.get('embedded', ()) if isinstance(q, dict) and _data.ASSETS[q['name']]['type'] == 'clip']
+        if _placed:
+            _pkgs[_pn] = _placed
+_ELEM = {'AnimationPackedPose': 12, 'AnimationPackedRotation': 4, 'AnimationRecord': 4, 'u16': 2}
+for _pn, _placed in sorted(_pkgs.items()):
+    _cont = Path('assets/USA/pe2pkg') / f'{_pn}.pe2pkg'
+    _bytes = _cont.read_bytes()
+    for _q in _placed:
+        _blob = _gas.declared.encode(_q['name'], _data.ASSETS, _data.EMBEDDED_ASSETS, Path('assets/USA'))
+        for _arr, _typ, _off, _size in _gas.clip_arrays(_q['name'], Path('assets/USA')):
+            _at = _q['offset'] + _off
+            if _bytes[_at:_at + _size] != _blob[_off:_off + _size]:
+                raise SystemExit(f'{_pn}: {_q["name"]} {_arr} differs from the package')
+            parts.append({'file': f'clip/{_pn}/{_arr}.inc', 'kind': 'clip', 'package': _pn, 'load': 0, 'source': _at,
+                          'part': 'data', 'offset': _at, 'size': _size, 'type': _typ, 'elem': _ELEM[_typ], 'op': 'copy'})
 # Font glyph tables (gen_font_inc.py output): the exe holds the same bytes the include spells out.
 import re as _re
 _exe = Path('assets/USA/main.exe').read_bytes()

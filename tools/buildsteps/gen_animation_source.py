@@ -60,11 +60,18 @@ def clip_runs(rec: dict, assets: dict) -> list[list[str]]:
     return runs
 
 
-def array(declaration: str, count: int, rows: list[str]) -> str:
-    return f"{declaration}[{count}] = {{\n" + "\n".join(rows) + "\n};\n"
+def array(declaration: str, count: int, rows: list[str], bind: str | None = None) -> str:
+    """One array. With `bind` (a registry key) the rows are the embedded build's initializer; the host build
+    defines it zero-filled and registers it so the loader fills it from the user's disc."""
+    if bind is None:
+        return f"{declaration}[{count}] = {{\n" + "\n".join(rows) + "\n};\n"
+    name = declaration.rsplit(" ", 1)[1]
+    return (f"#ifdef PE_EMBED_ASSETS\n{declaration}[{count}] = {{\n" + "\n".join(rows) + f"\n}};\n#else\n{declaration}[{count}];\n#endif\n"
+            f"#include \"port/asset_bind.h\"\nPE_ASSET_BIND(\"{bind}\", {name});\n")
 
 
-def clip_source(name: str, assets_root: Path) -> str:
+def clip_layout(name: str, assets_root: Path) -> dict:
+    """A clip's encoded blob cut into its arrays: [(kind, c array name, byte offset in the blob, byte size)] and the set."""
     assets, embedded = asset_data.ASSETS, asset_data.EMBEDDED_ASSETS
     blob = declared.encode(name, assets, embedded, assets_root)
     address = asset_schema.embedded_address(embedded[name])
@@ -73,25 +80,48 @@ def clip_source(name: str, assets_root: Path) -> str:
     records_at, starts_at = words[0] - address, words[1] - address
     banks = {kind: words[2 + kind] - address for kind in range(8) if words[2 + kind]}
     ends = sorted(list(banks.values()) + [records_at])
-    # A clip other units of its overlay refer to states its global `symbol`; the others are the unit's own.
     sym = assets[name].get("symbol") or ident(name)
-    storage = "static " if sym.startswith("_") else ""
     arrays = "_" + sym.lstrip("_")
+    return {"blob": blob, "at": at, "records_at": records_at, "starts_at": starts_at, "banks": banks, "ends": ends,
+            "sym": sym, "arrays": arrays}
+
+
+def clip_arrays(name: str, assets_root: Path) -> list[tuple[str, str, int, int]]:
+    """(C array name, element type, byte offset in the clip, byte size) of each data array of a clip."""
+    L = clip_layout(name, assets_root)
+    out = []
+    for kind, offset in sorted(L["banks"].items(), key=lambda kv: kv[1]):
+        end = L["ends"][L["ends"].index(offset) + 1]
+        out.append((f"{L['arrays']}Bank{kind}", "AnimationPackedPose" if kind == codec.TRANSLATION else "AnimationPackedRotation",
+                    offset, end - offset))
+    out.append((f"{L['arrays']}Records", "AnimationRecord", L["records_at"], L["starts_at"] - L["records_at"]))
+    out.append((f"{L['arrays']}TrackStarts", "u16", L["starts_at"], L["at"] - L["starts_at"]))
+    return out
+
+
+def clip_source(name: str, assets_root: Path, package: str | None = None) -> str:
+    assets, embedded = asset_data.ASSETS, asset_data.EMBEDDED_ASSETS
+    L = clip_layout(name, assets_root)
+    blob, at, banks, ends = L["blob"], L["at"], L["banks"], L["ends"]
+    records_at, starts_at, sym, arrays = L["records_at"], L["starts_at"], L["sym"], L["arrays"]
+    storage = "static " if sym.startswith("_") else ""
+    key = (lambda n: f"clip/{package}/{n}") if package else (lambda n: None)
     out = [f"/* {name} */"]
     for kind, offset in sorted(banks.items(), key=lambda kv: kv[1]):
         end = ends[ends.index(offset) + 1]
         if kind == codec.TRANSLATION:
             rows = [f"    {{ {', '.join(map(str, v))} }}," for v in struct.iter_unpack("<6h", blob[offset:end])]
-            out.append(array(f"static AnimationPackedPose {arrays}Bank{kind}", len(rows), rows))
+            out.append(array("static AnimationPackedPose " + f"{arrays}Bank{kind}", len(rows), rows, key(f"{arrays}Bank{kind}")))
         else:
             rows = [f"    {{ {', '.join(str(a // codec.ANGLE_STEP) for a in codec._unpack_rotation(w))} }},"
                     for w, in struct.iter_unpack("<I", blob[offset:end])]
-            out.append(array(f"static AnimationPackedRotation {arrays}Bank{kind}", len(rows), rows))
+            out.append(array("static AnimationPackedRotation " + f"{arrays}Bank{kind}", len(rows), rows, key(f"{arrays}Bank{kind}")))
     records = [f"    {{ {p}, {d}, 0x{f:02X} }}," for p, d, f in struct.iter_unpack("<HBB", blob[records_at:starts_at])]
-    out.append(array(f"static AnimationRecord {arrays}Records", len(records), records))
+    out.append(array(f"static AnimationRecord {arrays}Records", len(records), records, key(f"{arrays}Records")))
     starts = struct.unpack_from(f"<{(at - starts_at) // 2}H", blob, starts_at)
     out.append(array(f"static u16 {arrays}TrackStarts", len(starts),
-                     ["    " + ", ".join(map(str, starts[i:i + 8])) + "," for i in range(0, len(starts), 8)]))
+                     ["    " + ", ".join(map(str, starts[i:i + 8])) + "," for i in range(0, len(starts), 8)],
+                     key(f"{arrays}TrackStarts")))
     pose_banks = ", ".join(f"[{kind}] = {arrays}Bank{kind}" for kind in sorted(banks))
     out.append(f"{storage}AnimationSet {sym} = {{\n    .records           = {arrays}Records,\n"
                f"    .trackStartIndices = {arrays}TrackStarts,\n    .poseBanks         = {{ {pose_banks} }},\n}};\n")
@@ -104,7 +134,7 @@ def clips_source(package: str, assets_root: Path) -> str:
     runs = clip_runs(package_record(package), asset_data.ASSETS)
     names = runs[int(run) - 1] if run else [n for r in runs for n in r]
     what = f"the clips {package} places" + (f", run {run} of {len(runs)}" if run else "")
-    return HEADER.format(what=what) + "\n" + "\n".join(clip_source(n, assets_root) for n in names)
+    return HEADER.format(what=what) + "\n" + "\n".join(clip_source(n, assets_root, package) for n in names)
 
 
 def clip_symbol(bank: str, clip: str) -> str:

@@ -65,6 +65,8 @@ def decode(part, data):
 
 cache, ok, bad, skipped = {}, 0, 0, 0
 for p in parts:
+    if p['kind'] == 'clip':      # checked against the package when the parts were written
+        continue
     path = 'assets/USA/main.exe' if p['package'] == 'main.exe' else f"assets/USA/pe2pkg/{p['package']}.pe2pkg"
     data = cache.setdefault(p['package'], open(path, 'rb').read())
     want = decode(p, data)
