@@ -16,16 +16,16 @@ ELEM = {'TmdBone': 36, 'SVECTOR': 8, 'u32': 4, 'u16': 2, 's16': 2, 'GridFace': 1
         'AnimationPackedPose': 12, 'AnimationPackedRotation': 4, 'GridPointer': 4}
 pat = re.compile(
     r'^(?P<head>[^\n=;{}#]*\b(?P<name>\w+)\s*(?P<dim>\[[^\]\n]*\])?(?P<attr>(?:\s*(?:SECTION|ALIGN|__attribute__)\([^\n=]*?\))*\s*))=\s*\{[ \t]*\n'
-    r'(?P<mid>(?:[ \t]*#(?:undef|define)[^\n]*\n)*)#include "assets/(?P<key>[A-Za-z0-9_]+)\.inc"\n\};', re.M)
-cellmacro = re.compile(r'#define\s+\w+\(halfwordOffset\)\s*\(&(\w+)\[\(halfwordOffset\)\]\)')
+    r'(?P<mid>(?:[ \t]*#(?:undef|define)[^\n]*\n)*)#include "assets/(?P<key>[A-Za-z0-9_]+)\.inc"\n(?:[ \t]*\n)*\};', re.M)
+cellmacro = re.compile(r'#define\s+\w+\((\w+)\)\s*\(&(\w+)\[\(\1\)\]\)')
 done = skipped = 0
 for path in glob.glob('src/**/*.c', recursive=True) + glob.glob('src/**/*.h', recursive=True):
     s = open(path).read()
-    if 'PE_ASSET_BIND' in s and '#ifdef PE_EMBED_ASSETS' in s:
-        continue
     out, last, n = [], 0, 0
     for m in pat.finditer(s):
         part = parts.get(m['key'])
+        if s[:m.start()].endswith('#ifdef PE_EMBED_ASSETS\n'):
+            continue                                  # already converted
         if not part:
             skipped += 1
             continue
@@ -43,7 +43,7 @@ for path in glob.glob('src/**/*.c', recursive=True) + glob.glob('src/**/*.h', re
             if not macros:
                 skipped += 1
                 continue
-            aux = macros[-1]
+            aux = macros[-1][1]
         bind = (f'PE_ASSET_BIND_AUX("{m["key"]}", {m["name"]}, {aux});' if aux != 'NULL'
                 else f'PE_ASSET_BIND("{m["key"]}", {m["name"]});')
         block = (f'#ifdef PE_EMBED_ASSETS\n{m.group(0)}\n#else\n{decl}\n#endif\n{bind}')
@@ -55,7 +55,12 @@ for path in glob.glob('src/**/*.c', recursive=True) + glob.glob('src/**/*.h', re
     s2 = ''.join(out) + s[last:]
     # the binding macro lives in a port header
     first = re.search(r'^#include [<"][^\n]*\n', s2, re.M)
-    s2 = s2[:first.end()] + '#include "port/asset_bind.h"\n' + s2[first.end():] if first else '#include "port/asset_bind.h"\n' + s2
+    if '#include "port/asset_bind.h"' in s2:
+        pass
+    elif first:
+        s2 = s2[:first.end()] + '#include "port/asset_bind.h"\n' + s2[first.end():]
+    else:
+        s2 = '#include "port/asset_bind.h"\n' + s2
     open(path, 'w').write(s2)
     done += n
 print(f'{done} sites converted, {skipped} left alone', file=sys.stderr)

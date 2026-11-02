@@ -1480,9 +1480,14 @@ PE_ASSET_BIND("shelter_b3_dumping_hole_collision_0EE2C_cells", _gShelterB3Dumpin
 /// X-major 6-by-4 cell directory borrowing the packed face-index lists.
 ///
 /// Indexed by X * cellCountZ + Z; NULL denotes an empty cell.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB3DumpingHoleCollisionGridTable[SHELTER_B3_DUMPING_HOLE_GRID_CELLS_X * SHELTER_B3_DUMPING_HOLE_GRID_CELLS_Z] = {
 #include "assets/shelter_b3_dumping_hole_collision_0EE2C_table.inc"
 };
+#else
+static s16* _gShelterB3DumpingHoleCollisionGridTable[24];
+#endif
+PE_ASSET_BIND_AUX("shelter_b3_dumping_hole_collision_0EE2C_table", _gShelterB3DumpingHoleCollisionGridTable, _gShelterB3DumpingHoleCollisionGridCells);
 #undef SHELTER_B3_DUMPING_HOLE_CELL_FACE_LIST_AT_OFFSET
 
 /// Collision mesh and XZ cell index shared by dumping-hole rooms 1 and 2.

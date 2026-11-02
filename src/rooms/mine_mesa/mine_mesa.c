@@ -767,10 +767,15 @@ static AnimationRecord _gMineMesaAnimation06B9CRecords[109];
 #endif
 PE_ASSET_BIND("mine_mesa_animation_06B9C_records", _gMineMesaAnimation06B9CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gMineMesaAnimation06B9CIndices[20] = {
 #include "assets/mine_mesa_animation_06B9C_indices.inc"
 
 };
+#else
+static u16 _gMineMesaAnimation06B9CIndices[20];
+#endif
+PE_ASSET_BIND("mine_mesa_animation_06B9C_indices", _gMineMesaAnimation06B9CIndices);
 
 static AnimationSet _gMineMesaAnimation06B9C = {
     _gMineMesaAnimation06B9CRecords,

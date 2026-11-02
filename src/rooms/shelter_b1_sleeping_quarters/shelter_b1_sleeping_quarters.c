@@ -63,10 +63,15 @@ static SVECTOR _gShelterB1SleepingQuartersModel02DFCVerts[22];
 #endif
 PE_ASSET_BIND("shelter_b1_sleeping_quarters_model_02DFC_verts", _gShelterB1SleepingQuartersModel02DFCVerts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB1SleepingQuartersModel02DFCStream[78] = {
 #include "assets/shelter_b1_sleeping_quarters_model_02DFC_stream.inc"
 
 };
+#else
+static u32 _gShelterB1SleepingQuartersModel02DFCStream[78];
+#endif
+PE_ASSET_BIND("shelter_b1_sleeping_quarters_model_02DFC_stream", _gShelterB1SleepingQuartersModel02DFCStream);
 
 TmdSource gShelterB1SleepingQuartersModel02DFC = {
     0,

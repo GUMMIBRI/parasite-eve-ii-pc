@@ -86,10 +86,15 @@ static AnimationRecord _gMineGorgeAnimation00C98Records[139];
 #endif
 PE_ASSET_BIND("mine_gorge_animation_00C98_records", _gMineGorgeAnimation00C98Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gMineGorgeAnimation00C98Indices[20] = {
 #include "assets/mine_gorge_animation_00C98_indices.inc"
 
 };
+#else
+static u16 _gMineGorgeAnimation00C98Indices[20];
+#endif
+PE_ASSET_BIND("mine_gorge_animation_00C98_indices", _gMineGorgeAnimation00C98Indices);
 
 static AnimationSet _gMineGorgeAnimation00C98 = {
     _gMineGorgeAnimation00C98Records,
