@@ -28,3 +28,10 @@ So 0.1.0-alpha is the repository at a tag, built by each user from their own dis
 
 Binary releases need the embedded data above gone. The packaging model of the first game's port
 (`parasite-eve-pc`: CI-built Linux and Windows archives, a macOS bundle with `Info.plist`) applies once that is true.
+
+## Known link status (measured 2026-11-03)
+
+- Default build (`build-port`, Akropolis and a few packages): links and runs.
+- `-DPE_ALL_OVERLAYS=ON` (every overlay package): compiles, fails to link with 442 unique undefined symbols (overlay
+  functions and data that need the module registry, phase 2 in `docs/PORT_PLAN.md`). The option is experimental by
+  design. Dryfield, the Shelter, the Neo Ark and the Mine are unreachable until this is closed.
