@@ -56,6 +56,17 @@ package chunk -> one-shot LZSS decode. It is synchronous and independent of the 
 (`assets/USA/pe2pkg/`): **all 203 packages read from the two disc images are byte-identical** (disc 1 and disc 2).
 Build the tool with `cmake --build build-port --target pe2_discread`.
 
+## Part descriptions (done, verified)
+
+`tools/port/gen_asset_parts.py` (run with `venv/bin/python`, it imports `ninja_config`) asks the build's own planning
+functions which models (184), animation sets (451) and collision grids and patches (211 + patches) the C sources
+embed and writes one record per generated include: package, load address, byte offset and size inside the decoded
+package, element type and an operation (`copy`, `rotation` for the packed animation words, `grid_table` for the
+32-bit cell addresses). 3,655 records cover exactly the 3,655 includes that carry a package header.
+`tools/port/verify_asset_parts.py` decodes the package bytes with an independent description of each element type
+and compares the numbers with the include: **all 3,655 reproduce their include**. The records contain layout facts
+only, no game data.
+
 ## Plan
 
 1. **Manifest instead of bytes.** At configure time, `peassets` emits for each include a manifest entry
