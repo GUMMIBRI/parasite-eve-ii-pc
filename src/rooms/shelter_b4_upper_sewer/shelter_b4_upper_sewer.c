@@ -1,4 +1,5 @@
 #include "rooms/shelter_b4_upper_sewer.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -338,27 +339,47 @@ SVECTOR gShelterB4UpperSewerDiverSurfaceSpots[9] = {
 };
 
 /// Room-space collision normals, with ONE (4096) representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB4UpperSewerCollisionGridNormals[] = {
 #include "assets/shelter_b4_upper_sewer_collision_09938_normals.inc"
 };
+#else
+static SVECTOR _gShelterB4UpperSewerCollisionGridNormals[7];
+#endif
+PE_ASSET_BIND("shelter_b4_upper_sewer_collision_09938_normals", _gShelterB4UpperSewerCollisionGridNormals);
 
 /// Collision vertex pool in signed world-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB4UpperSewerCollisionGridVerts[] = {
 #include "assets/shelter_b4_upper_sewer_collision_09938_verts.inc"
 };
+#else
+static SVECTOR _gShelterB4UpperSewerCollisionGridVerts[87];
+#endif
+PE_ASSET_BIND("shelter_b4_upper_sewer_collision_09938_verts", _gShelterB4UpperSewerCollisionGridVerts);
 
 /// Indexed collision quads carrying normals and room-local surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB4UpperSewerCollisionGridFaces[] = {
 #include "assets/shelter_b4_upper_sewer_collision_09938_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB4UpperSewerCollisionGridFaces[42];
+#endif
+PE_ASSET_BIND("shelter_b4_upper_sewer_collision_09938_faces", _gShelterB4UpperSewerCollisionGridFaces);
 
 /// Packed cell face-index lists, each ending at WORLD_COLLISION_GRID_CELL_END.
 ///
 /// The cell table selects list starts; stored words after a list's end are
 /// retained asset data and are outside that list.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB4UpperSewerCollisionGridCells[] = {
 #include "assets/shelter_b4_upper_sewer_collision_09938_cells.inc"
 };
+#else
+static s16 _gShelterB4UpperSewerCollisionGridCells[292];
+#endif
+PE_ASSET_BIND("shelter_b4_upper_sewer_collision_09938_cells", _gShelterB4UpperSewerCollisionGridCells);
 
 enum {
     SHELTER_B4_UPPER_SEWER_COLLISION_CELL_COUNT_X = 6,
@@ -374,9 +395,14 @@ enum {
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B4_UPPER_SEWER_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB4UpperSewerCollisionGridCells[(halfwordOffset)])
 /// X-major cell table, indexed by x * cellCountZ + z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB4UpperSewerCollisionGridTable[] = {
 #include "assets/shelter_b4_upper_sewer_collision_09938_table.inc"
 };
+#else
+static s16* _gShelterB4UpperSewerCollisionGridTable[30];
+#endif
+PE_ASSET_BIND_AUX("shelter_b4_upper_sewer_collision_09938_table", _gShelterB4UpperSewerCollisionGridTable, _gShelterB4UpperSewerCollisionGridCells);
 #undef SHELTER_B4_UPPER_SEWER_CELL_FACE_LIST_AT_OFFSET
 
 STATIC_ASSERT_SIZEOF(_gShelterB4UpperSewerCollisionGridTable,

@@ -72,24 +72,45 @@ enum {
 };
 
 /// Room-space normals; the barrier owns entries 0..1 and the lift owns 2..5.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightFactoryCollisionGridNormals[28] = {
 #include "assets/dryfield_night_factory_collision_0A630_normals.inc"
+#include "port/asset_bind.h"
 };
+#else
+static SVECTOR _gDryfieldNightFactoryCollisionGridNormals[28];
+#endif
+PE_ASSET_BIND("dryfield_night_factory_collision_0A630_normals", _gDryfieldNightFactoryCollisionGridNormals);
 
 /// Room-space vertices; the barrier owns entries 0..7 and the lift owns 8..15.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightFactoryCollisionGridVerts[170] = {
 #include "assets/dryfield_night_factory_collision_0A630_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightFactoryCollisionGridVerts[170];
+#endif
+PE_ASSET_BIND("dryfield_night_factory_collision_0A630_verts", _gDryfieldNightFactoryCollisionGridVerts);
 
 /// Live room faces, with entries 0..5 reserved for the barrier and lift.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightFactoryCollisionGridFaces[72] = {
 #include "assets/dryfield_night_factory_collision_0A630_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightFactoryCollisionGridFaces[72];
+#endif
+PE_ASSET_BIND("dryfield_night_factory_collision_0A630_faces", _gDryfieldNightFactoryCollisionGridFaces);
 
 /// Cell face-index lists, terminated by `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightFactoryCollisionGridCells[288] = {
 #include "assets/dryfield_night_factory_collision_0A630_cells.inc"
 };
+#else
+static s16 _gDryfieldNightFactoryCollisionGridCells[288];
+#endif
+PE_ASSET_BIND("dryfield_night_factory_collision_0A630_cells", _gDryfieldNightFactoryCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
 ///
@@ -104,9 +125,14 @@ static s16 _gDryfieldNightFactoryCollisionGridCells[288] = {
 #define DRYFIELD_NIGHT_FACTORY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightFactoryCollisionGridCells[(halfwordOffset)])
 
 /// X-major cell pointers, indexed by x * cellCountZ + z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightFactoryCollisionGridTable[DRYFIELD_NIGHT_FACTORY_COLLISION_CELL_COUNT_X * DRYFIELD_NIGHT_FACTORY_COLLISION_CELL_COUNT_Z] = {
 #include "assets/dryfield_night_factory_collision_0A630_table.inc"
 };
+#else
+static s16* _gDryfieldNightFactoryCollisionGridTable[8];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_factory_collision_0A630_table", _gDryfieldNightFactoryCollisionGridTable, _gDryfieldNightFactoryCollisionGridCells);
 #undef DRYFIELD_NIGHT_FACTORY_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gDryfieldNightFactoryCollisionGrid = {

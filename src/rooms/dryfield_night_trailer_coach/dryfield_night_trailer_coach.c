@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_trailer_coach.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -141,21 +142,41 @@ static TaskDesc _gRoomCutsceneTaskDescs[ROOM_CUTSCENE_TASK_DESCRIPTOR_COUNT] = {
     { { { TASK_DESC_END, 0 } }, NULL, { .model = NULL } },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation07DD8Bank1[3] = {
 #include "assets/dryfield_night_trailer_coach_animation_07DD8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation07DD8Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_07DD8_bank1", _gDryfieldNightTrailerCoachAnimation07DD8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation07DD8Bank4[81] = {
 #include "assets/dryfield_night_trailer_coach_animation_07DD8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation07DD8Bank4[81];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_07DD8_bank4", _gDryfieldNightTrailerCoachAnimation07DD8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation07DD8Records[128] = {
 #include "assets/dryfield_night_trailer_coach_animation_07DD8_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation07DD8Records[128];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_07DD8_records", _gDryfieldNightTrailerCoachAnimation07DD8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation07DD8Indices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_07DD8_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation07DD8Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_07DD8_indices", _gDryfieldNightTrailerCoachAnimation07DD8Indices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation07DD8 = {
     _gDryfieldNightTrailerCoachAnimation07DD8Records,
@@ -163,21 +184,41 @@ static AnimationSet _gDryfieldNightTrailerCoachAnimation07DD8 = {
     { NULL, _gDryfieldNightTrailerCoachAnimation07DD8Bank1, NULL, NULL, _gDryfieldNightTrailerCoachAnimation07DD8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation07FD0Bank1[3] = {
 #include "assets/dryfield_night_trailer_coach_animation_07FD0_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation07FD0Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_07FD0_bank1", _gDryfieldNightTrailerCoachAnimation07FD0Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation07FD0Bank4[34] = {
 #include "assets/dryfield_night_trailer_coach_animation_07FD0_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation07FD0Bank4[34];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_07FD0_bank4", _gDryfieldNightTrailerCoachAnimation07FD0Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation07FD0Records[63] = {
 #include "assets/dryfield_night_trailer_coach_animation_07FD0_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation07FD0Records[63];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_07FD0_records", _gDryfieldNightTrailerCoachAnimation07FD0Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation07FD0Indices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_07FD0_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation07FD0Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_07FD0_indices", _gDryfieldNightTrailerCoachAnimation07FD0Indices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation07FD0 = {
     _gDryfieldNightTrailerCoachAnimation07FD0Records,
@@ -185,21 +226,41 @@ static AnimationSet _gDryfieldNightTrailerCoachAnimation07FD0 = {
     { NULL, _gDryfieldNightTrailerCoachAnimation07FD0Bank1, NULL, NULL, _gDryfieldNightTrailerCoachAnimation07FD0Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation08324Bank1[5] = {
 #include "assets/dryfield_night_trailer_coach_animation_08324_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation08324Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08324_bank1", _gDryfieldNightTrailerCoachAnimation08324Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation08324Bank4[58] = {
 #include "assets/dryfield_night_trailer_coach_animation_08324_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation08324Bank4[58];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08324_bank4", _gDryfieldNightTrailerCoachAnimation08324Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation08324Records[120] = {
 #include "assets/dryfield_night_trailer_coach_animation_08324_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation08324Records[120];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08324_records", _gDryfieldNightTrailerCoachAnimation08324Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation08324Indices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_08324_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation08324Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08324_indices", _gDryfieldNightTrailerCoachAnimation08324Indices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation08324 = {
     _gDryfieldNightTrailerCoachAnimation08324Records,
@@ -207,21 +268,41 @@ static AnimationSet _gDryfieldNightTrailerCoachAnimation08324 = {
     { NULL, _gDryfieldNightTrailerCoachAnimation08324Bank1, NULL, NULL, _gDryfieldNightTrailerCoachAnimation08324Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation0851CBank1[3] = {
 #include "assets/dryfield_night_trailer_coach_animation_0851C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation0851CBank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0851C_bank1", _gDryfieldNightTrailerCoachAnimation0851CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation0851CBank4[34] = {
 #include "assets/dryfield_night_trailer_coach_animation_0851C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation0851CBank4[34];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0851C_bank4", _gDryfieldNightTrailerCoachAnimation0851CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation0851CRecords[63] = {
 #include "assets/dryfield_night_trailer_coach_animation_0851C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation0851CRecords[63];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0851C_records", _gDryfieldNightTrailerCoachAnimation0851CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation0851CIndices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_0851C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation0851CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0851C_indices", _gDryfieldNightTrailerCoachAnimation0851CIndices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation0851C = {
     _gDryfieldNightTrailerCoachAnimation0851CRecords,
@@ -229,21 +310,41 @@ static AnimationSet _gDryfieldNightTrailerCoachAnimation0851C = {
     { NULL, _gDryfieldNightTrailerCoachAnimation0851CBank1, NULL, NULL, _gDryfieldNightTrailerCoachAnimation0851CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation08820Bank1[5] = {
 #include "assets/dryfield_night_trailer_coach_animation_08820_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation08820Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08820_bank1", _gDryfieldNightTrailerCoachAnimation08820Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation08820Bank4[55] = {
 #include "assets/dryfield_night_trailer_coach_animation_08820_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation08820Bank4[55];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08820_bank4", _gDryfieldNightTrailerCoachAnimation08820Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation08820Records[103] = {
 #include "assets/dryfield_night_trailer_coach_animation_08820_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation08820Records[103];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08820_records", _gDryfieldNightTrailerCoachAnimation08820Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation08820Indices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_08820_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation08820Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08820_indices", _gDryfieldNightTrailerCoachAnimation08820Indices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation08820 = {
     _gDryfieldNightTrailerCoachAnimation08820Records,
@@ -251,21 +352,41 @@ static AnimationSet _gDryfieldNightTrailerCoachAnimation08820 = {
     { NULL, _gDryfieldNightTrailerCoachAnimation08820Bank1, NULL, NULL, _gDryfieldNightTrailerCoachAnimation08820Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation08C48Bank1[5] = {
 #include "assets/dryfield_night_trailer_coach_animation_08C48_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation08C48Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08C48_bank1", _gDryfieldNightTrailerCoachAnimation08C48Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation08C48Bank4[90] = {
 #include "assets/dryfield_night_trailer_coach_animation_08C48_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation08C48Bank4[90];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08C48_bank4", _gDryfieldNightTrailerCoachAnimation08C48Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation08C48Records[141] = {
 #include "assets/dryfield_night_trailer_coach_animation_08C48_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation08C48Records[141];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08C48_records", _gDryfieldNightTrailerCoachAnimation08C48Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation08C48Indices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_08C48_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation08C48Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_08C48_indices", _gDryfieldNightTrailerCoachAnimation08C48Indices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation08C48 = {
     _gDryfieldNightTrailerCoachAnimation08C48Records,
@@ -273,21 +394,41 @@ static AnimationSet _gDryfieldNightTrailerCoachAnimation08C48 = {
     { NULL, _gDryfieldNightTrailerCoachAnimation08C48Bank1, NULL, NULL, _gDryfieldNightTrailerCoachAnimation08C48Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation09284Bank1[14] = {
 #include "assets/dryfield_night_trailer_coach_animation_09284_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation09284Bank1[14];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_09284_bank1", _gDryfieldNightTrailerCoachAnimation09284Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation09284Bank4[135] = {
 #include "assets/dryfield_night_trailer_coach_animation_09284_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation09284Bank4[135];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_09284_bank4", _gDryfieldNightTrailerCoachAnimation09284Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation09284Records[202] = {
 #include "assets/dryfield_night_trailer_coach_animation_09284_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation09284Records[202];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_09284_records", _gDryfieldNightTrailerCoachAnimation09284Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation09284Indices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_09284_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation09284Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_09284_indices", _gDryfieldNightTrailerCoachAnimation09284Indices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation09284 = {
     _gDryfieldNightTrailerCoachAnimation09284Records,
@@ -295,21 +436,41 @@ static AnimationSet _gDryfieldNightTrailerCoachAnimation09284 = {
     { NULL, _gDryfieldNightTrailerCoachAnimation09284Bank1, NULL, NULL, _gDryfieldNightTrailerCoachAnimation09284Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation0959CBank1[7] = {
 #include "assets/dryfield_night_trailer_coach_animation_0959C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation0959CBank1[7];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0959C_bank1", _gDryfieldNightTrailerCoachAnimation0959CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation0959CBank4[54] = {
 #include "assets/dryfield_night_trailer_coach_animation_0959C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation0959CBank4[54];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0959C_bank4", _gDryfieldNightTrailerCoachAnimation0959CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation0959CRecords[103] = {
 #include "assets/dryfield_night_trailer_coach_animation_0959C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation0959CRecords[103];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0959C_records", _gDryfieldNightTrailerCoachAnimation0959CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation0959CIndices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_0959C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation0959CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0959C_indices", _gDryfieldNightTrailerCoachAnimation0959CIndices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation0959C = {
     _gDryfieldNightTrailerCoachAnimation0959CRecords,
@@ -317,21 +478,41 @@ static AnimationSet _gDryfieldNightTrailerCoachAnimation0959C = {
     { NULL, _gDryfieldNightTrailerCoachAnimation0959CBank1, NULL, NULL, _gDryfieldNightTrailerCoachAnimation0959CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation098C8Bank1[7] = {
 #include "assets/dryfield_night_trailer_coach_animation_098C8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation098C8Bank1[7];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_098C8_bank1", _gDryfieldNightTrailerCoachAnimation098C8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation098C8Bank4[56] = {
 #include "assets/dryfield_night_trailer_coach_animation_098C8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation098C8Bank4[56];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_098C8_bank4", _gDryfieldNightTrailerCoachAnimation098C8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation098C8Records[106] = {
 #include "assets/dryfield_night_trailer_coach_animation_098C8_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation098C8Records[106];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_098C8_records", _gDryfieldNightTrailerCoachAnimation098C8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation098C8Indices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_098C8_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation098C8Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_098C8_indices", _gDryfieldNightTrailerCoachAnimation098C8Indices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation098C8 = {
     _gDryfieldNightTrailerCoachAnimation098C8Records,
@@ -339,21 +520,41 @@ static AnimationSet _gDryfieldNightTrailerCoachAnimation098C8 = {
     { NULL, _gDryfieldNightTrailerCoachAnimation098C8Bank1, NULL, NULL, _gDryfieldNightTrailerCoachAnimation098C8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation09E10Bank1[8] = {
 #include "assets/dryfield_night_trailer_coach_animation_09E10_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation09E10Bank1[8];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_09E10_bank1", _gDryfieldNightTrailerCoachAnimation09E10Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation09E10Bank4[121] = {
 #include "assets/dryfield_night_trailer_coach_animation_09E10_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation09E10Bank4[121];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_09E10_bank4", _gDryfieldNightTrailerCoachAnimation09E10Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation09E10Records[173] = {
 #include "assets/dryfield_night_trailer_coach_animation_09E10_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation09E10Records[173];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_09E10_records", _gDryfieldNightTrailerCoachAnimation09E10Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation09E10Indices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_09E10_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation09E10Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_09E10_indices", _gDryfieldNightTrailerCoachAnimation09E10Indices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation09E10 = {
     _gDryfieldNightTrailerCoachAnimation09E10Records,
@@ -361,21 +562,41 @@ static AnimationSet _gDryfieldNightTrailerCoachAnimation09E10 = {
     { NULL, _gDryfieldNightTrailerCoachAnimation09E10Bank1, NULL, NULL, _gDryfieldNightTrailerCoachAnimation09E10Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation0A364Bank1[9] = {
 #include "assets/dryfield_night_trailer_coach_animation_0A364_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightTrailerCoachAnimation0A364Bank1[9];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0A364_bank1", _gDryfieldNightTrailerCoachAnimation0A364Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation0A364Bank4[106] = {
 #include "assets/dryfield_night_trailer_coach_animation_0A364_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightTrailerCoachAnimation0A364Bank4[106];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0A364_bank4", _gDryfieldNightTrailerCoachAnimation0A364Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightTrailerCoachAnimation0A364Records[188] = {
 #include "assets/dryfield_night_trailer_coach_animation_0A364_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightTrailerCoachAnimation0A364Records[188];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0A364_records", _gDryfieldNightTrailerCoachAnimation0A364Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightTrailerCoachAnimation0A364Indices[20] = {
 #include "assets/dryfield_night_trailer_coach_animation_0A364_indices.inc"
 };
+#else
+static u16 _gDryfieldNightTrailerCoachAnimation0A364Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_animation_0A364_indices", _gDryfieldNightTrailerCoachAnimation0A364Indices);
 
 static AnimationSet _gDryfieldNightTrailerCoachAnimation0A364 = {
     _gDryfieldNightTrailerCoachAnimation0A364Records,

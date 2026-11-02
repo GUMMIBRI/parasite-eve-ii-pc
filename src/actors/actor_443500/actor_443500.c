@@ -1,4 +1,5 @@
 #include "actors/actor_443500.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -1623,24 +1624,44 @@ static TaskMessageEntry _gActor443500PierceMessages[4] = {
 };
 
 /// Unit normals of Pierce's room collision template, scaled by 4096.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor443500PierceCollisionNormals[2] = {
 #include "assets/actor_443500_collision_269B8_normals.inc"
 };
+#else
+static SVECTOR _gActor443500PierceCollisionNormals[2];
+#endif
+PE_ASSET_BIND("actor_443500_collision_269B8_normals", _gActor443500PierceCollisionNormals);
 
 /// Pierce's collision-template vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor443500PierceCollisionVerts[6] = {
 #include "assets/actor_443500_collision_269B8_verts.inc"
 };
+#else
+static SVECTOR _gActor443500PierceCollisionVerts[6];
+#endif
+PE_ASSET_BIND("actor_443500_collision_269B8_verts", _gActor443500PierceCollisionVerts);
 
 /// Two obstacle quads indexing Pierce's six template vertices and two normals.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gActor443500PierceCollisionFaces[2] = {
 #include "assets/actor_443500_collision_269B8_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gActor443500PierceCollisionFaces[2];
+#endif
+PE_ASSET_BIND("actor_443500_collision_269B8_faces", _gActor443500PierceCollisionFaces);
 
 /// Face-index list for Pierce's one grid cell; its first -1 ends the list.
+#ifdef PE_EMBED_ASSETS
 static s16 _gActor443500PierceCollisionCells[4] = {
 #include "assets/actor_443500_collision_269B8_cells.inc"
 };
+#else
+static s16 _gActor443500PierceCollisionCells[4];
+#endif
+PE_ASSET_BIND("actor_443500_collision_269B8_cells", _gActor443500PierceCollisionCells);
 
 /// Addresses a face list in Pierce's packed collision-template halfword pool.
 ///
@@ -1651,9 +1672,14 @@ static s16 _gActor443500PierceCollisionCells[4] = {
 /// selects this binding for the include producer; it is undefined after the table.
 #define ACTOR_443500_PIERCE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gActor443500PierceCollisionCells[(halfwordOffset)])
 /// Cell table of Pierce's collision template, borrowing its face-index list.
+#ifdef PE_EMBED_ASSETS
 static s16* _gActor443500PierceCollisionTable[1] = {
 #include "assets/actor_443500_collision_269B8_table.inc"
 };
+#else
+static s16* _gActor443500PierceCollisionTable[1];
+#endif
+PE_ASSET_BIND_AUX("actor_443500_collision_269B8_table", _gActor443500PierceCollisionTable, _gActor443500PierceCollisionCells);
 #undef ACTOR_443500_PIERCE_CELL_FACE_LIST_AT_OFFSET
 
 /// Pierce's obstacle mesh template for the leading entries of room 47's grid.

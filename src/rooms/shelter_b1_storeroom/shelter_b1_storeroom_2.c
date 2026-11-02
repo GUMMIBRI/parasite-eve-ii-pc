@@ -1,4 +1,5 @@
 #include "rooms/shelter_b1_storeroom.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -218,24 +219,44 @@ DirectionWarpEntry gShelterB1StoreroomWarpEntries[3] = {
 };
 
 /// Room-space face normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1StoreroomCollisionGridNormals[18] = {
 #include "assets/shelter_b1_storeroom_collision_07B18_normals.inc"
 };
+#else
+static SVECTOR _gShelterB1StoreroomCollisionGridNormals[18];
+#endif
+PE_ASSET_BIND("shelter_b1_storeroom_collision_07B18_normals", _gShelterB1StoreroomCollisionGridNormals);
 
 /// Room-space collision vertices in signed game-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1StoreroomCollisionGridVerts[64] = {
 #include "assets/shelter_b1_storeroom_collision_07B18_verts.inc"
 };
+#else
+static SVECTOR _gShelterB1StoreroomCollisionGridVerts[64];
+#endif
+PE_ASSET_BIND("shelter_b1_storeroom_collision_07B18_verts", _gShelterB1StoreroomCollisionGridVerts);
 
 /// Collision quads; class 1 is the floor and class 0 covers the other faces.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB1StoreroomCollisionGridFaces[26] = {
 #include "assets/shelter_b1_storeroom_collision_07B18_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB1StoreroomCollisionGridFaces[26];
+#endif
+PE_ASSET_BIND("shelter_b1_storeroom_collision_07B18_faces", _gShelterB1StoreroomCollisionGridFaces);
 
 /// Face-index lists for the eight cells, terminated by WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB1StoreroomCollisionGridCells[108] = {
 #include "assets/shelter_b1_storeroom_collision_07B18_cells.inc"
 };
+#else
+static s16 _gShelterB1StoreroomCollisionGridCells[108];
+#endif
+PE_ASSET_BIND("shelter_b1_storeroom_collision_07B18_cells", _gShelterB1StoreroomCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -247,9 +268,14 @@ static s16 _gShelterB1StoreroomCollisionGridCells[108] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_STOREROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1StoreroomCollisionGridCells[(halfwordOffset)])
 /// X-major cell lookup, with two Z entries for each of four X cells.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB1StoreroomCollisionGridTable[8] = {
 #include "assets/shelter_b1_storeroom_collision_07B18_table.inc"
 };
+#else
+static s16* _gShelterB1StoreroomCollisionGridTable[8];
+#endif
+PE_ASSET_BIND_AUX("shelter_b1_storeroom_collision_07B18_table", _gShelterB1StoreroomCollisionGridTable, _gShelterB1StoreroomCollisionGridCells);
 #undef SHELTER_B1_STOREROOM_CELL_FACE_LIST_AT_OFFSET
 
 /// Storeroom collision mesh, indexed by a 4-by-2 grid of 4000-unit XZ cells.

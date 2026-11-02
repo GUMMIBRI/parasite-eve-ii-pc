@@ -4,6 +4,7 @@
 #endif
 
 #include "enemies/stranger/lesser.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -154,19 +155,34 @@ static ActorStrangerVariant _gLesserStrangerUnusedStrangerVariants[3] = {
 #include "assets/enemies/stranger/lesser/bank.inc"
 
 /// Barrier patch's single Q12 +Z normal, copied into the fire-escape grid.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gLesserStrangerBarrierPatchNormals[1] = {
 #include "assets/lesser_stranger_collision_074DC.inc"
 };
+#else
+static SVECTOR _gLesserStrangerBarrierPatchNormals[1];
+#endif
+PE_ASSET_BIND("lesser_stranger_collision_074DC", _gLesserStrangerBarrierPatchNormals);
 
 /// Barrier patch's four room-coordinate vertices, copied into grid vertices 0..3.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gLesserStrangerBarrierPatchVerts[4] = {
 #include "assets/lesser_stranger_collision_074E4.inc"
 };
+#else
+static SVECTOR _gLesserStrangerBarrierPatchVerts[4];
+#endif
+PE_ASSET_BIND("lesser_stranger_collision_074E4", _gLesserStrangerBarrierPatchVerts);
 
 /// Barrier patch's one quad, copied into fire-escape grid face 0.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gLesserStrangerBarrierPatchFaces[1] = {
 #include "assets/lesser_stranger_collision_07504.inc"
 };
+#else
+static WorldCollisionGridFace _gLesserStrangerBarrierPatchFaces[1];
+#endif
+PE_ASSET_BIND("lesser_stranger_collision_07504", _gLesserStrangerBarrierPatchFaces);
 
 /// Fire-escape Stranger's sole supported message, `ACTOR_MESSAGE_IS_PRESENT`.
 static TaskMessageEntry _gLesserStrangerMessages[1] = {

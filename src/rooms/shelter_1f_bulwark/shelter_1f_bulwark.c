@@ -1,4 +1,5 @@
 #include "rooms/shelter_1f_bulwark.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -169,24 +170,44 @@ DirectionWarpEntry gShelter1fBulwarkWarpEntries[2] = {
 };
 
 /// Room-space unit normals of the Bulwark collision grid, with ONE for 1.0.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelter1fBulwarkCollisionGridNormals[6] = {
 #include "assets/shelter_1f_bulwark_collision_03088_normals.inc"
 };
+#else
+static SVECTOR _gShelter1fBulwarkCollisionGridNormals[6];
+#endif
+PE_ASSET_BIND("shelter_1f_bulwark_collision_03088_normals", _gShelter1fBulwarkCollisionGridNormals);
 
 /// Room-space collision-grid vertices, in signed world-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelter1fBulwarkCollisionGridVerts[22] = {
 #include "assets/shelter_1f_bulwark_collision_03088_verts.inc"
 };
+#else
+static SVECTOR _gShelter1fBulwarkCollisionGridVerts[22];
+#endif
+PE_ASSET_BIND("shelter_1f_bulwark_collision_03088_verts", _gShelter1fBulwarkCollisionGridVerts);
 
 /// Indexed collision faces; class 1 is the floor and class 0 has no footstep cues.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelter1fBulwarkCollisionGridFaces[12] = {
 #include "assets/shelter_1f_bulwark_collision_03088_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelter1fBulwarkCollisionGridFaces[12];
+#endif
+PE_ASSET_BIND("shelter_1f_bulwark_collision_03088_faces", _gShelter1fBulwarkCollisionGridFaces);
 
 /// Serialized signed face-index lists for six cells, each ending with -1.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelter1fBulwarkCollisionGridCells[64] = {
 #include "assets/shelter_1f_bulwark_collision_03088_cells.inc"
 };
+#else
+static s16 _gShelter1fBulwarkCollisionGridCells[64];
+#endif
+PE_ASSET_BIND("shelter_1f_bulwark_collision_03088_cells", _gShelter1fBulwarkCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -198,9 +219,14 @@ static s16 _gShelter1fBulwarkCollisionGridCells[64] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_1F_BULWARK_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelter1fBulwarkCollisionGridCells[(halfwordOffset)])
 /// X-major 3-by-2 cell directory borrowing the grid's face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelter1fBulwarkCollisionGridTable[6] = {
 #include "assets/shelter_1f_bulwark_collision_03088_table.inc"
 };
+#else
+static s16* _gShelter1fBulwarkCollisionGridTable[6];
+#endif
+PE_ASSET_BIND_AUX("shelter_1f_bulwark_collision_03088_table", _gShelter1fBulwarkCollisionGridTable, _gShelter1fBulwarkCollisionGridCells);
 #undef SHELTER_1F_BULWARK_CELL_FACE_LIST_AT_OFFSET
 
 /// Bulwark collision mesh with six 4000-unit XZ cells and twelve quad faces.

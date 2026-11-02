@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_motel_room_2.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -137,27 +138,47 @@ DirectionWarpEntry gDryfieldNightMotelRoom2WarpEntries[1] = {
 };
 
 /// Grid-local normals, with 4096 units per unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightMotelRoom2CollisionGridNormals[13] = {
 #include "assets/dryfield_night_motel_room_2_collision_00BC4_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightMotelRoom2CollisionGridNormals[13];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_room_2_collision_00BC4_normals", _gDryfieldNightMotelRoom2CollisionGridNormals);
 
 /// Collision-mesh vertices in signed grid-local game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightMotelRoom2CollisionGridVerts[105] = {
 #include "assets/dryfield_night_motel_room_2_collision_00BC4_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightMotelRoom2CollisionGridVerts[105];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_room_2_collision_00BC4_verts", _gDryfieldNightMotelRoom2CollisionGridVerts);
 
 /// Indexed room quads using surface classes 0..4.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightMotelRoom2CollisionGridFaces[43] = {
 #include "assets/dryfield_night_motel_room_2_collision_00BC4_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightMotelRoom2CollisionGridFaces[43];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_room_2_collision_00BC4_faces", _gDryfieldNightMotelRoom2CollisionGridFaces);
 
 /// Four signed face-index lists terminated by WORLD_COLLISION_GRID_CELL_END.
 ///
 /// Lists end at halfword elements 43, 81, 112 and 132. Elements 113 and 133
 /// retain authored zeros outside every cell scan.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightMotelRoom2CollisionGridCells[134] = {
 #include "assets/dryfield_night_motel_room_2_collision_00BC4_cells.inc"
 };
+#else
+static s16 _gDryfieldNightMotelRoom2CollisionGridCells[134];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_room_2_collision_00BC4_cells", _gDryfieldNightMotelRoom2CollisionGridCells);
 
 // Generated initializers select cell lists by offsets in halfword elements.
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -169,9 +190,14 @@ static s16 _gDryfieldNightMotelRoom2CollisionGridCells[134] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_MOTEL_ROOM_2_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMotelRoom2CollisionGridCells[(halfwordOffset)])
 /// X-major 2-by-2 cell table, with list starts at elements 0, 44, 82 and 114.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightMotelRoom2CollisionGridTable[4] = {
 #include "assets/dryfield_night_motel_room_2_collision_00BC4_table.inc"
 };
+#else
+static s16* _gDryfieldNightMotelRoom2CollisionGridTable[4];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_motel_room_2_collision_00BC4_table", _gDryfieldNightMotelRoom2CollisionGridTable, _gDryfieldNightMotelRoom2CollisionGridCells);
 #undef DRYFIELD_NIGHT_MOTEL_ROOM_2_CELL_FACE_LIST_AT_OFFSET
 
 /// Room 1's collision mesh and 2-by-2 XZ index of 4000-unit cells.

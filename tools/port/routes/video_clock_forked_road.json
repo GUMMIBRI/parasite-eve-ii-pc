@@ -1,0 +1,82 @@
+{
+  "description": "Physical controller route after Blue Key unlock: return through cleared Hallway, revisit Fountain with hidden climb still linked, cross east corridor and enter Forked Road.",
+  "clock": "video",
+  "baseRoute": "video_clock_blue_unlock",
+  "baseSamples": 159521,
+  "totalSamples": 162274,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          23,
+          32
+        ],
+        [
+          85,
+          8208
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          600,
+          0
+        ],
+        [
+          45,
+          8208
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          45,
+          8208
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          600,
+          0
+        ],
+        [
+          260,
+          8208
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          55,
+          8208
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          250,
+          8208
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          600,
+          0
+        ]
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 #include "rooms/shelter_b2_elevator_hall.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -286,24 +287,44 @@ DirectionWarpEntry gShelterB2ElevatorHallWarpEntries[SHELTER_B2_ELEVATOR_HALL_WA
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2ElevatorHallRoomCollisionNormals[7] = {
 #include "assets/shelter_b2_elevator_hall_collision_067F4_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2ElevatorHallRoomCollisionNormals[7];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_hall_collision_067F4_normals", _gShelterB2ElevatorHallRoomCollisionNormals);
 
 /// Wall and floor mesh vertices in signed room game coordinates.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2ElevatorHallRoomCollisionVerts[48] = {
 #include "assets/shelter_b2_elevator_hall_collision_067F4_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2ElevatorHallRoomCollisionVerts[48];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_hall_collision_067F4_verts", _gShelterB2ElevatorHallRoomCollisionVerts);
 
 /// Indexed wall quads (class 0) and floor quads (classes 1 and 2).
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB2ElevatorHallRoomCollisionFaces[28] = {
 #include "assets/shelter_b2_elevator_hall_collision_067F4_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB2ElevatorHallRoomCollisionFaces[28];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_hall_collision_067F4_faces", _gShelterB2ElevatorHallRoomCollisionFaces);
 
 /// Packed cell face-index lists, each ending at `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB2ElevatorHallRoomCollisionCells[124] = {
 #include "assets/shelter_b2_elevator_hall_collision_067F4_cells.inc"
 };
+#else
+static s16 _gShelterB2ElevatorHallRoomCollisionCells[124];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_hall_collision_067F4_cells", _gShelterB2ElevatorHallRoomCollisionCells);
 
 /// Supplies a cell face-list address for the generated collision table.
 ///
@@ -314,9 +335,14 @@ static s16 _gShelterB2ElevatorHallRoomCollisionCells[124] = {
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B2_ELEVATOR_HALL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB2ElevatorHallRoomCollisionCells[(halfwordOffset)])
 /// Face-list starts for the 5-by-2 grid, indexed by X times 2 plus Z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB2ElevatorHallRoomCollisionTable[10] = {
 #include "assets/shelter_b2_elevator_hall_collision_067F4_table.inc"
 };
+#else
+static s16* _gShelterB2ElevatorHallRoomCollisionTable[10];
+#endif
+PE_ASSET_BIND_AUX("shelter_b2_elevator_hall_collision_067F4_table", _gShelterB2ElevatorHallRoomCollisionTable, _gShelterB2ElevatorHallRoomCollisionCells);
 #undef SHELTER_B2_ELEVATOR_HALL_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB2ElevatorHallRoomCollision = {

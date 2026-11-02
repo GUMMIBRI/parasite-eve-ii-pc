@@ -1,4 +1,5 @@
 #include "gameplay/effect_tasks.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -3490,46 +3491,96 @@ enum { EFFECT_MODEL_HANDLERS_UNRESOLVED = 0,
        EFFECT_MODEL_PRETRANSFORM_BYTES  = 0 };
 
 /// Initial one-part identity transform for the bullet casing model.
+#ifdef PE_EMBED_ASSETS
 static const TmdBone _gEffectBulletCasingModelRestPose[1] SECTION(".data") = {
 #include "assets/bullet_casing_skeleton.inc"
 };
+#else
+static TmdBone _gEffectBulletCasingModelRestPose[1] SECTION(".data");
+#endif
+PE_ASSET_BIND("bullet_casing_skeleton", _gEffectBulletCasingModelRestPose);
 /// Vertex count of the bullet casing model's sole part.
+#ifdef PE_EMBED_ASSETS
 static const u32 _gEffectBulletCasingModelPartVertexCounts[1] SECTION(".data") = {
 #include "assets/bullet_casing_partVerts.inc"
 };
+#else
+static u32 _gEffectBulletCasingModelPartVertexCounts[1] SECTION(".data");
+#endif
+PE_ASSET_BIND("bullet_casing_partVerts", _gEffectBulletCasingModelPartVertexCounts);
 /// Part-local signed integer vertices of the bullet casing model.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gEffectBulletCasingModelVertices[6] = {
 #include "assets/bullet_casing_verts.inc"
 };
+#else
+static SVECTOR _gEffectBulletCasingModelVertices[6];
+#endif
+PE_ASSET_BIND("bullet_casing_verts", _gEffectBulletCasingModelVertices);
 /// Q12 lighting normals of the bullet casing model.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gEffectBulletCasingModelNormals[4] = {
 #include "assets/bullet_casing_normals.inc"
 };
+#else
+static SVECTOR _gEffectBulletCasingModelNormals[4];
+#endif
+PE_ASSET_BIND("bullet_casing_normals", _gEffectBulletCasingModelNormals);
 /// Bullet casing TMD command words, with writable draw-handler slots.
+#ifdef PE_EMBED_ASSETS
 static u32 _gEffectBulletCasingModelPackets[32] = {
 #include "assets/bullet_casing_stream.inc"
 };
+#else
+static u32 _gEffectBulletCasingModelPackets[32];
+#endif
+PE_ASSET_BIND("bullet_casing_stream", _gEffectBulletCasingModelPackets);
 TmdSource gEffectBulletCasingModel = { 0, sizeof(POLY_GT3) + 3 * sizeof(POLY_GT4), 0, ARRAY_SIZE(_gEffectBulletCasingModelRestPose), _gEffectBulletCasingModelPartVertexCounts, _gEffectBulletCasingModelVertices, _gEffectBulletCasingModelNormals, _gEffectBulletCasingModelRestPose, _gEffectBulletCasingModelPackets };
 /// Initial one-part identity transform for the rifle casing model.
+#ifdef PE_EMBED_ASSETS
 static const TmdBone _gEffectRifleCasingModelRestPose[1] SECTION(".data") = {
 #include "assets/rifle_casing_skeleton.inc"
 };
+#else
+static TmdBone _gEffectRifleCasingModelRestPose[1] SECTION(".data");
+#endif
+PE_ASSET_BIND("rifle_casing_skeleton", _gEffectRifleCasingModelRestPose);
 /// Vertex count of the rifle casing model's sole part.
+#ifdef PE_EMBED_ASSETS
 static const u32 _gEffectRifleCasingModelPartVertexCounts[1] SECTION(".data") = {
 #include "assets/rifle_casing_partVerts.inc"
 };
+#else
+static u32 _gEffectRifleCasingModelPartVertexCounts[1] SECTION(".data");
+#endif
+PE_ASSET_BIND("rifle_casing_partVerts", _gEffectRifleCasingModelPartVertexCounts);
 /// Part-local signed integer vertices of the rifle casing model.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gEffectRifleCasingModelVertices[6] = {
 #include "assets/rifle_casing_verts.inc"
 };
+#else
+static SVECTOR _gEffectRifleCasingModelVertices[6];
+#endif
+PE_ASSET_BIND("rifle_casing_verts", _gEffectRifleCasingModelVertices);
 /// Q12 lighting normals of the rifle casing model.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gEffectRifleCasingModelNormals[4] = {
 #include "assets/rifle_casing_normals.inc"
 };
+#else
+static SVECTOR _gEffectRifleCasingModelNormals[4];
+#endif
+PE_ASSET_BIND("rifle_casing_normals", _gEffectRifleCasingModelNormals);
 /// Rifle casing TMD command words, with writable draw-handler slots.
+#ifdef PE_EMBED_ASSETS
 static u32 _gEffectRifleCasingModelPackets[32] = {
 #include "assets/rifle_casing_stream.inc"
 };
+#else
+static u32 _gEffectRifleCasingModelPackets[32];
+#endif
+PE_ASSET_BIND("rifle_casing_stream", _gEffectRifleCasingModelPackets);
 TmdSource gEffectRifleCasingModel = {
     .handlersResolved    = EFFECT_MODEL_HANDLERS_UNRESOLVED,
     .bufferHalfBytes     = sizeof(POLY_GT3) + 3 * sizeof(POLY_GT4),
@@ -3542,25 +3593,50 @@ TmdSource gEffectRifleCasingModel = {
     .stream              = _gEffectRifleCasingModelPackets,
 };
 /// Initial one-part identity transform for the P229 casing model.
+#ifdef PE_EMBED_ASSETS
 static const TmdBone _gEffectP229CasingModelRestPose[1] SECTION(".data") = {
 #include "assets/p229_casing_skeleton.inc"
 };
+#else
+static TmdBone _gEffectP229CasingModelRestPose[1] SECTION(".data");
+#endif
+PE_ASSET_BIND("p229_casing_skeleton", _gEffectP229CasingModelRestPose);
 /// Vertex count of the P229 casing model's sole part.
+#ifdef PE_EMBED_ASSETS
 static const u32 _gEffectP229CasingModelPartVertexCounts[1] SECTION(".data") = {
 #include "assets/p229_casing_partVerts.inc"
 };
+#else
+static u32 _gEffectP229CasingModelPartVertexCounts[1] SECTION(".data");
+#endif
+PE_ASSET_BIND("p229_casing_partVerts", _gEffectP229CasingModelPartVertexCounts);
 /// Part-local signed integer vertices of the P229 casing model.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gEffectP229CasingModelVertices[6] = {
 #include "assets/p229_casing_verts.inc"
 };
+#else
+static SVECTOR _gEffectP229CasingModelVertices[6];
+#endif
+PE_ASSET_BIND("p229_casing_verts", _gEffectP229CasingModelVertices);
 /// Q12 lighting normals of the P229 casing model.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gEffectP229CasingModelNormals[4] = {
 #include "assets/p229_casing_normals.inc"
 };
+#else
+static SVECTOR _gEffectP229CasingModelNormals[4];
+#endif
+PE_ASSET_BIND("p229_casing_normals", _gEffectP229CasingModelNormals);
 /// P229 casing TMD command words, with writable draw-handler slots.
+#ifdef PE_EMBED_ASSETS
 static u32 _gEffectP229CasingModelPackets[32] = {
 #include "assets/p229_casing_stream.inc"
 };
+#else
+static u32 _gEffectP229CasingModelPackets[32];
+#endif
+PE_ASSET_BIND("p229_casing_stream", _gEffectP229CasingModelPackets);
 TmdSource gEffectP229CasingModel = {
     .handlersResolved    = EFFECT_MODEL_HANDLERS_UNRESOLVED,
     .bufferHalfBytes     = sizeof(POLY_GT3) + 3 * sizeof(POLY_GT4),
@@ -3573,25 +3649,50 @@ TmdSource gEffectP229CasingModel = {
     .stream              = _gEffectP229CasingModelPackets,
 };
 /// Initial one-part identity transform for the shotgun shell casing model.
+#ifdef PE_EMBED_ASSETS
 static const TmdBone _gEffectShotgunShellCasingModelRestPose[1] SECTION(".data") = {
 #include "assets/shotgun_shell_casing_skeleton.inc"
 };
+#else
+static TmdBone _gEffectShotgunShellCasingModelRestPose[1] SECTION(".data");
+#endif
+PE_ASSET_BIND("shotgun_shell_casing_skeleton", _gEffectShotgunShellCasingModelRestPose);
 /// Vertex count of the shotgun shell casing model's sole part.
+#ifdef PE_EMBED_ASSETS
 static const u32 _gEffectShotgunShellCasingModelPartVertexCounts[1] SECTION(".data") = {
 #include "assets/shotgun_shell_casing_partVerts.inc"
 };
+#else
+static u32 _gEffectShotgunShellCasingModelPartVertexCounts[1] SECTION(".data");
+#endif
+PE_ASSET_BIND("shotgun_shell_casing_partVerts", _gEffectShotgunShellCasingModelPartVertexCounts);
 /// Part-local signed integer vertices of the shotgun shell casing model.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gEffectShotgunShellCasingModelVertices[6] = {
 #include "assets/shotgun_shell_casing_verts.inc"
 };
+#else
+static SVECTOR _gEffectShotgunShellCasingModelVertices[6];
+#endif
+PE_ASSET_BIND("shotgun_shell_casing_verts", _gEffectShotgunShellCasingModelVertices);
 /// Q12 lighting normals of the shotgun shell casing model.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gEffectShotgunShellCasingModelNormals[4] = {
 #include "assets/shotgun_shell_casing_normals.inc"
 };
+#else
+static SVECTOR _gEffectShotgunShellCasingModelNormals[4];
+#endif
+PE_ASSET_BIND("shotgun_shell_casing_normals", _gEffectShotgunShellCasingModelNormals);
 /// Shotgun shell casing TMD command words, with writable draw-handler slots.
+#ifdef PE_EMBED_ASSETS
 static u32 _gEffectShotgunShellCasingModelPackets[32] = {
 #include "assets/shotgun_shell_casing_stream.inc"
 };
+#else
+static u32 _gEffectShotgunShellCasingModelPackets[32];
+#endif
+PE_ASSET_BIND("shotgun_shell_casing_stream", _gEffectShotgunShellCasingModelPackets);
 TmdSource gEffectShotgunShellCasingModel = {
     .handlersResolved    = EFFECT_MODEL_HANDLERS_UNRESOLVED,
     .bufferHalfBytes     = sizeof(POLY_GT3) + 3 * sizeof(POLY_GT4),
@@ -3604,25 +3705,50 @@ TmdSource gEffectShotgunShellCasingModel = {
     .stream              = _gEffectShotgunShellCasingModelPackets,
 };
 /// Initial one-part identity transform for the slot-0x91 thrown model.
+#ifdef PE_EMBED_ASSETS
 static const TmdBone _gEffectThrownModel91RestPose[1] SECTION(".data") = {
 #include "assets/thrown_model_91_skeleton.inc"
 };
+#else
+static TmdBone _gEffectThrownModel91RestPose[1] SECTION(".data");
+#endif
+PE_ASSET_BIND("thrown_model_91_skeleton", _gEffectThrownModel91RestPose);
 /// Vertex count of the slot-0x91 thrown model's sole part.
+#ifdef PE_EMBED_ASSETS
 static const u32 _gEffectThrownModel91PartVertexCounts[1] SECTION(".data") = {
 #include "assets/thrown_model_91_partVerts.inc"
 };
+#else
+static u32 _gEffectThrownModel91PartVertexCounts[1] SECTION(".data");
+#endif
+PE_ASSET_BIND("thrown_model_91_partVerts", _gEffectThrownModel91PartVertexCounts);
 /// Part-local integer vertices of the slot-0x91 box; physical identity unproven.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gEffectThrownModel91Vertices[8] = {
 #include "assets/thrown_model_91_verts.inc"
 };
+#else
+static SVECTOR _gEffectThrownModel91Vertices[8];
+#endif
+PE_ASSET_BIND("thrown_model_91_verts", _gEffectThrownModel91Vertices);
 /// Q12 lighting normals of the slot-0x91 box, including its two cap normals.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gEffectThrownModel91Normals[10] = {
 #include "assets/thrown_model_91_normals.inc"
 };
+#else
+static SVECTOR _gEffectThrownModel91Normals[10];
+#endif
+PE_ASSET_BIND("thrown_model_91_normals", _gEffectThrownModel91Normals);
 /// Six-quad TMD command words for slot 0x91, with writable draw-handler slots.
+#ifdef PE_EMBED_ASSETS
 static u32 _gEffectThrownModel91Packets[48] = {
 #include "assets/thrown_model_91_stream.inc"
 };
+#else
+static u32 _gEffectThrownModel91Packets[48];
+#endif
+PE_ASSET_BIND("thrown_model_91_stream", _gEffectThrownModel91Packets);
 TmdSource gEffectThrownModel91 = {
     .handlersResolved    = EFFECT_MODEL_HANDLERS_UNRESOLVED,
     .bufferHalfBytes     = 6 * sizeof(POLY_GT4),

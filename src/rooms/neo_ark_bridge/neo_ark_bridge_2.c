@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_bridge.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -181,26 +182,46 @@ SVECTOR gNeoArkBridgeDiverSurfaceSpots[9] = {
 };
 
 /// Room-space face normals, with `ONE` (4096) representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkBridgeCollisionGridNormals[] = {
 #include "assets/neo_ark_bridge_collision_05254_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkBridgeCollisionGridNormals[5];
+#endif
+PE_ASSET_BIND("neo_ark_bridge_collision_05254_normals", _gNeoArkBridgeCollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkBridgeCollisionGridVerts[] = {
 #include "assets/neo_ark_bridge_collision_05254_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkBridgeCollisionGridVerts[97];
+#endif
+PE_ASSET_BIND("neo_ark_bridge_collision_05254_verts", _gNeoArkBridgeCollisionGridVerts);
 
 /// Indexed collision quads selecting the bridge's local surface policies.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkBridgeCollisionGridFaces[] = {
 #include "assets/neo_ark_bridge_collision_05254_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkBridgeCollisionGridFaces[43];
+#endif
+PE_ASSET_BIND("neo_ark_bridge_collision_05254_faces", _gNeoArkBridgeCollisionGridFaces);
 
 /// Serialized face-index lists, ending at `WORLD_COLLISION_GRID_CELL_END`.
 ///
 /// Retains the authored halfwords between lists; table entries select their starts.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkBridgeCollisionGridCells[] = {
 #include "assets/neo_ark_bridge_collision_05254_cells.inc"
 };
+#else
+static s16 _gNeoArkBridgeCollisionGridCells[188];
+#endif
+PE_ASSET_BIND("neo_ark_bridge_collision_05254_cells", _gNeoArkBridgeCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -212,9 +233,14 @@ static s16 _gNeoArkBridgeCollisionGridCells[] = {
 /// binding through the table include, then undefine it.
 #define NEO_ARK_BRIDGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkBridgeCollisionGridCells[(halfwordOffset)])
 /// X-major 3-by-7 cell directory; NULL entries are empty cells.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkBridgeCollisionGridTable[] = {
 #include "assets/neo_ark_bridge_collision_05254_table.inc"
 };
+#else
+static s16* _gNeoArkBridgeCollisionGridTable[21];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_bridge_collision_05254_table", _gNeoArkBridgeCollisionGridTable, _gNeoArkBridgeCollisionGridCells);
 #undef NEO_ARK_BRIDGE_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gNeoArkBridgeCollisionGrid = {

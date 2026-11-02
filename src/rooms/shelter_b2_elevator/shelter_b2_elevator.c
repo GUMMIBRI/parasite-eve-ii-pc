@@ -1,4 +1,5 @@
 #include "rooms/shelter_b2_elevator.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -130,21 +131,41 @@ enum {
     SHELTER_B2_ELEVATOR_SPRITE_CLUT               = 0x3FC0, // VRAM X = 0, Y = 255
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB2ElevatorModel00688Skeleton[1] = {
 #include "assets/shelter_b2_elevator_model_00688_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB2ElevatorModel00688Skeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_model_00688_skeleton", _gShelterB2ElevatorModel00688Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2ElevatorModel00688PartVerts[1] = {
 #include "assets/shelter_b2_elevator_model_00688_partVerts.inc"
 };
+#else
+static u32 _gShelterB2ElevatorModel00688PartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_model_00688_partVerts", _gShelterB2ElevatorModel00688PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2ElevatorModel00688Verts[21] = {
 #include "assets/shelter_b2_elevator_model_00688_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2ElevatorModel00688Verts[21];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_model_00688_verts", _gShelterB2ElevatorModel00688Verts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2ElevatorModel00688Stream[66] = {
 #include "assets/shelter_b2_elevator_model_00688_stream.inc"
 };
+#else
+static u32 _gShelterB2ElevatorModel00688Stream[66];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_model_00688_stream", _gShelterB2ElevatorModel00688Stream);
 
 static TmdSource _gShelterB2ElevatorModel00688 = {
     0,
@@ -158,21 +179,41 @@ static TmdSource _gShelterB2ElevatorModel00688 = {
     _gShelterB2ElevatorModel00688Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB2ElevatorModel00884Skeleton[1] = {
 #include "assets/shelter_b2_elevator_model_00884_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB2ElevatorModel00884Skeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_model_00884_skeleton", _gShelterB2ElevatorModel00884Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2ElevatorModel00884PartVerts[1] = {
 #include "assets/shelter_b2_elevator_model_00884_partVerts.inc"
 };
+#else
+static u32 _gShelterB2ElevatorModel00884PartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_model_00884_partVerts", _gShelterB2ElevatorModel00884PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2ElevatorModel00884Verts[21] = {
 #include "assets/shelter_b2_elevator_model_00884_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2ElevatorModel00884Verts[21];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_model_00884_verts", _gShelterB2ElevatorModel00884Verts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2ElevatorModel00884Stream[66] = {
 #include "assets/shelter_b2_elevator_model_00884_stream.inc"
 };
+#else
+static u32 _gShelterB2ElevatorModel00884Stream[66];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_model_00884_stream", _gShelterB2ElevatorModel00884Stream);
 
 static TmdSource _gShelterB2ElevatorModel00884 = {
     0,
@@ -224,26 +265,46 @@ DirectionWarpEntry gShelterB2ElevatorWarps[1] = {
 };
 
 /// Room-axis unit normals for the cab's collision box, with ONE per unit.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2ElevatorCollisionGridNormals[6] = {
 #include "assets/shelter_b2_elevator_collision_00B24_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2ElevatorCollisionGridNormals[6];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_collision_00B24_normals", _gShelterB2ElevatorCollisionGridNormals);
 
 /// Eight corners of the cab's collision box in whole room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2ElevatorCollisionGridVerts[8] = {
 #include "assets/shelter_b2_elevator_collision_00B24_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2ElevatorCollisionGridVerts[8];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_collision_00B24_verts", _gShelterB2ElevatorCollisionGridVerts);
 
 /// Six quads indexing the collision grid's corner and normal pools.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB2ElevatorCollisionGridFaces[6] = {
 #include "assets/shelter_b2_elevator_collision_00B24_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB2ElevatorCollisionGridFaces[6];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_collision_00B24_faces", _gShelterB2ElevatorCollisionGridFaces);
 
 /// Face-index storage for the grid cell, including its -1 list end.
 ///
 /// The final word follows the end marker and has no established interpretation.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB2ElevatorCollisionGridCells[8] = {
 #include "assets/shelter_b2_elevator_collision_00B24_cells.inc"
 };
+#else
+static s16 _gShelterB2ElevatorCollisionGridCells[8];
+#endif
+PE_ASSET_BIND("shelter_b2_elevator_collision_00B24_cells", _gShelterB2ElevatorCollisionGridCells);
 
 /// Resolves a generated halfword offset to the elevator cell's face-index list.
 ///
@@ -255,9 +316,14 @@ static s16 _gShelterB2ElevatorCollisionGridCells[8] = {
 #define SHELTER_B2_ELEVATOR_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB2ElevatorCollisionGridCells[(halfwordOffset)])
 
 /// X-major directory of the cab grid's single face-index list.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB2ElevatorCollisionGridTable[1] = {
 #include "assets/shelter_b2_elevator_collision_00B24_table.inc"
 };
+#else
+static s16* _gShelterB2ElevatorCollisionGridTable[1];
+#endif
+PE_ASSET_BIND_AUX("shelter_b2_elevator_collision_00B24_table", _gShelterB2ElevatorCollisionGridTable, _gShelterB2ElevatorCollisionGridCells);
 #undef SHELTER_B2_ELEVATOR_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB2ElevatorCollisionGrid = { NULL, _gShelterB2ElevatorCollisionGridNormals, _gShelterB2ElevatorCollisionGridVerts, _gShelterB2ElevatorCollisionGridFaces, _gShelterB2ElevatorCollisionGridTable, -0x2AF8, 1450, 1, 1, 4000, ARRAY_SIZE(_gShelterB2ElevatorCollisionGridFaces) };

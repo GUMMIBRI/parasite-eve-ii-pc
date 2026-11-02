@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_garden.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -117,24 +118,44 @@ DirectionWarpEntry gNeoArkGardenWarpEntries[3] = {
 };
 
 /// Unit-length room-space normals indexed by the garden collision faces.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkGardenCollisionGridNormals[5] = {
 #include "assets/neo_ark_garden_collision_04104_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkGardenCollisionGridNormals[5];
+#endif
+PE_ASSET_BIND("neo_ark_garden_collision_04104_normals", _gNeoArkGardenCollisionGridNormals);
 
 /// Signed-halfword room-space vertices indexed by the garden collision faces.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkGardenCollisionGridVerts[22] = {
 #include "assets/neo_ark_garden_collision_04104_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkGardenCollisionGridVerts[22];
+#endif
+PE_ASSET_BIND("neo_ark_garden_collision_04104_verts", _gNeoArkGardenCollisionGridVerts);
 
 /// Nine wall/floor quads with room-local collision surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkGardenCollisionGridFaces[9] = {
 #include "assets/neo_ark_garden_collision_04104_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkGardenCollisionGridFaces[9];
+#endif
+PE_ASSET_BIND("neo_ark_garden_collision_04104_faces", _gNeoArkGardenCollisionGridFaces);
 
 /// Contiguous signed face-index lists, each ending at WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkGardenCollisionGridCells[62] = {
 #include "assets/neo_ark_garden_collision_04104_cells.inc"
 };
+#else
+static s16 _gNeoArkGardenCollisionGridCells[62];
+#endif
+PE_ASSET_BIND("neo_ark_garden_collision_04104_cells", _gNeoArkGardenCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -146,9 +167,14 @@ static s16 _gNeoArkGardenCollisionGridCells[62] = {
 /// binding through the table include, then undefine it.
 #define NEO_ARK_GARDEN_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkGardenCollisionGridCells[(halfwordOffset)])
 /// X-major directory of twelve cell lists for the garden's four-by-three grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkGardenCollisionGridTable[12] = {
 #include "assets/neo_ark_garden_collision_04104_table.inc"
 };
+#else
+static s16* _gNeoArkGardenCollisionGridTable[12];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_garden_collision_04104_table", _gNeoArkGardenCollisionGridTable, _gNeoArkGardenCollisionGridCells);
 #undef NEO_ARK_GARDEN_CELL_FACE_LIST_AT_OFFSET
 
 /// Garden wall/floor mesh and 4000-world-unit XZ cells, bound to the active view.

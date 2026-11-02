@@ -1,4 +1,5 @@
 #include "rooms/dryfield_parking_lot.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -210,24 +211,44 @@ DirectionWarpEntry gDryfieldParkingLotWarpEntries[DRYFIELD_PARKING_LOT_WARP_COUN
 };
 
 /// Collision-mesh normals in room axes, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldParkingLotCollisionGridNormals[18] = {
 #include "assets/dryfield_parking_lot_collision_0131C_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldParkingLotCollisionGridNormals[18];
+#endif
+PE_ASSET_BIND("dryfield_parking_lot_collision_0131C_normals", _gDryfieldParkingLotCollisionGridNormals);
 
 /// Collision-mesh vertices in signed grid-local world units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldParkingLotCollisionGridVerts[132] = {
 #include "assets/dryfield_parking_lot_collision_0131C_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldParkingLotCollisionGridVerts[132];
+#endif
+PE_ASSET_BIND("dryfield_parking_lot_collision_0131C_verts", _gDryfieldParkingLotCollisionGridVerts);
 
 /// Indexed collision faces, carrying the room's surface classes 0..7.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldParkingLotCollisionGridFaces[55] = {
 #include "assets/dryfield_parking_lot_collision_0131C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldParkingLotCollisionGridFaces[55];
+#endif
+PE_ASSET_BIND("dryfield_parking_lot_collision_0131C_faces", _gDryfieldParkingLotCollisionGridFaces);
 
 /// Packed signed face-index lists for all 45 cells; each ends with -1.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldParkingLotCollisionGridCells[436] = {
 #include "assets/dryfield_parking_lot_collision_0131C_cells.inc"
 };
+#else
+static s16 _gDryfieldParkingLotCollisionGridCells[436];
+#endif
+PE_ASSET_BIND("dryfield_parking_lot_collision_0131C_cells", _gDryfieldParkingLotCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -238,9 +259,14 @@ static s16 _gDryfieldParkingLotCollisionGridCells[436] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_PARKING_LOT_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldParkingLotCollisionGridCells[(halfwordOffset)])
 /// X-major directory of the grid's 9 by 5 face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldParkingLotCollisionGridTable[45] = {
 #include "assets/dryfield_parking_lot_collision_0131C_table.inc"
 };
+#else
+static s16* _gDryfieldParkingLotCollisionGridTable[45];
+#endif
+PE_ASSET_BIND_AUX("dryfield_parking_lot_collision_0131C_table", _gDryfieldParkingLotCollisionGridTable, _gDryfieldParkingLotCollisionGridCells);
 #undef DRYFIELD_PARKING_LOT_CELL_FACE_LIST_AT_OFFSET
 
 /// The daytime parking lot's 55-face mesh and 9 by 5 broad-phase grid.

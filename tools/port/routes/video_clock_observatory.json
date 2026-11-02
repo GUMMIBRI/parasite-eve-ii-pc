@@ -1,0 +1,148 @@
+{
+  "description": "Physical controller capture: cross Forked Road, enter escalator, let original outbound and Observatory arrival scenes complete, normal control restored.",
+  "clock": "video",
+  "baseRoute": "video_clock_forked_road",
+  "baseSamples": 162274,
+  "totalSamples": 164827,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          130,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          23,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          145,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          22,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          50,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          23,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          24592
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          52,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          24592
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          52,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    }
+  ]
+}

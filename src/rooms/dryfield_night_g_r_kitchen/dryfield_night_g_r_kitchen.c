@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_g_r_kitchen.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -168,24 +169,44 @@ DirectionWarpEntry gDryfieldNightGRKitchenWarpEntries[DRYFIELD_NIGHT_G_R_KITCHEN
 };
 
 /// Unit room-space normals used by the kitchen collision mesh (ONE per unit).
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGRKitchenCollisionGridNormals[6] = {
 #include "assets/dryfield_night_g_r_kitchen_collision_00F94_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGRKitchenCollisionGridNormals[6];
+#endif
+PE_ASSET_BIND("dryfield_night_g_r_kitchen_collision_00F94_normals", _gDryfieldNightGRKitchenCollisionGridNormals);
 
 /// Collision-mesh vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGRKitchenCollisionGridVerts[26] = {
 #include "assets/dryfield_night_g_r_kitchen_collision_00F94_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGRKitchenCollisionGridVerts[26];
+#endif
+PE_ASSET_BIND("dryfield_night_g_r_kitchen_collision_00F94_verts", _gDryfieldNightGRKitchenCollisionGridVerts);
 
 /// Indexed collision quads; class 1 is the floor and class 0 covers the other faces.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightGRKitchenCollisionGridFaces[16] = {
 #include "assets/dryfield_night_g_r_kitchen_collision_00F94_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightGRKitchenCollisionGridFaces[16];
+#endif
+PE_ASSET_BIND("dryfield_night_g_r_kitchen_collision_00F94_faces", _gDryfieldNightGRKitchenCollisionGridFaces);
 
 /// Two terminated face-index lists, with one retained zero between them.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightGRKitchenCollisionGridCells[32] = {
 #include "assets/dryfield_night_g_r_kitchen_collision_00F94_cells.inc"
 };
+#else
+static s16 _gDryfieldNightGRKitchenCollisionGridCells[32];
+#endif
+PE_ASSET_BIND("dryfield_night_g_r_kitchen_collision_00F94_cells", _gDryfieldNightGRKitchenCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -197,9 +218,14 @@ static s16 _gDryfieldNightGRKitchenCollisionGridCells[32] = {
 /// The binding is undefined immediately after that include.
 #define DRYFIELD_NIGHT_G_R_KITCHEN_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightGRKitchenCollisionGridCells[(halfwordOffset)])
 /// X-major cell pointers for the grid's one X cell and two Z cells.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightGRKitchenCollisionGridTable[2] = {
 #include "assets/dryfield_night_g_r_kitchen_collision_00F94_table.inc"
 };
+#else
+static s16* _gDryfieldNightGRKitchenCollisionGridTable[2];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_g_r_kitchen_collision_00F94_table", _gDryfieldNightGRKitchenCollisionGridTable, _gDryfieldNightGRKitchenCollisionGridCells);
 #undef DRYFIELD_NIGHT_G_R_KITCHEN_CELL_FACE_LIST_AT_OFFSET
 
 /// The kitchen collision mesh, selected through a 1-by-2 XZ grid of 4000-unit cells.

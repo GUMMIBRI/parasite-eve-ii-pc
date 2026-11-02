@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_garage.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -389,24 +390,44 @@ DirectionWarpEntry gDryfieldNightGarageWarpEntries[2] = {
 };
 
 /// Room-space unit normals for the early-room collision grid, with 4096 as unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGarageEarlyRoomCollisionGridNormals[] = {
 #include "assets/dryfield_night_garage_collision_06814_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGarageEarlyRoomCollisionGridNormals[40];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_06814_normals", _gDryfieldNightGarageEarlyRoomCollisionGridNormals);
 
 /// Signed game-coordinate vertices for the early-room collision grid.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGarageEarlyRoomCollisionGridVerts[] = {
 #include "assets/dryfield_night_garage_collision_06814_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGarageEarlyRoomCollisionGridVerts[110];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_06814_verts", _gDryfieldNightGarageEarlyRoomCollisionGridVerts);
 
 /// Indexed collision faces, including the four leading records replaced by box patches.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightGarageEarlyRoomCollisionGridFaces[] = {
 #include "assets/dryfield_night_garage_collision_06814_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightGarageEarlyRoomCollisionGridFaces[55];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_06814_faces", _gDryfieldNightGarageEarlyRoomCollisionGridFaces);
 
 /// Signed face-index lists for the early-room grid's cells, each terminated by -1.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightGarageEarlyRoomCollisionGridCells[] = {
 #include "assets/dryfield_night_garage_collision_06814_cells.inc"
 };
+#else
+static s16 _gDryfieldNightGarageEarlyRoomCollisionGridCells[222];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_06814_cells", _gDryfieldNightGarageEarlyRoomCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -418,9 +439,14 @@ static s16 _gDryfieldNightGarageEarlyRoomCollisionGridCells[] = {
 /// The binding is undefined immediately after that include.
 #define DRYFIELD_NIGHT_GARAGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightGarageEarlyRoomCollisionGridCells[(halfwordOffset)])
 /// Nine X-major cell-list pointers for the early-room collision grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightGarageEarlyRoomCollisionGridTable[] = {
 #include "assets/dryfield_night_garage_collision_06814_table.inc"
 };
+#else
+static s16* _gDryfieldNightGarageEarlyRoomCollisionGridTable[9];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_garage_collision_06814_table", _gDryfieldNightGarageEarlyRoomCollisionGridTable, _gDryfieldNightGarageEarlyRoomCollisionGridCells);
 #undef DRYFIELD_NIGHT_GARAGE_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gDryfieldNightGarageEarlyRoomCollisionGrid = {
@@ -438,24 +464,44 @@ WorldCollisionGrid gDryfieldNightGarageEarlyRoomCollisionGrid = {
 };
 
 /// Room-space normals for the late-room collision grid, with 4096 as unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGarageLateRoomCollisionGridNormals[] = {
 #include "assets/dryfield_night_garage_collision_06E14_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGarageLateRoomCollisionGridNormals[29];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_06E14_normals", _gDryfieldNightGarageLateRoomCollisionGridNormals);
 
 /// Signed game-coordinate vertices for the late-room collision grid.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGarageLateRoomCollisionGridVerts[] = {
 #include "assets/dryfield_night_garage_collision_06E14_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGarageLateRoomCollisionGridVerts[74];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_06E14_verts", _gDryfieldNightGarageLateRoomCollisionGridVerts);
 
 /// Indexed triangles and quads for the late-room collision grid.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightGarageLateRoomCollisionGridFaces[] = {
 #include "assets/dryfield_night_garage_collision_06E14_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightGarageLateRoomCollisionGridFaces[34];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_06E14_faces", _gDryfieldNightGarageLateRoomCollisionGridFaces);
 
 /// Signed face-index lists for the late-room grid's cells, each ending with -1.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightGarageLateRoomCollisionGridCells[] = {
 #include "assets/dryfield_night_garage_collision_06E14_cells.inc"
 };
+#else
+static s16 _gDryfieldNightGarageLateRoomCollisionGridCells[116];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_06E14_cells", _gDryfieldNightGarageLateRoomCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -467,9 +513,14 @@ static s16 _gDryfieldNightGarageLateRoomCollisionGridCells[] = {
 /// The binding is undefined immediately after that include.
 #define DRYFIELD_NIGHT_GARAGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightGarageLateRoomCollisionGridCells[(halfwordOffset)])
 /// Nine X-major cell-list pointers for the late-room collision grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightGarageLateRoomCollisionGridTable[] = {
 #include "assets/dryfield_night_garage_collision_06E14_table.inc"
 };
+#else
+static s16* _gDryfieldNightGarageLateRoomCollisionGridTable[9];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_garage_collision_06E14_table", _gDryfieldNightGarageLateRoomCollisionGridTable, _gDryfieldNightGarageLateRoomCollisionGridCells);
 #undef DRYFIELD_NIGHT_GARAGE_CELL_FACE_LIST_AT_OFFSET
 
 /// Room 2's collision mesh and XZ cell index for the night garage.

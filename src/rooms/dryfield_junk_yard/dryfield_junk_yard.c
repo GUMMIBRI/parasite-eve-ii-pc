@@ -1,4 +1,5 @@
 #include "rooms/dryfield_junk_yard.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -443,21 +444,41 @@ static EvsCommand _gDryfieldJunkYardCompanionReturnSkipScript[] = {
     { .opcode = EVENT_SCRIPT_OPCODE_END },
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gDryfieldJunkYardModel01378Skeleton[1] = {
 #include "assets/dryfield_junk_yard_model_01378_skeleton.inc"
 };
+#else
+static TmdBone _gDryfieldJunkYardModel01378Skeleton[1];
+#endif
+PE_ASSET_BIND("dryfield_junk_yard_model_01378_skeleton", _gDryfieldJunkYardModel01378Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gDryfieldJunkYardModel01378PartVerts[1] = {
 #include "assets/dryfield_junk_yard_model_01378_partVerts.inc"
 };
+#else
+static u32 _gDryfieldJunkYardModel01378PartVerts[1];
+#endif
+PE_ASSET_BIND("dryfield_junk_yard_model_01378_partVerts", _gDryfieldJunkYardModel01378PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldJunkYardModel01378Verts[54] = {
 #include "assets/dryfield_junk_yard_model_01378_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldJunkYardModel01378Verts[54];
+#endif
+PE_ASSET_BIND("dryfield_junk_yard_model_01378_verts", _gDryfieldJunkYardModel01378Verts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gDryfieldJunkYardModel01378Stream[234] = {
 #include "assets/dryfield_junk_yard_model_01378_stream.inc"
 };
+#else
+static u32 _gDryfieldJunkYardModel01378Stream[234];
+#endif
+PE_ASSET_BIND("dryfield_junk_yard_model_01378_stream", _gDryfieldJunkYardModel01378Stream);
 
 TmdSource gDryfieldJunkYardModel01378 = {
     0,
@@ -530,24 +551,44 @@ DirectionWarpEntry gDryfieldJunkYardWarpEntries[3] = {
 };
 
 /// Room-grid plane normals in 4096-per-unit coordinates, indexed by each face.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldJunkYardCollisionGridNormals[] = {
 #include "assets/dryfield_junk_yard_collision_01F08_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldJunkYardCollisionGridNormals[33];
+#endif
+PE_ASSET_BIND("dryfield_junk_yard_collision_01F08_normals", _gDryfieldJunkYardCollisionGridNormals);
 
 /// Room-grid vertices in whole signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldJunkYardCollisionGridVerts[] = {
 #include "assets/dryfield_junk_yard_collision_01F08_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldJunkYardCollisionGridVerts[88];
+#endif
+PE_ASSET_BIND("dryfield_junk_yard_collision_01F08_verts", _gDryfieldJunkYardCollisionGridVerts);
 
 /// Room-grid quads; face 0 uses footstep surface class 1, all others class 0.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldJunkYardCollisionGridFaces[] = {
 #include "assets/dryfield_junk_yard_collision_01F08_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldJunkYardCollisionGridFaces[36];
+#endif
+PE_ASSET_BIND("dryfield_junk_yard_collision_01F08_faces", _gDryfieldJunkYardCollisionGridFaces);
 
 /// Cell face-index lists ending at -1, with retained zero words between lists.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldJunkYardCollisionGridCells[] = {
 #include "assets/dryfield_junk_yard_collision_01F08_cells.inc"
 };
+#else
+static s16 _gDryfieldJunkYardCollisionGridCells[166];
+#endif
+PE_ASSET_BIND("dryfield_junk_yard_collision_01F08_cells", _gDryfieldJunkYardCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
 ///
@@ -562,9 +603,14 @@ static s16 _gDryfieldJunkYardCollisionGridCells[] = {
 #define DRYFIELD_JUNK_YARD_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldJunkYardCollisionGridCells[(halfwordOffset)])
 
 /// Fourteen X-major cell lists for the seven-by-two room grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldJunkYardCollisionGridTable[] = {
 #include "assets/dryfield_junk_yard_collision_01F08_table.inc"
 };
+#else
+static s16* _gDryfieldJunkYardCollisionGridTable[14];
+#endif
+PE_ASSET_BIND_AUX("dryfield_junk_yard_collision_01F08_table", _gDryfieldJunkYardCollisionGridTable, _gDryfieldJunkYardCollisionGridCells);
 #undef DRYFIELD_JUNK_YARD_CELL_FACE_LIST_AT_OFFSET
 
 /// The junk yard's sole collision mesh and its seven-by-two XZ cell index.

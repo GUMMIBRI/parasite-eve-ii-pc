@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_north_promenade.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -181,27 +182,47 @@ DirectionWarpEntry gNeoArkNorthPromenadeWarpEntries[2] = {
 };
 
 /// Room-space face normals for the promenade grid, with `ONE` for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkNorthPromenadeCollisionGridNormals[] = {
 #include "assets/neo_ark_north_promenade_collision_04E2C_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkNorthPromenadeCollisionGridNormals[12];
+#endif
+PE_ASSET_BIND("neo_ark_north_promenade_collision_04E2C_normals", _gNeoArkNorthPromenadeCollisionGridNormals);
 
 /// Promenade collision vertices in signed room-space game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkNorthPromenadeCollisionGridVerts[] = {
 #include "assets/neo_ark_north_promenade_collision_04E2C_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkNorthPromenadeCollisionGridVerts[79];
+#endif
+PE_ASSET_BIND("neo_ark_north_promenade_collision_04E2C_verts", _gNeoArkNorthPromenadeCollisionGridVerts);
 
 /// Promenade collision quads indexing the grid's vertex/normal pools and surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkNorthPromenadeCollisionGridFaces[] = {
 #include "assets/neo_ark_north_promenade_collision_04E2C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkNorthPromenadeCollisionGridFaces[31];
+#endif
+PE_ASSET_BIND("neo_ark_north_promenade_collision_04E2C_faces", _gNeoArkNorthPromenadeCollisionGridFaces);
 
 /// Serialized signed face-index lists selected by the grid's cells.
 ///
 /// Each referenced list ends with `WORLD_COLLISION_GRID_CELL_END`; retain the full
 /// asset extent, including its final halfword after the last list terminator.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkNorthPromenadeCollisionGridCells[] = {
 #include "assets/neo_ark_north_promenade_collision_04E2C_cells.inc"
 };
+#else
+static s16 _gNeoArkNorthPromenadeCollisionGridCells[142];
+#endif
+PE_ASSET_BIND("neo_ark_north_promenade_collision_04E2C_cells", _gNeoArkNorthPromenadeCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -213,9 +234,14 @@ static s16 _gNeoArkNorthPromenadeCollisionGridCells[] = {
 /// binding through the table include, then undefine it.
 #define NEO_ARK_NORTH_PROMENADE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkNorthPromenadeCollisionGridCells[(halfwordOffset)])
 /// X-major 4-by-4 cell directory; NULL denotes the one empty cell.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkNorthPromenadeCollisionGridTable[] = {
 #include "assets/neo_ark_north_promenade_collision_04E2C_table.inc"
 };
+#else
+static s16* _gNeoArkNorthPromenadeCollisionGridTable[16];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_north_promenade_collision_04E2C_table", _gNeoArkNorthPromenadeCollisionGridTable, _gNeoArkNorthPromenadeCollisionGridCells);
 #undef NEO_ARK_NORTH_PROMENADE_CELL_FACE_LIST_AT_OFFSET
 
 /// Promenade room collision mesh and 4000-game-unit XZ cell index.

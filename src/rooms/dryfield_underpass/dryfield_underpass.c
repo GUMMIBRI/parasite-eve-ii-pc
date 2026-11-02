@@ -1,4 +1,5 @@
 #include "rooms/dryfield_underpass.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -68,21 +69,41 @@ static s32  _dryfieldUnderpassRejectKeyItemUse(Task* unusedTask, s32 messageId, 
 static void _dryfieldUnderpassIdleTask(Task* unusedTask);
 static s32  _dryfieldUnderpassHandleRoomAction(Task* task, s32 messageId, const DirectionActionRequest* request, s32 unusedSecondArg);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldUnderpassAnimation00E64Bank1[10] = {
 #include "assets/dryfield_underpass_animation_00E64_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldUnderpassAnimation00E64Bank1[10];
+#endif
+PE_ASSET_BIND("dryfield_underpass_animation_00E64_bank1", _gDryfieldUnderpassAnimation00E64Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldUnderpassAnimation00E64Bank4[126] = {
 #include "assets/dryfield_underpass_animation_00E64_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldUnderpassAnimation00E64Bank4[126];
+#endif
+PE_ASSET_BIND("dryfield_underpass_animation_00E64_bank4", _gDryfieldUnderpassAnimation00E64Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldUnderpassAnimation00E64Records[171] = {
 #include "assets/dryfield_underpass_animation_00E64_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldUnderpassAnimation00E64Records[171];
+#endif
+PE_ASSET_BIND("dryfield_underpass_animation_00E64_records", _gDryfieldUnderpassAnimation00E64Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldUnderpassAnimation00E64Indices[20] = {
 #include "assets/dryfield_underpass_animation_00E64_indices.inc"
 };
+#else
+static u16 _gDryfieldUnderpassAnimation00E64Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_underpass_animation_00E64_indices", _gDryfieldUnderpassAnimation00E64Indices);
 
 static AnimationSet _gDryfieldUnderpassAnimation00E64 = {
     _gDryfieldUnderpassAnimation00E64Records,
@@ -90,21 +111,41 @@ static AnimationSet _gDryfieldUnderpassAnimation00E64 = {
     { NULL, _gDryfieldUnderpassAnimation00E64Bank1, NULL, NULL, _gDryfieldUnderpassAnimation00E64Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldUnderpassAnimation01230Bank1[6] = {
 #include "assets/dryfield_underpass_animation_01230_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldUnderpassAnimation01230Bank1[6];
+#endif
+PE_ASSET_BIND("dryfield_underpass_animation_01230_bank1", _gDryfieldUnderpassAnimation01230Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldUnderpassAnimation01230Bank4[64] = {
 #include "assets/dryfield_underpass_animation_01230_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldUnderpassAnimation01230Bank4[64];
+#endif
+PE_ASSET_BIND("dryfield_underpass_animation_01230_bank4", _gDryfieldUnderpassAnimation01230Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldUnderpassAnimation01230Records[141] = {
 #include "assets/dryfield_underpass_animation_01230_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldUnderpassAnimation01230Records[141];
+#endif
+PE_ASSET_BIND("dryfield_underpass_animation_01230_records", _gDryfieldUnderpassAnimation01230Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldUnderpassAnimation01230Indices[20] = {
 #include "assets/dryfield_underpass_animation_01230_indices.inc"
 };
+#else
+static u16 _gDryfieldUnderpassAnimation01230Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_underpass_animation_01230_indices", _gDryfieldUnderpassAnimation01230Indices);
 
 static AnimationSet _gDryfieldUnderpassAnimation01230 = {
     _gDryfieldUnderpassAnimation01230Records,
@@ -512,24 +553,44 @@ DirectionWarpEntry gDryfieldUnderpassWarpEntries[DRYFIELD_UNDERPASS_WARP_COUNT] 
 };
 
 /// Collision-grid face normals in room axes, with `ONE` units per unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldUnderpassCollisionGridNormals[12] = {
 #include "assets/dryfield_underpass_collision_01EC4_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldUnderpassCollisionGridNormals[12];
+#endif
+PE_ASSET_BIND("dryfield_underpass_collision_01EC4_normals", _gDryfieldUnderpassCollisionGridNormals);
 
 /// Collision-grid vertex positions in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldUnderpassCollisionGridVerts[70] = {
 #include "assets/dryfield_underpass_collision_01EC4_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldUnderpassCollisionGridVerts[70];
+#endif
+PE_ASSET_BIND("dryfield_underpass_collision_01EC4_verts", _gDryfieldUnderpassCollisionGridVerts);
 
 /// Indexed collision triangles and quads, with room-local surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldUnderpassCollisionGridFaces[46] = {
 #include "assets/dryfield_underpass_collision_01EC4_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldUnderpassCollisionGridFaces[46];
+#endif
+PE_ASSET_BIND("dryfield_underpass_collision_01EC4_faces", _gDryfieldUnderpassCollisionGridFaces);
 
 /// Serialized cell face-index lists ending at `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldUnderpassCollisionGridCells[346] = {
 #include "assets/dryfield_underpass_collision_01EC4_cells.inc"
 };
+#else
+static s16 _gDryfieldUnderpassCollisionGridCells[346];
+#endif
+PE_ASSET_BIND("dryfield_underpass_collision_01EC4_cells", _gDryfieldUnderpassCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -541,9 +602,14 @@ static s16 _gDryfieldUnderpassCollisionGridCells[346] = {
 /// binding through the table include, then undefine it.
 #define DRYFIELD_UNDERPASS_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldUnderpassCollisionGridCells[(halfwordOffset)])
 /// X-major cell-list pointers for the grid's six-by-four XZ cells.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldUnderpassCollisionGridTable[24] = {
 #include "assets/dryfield_underpass_collision_01EC4_table.inc"
 };
+#else
+static s16* _gDryfieldUnderpassCollisionGridTable[24];
+#endif
+PE_ASSET_BIND_AUX("dryfield_underpass_collision_01EC4_table", _gDryfieldUnderpassCollisionGridTable, _gDryfieldUnderpassCollisionGridCells);
 #undef DRYFIELD_UNDERPASS_CELL_FACE_LIST_AT_OFFSET
 
 /// Collision mesh shared by all six underpass rooms.

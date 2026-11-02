@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_r26.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -407,24 +408,44 @@ DirectionWarpEntry gNeoArkR26Warps[1] = {
 };
 
 /// The floor's downward unit normal, with 4096 per unit.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkR26FloorCollisionGridNormals[1] = {
 #include "assets/neo_ark_r26_collision_00BDC_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkR26FloorCollisionGridNormals[1];
+#endif
+PE_ASSET_BIND("neo_ark_r26_collision_00BDC_normals", _gNeoArkR26FloorCollisionGridNormals);
 
 /// Four floor corners in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkR26FloorCollisionGridVerts[4] = {
 #include "assets/neo_ark_r26_collision_00BDC_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkR26FloorCollisionGridVerts[4];
+#endif
+PE_ASSET_BIND("neo_ark_r26_collision_00BDC_verts", _gNeoArkR26FloorCollisionGridVerts);
 
 /// One floor quad selecting normal 0, all four corners and surface class 1.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkR26FloorCollisionGridFaces[1] = {
 #include "assets/neo_ark_r26_collision_00BDC_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkR26FloorCollisionGridFaces[1];
+#endif
+PE_ASSET_BIND("neo_ark_r26_collision_00BDC_faces", _gNeoArkR26FloorCollisionGridFaces);
 
 /// Eight two-element face lists, each face 0 followed by WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkR26FloorCollisionGridCells[16] = {
 #include "assets/neo_ark_r26_collision_00BDC_cells.inc"
 };
+#else
+static s16 _gNeoArkR26FloorCollisionGridCells[16];
+#endif
+PE_ASSET_BIND("neo_ark_r26_collision_00BDC_cells", _gNeoArkR26FloorCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -436,9 +457,14 @@ static s16 _gNeoArkR26FloorCollisionGridCells[16] = {
 /// binding through the table include, then undefine it.
 #define NEO_ARK_R26_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkR26FloorCollisionGridCells[(halfwordOffset)])
 /// X-major 3x3 cell directory: eight floor lists followed by one empty cell.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkR26FloorCollisionGridTable[9] = {
 #include "assets/neo_ark_r26_collision_00BDC_table.inc"
 };
+#else
+static s16* _gNeoArkR26FloorCollisionGridTable[9];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_r26_collision_00BDC_table", _gNeoArkR26FloorCollisionGridTable, _gNeoArkR26FloorCollisionGridCells);
 #undef NEO_ARK_R26_CELL_FACE_LIST_AT_OFFSET
 
 /// The room's floor quad at Y=0, spanning -4000..4000 on both horizontal axes.

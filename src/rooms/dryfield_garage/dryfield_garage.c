@@ -1,4 +1,5 @@
 #include "rooms/dryfield_garage.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -150,22 +151,42 @@ DirectionWarpEntry gDryfieldGarageWarpEntries[2] = {
     { { { .word = ACTOR_TRANSFORM_ANGLE_HALF_TURN }, 950, 0, 7300 }, { 0, 0, 0, 0 }, { { .word = ACTOR_TRANSFORM_ANGLE_HALF_TURN }, 1100, 0, 7300 }, { 0, 0, 0, 0 }, SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_GARAGE, 2), SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_GARAGE, 1), SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_GARAGE, 7), 6, DIRECTION_WARP_FLAG_NONE, DRYFIELD_GARAGE_JUNK_YARD_WARP_MAP_FLAG },
 };
 
+#ifdef PE_EMBED_ASSETS
 SVECTOR gDryfieldGarageCollisionGridNormals[39] = {
 #include "assets/dryfield_garage_collision_0108C_normals.inc"
 };
+#else
+SVECTOR gDryfieldGarageCollisionGridNormals[39];
+#endif
+PE_ASSET_BIND("dryfield_garage_collision_0108C_normals", gDryfieldGarageCollisionGridNormals);
 
+#ifdef PE_EMBED_ASSETS
 SVECTOR gDryfieldGarageCollisionGridVerts[106] = {
 #include "assets/dryfield_garage_collision_0108C_verts.inc"
 };
+#else
+SVECTOR gDryfieldGarageCollisionGridVerts[106];
+#endif
+PE_ASSET_BIND("dryfield_garage_collision_0108C_verts", gDryfieldGarageCollisionGridVerts);
 
+#ifdef PE_EMBED_ASSETS
 WorldCollisionGridFace gDryfieldGarageCollisionGridFaces[54] = {
 #include "assets/dryfield_garage_collision_0108C_faces.inc"
 };
+#else
+WorldCollisionGridFace gDryfieldGarageCollisionGridFaces[54];
+#endif
+PE_ASSET_BIND("dryfield_garage_collision_0108C_faces", gDryfieldGarageCollisionGridFaces);
 
 /// Signed face-index lists for the nine cells, each ending with -1.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldGarageCollisionGridCells[214] = {
 #include "assets/dryfield_garage_collision_0108C_cells.inc"
 };
+#else
+static s16 _gDryfieldGarageCollisionGridCells[214];
+#endif
+PE_ASSET_BIND("dryfield_garage_collision_0108C_cells", _gDryfieldGarageCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
 ///
@@ -180,9 +201,14 @@ static s16 _gDryfieldGarageCollisionGridCells[214] = {
 #define DRYFIELD_GARAGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldGarageCollisionGridCells[(halfwordOffset)])
 
 /// X-major 3-by-3 directory into the grid's face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldGarageCollisionGridTable[9] = {
 #include "assets/dryfield_garage_collision_0108C_table.inc"
 };
+#else
+static s16* _gDryfieldGarageCollisionGridTable[9];
+#endif
+PE_ASSET_BIND_AUX("dryfield_garage_collision_0108C_table", _gDryfieldGarageCollisionGridTable, _gDryfieldGarageCollisionGridCells);
 #undef DRYFIELD_GARAGE_CELL_FACE_LIST_AT_OFFSET
 
 /// The garage's room collision mesh and 3-by-3 XZ cell index.

@@ -1,4 +1,5 @@
 #include "rooms/mine_tunnel_entrance.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -188,24 +189,44 @@ enum {
 };
 
 /// Room-space collision normals, with ONE (4096) representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineTunnelEntranceCollisionGridNormals[23] = {
 #include "assets/mine_tunnel_entrance_collision_00B00_normals.inc"
 };
+#else
+static SVECTOR _gMineTunnelEntranceCollisionGridNormals[23];
+#endif
+PE_ASSET_BIND("mine_tunnel_entrance_collision_00B00_normals", _gMineTunnelEntranceCollisionGridNormals);
 
 /// Collision mesh vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineTunnelEntranceCollisionGridVerts[54] = {
 #include "assets/mine_tunnel_entrance_collision_00B00_verts.inc"
 };
+#else
+static SVECTOR _gMineTunnelEntranceCollisionGridVerts[54];
+#endif
+PE_ASSET_BIND("mine_tunnel_entrance_collision_00B00_verts", _gMineTunnelEntranceCollisionGridVerts);
 
 /// Collision triangles and quads indexed by the grid's cell lists.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gMineTunnelEntranceCollisionGridFaces[30] = {
 #include "assets/mine_tunnel_entrance_collision_00B00_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gMineTunnelEntranceCollisionGridFaces[30];
+#endif
+PE_ASSET_BIND("mine_tunnel_entrance_collision_00B00_faces", _gMineTunnelEntranceCollisionGridFaces);
 
 /// Cell face-index lists ending in WORLD_COLLISION_GRID_CELL_END, including retained zero entries.
+#ifdef PE_EMBED_ASSETS
 static s16 _gMineTunnelEntranceCollisionGridCells[84] = {
 #include "assets/mine_tunnel_entrance_collision_00B00_cells.inc"
 };
+#else
+static s16 _gMineTunnelEntranceCollisionGridCells[84];
+#endif
+PE_ASSET_BIND("mine_tunnel_entrance_collision_00B00_cells", _gMineTunnelEntranceCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -217,9 +238,14 @@ static s16 _gMineTunnelEntranceCollisionGridCells[84] = {
 /// binding through the table include, then undefine it.
 #define MINE_TUNNEL_ENTRANCE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineTunnelEntranceCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory borrowing one terminated face-index list per cell.
+#ifdef PE_EMBED_ASSETS
 static s16* _gMineTunnelEntranceCollisionGridTable[MINE_TUNNEL_ENTRANCE_COLLISION_GRID_CELL_COUNT_X * MINE_TUNNEL_ENTRANCE_COLLISION_GRID_CELL_COUNT_Z] = {
 #include "assets/mine_tunnel_entrance_collision_00B00_table.inc"
 };
+#else
+static s16* _gMineTunnelEntranceCollisionGridTable[10];
+#endif
+PE_ASSET_BIND_AUX("mine_tunnel_entrance_collision_00B00_table", _gMineTunnelEntranceCollisionGridTable, _gMineTunnelEntranceCollisionGridCells);
 #undef MINE_TUNNEL_ENTRANCE_CELL_FACE_LIST_AT_OFFSET
 
 /// Tunnel entrance floor and walls, partitioned into five by two square XZ cells.

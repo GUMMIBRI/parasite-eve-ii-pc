@@ -1,4 +1,5 @@
 #include "rooms/shelter_1f_parking_garage.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -166,24 +167,44 @@ DirectionWarpEntry gShelter1fParkingGarageWarps[2] = {
 };
 
 /// Q12 face normals of the garage collision mesh.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelter1fParkingGarageCollisionGridNormals[11] = {
 #include "assets/shelter_1f_parking_garage_collision_03A28_normals.inc"
 };
+#else
+static SVECTOR _gShelter1fParkingGarageCollisionGridNormals[11];
+#endif
+PE_ASSET_BIND("shelter_1f_parking_garage_collision_03A28_normals", _gShelter1fParkingGarageCollisionGridNormals);
 
 /// Signed room-local game-coordinate vertices of the garage collision mesh.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelter1fParkingGarageCollisionGridVerts[34] = {
 #include "assets/shelter_1f_parking_garage_collision_03A28_verts.inc"
 };
+#else
+static SVECTOR _gShelter1fParkingGarageCollisionGridVerts[34];
+#endif
+PE_ASSET_BIND("shelter_1f_parking_garage_collision_03A28_verts", _gShelter1fParkingGarageCollisionGridVerts);
 
 /// Thirteen indexed garage collision faces; the floor uses surface class 1.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelter1fParkingGarageCollisionGridFaces[13] = {
 #include "assets/shelter_1f_parking_garage_collision_03A28_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelter1fParkingGarageCollisionGridFaces[13];
+#endif
+PE_ASSET_BIND("shelter_1f_parking_garage_collision_03A28_faces", _gShelter1fParkingGarageCollisionGridFaces);
 
 /// Signed face-index lists for collision cells, ending at WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelter1fParkingGarageCollisionGridCells[88] = {
 #include "assets/shelter_1f_parking_garage_collision_03A28_cells.inc"
 };
+#else
+static s16 _gShelter1fParkingGarageCollisionGridCells[88];
+#endif
+PE_ASSET_BIND("shelter_1f_parking_garage_collision_03A28_cells", _gShelter1fParkingGarageCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -195,9 +216,14 @@ static s16 _gShelter1fParkingGarageCollisionGridCells[88] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_1F_PARKING_GARAGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelter1fParkingGarageCollisionGridCells[(halfwordOffset)])
 /// X-major 4-by-4 cell directory; NULL entries have no collision faces.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelter1fParkingGarageCollisionGridTable[16] = {
 #include "assets/shelter_1f_parking_garage_collision_03A28_table.inc"
 };
+#else
+static s16* _gShelter1fParkingGarageCollisionGridTable[16];
+#endif
+PE_ASSET_BIND_AUX("shelter_1f_parking_garage_collision_03A28_table", _gShelter1fParkingGarageCollisionGridTable, _gShelter1fParkingGarageCollisionGridCells);
 #undef SHELTER_1F_PARKING_GARAGE_CELL_FACE_LIST_AT_OFFSET
 
 /// Garage floor/wall mesh indexed by a 4-by-4 XZ grid of 4000-game-unit cells.

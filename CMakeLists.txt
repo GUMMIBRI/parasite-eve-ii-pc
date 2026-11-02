@@ -40,6 +40,10 @@ target_link_libraries(game_main PUBLIC psyz)
 set(PE_PACKAGES
     src/title/title.c;src/mapui/map_dryfield/map_dryfield.c;src/mapui/map_dryfield_full/map_dryfield_full.c;src/mapui/map_neo_ark/map_neo_ark.c;src/mapui/map_shelter/map_shelter.c
     CACHE STRING "Overlay sources linked into the executable")
+option(PE_EMBED_ASSETS "Comparison build: keep the build-time asset includes instead of loading from the disc" OFF)
+if(PE_EMBED_ASSETS)
+    add_compile_definitions(PE_EMBED_ASSETS=1)
+endif()
 option(PE_ALL_OVERLAYS "Compile every overlay package that builds on the host (experimental; does not link)" OFF)
 if(PE_ALL_OVERLAYS)
     include(cmake/overlay_sources.cmake)
@@ -219,7 +223,7 @@ target_link_libraries(game_overlays PUBLIC psyz)
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/port/asm_data.c)
     file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/port/asm_data.c "")
 endif()
-add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/fixed_log.c src/port/pad_trace.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c src/port/mdec_vlc.c src/port/tmd_source.c src/port/tmd_layout.c src/port/cap_asset.c src/port/cap_resource.c src/port/asm_data.c src/port/globals.c src/port/unresolved_stubs.c $<TARGET_OBJECTS:game_main>
+add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/fixed_log.c src/port/pad_trace.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c src/port/mdec_vlc.c src/port/tmd_source.c src/port/tmd_layout.c src/port/cap_asset.c src/port/cap_resource.c src/port/disc_assets.c src/port/asset_loader.c src/port/asset_parts_table.c src/port/asm_data.c src/port/globals.c src/port/unresolved_stubs.c $<TARGET_OBJECTS:game_main>
     $<TARGET_OBJECTS:game_overlays>)
 target_include_directories(parasite-eve-ii-pc PRIVATE include include/decomp src/main)
 target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz SKIP_ASM)

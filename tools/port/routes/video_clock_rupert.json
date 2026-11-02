@@ -1,0 +1,246 @@
+{
+  "description": "Physical input capture: open Security monitor panel, raise brightness, choose camera10, finish Rupert playback and close panel normally.",
+  "clock": "video",
+  "baseRoute": "video_clock_security",
+  "baseSamples": 133681,
+  "totalSamples": 140435,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          110,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          25,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          10,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 5,
+      "steps": [
+        [
+          8,
+          24592
+        ],
+        [
+          52,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          70,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          17,
+          64
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          78,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          80,
+          64
+        ]
+      ]
+    },
+    {
+      "repeat": 30,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8192
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          20,
+          8192
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          240,
+          0
+        ]
+      ]
+    }
+  ]
+}

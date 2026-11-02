@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_driveway.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -102,21 +103,41 @@ static void         _dryfieldNightDrivewaySetPlayerStateHold(u8 hold);
 /// snapshots must remain stable until the callback requests session reload.
 static TaskDesc _gRoomEventStagedTaskDesc = { { { TASK_BODY_NONE, TASK_PRIORITY_SCENE } }, roomEventStagedTask, { .value = 0 } };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDrivewayAnimation0150CBank1[10] = {
 #include "assets/dryfield_night_driveway_animation_0150C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDrivewayAnimation0150CBank1[10];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_0150C_bank1", _gDryfieldNightDrivewayAnimation0150CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDrivewayAnimation0150CBank4[95] = {
 #include "assets/dryfield_night_driveway_animation_0150C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDrivewayAnimation0150CBank4[95];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_0150C_bank4", _gDryfieldNightDrivewayAnimation0150CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDrivewayAnimation0150CRecords[139] = {
 #include "assets/dryfield_night_driveway_animation_0150C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDrivewayAnimation0150CRecords[139];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_0150C_records", _gDryfieldNightDrivewayAnimation0150CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDrivewayAnimation0150CIndices[20] = {
 #include "assets/dryfield_night_driveway_animation_0150C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDrivewayAnimation0150CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_0150C_indices", _gDryfieldNightDrivewayAnimation0150CIndices);
 
 static AnimationSet _gDryfieldNightDrivewayAnimation0150C = {
     _gDryfieldNightDrivewayAnimation0150CRecords,
@@ -124,21 +145,41 @@ static AnimationSet _gDryfieldNightDrivewayAnimation0150C = {
     { NULL, _gDryfieldNightDrivewayAnimation0150CBank1, NULL, NULL, _gDryfieldNightDrivewayAnimation0150CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDrivewayAnimation01870Bank1[6] = {
 #include "assets/dryfield_night_driveway_animation_01870_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDrivewayAnimation01870Bank1[6];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01870_bank1", _gDryfieldNightDrivewayAnimation01870Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDrivewayAnimation01870Bank4[75] = {
 #include "assets/dryfield_night_driveway_animation_01870_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDrivewayAnimation01870Bank4[75];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01870_bank4", _gDryfieldNightDrivewayAnimation01870Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDrivewayAnimation01870Records[104] = {
 #include "assets/dryfield_night_driveway_animation_01870_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDrivewayAnimation01870Records[104];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01870_records", _gDryfieldNightDrivewayAnimation01870Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDrivewayAnimation01870Indices[20] = {
 #include "assets/dryfield_night_driveway_animation_01870_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDrivewayAnimation01870Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01870_indices", _gDryfieldNightDrivewayAnimation01870Indices);
 
 static AnimationSet _gDryfieldNightDrivewayAnimation01870 = {
     _gDryfieldNightDrivewayAnimation01870Records,
@@ -146,21 +187,41 @@ static AnimationSet _gDryfieldNightDrivewayAnimation01870 = {
     { NULL, _gDryfieldNightDrivewayAnimation01870Bank1, NULL, NULL, _gDryfieldNightDrivewayAnimation01870Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDrivewayAnimation01A84Bank1[2] = {
 #include "assets/dryfield_night_driveway_animation_01A84_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDrivewayAnimation01A84Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01A84_bank1", _gDryfieldNightDrivewayAnimation01A84Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDrivewayAnimation01A84Bank4[24] = {
 #include "assets/dryfield_night_driveway_animation_01A84_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDrivewayAnimation01A84Bank4[24];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01A84_bank4", _gDryfieldNightDrivewayAnimation01A84Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDrivewayAnimation01A84Records[83] = {
 #include "assets/dryfield_night_driveway_animation_01A84_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDrivewayAnimation01A84Records[83];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01A84_records", _gDryfieldNightDrivewayAnimation01A84Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDrivewayAnimation01A84Indices[20] = {
 #include "assets/dryfield_night_driveway_animation_01A84_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDrivewayAnimation01A84Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01A84_indices", _gDryfieldNightDrivewayAnimation01A84Indices);
 
 static AnimationSet _gDryfieldNightDrivewayAnimation01A84 = {
     _gDryfieldNightDrivewayAnimation01A84Records,
@@ -168,21 +229,41 @@ static AnimationSet _gDryfieldNightDrivewayAnimation01A84 = {
     { NULL, _gDryfieldNightDrivewayAnimation01A84Bank1, NULL, NULL, _gDryfieldNightDrivewayAnimation01A84Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDrivewayAnimation01D64Bank1[5] = {
 #include "assets/dryfield_night_driveway_animation_01D64_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDrivewayAnimation01D64Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01D64_bank1", _gDryfieldNightDrivewayAnimation01D64Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDrivewayAnimation01D64Bank4[60] = {
 #include "assets/dryfield_night_driveway_animation_01D64_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDrivewayAnimation01D64Bank4[60];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01D64_bank4", _gDryfieldNightDrivewayAnimation01D64Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDrivewayAnimation01D64Records[89] = {
 #include "assets/dryfield_night_driveway_animation_01D64_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDrivewayAnimation01D64Records[89];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01D64_records", _gDryfieldNightDrivewayAnimation01D64Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDrivewayAnimation01D64Indices[20] = {
 #include "assets/dryfield_night_driveway_animation_01D64_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDrivewayAnimation01D64Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_animation_01D64_indices", _gDryfieldNightDrivewayAnimation01D64Indices);
 
 static AnimationSet _gDryfieldNightDrivewayAnimation01D64 = {
     _gDryfieldNightDrivewayAnimation01D64Records,
@@ -839,24 +920,44 @@ enum {
 };
 
 /// Thirteen room-space normals for the driveway mesh; 4096 represents unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightDrivewayCollisionGridNormals[13] = {
 #include "assets/dryfield_night_driveway_collision_0364C_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightDrivewayCollisionGridNormals[13];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_collision_0364C_normals", _gDryfieldNightDrivewayCollisionGridNormals);
 
 /// Sixty-four mesh vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightDrivewayCollisionGridVerts[64] = {
 #include "assets/dryfield_night_driveway_collision_0364C_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightDrivewayCollisionGridVerts[64];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_collision_0364C_verts", _gDryfieldNightDrivewayCollisionGridVerts);
 
 /// Twenty-three mesh quads, indexing the vertex/normal pools and surface classes 0..2.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightDrivewayCollisionGridFaces[23] = {
 #include "assets/dryfield_night_driveway_collision_0364C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightDrivewayCollisionGridFaces[23];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_collision_0364C_faces", _gDryfieldNightDrivewayCollisionGridFaces);
 
 /// Packed signed face-index lists; each nonempty cell ends with -1.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightDrivewayCollisionGridCells[154] = {
 #include "assets/dryfield_night_driveway_collision_0364C_cells.inc"
 };
+#else
+static s16 _gDryfieldNightDrivewayCollisionGridCells[154];
+#endif
+PE_ASSET_BIND("dryfield_night_driveway_collision_0364C_cells", _gDryfieldNightDrivewayCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
 ///
@@ -871,9 +972,14 @@ static s16 _gDryfieldNightDrivewayCollisionGridCells[154] = {
 #define DRYFIELD_NIGHT_DRIVEWAY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightDrivewayCollisionGridCells[(halfwordOffset)])
 
 /// X-major cell pointers into the face-index lists; NULL denotes the final empty cell.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightDrivewayCollisionGridTable[DRYFIELD_NIGHT_DRIVEWAY_GRID_CELL_COUNT_X * DRYFIELD_NIGHT_DRIVEWAY_GRID_CELL_COUNT_Z] = {
 #include "assets/dryfield_night_driveway_collision_0364C_table.inc"
 };
+#else
+static s16* _gDryfieldNightDrivewayCollisionGridTable[21];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_driveway_collision_0364C_table", _gDryfieldNightDrivewayCollisionGridTable, _gDryfieldNightDrivewayCollisionGridCells);
 #undef DRYFIELD_NIGHT_DRIVEWAY_CELL_FACE_LIST_AT_OFFSET
 
 /// Driveway collision mesh shared by rooms 1 and 2, with an X-major 7 by 3 cell index.

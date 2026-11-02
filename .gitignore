@@ -74,3 +74,4 @@ build-port/
 build-all/
 build-*/
 src/port/asm_data.c
+src/port/asset_parts_table.c

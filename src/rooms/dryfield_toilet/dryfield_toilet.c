@@ -1,4 +1,5 @@
 #include "rooms/dryfield_toilet.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -76,24 +77,44 @@ static const ActorCommand _gDryfieldToiletPrepareEncounterActorsCommand __attrib
 };
 
 /// Q12 room-space normal restored into the room grid's reserved event face.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldToiletEventCollisionTemplateNormals[1] = {
 #include "assets/dryfield_toilet_collision_02D54_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldToiletEventCollisionTemplateNormals[1];
+#endif
+PE_ASSET_BIND("dryfield_toilet_collision_02D54_normals", _gDryfieldToiletEventCollisionTemplateNormals);
 
 /// Four event-face vertices in signed whole room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldToiletEventCollisionTemplateVerts[4] = {
 #include "assets/dryfield_toilet_collision_02D54_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldToiletEventCollisionTemplateVerts[4];
+#endif
+PE_ASSET_BIND("dryfield_toilet_collision_02D54_verts", _gDryfieldToiletEventCollisionTemplateVerts);
 
 /// The event quad, indexing this template's four vertices and single normal.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldToiletEventCollisionTemplateFaces[1] = {
 #include "assets/dryfield_toilet_collision_02D54_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldToiletEventCollisionTemplateFaces[1];
+#endif
+PE_ASSET_BIND("dryfield_toilet_collision_02D54_faces", _gDryfieldToiletEventCollisionTemplateFaces);
 
 /// The event cell's face-index list: face 0 followed by the -1 end marker.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldToiletEventCollisionTemplateCells[2] = {
 #include "assets/dryfield_toilet_collision_02D54_cells.inc"
 };
+#else
+static s16 _gDryfieldToiletEventCollisionTemplateCells[2];
+#endif
+PE_ASSET_BIND("dryfield_toilet_collision_02D54_cells", _gDryfieldToiletEventCollisionTemplateCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -104,9 +125,14 @@ static s16 _gDryfieldToiletEventCollisionTemplateCells[2] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_TOILET_EVENT_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldToiletEventCollisionTemplateCells[(halfwordOffset)])
 /// The sole cell's borrowed face-index list; this template is never bound live.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldToiletEventCollisionTemplateTable[1] = {
 #include "assets/dryfield_toilet_collision_02D54_table.inc"
 };
+#else
+static s16* _gDryfieldToiletEventCollisionTemplateTable[1];
+#endif
+PE_ASSET_BIND_AUX("dryfield_toilet_collision_02D54_table", _gDryfieldToiletEventCollisionTemplateTable, _gDryfieldToiletEventCollisionTemplateCells);
 #undef DRYFIELD_TOILET_EVENT_CELL_FACE_LIST_AT_OFFSET
 
 /// Source geometry for the room grid's reserved event-collision head.
@@ -129,21 +155,41 @@ static const WorldCollisionGrid _gDryfieldToiletEventCollisionTemplate SECTION("
     .faceCount   = ARRAY_SIZE(_gDryfieldToiletEventCollisionTemplateFaces),
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldToiletAnimation03054Bank1[6] = {
 #include "assets/dryfield_toilet_animation_03054_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldToiletAnimation03054Bank1[6];
+#endif
+PE_ASSET_BIND("dryfield_toilet_animation_03054_bank1", _gDryfieldToiletAnimation03054Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldToiletAnimation03054Bank4[46] = {
 #include "assets/dryfield_toilet_animation_03054_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldToiletAnimation03054Bank4[46];
+#endif
+PE_ASSET_BIND("dryfield_toilet_animation_03054_bank4", _gDryfieldToiletAnimation03054Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldToiletAnimation03054Records[109] = {
 #include "assets/dryfield_toilet_animation_03054_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldToiletAnimation03054Records[109];
+#endif
+PE_ASSET_BIND("dryfield_toilet_animation_03054_records", _gDryfieldToiletAnimation03054Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldToiletAnimation03054Indices[20] = {
 #include "assets/dryfield_toilet_animation_03054_indices.inc"
 };
+#else
+static u16 _gDryfieldToiletAnimation03054Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_toilet_animation_03054_indices", _gDryfieldToiletAnimation03054Indices);
 
 AnimationSet gDryfieldToiletAnimation03054 = {
     _gDryfieldToiletAnimation03054Records,
@@ -151,21 +197,41 @@ AnimationSet gDryfieldToiletAnimation03054 = {
     { NULL, _gDryfieldToiletAnimation03054Bank1, NULL, NULL, _gDryfieldToiletAnimation03054Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldToiletAnimation035A4Bank1[9] = {
 #include "assets/dryfield_toilet_animation_035A4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldToiletAnimation035A4Bank1[9];
+#endif
+PE_ASSET_BIND("dryfield_toilet_animation_035A4_bank1", _gDryfieldToiletAnimation035A4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldToiletAnimation035A4Bank4[131] = {
 #include "assets/dryfield_toilet_animation_035A4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldToiletAnimation035A4Bank4[131];
+#endif
+PE_ASSET_BIND("dryfield_toilet_animation_035A4_bank4", _gDryfieldToiletAnimation035A4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldToiletAnimation035A4Records[162] = {
 #include "assets/dryfield_toilet_animation_035A4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldToiletAnimation035A4Records[162];
+#endif
+PE_ASSET_BIND("dryfield_toilet_animation_035A4_records", _gDryfieldToiletAnimation035A4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldToiletAnimation035A4Indices[20] = {
 #include "assets/dryfield_toilet_animation_035A4_indices.inc"
 };
+#else
+static u16 _gDryfieldToiletAnimation035A4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_toilet_animation_035A4_indices", _gDryfieldToiletAnimation035A4Indices);
 
 AnimationSet gDryfieldToiletAnimation035A4 = {
     _gDryfieldToiletAnimation035A4Records,

@@ -1,4 +1,5 @@
 #include "rooms/shelter_1f_heliport.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -204,24 +205,44 @@ static const u8 _gShelter1fHeliportPlacedActorDrawModesByView[SHELTER_1F_HELIPOR
 static SVECTOR _gShelter1fHeliportCompanionObstacleOffset = { 0 };
 
 /// Four model-local obstacle normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelter1fHeliportCompanionObstacleTemplateNormals[4] = {
 #include "assets/shelter_1f_heliport_collision_03CEC_normals.inc"
 };
+#else
+static SVECTOR _gShelter1fHeliportCompanionObstacleTemplateNormals[4];
+#endif
+PE_ASSET_BIND("shelter_1f_heliport_collision_03CEC_normals", _gShelter1fHeliportCompanionObstacleTemplateNormals);
 
 /// Eight model-local obstacle corners in signed game-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelter1fHeliportCompanionObstacleTemplateVerts[8] = {
 #include "assets/shelter_1f_heliport_collision_03CEC_verts.inc"
 };
+#else
+static SVECTOR _gShelter1fHeliportCompanionObstacleTemplateVerts[8];
+#endif
+PE_ASSET_BIND("shelter_1f_heliport_collision_03CEC_verts", _gShelter1fHeliportCompanionObstacleTemplateVerts);
 
 /// Four side quads using vertices 0..7, normals 0..3 and room surface class 0.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelter1fHeliportCompanionObstacleTemplateFaces[4] = {
 #include "assets/shelter_1f_heliport_collision_03CEC_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelter1fHeliportCompanionObstacleTemplateFaces[4];
+#endif
+PE_ASSET_BIND("shelter_1f_heliport_collision_03CEC_faces", _gShelter1fHeliportCompanionObstacleTemplateFaces);
 
 /// Single-cell face list (0..3, END) and the final retained zero halfword.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelter1fHeliportCompanionObstacleTemplateCells[6] = {
 #include "assets/shelter_1f_heliport_collision_03CEC_cells.inc"
 };
+#else
+static s16 _gShelter1fHeliportCompanionObstacleTemplateCells[6];
+#endif
+PE_ASSET_BIND("shelter_1f_heliport_collision_03CEC_cells", _gShelter1fHeliportCompanionObstacleTemplateCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -233,9 +254,14 @@ static s16 _gShelter1fHeliportCompanionObstacleTemplateCells[6] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_1F_HELIPORT_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelter1fHeliportCompanionObstacleTemplateCells[(halfwordOffset)])
 /// One-cell directory retained with the obstacle template; the rebuild uses only its mesh.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelter1fHeliportCompanionObstacleTemplateTable[1] = {
 #include "assets/shelter_1f_heliport_collision_03CEC_table.inc"
 };
+#else
+static s16* _gShelter1fHeliportCompanionObstacleTemplateTable[1];
+#endif
+PE_ASSET_BIND_AUX("shelter_1f_heliport_collision_03CEC_table", _gShelter1fHeliportCompanionObstacleTemplateTable, _gShelter1fHeliportCompanionObstacleTemplateCells);
 #undef SHELTER_1F_HELIPORT_CELL_FACE_LIST_AT_OFFSET
 
 /// Model-local companion obstacle template restored into the room grid's leading slots.
@@ -294,24 +320,44 @@ enum { SHELTER_1F_HELIPORT_COLLISION_CELLS_X = 3,
        SHELTER_1F_HELIPORT_COLLISION_CELLS_Z = 3 };
 
 /// Room-space collision normals; the first four are rebuilt for the companion obstacle.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelter1fHeliportCollisionGridNormals[12] = {
 #include "assets/shelter_1f_heliport_collision_043B4_normals.inc"
 };
+#else
+static SVECTOR _gShelter1fHeliportCollisionGridNormals[12];
+#endif
+PE_ASSET_BIND("shelter_1f_heliport_collision_043B4_normals", _gShelter1fHeliportCollisionGridNormals);
 
 /// Room-space collision vertices; the first eight are rebuilt for the companion obstacle.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelter1fHeliportCollisionGridVerts[75] = {
 #include "assets/shelter_1f_heliport_collision_043B4_verts.inc"
 };
+#else
+static SVECTOR _gShelter1fHeliportCollisionGridVerts[75];
+#endif
+PE_ASSET_BIND("shelter_1f_heliport_collision_043B4_verts", _gShelter1fHeliportCollisionGridVerts);
 
 /// Indexed room collision faces, with four leading slots reserved for the companion obstacle.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelter1fHeliportCollisionGridFaces[40] = {
 #include "assets/shelter_1f_heliport_collision_043B4_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelter1fHeliportCollisionGridFaces[40];
+#endif
+PE_ASSET_BIND("shelter_1f_heliport_collision_043B4_faces", _gShelter1fHeliportCollisionGridFaces);
 
 /// Serialized face-index lists, each terminated by `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelter1fHeliportCollisionGridCells[172] = {
 #include "assets/shelter_1f_heliport_collision_043B4_cells.inc"
 };
+#else
+static s16 _gShelter1fHeliportCollisionGridCells[172];
+#endif
+PE_ASSET_BIND("shelter_1f_heliport_collision_043B4_cells", _gShelter1fHeliportCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -323,9 +369,14 @@ static s16 _gShelter1fHeliportCollisionGridCells[172] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_1F_HELIPORT_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelter1fHeliportCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory; every cell includes the four companion-obstacle face slots.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelter1fHeliportCollisionGridTable[SHELTER_1F_HELIPORT_COLLISION_CELLS_X * SHELTER_1F_HELIPORT_COLLISION_CELLS_Z] = {
 #include "assets/shelter_1f_heliport_collision_043B4_table.inc"
 };
+#else
+static s16* _gShelter1fHeliportCollisionGridTable[9];
+#endif
+PE_ASSET_BIND_AUX("shelter_1f_heliport_collision_043B4_table", _gShelter1fHeliportCollisionGridTable, _gShelter1fHeliportCollisionGridCells);
 #undef SHELTER_1F_HELIPORT_CELL_FACE_LIST_AT_OFFSET
 
 /// Complete room collision grid, including the mutable companion-obstacle slots.

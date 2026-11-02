@@ -1,4 +1,5 @@
 #include "rooms/dryfield_toilet.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -262,26 +263,46 @@ DirectionWarpEntry gDryfieldToiletWarpEntries[1] = {
 };
 
 /// Seven room-grid normals in Q12 units; normal zero belongs to the event obstacle.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldToiletRoomCollisionGridNormals[7] = {
 #include "assets/dryfield_toilet_collision_03E44_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldToiletRoomCollisionGridNormals[7];
+#endif
+PE_ASSET_BIND("dryfield_toilet_collision_03E44_normals", _gDryfieldToiletRoomCollisionGridNormals);
 
 /// Thirty-eight room-grid vertices; the event obstacle occupies vertices 0..3.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldToiletRoomCollisionGridVerts[38] = {
 #include "assets/dryfield_toilet_collision_03E44_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldToiletRoomCollisionGridVerts[38];
+#endif
+PE_ASSET_BIND("dryfield_toilet_collision_03E44_verts", _gDryfieldToiletRoomCollisionGridVerts);
 
 /// Seventeen indexed room faces; the initially empty first face is restored for the event.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldToiletRoomCollisionGridFaces[17] = {
 #include "assets/dryfield_toilet_collision_03E44_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldToiletRoomCollisionGridFaces[17];
+#endif
+PE_ASSET_BIND("dryfield_toilet_collision_03E44_faces", _gDryfieldToiletRoomCollisionGridFaces);
 
 /// Serialized signed face-index lists for both cells, terminated by -1.
 ///
 /// The final stored zero follows both terminated lists and is not traversed.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldToiletRoomCollisionGridCells[34] = {
 #include "assets/dryfield_toilet_collision_03E44_cells.inc"
 };
+#else
+static s16 _gDryfieldToiletRoomCollisionGridCells[34];
+#endif
+PE_ASSET_BIND("dryfield_toilet_collision_03E44_cells", _gDryfieldToiletRoomCollisionGridCells);
 
 // The generated initializer supplies a constant index into the signed cell lists.
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -293,9 +314,14 @@ static s16 _gDryfieldToiletRoomCollisionGridCells[34] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_TOILET_ROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldToiletRoomCollisionGridCells[(halfwordOffset)])
 /// X-major cell-list pointers for the grid's one-by-two XZ partition.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldToiletRoomCollisionGridTable[2] = {
 #include "assets/dryfield_toilet_collision_03E44_table.inc"
 };
+#else
+static s16* _gDryfieldToiletRoomCollisionGridTable[2];
+#endif
+PE_ASSET_BIND_AUX("dryfield_toilet_collision_03E44_table", _gDryfieldToiletRoomCollisionGridTable, _gDryfieldToiletRoomCollisionGridCells);
 #undef DRYFIELD_TOILET_ROOM_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gDryfieldToiletRoomCollisionGrid = {

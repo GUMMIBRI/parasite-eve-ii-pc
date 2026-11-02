@@ -1,4 +1,5 @@
 #include "rooms/shelter_b3_garbage_incinerator.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -224,28 +225,48 @@ static SVECTOR _gShelterB3GarbageIncineratorLightPoints[79] = {
 /// Room-space collision normals; the first eight slots serve rebuilt walls.
 ///
 /// A unit normal uses 4096. The writable pool lives with this overlay.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3GarbageIncineratorCollisionGridNormals[29] = {
 #include "assets/shelter_b3_garbage_incinerator_collision_0ADC8_normals.inc"
 };
+#else
+static SVECTOR _gShelterB3GarbageIncineratorCollisionGridNormals[29];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_collision_0ADC8_normals", _gShelterB3GarbageIncineratorCollisionGridNormals);
 
 /// Grid-local collision vertices in signed game units, with 32 wall slots first.
 ///
 /// Lift and exit updates rebuild the leading wall vertices in place.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3GarbageIncineratorCollisionGridVerts[84] = {
 #include "assets/shelter_b3_garbage_incinerator_collision_0ADC8_verts.inc"
 };
+#else
+static SVECTOR _gShelterB3GarbageIncineratorCollisionGridVerts[84];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_collision_0ADC8_verts", _gShelterB3GarbageIncineratorCollisionGridVerts);
 
 /// Collision triangles and quads, with eight initially inactive wall slots first.
 ///
 /// Faces index the vertex and normal pools; wall updates populate slots 0..7.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB3GarbageIncineratorCollisionGridFaces[64] = {
 #include "assets/shelter_b3_garbage_incinerator_collision_0ADC8_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB3GarbageIncineratorCollisionGridFaces[64];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_collision_0ADC8_faces", _gShelterB3GarbageIncineratorCollisionGridFaces);
 
 /// Halfword face-index lists ending with `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB3GarbageIncineratorCollisionGridCells[604] = {
 #include "assets/shelter_b3_garbage_incinerator_collision_0ADC8_cells.inc"
 };
+#else
+static s16 _gShelterB3GarbageIncineratorCollisionGridCells[604];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_collision_0ADC8_cells", _gShelterB3GarbageIncineratorCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
 ///
@@ -256,9 +277,14 @@ static s16 _gShelterB3GarbageIncineratorCollisionGridCells[604] = {
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B3_GARBAGE_INCINERATOR_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB3GarbageIncineratorCollisionGridCells[(halfwordOffset)])
 /// X-major cell pointers into the face-index pool for the 5 by 7 grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB3GarbageIncineratorCollisionGridTable[35] = {
 #include "assets/shelter_b3_garbage_incinerator_collision_0ADC8_table.inc"
 };
+#else
+static s16* _gShelterB3GarbageIncineratorCollisionGridTable[35];
+#endif
+PE_ASSET_BIND_AUX("shelter_b3_garbage_incinerator_collision_0ADC8_table", _gShelterB3GarbageIncineratorCollisionGridTable, _gShelterB3GarbageIncineratorCollisionGridCells);
 #undef SHELTER_B3_GARBAGE_INCINERATOR_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB3GarbageIncineratorCollisionGrid = {

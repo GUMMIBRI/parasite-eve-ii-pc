@@ -1,4 +1,5 @@
 #include "rooms/shelter_b1_access_tunnel.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -179,27 +180,47 @@ DirectionWarpEntry gShelterB1AccessTunnelWarpEntries[4] = {
 };
 
 /// Collision mesh's room-space normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1AccessTunnelCollisionGridNormals[6] = {
 #include "assets/shelter_b1_access_tunnel_collision_01564_normals.inc"
 };
+#else
+static SVECTOR _gShelterB1AccessTunnelCollisionGridNormals[6];
+#endif
+PE_ASSET_BIND("shelter_b1_access_tunnel_collision_01564_normals", _gShelterB1AccessTunnelCollisionGridNormals);
 
 /// Collision mesh's signed room-coordinate vertices.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1AccessTunnelCollisionGridVerts[24] = {
 #include "assets/shelter_b1_access_tunnel_collision_01564_verts.inc"
 };
+#else
+static SVECTOR _gShelterB1AccessTunnelCollisionGridVerts[24];
+#endif
+PE_ASSET_BIND("shelter_b1_access_tunnel_collision_01564_verts", _gShelterB1AccessTunnelCollisionGridVerts);
 
 /// Indexed collision quads selecting vertex/normal pools and surface classes 0..2.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB1AccessTunnelCollisionGridFaces[15] = {
 #include "assets/shelter_b1_access_tunnel_collision_01564_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB1AccessTunnelCollisionGridFaces[15];
+#endif
+PE_ASSET_BIND("shelter_b1_access_tunnel_collision_01564_faces", _gShelterB1AccessTunnelCollisionGridFaces);
 
 /// Signed face-index lists ended by WORLD_COLLISION_GRID_CELL_END.
 ///
 /// The cell directory selects each list's start; retained inter-list bytes
 /// outside the terminated lists have no established collision use.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB1AccessTunnelCollisionGridCells[72] = {
 #include "assets/shelter_b1_access_tunnel_collision_01564_cells.inc"
 };
+#else
+static s16 _gShelterB1AccessTunnelCollisionGridCells[72];
+#endif
+PE_ASSET_BIND("shelter_b1_access_tunnel_collision_01564_cells", _gShelterB1AccessTunnelCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -211,9 +232,14 @@ static s16 _gShelterB1AccessTunnelCollisionGridCells[72] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_ACCESS_TUNNEL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1AccessTunnelCollisionGridCells[(halfwordOffset)])
 /// X-major directory for the collision mesh's 3-by-3 cells; NULL is an empty cell.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB1AccessTunnelCollisionGridTable[9] = {
 #include "assets/shelter_b1_access_tunnel_collision_01564_table.inc"
 };
+#else
+static s16* _gShelterB1AccessTunnelCollisionGridTable[9];
+#endif
+PE_ASSET_BIND_AUX("shelter_b1_access_tunnel_collision_01564_table", _gShelterB1AccessTunnelCollisionGridTable, _gShelterB1AccessTunnelCollisionGridCells);
 #undef SHELTER_B1_ACCESS_TUNNEL_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB1AccessTunnelCollisionGrid = {

@@ -2783,3 +2783,163 @@ Both full Protein Capsule probes now pass all10 expectations. Differing
 checkpoint groups: timing. Logs:
 `build-port/video-clock-fountain-protein-{a,b}.log`. This verifies pickup
 and control after the climb on the corrected audio/video-clock route.
+
+
+### Fountain descent, Hallway rat victory and combat healing (2026-11-02)
+
+From the upper Protein pickup, normal navigation around the SWAT cases returns
+to the ledge; forward/action input performs the descent. At123590 lower
+surfaceClass4/root[2398,129,-4811] replaces upper class5. Returning through
+Fountain's Hallway door restores area7 with all eight18HP rats present.
+Tonfa attacks demonstrably damage/kill them. Retargeting after attack recovery
+is needed; holding the previous lock yields inefficient attacks. One real
+Pyrokinesis cast spends8MP, but no rat HP reduction was observed at the sampled
+post-cast checkpoint, so no Pyrokinesis hit is claimed.
+
+At15HP the combat attachment menu is opened. Its slots use horizontal Left/
+Right navigation (the generic inventory attachment-list observer is unrelated).
+Selecting attachment index2 and confirming consumes the last attached
+Recovery2 and heals15 to105 while the battle is active; the menu then closes
+normally. Subsequent Tonfa attacks with recovery/target-selection pauses kill
+all remaining rats. At131427 the result is EXP458 (+32), BP700 (+176), HP101,
+MP30, statusFlags0 and weapon19. Confirmation at the nearby door also returns
+to Cafeteria area4/roomState4/view5, root[-986,-172,-5486]. This return is
+preserved in the input rather than described as a Hallway endpoint.
+
+`--video-clock-hallway-clear --frames 20000 --aim-cycle 180` generates131427
+samples byte-identical to the live capture. Two finite probes each pass ten
+expectations and have identical complete checkpoint dictionaries, including
+RNG/timing (`build-port/video-clock-hallway-clear-{a,b}.log`). A normal-input
+revisit at132083 independently shows Hallway with battleRefs0; the rats did
+not respawn. The menu-healing and Tonfa enemy-hit path uses no game-state writes.
+
+### Corrected Security Room entry after clearing Hallway (2026-11-02)
+
+The live route returns through cleared Hallway and its south security door.
+At133681: area6/roomState1/variant1/view2/warp1, normal actor/state0,
+root[-46,-872,-2877], yaw0, HP101/MP30, EXP458/BP700, weapon19,
+event/UI0 and all observed flow fields0. Grid/controller identify Security
+Room. Room and HUD visually inspected (`build-port/video-security-settled.png`).
+New `--video-clock-security --frames 20000 --aim-cycle 180` generates133681
+samples from the verified rat-clear prefix and matches the live recording
+byte-for-byte. Independent finite verification is running; monitor interaction
+and Rupert playback are not yet verified on this corrected audio/video route.
+
+The finite133681-sample Security entry replay passes all10 expectations and
+exits normally (`build-port/video-clock-security-entry.log`), including exact
+root, Tonfa, HP101, EXP458/BP700 and restored control. The prior rat-clear
+endpoint was independently repeated twice; this entry probe was run once.
+
+
+### Security monitors and Rupert playback on the corrected route (2026-11-02)
+
+From Security entry133681, normal input approaches the console, aligns the
+player and opens its actual monitor panel. Continuing movement during opening
+moves the UI cursor to(0,-110); Left70/Down17 brings it to(-140,-74), inside
+the brightness hotspot. Confirm input raises live screenLevel4 to252. Right78/
+Down80 selects camera10 at(16,86), with no cursor/trigger/flag writes.
+
+The real Rupert playback completes: monitorScenesSeen2, rupertSceneFinished1,
+Rupert task gone, SWAT task retained. Additional confirms finish the camera
+caption, then ordinary Cancel inputs close the monitor panel. At140435
+monitorBrightness4 is persisted, monitor task gone, actor mode/state0,
+event/UI0 and pendingMode0 restored. HP101/MP30, weapon19 and rewards retained.
+The open panel, changed brightness and playback were visually inspected
+(`build-port/video-monitor-trigger.png`, `video-monitor-brightness.png`,
+`video-rupert-monitor.png`). This verifies camera playback and closure, not
+an additional speaker-warning interaction.
+
+New `--video-clock-rupert --frames 20000 --aim-cycle 180` generates140435
+samples, recursively using the verified Security entry. Output matches the
+live recording byte-for-byte; Python compilation and diff whitespace checks
+pass. Two finite full-route probes are checking scene flags, brightness,
+equipment, health and restored control. No production-code fix was required
+for this interaction after the existing audio fixes.
+
+Both full Rupert probes pass all10 expectations. Differing checkpoint groups:
+none, including timing and RNG. Logs: `build-port/video-clock-rupert-{a,b}.log`.
+The monitor task is absent and only the SWAT monitor actor remains after
+closure; the Rupert actor has retired normally.
+
+
+### Blue Key and left power lock after Rupert playback (2026-11-02)
+
+The corrected native route now returns to cleared Hallway after the Rupert
+monitor scene and collects Blue Key (collection260) through CAP2's key box at
+(800,-928). The neighboring manual (CAP5) and extinguisher (CAP6) examinations
+were explored first; neither yields the key. At154327 normal control/event/UI0
+are restored and the collected display order contains[260,258,257,262]. New
+`--video-clock-blue-key --frames 20000 --aim-cycle 180` generates154327 samples,
+byte-identical to the capture; its finite video-clock probe passes eight
+expectations (`build-port/video-clock-blue-key.log`).
+
+Returning to Security, the power panel uses CAP2 at(192,144), distinct from
+CAP1 graffiti at(-1088,-704). The panel opens with cursor(0,0). Moving to the
+left lock(-56,32), choosing Item and confirming the actual Blue Key entry
+consumes the key and starts the unlock scene. At159401 panelKeys1,
+sanctuaryRouteProgress2, Blue Key absent, rupertSceneFinished1 retained,
+actor mode/state0, event/UI0 and pendingMode0. HP101/MP30, weapon19 retained.
+Actual key-item selection and the resulting scene were visually inspected
+(`build-port/video-key-item-menu.png`, `video-blue-unlock-scene.png`).
+
+New `--video-clock-blue-unlock` generates159401 samples using the verified
+key prefix, byte-identical to the live input. Python compilation and whitespace
+checks pass. Initial finite-probe launches did not run: a concurrent external
+build temporarily removed the executable while relinking. Its process was
+observed live, then terminal; the replacement binary is now present. The
+current HEAD48d0b31 retains the SPU attribute implementation and overlay CMake
+wiring. To avoid another relink interrupt, subsequent probes use a copied
+binary `build-port/replay-bin/pe2-blue-unlock-48d0b31`; two full probes are
+running. No build files were reverted by this task and no game-state values
+were injected.
+
+The two159401-sample probes on the copied replacement binary verify key
+consumption, panelKeys1, sanctuaryRouteProgress2 and normal player/event/UI
+state, but fail pendingMode0: each stops at pendingMode255 during the final
+presentation handoff. The route is extended by120 neutral samples to159521;
+it remains byte-identical to the live recording. Settled endpoint probes are
+running against the same copied binary; the earlier failed gate is retained
+in `video-clock-blue-unlock-{a,b}.log` rather than described as a pass.
+
+Both settled159521-sample Blue Key unlock probes pass all11 expectations,
+including pendingMode0. Differing complete checkpoint groups: none, including RNG/timing.
+Evidence: `build-port/video-clock-blue-unlock-settled-{a,b}.log`. This also
+checks the route against the externally rebuilt executable copied at HEAD
+48d0b31, beyond the original live process.
+
+
+### Fountain revisit, Forked Road and Observatory ride (2026-11-02)
+
+After the Blue Key unlock, normal input revisits Fountain. At160958 the saved
+hidden-path flag remains1 and the extra climb trigger is enabled/linked along
+with all nine authored actions, verifying this branch's actual room re-entry.
+The east/upper corridor reaches Forked Road at162274: area9/roomState2/
+variant2/view4/warp3, root[-5107,129,-3780], yaw0, HP101/MP30,
+weapon19, panelKeys1 and sanctuaryRouteProgress2 retained. A live160HP Stranger
+is present; no Forked Road victory is claimed. `--video-clock-forked-road`
+generates this capture byte-for-byte.
+
+The controller route crosses to the escalator and executes the real outbound
+and Observatory arrival movie paths. At164827: Observatory area10/roomState1/
+variant1/view2/warp4, root[-2491,-2861,-1750], yaw1008, normal mode/state0,
+event/UI0 and pendingMode0, HP101/MP30, weapon19. Arrival flag1, bat ambush0,
+actorControl0, padScriptFlags0 and no remaining movie tasks. The rendered
+arrival backdrop/player/HUD were visually inspected
+(`build-port/video-observatory-arrival.png`). New `--video-clock-observatory
+--frames 20000 --aim-cycle 180` generates164827 samples byte-identical to the
+live recording. Two finite probes on copied binary48d0b31 pass11 expectations
+and have identical complete checkpoint dictionaries, including timing/RNG
+(`build-port/video-clock-observatory-{a,b}.log`).
+
+A separate162274-sample Forked Road endpoint probe crashed before its EOF,
+back in Gallery area20/HP100: `_stageResolvePlayerContacts` dereferences a
+missing player task while `_sceneBattleResultTask` is queued with forced
+reload entry258/spawnArg1=1. Log: `build-port/video-clock-forked-road.log`.
+This resembles the earlier unresolved missing-player lifecycle failure; the
+two successful longer-prefix probes do not invalidate it or prove global
+replay stability. No NULL guard/state injection was added. `pe2-transition`
+now records input sample index, player task pointer, display owner/hold and
+both task lists even when full player collection is unavailable. It was
+verified read-only in the live process at input164827. A replay of the failing
+endpoint with expanded diagnostics is running. Later Observatory combat on
+this corrected route remains unverified.

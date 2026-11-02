@@ -1,4 +1,5 @@
 #include "rooms/mine_forked_tunnel.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -186,25 +187,50 @@ static WorldCollisionTrigger      _gMineForkedTunnelActionTriggers[6];
 static WorldCoordRoomAmbientEntry _gMineForkedTunnelViewAmbientTable[8];
 static WorldCoordRoomLights       _gMineForkedTunnelRoomLights;
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gMineForkedTunnelModel01B48Skeleton[1] = {
 #include "assets/mine_forked_tunnel_model_01B48_skeleton.inc"
 };
+#else
+static TmdBone _gMineForkedTunnelModel01B48Skeleton[1];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_model_01B48_skeleton", _gMineForkedTunnelModel01B48Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gMineForkedTunnelModel01B48PartVerts[1] = {
 #include "assets/mine_forked_tunnel_model_01B48_partVerts.inc"
 };
+#else
+static u32 _gMineForkedTunnelModel01B48PartVerts[1];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_model_01B48_partVerts", _gMineForkedTunnelModel01B48PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelModel01B48Verts[223] = {
 #include "assets/mine_forked_tunnel_model_01B48_verts.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelModel01B48Verts[223];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_model_01B48_verts", _gMineForkedTunnelModel01B48Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelModel01B48Normals[56] = {
 #include "assets/mine_forked_tunnel_model_01B48_normals.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelModel01B48Normals[56];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_model_01B48_normals", _gMineForkedTunnelModel01B48Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gMineForkedTunnelModel01B48Stream[1451] = {
 #include "assets/mine_forked_tunnel_model_01B48_stream.inc"
 };
+#else
+static u32 _gMineForkedTunnelModel01B48Stream[1451];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_model_01B48_stream", _gMineForkedTunnelModel01B48Stream);
 
 TmdSource gMineForkedTunnelModel01B48 = {
     0,
@@ -218,25 +244,50 @@ TmdSource gMineForkedTunnelModel01B48 = {
     _gMineForkedTunnelModel01B48Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gMineForkedTunnelModel03340Skeleton[1] = {
 #include "assets/mine_forked_tunnel_model_03340_skeleton.inc"
 };
+#else
+static TmdBone _gMineForkedTunnelModel03340Skeleton[1];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_model_03340_skeleton", _gMineForkedTunnelModel03340Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gMineForkedTunnelModel03340PartVerts[1] = {
 #include "assets/mine_forked_tunnel_model_03340_partVerts.inc"
 };
+#else
+static u32 _gMineForkedTunnelModel03340PartVerts[1];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_model_03340_partVerts", _gMineForkedTunnelModel03340PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelModel03340Verts[20] = {
 #include "assets/mine_forked_tunnel_model_03340_verts.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelModel03340Verts[20];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_model_03340_verts", _gMineForkedTunnelModel03340Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelModel03340Normals[12] = {
 #include "assets/mine_forked_tunnel_model_03340_normals.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelModel03340Normals[12];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_model_03340_normals", _gMineForkedTunnelModel03340Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gMineForkedTunnelModel03340Stream[104] = {
 #include "assets/mine_forked_tunnel_model_03340_stream.inc"
 };
+#else
+static u32 _gMineForkedTunnelModel03340Stream[104];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_model_03340_stream", _gMineForkedTunnelModel03340Stream);
 
 static TmdSource _gMineForkedTunnelModel03340 = {
     0,
@@ -331,24 +382,44 @@ enum {
 };
 
 /// Room-space normals for the collision box's three exposed faces, at 4096 per unit.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelAreaObjectCollisionBoxNormals[MINE_FORKED_TUNNEL_AREA_OBJECT_COLLISION_FACE_COUNT] = {
 #include "assets/mine_forked_tunnel_collision_0469C_normals.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelAreaObjectCollisionBoxNormals[3];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_collision_0469C_normals", _gMineForkedTunnelAreaObjectCollisionBoxNormals);
 
 /// Eight box corners in signed integer room-coordinate units, before the runtime offset.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelAreaObjectCollisionBoxVerts[MINE_FORKED_TUNNEL_AREA_OBJECT_COLLISION_VERTEX_COUNT] = {
 #include "assets/mine_forked_tunnel_collision_0469C_verts.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelAreaObjectCollisionBoxVerts[8];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_collision_0469C_verts", _gMineForkedTunnelAreaObjectCollisionBoxVerts);
 
 /// Three side quads indexing the template pools, all using room surface class zero.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gMineForkedTunnelAreaObjectCollisionBoxFaces[MINE_FORKED_TUNNEL_AREA_OBJECT_COLLISION_FACE_COUNT] = {
 #include "assets/mine_forked_tunnel_collision_0469C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gMineForkedTunnelAreaObjectCollisionBoxFaces[3];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_collision_0469C_faces", _gMineForkedTunnelAreaObjectCollisionBoxFaces);
 
 /// One packed cell list containing all three face IDs followed by the -1 terminator.
+#ifdef PE_EMBED_ASSETS
 static s16 _gMineForkedTunnelAreaObjectCollisionBoxCells[MINE_FORKED_TUNNEL_AREA_OBJECT_COLLISION_FACE_COUNT + 1] = {
 #include "assets/mine_forked_tunnel_collision_0469C_cells.inc"
 };
+#else
+static s16 _gMineForkedTunnelAreaObjectCollisionBoxCells[4];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_collision_0469C_cells", _gMineForkedTunnelAreaObjectCollisionBoxCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -360,9 +431,14 @@ static s16 _gMineForkedTunnelAreaObjectCollisionBoxCells[MINE_FORKED_TUNNEL_AREA
 /// binding through the table include, then undefine it.
 #define MINE_FORKED_TUNNEL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineForkedTunnelAreaObjectCollisionBoxCells[(halfwordOffset)])
 /// Single-cell directory retained with the authored collision-box grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gMineForkedTunnelAreaObjectCollisionBoxTable[MINE_FORKED_TUNNEL_AREA_OBJECT_COLLISION_CELL_COUNT_X * MINE_FORKED_TUNNEL_AREA_OBJECT_COLLISION_CELL_COUNT_Z] = {
 #include "assets/mine_forked_tunnel_collision_0469C_table.inc"
 };
+#else
+static s16* _gMineForkedTunnelAreaObjectCollisionBoxTable[1];
+#endif
+PE_ASSET_BIND_AUX("mine_forked_tunnel_collision_0469C_table", _gMineForkedTunnelAreaObjectCollisionBoxTable, _gMineForkedTunnelAreaObjectCollisionBoxCells);
 #undef MINE_FORKED_TUNNEL_CELL_FACE_LIST_AT_OFFSET
 
 /// Collision-box template for the switch-controlled area object.
@@ -397,21 +473,41 @@ static const TaskMessageEntry _gMineForkedTunnelRoomMessages[5] SECTION(".data")
     { TASK_MESSAGE_TABLE_END, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gMineForkedTunnelAnimation049C4Bank1[6] = {
 #include "assets/mine_forked_tunnel_animation_049C4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gMineForkedTunnelAnimation049C4Bank1[6];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_049C4_bank1", _gMineForkedTunnelAnimation049C4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gMineForkedTunnelAnimation049C4Bank4[46] = {
 #include "assets/mine_forked_tunnel_animation_049C4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gMineForkedTunnelAnimation049C4Bank4[46];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_049C4_bank4", _gMineForkedTunnelAnimation049C4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gMineForkedTunnelAnimation049C4Records[109] = {
 #include "assets/mine_forked_tunnel_animation_049C4_records.inc"
 };
+#else
+static AnimationRecord _gMineForkedTunnelAnimation049C4Records[109];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_049C4_records", _gMineForkedTunnelAnimation049C4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gMineForkedTunnelAnimation049C4Indices[20] = {
 #include "assets/mine_forked_tunnel_animation_049C4_indices.inc"
 };
+#else
+static u16 _gMineForkedTunnelAnimation049C4Indices[20];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_049C4_indices", _gMineForkedTunnelAnimation049C4Indices);
 
 static AnimationSet _gMineForkedTunnelAnimation049C4 = {
     _gMineForkedTunnelAnimation049C4Records,
@@ -419,21 +515,41 @@ static AnimationSet _gMineForkedTunnelAnimation049C4 = {
     { NULL, _gMineForkedTunnelAnimation049C4Bank1, NULL, NULL, _gMineForkedTunnelAnimation049C4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gMineForkedTunnelAnimation04C50Bank1[2] = {
 #include "assets/mine_forked_tunnel_animation_04C50_bank1.inc"
 };
+#else
+static AnimationPackedPose _gMineForkedTunnelAnimation04C50Bank1[2];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_04C50_bank1", _gMineForkedTunnelAnimation04C50Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gMineForkedTunnelAnimation04C50Bank4[47] = {
 #include "assets/mine_forked_tunnel_animation_04C50_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gMineForkedTunnelAnimation04C50Bank4[47];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_04C50_bank4", _gMineForkedTunnelAnimation04C50Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gMineForkedTunnelAnimation04C50Records[90] = {
 #include "assets/mine_forked_tunnel_animation_04C50_records.inc"
 };
+#else
+static AnimationRecord _gMineForkedTunnelAnimation04C50Records[90];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_04C50_records", _gMineForkedTunnelAnimation04C50Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gMineForkedTunnelAnimation04C50Indices[20] = {
 #include "assets/mine_forked_tunnel_animation_04C50_indices.inc"
 };
+#else
+static u16 _gMineForkedTunnelAnimation04C50Indices[20];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_04C50_indices", _gMineForkedTunnelAnimation04C50Indices);
 
 static AnimationSet _gMineForkedTunnelAnimation04C50 = {
     _gMineForkedTunnelAnimation04C50Records,
@@ -441,21 +557,41 @@ static AnimationSet _gMineForkedTunnelAnimation04C50 = {
     { NULL, _gMineForkedTunnelAnimation04C50Bank1, NULL, NULL, _gMineForkedTunnelAnimation04C50Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gMineForkedTunnelAnimation05B1CBank1[33] = {
 #include "assets/mine_forked_tunnel_animation_05B1C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gMineForkedTunnelAnimation05B1CBank1[33];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_05B1C_bank1", _gMineForkedTunnelAnimation05B1CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gMineForkedTunnelAnimation05B1CBank4[381] = {
 #include "assets/mine_forked_tunnel_animation_05B1C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gMineForkedTunnelAnimation05B1CBank4[381];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_05B1C_bank4", _gMineForkedTunnelAnimation05B1CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gMineForkedTunnelAnimation05B1CRecords[447] = {
 #include "assets/mine_forked_tunnel_animation_05B1C_records.inc"
 };
+#else
+static AnimationRecord _gMineForkedTunnelAnimation05B1CRecords[447];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_05B1C_records", _gMineForkedTunnelAnimation05B1CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gMineForkedTunnelAnimation05B1CIndices[20] = {
 #include "assets/mine_forked_tunnel_animation_05B1C_indices.inc"
 };
+#else
+static u16 _gMineForkedTunnelAnimation05B1CIndices[20];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_animation_05B1C_indices", _gMineForkedTunnelAnimation05B1CIndices);
 
 static AnimationSet _gMineForkedTunnelAnimation05B1C = {
     _gMineForkedTunnelAnimation05B1CRecords,
@@ -728,27 +864,47 @@ DirectionWarpEntry gMineForkedTunnelWarpEntries[1] = {
 /// Room-space collision normals; the first three are reserved for the area-object box.
 ///
 /// Unit length is 4096. The box rebuild replaces only XYZ in the reserved prefix.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelCollisionGridNormals[33] = {
 #include "assets/mine_forked_tunnel_collision_067B0_normals.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelCollisionGridNormals[33];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_collision_067B0_normals", _gMineForkedTunnelCollisionGridNormals);
 
 /// Room-space collision vertices in integer game units; the first eight form the movable box.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineForkedTunnelCollisionGridVerts[88] = {
 #include "assets/mine_forked_tunnel_collision_067B0_verts.inc"
 };
+#else
+static SVECTOR _gMineForkedTunnelCollisionGridVerts[88];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_collision_067B0_verts", _gMineForkedTunnelCollisionGridVerts);
 
 /// Indexed collision faces; the first three are replaced by the area-object box faces.
 ///
 /// Remaining faces use surface classes 0 and 1 and index this grid's vertex
 /// and normal pools. The zeroed box prefix is populated during object setup.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gMineForkedTunnelCollisionGridFaces[37] = {
 #include "assets/mine_forked_tunnel_collision_067B0_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gMineForkedTunnelCollisionGridFaces[37];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_collision_067B0_faces", _gMineForkedTunnelCollisionGridFaces);
 
 /// Packed face-index lists for the collision grid's eight cells, each terminated by -1.
+#ifdef PE_EMBED_ASSETS
 static s16 _gMineForkedTunnelCollisionGridCells[160] = {
 #include "assets/mine_forked_tunnel_collision_067B0_cells.inc"
 };
+#else
+static s16 _gMineForkedTunnelCollisionGridCells[160];
+#endif
+PE_ASSET_BIND("mine_forked_tunnel_collision_067B0_cells", _gMineForkedTunnelCollisionGridCells);
 
 /// Collision-grid dimensions; cells are square and measured in integer game units.
 enum {
@@ -767,9 +923,14 @@ enum {
 /// binding through the table include, then undefine it.
 #define MINE_FORKED_TUNNEL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineForkedTunnelCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory, indexed by x * cellCountZ + z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gMineForkedTunnelCollisionGridTable[MINE_FORKED_TUNNEL_COLLISION_GRID_CELL_COUNT_X * MINE_FORKED_TUNNEL_COLLISION_GRID_CELL_COUNT_Z] = {
 #include "assets/mine_forked_tunnel_collision_067B0_table.inc"
 };
+#else
+static s16* _gMineForkedTunnelCollisionGridTable[8];
+#endif
+PE_ASSET_BIND_AUX("mine_forked_tunnel_collision_067B0_table", _gMineForkedTunnelCollisionGridTable, _gMineForkedTunnelCollisionGridCells);
 #undef MINE_FORKED_TUNNEL_CELL_FACE_LIST_AT_OFFSET
 
 /// Active tunnel collision grid with reserved storage for the switch-controlled prop box.

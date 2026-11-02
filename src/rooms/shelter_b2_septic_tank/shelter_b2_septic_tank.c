@@ -1,4 +1,5 @@
 #include "rooms/shelter_b2_septic_tank.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -139,21 +140,41 @@ enum {
     SHELTER_B2_SEPTIC_TANK_COMMAND_FIGHT         = 5
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB2SepticTankAnimation05958Bank1[6] = {
 #include "assets/shelter_b2_septic_tank_animation_05958_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB2SepticTankAnimation05958Bank1[6];
+#endif
+PE_ASSET_BIND("shelter_b2_septic_tank_animation_05958_bank1", _gShelterB2SepticTankAnimation05958Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB2SepticTankAnimation05958Bank4[64] = {
 #include "assets/shelter_b2_septic_tank_animation_05958_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB2SepticTankAnimation05958Bank4[64];
+#endif
+PE_ASSET_BIND("shelter_b2_septic_tank_animation_05958_bank4", _gShelterB2SepticTankAnimation05958Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB2SepticTankAnimation05958Records[141] = {
 #include "assets/shelter_b2_septic_tank_animation_05958_records.inc"
 };
+#else
+static AnimationRecord _gShelterB2SepticTankAnimation05958Records[141];
+#endif
+PE_ASSET_BIND("shelter_b2_septic_tank_animation_05958_records", _gShelterB2SepticTankAnimation05958Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB2SepticTankAnimation05958Indices[20] = {
 #include "assets/shelter_b2_septic_tank_animation_05958_indices.inc"
 };
+#else
+static u16 _gShelterB2SepticTankAnimation05958Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b2_septic_tank_animation_05958_indices", _gShelterB2SepticTankAnimation05958Indices);
 
 static AnimationSet _gShelterB2SepticTankAnimation05958 = {
     _gShelterB2SepticTankAnimation05958Records,
@@ -470,24 +491,44 @@ SVECTOR gShelterB2SepticTankDiverSurfaceSpots[12] = {
 };
 
 /// Room-space face normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2SepticTankCollisionGridNormals[18] = {
 #include "assets/shelter_b2_septic_tank_collision_0684C_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2SepticTankCollisionGridNormals[18];
+#endif
+PE_ASSET_BIND("shelter_b2_septic_tank_collision_0684C_normals", _gShelterB2SepticTankCollisionGridNormals);
 
 /// Collision-mesh positions in signed room-space game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2SepticTankCollisionGridVerts[82] = {
 #include "assets/shelter_b2_septic_tank_collision_0684C_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2SepticTankCollisionGridVerts[82];
+#endif
+PE_ASSET_BIND("shelter_b2_septic_tank_collision_0684C_verts", _gShelterB2SepticTankCollisionGridVerts);
 
 /// Indexed collision triangles and quads with room-local surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB2SepticTankCollisionGridFaces[31] = {
 #include "assets/shelter_b2_septic_tank_collision_0684C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB2SepticTankCollisionGridFaces[31];
+#endif
+PE_ASSET_BIND("shelter_b2_septic_tank_collision_0684C_faces", _gShelterB2SepticTankCollisionGridFaces);
 
 /// Signed face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB2SepticTankCollisionGridCells[270] = {
 #include "assets/shelter_b2_septic_tank_collision_0684C_cells.inc"
 };
+#else
+static s16 _gShelterB2SepticTankCollisionGridCells[270];
+#endif
+PE_ASSET_BIND("shelter_b2_septic_tank_collision_0684C_cells", _gShelterB2SepticTankCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
 ///
@@ -498,9 +539,14 @@ static s16 _gShelterB2SepticTankCollisionGridCells[270] = {
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B2_SEPTIC_TANK_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB2SepticTankCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory: three rows of six terminated face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB2SepticTankCollisionGridTable[18] = {
 #include "assets/shelter_b2_septic_tank_collision_0684C_table.inc"
 };
+#else
+static s16* _gShelterB2SepticTankCollisionGridTable[18];
+#endif
+PE_ASSET_BIND_AUX("shelter_b2_septic_tank_collision_0684C_table", _gShelterB2SepticTankCollisionGridTable, _gShelterB2SepticTankCollisionGridCells);
 #undef SHELTER_B2_SEPTIC_TANK_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB2SepticTankCollisionGrid = { NULL, _gShelterB2SepticTankCollisionGridNormals, _gShelterB2SepticTankCollisionGridVerts, _gShelterB2SepticTankCollisionGridFaces, _gShelterB2SepticTankCollisionGridTable, 5374, 0x47A9, 3, 6, 4000, ARRAY_SIZE(_gShelterB2SepticTankCollisionGridFaces) };

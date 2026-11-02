@@ -1,3 +1,5 @@
+#include "port/disc_assets.h"
+#include "port/asset_bind.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -54,6 +56,19 @@ int main(int argc, char** argv) {
         return 2;
     }
     Psyz_SetTitle("Parasite Eve II");
+    /* Game tables the original source embedded at build time are filled from the disc here. */
+    {
+        extern int peAssetsDump(const char*);
+        struct PeDisc* assets = peDiscOpen(disc);
+#ifndef PE_EMBED_ASSETS
+        if (!assets) {
+            fprintf(stderr, "cannot read game data from %s\n", disc);
+            return 2;
+        }
+        fprintf(stderr, "[assets] %d arrays loaded from the disc\n", peAssetsLoad(assets));
+#endif
+        if (getenv("PE2_DUMP_ASSETS")) peAssetsDump(getenv("PE2_DUMP_ASSETS"));
+    }
     ResetGraph(0);
     gameMainRun();
     return 0;

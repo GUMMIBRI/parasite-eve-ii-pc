@@ -1,4 +1,5 @@
 #include "rooms/shelter_b4_water_supply.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -227,24 +228,44 @@ DirectionWarpEntry gShelterB4WaterSupplyWarpEntries[3] = {
 };
 
 /// Collision-grid face normals in room space, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB4WaterSupplyCollisionGridNormals[] = {
 #include "assets/shelter_b4_water_supply_collision_0587C_normals.inc"
 };
+#else
+static SVECTOR _gShelterB4WaterSupplyCollisionGridNormals[12];
+#endif
+PE_ASSET_BIND("shelter_b4_water_supply_collision_0587C_normals", _gShelterB4WaterSupplyCollisionGridNormals);
 
 /// Collision-grid vertices in signed room-space game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB4WaterSupplyCollisionGridVerts[] = {
 #include "assets/shelter_b4_water_supply_collision_0587C_verts.inc"
 };
+#else
+static SVECTOR _gShelterB4WaterSupplyCollisionGridVerts[59];
+#endif
+PE_ASSET_BIND("shelter_b4_water_supply_collision_0587C_verts", _gShelterB4WaterSupplyCollisionGridVerts);
 
 /// Collision-grid faces indexing this asset's vertex and normal pools.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB4WaterSupplyCollisionGridFaces[] = {
 #include "assets/shelter_b4_water_supply_collision_0587C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB4WaterSupplyCollisionGridFaces[45];
+#endif
+PE_ASSET_BIND("shelter_b4_water_supply_collision_0587C_faces", _gShelterB4WaterSupplyCollisionGridFaces);
 
 /// Concatenated cell face-index lists, each ending at WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB4WaterSupplyCollisionGridCells[] = {
 #include "assets/shelter_b4_water_supply_collision_0587C_cells.inc"
 };
+#else
+static s16 _gShelterB4WaterSupplyCollisionGridCells[222];
+#endif
+PE_ASSET_BIND("shelter_b4_water_supply_collision_0587C_cells", _gShelterB4WaterSupplyCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
 ///
@@ -255,9 +276,14 @@ static s16 _gShelterB4WaterSupplyCollisionGridCells[] = {
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B4_WATER_SUPPLY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB4WaterSupplyCollisionGridCells[(halfwordOffset)])
 /// X-major 4-by-4 collision-cell directory; NULL entries contain no faces.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB4WaterSupplyCollisionGridTable[] = {
 #include "assets/shelter_b4_water_supply_collision_0587C_table.inc"
 };
+#else
+static s16* _gShelterB4WaterSupplyCollisionGridTable[16];
+#endif
+PE_ASSET_BIND_AUX("shelter_b4_water_supply_collision_0587C_table", _gShelterB4WaterSupplyCollisionGridTable, _gShelterB4WaterSupplyCollisionGridCells);
 #undef SHELTER_B4_WATER_SUPPLY_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB4WaterSupplyCollisionGrid = {

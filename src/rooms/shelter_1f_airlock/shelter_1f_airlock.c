@@ -1,4 +1,5 @@
 #include "rooms/shelter_1f_airlock.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -188,24 +189,44 @@ DirectionWarpEntry gShelter1fAirlockWarpEntries[2] = {
 };
 
 /// Room-axis unit normals (4096 per unit) used by the collision grid's faces.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelter1fAirlockCollisionGridNormals[6] = {
 #include "assets/shelter_1f_airlock_collision_01278_normals.inc"
 };
+#else
+static SVECTOR _gShelter1fAirlockCollisionGridNormals[6];
+#endif
+PE_ASSET_BIND("shelter_1f_airlock_collision_01278_normals", _gShelter1fAirlockCollisionGridNormals);
 
 /// Floor, ceiling and wall vertices in room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelter1fAirlockCollisionGridVerts[32] = {
 #include "assets/shelter_1f_airlock_collision_01278_verts.inc"
 };
+#else
+static SVECTOR _gShelter1fAirlockCollisionGridVerts[32];
+#endif
+PE_ASSET_BIND("shelter_1f_airlock_collision_01278_verts", _gShelter1fAirlockCollisionGridVerts);
 
 /// Three class-1 floor quads followed by ten class-0 ceiling and wall quads.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelter1fAirlockCollisionGridFaces[13] = {
 #include "assets/shelter_1f_airlock_collision_01278_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelter1fAirlockCollisionGridFaces[13];
+#endif
+PE_ASSET_BIND("shelter_1f_airlock_collision_01278_faces", _gShelter1fAirlockCollisionGridFaces);
 
 /// Three signed face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelter1fAirlockCollisionGridCells[26] = {
 #include "assets/shelter_1f_airlock_collision_01278_cells.inc"
 };
+#else
+static s16 _gShelter1fAirlockCollisionGridCells[26];
+#endif
+PE_ASSET_BIND("shelter_1f_airlock_collision_01278_cells", _gShelter1fAirlockCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -217,9 +238,14 @@ static s16 _gShelter1fAirlockCollisionGridCells[26] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_1F_AIRLOCK_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelter1fAirlockCollisionGridCells[(halfwordOffset)])
 /// X-major pointers to the three collision cells' face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelter1fAirlockCollisionGridTable[3] = {
 #include "assets/shelter_1f_airlock_collision_01278_table.inc"
 };
+#else
+static s16* _gShelter1fAirlockCollisionGridTable[3];
+#endif
+PE_ASSET_BIND_AUX("shelter_1f_airlock_collision_01278_table", _gShelter1fAirlockCollisionGridTable, _gShelter1fAirlockCollisionGridCells);
 #undef SHELTER_1F_AIRLOCK_CELL_FACE_LIST_AT_OFFSET
 
 /// Airlock floor, ceiling and walls indexed by three 4000-unit X/Z cells.

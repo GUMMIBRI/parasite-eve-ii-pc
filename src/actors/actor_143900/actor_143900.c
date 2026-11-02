@@ -1,4 +1,5 @@
 #include "actors/actor_143900.h"
+#include "port/asset_bind.h"
 #include "actors/actor_143900.h"
 
 #include <psyz.h>
@@ -229,25 +230,50 @@ TaskDesc gActor143900ScriptedWalkerTaskDesc = { { { TASK_BODY_TMD, TASK_PRIORITY
 
 #include "assets/characters/president/office_scenes_clips_2.inc"
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor143900Model173A8Skeleton[1] = {
 #include "assets/actor_143900_model_173A8_skeleton.inc"
 };
+#else
+static TmdBone _gActor143900Model173A8Skeleton[1];
+#endif
+PE_ASSET_BIND("actor_143900_model_173A8_skeleton", _gActor143900Model173A8Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor143900Model173A8PartVerts[1] = {
 #include "assets/actor_143900_model_173A8_partVerts.inc"
 };
+#else
+static u32 _gActor143900Model173A8PartVerts[1];
+#endif
+PE_ASSET_BIND("actor_143900_model_173A8_partVerts", _gActor143900Model173A8PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor143900Model173A8Verts[18] = {
 #include "assets/actor_143900_model_173A8_verts.inc"
 };
+#else
+static SVECTOR _gActor143900Model173A8Verts[18];
+#endif
+PE_ASSET_BIND("actor_143900_model_173A8_verts", _gActor143900Model173A8Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor143900Model173A8Normals[9] = {
 #include "assets/actor_143900_model_173A8_normals.inc"
 };
+#else
+static SVECTOR _gActor143900Model173A8Normals[9];
+#endif
+PE_ASSET_BIND("actor_143900_model_173A8_normals", _gActor143900Model173A8Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor143900Model173A8Stream[121] = {
 #include "assets/actor_143900_model_173A8_stream.inc"
 };
+#else
+static u32 _gActor143900Model173A8Stream[121];
+#endif
+PE_ASSET_BIND("actor_143900_model_173A8_stream", _gActor143900Model173A8Stream);
 
 static TmdSource _gActor143900Model173A8 = {
     0,
@@ -261,25 +287,50 @@ static TmdSource _gActor143900Model173A8 = {
     _gActor143900Model173A8Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor143900Model17688Skeleton[1] = {
 #include "assets/actor_143900_model_17688_skeleton.inc"
 };
+#else
+static TmdBone _gActor143900Model17688Skeleton[1];
+#endif
+PE_ASSET_BIND("actor_143900_model_17688_skeleton", _gActor143900Model17688Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor143900Model17688PartVerts[1] = {
 #include "assets/actor_143900_model_17688_partVerts.inc"
 };
+#else
+static u32 _gActor143900Model17688PartVerts[1];
+#endif
+PE_ASSET_BIND("actor_143900_model_17688_partVerts", _gActor143900Model17688PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor143900Model17688Verts[14] = {
 #include "assets/actor_143900_model_17688_verts.inc"
 };
+#else
+static SVECTOR _gActor143900Model17688Verts[14];
+#endif
+PE_ASSET_BIND("actor_143900_model_17688_verts", _gActor143900Model17688Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor143900Model17688Normals[8] = {
 #include "assets/actor_143900_model_17688_normals.inc"
 };
+#else
+static SVECTOR _gActor143900Model17688Normals[8];
+#endif
+PE_ASSET_BIND("actor_143900_model_17688_normals", _gActor143900Model17688Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor143900Model17688Stream[89] = {
 #include "assets/actor_143900_model_17688_stream.inc"
 };
+#else
+static u32 _gActor143900Model17688Stream[89];
+#endif
+PE_ASSET_BIND("actor_143900_model_17688_stream", _gActor143900Model17688Stream);
 
 static TmdSource _gActor143900Model17688 = {
     0,

@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_eve_elevator.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -98,24 +99,44 @@ DirectionWarpEntry gNeoArkEveElevatorWarpEntries[1] = {
 };
 
 /// Room-local unit normals for the platform's walls and floor, with 4096 per unit.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkEveElevatorCollisionGridNormals[14] = {
 #include "assets/neo_ark_eve_elevator_collision_0046C_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkEveElevatorCollisionGridNormals[14];
+#endif
+PE_ASSET_BIND("neo_ark_eve_elevator_collision_0046C_normals", _gNeoArkEveElevatorCollisionGridNormals);
 
 /// Platform wall and floor vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkEveElevatorCollisionGridVerts[24] = {
 #include "assets/neo_ark_eve_elevator_collision_0046C_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkEveElevatorCollisionGridVerts[24];
+#endif
+PE_ASSET_BIND("neo_ark_eve_elevator_collision_0046C_verts", _gNeoArkEveElevatorCollisionGridVerts);
 
 /// Indexed platform faces; class 1 is the floor and class 0 is silent geometry.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkEveElevatorCollisionGridFaces[24] = {
 #include "assets/neo_ark_eve_elevator_collision_0046C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkEveElevatorCollisionGridFaces[24];
+#endif
+PE_ASSET_BIND("neo_ark_eve_elevator_collision_0046C_faces", _gNeoArkEveElevatorCollisionGridFaces);
 
 /// The single cell's 24 face indices and -1 terminator, followed by a retained zero halfword.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkEveElevatorCollisionGridCells[26] = {
 #include "assets/neo_ark_eve_elevator_collision_0046C_cells.inc"
 };
+#else
+static s16 _gNeoArkEveElevatorCollisionGridCells[26];
+#endif
+PE_ASSET_BIND("neo_ark_eve_elevator_collision_0046C_cells", _gNeoArkEveElevatorCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -127,9 +148,14 @@ static s16 _gNeoArkEveElevatorCollisionGridCells[26] = {
 /// binding through the table include, then undefine it.
 #define NEO_ARK_EVE_ELEVATOR_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkEveElevatorCollisionGridCells[(halfwordOffset)])
 /// One X-major cell-list pointer covering the entire platform mesh.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkEveElevatorCollisionGridTable[1] = {
 #include "assets/neo_ark_eve_elevator_collision_0046C_table.inc"
 };
+#else
+static s16* _gNeoArkEveElevatorCollisionGridTable[1];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_eve_elevator_collision_0046C_table", _gNeoArkEveElevatorCollisionGridTable, _gNeoArkEveElevatorCollisionGridCells);
 #undef NEO_ARK_EVE_ELEVATOR_CELL_FACE_LIST_AT_OFFSET
 
 /// Writable platform collision mesh with a single 4000-unit square cell.

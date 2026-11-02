@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_trailer_coach.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -323,27 +324,47 @@ DirectionWarpEntry gDryfieldNightTrailerCoachWarpEntries[3] = {
 };
 
 /// Room-axis unit normals for the coach collision mesh, with 4096 for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightTrailerCoachCollisionGridNormals[10] = {
 #include "assets/dryfield_night_trailer_coach_collision_0C460_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightTrailerCoachCollisionGridNormals[10];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_collision_0C460_normals", _gDryfieldNightTrailerCoachCollisionGridNormals);
 
 /// Collision-mesh vertices in signed room-coordinate game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightTrailerCoachCollisionGridVerts[65] = {
 #include "assets/dryfield_night_trailer_coach_collision_0C460_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightTrailerCoachCollisionGridVerts[65];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_collision_0C460_verts", _gDryfieldNightTrailerCoachCollisionGridVerts);
 
 /// Coach collision quads indexing the vertex/normal pools and surface classes 5/6.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightTrailerCoachCollisionGridFaces[32] = {
 #include "assets/dryfield_night_trailer_coach_collision_0C460_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightTrailerCoachCollisionGridFaces[32];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_collision_0C460_faces", _gDryfieldNightTrailerCoachCollisionGridFaces);
 
 /// Signed face-index lists for the three cells, each ending at -1.
 ///
 /// Lists occupy elements 0..16, 18..37 and 38..57; element 17 is retained,
 /// unreferenced storage from the serialized asset.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightTrailerCoachCollisionGridCells[58] = {
 #include "assets/dryfield_night_trailer_coach_collision_0C460_cells.inc"
 };
+#else
+static s16 _gDryfieldNightTrailerCoachCollisionGridCells[58];
+#endif
+PE_ASSET_BIND("dryfield_night_trailer_coach_collision_0C460_cells", _gDryfieldNightTrailerCoachCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -354,9 +375,14 @@ static s16 _gDryfieldNightTrailerCoachCollisionGridCells[58] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_TRAILER_COACH_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightTrailerCoachCollisionGridCells[(halfwordOffset)])
 /// X-major cell-list pointers for the coach's three-by-one collision grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightTrailerCoachCollisionGridTable[3] = {
 #include "assets/dryfield_night_trailer_coach_collision_0C460_table.inc"
 };
+#else
+static s16* _gDryfieldNightTrailerCoachCollisionGridTable[3];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_trailer_coach_collision_0C460_table", _gDryfieldNightTrailerCoachCollisionGridTable, _gDryfieldNightTrailerCoachCollisionGridCells);
 #undef DRYFIELD_NIGHT_TRAILER_COACH_CELL_FACE_LIST_AT_OFFSET
 
 /// The coach's room collision mesh, partitioned into three 4000-unit XZ cells.

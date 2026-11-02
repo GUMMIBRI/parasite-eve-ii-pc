@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_woodland_path.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -104,24 +105,44 @@ DirectionWarpEntry gNeoArkWoodlandPathWarpEntries[2] = {
 };
 
 /// Room-space face normals, with ONE representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkWoodlandPathCollisionGridNormals[17] = {
 #include "assets/neo_ark_woodland_path_collision_0479C_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkWoodlandPathCollisionGridNormals[17];
+#endif
+PE_ASSET_BIND("neo_ark_woodland_path_collision_0479C_normals", _gNeoArkWoodlandPathCollisionGridNormals);
 
 /// Collision vertex pool in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkWoodlandPathCollisionGridVerts[75] = {
 #include "assets/neo_ark_woodland_path_collision_0479C_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkWoodlandPathCollisionGridVerts[75];
+#endif
+PE_ASSET_BIND("neo_ark_woodland_path_collision_0479C_verts", _gNeoArkWoodlandPathCollisionGridVerts);
 
 /// Indexed collision quads carrying room-local surface classes 0..4.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkWoodlandPathCollisionGridFaces[35] = {
 #include "assets/neo_ark_woodland_path_collision_0479C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkWoodlandPathCollisionGridFaces[35];
+#endif
+PE_ASSET_BIND("neo_ark_woodland_path_collision_0479C_faces", _gNeoArkWoodlandPathCollisionGridFaces);
 
 /// Packed cell face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkWoodlandPathCollisionGridCells[190] = {
 #include "assets/neo_ark_woodland_path_collision_0479C_cells.inc"
 };
+#else
+static s16 _gNeoArkWoodlandPathCollisionGridCells[190];
+#endif
+PE_ASSET_BIND("neo_ark_woodland_path_collision_0479C_cells", _gNeoArkWoodlandPathCollisionGridCells);
 
 /// Face-list address at a halfword offset in the woodland collision grid's pool.
 ///
@@ -131,9 +152,14 @@ static s16 _gNeoArkWoodlandPathCollisionGridCells[190] = {
 /// selects this binding through the grid's `cell_face_list_macro` configuration.
 #define NEO_ARK_WOODLAND_PATH_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkWoodlandPathCollisionGridCells[(halfwordOffset)])
 /// X-major directory of 4-by-5 collision cells; NULL marks an empty cell.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkWoodlandPathCollisionGridTable[20] = {
 #include "assets/neo_ark_woodland_path_collision_0479C_table.inc"
 };
+#else
+static s16* _gNeoArkWoodlandPathCollisionGridTable[20];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_woodland_path_collision_0479C_table", _gNeoArkWoodlandPathCollisionGridTable, _gNeoArkWoodlandPathCollisionGridCells);
 #undef NEO_ARK_WOODLAND_PATH_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gNeoArkWoodlandPathCollisionGrid = {

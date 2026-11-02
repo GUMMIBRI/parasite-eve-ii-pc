@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_pyramid.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -151,26 +152,46 @@ DirectionWarpEntry gNeoArkPyramidWarpEntries[2] = {
 };
 
 /// Room-local collision normals, with ONE representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkPyramidCollisionGridNormals[13] = {
 #include "assets/neo_ark_pyramid_collision_02D04_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkPyramidCollisionGridNormals[13];
+#endif
+PE_ASSET_BIND("neo_ark_pyramid_collision_02D04_normals", _gNeoArkPyramidCollisionGridNormals);
 
 /// Vertices of the pyramid's collision mesh, in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkPyramidCollisionGridVerts[66] = {
 #include "assets/neo_ark_pyramid_collision_02D04_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkPyramidCollisionGridVerts[66];
+#endif
+PE_ASSET_BIND("neo_ark_pyramid_collision_02D04_verts", _gNeoArkPyramidCollisionGridVerts);
 
 /// Indexed collision triangles and quads, carrying room-local surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkPyramidCollisionGridFaces[36] = {
 #include "assets/neo_ark_pyramid_collision_02D04_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkPyramidCollisionGridFaces[36];
+#endif
+PE_ASSET_BIND("neo_ark_pyramid_collision_02D04_faces", _gNeoArkPyramidCollisionGridFaces);
 
 /// Packed cell face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
 ///
 /// Retains the complete 194-halfword asset span, including values between lists.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkPyramidCollisionGridCells[194] = {
 #include "assets/neo_ark_pyramid_collision_02D04_cells.inc"
 };
+#else
+static s16 _gNeoArkPyramidCollisionGridCells[194];
+#endif
+PE_ASSET_BIND("neo_ark_pyramid_collision_02D04_cells", _gNeoArkPyramidCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -182,9 +203,14 @@ static s16 _gNeoArkPyramidCollisionGridCells[194] = {
 /// binding through the table include, then undefine it.
 #define NEO_ARK_PYRAMID_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkPyramidCollisionGridCells[(halfwordOffset)])
 /// X-major 5-by-3 directory of the pyramid's collision cell lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkPyramidCollisionGridTable[15] = {
 #include "assets/neo_ark_pyramid_collision_02D04_table.inc"
 };
+#else
+static s16* _gNeoArkPyramidCollisionGridTable[15];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_pyramid_collision_02D04_table", _gNeoArkPyramidCollisionGridTable, _gNeoArkPyramidCollisionGridCells);
 #undef NEO_ARK_PYRAMID_CELL_FACE_LIST_AT_OFFSET
 
 /// Collision mesh shared by both pyramid room variants.

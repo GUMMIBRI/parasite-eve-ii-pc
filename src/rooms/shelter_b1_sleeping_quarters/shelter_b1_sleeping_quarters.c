@@ -1,4 +1,5 @@
 #include "rooms/shelter_b1_sleeping_quarters.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -35,17 +36,32 @@ static SVECTOR _gShelterB1SleepingQuartersModel02DFCVerts[22];
 static TmdBone _gShelterB1SleepingQuartersModel02DFCSkeleton[1];
 static u32     _gShelterB1SleepingQuartersModel02DFCStream[78];
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB1SleepingQuartersModel02DFCSkeleton[1] = {
 #include "assets/shelter_b1_sleeping_quarters_model_02DFC_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB1SleepingQuartersModel02DFCSkeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b1_sleeping_quarters_model_02DFC_skeleton", _gShelterB1SleepingQuartersModel02DFCSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB1SleepingQuartersModel02DFCPartVerts[1] = {
 #include "assets/shelter_b1_sleeping_quarters_model_02DFC_partVerts.inc"
 };
+#else
+static u32 _gShelterB1SleepingQuartersModel02DFCPartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b1_sleeping_quarters_model_02DFC_partVerts", _gShelterB1SleepingQuartersModel02DFCPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1SleepingQuartersModel02DFCVerts[22] = {
 #include "assets/shelter_b1_sleeping_quarters_model_02DFC_verts.inc"
 };
+#else
+static SVECTOR _gShelterB1SleepingQuartersModel02DFCVerts[22];
+#endif
+PE_ASSET_BIND("shelter_b1_sleeping_quarters_model_02DFC_verts", _gShelterB1SleepingQuartersModel02DFCVerts);
 
 static u32 _gShelterB1SleepingQuartersModel02DFCStream[78] = {
 #include "assets/shelter_b1_sleeping_quarters_model_02DFC_stream.inc"

@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_dilapidated_house.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -68,21 +69,41 @@ TaskMessageEntry gDryfieldNightDilapidatedHouseRoomMessages[5] = {
     { TASK_MESSAGE_TABLE_END, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation01444Bank1[6] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01444_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation01444Bank1[6];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01444_bank1", _gDryfieldNightDilapidatedHouseAnimation01444Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation01444Bank4[46] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01444_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation01444Bank4[46];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01444_bank4", _gDryfieldNightDilapidatedHouseAnimation01444Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation01444Records[109] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01444_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation01444Records[109];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01444_records", _gDryfieldNightDilapidatedHouseAnimation01444Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation01444Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01444_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation01444Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01444_indices", _gDryfieldNightDilapidatedHouseAnimation01444Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation01444 = {
     _gDryfieldNightDilapidatedHouseAnimation01444Records,
@@ -90,21 +111,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation01444 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation01444Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation01444Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation01C10Bank1[22] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01C10_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation01C10Bank1[22];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01C10_bank1", _gDryfieldNightDilapidatedHouseAnimation01C10Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation01C10Bank4[182] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01C10_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation01C10Bank4[182];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01C10_bank4", _gDryfieldNightDilapidatedHouseAnimation01C10Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation01C10Records[231] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01C10_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation01C10Records[231];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01C10_records", _gDryfieldNightDilapidatedHouseAnimation01C10Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation01C10Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01C10_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation01C10Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01C10_indices", _gDryfieldNightDilapidatedHouseAnimation01C10Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation01C10 = {
     _gDryfieldNightDilapidatedHouseAnimation01C10Records,
@@ -112,21 +153,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation01C10 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation01C10Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation01C10Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation01DE4Bank1[2] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01DE4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation01DE4Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01DE4_bank1", _gDryfieldNightDilapidatedHouseAnimation01DE4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation01DE4Bank4[15] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01DE4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation01DE4Bank4[15];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01DE4_bank4", _gDryfieldNightDilapidatedHouseAnimation01DE4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation01DE4Records[76] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01DE4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation01DE4Records[76];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01DE4_records", _gDryfieldNightDilapidatedHouseAnimation01DE4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation01DE4Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_01DE4_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation01DE4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_01DE4_indices", _gDryfieldNightDilapidatedHouseAnimation01DE4Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation01DE4 = {
     _gDryfieldNightDilapidatedHouseAnimation01DE4Records,
@@ -134,21 +195,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation01DE4 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation01DE4Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation01DE4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0219CBank1[7] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0219C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0219CBank1[7];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0219C_bank1", _gDryfieldNightDilapidatedHouseAnimation0219CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0219CBank4[82] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0219C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0219CBank4[82];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0219C_bank4", _gDryfieldNightDilapidatedHouseAnimation0219CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0219CRecords[115] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0219C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0219CRecords[115];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0219C_records", _gDryfieldNightDilapidatedHouseAnimation0219CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation0219CIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0219C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation0219CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0219C_indices", _gDryfieldNightDilapidatedHouseAnimation0219CIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0219C = {
     _gDryfieldNightDilapidatedHouseAnimation0219CRecords,
@@ -156,21 +237,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0219C = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation0219CBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation0219CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation02368Bank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02368_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation02368Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02368_bank1", _gDryfieldNightDilapidatedHouseAnimation02368Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation02368Bank4[19] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02368_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation02368Bank4[19];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02368_bank4", _gDryfieldNightDilapidatedHouseAnimation02368Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation02368Records[67] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02368_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation02368Records[67];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02368_records", _gDryfieldNightDilapidatedHouseAnimation02368Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation02368Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02368_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation02368Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02368_indices", _gDryfieldNightDilapidatedHouseAnimation02368Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation02368 = {
     _gDryfieldNightDilapidatedHouseAnimation02368Records,
@@ -178,21 +279,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation02368 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation02368Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation02368Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation02734Bank1[6] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02734_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation02734Bank1[6];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02734_bank1", _gDryfieldNightDilapidatedHouseAnimation02734Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation02734Bank4[64] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02734_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation02734Bank4[64];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02734_bank4", _gDryfieldNightDilapidatedHouseAnimation02734Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation02734Records[141] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02734_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation02734Records[141];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02734_records", _gDryfieldNightDilapidatedHouseAnimation02734Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation02734Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02734_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation02734Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02734_indices", _gDryfieldNightDilapidatedHouseAnimation02734Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation02734 = {
     _gDryfieldNightDilapidatedHouseAnimation02734Records,
@@ -200,21 +321,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation02734 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation02734Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation02734Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation02A4CBank1[7] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02A4C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation02A4CBank1[7];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02A4C_bank1", _gDryfieldNightDilapidatedHouseAnimation02A4CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation02A4CBank4[54] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02A4C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation02A4CBank4[54];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02A4C_bank4", _gDryfieldNightDilapidatedHouseAnimation02A4CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation02A4CRecords[103] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02A4C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation02A4CRecords[103];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02A4C_records", _gDryfieldNightDilapidatedHouseAnimation02A4CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation02A4CIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02A4C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation02A4CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02A4C_indices", _gDryfieldNightDilapidatedHouseAnimation02A4CIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation02A4C = {
     _gDryfieldNightDilapidatedHouseAnimation02A4CRecords,
@@ -222,21 +363,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation02A4C = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation02A4CBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation02A4CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation02E4CBank1[10] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02E4C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation02E4CBank1[10];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02E4C_bank1", _gDryfieldNightDilapidatedHouseAnimation02E4CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation02E4CBank4[85] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02E4C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation02E4CBank4[85];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02E4C_bank4", _gDryfieldNightDilapidatedHouseAnimation02E4CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation02E4CRecords[121] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02E4C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation02E4CRecords[121];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02E4C_records", _gDryfieldNightDilapidatedHouseAnimation02E4CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation02E4CIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_02E4C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation02E4CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_02E4C_indices", _gDryfieldNightDilapidatedHouseAnimation02E4CIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation02E4C = {
     _gDryfieldNightDilapidatedHouseAnimation02E4CRecords,
@@ -244,21 +405,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation02E4C = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation02E4CBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation02E4CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation03048Bank1[4] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03048_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation03048Bank1[4];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03048_bank1", _gDryfieldNightDilapidatedHouseAnimation03048Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation03048Bank4[17] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03048_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation03048Bank4[17];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03048_bank4", _gDryfieldNightDilapidatedHouseAnimation03048Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation03048Records[78] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03048_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation03048Records[78];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03048_records", _gDryfieldNightDilapidatedHouseAnimation03048Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation03048Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03048_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation03048Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03048_indices", _gDryfieldNightDilapidatedHouseAnimation03048Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation03048 = {
     _gDryfieldNightDilapidatedHouseAnimation03048Records,
@@ -266,21 +447,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation03048 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation03048Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation03048Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation03384Bank1[8] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03384_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation03384Bank1[8];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03384_bank1", _gDryfieldNightDilapidatedHouseAnimation03384Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation03384Bank4[65] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03384_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation03384Bank4[65];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03384_bank4", _gDryfieldNightDilapidatedHouseAnimation03384Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation03384Records[98] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03384_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation03384Records[98];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03384_records", _gDryfieldNightDilapidatedHouseAnimation03384Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation03384Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03384_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation03384Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03384_indices", _gDryfieldNightDilapidatedHouseAnimation03384Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation03384 = {
     _gDryfieldNightDilapidatedHouseAnimation03384Records,
@@ -288,21 +489,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation03384 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation03384Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation03384Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0378CBank1[6] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0378C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0378CBank1[6];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0378C_bank1", _gDryfieldNightDilapidatedHouseAnimation0378CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0378CBank4[65] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0378C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0378CBank4[65];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0378C_bank4", _gDryfieldNightDilapidatedHouseAnimation0378CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0378CRecords[155] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0378C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0378CRecords[155];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0378C_records", _gDryfieldNightDilapidatedHouseAnimation0378CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation0378CIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0378C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation0378CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0378C_indices", _gDryfieldNightDilapidatedHouseAnimation0378CIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0378C = {
     _gDryfieldNightDilapidatedHouseAnimation0378CRecords,
@@ -310,21 +531,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0378C = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation0378CBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation0378CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation039CCBank1[4] = {
 #include "assets/dryfield_night_dilapidated_house_animation_039CC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation039CCBank1[4];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_039CC_bank1", _gDryfieldNightDilapidatedHouseAnimation039CCBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation039CCBank4[42] = {
 #include "assets/dryfield_night_dilapidated_house_animation_039CC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation039CCBank4[42];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_039CC_bank4", _gDryfieldNightDilapidatedHouseAnimation039CCBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation039CCRecords[70] = {
 #include "assets/dryfield_night_dilapidated_house_animation_039CC_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation039CCRecords[70];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_039CC_records", _gDryfieldNightDilapidatedHouseAnimation039CCRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation039CCIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_039CC_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation039CCIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_039CC_indices", _gDryfieldNightDilapidatedHouseAnimation039CCIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation039CC = {
     _gDryfieldNightDilapidatedHouseAnimation039CCRecords,
@@ -332,21 +573,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation039CC = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation039CCBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation039CCBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation03DA0Bank1[8] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03DA0_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation03DA0Bank1[8];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03DA0_bank1", _gDryfieldNightDilapidatedHouseAnimation03DA0Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation03DA0Bank4[84] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03DA0_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation03DA0Bank4[84];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03DA0_bank4", _gDryfieldNightDilapidatedHouseAnimation03DA0Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation03DA0Records[117] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03DA0_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation03DA0Records[117];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03DA0_records", _gDryfieldNightDilapidatedHouseAnimation03DA0Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation03DA0Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_03DA0_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation03DA0Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_03DA0_indices", _gDryfieldNightDilapidatedHouseAnimation03DA0Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation03DA0 = {
     _gDryfieldNightDilapidatedHouseAnimation03DA0Records,
@@ -354,21 +615,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation03DA0 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation03DA0Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation03DA0Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0410CBank1[7] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0410C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0410CBank1[7];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0410C_bank1", _gDryfieldNightDilapidatedHouseAnimation0410CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0410CBank4[74] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0410C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0410CBank4[74];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0410C_bank4", _gDryfieldNightDilapidatedHouseAnimation0410CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0410CRecords[104] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0410C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0410CRecords[104];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0410C_records", _gDryfieldNightDilapidatedHouseAnimation0410CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation0410CIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0410C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation0410CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0410C_indices", _gDryfieldNightDilapidatedHouseAnimation0410CIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0410C = {
     _gDryfieldNightDilapidatedHouseAnimation0410CRecords,
@@ -376,21 +657,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0410C = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation0410CBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation0410CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation04560Bank1[5] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04560_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation04560Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04560_bank1", _gDryfieldNightDilapidatedHouseAnimation04560Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation04560Bank4[80] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04560_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation04560Bank4[80];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04560_bank4", _gDryfieldNightDilapidatedHouseAnimation04560Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation04560Records[162] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04560_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation04560Records[162];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04560_records", _gDryfieldNightDilapidatedHouseAnimation04560Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation04560Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04560_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation04560Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04560_indices", _gDryfieldNightDilapidatedHouseAnimation04560Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation04560 = {
     _gDryfieldNightDilapidatedHouseAnimation04560Records,
@@ -398,21 +699,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation04560 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation04560Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation04560Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation047F4Bank1[4] = {
 #include "assets/dryfield_night_dilapidated_house_animation_047F4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation047F4Bank1[4];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_047F4_bank1", _gDryfieldNightDilapidatedHouseAnimation047F4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation047F4Bank4[51] = {
 #include "assets/dryfield_night_dilapidated_house_animation_047F4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation047F4Bank4[51];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_047F4_bank4", _gDryfieldNightDilapidatedHouseAnimation047F4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation047F4Records[82] = {
 #include "assets/dryfield_night_dilapidated_house_animation_047F4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation047F4Records[82];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_047F4_records", _gDryfieldNightDilapidatedHouseAnimation047F4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation047F4Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_047F4_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation047F4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_047F4_indices", _gDryfieldNightDilapidatedHouseAnimation047F4Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation047F4 = {
     _gDryfieldNightDilapidatedHouseAnimation047F4Records,
@@ -420,21 +741,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation047F4 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation047F4Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation047F4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation04B20Bank1[7] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04B20_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation04B20Bank1[7];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04B20_bank1", _gDryfieldNightDilapidatedHouseAnimation04B20Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation04B20Bank4[56] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04B20_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation04B20Bank4[56];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04B20_bank4", _gDryfieldNightDilapidatedHouseAnimation04B20Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation04B20Records[106] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04B20_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation04B20Records[106];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04B20_records", _gDryfieldNightDilapidatedHouseAnimation04B20Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation04B20Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04B20_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation04B20Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04B20_indices", _gDryfieldNightDilapidatedHouseAnimation04B20Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation04B20 = {
     _gDryfieldNightDilapidatedHouseAnimation04B20Records,
@@ -442,21 +783,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation04B20 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation04B20Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation04B20Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation04ED8Bank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04ED8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation04ED8Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04ED8_bank1", _gDryfieldNightDilapidatedHouseAnimation04ED8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation04ED8Bank4[81] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04ED8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation04ED8Bank4[81];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04ED8_bank4", _gDryfieldNightDilapidatedHouseAnimation04ED8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation04ED8Records[128] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04ED8_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation04ED8Records[128];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04ED8_records", _gDryfieldNightDilapidatedHouseAnimation04ED8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation04ED8Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_04ED8_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation04ED8Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_04ED8_indices", _gDryfieldNightDilapidatedHouseAnimation04ED8Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation04ED8 = {
     _gDryfieldNightDilapidatedHouseAnimation04ED8Records,
@@ -464,21 +825,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation04ED8 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation04ED8Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation04ED8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0522CBank1[5] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0522C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0522CBank1[5];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0522C_bank1", _gDryfieldNightDilapidatedHouseAnimation0522CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0522CBank4[58] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0522C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0522CBank4[58];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0522C_bank4", _gDryfieldNightDilapidatedHouseAnimation0522CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0522CRecords[120] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0522C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0522CRecords[120];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0522C_records", _gDryfieldNightDilapidatedHouseAnimation0522CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation0522CIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0522C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation0522CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0522C_indices", _gDryfieldNightDilapidatedHouseAnimation0522CIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0522C = {
     _gDryfieldNightDilapidatedHouseAnimation0522CRecords,
@@ -486,21 +867,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0522C = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation0522CBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation0522CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation05424Bank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05424_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation05424Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05424_bank1", _gDryfieldNightDilapidatedHouseAnimation05424Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation05424Bank4[34] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05424_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation05424Bank4[34];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05424_bank4", _gDryfieldNightDilapidatedHouseAnimation05424Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation05424Records[63] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05424_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation05424Records[63];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05424_records", _gDryfieldNightDilapidatedHouseAnimation05424Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation05424Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05424_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation05424Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05424_indices", _gDryfieldNightDilapidatedHouseAnimation05424Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation05424 = {
     _gDryfieldNightDilapidatedHouseAnimation05424Records,
@@ -508,21 +909,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation05424 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation05424Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation05424Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation055E8Bank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_055E8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation055E8Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_055E8_bank1", _gDryfieldNightDilapidatedHouseAnimation055E8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation055E8Bank4[27] = {
 #include "assets/dryfield_night_dilapidated_house_animation_055E8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation055E8Bank4[27];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_055E8_bank4", _gDryfieldNightDilapidatedHouseAnimation055E8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation055E8Records[57] = {
 #include "assets/dryfield_night_dilapidated_house_animation_055E8_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation055E8Records[57];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_055E8_records", _gDryfieldNightDilapidatedHouseAnimation055E8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation055E8Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_055E8_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation055E8Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_055E8_indices", _gDryfieldNightDilapidatedHouseAnimation055E8Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation055E8 = {
     _gDryfieldNightDilapidatedHouseAnimation055E8Records,
@@ -530,21 +951,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation055E8 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation055E8Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation055E8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation058A8Bank1[4] = {
 #include "assets/dryfield_night_dilapidated_house_animation_058A8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation058A8Bank1[4];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_058A8_bank1", _gDryfieldNightDilapidatedHouseAnimation058A8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation058A8Bank4[40] = {
 #include "assets/dryfield_night_dilapidated_house_animation_058A8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation058A8Bank4[40];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_058A8_bank4", _gDryfieldNightDilapidatedHouseAnimation058A8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation058A8Records[104] = {
 #include "assets/dryfield_night_dilapidated_house_animation_058A8_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation058A8Records[104];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_058A8_records", _gDryfieldNightDilapidatedHouseAnimation058A8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation058A8Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_058A8_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation058A8Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_058A8_indices", _gDryfieldNightDilapidatedHouseAnimation058A8Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation058A8 = {
     _gDryfieldNightDilapidatedHouseAnimation058A8Records,
@@ -552,21 +993,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation058A8 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation058A8Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation058A8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation05A6CBank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05A6C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation05A6CBank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05A6C_bank1", _gDryfieldNightDilapidatedHouseAnimation05A6CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation05A6CBank4[27] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05A6C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation05A6CBank4[27];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05A6C_bank4", _gDryfieldNightDilapidatedHouseAnimation05A6CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation05A6CRecords[57] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05A6C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation05A6CRecords[57];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05A6C_records", _gDryfieldNightDilapidatedHouseAnimation05A6CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation05A6CIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05A6C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation05A6CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05A6C_indices", _gDryfieldNightDilapidatedHouseAnimation05A6CIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation05A6C = {
     _gDryfieldNightDilapidatedHouseAnimation05A6CRecords,
@@ -574,21 +1035,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation05A6C = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation05A6CBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation05A6CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation05D8CBank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05D8C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation05D8CBank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05D8C_bank1", _gDryfieldNightDilapidatedHouseAnimation05D8CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation05D8CBank4[48] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05D8C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation05D8CBank4[48];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05D8C_bank4", _gDryfieldNightDilapidatedHouseAnimation05D8CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation05D8CRecords[123] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05D8C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation05D8CRecords[123];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05D8C_records", _gDryfieldNightDilapidatedHouseAnimation05D8CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation05D8CIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_05D8C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation05D8CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_05D8C_indices", _gDryfieldNightDilapidatedHouseAnimation05D8CIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation05D8C = {
     _gDryfieldNightDilapidatedHouseAnimation05D8CRecords,
@@ -596,21 +1077,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation05D8C = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation05D8CBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation05D8CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation06008Bank1[2] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06008_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation06008Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06008_bank1", _gDryfieldNightDilapidatedHouseAnimation06008Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation06008Bank4[32] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06008_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation06008Bank4[32];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06008_bank4", _gDryfieldNightDilapidatedHouseAnimation06008Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation06008Records[101] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06008_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation06008Records[101];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06008_records", _gDryfieldNightDilapidatedHouseAnimation06008Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation06008Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06008_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation06008Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06008_indices", _gDryfieldNightDilapidatedHouseAnimation06008Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation06008 = {
     _gDryfieldNightDilapidatedHouseAnimation06008Records,
@@ -618,21 +1119,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation06008 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation06008Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation06008Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0679CBank1[21] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0679C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0679CBank1[21];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0679C_bank1", _gDryfieldNightDilapidatedHouseAnimation0679CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0679CBank4[156] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0679C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0679CBank4[156];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0679C_bank4", _gDryfieldNightDilapidatedHouseAnimation0679CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0679CRecords[246] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0679C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0679CRecords[246];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0679C_records", _gDryfieldNightDilapidatedHouseAnimation0679CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation0679CIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0679C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation0679CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0679C_indices", _gDryfieldNightDilapidatedHouseAnimation0679CIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0679C = {
     _gDryfieldNightDilapidatedHouseAnimation0679CRecords,
@@ -640,21 +1161,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0679C = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation0679CBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation0679CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation06D10Bank1[2] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06D10_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation06D10Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06D10_bank1", _gDryfieldNightDilapidatedHouseAnimation06D10Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation06D10Bank4[135] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06D10_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation06D10Bank4[135];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06D10_bank4", _gDryfieldNightDilapidatedHouseAnimation06D10Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation06D10Records[188] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06D10_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation06D10Records[188];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06D10_records", _gDryfieldNightDilapidatedHouseAnimation06D10Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation06D10Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06D10_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation06D10Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06D10_indices", _gDryfieldNightDilapidatedHouseAnimation06D10Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation06D10 = {
     _gDryfieldNightDilapidatedHouseAnimation06D10Records,
@@ -662,21 +1203,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation06D10 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation06D10Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation06D10Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation06EE8Bank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06EE8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation06EE8Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06EE8_bank1", _gDryfieldNightDilapidatedHouseAnimation06EE8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation06EE8Bank4[29] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06EE8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation06EE8Bank4[29];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06EE8_bank4", _gDryfieldNightDilapidatedHouseAnimation06EE8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation06EE8Records[60] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06EE8_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation06EE8Records[60];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06EE8_records", _gDryfieldNightDilapidatedHouseAnimation06EE8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation06EE8Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_06EE8_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation06EE8Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_06EE8_indices", _gDryfieldNightDilapidatedHouseAnimation06EE8Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation06EE8 = {
     _gDryfieldNightDilapidatedHouseAnimation06EE8Records,
@@ -684,21 +1245,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation06EE8 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation06EE8Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation06EE8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation07304Bank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07304_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation07304Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07304_bank1", _gDryfieldNightDilapidatedHouseAnimation07304Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation07304Bank4[80] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07304_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation07304Bank4[80];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07304_bank4", _gDryfieldNightDilapidatedHouseAnimation07304Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation07304Records[154] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07304_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation07304Records[154];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07304_records", _gDryfieldNightDilapidatedHouseAnimation07304Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation07304Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07304_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation07304Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07304_indices", _gDryfieldNightDilapidatedHouseAnimation07304Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation07304 = {
     _gDryfieldNightDilapidatedHouseAnimation07304Records,
@@ -706,21 +1287,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation07304 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation07304Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation07304Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation074C0Bank1[2] = {
 #include "assets/dryfield_night_dilapidated_house_animation_074C0_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation074C0Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_074C0_bank1", _gDryfieldNightDilapidatedHouseAnimation074C0Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation074C0Bank4[25] = {
 #include "assets/dryfield_night_dilapidated_house_animation_074C0_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation074C0Bank4[25];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_074C0_bank4", _gDryfieldNightDilapidatedHouseAnimation074C0Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation074C0Records[60] = {
 #include "assets/dryfield_night_dilapidated_house_animation_074C0_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation074C0Records[60];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_074C0_records", _gDryfieldNightDilapidatedHouseAnimation074C0Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation074C0Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_074C0_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation074C0Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_074C0_indices", _gDryfieldNightDilapidatedHouseAnimation074C0Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation074C0 = {
     _gDryfieldNightDilapidatedHouseAnimation074C0Records,
@@ -728,21 +1329,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation074C0 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation074C0Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation074C0Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation076A8Bank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_076A8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation076A8Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_076A8_bank1", _gDryfieldNightDilapidatedHouseAnimation076A8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation076A8Bank4[33] = {
 #include "assets/dryfield_night_dilapidated_house_animation_076A8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation076A8Bank4[33];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_076A8_bank4", _gDryfieldNightDilapidatedHouseAnimation076A8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation076A8Records[60] = {
 #include "assets/dryfield_night_dilapidated_house_animation_076A8_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation076A8Records[60];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_076A8_records", _gDryfieldNightDilapidatedHouseAnimation076A8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation076A8Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_076A8_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation076A8Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_076A8_indices", _gDryfieldNightDilapidatedHouseAnimation076A8Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation076A8 = {
     _gDryfieldNightDilapidatedHouseAnimation076A8Records,
@@ -750,21 +1371,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation076A8 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation076A8Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation076A8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation07964Bank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07964_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation07964Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07964_bank1", _gDryfieldNightDilapidatedHouseAnimation07964Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation07964Bank4[39] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07964_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation07964Bank4[39];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07964_bank4", _gDryfieldNightDilapidatedHouseAnimation07964Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation07964Records[107] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07964_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation07964Records[107];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07964_records", _gDryfieldNightDilapidatedHouseAnimation07964Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation07964Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07964_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation07964Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07964_indices", _gDryfieldNightDilapidatedHouseAnimation07964Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation07964 = {
     _gDryfieldNightDilapidatedHouseAnimation07964Records,
@@ -772,21 +1413,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation07964 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation07964Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation07964Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation07B44Bank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07B44_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation07B44Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07B44_bank1", _gDryfieldNightDilapidatedHouseAnimation07B44Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation07B44Bank4[31] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07B44_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation07B44Bank4[31];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07B44_bank4", _gDryfieldNightDilapidatedHouseAnimation07B44Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation07B44Records[60] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07B44_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation07B44Records[60];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07B44_records", _gDryfieldNightDilapidatedHouseAnimation07B44Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation07B44Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07B44_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation07B44Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07B44_indices", _gDryfieldNightDilapidatedHouseAnimation07B44Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation07B44 = {
     _gDryfieldNightDilapidatedHouseAnimation07B44Records,
@@ -794,21 +1455,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation07B44 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation07B44Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation07B44Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation07DA4Bank1[5] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07DA4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation07DA4Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07DA4_bank1", _gDryfieldNightDilapidatedHouseAnimation07DA4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation07DA4Bank4[41] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07DA4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation07DA4Bank4[41];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07DA4_bank4", _gDryfieldNightDilapidatedHouseAnimation07DA4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation07DA4Records[76] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07DA4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation07DA4Records[76];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07DA4_records", _gDryfieldNightDilapidatedHouseAnimation07DA4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation07DA4Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07DA4_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation07DA4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07DA4_indices", _gDryfieldNightDilapidatedHouseAnimation07DA4Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation07DA4 = {
     _gDryfieldNightDilapidatedHouseAnimation07DA4Records,
@@ -816,21 +1497,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation07DA4 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation07DA4Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation07DA4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation07FC8Bank1[3] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07FC8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation07FC8Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07FC8_bank1", _gDryfieldNightDilapidatedHouseAnimation07FC8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation07FC8Bank4[21] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07FC8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation07FC8Bank4[21];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07FC8_bank4", _gDryfieldNightDilapidatedHouseAnimation07FC8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation07FC8Records[87] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07FC8_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation07FC8Records[87];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07FC8_records", _gDryfieldNightDilapidatedHouseAnimation07FC8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation07FC8Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_07FC8_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation07FC8Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_07FC8_indices", _gDryfieldNightDilapidatedHouseAnimation07FC8Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation07FC8 = {
     _gDryfieldNightDilapidatedHouseAnimation07FC8Records,
@@ -838,21 +1539,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation07FC8 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation07FC8Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation07FC8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation08278Bank1[5] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08278_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation08278Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08278_bank1", _gDryfieldNightDilapidatedHouseAnimation08278Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation08278Bank4[52] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08278_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation08278Bank4[52];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08278_bank4", _gDryfieldNightDilapidatedHouseAnimation08278Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation08278Records[85] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08278_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation08278Records[85];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08278_records", _gDryfieldNightDilapidatedHouseAnimation08278Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation08278Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08278_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation08278Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08278_indices", _gDryfieldNightDilapidatedHouseAnimation08278Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation08278 = {
     _gDryfieldNightDilapidatedHouseAnimation08278Records,
@@ -860,21 +1581,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation08278 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation08278Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation08278Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0865CBank1[2] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0865C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation0865CBank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0865C_bank1", _gDryfieldNightDilapidatedHouseAnimation0865CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0865CBank4[87] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0865C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation0865CBank4[87];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0865C_bank4", _gDryfieldNightDilapidatedHouseAnimation0865CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0865CRecords[136] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0865C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation0865CRecords[136];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0865C_records", _gDryfieldNightDilapidatedHouseAnimation0865CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation0865CIndices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_0865C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation0865CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_0865C_indices", _gDryfieldNightDilapidatedHouseAnimation0865CIndices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0865C = {
     _gDryfieldNightDilapidatedHouseAnimation0865CRecords,
@@ -882,21 +1623,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation0865C = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation0865CBank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation0865CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation08C74Bank1[4] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08C74_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation08C74Bank1[4];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08C74_bank1", _gDryfieldNightDilapidatedHouseAnimation08C74Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation08C74Bank4[147] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08C74_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation08C74Bank4[147];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08C74_bank4", _gDryfieldNightDilapidatedHouseAnimation08C74Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation08C74Records[211] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08C74_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation08C74Records[211];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08C74_records", _gDryfieldNightDilapidatedHouseAnimation08C74Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation08C74Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08C74_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation08C74Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08C74_indices", _gDryfieldNightDilapidatedHouseAnimation08C74Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation08C74 = {
     _gDryfieldNightDilapidatedHouseAnimation08C74Records,
@@ -904,21 +1665,41 @@ static AnimationSet _gDryfieldNightDilapidatedHouseAnimation08C74 = {
     { NULL, _gDryfieldNightDilapidatedHouseAnimation08C74Bank1, NULL, NULL, _gDryfieldNightDilapidatedHouseAnimation08C74Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation08ED4Bank1[4] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08ED4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightDilapidatedHouseAnimation08ED4Bank1[4];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08ED4_bank1", _gDryfieldNightDilapidatedHouseAnimation08ED4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation08ED4Bank4[36] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08ED4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightDilapidatedHouseAnimation08ED4Bank4[36];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08ED4_bank4", _gDryfieldNightDilapidatedHouseAnimation08ED4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation08ED4Records[84] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08ED4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightDilapidatedHouseAnimation08ED4Records[84];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08ED4_records", _gDryfieldNightDilapidatedHouseAnimation08ED4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightDilapidatedHouseAnimation08ED4Indices[20] = {
 #include "assets/dryfield_night_dilapidated_house_animation_08ED4_indices.inc"
 };
+#else
+static u16 _gDryfieldNightDilapidatedHouseAnimation08ED4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_animation_08ED4_indices", _gDryfieldNightDilapidatedHouseAnimation08ED4Indices);
 
 static AnimationSet _gDryfieldNightDilapidatedHouseAnimation08ED4 = {
     _gDryfieldNightDilapidatedHouseAnimation08ED4Records,
@@ -1647,27 +2428,47 @@ DirectionWarpEntry gDryfieldNightDilapidatedHouseWarpEntries[3] = {
 };
 
 /// Room-space face normals, using ONE for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightDilapidatedHouseCollisionGridNormals[10] = {
 #include "assets/dryfield_night_dilapidated_house_collision_0A784_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightDilapidatedHouseCollisionGridNormals[10];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_collision_0A784_normals", _gDryfieldNightDilapidatedHouseCollisionGridNormals);
 
 /// Collision mesh positions in signed integer room units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightDilapidatedHouseCollisionGridVerts[116] = {
 #include "assets/dryfield_night_dilapidated_house_collision_0A784_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightDilapidatedHouseCollisionGridVerts[116];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_collision_0A784_verts", _gDryfieldNightDilapidatedHouseCollisionGridVerts);
 
 /// Indexed collision triangles and quads, with room surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightDilapidatedHouseCollisionGridFaces[70] = {
 #include "assets/dryfield_night_dilapidated_house_collision_0A784_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightDilapidatedHouseCollisionGridFaces[70];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_collision_0A784_faces", _gDryfieldNightDilapidatedHouseCollisionGridFaces);
 
 /// Six packed face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
 ///
 /// The cell table selects each list's start. Retained zeros between some lists
 /// and after the final terminator are not traversed as face indices.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightDilapidatedHouseCollisionGridCells[208] = {
 #include "assets/dryfield_night_dilapidated_house_collision_0A784_cells.inc"
 };
+#else
+static s16 _gDryfieldNightDilapidatedHouseCollisionGridCells[208];
+#endif
+PE_ASSET_BIND("dryfield_night_dilapidated_house_collision_0A784_cells", _gDryfieldNightDilapidatedHouseCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
 ///
@@ -1682,9 +2483,14 @@ static s16 _gDryfieldNightDilapidatedHouseCollisionGridCells[208] = {
 #define DRYFIELD_NIGHT_DILAPIDATED_HOUSE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightDilapidatedHouseCollisionGridCells[(halfwordOffset)])
 
 /// X-major cell directory, indexed as cellX * 2 + cellZ for the 3-by-2 grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightDilapidatedHouseCollisionGridTable[6] = {
 #include "assets/dryfield_night_dilapidated_house_collision_0A784_table.inc"
 };
+#else
+static s16* _gDryfieldNightDilapidatedHouseCollisionGridTable[6];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_dilapidated_house_collision_0A784_table", _gDryfieldNightDilapidatedHouseCollisionGridTable, _gDryfieldNightDilapidatedHouseCollisionGridCells);
 #undef DRYFIELD_NIGHT_DILAPIDATED_HOUSE_CELL_FACE_LIST_AT_OFFSET
 
 /// The house's room collision mesh and six-cell XZ face directory.

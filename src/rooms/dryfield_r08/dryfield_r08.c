@@ -1,4 +1,5 @@
 #include "rooms/dryfield_r08.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -189,24 +190,44 @@ enum {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldR08CollisionGridNormals[6] = {
 #include "assets/dryfield_r08_collision_025D8_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldR08CollisionGridNormals[6];
+#endif
+PE_ASSET_BIND("dryfield_r08_collision_025D8_normals", _gDryfieldR08CollisionGridNormals);
 
 /// Collision mesh vertices in signed integer room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldR08CollisionGridVerts[59] = {
 #include "assets/dryfield_r08_collision_025D8_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldR08CollisionGridVerts[59];
+#endif
+PE_ASSET_BIND("dryfield_r08_collision_025D8_verts", _gDryfieldR08CollisionGridVerts);
 
 /// Indexed room collision quads, all using surface class 0.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldR08CollisionGridFaces[31] = {
 #include "assets/dryfield_r08_collision_025D8_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldR08CollisionGridFaces[31];
+#endif
+PE_ASSET_BIND("dryfield_r08_collision_025D8_faces", _gDryfieldR08CollisionGridFaces);
 
 /// Packed signed face-index lists; each active cell list ends with -1.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldR08CollisionGridCells[86] = {
 #include "assets/dryfield_r08_collision_025D8_cells.inc"
 };
+#else
+static s16 _gDryfieldR08CollisionGridCells[86];
+#endif
+PE_ASSET_BIND("dryfield_r08_collision_025D8_cells", _gDryfieldR08CollisionGridCells);
 
 // Bind the generated table's halfword offsets to this grid's face-index pool.
 // Each constant offset is evaluated once; the binding ends after the include.
@@ -219,9 +240,14 @@ static s16 _gDryfieldR08CollisionGridCells[86] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_R08_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldR08CollisionGridCells[(halfwordOffset)])
 /// X-major cell pointers, indexed by x * cellCountZ + z in the 4 by 2 grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldR08CollisionGridTable[DRYFIELD_R08_COLLISION_CELL_COUNT_X * DRYFIELD_R08_COLLISION_CELL_COUNT_Z] = {
 #include "assets/dryfield_r08_collision_025D8_table.inc"
 };
+#else
+static s16* _gDryfieldR08CollisionGridTable[8];
+#endif
+PE_ASSET_BIND_AUX("dryfield_r08_collision_025D8_table", _gDryfieldR08CollisionGridTable, _gDryfieldR08CollisionGridCells);
 #undef DRYFIELD_R08_CELL_FACE_LIST_AT_OFFSET
 
 /// Shared collision mesh for both room variants and its 4 by 2 XZ cell index.

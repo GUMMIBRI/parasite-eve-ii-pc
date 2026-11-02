@@ -1,4 +1,5 @@
 #include "actors/actor_121300.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -223,25 +224,50 @@ enum {
 
 #include "assets/characters/eve/body.inc"
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor121300Model07E84Skeleton[1] = {
 #include "assets/actor_121300_model_07E84_skeleton.inc"
 };
+#else
+static TmdBone _gActor121300Model07E84Skeleton[1];
+#endif
+PE_ASSET_BIND("actor_121300_model_07E84_skeleton", _gActor121300Model07E84Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor121300Model07E84PartVerts[1] = {
 #include "assets/actor_121300_model_07E84_partVerts.inc"
 };
+#else
+static u32 _gActor121300Model07E84PartVerts[1];
+#endif
+PE_ASSET_BIND("actor_121300_model_07E84_partVerts", _gActor121300Model07E84PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor121300Model07E84Verts[10] = {
 #include "assets/actor_121300_model_07E84_verts.inc"
 };
+#else
+static SVECTOR _gActor121300Model07E84Verts[10];
+#endif
+PE_ASSET_BIND("actor_121300_model_07E84_verts", _gActor121300Model07E84Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor121300Model07E84Normals[17] = {
 #include "assets/actor_121300_model_07E84_normals.inc"
 };
+#else
+static SVECTOR _gActor121300Model07E84Normals[17];
+#endif
+PE_ASSET_BIND("actor_121300_model_07E84_normals", _gActor121300Model07E84Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor121300Model07E84Stream[80] = {
 #include "assets/actor_121300_model_07E84_stream.inc"
 };
+#else
+static u32 _gActor121300Model07E84Stream[80];
+#endif
+PE_ASSET_BIND("actor_121300_model_07E84_stream", _gActor121300Model07E84Stream);
 
 static TmdSource _gActor121300Model07E84 = {
     0,
@@ -255,25 +281,50 @@ static TmdSource _gActor121300Model07E84 = {
     _gActor121300Model07E84Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor121300Model080F0Skeleton[1] = {
 #include "assets/actor_121300_model_080F0_skeleton.inc"
 };
+#else
+static TmdBone _gActor121300Model080F0Skeleton[1];
+#endif
+PE_ASSET_BIND("actor_121300_model_080F0_skeleton", _gActor121300Model080F0Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor121300Model080F0PartVerts[1] = {
 #include "assets/actor_121300_model_080F0_partVerts.inc"
 };
+#else
+static u32 _gActor121300Model080F0PartVerts[1];
+#endif
+PE_ASSET_BIND("actor_121300_model_080F0_partVerts", _gActor121300Model080F0PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor121300Model080F0Verts[10] = {
 #include "assets/actor_121300_model_080F0_verts.inc"
 };
+#else
+static SVECTOR _gActor121300Model080F0Verts[10];
+#endif
+PE_ASSET_BIND("actor_121300_model_080F0_verts", _gActor121300Model080F0Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor121300Model080F0Normals[18] = {
 #include "assets/actor_121300_model_080F0_normals.inc"
 };
+#else
+static SVECTOR _gActor121300Model080F0Normals[18];
+#endif
+PE_ASSET_BIND("actor_121300_model_080F0_normals", _gActor121300Model080F0Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor121300Model080F0Stream[80] = {
 #include "assets/actor_121300_model_080F0_stream.inc"
 };
+#else
+static u32 _gActor121300Model080F0Stream[80];
+#endif
+PE_ASSET_BIND("actor_121300_model_080F0_stream", _gActor121300Model080F0Stream);
 
 static TmdSource _gActor121300Model080F0 = {
     0,
@@ -287,25 +338,50 @@ static TmdSource _gActor121300Model080F0 = {
     _gActor121300Model080F0Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor121300Model0834CSkeleton[1] = {
 #include "assets/actor_121300_model_0834C_skeleton.inc"
 };
+#else
+static TmdBone _gActor121300Model0834CSkeleton[1];
+#endif
+PE_ASSET_BIND("actor_121300_model_0834C_skeleton", _gActor121300Model0834CSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor121300Model0834CPartVerts[1] = {
 #include "assets/actor_121300_model_0834C_partVerts.inc"
 };
+#else
+static u32 _gActor121300Model0834CPartVerts[1];
+#endif
+PE_ASSET_BIND("actor_121300_model_0834C_partVerts", _gActor121300Model0834CPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor121300Model0834CVerts[10] = {
 #include "assets/actor_121300_model_0834C_verts.inc"
 };
+#else
+static SVECTOR _gActor121300Model0834CVerts[10];
+#endif
+PE_ASSET_BIND("actor_121300_model_0834C_verts", _gActor121300Model0834CVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor121300Model0834CNormals[16] = {
 #include "assets/actor_121300_model_0834C_normals.inc"
 };
+#else
+static SVECTOR _gActor121300Model0834CNormals[16];
+#endif
+PE_ASSET_BIND("actor_121300_model_0834C_normals", _gActor121300Model0834CNormals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor121300Model0834CStream[80] = {
 #include "assets/actor_121300_model_0834C_stream.inc"
 };
+#else
+static u32 _gActor121300Model0834CStream[80];
+#endif
+PE_ASSET_BIND("actor_121300_model_0834C_stream", _gActor121300Model0834CStream);
 
 static TmdSource _gActor121300Model0834C = {
     0,
@@ -319,25 +395,50 @@ static TmdSource _gActor121300Model0834C = {
     _gActor121300Model0834CStream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor121300Model08580Skeleton[1] = {
 #include "assets/actor_121300_model_08580_skeleton.inc"
 };
+#else
+static TmdBone _gActor121300Model08580Skeleton[1];
+#endif
+PE_ASSET_BIND("actor_121300_model_08580_skeleton", _gActor121300Model08580Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor121300Model08580PartVerts[1] = {
 #include "assets/actor_121300_model_08580_partVerts.inc"
 };
+#else
+static u32 _gActor121300Model08580PartVerts[1];
+#endif
+PE_ASSET_BIND("actor_121300_model_08580_partVerts", _gActor121300Model08580PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor121300Model08580Verts[8] = {
 #include "assets/actor_121300_model_08580_verts.inc"
 };
+#else
+static SVECTOR _gActor121300Model08580Verts[8];
+#endif
+PE_ASSET_BIND("actor_121300_model_08580_verts", _gActor121300Model08580Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor121300Model08580Normals[13] = {
 #include "assets/actor_121300_model_08580_normals.inc"
 };
+#else
+static SVECTOR _gActor121300Model08580Normals[13];
+#endif
+PE_ASSET_BIND("actor_121300_model_08580_normals", _gActor121300Model08580Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor121300Model08580Stream[61] = {
 #include "assets/actor_121300_model_08580_stream.inc"
 };
+#else
+static u32 _gActor121300Model08580Stream[61];
+#endif
+PE_ASSET_BIND("actor_121300_model_08580_stream", _gActor121300Model08580Stream);
 
 static TmdSource _gActor121300Model08580 = {
     0,
@@ -351,25 +452,50 @@ static TmdSource _gActor121300Model08580 = {
     _gActor121300Model08580Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor121300Model08768Skeleton[1] = {
 #include "assets/actor_121300_model_08768_skeleton.inc"
 };
+#else
+static TmdBone _gActor121300Model08768Skeleton[1];
+#endif
+PE_ASSET_BIND("actor_121300_model_08768_skeleton", _gActor121300Model08768Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor121300Model08768PartVerts[1] = {
 #include "assets/actor_121300_model_08768_partVerts.inc"
 };
+#else
+static u32 _gActor121300Model08768PartVerts[1];
+#endif
+PE_ASSET_BIND("actor_121300_model_08768_partVerts", _gActor121300Model08768PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor121300Model08768Verts[8] = {
 #include "assets/actor_121300_model_08768_verts.inc"
 };
+#else
+static SVECTOR _gActor121300Model08768Verts[8];
+#endif
+PE_ASSET_BIND("actor_121300_model_08768_verts", _gActor121300Model08768Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor121300Model08768Normals[13] = {
 #include "assets/actor_121300_model_08768_normals.inc"
 };
+#else
+static SVECTOR _gActor121300Model08768Normals[13];
+#endif
+PE_ASSET_BIND("actor_121300_model_08768_normals", _gActor121300Model08768Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor121300Model08768Stream[61] = {
 #include "assets/actor_121300_model_08768_stream.inc"
 };
+#else
+static u32 _gActor121300Model08768Stream[61];
+#endif
+PE_ASSET_BIND("actor_121300_model_08768_stream", _gActor121300Model08768Stream);
 
 static TmdSource _gActor121300Model08768 = {
     0,

@@ -753,7 +753,7 @@ def write_captured_route(path: Path, name: str) -> None:
     route = json.loads((Path(__file__).parent / f"routes/{name}.json").read_text())
     with tempfile.TemporaryDirectory(prefix="pe2_route_") as directory:
         base = Path(directory) / "base.pad"
-        if route.get("baseRoute") in ("audio_fixed_east_hall", "video_clock_airlock", "video_clock_akropolis", "video_clock_tower", "video_clock_patio", "video_clock_patio_clear", "video_clock_parthenon_key", "video_clock_cafeteria", "video_clock_cafeteria_clear", "video_clock_patio_ambush", "video_clock_mist_report", "video_clock_fountain", "video_clock_fountain_path"):
+        if route.get("baseRoute") in ("audio_fixed_east_hall", "video_clock_airlock", "video_clock_akropolis", "video_clock_tower", "video_clock_patio", "video_clock_patio_clear", "video_clock_parthenon_key", "video_clock_cafeteria", "video_clock_cafeteria_clear", "video_clock_patio_ambush", "video_clock_mist_report", "video_clock_fountain", "video_clock_fountain_path", "video_clock_fountain_protein", "video_clock_hallway_clear", "video_clock_security", "video_clock_rupert", "video_clock_blue_key", "video_clock_blue_unlock", "video_clock_forked_road"):
             write_captured_route(base, route["baseRoute"])
         elif route.get("baseRoute") == "leave_booth":
             write_route(base, 20000, 180, leave_booth=True)
@@ -811,6 +811,20 @@ def main() -> None:
                         help="equip Tonfa and climb hidden Fountain path; run with --clock video")
     parser.add_argument("--video-clock-fountain-protein", action="store_true",
                         help="take Protein Capsule on upper Fountain path; run with --clock video")
+    parser.add_argument("--video-clock-hallway-clear", action="store_true",
+                        help="descend Fountain, defeat Hallway rats, heal in battle and return to Cafeteria; run with --clock video")
+    parser.add_argument("--video-clock-security", action="store_true",
+                        help="revisit cleared Hallway and enter Security Room; run with --clock video")
+    parser.add_argument("--video-clock-rupert", action="store_true",
+                        help="brighten monitor, play Rupert camera scene and close panel; run with --clock video")
+    parser.add_argument("--video-clock-blue-key", action="store_true",
+                        help="leave monitor room and collect Hallway Blue Key; run with --clock video")
+    parser.add_argument("--video-clock-blue-unlock", action="store_true",
+                        help="use Blue Key at left Security power lock; run with --clock video")
+    parser.add_argument("--video-clock-forked-road", action="store_true",
+                        help="revisit Fountain and enter unlocked Forked Road; run with --clock video")
+    parser.add_argument("--video-clock-observatory", action="store_true",
+                        help="ride original escalator scenes into Observatory; run with --clock video")
     parser.add_argument("--frames", type=int, default=12000)
     parser.add_argument("--aim-cycle", type=int, default=0,
                         help="release aim for 15 samples every N samples (0 holds continuously)")
@@ -901,7 +915,7 @@ def main() -> None:
     parser.add_argument("--bridge-entry", action="store_true",
                         help="use Red Key, clear the Observatory bat ambush and enter Bridge through Promenade")
     args = parser.parse_args()
-    captured = [name for name in ("audio_fixed_east_hall", "audio_fixed_cafeteria", "video_clock_airlock", "video_clock_akropolis", "video_clock_tower", "video_clock_patio", "video_clock_patio_clear", "video_clock_parthenon_key", "video_clock_cafeteria", "video_clock_cafeteria_clear", "video_clock_patio_ambush", "video_clock_mist_report", "video_clock_fountain", "video_clock_fountain_path", "video_clock_fountain_protein") if getattr(args, name)]
+    captured = [name for name in ("audio_fixed_east_hall", "audio_fixed_cafeteria", "video_clock_airlock", "video_clock_akropolis", "video_clock_tower", "video_clock_patio", "video_clock_patio_clear", "video_clock_parthenon_key", "video_clock_cafeteria", "video_clock_cafeteria_clear", "video_clock_patio_ambush", "video_clock_mist_report", "video_clock_fountain", "video_clock_fountain_path", "video_clock_fountain_protein", "video_clock_hallway_clear", "video_clock_security", "video_clock_rupert", "video_clock_blue_key", "video_clock_blue_unlock", "video_clock_forked_road", "video_clock_observatory") if getattr(args, name)]
     if captured:
         if len(captured) != 1 or any(value is True for name, value in vars(args).items() if name != captured[0]):
             parser.error("select one captured route without legacy progression flags")

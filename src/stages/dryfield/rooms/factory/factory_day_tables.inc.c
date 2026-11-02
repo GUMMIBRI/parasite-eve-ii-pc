@@ -90,24 +90,45 @@ enum {
 };
 
 /// Room-space normals; the barrier owns entries 0..1 and the lift owns 2..5.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldFactoryCollisionGridNormals[28] = {
 #include "assets/dryfield_factory_collision_0A638_normals.inc"
+#include "port/asset_bind.h"
 };
+#else
+static SVECTOR _gDryfieldFactoryCollisionGridNormals[28];
+#endif
+PE_ASSET_BIND("dryfield_factory_collision_0A638_normals", _gDryfieldFactoryCollisionGridNormals);
 
 /// Room-space vertices; the barrier owns entries 0..7 and the lift owns 8..15.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldFactoryCollisionGridVerts[170] = {
 #include "assets/dryfield_factory_collision_0A638_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldFactoryCollisionGridVerts[170];
+#endif
+PE_ASSET_BIND("dryfield_factory_collision_0A638_verts", _gDryfieldFactoryCollisionGridVerts);
 
 /// Live room faces, with entries 0..5 reserved for the barrier and lift.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldFactoryCollisionGridFaces[72] = {
 #include "assets/dryfield_factory_collision_0A638_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldFactoryCollisionGridFaces[72];
+#endif
+PE_ASSET_BIND("dryfield_factory_collision_0A638_faces", _gDryfieldFactoryCollisionGridFaces);
 
 /// Face-index lists for the eight cells, each ended by WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldFactoryCollisionGridCells[288] = {
 #include "assets/dryfield_factory_collision_0A638_cells.inc"
 };
+#else
+static s16 _gDryfieldFactoryCollisionGridCells[288];
+#endif
+PE_ASSET_BIND("dryfield_factory_collision_0A638_cells", _gDryfieldFactoryCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
 ///
@@ -122,9 +143,14 @@ static s16 _gDryfieldFactoryCollisionGridCells[288] = {
 #define DRYFIELD_FACTORY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldFactoryCollisionGridCells[(halfwordOffset)])
 
 /// X-major cell pointers, indexed by x * cellCountZ + z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldFactoryCollisionGridTable[DRYFIELD_FACTORY_COLLISION_CELL_COUNT_X * DRYFIELD_FACTORY_COLLISION_CELL_COUNT_Z] = {
 #include "assets/dryfield_factory_collision_0A638_table.inc"
 };
+#else
+static s16* _gDryfieldFactoryCollisionGridTable[8];
+#endif
+PE_ASSET_BIND_AUX("dryfield_factory_collision_0A638_table", _gDryfieldFactoryCollisionGridTable, _gDryfieldFactoryCollisionGridCells);
 #undef DRYFIELD_FACTORY_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gDryfieldFactoryCollisionGrid = {

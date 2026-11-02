@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_shrine.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -437,24 +438,44 @@ enum {
 };
 
 /// Base-layout collision normals in room axes, with ONE for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkShrineBaseCollisionGridNormals[] = {
 #include "assets/neo_ark_shrine_collision_0576C_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkShrineBaseCollisionGridNormals[10];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_0576C_normals", _gNeoArkShrineBaseCollisionGridNormals);
 
 /// Base-layout collision vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkShrineBaseCollisionGridVerts[] = {
 #include "assets/neo_ark_shrine_collision_0576C_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkShrineBaseCollisionGridVerts[46];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_0576C_verts", _gNeoArkShrineBaseCollisionGridVerts);
 
 /// Base-layout indexed quads, selecting the shrine's surface classes 0 and 2.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkShrineBaseCollisionGridFaces[] = {
 #include "assets/neo_ark_shrine_collision_0576C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkShrineBaseCollisionGridFaces[30];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_0576C_faces", _gNeoArkShrineBaseCollisionGridFaces);
 
 /// Packed face-index lists for the base layout, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkShrineBaseCollisionGridCells[] = {
 #include "assets/neo_ark_shrine_collision_0576C_cells.inc"
 };
+#else
+static s16 _gNeoArkShrineBaseCollisionGridCells[140];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_0576C_cells", _gNeoArkShrineBaseCollisionGridCells);
 
 /// Binds a generated base-grid table entry to its packed face-list start.
 ///
@@ -464,9 +485,14 @@ static s16 _gNeoArkShrineBaseCollisionGridCells[] = {
 /// keep the binding through the table include, then undefine it.
 #define NEO_ARK_SHRINE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkShrineBaseCollisionGridCells[(halfwordOffset)])
 /// X-major directory of base-layout face lists, indexed as x * 3 + z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkShrineBaseCollisionGridTable[NEO_ARK_SHRINE_BASE_COLLISION_CELLS_X * NEO_ARK_SHRINE_BASE_COLLISION_CELLS_Z] = {
 #include "assets/neo_ark_shrine_collision_0576C_table.inc"
 };
+#else
+static s16* _gNeoArkShrineBaseCollisionGridTable[12];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_shrine_collision_0576C_table", _gNeoArkShrineBaseCollisionGridTable, _gNeoArkShrineBaseCollisionGridCells);
 #undef NEO_ARK_SHRINE_CELL_FACE_LIST_AT_OFFSET
 
 /// Mutable collision mesh for the shrine's base layout, used by room selectors 1 and 4.
@@ -494,24 +520,44 @@ enum {
 };
 
 /// Active-layout collision normals in room axes, with ONE for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkShrineActiveCollisionGridNormals[] = {
 #include "assets/neo_ark_shrine_collision_05C18_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkShrineActiveCollisionGridNormals[9];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_05C18_normals", _gNeoArkShrineActiveCollisionGridNormals);
 
 /// Active-layout collision vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkShrineActiveCollisionGridVerts[] = {
 #include "assets/neo_ark_shrine_collision_05C18_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkShrineActiveCollisionGridVerts[48];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_05C18_verts", _gNeoArkShrineActiveCollisionGridVerts);
 
 /// Active-layout indexed quads, selecting the shrine's surface classes 1 and 2.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkShrineActiveCollisionGridFaces[] = {
 #include "assets/neo_ark_shrine_collision_05C18_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkShrineActiveCollisionGridFaces[31];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_05C18_faces", _gNeoArkShrineActiveCollisionGridFaces);
 
 /// Packed active-layout face lists, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkShrineActiveCollisionGridCells[] = {
 #include "assets/neo_ark_shrine_collision_05C18_cells.inc"
 };
+#else
+static s16 _gNeoArkShrineActiveCollisionGridCells[142];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_05C18_cells", _gNeoArkShrineActiveCollisionGridCells);
 
 /// Binds a generated active-grid entry to its packed face-list start.
 ///
@@ -521,9 +567,14 @@ static s16 _gNeoArkShrineActiveCollisionGridCells[] = {
 /// after the include.
 #define NEO_ARK_SHRINE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkShrineActiveCollisionGridCells[(halfwordOffset)])
 /// X-major directory of active-layout face lists, indexed as x * 3 + z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkShrineActiveCollisionGridTable[NEO_ARK_SHRINE_ACTIVE_COLLISION_CELLS_X * NEO_ARK_SHRINE_ACTIVE_COLLISION_CELLS_Z] = {
 #include "assets/neo_ark_shrine_collision_05C18_table.inc"
 };
+#else
+static s16* _gNeoArkShrineActiveCollisionGridTable[12];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_shrine_collision_05C18_table", _gNeoArkShrineActiveCollisionGridTable, _gNeoArkShrineActiveCollisionGridCells);
 #undef NEO_ARK_SHRINE_CELL_FACE_LIST_AT_OFFSET
 
 /// Mutable collision mesh for the puzzle's active layout, used by room selectors 2 and 5.
@@ -551,24 +602,44 @@ enum {
 };
 
 /// Enemy-release collision normals in room axes, with ONE for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkShrineEnemyReleaseCollisionGridNormals[] = {
 #include "assets/neo_ark_shrine_collision_060D8_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkShrineEnemyReleaseCollisionGridNormals[9];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_060D8_normals", _gNeoArkShrineEnemyReleaseCollisionGridNormals);
 
 /// Enemy-release collision vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkShrineEnemyReleaseCollisionGridVerts[] = {
 #include "assets/neo_ark_shrine_collision_060D8_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkShrineEnemyReleaseCollisionGridVerts[50];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_060D8_verts", _gNeoArkShrineEnemyReleaseCollisionGridVerts);
 
 /// Enemy-release indexed quads, selecting the shrine's surface classes 1 and 2.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkShrineEnemyReleaseCollisionGridFaces[] = {
 #include "assets/neo_ark_shrine_collision_060D8_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkShrineEnemyReleaseCollisionGridFaces[31];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_060D8_faces", _gNeoArkShrineEnemyReleaseCollisionGridFaces);
 
 /// Packed enemy-release face lists, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkShrineEnemyReleaseCollisionGridCells[] = {
 #include "assets/neo_ark_shrine_collision_060D8_cells.inc"
 };
+#else
+static s16 _gNeoArkShrineEnemyReleaseCollisionGridCells[144];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_collision_060D8_cells", _gNeoArkShrineEnemyReleaseCollisionGridCells);
 
 /// Binds a generated enemy-release-grid entry to its packed face-list start.
 ///
@@ -578,9 +649,14 @@ static s16 _gNeoArkShrineEnemyReleaseCollisionGridCells[] = {
 /// after the include.
 #define NEO_ARK_SHRINE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkShrineEnemyReleaseCollisionGridCells[(halfwordOffset)])
 /// X-major directory of enemy-release face lists, indexed as x * 3 + z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkShrineEnemyReleaseCollisionGridTable[NEO_ARK_SHRINE_ENEMY_RELEASE_COLLISION_CELLS_X * NEO_ARK_SHRINE_ENEMY_RELEASE_COLLISION_CELLS_Z] = {
 #include "assets/neo_ark_shrine_collision_060D8_table.inc"
 };
+#else
+static s16* _gNeoArkShrineEnemyReleaseCollisionGridTable[12];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_shrine_collision_060D8_table", _gNeoArkShrineEnemyReleaseCollisionGridTable, _gNeoArkShrineEnemyReleaseCollisionGridCells);
 #undef NEO_ARK_SHRINE_CELL_FACE_LIST_AT_OFFSET
 
 /// Mutable collision mesh for the enemy-release layout, used by room selectors 3 and 6.

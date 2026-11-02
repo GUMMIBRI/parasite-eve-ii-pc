@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_power_plant_1.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -90,21 +91,41 @@ enum {
 
 static AnimationSet _gNeoArkPowerPlant1Animation01530;
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gNeoArkPowerPlant1Animation01530Bank1[10] = {
 #include "assets/neo_ark_power_plant_1_animation_01530_bank1.inc"
 };
+#else
+static AnimationPackedPose _gNeoArkPowerPlant1Animation01530Bank1[10];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_1_animation_01530_bank1", _gNeoArkPowerPlant1Animation01530Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gNeoArkPowerPlant1Animation01530Bank4[126] = {
 #include "assets/neo_ark_power_plant_1_animation_01530_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gNeoArkPowerPlant1Animation01530Bank4[126];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_1_animation_01530_bank4", _gNeoArkPowerPlant1Animation01530Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gNeoArkPowerPlant1Animation01530Records[171] = {
 #include "assets/neo_ark_power_plant_1_animation_01530_records.inc"
 };
+#else
+static AnimationRecord _gNeoArkPowerPlant1Animation01530Records[171];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_1_animation_01530_records", _gNeoArkPowerPlant1Animation01530Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gNeoArkPowerPlant1Animation01530Indices[20] = {
 #include "assets/neo_ark_power_plant_1_animation_01530_indices.inc"
 };
+#else
+static u16 _gNeoArkPowerPlant1Animation01530Indices[20];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_1_animation_01530_indices", _gNeoArkPowerPlant1Animation01530Indices);
 
 static AnimationSet _gNeoArkPowerPlant1Animation01530 = {
     _gNeoArkPowerPlant1Animation01530Records,
@@ -402,24 +423,44 @@ static WorldCoordRoomLights _gNeoArkPowerPlant1RoomLights = {
 };
 
 /// Room-space collision normals, with `ONE` for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkPowerPlant1CollisionGridNormals[10] = {
 #include "assets/neo_ark_power_plant_1_collision_02AD0_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkPowerPlant1CollisionGridNormals[10];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_1_collision_02AD0_normals", _gNeoArkPowerPlant1CollisionGridNormals);
 
 /// Room-space collision vertices in signed game-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkPowerPlant1CollisionGridVerts[58] = {
 #include "assets/neo_ark_power_plant_1_collision_02AD0_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkPowerPlant1CollisionGridVerts[58];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_1_collision_02AD0_verts", _gNeoArkPowerPlant1CollisionGridVerts);
 
 /// Collision faces indexing this grid's vertex and normal pools.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkPowerPlant1CollisionGridFaces[30] = {
 #include "assets/neo_ark_power_plant_1_collision_02AD0_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkPowerPlant1CollisionGridFaces[30];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_1_collision_02AD0_faces", _gNeoArkPowerPlant1CollisionGridFaces);
 
 /// Signed face-index lists terminated by `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkPowerPlant1CollisionGridCells[160] = {
 #include "assets/neo_ark_power_plant_1_collision_02AD0_cells.inc"
 };
+#else
+static s16 _gNeoArkPowerPlant1CollisionGridCells[160];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_1_collision_02AD0_cells", _gNeoArkPowerPlant1CollisionGridCells);
 
 enum {
     NEO_ARK_POWER_PLANT_1_COLLISION_CELLS_X = 3,
@@ -436,9 +477,14 @@ enum {
 /// binding through the table include, then undefine it.
 #define NEO_ARK_POWER_PLANT_1_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkPowerPlant1CollisionGridCells[(halfwordOffset)])
 /// X-major cell directory; each pointer selects a list in the face-index pool.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkPowerPlant1CollisionGridTable[NEO_ARK_POWER_PLANT_1_COLLISION_CELLS_X * NEO_ARK_POWER_PLANT_1_COLLISION_CELLS_Z] = {
 #include "assets/neo_ark_power_plant_1_collision_02AD0_table.inc"
 };
+#else
+static s16* _gNeoArkPowerPlant1CollisionGridTable[12];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_power_plant_1_collision_02AD0_table", _gNeoArkPowerPlant1CollisionGridTable, _gNeoArkPowerPlant1CollisionGridCells);
 #undef NEO_ARK_POWER_PLANT_1_CELL_FACE_LIST_AT_OFFSET
 
 /// Power Plant 1's collision mesh and 3-by-4 room-space cell index.

@@ -1,4 +1,5 @@
 #include "actors/actor_341700.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -94,25 +95,50 @@ static s32 _actor341700PropCommandMessage(Task* task, s32 messageId, const Actor
 
 #include "../../shared/actor/actor_contacts.h"
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor341700Model13558Skeleton[11] = {
 #include "assets/actor_341700_model_13558_skeleton.inc"
 };
+#else
+static TmdBone _gActor341700Model13558Skeleton[11];
+#endif
+PE_ASSET_BIND("actor_341700_model_13558_skeleton", _gActor341700Model13558Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor341700Model13558PartVerts[11] = {
 #include "assets/actor_341700_model_13558_partVerts.inc"
 };
+#else
+static u32 _gActor341700Model13558PartVerts[11];
+#endif
+PE_ASSET_BIND("actor_341700_model_13558_partVerts", _gActor341700Model13558PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor341700Model13558Verts[81] = {
 #include "assets/actor_341700_model_13558_verts.inc"
 };
+#else
+static SVECTOR _gActor341700Model13558Verts[81];
+#endif
+PE_ASSET_BIND("actor_341700_model_13558_verts", _gActor341700Model13558Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor341700Model13558Normals[46] = {
 #include "assets/actor_341700_model_13558_normals.inc"
 };
+#else
+static SVECTOR _gActor341700Model13558Normals[46];
+#endif
+PE_ASSET_BIND("actor_341700_model_13558_normals", _gActor341700Model13558Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor341700Model13558Stream[753] = {
 #include "assets/actor_341700_model_13558_stream.inc"
 };
+#else
+static u32 _gActor341700Model13558Stream[753];
+#endif
+PE_ASSET_BIND("actor_341700_model_13558_stream", _gActor341700Model13558Stream);
 
 static TmdSource _gActor341700Model13558 = {
     0,

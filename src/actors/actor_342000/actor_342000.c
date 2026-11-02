@@ -1,4 +1,5 @@
 #include "actors/actor_342000.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -183,21 +184,41 @@ static void _actor342000StageSceneAudioStart(void);
 static void _actor342000EnqueueScenePlayback(void);
 static void _actor342000FinishScene(void);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor342000Animation029A0Bank1[6] = {
 #include "assets/actor_342000_animation_029A0_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor342000Animation029A0Bank1[6];
+#endif
+PE_ASSET_BIND("actor_342000_animation_029A0_bank1", _gActor342000Animation029A0Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor342000Animation029A0Bank4[46] = {
 #include "assets/actor_342000_animation_029A0_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor342000Animation029A0Bank4[46];
+#endif
+PE_ASSET_BIND("actor_342000_animation_029A0_bank4", _gActor342000Animation029A0Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor342000Animation029A0Records[109] = {
 #include "assets/actor_342000_animation_029A0_records.inc"
 };
+#else
+static AnimationRecord _gActor342000Animation029A0Records[109];
+#endif
+PE_ASSET_BIND("actor_342000_animation_029A0_records", _gActor342000Animation029A0Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor342000Animation029A0Indices[20] = {
 #include "assets/actor_342000_animation_029A0_indices.inc"
 };
+#else
+static u16 _gActor342000Animation029A0Indices[20];
+#endif
+PE_ASSET_BIND("actor_342000_animation_029A0_indices", _gActor342000Animation029A0Indices);
 
 static AnimationSet _gActor342000Animation029A0 = {
     _gActor342000Animation029A0Records,

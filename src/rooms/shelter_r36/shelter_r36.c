@@ -1,4 +1,5 @@
 #include "rooms/shelter_r36.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -666,24 +667,44 @@ enum {
 };
 
 /// Upward floor normal in room coordinates, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterR36FloorCollisionGridNormals[1] = {
 #include "assets/shelter_r36_collision_014F0_normals.inc"
 };
+#else
+static SVECTOR _gShelterR36FloorCollisionGridNormals[1];
+#endif
+PE_ASSET_BIND("shelter_r36_collision_014F0_normals", _gShelterR36FloorCollisionGridNormals);
 
 /// Four floor corners in signed integer room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterR36FloorCollisionGridVerts[4] = {
 #include "assets/shelter_r36_collision_014F0_verts.inc"
 };
+#else
+static SVECTOR _gShelterR36FloorCollisionGridVerts[4];
+#endif
+PE_ASSET_BIND("shelter_r36_collision_014F0_verts", _gShelterR36FloorCollisionGridVerts);
 
 /// The floor quad, using normal 0, all four vertices and surface class 1.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterR36FloorCollisionGridFaces[1] = {
 #include "assets/shelter_r36_collision_014F0_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterR36FloorCollisionGridFaces[1];
+#endif
+PE_ASSET_BIND("shelter_r36_collision_014F0_faces", _gShelterR36FloorCollisionGridFaces);
 
 /// Nine face-index lists, each containing face 0 then WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterR36FloorCollisionGridCells[18] = {
 #include "assets/shelter_r36_collision_014F0_cells.inc"
 };
+#else
+static s16 _gShelterR36FloorCollisionGridCells[18];
+#endif
+PE_ASSET_BIND("shelter_r36_collision_014F0_cells", _gShelterR36FloorCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
 ///
@@ -694,9 +715,14 @@ static s16 _gShelterR36FloorCollisionGridCells[18] = {
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_R36_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterR36FloorCollisionGridCells[(halfwordOffset)])
 /// X-major cell pointers, indexed by x * cellCountZ + z in the 3 by 3 grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterR36FloorCollisionGridTable[SHELTER_R36_FLOOR_GRID_CELL_COUNT_X * SHELTER_R36_FLOOR_GRID_CELL_COUNT_Z] = {
 #include "assets/shelter_r36_collision_014F0_table.inc"
 };
+#else
+static s16* _gShelterR36FloorCollisionGridTable[9];
+#endif
+PE_ASSET_BIND_AUX("shelter_r36_collision_014F0_table", _gShelterR36FloorCollisionGridTable, _gShelterR36FloorCollisionGridCells);
 #undef SHELTER_R36_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterR36FloorCollisionGrid = {

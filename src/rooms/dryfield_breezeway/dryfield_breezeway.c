@@ -1,4 +1,5 @@
 #include "rooms/dryfield_breezeway.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -104,24 +105,44 @@ DirectionWarpEntry gDryfieldBreezewayWarpEntries[2] = {
 };
 
 /// Sixteen room-space face normals, with ONE for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldBreezewayCollisionGridNormals[16] = {
 #include "assets/dryfield_breezeway_collision_06068_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldBreezewayCollisionGridNormals[16];
+#endif
+PE_ASSET_BIND("dryfield_breezeway_collision_06068_normals", _gDryfieldBreezewayCollisionGridNormals);
 
 /// Forty-six collision-mesh vertices in signed room-coordinate game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldBreezewayCollisionGridVerts[46] = {
 #include "assets/dryfield_breezeway_collision_06068_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldBreezewayCollisionGridVerts[46];
+#endif
+PE_ASSET_BIND("dryfield_breezeway_collision_06068_verts", _gDryfieldBreezewayCollisionGridVerts);
 
 /// Twenty-four indexed quads; face 21 uses footstep class 1 and the others class 0.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldBreezewayCollisionGridFaces[24] = {
 #include "assets/dryfield_breezeway_collision_06068_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldBreezewayCollisionGridFaces[24];
+#endif
+PE_ASSET_BIND("dryfield_breezeway_collision_06068_faces", _gDryfieldBreezewayCollisionGridFaces);
 
 /// Eight concatenated signed face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldBreezewayCollisionGridCells[126] = {
 #include "assets/dryfield_breezeway_collision_06068_cells.inc"
 };
+#else
+static s16 _gDryfieldBreezewayCollisionGridCells[126];
+#endif
+PE_ASSET_BIND("dryfield_breezeway_collision_06068_cells", _gDryfieldBreezewayCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
 ///
@@ -136,9 +157,14 @@ static s16 _gDryfieldBreezewayCollisionGridCells[126] = {
 #define DRYFIELD_BREEZEWAY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldBreezewayCollisionGridCells[(halfwordOffset)])
 
 /// X-major 4-by-2 directory into the borrowed collision face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldBreezewayCollisionGridTable[8] = {
 #include "assets/dryfield_breezeway_collision_06068_table.inc"
 };
+#else
+static s16* _gDryfieldBreezewayCollisionGridTable[8];
+#endif
+PE_ASSET_BIND_AUX("dryfield_breezeway_collision_06068_table", _gDryfieldBreezewayCollisionGridTable, _gDryfieldBreezewayCollisionGridCells);
 #undef DRYFIELD_BREEZEWAY_CELL_FACE_LIST_AT_OFFSET
 
 /// The breezeway's room collision mesh and 4-by-2 XZ cell index.

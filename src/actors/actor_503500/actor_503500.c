@@ -1,4 +1,5 @@
 #include "actors/actor_503500.h"
+#include "port/asset_bind.h"
 #include "actor_503500_private.h"
 
 #include <psyz.h>
@@ -80,21 +81,41 @@ static PadScriptVibrationSegment _gActor503500SliderVibrationSegments[2] = {
     { .startIntensity = 156, .endIntensity = 106, .durationFrames = 2, .field_3 = 1 },
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor503500Model14DA0Skeleton[1] = {
 #include "assets/actor_503500_model_14DA0_skeleton.inc"
 };
+#else
+static TmdBone _gActor503500Model14DA0Skeleton[1];
+#endif
+PE_ASSET_BIND("actor_503500_model_14DA0_skeleton", _gActor503500Model14DA0Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor503500Model14DA0PartVerts[1] = {
 #include "assets/actor_503500_model_14DA0_partVerts.inc"
 };
+#else
+static u32 _gActor503500Model14DA0PartVerts[1];
+#endif
+PE_ASSET_BIND("actor_503500_model_14DA0_partVerts", _gActor503500Model14DA0PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor503500Model14DA0Verts[92] = {
 #include "assets/actor_503500_model_14DA0_verts.inc"
 };
+#else
+static SVECTOR _gActor503500Model14DA0Verts[92];
+#endif
+PE_ASSET_BIND("actor_503500_model_14DA0_verts", _gActor503500Model14DA0Verts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor503500Model14DA0Stream[469] = {
 #include "assets/actor_503500_model_14DA0_stream.inc"
 };
+#else
+static u32 _gActor503500Model14DA0Stream[469];
+#endif
+PE_ASSET_BIND("actor_503500_model_14DA0_stream", _gActor503500Model14DA0Stream);
 
 TmdSource gActor503500Model14DA0 = {
     0,
@@ -108,21 +129,41 @@ TmdSource gActor503500Model14DA0 = {
     _gActor503500Model14DA0Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor503500Model15820Skeleton[1] = {
 #include "assets/actor_503500_model_15820_skeleton.inc"
 };
+#else
+static TmdBone _gActor503500Model15820Skeleton[1];
+#endif
+PE_ASSET_BIND("actor_503500_model_15820_skeleton", _gActor503500Model15820Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor503500Model15820PartVerts[1] = {
 #include "assets/actor_503500_model_15820_partVerts.inc"
 };
+#else
+static u32 _gActor503500Model15820PartVerts[1];
+#endif
+PE_ASSET_BIND("actor_503500_model_15820_partVerts", _gActor503500Model15820PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor503500Model15820Verts[92] = {
 #include "assets/actor_503500_model_15820_verts.inc"
 };
+#else
+static SVECTOR _gActor503500Model15820Verts[92];
+#endif
+PE_ASSET_BIND("actor_503500_model_15820_verts", _gActor503500Model15820Verts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor503500Model15820Stream[459] = {
 #include "assets/actor_503500_model_15820_stream.inc"
 };
+#else
+static u32 _gActor503500Model15820Stream[459];
+#endif
+PE_ASSET_BIND("actor_503500_model_15820_stream", _gActor503500Model15820Stream);
 
 TmdSource gActor503500Model15820 = {
     0,

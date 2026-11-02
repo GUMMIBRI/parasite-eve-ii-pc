@@ -1,0 +1,523 @@
+{
+  "description": "Physical controller capture after Rupert monitor scene: return to cleared Hallway, examine objects, collect Blue Key from CAP2 key box and back away.",
+  "clock": "video",
+  "baseRoute": "video_clock_rupert",
+  "baseSamples": 140435,
+  "totalSamples": 154327,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          46,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          20,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          35,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          45,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 10,
+      "steps": [
+        [
+          8,
+          16448
+        ],
+        [
+          52,
+          64
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          50,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          75,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 50,
+      "steps": [
+        [
+          8,
+          16448
+        ],
+        [
+          52,
+          64
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          30,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          50,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          40,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 10,
+      "steps": [
+        [
+          8,
+          16448
+        ],
+        [
+          52,
+          64
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          50,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          50,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          20,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 10,
+      "steps": [
+        [
+          8,
+          16448
+        ],
+        [
+          52,
+          64
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          80,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          45,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 10,
+      "steps": [
+        [
+          8,
+          16448
+        ],
+        [
+          52,
+          64
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    }
+  ]
+}

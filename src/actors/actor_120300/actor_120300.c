@@ -1,4 +1,5 @@
 #include "actors/actor_120300.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -261,24 +262,39 @@ static const s16 _gActor120300BodyFollowOnAnimations[20] SECTION(".data") = {
 /// Three room-axis normals for Gary's garage collision patch, in signed Q12.
 ///
 /// Replaces only normals 0..2 of the live garage grid during body initialization.
+#ifdef PE_EMBED_ASSETS
 static const SVECTOR _gActor120300GarageCollisionPatchNormals[3] SECTION(".data") = {
 #include "assets/actor_120300_collision_0EB88.inc"
 };
+#else
+static SVECTOR _gActor120300GarageCollisionPatchNormals[3] SECTION(".data");
+#endif
+PE_ASSET_BIND("actor_120300_collision_0EB88", _gActor120300GarageCollisionPatchNormals);
 
 /// Twelve signed room-coordinate vertices for Gary's garage collision patch.
 ///
 /// Replaces only vertices 0..11 of the live garage grid; the remaining pool stays.
+#ifdef PE_EMBED_ASSETS
 static const SVECTOR _gActor120300GarageCollisionPatchVerts[12] SECTION(".data") = {
 #include "assets/actor_120300_collision_0EBA0.inc"
 };
+#else
+static SVECTOR _gActor120300GarageCollisionPatchVerts[12] SECTION(".data");
+#endif
+PE_ASSET_BIND("actor_120300_collision_0EBA0", _gActor120300GarageCollisionPatchVerts);
 
 /// Three blocking class-0 quads replacing the garage grid's leading faces.
 ///
 /// Index vertices 0..11 and normals 0..2 of the accompanying patch. Existing
 /// grid cell lists remain valid; only these three face records are copied.
+#ifdef PE_EMBED_ASSETS
 static const WorldCollisionGridFace _gActor120300GarageCollisionPatchFaces[3] SECTION(".data") = {
 #include "assets/actor_120300_collision_0EC00.inc"
 };
+#else
+static WorldCollisionGridFace _gActor120300GarageCollisionPatchFaces[3] SECTION(".data");
+#endif
+PE_ASSET_BIND("actor_120300_collision_0EC00", _gActor120300GarageCollisionPatchFaces);
 
 /// Placement and active-draw messages shared by Gary's body, head and rifle tasks.
 ///

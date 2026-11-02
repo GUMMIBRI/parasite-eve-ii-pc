@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_motel_balcony.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -494,24 +495,44 @@ DirectionWarpEntry gDryfieldNightMotelBalconyWarpEntries[5] = {
 };
 
 /// Room-space face normals for the rooms 1 and 2 collision grid; 4096 represents unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightMotelBalconyRooms1And2CollisionGridNormals[7] = {
 #include "assets/dryfield_night_motel_balcony_collision_06190_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightMotelBalconyRooms1And2CollisionGridNormals[7];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_balcony_collision_06190_normals", _gDryfieldNightMotelBalconyRooms1And2CollisionGridNormals);
 
 /// Room-space vertices for the rooms 1 and 2 collision mesh, in signed game-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightMotelBalconyRooms1And2CollisionGridVerts[69] = {
 #include "assets/dryfield_night_motel_balcony_collision_06190_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightMotelBalconyRooms1And2CollisionGridVerts[69];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_balcony_collision_06190_verts", _gDryfieldNightMotelBalconyRooms1And2CollisionGridVerts);
 
 /// Indexed triangles and quads for the rooms 1 and 2 collision mesh.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightMotelBalconyRooms1And2CollisionGridFaces[32] = {
 #include "assets/dryfield_night_motel_balcony_collision_06190_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightMotelBalconyRooms1And2CollisionGridFaces[32];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_balcony_collision_06190_faces", _gDryfieldNightMotelBalconyRooms1And2CollisionGridFaces);
 
 /// Signed face-index lists for the rooms 1 and 2 collision cells, each ending with `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightMotelBalconyRooms1And2CollisionGridCells[342] = {
 #include "assets/dryfield_night_motel_balcony_collision_06190_cells.inc"
 };
+#else
+static s16 _gDryfieldNightMotelBalconyRooms1And2CollisionGridCells[342];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_balcony_collision_06190_cells", _gDryfieldNightMotelBalconyRooms1And2CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -522,9 +543,14 @@ static s16 _gDryfieldNightMotelBalconyRooms1And2CollisionGridCells[342] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_MOTEL_BALCONY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMotelBalconyRooms1And2CollisionGridCells[(halfwordOffset)])
 /// X-major 8-by-8 cell directory into the rooms 1 and 2 collision face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightMotelBalconyRooms1And2CollisionGridTable[64] = {
 #include "assets/dryfield_night_motel_balcony_collision_06190_table.inc"
 };
+#else
+static s16* _gDryfieldNightMotelBalconyRooms1And2CollisionGridTable[64];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_motel_balcony_collision_06190_table", _gDryfieldNightMotelBalconyRooms1And2CollisionGridTable, _gDryfieldNightMotelBalconyRooms1And2CollisionGridCells);
 #undef DRYFIELD_NIGHT_MOTEL_BALCONY_CELL_FACE_LIST_AT_OFFSET
 
 /// Collision grid shared by nighttime motel balcony rooms 1 and 2.
@@ -547,24 +573,44 @@ static WorldCollisionGrid _gDryfieldNightMotelBalconyRooms1And2CollisionGrid = {
 };
 
 /// Room-space collision normals for room 3, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightMotelBalconyRoom3CollisionGridNormals[11] = {
 #include "assets/dryfield_night_motel_balcony_collision_06A20_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightMotelBalconyRoom3CollisionGridNormals[11];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_balcony_collision_06A20_normals", _gDryfieldNightMotelBalconyRoom3CollisionGridNormals);
 
 /// Room-space collision vertices for room 3, in signed game-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightMotelBalconyRoom3CollisionGridVerts[81] = {
 #include "assets/dryfield_night_motel_balcony_collision_06A20_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightMotelBalconyRoom3CollisionGridVerts[81];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_balcony_collision_06A20_verts", _gDryfieldNightMotelBalconyRoom3CollisionGridVerts);
 
 /// Indexed triangles and quads for the room 3 collision mesh.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightMotelBalconyRoom3CollisionGridFaces[37] = {
 #include "assets/dryfield_night_motel_balcony_collision_06A20_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightMotelBalconyRoom3CollisionGridFaces[37];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_balcony_collision_06A20_faces", _gDryfieldNightMotelBalconyRoom3CollisionGridFaces);
 
 /// Signed face-index lists for the room 3 collision cells, each ending with `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightMotelBalconyRoom3CollisionGridCells[360] = {
 #include "assets/dryfield_night_motel_balcony_collision_06A20_cells.inc"
 };
+#else
+static s16 _gDryfieldNightMotelBalconyRoom3CollisionGridCells[360];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_balcony_collision_06A20_cells", _gDryfieldNightMotelBalconyRoom3CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -575,9 +621,14 @@ static s16 _gDryfieldNightMotelBalconyRoom3CollisionGridCells[360] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_MOTEL_BALCONY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMotelBalconyRoom3CollisionGridCells[(halfwordOffset)])
 /// X-major 8-by-8 cell directory into the room 3 collision face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightMotelBalconyRoom3CollisionGridTable[64] = {
 #include "assets/dryfield_night_motel_balcony_collision_06A20_table.inc"
 };
+#else
+static s16* _gDryfieldNightMotelBalconyRoom3CollisionGridTable[64];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_motel_balcony_collision_06A20_table", _gDryfieldNightMotelBalconyRoom3CollisionGridTable, _gDryfieldNightMotelBalconyRoom3CollisionGridCells);
 #undef DRYFIELD_NIGHT_MOTEL_BALCONY_CELL_FACE_LIST_AT_OFFSET
 
 /// Collision grid for nighttime motel balcony room 3.

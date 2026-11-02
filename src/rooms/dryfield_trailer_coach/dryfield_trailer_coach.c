@@ -1,4 +1,5 @@
 #include "rooms/dryfield_trailer_coach.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -129,21 +130,41 @@ DEFINE_ALIAS(_gItemBoxModel, gDryfieldTrailerCoachItemBoxModel);
 
 #include "../../shared/room/telephone_data.inc.c"
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldTrailerCoachAnimation07668Bank1[3] = {
 #include "assets/dryfield_trailer_coach_animation_07668_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldTrailerCoachAnimation07668Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_animation_07668_bank1", _gDryfieldTrailerCoachAnimation07668Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldTrailerCoachAnimation07668Bank4[81] = {
 #include "assets/dryfield_trailer_coach_animation_07668_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldTrailerCoachAnimation07668Bank4[81];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_animation_07668_bank4", _gDryfieldTrailerCoachAnimation07668Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldTrailerCoachAnimation07668Records[128] = {
 #include "assets/dryfield_trailer_coach_animation_07668_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldTrailerCoachAnimation07668Records[128];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_animation_07668_records", _gDryfieldTrailerCoachAnimation07668Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldTrailerCoachAnimation07668Indices[20] = {
 #include "assets/dryfield_trailer_coach_animation_07668_indices.inc"
 };
+#else
+static u16 _gDryfieldTrailerCoachAnimation07668Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_animation_07668_indices", _gDryfieldTrailerCoachAnimation07668Indices);
 
 static AnimationSet _gDryfieldTrailerCoachAnimation07668 = {
     _gDryfieldTrailerCoachAnimation07668Records,
@@ -151,21 +172,41 @@ static AnimationSet _gDryfieldTrailerCoachAnimation07668 = {
     { NULL, _gDryfieldTrailerCoachAnimation07668Bank1, NULL, NULL, _gDryfieldTrailerCoachAnimation07668Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldTrailerCoachAnimation07994Bank1[7] = {
 #include "assets/dryfield_trailer_coach_animation_07994_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldTrailerCoachAnimation07994Bank1[7];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_animation_07994_bank1", _gDryfieldTrailerCoachAnimation07994Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldTrailerCoachAnimation07994Bank4[56] = {
 #include "assets/dryfield_trailer_coach_animation_07994_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldTrailerCoachAnimation07994Bank4[56];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_animation_07994_bank4", _gDryfieldTrailerCoachAnimation07994Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldTrailerCoachAnimation07994Records[106] = {
 #include "assets/dryfield_trailer_coach_animation_07994_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldTrailerCoachAnimation07994Records[106];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_animation_07994_records", _gDryfieldTrailerCoachAnimation07994Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldTrailerCoachAnimation07994Indices[20] = {
 #include "assets/dryfield_trailer_coach_animation_07994_indices.inc"
 };
+#else
+static u16 _gDryfieldTrailerCoachAnimation07994Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_animation_07994_indices", _gDryfieldTrailerCoachAnimation07994Indices);
 
 static AnimationSet _gDryfieldTrailerCoachAnimation07994 = {
     _gDryfieldTrailerCoachAnimation07994Records,
@@ -1357,21 +1398,41 @@ DirectionWarpEntry gDryfieldTrailerCoachWarpEntries[2] = {
     { { { .word = ACTOR_TRANSFORM_ANGLE_HALF_TURN }, 1579, 0, -800 }, { 0, 0, 0, 0 }, { { .word = ACTOR_TRANSFORM_ANGLE_HALF_TURN }, 1579, 0, -800 }, { 0, 0, 0, 0 }, SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_TRAILER_COACH, 2), SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_TRAILER_COACH, 1), DIRECTION_WARP_SOUND_NONE, 5, DIRECTION_WARP_FLAG_NONE, DRYFIELD_TRAILER_COACH_MAP_VISIT_FLAG },
 };
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldTrailerCoachRoomCollisionGridNormals[10] = {
 #include "assets/dryfield_trailer_coach_collision_0A0F4_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldTrailerCoachRoomCollisionGridNormals[10];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_collision_0A0F4_normals", _gDryfieldTrailerCoachRoomCollisionGridNormals);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldTrailerCoachRoomCollisionGridVerts[65] = {
 #include "assets/dryfield_trailer_coach_collision_0A0F4_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldTrailerCoachRoomCollisionGridVerts[65];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_collision_0A0F4_verts", _gDryfieldTrailerCoachRoomCollisionGridVerts);
 
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldTrailerCoachRoomCollisionGridFaces[32] = {
 #include "assets/dryfield_trailer_coach_collision_0A0F4_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldTrailerCoachRoomCollisionGridFaces[32];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_collision_0A0F4_faces", _gDryfieldTrailerCoachRoomCollisionGridFaces);
 
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldTrailerCoachRoomCollisionGridCells[58] = {
 #include "assets/dryfield_trailer_coach_collision_0A0F4_cells.inc"
 };
+#else
+static s16 _gDryfieldTrailerCoachRoomCollisionGridCells[58];
+#endif
+PE_ASSET_BIND("dryfield_trailer_coach_collision_0A0F4_cells", _gDryfieldTrailerCoachRoomCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -1381,9 +1442,14 @@ static s16 _gDryfieldTrailerCoachRoomCollisionGridCells[58] = {
 /// Returns a borrowed s16* without modifying the pool. `cell_face_list_macro`
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_TRAILER_COACH_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldTrailerCoachRoomCollisionGridCells[(halfwordOffset)])
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldTrailerCoachRoomCollisionGridTable[3] = {
 #include "assets/dryfield_trailer_coach_collision_0A0F4_table.inc"
 };
+#else
+static s16* _gDryfieldTrailerCoachRoomCollisionGridTable[3];
+#endif
+PE_ASSET_BIND_AUX("dryfield_trailer_coach_collision_0A0F4_table", _gDryfieldTrailerCoachRoomCollisionGridTable, _gDryfieldTrailerCoachRoomCollisionGridCells);
 #undef DRYFIELD_TRAILER_COACH_CELL_FACE_LIST_AT_OFFSET
 
 /// Room-space collision mesh with a three-by-one XZ cell directory.

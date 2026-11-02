@@ -1,0 +1,70 @@
+{
+  "description": "Physical controller route from cleared rat battle through Cafeteria back to empty Hallway and normal Security Room entry.",
+  "clock": "video",
+  "baseRoute": "video_clock_hallway_clear",
+  "baseSamples": 131427,
+  "totalSamples": 133681,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          48,
+          32
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          600,
+          0
+        ],
+        [
+          145,
+          8208
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          24,
+          128
+        ],
+        [
+          80,
+          16
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          600,
+          0
+        ],
+        [
+          24,
+          32
+        ],
+        [
+          25,
+          16
+        ],
+        [
+          24,
+          128
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          600,
+          0
+        ]
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 #include "rooms/shelter_b1_golem_freezer_1.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -103,24 +104,44 @@ static s16 _gShelterB1GolemFreezer1MeetingObstacleOffset[3] = {
 };
 
 /// Model-local quad normal in Q12, copied before each obstacle transform.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1GolemFreezer1MeetingObstacleCollisionNormals[SHELTER_B1_GOLEM_FREEZER_1_OBSTACLE_FACE_COUNT] = {
 #include "assets/shelter_b1_golem_freezer_1_collision_01154_normals.inc"
 };
+#else
+static SVECTOR _gShelterB1GolemFreezer1MeetingObstacleCollisionNormals[1];
+#endif
+PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01154_normals", _gShelterB1GolemFreezer1MeetingObstacleCollisionNormals);
 
 /// Meeting-obstacle corners in signed model-local game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1GolemFreezer1MeetingObstacleCollisionVerts[SHELTER_B1_GOLEM_FREEZER_1_OBSTACLE_VERTEX_COUNT] = {
 #include "assets/shelter_b1_golem_freezer_1_collision_01154_verts.inc"
 };
+#else
+static SVECTOR _gShelterB1GolemFreezer1MeetingObstacleCollisionVerts[4];
+#endif
+PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01154_verts", _gShelterB1GolemFreezer1MeetingObstacleCollisionVerts);
 
 /// One class-0 quad referencing the four model-local corners and normal zero.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB1GolemFreezer1MeetingObstacleCollisionFaces[SHELTER_B1_GOLEM_FREEZER_1_OBSTACLE_FACE_COUNT] = {
 #include "assets/shelter_b1_golem_freezer_1_collision_01154_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB1GolemFreezer1MeetingObstacleCollisionFaces[1];
+#endif
+PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01154_faces", _gShelterB1GolemFreezer1MeetingObstacleCollisionFaces);
 
 /// Face zero followed by WORLD_COLLISION_GRID_CELL_END for the single cell.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB1GolemFreezer1MeetingObstacleCollisionCells[2] = {
 #include "assets/shelter_b1_golem_freezer_1_collision_01154_cells.inc"
 };
+#else
+static s16 _gShelterB1GolemFreezer1MeetingObstacleCollisionCells[2];
+#endif
+PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01154_cells", _gShelterB1GolemFreezer1MeetingObstacleCollisionCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -132,9 +153,14 @@ static s16 _gShelterB1GolemFreezer1MeetingObstacleCollisionCells[2] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_GOLEM_FREEZER_1_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1GolemFreezer1MeetingObstacleCollisionCells[(halfwordOffset)])
 /// Single-cell directory borrowing the meeting quad's serialized face list.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB1GolemFreezer1MeetingObstacleCollisionTable[1] = {
 #include "assets/shelter_b1_golem_freezer_1_collision_01154_table.inc"
 };
+#else
+static s16* _gShelterB1GolemFreezer1MeetingObstacleCollisionTable[1];
+#endif
+PE_ASSET_BIND_AUX("shelter_b1_golem_freezer_1_collision_01154_table", _gShelterB1GolemFreezer1MeetingObstacleCollisionTable, _gShelterB1GolemFreezer1MeetingObstacleCollisionCells);
 #undef SHELTER_B1_GOLEM_FREEZER_1_CELL_FACE_LIST_AT_OFFSET
 
 /// Model-local source quad for the meeting actor's moving collision obstacle.
@@ -204,24 +230,44 @@ DirectionWarpEntry gShelterB1GolemFreezer1WarpEntries[1] = {
 };
 
 /// Room collision normals in Q12; the meeting obstacle replaces entry zero.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1GolemFreezer1RoomCollisionNormals[9] = {
 #include "assets/shelter_b1_golem_freezer_1_collision_01400_normals.inc"
 };
+#else
+static SVECTOR _gShelterB1GolemFreezer1RoomCollisionNormals[9];
+#endif
+PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01400_normals", _gShelterB1GolemFreezer1RoomCollisionNormals);
 
 /// Room collision vertices in game units; the meeting obstacle replaces the first four.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1GolemFreezer1RoomCollisionVerts[28] = {
 #include "assets/shelter_b1_golem_freezer_1_collision_01400_verts.inc"
 };
+#else
+static SVECTOR _gShelterB1GolemFreezer1RoomCollisionVerts[28];
+#endif
+PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01400_verts", _gShelterB1GolemFreezer1RoomCollisionVerts);
 
 /// Indexed room walls and floor following four initially empty face records.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB1GolemFreezer1RoomCollisionFaces[12] = {
 #include "assets/shelter_b1_golem_freezer_1_collision_01400_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB1GolemFreezer1RoomCollisionFaces[12];
+#endif
+PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01400_faces", _gShelterB1GolemFreezer1RoomCollisionFaces);
 
 /// Two twelve-halfword face-index lists, each terminated by WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB1GolemFreezer1RoomCollisionCells[24] = {
 #include "assets/shelter_b1_golem_freezer_1_collision_01400_cells.inc"
 };
+#else
+static s16 _gShelterB1GolemFreezer1RoomCollisionCells[24];
+#endif
+PE_ASSET_BIND("shelter_b1_golem_freezer_1_collision_01400_cells", _gShelterB1GolemFreezer1RoomCollisionCells);
 
 // The generated cell table supplies halfword offsets into the two contiguous lists.
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -234,9 +280,14 @@ static s16 _gShelterB1GolemFreezer1RoomCollisionCells[24] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_GOLEM_FREEZER_1_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1GolemFreezer1RoomCollisionCells[(halfwordOffset)])
 /// X-major cell directory for the room's two-by-one collision grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB1GolemFreezer1RoomCollisionTable[2] = {
 #include "assets/shelter_b1_golem_freezer_1_collision_01400_table.inc"
 };
+#else
+static s16* _gShelterB1GolemFreezer1RoomCollisionTable[2];
+#endif
+PE_ASSET_BIND_AUX("shelter_b1_golem_freezer_1_collision_01400_table", _gShelterB1GolemFreezer1RoomCollisionTable, _gShelterB1GolemFreezer1RoomCollisionCells);
 #undef SHELTER_B1_GOLEM_FREEZER_1_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB1GolemFreezer1RoomCollision = {

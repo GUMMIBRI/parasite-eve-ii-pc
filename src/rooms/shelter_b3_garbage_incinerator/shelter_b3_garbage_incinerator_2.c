@@ -1,4 +1,5 @@
 #include "rooms/shelter_b3_garbage_incinerator.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -269,25 +270,50 @@ enum {
 
 TaskDesc gShelterB3GarbageIncineratorExitEncounterTaskDesc = { { { TASK_BODY_NONE, TASK_PRIORITY_CONTROL } }, _shelterB3GarbageIncineratorExitEncounterTask, { .value = 0 } };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB3GarbageIncineratorModel081E4Skeleton[1] = {
 #include "assets/shelter_b3_garbage_incinerator_model_081E4_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB3GarbageIncineratorModel081E4Skeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_model_081E4_skeleton", _gShelterB3GarbageIncineratorModel081E4Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB3GarbageIncineratorModel081E4PartVerts[1] = {
 #include "assets/shelter_b3_garbage_incinerator_model_081E4_partVerts.inc"
 };
+#else
+static u32 _gShelterB3GarbageIncineratorModel081E4PartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_model_081E4_partVerts", _gShelterB3GarbageIncineratorModel081E4PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3GarbageIncineratorModel081E4Verts[49] = {
 #include "assets/shelter_b3_garbage_incinerator_model_081E4_verts.inc"
 };
+#else
+static SVECTOR _gShelterB3GarbageIncineratorModel081E4Verts[49];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_model_081E4_verts", _gShelterB3GarbageIncineratorModel081E4Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3GarbageIncineratorModel081E4Normals[1] = {
 #include "assets/shelter_b3_garbage_incinerator_model_081E4_normals.inc"
 };
+#else
+static SVECTOR _gShelterB3GarbageIncineratorModel081E4Normals[1];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_model_081E4_normals", _gShelterB3GarbageIncineratorModel081E4Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB3GarbageIncineratorModel081E4Stream[222] = {
 #include "assets/shelter_b3_garbage_incinerator_model_081E4_stream.inc"
 };
+#else
+static u32 _gShelterB3GarbageIncineratorModel081E4Stream[222];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_model_081E4_stream", _gShelterB3GarbageIncineratorModel081E4Stream);
 
 static TmdSource _gShelterB3GarbageIncineratorModel081E4 = {
     0,
@@ -356,21 +382,41 @@ static TaskDesc _gShelterB3GarbageIncineratorBlazeHeatHazeTaskDescs[2] = {
 /// the initial 256 to zero; the context must have a positive span while drawing.
 static s32 _gScreenWaveAmplitude = 256;
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB3GarbageIncineratorAnimation088E4Bank1[6] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_088E4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB3GarbageIncineratorAnimation088E4Bank1[6];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_088E4_bank1", _gShelterB3GarbageIncineratorAnimation088E4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB3GarbageIncineratorAnimation088E4Bank4[46] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_088E4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB3GarbageIncineratorAnimation088E4Bank4[46];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_088E4_bank4", _gShelterB3GarbageIncineratorAnimation088E4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB3GarbageIncineratorAnimation088E4Records[109] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_088E4_records.inc"
 };
+#else
+static AnimationRecord _gShelterB3GarbageIncineratorAnimation088E4Records[109];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_088E4_records", _gShelterB3GarbageIncineratorAnimation088E4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB3GarbageIncineratorAnimation088E4Indices[20] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_088E4_indices.inc"
 };
+#else
+static u16 _gShelterB3GarbageIncineratorAnimation088E4Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_088E4_indices", _gShelterB3GarbageIncineratorAnimation088E4Indices);
 
 static AnimationSet _gShelterB3GarbageIncineratorAnimation088E4 = {
     _gShelterB3GarbageIncineratorAnimation088E4Records,
@@ -378,21 +424,41 @@ static AnimationSet _gShelterB3GarbageIncineratorAnimation088E4 = {
     { NULL, _gShelterB3GarbageIncineratorAnimation088E4Bank1, NULL, NULL, _gShelterB3GarbageIncineratorAnimation088E4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB3GarbageIncineratorAnimation09320Bank1[16] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_09320_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB3GarbageIncineratorAnimation09320Bank1[16];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_09320_bank1", _gShelterB3GarbageIncineratorAnimation09320Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB3GarbageIncineratorAnimation09320Bank4[246] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_09320_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB3GarbageIncineratorAnimation09320Bank4[246];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_09320_bank4", _gShelterB3GarbageIncineratorAnimation09320Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB3GarbageIncineratorAnimation09320Records[341] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_09320_records.inc"
 };
+#else
+static AnimationRecord _gShelterB3GarbageIncineratorAnimation09320Records[341];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_09320_records", _gShelterB3GarbageIncineratorAnimation09320Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB3GarbageIncineratorAnimation09320Indices[20] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_09320_indices.inc"
 };
+#else
+static u16 _gShelterB3GarbageIncineratorAnimation09320Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_09320_indices", _gShelterB3GarbageIncineratorAnimation09320Indices);
 
 static AnimationSet _gShelterB3GarbageIncineratorAnimation09320 = {
     _gShelterB3GarbageIncineratorAnimation09320Records,
@@ -400,21 +466,41 @@ static AnimationSet _gShelterB3GarbageIncineratorAnimation09320 = {
     { NULL, _gShelterB3GarbageIncineratorAnimation09320Bank1, NULL, NULL, _gShelterB3GarbageIncineratorAnimation09320Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB3GarbageIncineratorAnimation09988Bank1[14] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_09988_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB3GarbageIncineratorAnimation09988Bank1[14];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_09988_bank1", _gShelterB3GarbageIncineratorAnimation09988Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB3GarbageIncineratorAnimation09988Bank4[148] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_09988_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB3GarbageIncineratorAnimation09988Bank4[148];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_09988_bank4", _gShelterB3GarbageIncineratorAnimation09988Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB3GarbageIncineratorAnimation09988Records[200] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_09988_records.inc"
 };
+#else
+static AnimationRecord _gShelterB3GarbageIncineratorAnimation09988Records[200];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_09988_records", _gShelterB3GarbageIncineratorAnimation09988Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB3GarbageIncineratorAnimation09988Indices[20] = {
 #include "assets/shelter_b3_garbage_incinerator_animation_09988_indices.inc"
 };
+#else
+static u16 _gShelterB3GarbageIncineratorAnimation09988Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b3_garbage_incinerator_animation_09988_indices", _gShelterB3GarbageIncineratorAnimation09988Indices);
 
 static AnimationSet _gShelterB3GarbageIncineratorAnimation09988 = {
     _gShelterB3GarbageIncineratorAnimation09988Records,

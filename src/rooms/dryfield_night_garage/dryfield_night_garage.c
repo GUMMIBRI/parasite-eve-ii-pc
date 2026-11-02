@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_garage.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -139,21 +140,41 @@ static EvsCommand _gDryfieldNightGarageCompanionRevisitScript[] = {
     { .opcode = EVENT_SCRIPT_OPCODE_END },
 };
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGarageLowCollisionBoxTemplateNormals[4] = {
 #include "assets/dryfield_night_garage_collision_047BC_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGarageLowCollisionBoxTemplateNormals[4];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_047BC_normals", _gDryfieldNightGarageLowCollisionBoxTemplateNormals);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGarageLowCollisionBoxTemplateVerts[8] = {
 #include "assets/dryfield_night_garage_collision_047BC_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGarageLowCollisionBoxTemplateVerts[8];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_047BC_verts", _gDryfieldNightGarageLowCollisionBoxTemplateVerts);
 
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightGarageLowCollisionBoxTemplateFaces[4] = {
 #include "assets/dryfield_night_garage_collision_047BC_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightGarageLowCollisionBoxTemplateFaces[4];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_047BC_faces", _gDryfieldNightGarageLowCollisionBoxTemplateFaces);
 
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightGarageLowCollisionBoxTemplateCells[6] = {
 #include "assets/dryfield_night_garage_collision_047BC_cells.inc"
 };
+#else
+static s16 _gDryfieldNightGarageLowCollisionBoxTemplateCells[6];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_047BC_cells", _gDryfieldNightGarageLowCollisionBoxTemplateCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -164,9 +185,14 @@ static s16 _gDryfieldNightGarageLowCollisionBoxTemplateCells[6] = {
 /// `cell_face_list_macro` selects this binding for the table include.
 /// The binding is undefined immediately after that include.
 #define DRYFIELD_NIGHT_GARAGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightGarageLowCollisionBoxTemplateCells[(halfwordOffset)])
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightGarageLowCollisionBoxTemplateTable[1] = {
 #include "assets/dryfield_night_garage_collision_047BC_table.inc"
 };
+#else
+static s16* _gDryfieldNightGarageLowCollisionBoxTemplateTable[1];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_garage_collision_047BC_table", _gDryfieldNightGarageLowCollisionBoxTemplateTable, _gDryfieldNightGarageLowCollisionBoxTemplateCells);
 #undef DRYFIELD_NIGHT_GARAGE_CELL_FACE_LIST_AT_OFFSET
 
 /// Source geometry for the movable low box in the garage's live collision mesh.
@@ -189,21 +215,41 @@ static WorldCollisionGrid _gDryfieldNightGarageLowCollisionBoxTemplate = {
     .faceCount   = ARRAY_SIZE(_gDryfieldNightGarageLowCollisionBoxTemplateFaces),
 };
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGarageTallCollisionBoxTemplateNormals[4] = {
 #include "assets/dryfield_night_garage_collision_04880_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGarageTallCollisionBoxTemplateNormals[4];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_04880_normals", _gDryfieldNightGarageTallCollisionBoxTemplateNormals);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGarageTallCollisionBoxTemplateVerts[8] = {
 #include "assets/dryfield_night_garage_collision_04880_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGarageTallCollisionBoxTemplateVerts[8];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_04880_verts", _gDryfieldNightGarageTallCollisionBoxTemplateVerts);
 
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightGarageTallCollisionBoxTemplateFaces[4] = {
 #include "assets/dryfield_night_garage_collision_04880_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightGarageTallCollisionBoxTemplateFaces[4];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_04880_faces", _gDryfieldNightGarageTallCollisionBoxTemplateFaces);
 
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightGarageTallCollisionBoxTemplateCells[6] = {
 #include "assets/dryfield_night_garage_collision_04880_cells.inc"
 };
+#else
+static s16 _gDryfieldNightGarageTallCollisionBoxTemplateCells[6];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_collision_04880_cells", _gDryfieldNightGarageTallCollisionBoxTemplateCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -214,9 +260,14 @@ static s16 _gDryfieldNightGarageTallCollisionBoxTemplateCells[6] = {
 /// `cell_face_list_macro` selects this binding for the table include.
 /// The binding is undefined immediately after that include.
 #define DRYFIELD_NIGHT_GARAGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightGarageTallCollisionBoxTemplateCells[(halfwordOffset)])
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightGarageTallCollisionBoxTemplateTable[1] = {
 #include "assets/dryfield_night_garage_collision_04880_table.inc"
 };
+#else
+static s16* _gDryfieldNightGarageTallCollisionBoxTemplateTable[1];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_garage_collision_04880_table", _gDryfieldNightGarageTallCollisionBoxTemplateTable, _gDryfieldNightGarageTallCollisionBoxTemplateCells);
 #undef DRYFIELD_NIGHT_GARAGE_CELL_FACE_LIST_AT_OFFSET
 
 /// Source geometry for the tall box around the companion's garage placement.
@@ -239,21 +290,41 @@ static WorldCollisionGrid _gDryfieldNightGarageTallCollisionBoxTemplate = {
     .faceCount   = ARRAY_SIZE(_gDryfieldNightGarageTallCollisionBoxTemplateFaces),
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGarageAnimation04B80Bank1[6] = {
 #include "assets/dryfield_night_garage_animation_04B80_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGarageAnimation04B80Bank1[6];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_04B80_bank1", _gDryfieldNightGarageAnimation04B80Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGarageAnimation04B80Bank4[46] = {
 #include "assets/dryfield_night_garage_animation_04B80_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGarageAnimation04B80Bank4[46];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_04B80_bank4", _gDryfieldNightGarageAnimation04B80Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGarageAnimation04B80Records[109] = {
 #include "assets/dryfield_night_garage_animation_04B80_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGarageAnimation04B80Records[109];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_04B80_records", _gDryfieldNightGarageAnimation04B80Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGarageAnimation04B80Indices[20] = {
 #include "assets/dryfield_night_garage_animation_04B80_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGarageAnimation04B80Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_04B80_indices", _gDryfieldNightGarageAnimation04B80Indices);
 
 AnimationSet gDryfieldNightGarageAnimation04B80 = {
     _gDryfieldNightGarageAnimation04B80Records,
@@ -261,21 +332,41 @@ AnimationSet gDryfieldNightGarageAnimation04B80 = {
     { NULL, _gDryfieldNightGarageAnimation04B80Bank1, NULL, NULL, _gDryfieldNightGarageAnimation04B80Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGarageAnimation04F54Bank1[8] = {
 #include "assets/dryfield_night_garage_animation_04F54_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGarageAnimation04F54Bank1[8];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_04F54_bank1", _gDryfieldNightGarageAnimation04F54Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGarageAnimation04F54Bank4[84] = {
 #include "assets/dryfield_night_garage_animation_04F54_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGarageAnimation04F54Bank4[84];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_04F54_bank4", _gDryfieldNightGarageAnimation04F54Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGarageAnimation04F54Records[117] = {
 #include "assets/dryfield_night_garage_animation_04F54_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGarageAnimation04F54Records[117];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_04F54_records", _gDryfieldNightGarageAnimation04F54Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGarageAnimation04F54Indices[20] = {
 #include "assets/dryfield_night_garage_animation_04F54_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGarageAnimation04F54Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_04F54_indices", _gDryfieldNightGarageAnimation04F54Indices);
 
 AnimationSet gDryfieldNightGarageAnimation04F54 = {
     _gDryfieldNightGarageAnimation04F54Records,
@@ -283,21 +374,41 @@ AnimationSet gDryfieldNightGarageAnimation04F54 = {
     { NULL, _gDryfieldNightGarageAnimation04F54Bank1, NULL, NULL, _gDryfieldNightGarageAnimation04F54Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGarageAnimation05344Bank1[7] = {
 #include "assets/dryfield_night_garage_animation_05344_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGarageAnimation05344Bank1[7];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_05344_bank1", _gDryfieldNightGarageAnimation05344Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGarageAnimation05344Bank4[62] = {
 #include "assets/dryfield_night_garage_animation_05344_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGarageAnimation05344Bank4[62];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_05344_bank4", _gDryfieldNightGarageAnimation05344Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGarageAnimation05344Records[149] = {
 #include "assets/dryfield_night_garage_animation_05344_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGarageAnimation05344Records[149];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_05344_records", _gDryfieldNightGarageAnimation05344Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGarageAnimation05344Indices[20] = {
 #include "assets/dryfield_night_garage_animation_05344_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGarageAnimation05344Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_05344_indices", _gDryfieldNightGarageAnimation05344Indices);
 
 AnimationSet gDryfieldNightGarageAnimation05344 = {
     _gDryfieldNightGarageAnimation05344Records,
@@ -305,21 +416,41 @@ AnimationSet gDryfieldNightGarageAnimation05344 = {
     { NULL, _gDryfieldNightGarageAnimation05344Bank1, NULL, NULL, _gDryfieldNightGarageAnimation05344Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGarageAnimation056B0Bank1[7] = {
 #include "assets/dryfield_night_garage_animation_056B0_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGarageAnimation056B0Bank1[7];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_056B0_bank1", _gDryfieldNightGarageAnimation056B0Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGarageAnimation056B0Bank4[74] = {
 #include "assets/dryfield_night_garage_animation_056B0_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGarageAnimation056B0Bank4[74];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_056B0_bank4", _gDryfieldNightGarageAnimation056B0Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGarageAnimation056B0Records[104] = {
 #include "assets/dryfield_night_garage_animation_056B0_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGarageAnimation056B0Records[104];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_056B0_records", _gDryfieldNightGarageAnimation056B0Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGarageAnimation056B0Indices[20] = {
 #include "assets/dryfield_night_garage_animation_056B0_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGarageAnimation056B0Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_garage_animation_056B0_indices", _gDryfieldNightGarageAnimation056B0Indices);
 
 AnimationSet gDryfieldNightGarageAnimation056B0 = {
     _gDryfieldNightGarageAnimation056B0Records,

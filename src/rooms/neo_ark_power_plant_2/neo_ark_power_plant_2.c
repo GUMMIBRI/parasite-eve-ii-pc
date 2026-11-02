@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_power_plant_2.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -94,21 +95,41 @@ static s32  _neoArkPowerPlant2IgnoreRoomAction(Task* task, s32 messageId, const 
 static void _neoArkPowerPlant2PrepareGeneratorClearScene(void);
 static void _neoArkPowerPlant2StopSkippedSceneVibration(void);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gNeoArkPowerPlant2Animation02A4CBank1[3] = {
 #include "assets/neo_ark_power_plant_2_animation_02A4C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gNeoArkPowerPlant2Animation02A4CBank1[3];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_animation_02A4C_bank1", _gNeoArkPowerPlant2Animation02A4CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gNeoArkPowerPlant2Animation02A4CBank4[28] = {
 #include "assets/neo_ark_power_plant_2_animation_02A4C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gNeoArkPowerPlant2Animation02A4CBank4[28];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_animation_02A4C_bank4", _gNeoArkPowerPlant2Animation02A4CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gNeoArkPowerPlant2Animation02A4CRecords[88] = {
 #include "assets/neo_ark_power_plant_2_animation_02A4C_records.inc"
 };
+#else
+static AnimationRecord _gNeoArkPowerPlant2Animation02A4CRecords[88];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_animation_02A4C_records", _gNeoArkPowerPlant2Animation02A4CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gNeoArkPowerPlant2Animation02A4CIndices[20] = {
 #include "assets/neo_ark_power_plant_2_animation_02A4C_indices.inc"
 };
+#else
+static u16 _gNeoArkPowerPlant2Animation02A4CIndices[20];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_animation_02A4C_indices", _gNeoArkPowerPlant2Animation02A4CIndices);
 
 static AnimationSet _gNeoArkPowerPlant2Animation02A4C = {
     _gNeoArkPowerPlant2Animation02A4CRecords,
@@ -116,21 +137,41 @@ static AnimationSet _gNeoArkPowerPlant2Animation02A4C = {
     { NULL, _gNeoArkPowerPlant2Animation02A4CBank1, NULL, NULL, _gNeoArkPowerPlant2Animation02A4CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gNeoArkPowerPlant2Animation02C10Bank1[2] = {
 #include "assets/neo_ark_power_plant_2_animation_02C10_bank1.inc"
 };
+#else
+static AnimationPackedPose _gNeoArkPowerPlant2Animation02C10Bank1[2];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_animation_02C10_bank1", _gNeoArkPowerPlant2Animation02C10Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gNeoArkPowerPlant2Animation02C10Bank4[22] = {
 #include "assets/neo_ark_power_plant_2_animation_02C10_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gNeoArkPowerPlant2Animation02C10Bank4[22];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_animation_02C10_bank4", _gNeoArkPowerPlant2Animation02C10Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gNeoArkPowerPlant2Animation02C10Records[65] = {
 #include "assets/neo_ark_power_plant_2_animation_02C10_records.inc"
 };
+#else
+static AnimationRecord _gNeoArkPowerPlant2Animation02C10Records[65];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_animation_02C10_records", _gNeoArkPowerPlant2Animation02C10Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gNeoArkPowerPlant2Animation02C10Indices[20] = {
 #include "assets/neo_ark_power_plant_2_animation_02C10_indices.inc"
 };
+#else
+static u16 _gNeoArkPowerPlant2Animation02C10Indices[20];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_animation_02C10_indices", _gNeoArkPowerPlant2Animation02C10Indices);
 
 static AnimationSet _gNeoArkPowerPlant2Animation02C10 = {
     _gNeoArkPowerPlant2Animation02C10Records,
@@ -354,24 +395,44 @@ DirectionWarpEntry gNeoArkPowerPlant2WarpEntries[1] = {
 };
 
 /// Room-axis collision normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkPowerPlant2CollisionGridNormals[] = {
 #include "assets/neo_ark_power_plant_2_collision_03804_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkPowerPlant2CollisionGridNormals[11];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_collision_03804_normals", _gNeoArkPowerPlant2CollisionGridNormals);
 
 /// Collision mesh vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkPowerPlant2CollisionGridVerts[] = {
 #include "assets/neo_ark_power_plant_2_collision_03804_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkPowerPlant2CollisionGridVerts[82];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_collision_03804_verts", _gNeoArkPowerPlant2CollisionGridVerts);
 
 /// Indexed triangles and quads using this room's surface classes 0, 3, 4 and 5.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkPowerPlant2CollisionGridFaces[] = {
 #include "assets/neo_ark_power_plant_2_collision_03804_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkPowerPlant2CollisionGridFaces[41];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_collision_03804_faces", _gNeoArkPowerPlant2CollisionGridFaces);
 
 /// Serialized face-index lists for the grid cells, each ending at -1.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkPowerPlant2CollisionGridCells[] = {
 #include "assets/neo_ark_power_plant_2_collision_03804_cells.inc"
 };
+#else
+static s16 _gNeoArkPowerPlant2CollisionGridCells[236];
+#endif
+PE_ASSET_BIND("neo_ark_power_plant_2_collision_03804_cells", _gNeoArkPowerPlant2CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -383,9 +444,14 @@ static s16 _gNeoArkPowerPlant2CollisionGridCells[] = {
 /// binding through the table include, then undefine it.
 #define NEO_ARK_POWER_PLANT_2_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkPowerPlant2CollisionGridCells[(halfwordOffset)])
 /// Twelve cell-list pointers in X-major order, four Z cells per X row.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkPowerPlant2CollisionGridTable[] = {
 #include "assets/neo_ark_power_plant_2_collision_03804_table.inc"
 };
+#else
+static s16* _gNeoArkPowerPlant2CollisionGridTable[12];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_power_plant_2_collision_03804_table", _gNeoArkPowerPlant2CollisionGridTable, _gNeoArkPowerPlant2CollisionGridCells);
 #undef NEO_ARK_POWER_PLANT_2_CELL_FACE_LIST_AT_OFFSET
 
 enum { NEO_ARK_POWER_PLANT_2_COLLISION_GRID_Z_CELL_COUNT = 4 };

@@ -1,4 +1,5 @@
 #include "rooms/shelter_b2_south_maintenance_walkway.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -201,26 +202,46 @@ DirectionWarpEntry gShelterB2SouthMaintenanceWalkwayWarpEntries[2] = {
 };
 
 /// Room-space unit normals for the collision grid's quad faces, with scale ONE.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2SouthMaintenanceWalkwayCollisionGridNormals[14] = {
 #include "assets/shelter_b2_south_maintenance_walkway_collision_05428_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2SouthMaintenanceWalkwayCollisionGridNormals[14];
+#endif
+PE_ASSET_BIND("shelter_b2_south_maintenance_walkway_collision_05428_normals", _gShelterB2SouthMaintenanceWalkwayCollisionGridNormals);
 
 /// Room-space vertices indexed by the collision grid's faces, in signed game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2SouthMaintenanceWalkwayCollisionGridVerts[38] = {
 #include "assets/shelter_b2_south_maintenance_walkway_collision_05428_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2SouthMaintenanceWalkwayCollisionGridVerts[38];
+#endif
+PE_ASSET_BIND("shelter_b2_south_maintenance_walkway_collision_05428_verts", _gShelterB2SouthMaintenanceWalkwayCollisionGridVerts);
 
 /// Eighteen collision quads referencing the grid's vertex/normal pools and classes 0 or 1.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB2SouthMaintenanceWalkwayCollisionGridFaces[18] = {
 #include "assets/shelter_b2_south_maintenance_walkway_collision_05428_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB2SouthMaintenanceWalkwayCollisionGridFaces[18];
+#endif
+PE_ASSET_BIND("shelter_b2_south_maintenance_walkway_collision_05428_faces", _gShelterB2SouthMaintenanceWalkwayCollisionGridFaces);
 
 /// Serialized signed face-index runs for the six cells, each ending with -1.
 ///
 /// Retains all 82 halfwords from the asset, including bytes between live runs.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB2SouthMaintenanceWalkwayCollisionGridCells[82] = {
 #include "assets/shelter_b2_south_maintenance_walkway_collision_05428_cells.inc"
 };
+#else
+static s16 _gShelterB2SouthMaintenanceWalkwayCollisionGridCells[82];
+#endif
+PE_ASSET_BIND("shelter_b2_south_maintenance_walkway_collision_05428_cells", _gShelterB2SouthMaintenanceWalkwayCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
 ///
@@ -231,9 +252,14 @@ static s16 _gShelterB2SouthMaintenanceWalkwayCollisionGridCells[82] = {
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B2_SOUTH_MAINTENANCE_WALKWAY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB2SouthMaintenanceWalkwayCollisionGridCells[(halfwordOffset)])
 /// X-major cell pointers, indexed as x * 3 + z for x in 0..1 and z in 0..2.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB2SouthMaintenanceWalkwayCollisionGridTable[6] = {
 #include "assets/shelter_b2_south_maintenance_walkway_collision_05428_table.inc"
 };
+#else
+static s16* _gShelterB2SouthMaintenanceWalkwayCollisionGridTable[6];
+#endif
+PE_ASSET_BIND_AUX("shelter_b2_south_maintenance_walkway_collision_05428_table", _gShelterB2SouthMaintenanceWalkwayCollisionGridTable, _gShelterB2SouthMaintenanceWalkwayCollisionGridCells);
 #undef SHELTER_B2_SOUTH_MAINTENANCE_WALKWAY_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB2SouthMaintenanceWalkwayCollisionGrid = {

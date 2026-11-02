@@ -1,4 +1,5 @@
 #include "types.h"
+#include "port/asset_bind.h"
 
 #include "main/task_types.h"
 #include "../../shared/water_tank.h"
@@ -800,25 +801,50 @@ static EvsCommand _gDryfieldWaterTankPlayerPathSceneSkipScript[14] = {
     { .opcode = EVENT_SCRIPT_OPCODE_END },
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Skeleton[1] = {
 #include "assets/dryfield_night_water_tank_model_00FF8_skeleton.inc"
 };
+#else
+static TmdBone _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Skeleton[1];
+#endif
+PE_ASSET_BIND("dryfield_night_water_tank_model_00FF8_skeleton", _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8PartVerts[1] = {
 #include "assets/dryfield_night_water_tank_model_00FF8_partVerts.inc"
 };
+#else
+static u32 _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8PartVerts[1];
+#endif
+PE_ASSET_BIND("dryfield_night_water_tank_model_00FF8_partVerts", _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Verts[84] = {
 #include "assets/dryfield_night_water_tank_model_00FF8_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Verts[84];
+#endif
+PE_ASSET_BIND("dryfield_night_water_tank_model_00FF8_verts", _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Normals[72] = {
 #include "assets/dryfield_night_water_tank_model_00FF8_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Normals[72];
+#endif
+PE_ASSET_BIND("dryfield_night_water_tank_model_00FF8_normals", _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Stream[531] = {
 #include "assets/dryfield_night_water_tank_model_00FF8_stream.inc"
 };
+#else
+static u32 _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Stream[531];
+#endif
+PE_ASSET_BIND("dryfield_night_water_tank_model_00FF8_stream", _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8Stream);
 
 static TmdSource _gDryfieldWaterTankDryfieldNightWaterTankModel00FF8 = {
     0,
@@ -883,24 +909,44 @@ DirectionWarpEntry gDryfieldWaterTankWarpEntries[2] = {
 };
 
 /// Room-space Q12 unit normals indexed by the room collision faces.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldWaterTankRoomCollisionGridNormals[14] = {
 #include "assets/dryfield_water_tank_collision_098FC_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldWaterTankRoomCollisionGridNormals[14];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_collision_098FC_normals", _gDryfieldWaterTankRoomCollisionGridNormals);
 
 /// Room collision vertices in signed game-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldWaterTankRoomCollisionGridVerts[70] = {
 #include "assets/dryfield_water_tank_collision_098FC_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldWaterTankRoomCollisionGridVerts[70];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_collision_098FC_verts", _gDryfieldWaterTankRoomCollisionGridVerts);
 
 /// Room collision quads indexing the vertex/normal pools and surface classes 0, 1, 3..5.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldWaterTankRoomCollisionGridFaces[36] = {
 #include "assets/dryfield_water_tank_collision_098FC_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldWaterTankRoomCollisionGridFaces[36];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_collision_098FC_faces", _gDryfieldWaterTankRoomCollisionGridFaces);
 
 /// Four packed face-index lists, each ending in `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldWaterTankRoomCollisionGridCells[118] = {
 #include "assets/dryfield_water_tank_collision_098FC_cells.inc"
 };
+#else
+static s16 _gDryfieldWaterTankRoomCollisionGridCells[118];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_collision_098FC_cells", _gDryfieldWaterTankRoomCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -912,9 +958,14 @@ static s16 _gDryfieldWaterTankRoomCollisionGridCells[118] = {
 /// binding through the table include, then undefine it.
 #define DRYFIELD_WATER_TANK_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldWaterTankRoomCollisionGridCells[(halfwordOffset)])
 /// X-major pointers to the room grid's four cell lists, with a Z stride of two.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldWaterTankRoomCollisionGridTable[4] = {
 #include "assets/dryfield_water_tank_collision_098FC_table.inc"
 };
+#else
+static s16* _gDryfieldWaterTankRoomCollisionGridTable[4];
+#endif
+PE_ASSET_BIND_AUX("dryfield_water_tank_collision_098FC_table", _gDryfieldWaterTankRoomCollisionGridTable, _gDryfieldWaterTankRoomCollisionGridCells);
 #undef DRYFIELD_WATER_TANK_CELL_FACE_LIST_AT_OFFSET
 
 /// Room 1's collision mesh, indexed by a 2x2 XZ grid of 4000-unit cells.

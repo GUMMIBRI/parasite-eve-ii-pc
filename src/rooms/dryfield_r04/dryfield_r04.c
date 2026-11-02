@@ -1,4 +1,5 @@
 #include "rooms/dryfield_r04.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -36,24 +37,44 @@ DirectionWarpEntry gDryfieldR04WarpEntries[1] = {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldR04CollisionGridNormals[1] = {
 #include "assets/dryfield_r04_collision_00C34_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldR04CollisionGridNormals[1];
+#endif
+PE_ASSET_BIND("dryfield_r04_collision_00C34_normals", _gDryfieldR04CollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldR04CollisionGridVerts[81] = {
 #include "assets/dryfield_r04_collision_00C34_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldR04CollisionGridVerts[81];
+#endif
+PE_ASSET_BIND("dryfield_r04_collision_00C34_verts", _gDryfieldR04CollisionGridVerts);
 
 /// Indexed collision faces referencing the grid's vertex and normal pools.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldR04CollisionGridFaces[64] = {
 #include "assets/dryfield_r04_collision_00C34_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldR04CollisionGridFaces[64];
+#endif
+PE_ASSET_BIND("dryfield_r04_collision_00C34_faces", _gDryfieldR04CollisionGridFaces);
 
 /// Face-index lists for the grid cells, ending with `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldR04CollisionGridCells[642] = {
 #include "assets/dryfield_r04_collision_00C34_cells.inc"
 };
+#else
+static s16 _gDryfieldR04CollisionGridCells[642];
+#endif
+PE_ASSET_BIND("dryfield_r04_collision_00C34_cells", _gDryfieldR04CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -64,9 +85,14 @@ static s16 _gDryfieldR04CollisionGridCells[642] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_R04_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldR04CollisionGridCells[(halfwordOffset)])
 /// X-major 9-by-9 directory of the grid's face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldR04CollisionGridTable[81] = {
 #include "assets/dryfield_r04_collision_00C34_table.inc"
 };
+#else
+static s16* _gDryfieldR04CollisionGridTable[81];
+#endif
+PE_ASSET_BIND_AUX("dryfield_r04_collision_00C34_table", _gDryfieldR04CollisionGridTable, _gDryfieldR04CollisionGridCells);
 #undef DRYFIELD_R04_CELL_FACE_LIST_AT_OFFSET
 
 /// Mutable room collision mesh with a 9-by-9 index of 4000-unit XZ cells.

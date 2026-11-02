@@ -1,4 +1,5 @@
 #include "rooms/dryfield_cellar.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -141,24 +142,44 @@ DirectionWarpEntry gDryfieldCellarWarpEntries[1] = {
 };
 
 /// Unit-length grid normals in room axes, with 4096 representing one.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldCellarCollisionGridNormals[8] = {
 #include "assets/dryfield_cellar_collision_00994_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldCellarCollisionGridNormals[8];
+#endif
+PE_ASSET_BIND("dryfield_cellar_collision_00994_normals", _gDryfieldCellarCollisionGridNormals);
 
 /// Collision-mesh vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldCellarCollisionGridVerts[39] = {
 #include "assets/dryfield_cellar_collision_00994_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldCellarCollisionGridVerts[39];
+#endif
+PE_ASSET_BIND("dryfield_cellar_collision_00994_verts", _gDryfieldCellarCollisionGridVerts);
 
 /// Indexed mesh faces using the cellar's normals, vertices and surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldCellarCollisionGridFaces[20] = {
 #include "assets/dryfield_cellar_collision_00994_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldCellarCollisionGridFaces[20];
+#endif
+PE_ASSET_BIND("dryfield_cellar_collision_00994_faces", _gDryfieldCellarCollisionGridFaces);
 
 /// Signed face-index lists ending at `WORLD_COLLISION_GRID_CELL_END`.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldCellarCollisionGridCells[62] = {
 #include "assets/dryfield_cellar_collision_00994_cells.inc"
 };
+#else
+static s16 _gDryfieldCellarCollisionGridCells[62];
+#endif
+PE_ASSET_BIND("dryfield_cellar_collision_00994_cells", _gDryfieldCellarCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
 ///
@@ -173,9 +194,14 @@ static s16 _gDryfieldCellarCollisionGridCells[62] = {
 #define DRYFIELD_CELLAR_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldCellarCollisionGridCells[(halfwordOffset)])
 
 /// Six cell-list starts, indexed by X * 2 + Z in the 3-by-2 grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldCellarCollisionGridTable[6] = {
 #include "assets/dryfield_cellar_collision_00994_table.inc"
 };
+#else
+static s16* _gDryfieldCellarCollisionGridTable[6];
+#endif
+PE_ASSET_BIND_AUX("dryfield_cellar_collision_00994_table", _gDryfieldCellarCollisionGridTable, _gDryfieldCellarCollisionGridCells);
 #undef DRYFIELD_CELLAR_CELL_FACE_LIST_AT_OFFSET
 
 /// Collision mesh shared by both cellar rooms, with 4000-unit XZ cells.

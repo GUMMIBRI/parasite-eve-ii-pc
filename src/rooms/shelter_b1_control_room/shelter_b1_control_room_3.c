@@ -1,4 +1,5 @@
 #include "actors/actor_02100.h"
+#include "port/asset_bind.h"
 #include "actors/actor_02400.h"
 #include "actors/actor_150400.h"
 
@@ -95,27 +96,47 @@ DirectionWarpEntry gShelterB1ControlRoomWarpEntries[3] = {
 };
 
 /// Room-space unit normals for `gShelterB1ControlRoomRoomCollision`, in Q12.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1ControlRoomRoomCollisionNormals[7] = {
 #include "assets/shelter_b1_control_room_collision_04B38_normals.inc"
 };
+#else
+static SVECTOR _gShelterB1ControlRoomRoomCollisionNormals[7];
+#endif
+PE_ASSET_BIND("shelter_b1_control_room_collision_04B38_normals", _gShelterB1ControlRoomRoomCollisionNormals);
 
 /// Room-space vertices of `gShelterB1ControlRoomRoomCollision`, in signed game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1ControlRoomRoomCollisionVerts[56] = {
 #include "assets/shelter_b1_control_room_collision_04B38_verts.inc"
 };
+#else
+static SVECTOR _gShelterB1ControlRoomRoomCollisionVerts[56];
+#endif
+PE_ASSET_BIND("shelter_b1_control_room_collision_04B38_verts", _gShelterB1ControlRoomRoomCollisionVerts);
 
 /// Indexed room faces: class 1 is the main floor, class 2 the raised floor, class 0 other geometry.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB1ControlRoomRoomCollisionFaces[29] = {
 #include "assets/shelter_b1_control_room_collision_04B38_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB1ControlRoomRoomCollisionFaces[29];
+#endif
+PE_ASSET_BIND("shelter_b1_control_room_collision_04B38_faces", _gShelterB1ControlRoomRoomCollisionFaces);
 
 /// Signed face-index lists for the collision cells, each ending at -1.
 ///
 /// The cell table selects lists at elements 0, 14 and 38. The complete authored
 /// array also retains two zero elements outside those terminated lists.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB1ControlRoomRoomCollisionCells[60] = {
 #include "assets/shelter_b1_control_room_collision_04B38_cells.inc"
 };
+#else
+static s16 _gShelterB1ControlRoomRoomCollisionCells[60];
+#endif
+PE_ASSET_BIND("shelter_b1_control_room_collision_04B38_cells", _gShelterB1ControlRoomRoomCollisionCells);
 
 // The generated table supplies element indices into the retained face-index lists.
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -128,9 +149,14 @@ static s16 _gShelterB1ControlRoomRoomCollisionCells[60] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_CONTROL_ROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1ControlRoomRoomCollisionCells[(halfwordOffset)])
 /// X-major index of three cells, each borrowing one terminated face-index list.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB1ControlRoomRoomCollisionTable[3] = {
 #include "assets/shelter_b1_control_room_collision_04B38_table.inc"
 };
+#else
+static s16* _gShelterB1ControlRoomRoomCollisionTable[3];
+#endif
+PE_ASSET_BIND_AUX("shelter_b1_control_room_collision_04B38_table", _gShelterB1ControlRoomRoomCollisionTable, _gShelterB1ControlRoomRoomCollisionCells);
 #undef SHELTER_B1_CONTROL_ROOM_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB1ControlRoomRoomCollision = {

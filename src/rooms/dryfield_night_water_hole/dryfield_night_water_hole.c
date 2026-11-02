@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_water_hole.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -162,21 +163,41 @@ enum {
     DRYFIELD_NIGHT_WATER_HOLE_WARP3_ARRIVAL_SOUND          = SOUND_AREA(GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_WATER_HOLE, 8),
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightWaterHoleAnimation03004Bank1[6] = {
 #include "assets/dryfield_night_water_hole_animation_03004_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightWaterHoleAnimation03004Bank1[6];
+#endif
+PE_ASSET_BIND("dryfield_night_water_hole_animation_03004_bank1", _gDryfieldNightWaterHoleAnimation03004Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightWaterHoleAnimation03004Bank4[64] = {
 #include "assets/dryfield_night_water_hole_animation_03004_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightWaterHoleAnimation03004Bank4[64];
+#endif
+PE_ASSET_BIND("dryfield_night_water_hole_animation_03004_bank4", _gDryfieldNightWaterHoleAnimation03004Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightWaterHoleAnimation03004Records[141] = {
 #include "assets/dryfield_night_water_hole_animation_03004_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightWaterHoleAnimation03004Records[141];
+#endif
+PE_ASSET_BIND("dryfield_night_water_hole_animation_03004_records", _gDryfieldNightWaterHoleAnimation03004Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightWaterHoleAnimation03004Indices[20] = {
 #include "assets/dryfield_night_water_hole_animation_03004_indices.inc"
 };
+#else
+static u16 _gDryfieldNightWaterHoleAnimation03004Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_water_hole_animation_03004_indices", _gDryfieldNightWaterHoleAnimation03004Indices);
 
 static AnimationSet _gDryfieldNightWaterHoleAnimation03004 = {
     _gDryfieldNightWaterHoleAnimation03004Records,
@@ -482,27 +503,47 @@ enum {
 };
 
 /// Room-space collision normals, using ONE (4096) for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightWaterHoleCollisionGridNormals[10] = {
 #include "assets/dryfield_night_water_hole_collision_03990_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightWaterHoleCollisionGridNormals[10];
+#endif
+PE_ASSET_BIND("dryfield_night_water_hole_collision_03990_normals", _gDryfieldNightWaterHoleCollisionGridNormals);
 
 /// Collision mesh vertices in signed integer room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightWaterHoleCollisionGridVerts[54] = {
 #include "assets/dryfield_night_water_hole_collision_03990_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightWaterHoleCollisionGridVerts[54];
+#endif
+PE_ASSET_BIND("dryfield_night_water_hole_collision_03990_verts", _gDryfieldNightWaterHoleCollisionGridVerts);
 
 /// Indexed collision quads and their room-local surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightWaterHoleCollisionGridFaces[23] = {
 #include "assets/dryfield_night_water_hole_collision_03990_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightWaterHoleCollisionGridFaces[23];
+#endif
+PE_ASSET_BIND("dryfield_night_water_hole_collision_03990_faces", _gDryfieldNightWaterHoleCollisionGridFaces);
 
 /// Twelve packed face-index lists, terminated by WORLD_COLLISION_GRID_CELL_END.
 ///
 /// The cell table selects each list's start in halfwords. Retained zeros
 /// between some lists are outside the traversed face indices.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightWaterHoleCollisionGridCells[92] = {
 #include "assets/dryfield_night_water_hole_collision_03990_cells.inc"
 };
+#else
+static s16 _gDryfieldNightWaterHoleCollisionGridCells[92];
+#endif
+PE_ASSET_BIND("dryfield_night_water_hole_collision_03990_cells", _gDryfieldNightWaterHoleCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -513,9 +554,14 @@ static s16 _gDryfieldNightWaterHoleCollisionGridCells[92] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_WATER_HOLE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightWaterHoleCollisionGridCells[(halfwordOffset)])
 /// X-major cell-list starts, indexed by x * cellCountZ + z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightWaterHoleCollisionGridTable[DRYFIELD_NIGHT_WATER_HOLE_GRID_CELL_COUNT_X * DRYFIELD_NIGHT_WATER_HOLE_GRID_CELL_COUNT_Z] = {
 #include "assets/dryfield_night_water_hole_collision_03990_table.inc"
 };
+#else
+static s16* _gDryfieldNightWaterHoleCollisionGridTable[12];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_water_hole_collision_03990_table", _gDryfieldNightWaterHoleCollisionGridTable, _gDryfieldNightWaterHoleCollisionGridCells);
 #undef DRYFIELD_NIGHT_WATER_HOLE_CELL_FACE_LIST_AT_OFFSET
 
 /// Collision mesh shared by the night water hole's four room selectors.

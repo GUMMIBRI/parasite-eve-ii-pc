@@ -1,4 +1,5 @@
 #include "rooms/shelter_b2_pod_bottom.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -105,25 +106,50 @@ static void _shelterB2PodBottomDrawBurstBlade(const GfxCoord* coord, s32 radiusS
 /// The sixteen-byte runtime allocation contains only twelve package zero bytes.
 static s16 _gShelterB2PodBottomBurstBladeAngles[8];
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB2PodBottomModel0A2A0Skeleton[1] = {
 #include "assets/shelter_b2_pod_bottom_model_0A2A0_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB2PodBottomModel0A2A0Skeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0A2A0_skeleton", _gShelterB2PodBottomModel0A2A0Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2PodBottomModel0A2A0PartVerts[1] = {
 #include "assets/shelter_b2_pod_bottom_model_0A2A0_partVerts.inc"
 };
+#else
+static u32 _gShelterB2PodBottomModel0A2A0PartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0A2A0_partVerts", _gShelterB2PodBottomModel0A2A0PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2PodBottomModel0A2A0Verts[16] = {
 #include "assets/shelter_b2_pod_bottom_model_0A2A0_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2PodBottomModel0A2A0Verts[16];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0A2A0_verts", _gShelterB2PodBottomModel0A2A0Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2PodBottomModel0A2A0Normals[29] = {
 #include "assets/shelter_b2_pod_bottom_model_0A2A0_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2PodBottomModel0A2A0Normals[29];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0A2A0_normals", _gShelterB2PodBottomModel0A2A0Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2PodBottomModel0A2A0Stream[172] = {
 #include "assets/shelter_b2_pod_bottom_model_0A2A0_stream.inc"
 };
+#else
+static u32 _gShelterB2PodBottomModel0A2A0Stream[172];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0A2A0_stream", _gShelterB2PodBottomModel0A2A0Stream);
 
 TmdSource gShelterB2PodBottomModel0A2A0 = {
     0,
@@ -137,25 +163,50 @@ TmdSource gShelterB2PodBottomModel0A2A0 = {
     _gShelterB2PodBottomModel0A2A0Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB2PodBottomModel0A68CSkeleton[1] = {
 #include "assets/shelter_b2_pod_bottom_model_0A68C_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB2PodBottomModel0A68CSkeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0A68C_skeleton", _gShelterB2PodBottomModel0A68CSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2PodBottomModel0A68CPartVerts[1] = {
 #include "assets/shelter_b2_pod_bottom_model_0A68C_partVerts.inc"
 };
+#else
+static u32 _gShelterB2PodBottomModel0A68CPartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0A68C_partVerts", _gShelterB2PodBottomModel0A68CPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2PodBottomModel0A68CVerts[11] = {
 #include "assets/shelter_b2_pod_bottom_model_0A68C_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2PodBottomModel0A68CVerts[11];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0A68C_verts", _gShelterB2PodBottomModel0A68CVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2PodBottomModel0A68CNormals[19] = {
 #include "assets/shelter_b2_pod_bottom_model_0A68C_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2PodBottomModel0A68CNormals[19];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0A68C_normals", _gShelterB2PodBottomModel0A68CNormals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2PodBottomModel0A68CStream[114] = {
 #include "assets/shelter_b2_pod_bottom_model_0A68C_stream.inc"
 };
+#else
+static u32 _gShelterB2PodBottomModel0A68CStream[114];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0A68C_stream", _gShelterB2PodBottomModel0A68CStream);
 
 TmdSource gShelterB2PodBottomModel0A68C = {
     0,
@@ -169,25 +220,50 @@ TmdSource gShelterB2PodBottomModel0A68C = {
     _gShelterB2PodBottomModel0A68CStream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB2PodBottomModel0AA08Skeleton[1] = {
 #include "assets/shelter_b2_pod_bottom_model_0AA08_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB2PodBottomModel0AA08Skeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0AA08_skeleton", _gShelterB2PodBottomModel0AA08Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2PodBottomModel0AA08PartVerts[1] = {
 #include "assets/shelter_b2_pod_bottom_model_0AA08_partVerts.inc"
 };
+#else
+static u32 _gShelterB2PodBottomModel0AA08PartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0AA08_partVerts", _gShelterB2PodBottomModel0AA08PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2PodBottomModel0AA08Verts[16] = {
 #include "assets/shelter_b2_pod_bottom_model_0AA08_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2PodBottomModel0AA08Verts[16];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0AA08_verts", _gShelterB2PodBottomModel0AA08Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2PodBottomModel0AA08Normals[29] = {
 #include "assets/shelter_b2_pod_bottom_model_0AA08_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2PodBottomModel0AA08Normals[29];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0AA08_normals", _gShelterB2PodBottomModel0AA08Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2PodBottomModel0AA08Stream[167] = {
 #include "assets/shelter_b2_pod_bottom_model_0AA08_stream.inc"
 };
+#else
+static u32 _gShelterB2PodBottomModel0AA08Stream[167];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0AA08_stream", _gShelterB2PodBottomModel0AA08Stream);
 
 TmdSource gShelterB2PodBottomModel0AA08 = {
     0,
@@ -201,25 +277,50 @@ TmdSource gShelterB2PodBottomModel0AA08 = {
     _gShelterB2PodBottomModel0AA08Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB2PodBottomModel0AE48Skeleton[1] = {
 #include "assets/shelter_b2_pod_bottom_model_0AE48_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB2PodBottomModel0AE48Skeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0AE48_skeleton", _gShelterB2PodBottomModel0AE48Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2PodBottomModel0AE48PartVerts[1] = {
 #include "assets/shelter_b2_pod_bottom_model_0AE48_partVerts.inc"
 };
+#else
+static u32 _gShelterB2PodBottomModel0AE48PartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0AE48_partVerts", _gShelterB2PodBottomModel0AE48PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2PodBottomModel0AE48Verts[15] = {
 #include "assets/shelter_b2_pod_bottom_model_0AE48_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2PodBottomModel0AE48Verts[15];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0AE48_verts", _gShelterB2PodBottomModel0AE48Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2PodBottomModel0AE48Normals[28] = {
 #include "assets/shelter_b2_pod_bottom_model_0AE48_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2PodBottomModel0AE48Normals[28];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0AE48_normals", _gShelterB2PodBottomModel0AE48Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB2PodBottomModel0AE48Stream[145] = {
 #include "assets/shelter_b2_pod_bottom_model_0AE48_stream.inc"
 };
+#else
+static u32 _gShelterB2PodBottomModel0AE48Stream[145];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_model_0AE48_stream", _gShelterB2PodBottomModel0AE48Stream);
 
 TmdSource gShelterB2PodBottomModel0AE48 = {
     0,

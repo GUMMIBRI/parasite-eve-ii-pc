@@ -1,4 +1,5 @@
 #include "rooms/shelter_b1_sterilization_room.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -187,21 +188,41 @@ static ActorCommand _gShelterB1SterilizationRoomStartSmokingCommand __attribute_
 /// initialization selects Y=0 when active or Y=10000 to move it out of reach.
 static s16 _gShelterB1SterilizationRoomEventActorObstacleOffset[3] = { 0 };
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1SterilizationRoomEventActorObstacleGridNormals[4] = {
 #include "assets/shelter_b1_sterilization_room_collision_07968_normals.inc"
 };
+#else
+static SVECTOR _gShelterB1SterilizationRoomEventActorObstacleGridNormals[4];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_collision_07968_normals", _gShelterB1SterilizationRoomEventActorObstacleGridNormals);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1SterilizationRoomEventActorObstacleGridVerts[8] = {
 #include "assets/shelter_b1_sterilization_room_collision_07968_verts.inc"
 };
+#else
+static SVECTOR _gShelterB1SterilizationRoomEventActorObstacleGridVerts[8];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_collision_07968_verts", _gShelterB1SterilizationRoomEventActorObstacleGridVerts);
 
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB1SterilizationRoomEventActorObstacleGridFaces[4] = {
 #include "assets/shelter_b1_sterilization_room_collision_07968_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB1SterilizationRoomEventActorObstacleGridFaces[4];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_collision_07968_faces", _gShelterB1SterilizationRoomEventActorObstacleGridFaces);
 
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB1SterilizationRoomEventActorObstacleGridCells[6] = {
 #include "assets/shelter_b1_sterilization_room_collision_07968_cells.inc"
 };
+#else
+static s16 _gShelterB1SterilizationRoomEventActorObstacleGridCells[6];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_collision_07968_cells", _gShelterB1SterilizationRoomEventActorObstacleGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -212,9 +233,14 @@ static s16 _gShelterB1SterilizationRoomEventActorObstacleGridCells[6] = {
 /// `cell_face_list_macro` selects this binding for the table include.
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_STERILIZATION_ROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1SterilizationRoomEventActorObstacleGridCells[(halfwordOffset)])
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB1SterilizationRoomEventActorObstacleGridTable[1] = {
 #include "assets/shelter_b1_sterilization_room_collision_07968_table.inc"
 };
+#else
+static s16* _gShelterB1SterilizationRoomEventActorObstacleGridTable[1];
+#endif
+PE_ASSET_BIND_AUX("shelter_b1_sterilization_room_collision_07968_table", _gShelterB1SterilizationRoomEventActorObstacleGridTable, _gShelterB1SterilizationRoomEventActorObstacleGridCells);
 #undef SHELTER_B1_STERILIZATION_ROOM_CELL_FACE_LIST_AT_OFFSET
 
 /// Local four-face obstacle copied into the leading entries of the live room grid.
@@ -236,21 +262,41 @@ static WorldCollisionGrid _gShelterB1SterilizationRoomEventActorObstacleGrid = {
     .faceCount   = ARRAY_SIZE(_gShelterB1SterilizationRoomEventActorObstacleGridFaces),
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB1SterilizationRoomAnimation07C68Bank1[6] = {
 #include "assets/shelter_b1_sterilization_room_animation_07C68_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB1SterilizationRoomAnimation07C68Bank1[6];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_07C68_bank1", _gShelterB1SterilizationRoomAnimation07C68Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation07C68Bank4[46] = {
 #include "assets/shelter_b1_sterilization_room_animation_07C68_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation07C68Bank4[46];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_07C68_bank4", _gShelterB1SterilizationRoomAnimation07C68Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB1SterilizationRoomAnimation07C68Records[109] = {
 #include "assets/shelter_b1_sterilization_room_animation_07C68_records.inc"
 };
+#else
+static AnimationRecord _gShelterB1SterilizationRoomAnimation07C68Records[109];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_07C68_records", _gShelterB1SterilizationRoomAnimation07C68Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB1SterilizationRoomAnimation07C68Indices[20] = {
 #include "assets/shelter_b1_sterilization_room_animation_07C68_indices.inc"
 };
+#else
+static u16 _gShelterB1SterilizationRoomAnimation07C68Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_07C68_indices", _gShelterB1SterilizationRoomAnimation07C68Indices);
 
 static AnimationSet _gShelterB1SterilizationRoomAnimation07C68 = {
     _gShelterB1SterilizationRoomAnimation07C68Records,
@@ -258,21 +304,41 @@ static AnimationSet _gShelterB1SterilizationRoomAnimation07C68 = {
     { NULL, _gShelterB1SterilizationRoomAnimation07C68Bank1, NULL, NULL, _gShelterB1SterilizationRoomAnimation07C68Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB1SterilizationRoomAnimation07E1CBank1[2] = {
 #include "assets/shelter_b1_sterilization_room_animation_07E1C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB1SterilizationRoomAnimation07E1CBank1[2];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_07E1C_bank1", _gShelterB1SterilizationRoomAnimation07E1CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation07E1CBank4[26] = {
 #include "assets/shelter_b1_sterilization_room_animation_07E1C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation07E1CBank4[26];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_07E1C_bank4", _gShelterB1SterilizationRoomAnimation07E1CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB1SterilizationRoomAnimation07E1CRecords[57] = {
 #include "assets/shelter_b1_sterilization_room_animation_07E1C_records.inc"
 };
+#else
+static AnimationRecord _gShelterB1SterilizationRoomAnimation07E1CRecords[57];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_07E1C_records", _gShelterB1SterilizationRoomAnimation07E1CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB1SterilizationRoomAnimation07E1CIndices[20] = {
 #include "assets/shelter_b1_sterilization_room_animation_07E1C_indices.inc"
 };
+#else
+static u16 _gShelterB1SterilizationRoomAnimation07E1CIndices[20];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_07E1C_indices", _gShelterB1SterilizationRoomAnimation07E1CIndices);
 
 static AnimationSet _gShelterB1SterilizationRoomAnimation07E1C = {
     _gShelterB1SterilizationRoomAnimation07E1CRecords,
@@ -280,21 +346,41 @@ static AnimationSet _gShelterB1SterilizationRoomAnimation07E1C = {
     { NULL, _gShelterB1SterilizationRoomAnimation07E1CBank1, NULL, NULL, _gShelterB1SterilizationRoomAnimation07E1CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB1SterilizationRoomAnimation0853CBank1[8] = {
 #include "assets/shelter_b1_sterilization_room_animation_0853C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB1SterilizationRoomAnimation0853CBank1[8];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0853C_bank1", _gShelterB1SterilizationRoomAnimation0853CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation0853CBank4[161] = {
 #include "assets/shelter_b1_sterilization_room_animation_0853C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation0853CBank4[161];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0853C_bank4", _gShelterB1SterilizationRoomAnimation0853CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB1SterilizationRoomAnimation0853CRecords[251] = {
 #include "assets/shelter_b1_sterilization_room_animation_0853C_records.inc"
 };
+#else
+static AnimationRecord _gShelterB1SterilizationRoomAnimation0853CRecords[251];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0853C_records", _gShelterB1SterilizationRoomAnimation0853CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB1SterilizationRoomAnimation0853CIndices[20] = {
 #include "assets/shelter_b1_sterilization_room_animation_0853C_indices.inc"
 };
+#else
+static u16 _gShelterB1SterilizationRoomAnimation0853CIndices[20];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0853C_indices", _gShelterB1SterilizationRoomAnimation0853CIndices);
 
 static AnimationSet _gShelterB1SterilizationRoomAnimation0853C = {
     _gShelterB1SterilizationRoomAnimation0853CRecords,
@@ -302,21 +388,41 @@ static AnimationSet _gShelterB1SterilizationRoomAnimation0853C = {
     { NULL, _gShelterB1SterilizationRoomAnimation0853CBank1, NULL, NULL, _gShelterB1SterilizationRoomAnimation0853CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB1SterilizationRoomAnimation086CCBank1[2] = {
 #include "assets/shelter_b1_sterilization_room_animation_086CC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB1SterilizationRoomAnimation086CCBank1[2];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_086CC_bank1", _gShelterB1SterilizationRoomAnimation086CCBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation086CCBank4[17] = {
 #include "assets/shelter_b1_sterilization_room_animation_086CC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation086CCBank4[17];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_086CC_bank4", _gShelterB1SterilizationRoomAnimation086CCBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB1SterilizationRoomAnimation086CCRecords[57] = {
 #include "assets/shelter_b1_sterilization_room_animation_086CC_records.inc"
 };
+#else
+static AnimationRecord _gShelterB1SterilizationRoomAnimation086CCRecords[57];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_086CC_records", _gShelterB1SterilizationRoomAnimation086CCRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB1SterilizationRoomAnimation086CCIndices[20] = {
 #include "assets/shelter_b1_sterilization_room_animation_086CC_indices.inc"
 };
+#else
+static u16 _gShelterB1SterilizationRoomAnimation086CCIndices[20];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_086CC_indices", _gShelterB1SterilizationRoomAnimation086CCIndices);
 
 static AnimationSet _gShelterB1SterilizationRoomAnimation086CC = {
     _gShelterB1SterilizationRoomAnimation086CCRecords,
@@ -324,21 +430,41 @@ static AnimationSet _gShelterB1SterilizationRoomAnimation086CC = {
     { NULL, _gShelterB1SterilizationRoomAnimation086CCBank1, NULL, NULL, _gShelterB1SterilizationRoomAnimation086CCBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB1SterilizationRoomAnimation09350Bank1[31] = {
 #include "assets/shelter_b1_sterilization_room_animation_09350_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB1SterilizationRoomAnimation09350Bank1[31];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_09350_bank1", _gShelterB1SterilizationRoomAnimation09350Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation09350Bank4[308] = {
 #include "assets/shelter_b1_sterilization_room_animation_09350_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation09350Bank4[308];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_09350_bank4", _gShelterB1SterilizationRoomAnimation09350Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB1SterilizationRoomAnimation09350Records[380] = {
 #include "assets/shelter_b1_sterilization_room_animation_09350_records.inc"
 };
+#else
+static AnimationRecord _gShelterB1SterilizationRoomAnimation09350Records[380];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_09350_records", _gShelterB1SterilizationRoomAnimation09350Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB1SterilizationRoomAnimation09350Indices[20] = {
 #include "assets/shelter_b1_sterilization_room_animation_09350_indices.inc"
 };
+#else
+static u16 _gShelterB1SterilizationRoomAnimation09350Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_09350_indices", _gShelterB1SterilizationRoomAnimation09350Indices);
 
 static AnimationSet _gShelterB1SterilizationRoomAnimation09350 = {
     _gShelterB1SterilizationRoomAnimation09350Records,
@@ -346,21 +472,41 @@ static AnimationSet _gShelterB1SterilizationRoomAnimation09350 = {
     { NULL, _gShelterB1SterilizationRoomAnimation09350Bank1, NULL, NULL, _gShelterB1SterilizationRoomAnimation09350Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB1SterilizationRoomAnimation0A858Bank1[41] = {
 #include "assets/shelter_b1_sterilization_room_animation_0A858_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB1SterilizationRoomAnimation0A858Bank1[41];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0A858_bank1", _gShelterB1SterilizationRoomAnimation0A858Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation0A858Bank4[549] = {
 #include "assets/shelter_b1_sterilization_room_animation_0A858_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation0A858Bank4[549];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0A858_bank4", _gShelterB1SterilizationRoomAnimation0A858Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB1SterilizationRoomAnimation0A858Records[654] = {
 #include "assets/shelter_b1_sterilization_room_animation_0A858_records.inc"
 };
+#else
+static AnimationRecord _gShelterB1SterilizationRoomAnimation0A858Records[654];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0A858_records", _gShelterB1SterilizationRoomAnimation0A858Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB1SterilizationRoomAnimation0A858Indices[20] = {
 #include "assets/shelter_b1_sterilization_room_animation_0A858_indices.inc"
 };
+#else
+static u16 _gShelterB1SterilizationRoomAnimation0A858Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0A858_indices", _gShelterB1SterilizationRoomAnimation0A858Indices);
 
 static AnimationSet _gShelterB1SterilizationRoomAnimation0A858 = {
     _gShelterB1SterilizationRoomAnimation0A858Records,
@@ -368,21 +514,41 @@ static AnimationSet _gShelterB1SterilizationRoomAnimation0A858 = {
     { NULL, _gShelterB1SterilizationRoomAnimation0A858Bank1, NULL, NULL, _gShelterB1SterilizationRoomAnimation0A858Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB1SterilizationRoomAnimation0AF1CBank1[4] = {
 #include "assets/shelter_b1_sterilization_room_animation_0AF1C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB1SterilizationRoomAnimation0AF1CBank1[4];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0AF1C_bank1", _gShelterB1SterilizationRoomAnimation0AF1CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation0AF1CBank4[151] = {
 #include "assets/shelter_b1_sterilization_room_animation_0AF1C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB1SterilizationRoomAnimation0AF1CBank4[151];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0AF1C_bank4", _gShelterB1SterilizationRoomAnimation0AF1CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB1SterilizationRoomAnimation0AF1CRecords[250] = {
 #include "assets/shelter_b1_sterilization_room_animation_0AF1C_records.inc"
 };
+#else
+static AnimationRecord _gShelterB1SterilizationRoomAnimation0AF1CRecords[250];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0AF1C_records", _gShelterB1SterilizationRoomAnimation0AF1CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB1SterilizationRoomAnimation0AF1CIndices[20] = {
 #include "assets/shelter_b1_sterilization_room_animation_0AF1C_indices.inc"
 };
+#else
+static u16 _gShelterB1SterilizationRoomAnimation0AF1CIndices[20];
+#endif
+PE_ASSET_BIND("shelter_b1_sterilization_room_animation_0AF1C_indices", _gShelterB1SterilizationRoomAnimation0AF1CIndices);
 
 static AnimationSet _gShelterB1SterilizationRoomAnimation0AF1C = {
     _gShelterB1SterilizationRoomAnimation0AF1CRecords,

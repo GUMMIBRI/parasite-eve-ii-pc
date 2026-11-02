@@ -1,4 +1,5 @@
 #include "rooms/shelter_b2_operating_room.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -244,27 +245,47 @@ DirectionWarpEntry gShelterB2OperatingRoomWarpEntries[3] = {
 };
 
 /// Room-space normals for the operating-room grid, with 4096 for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2OperatingRoomCollisionGridNormals[18] = {
 #include "assets/shelter_b2_operating_room_collision_03DA4_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2OperatingRoomCollisionGridNormals[18];
+#endif
+PE_ASSET_BIND("shelter_b2_operating_room_collision_03DA4_normals", _gShelterB2OperatingRoomCollisionGridNormals);
 
 /// Operating-room collision vertices in signed integer game-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2OperatingRoomCollisionGridVerts[99] = {
 #include "assets/shelter_b2_operating_room_collision_03DA4_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2OperatingRoomCollisionGridVerts[99];
+#endif
+PE_ASSET_BIND("shelter_b2_operating_room_collision_03DA4_verts", _gShelterB2OperatingRoomCollisionGridVerts);
 
 /// Indexed room-grid faces: class-0 walls and class-1/class-2 floors.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB2OperatingRoomCollisionGridFaces[42] = {
 #include "assets/shelter_b2_operating_room_collision_03DA4_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB2OperatingRoomCollisionGridFaces[42];
+#endif
+PE_ASSET_BIND("shelter_b2_operating_room_collision_03DA4_faces", _gShelterB2OperatingRoomCollisionGridFaces);
 
 /// Packed signed face-index lists, terminated by `WORLD_COLLISION_GRID_CELL_END`.
 ///
 /// Cell-directory offsets are halfword indices; retained zero entries between
 /// lists and after the final terminator are never consumed by cell traversal.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB2OperatingRoomCollisionGridCells[150] = {
 #include "assets/shelter_b2_operating_room_collision_03DA4_cells.inc"
 };
+#else
+static s16 _gShelterB2OperatingRoomCollisionGridCells[150];
+#endif
+PE_ASSET_BIND("shelter_b2_operating_room_collision_03DA4_cells", _gShelterB2OperatingRoomCollisionGridCells);
 
 /// Collision-grid dimensions; square-cell side length is in integer game units.
 enum {
@@ -282,9 +303,14 @@ enum {
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B2_OPERATING_ROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB2OperatingRoomCollisionGridCells[(halfwordOffset)])
 /// X-major collision-cell directory, indexed by x * cellCountZ + z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB2OperatingRoomCollisionGridTable[SHELTER_B2_OPERATING_ROOM_COLLISION_GRID_CELL_COUNT_X * SHELTER_B2_OPERATING_ROOM_COLLISION_GRID_CELL_COUNT_Z] = {
 #include "assets/shelter_b2_operating_room_collision_03DA4_table.inc"
 };
+#else
+static s16* _gShelterB2OperatingRoomCollisionGridTable[8];
+#endif
+PE_ASSET_BIND_AUX("shelter_b2_operating_room_collision_03DA4_table", _gShelterB2OperatingRoomCollisionGridTable, _gShelterB2OperatingRoomCollisionGridCells);
 #undef SHELTER_B2_OPERATING_ROOM_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB2OperatingRoomCollisionGrid = {

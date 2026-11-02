@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_motel_room_3.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -109,24 +110,44 @@ DirectionWarpEntry gDryfieldNightMotelRoom3WarpEntries[1] = {
 };
 
 /// Room collision face normals in grid-local coordinates, with ONE per unit.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightMotelRoom3CollisionGridNormals[14] = {
 #include "assets/dryfield_night_motel_room_3_collision_00BC0_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightMotelRoom3CollisionGridNormals[14];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_room_3_collision_00BC0_normals", _gDryfieldNightMotelRoom3CollisionGridNormals);
 
 /// Room collision vertices in signed grid-local game coordinates.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightMotelRoom3CollisionGridVerts[100] = {
 #include "assets/dryfield_night_motel_room_3_collision_00BC0_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightMotelRoom3CollisionGridVerts[100];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_room_3_collision_00BC0_verts", _gDryfieldNightMotelRoom3CollisionGridVerts);
 
 /// Indexed room collision quads carrying room-local surface classes 0..3.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightMotelRoom3CollisionGridFaces[41] = {
 #include "assets/dryfield_night_motel_room_3_collision_00BC0_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightMotelRoom3CollisionGridFaces[41];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_room_3_collision_00BC0_faces", _gDryfieldNightMotelRoom3CollisionGridFaces);
 
 /// Four packed cell face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightMotelRoom3CollisionGridCells[128] = {
 #include "assets/dryfield_night_motel_room_3_collision_00BC0_cells.inc"
 };
+#else
+static s16 _gDryfieldNightMotelRoom3CollisionGridCells[128];
+#endif
+PE_ASSET_BIND("dryfield_night_motel_room_3_collision_00BC0_cells", _gDryfieldNightMotelRoom3CollisionGridCells);
 
 // The generated cell table supplies element offsets into the packed lists.
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -138,9 +159,14 @@ static s16 _gDryfieldNightMotelRoom3CollisionGridCells[128] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_MOTEL_ROOM_3_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMotelRoom3CollisionGridCells[(halfwordOffset)])
 /// X-major 2-by-2 directory of the room collision grid's face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightMotelRoom3CollisionGridTable[4] = {
 #include "assets/dryfield_night_motel_room_3_collision_00BC0_table.inc"
 };
+#else
+static s16* _gDryfieldNightMotelRoom3CollisionGridTable[4];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_motel_room_3_collision_00BC0_table", _gDryfieldNightMotelRoom3CollisionGridTable, _gDryfieldNightMotelRoom3CollisionGridCells);
 #undef DRYFIELD_NIGHT_MOTEL_ROOM_3_CELL_FACE_LIST_AT_OFFSET
 
 /// Night motel room 3's collision mesh and its 2-by-2 XZ cell index.

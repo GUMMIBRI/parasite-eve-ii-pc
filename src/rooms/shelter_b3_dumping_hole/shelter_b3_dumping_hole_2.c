@@ -1,4 +1,5 @@
 #include "rooms/shelter_b3_dumping_hole.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -857,25 +858,50 @@ static TaskDesc _gShelterB3DumpingHoleSpriteTaskDescriptors[4] = {
     { { { TASK_BODY_COORD, TASK_PRIORITY_CONTROL } }, _shelterB3DumpingHolePlayerSpriteTask, { .value = 0 } },
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB3DumpingHoleModel0BAC8Skeleton[4] = {
 #include "assets/shelter_b3_dumping_hole_model_0BAC8_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB3DumpingHoleModel0BAC8Skeleton[4];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0BAC8_skeleton", _gShelterB3DumpingHoleModel0BAC8Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB3DumpingHoleModel0BAC8PartVerts[4] = {
 #include "assets/shelter_b3_dumping_hole_model_0BAC8_partVerts.inc"
 };
+#else
+static u32 _gShelterB3DumpingHoleModel0BAC8PartVerts[4];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0BAC8_partVerts", _gShelterB3DumpingHoleModel0BAC8PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3DumpingHoleModel0BAC8Verts[100] = {
 #include "assets/shelter_b3_dumping_hole_model_0BAC8_verts.inc"
 };
+#else
+static SVECTOR _gShelterB3DumpingHoleModel0BAC8Verts[100];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0BAC8_verts", _gShelterB3DumpingHoleModel0BAC8Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3DumpingHoleModel0BAC8Normals[18] = {
 #include "assets/shelter_b3_dumping_hole_model_0BAC8_normals.inc"
 };
+#else
+static SVECTOR _gShelterB3DumpingHoleModel0BAC8Normals[18];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0BAC8_normals", _gShelterB3DumpingHoleModel0BAC8Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB3DumpingHoleModel0BAC8Stream[365] = {
 #include "assets/shelter_b3_dumping_hole_model_0BAC8_stream.inc"
 };
+#else
+static u32 _gShelterB3DumpingHoleModel0BAC8Stream[365];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0BAC8_stream", _gShelterB3DumpingHoleModel0BAC8Stream);
 
 static TmdSource _gShelterB3DumpingHoleModel0BAC8 = {
     0,
@@ -980,21 +1006,41 @@ TaskDesc gShelterB3DumpingHoleCollapseTaskDescriptors[2] = {
     { { { TASK_BODY_COORD, TASK_PRIORITY_CONTROL } }, _shelterB3DumpingHoleShardTask, { .value = 0 } },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB3DumpingHoleAnimation0C810Bank1[6] = {
 #include "assets/shelter_b3_dumping_hole_animation_0C810_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB3DumpingHoleAnimation0C810Bank1[6];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0C810_bank1", _gShelterB3DumpingHoleAnimation0C810Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB3DumpingHoleAnimation0C810Bank4[46] = {
 #include "assets/shelter_b3_dumping_hole_animation_0C810_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB3DumpingHoleAnimation0C810Bank4[46];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0C810_bank4", _gShelterB3DumpingHoleAnimation0C810Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB3DumpingHoleAnimation0C810Records[109] = {
 #include "assets/shelter_b3_dumping_hole_animation_0C810_records.inc"
 };
+#else
+static AnimationRecord _gShelterB3DumpingHoleAnimation0C810Records[109];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0C810_records", _gShelterB3DumpingHoleAnimation0C810Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB3DumpingHoleAnimation0C810Indices[20] = {
 #include "assets/shelter_b3_dumping_hole_animation_0C810_indices.inc"
 };
+#else
+static u16 _gShelterB3DumpingHoleAnimation0C810Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0C810_indices", _gShelterB3DumpingHoleAnimation0C810Indices);
 
 static AnimationSet _gShelterB3DumpingHoleAnimation0C810 = {
     _gShelterB3DumpingHoleAnimation0C810Records,
@@ -1002,21 +1048,41 @@ static AnimationSet _gShelterB3DumpingHoleAnimation0C810 = {
     { NULL, _gShelterB3DumpingHoleAnimation0C810Bank1, NULL, NULL, _gShelterB3DumpingHoleAnimation0C810Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB3DumpingHoleAnimation0CCB4Bank1[9] = {
 #include "assets/shelter_b3_dumping_hole_animation_0CCB4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB3DumpingHoleAnimation0CCB4Bank1[9];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0CCB4_bank1", _gShelterB3DumpingHoleAnimation0CCB4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB3DumpingHoleAnimation0CCB4Bank4[97] = {
 #include "assets/shelter_b3_dumping_hole_animation_0CCB4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB3DumpingHoleAnimation0CCB4Bank4[97];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0CCB4_bank4", _gShelterB3DumpingHoleAnimation0CCB4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB3DumpingHoleAnimation0CCB4Records[153] = {
 #include "assets/shelter_b3_dumping_hole_animation_0CCB4_records.inc"
 };
+#else
+static AnimationRecord _gShelterB3DumpingHoleAnimation0CCB4Records[153];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0CCB4_records", _gShelterB3DumpingHoleAnimation0CCB4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB3DumpingHoleAnimation0CCB4Indices[20] = {
 #include "assets/shelter_b3_dumping_hole_animation_0CCB4_indices.inc"
 };
+#else
+static u16 _gShelterB3DumpingHoleAnimation0CCB4Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0CCB4_indices", _gShelterB3DumpingHoleAnimation0CCB4Indices);
 
 static AnimationSet _gShelterB3DumpingHoleAnimation0CCB4 = {
     _gShelterB3DumpingHoleAnimation0CCB4Records,
@@ -1024,21 +1090,41 @@ static AnimationSet _gShelterB3DumpingHoleAnimation0CCB4 = {
     { NULL, _gShelterB3DumpingHoleAnimation0CCB4Bank1, NULL, NULL, _gShelterB3DumpingHoleAnimation0CCB4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB3DumpingHoleAnimation0D9C4Bank1[28] = {
 #include "assets/shelter_b3_dumping_hole_animation_0D9C4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB3DumpingHoleAnimation0D9C4Bank1[28];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0D9C4_bank1", _gShelterB3DumpingHoleAnimation0D9C4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB3DumpingHoleAnimation0D9C4Bank4[232] = {
 #include "assets/shelter_b3_dumping_hole_animation_0D9C4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB3DumpingHoleAnimation0D9C4Bank4[232];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0D9C4_bank4", _gShelterB3DumpingHoleAnimation0D9C4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB3DumpingHoleAnimation0D9C4Records[500] = {
 #include "assets/shelter_b3_dumping_hole_animation_0D9C4_records.inc"
 };
+#else
+static AnimationRecord _gShelterB3DumpingHoleAnimation0D9C4Records[500];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0D9C4_records", _gShelterB3DumpingHoleAnimation0D9C4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB3DumpingHoleAnimation0D9C4Indices[20] = {
 #include "assets/shelter_b3_dumping_hole_animation_0D9C4_indices.inc"
 };
+#else
+static u16 _gShelterB3DumpingHoleAnimation0D9C4Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0D9C4_indices", _gShelterB3DumpingHoleAnimation0D9C4Indices);
 
 static AnimationSet _gShelterB3DumpingHoleAnimation0D9C4 = {
     _gShelterB3DumpingHoleAnimation0D9C4Records,
@@ -1345,24 +1431,44 @@ enum {
 };
 
 /// Room-space mesh normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3DumpingHoleCollisionGridNormals[35] = {
 #include "assets/shelter_b3_dumping_hole_collision_0EE2C_normals.inc"
 };
+#else
+static SVECTOR _gShelterB3DumpingHoleCollisionGridNormals[35];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_collision_0EE2C_normals", _gShelterB3DumpingHoleCollisionGridNormals);
 
 /// Signed room-space vertices of the shared collision mesh, in world units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3DumpingHoleCollisionGridVerts[90] = {
 #include "assets/shelter_b3_dumping_hole_collision_0EE2C_verts.inc"
 };
+#else
+static SVECTOR _gShelterB3DumpingHoleCollisionGridVerts[90];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_collision_0EE2C_verts", _gShelterB3DumpingHoleCollisionGridVerts);
 
 /// Indexed triangles and quads selecting surface classes 0, 3 and 4.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB3DumpingHoleCollisionGridFaces[56] = {
 #include "assets/shelter_b3_dumping_hole_collision_0EE2C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB3DumpingHoleCollisionGridFaces[56];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_collision_0EE2C_faces", _gShelterB3DumpingHoleCollisionGridFaces);
 
 /// Signed face-index lists for the grid cells, each ending at -1.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB3DumpingHoleCollisionGridCells[412] = {
 #include "assets/shelter_b3_dumping_hole_collision_0EE2C_cells.inc"
 };
+#else
+static s16 _gShelterB3DumpingHoleCollisionGridCells[412];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_collision_0EE2C_cells", _gShelterB3DumpingHoleCollisionGridCells);
 
 /// Face-list start at a halfword offset into the room's 412-element signed pool.
 ///

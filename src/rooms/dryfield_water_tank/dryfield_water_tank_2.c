@@ -1,4 +1,5 @@
 #include "rooms/dryfield_water_tank.h"
+#include "port/asset_bind.h"
 #include "../../shared/water_tank.h"
 
 #include <psyz.h>
@@ -163,21 +164,41 @@ TaskDesc gDryfieldWaterTankRoomActionTaskDescs[2] = {
     { { { TASK_BODY_NONE, TASK_PRIORITY_SCENE } }, dryfieldWaterTankMechanismPromptTask, { .value = 0 } },
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gDryfieldWaterTankModel020D4Skeleton[1] = {
 #include "assets/dryfield_water_tank_model_020D4_skeleton.inc"
 };
+#else
+static TmdBone _gDryfieldWaterTankModel020D4Skeleton[1];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_model_020D4_skeleton", _gDryfieldWaterTankModel020D4Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gDryfieldWaterTankModel020D4PartVerts[1] = {
 #include "assets/dryfield_water_tank_model_020D4_partVerts.inc"
 };
+#else
+static u32 _gDryfieldWaterTankModel020D4PartVerts[1];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_model_020D4_partVerts", _gDryfieldWaterTankModel020D4PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldWaterTankModel020D4Verts[97] = {
 #include "assets/dryfield_water_tank_model_020D4_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldWaterTankModel020D4Verts[97];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_model_020D4_verts", _gDryfieldWaterTankModel020D4Verts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gDryfieldWaterTankModel020D4Stream[426] = {
 #include "assets/dryfield_water_tank_model_020D4_stream.inc"
 };
+#else
+static u32 _gDryfieldWaterTankModel020D4Stream[426];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_model_020D4_stream", _gDryfieldWaterTankModel020D4Stream);
 
 static TmdSource _gDryfieldWaterTankModel020D4 = {
     0,
@@ -247,21 +268,41 @@ TaskDesc gDryfieldWaterTankPropSceneTaskDescs[2] = {
     { { { (TASK_BODY_TMD | TASK_DESC_SKIP_AUTO_MODEL_BUFFER), TASK_PRIORITY_CONTROL } }, dryfieldWaterTankPropTask, { .model = &_gDryfieldWaterTankModel020D4 } },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation02B70Bank1[2] = {
 #include "assets/dryfield_water_tank_animation_02B70_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation02B70Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_02B70_bank1", _gDryfieldWaterTankAnimation02B70Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation02B70Bank4[8] = {
 #include "assets/dryfield_water_tank_animation_02B70_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation02B70Bank4[8];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_02B70_bank4", _gDryfieldWaterTankAnimation02B70Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation02B70Records[76] = {
 #include "assets/dryfield_water_tank_animation_02B70_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation02B70Records[76];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_02B70_records", _gDryfieldWaterTankAnimation02B70Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation02B70Indices[20] = {
 #include "assets/dryfield_water_tank_animation_02B70_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation02B70Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_02B70_indices", _gDryfieldWaterTankAnimation02B70Indices);
 
 static AnimationSet _gDryfieldWaterTankAnimation02B70 = {
     _gDryfieldWaterTankAnimation02B70Records,
@@ -269,21 +310,41 @@ static AnimationSet _gDryfieldWaterTankAnimation02B70 = {
     { NULL, _gDryfieldWaterTankAnimation02B70Bank1, NULL, NULL, _gDryfieldWaterTankAnimation02B70Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation02F04Bank1[7] = {
 #include "assets/dryfield_water_tank_animation_02F04_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation02F04Bank1[7];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_02F04_bank1", _gDryfieldWaterTankAnimation02F04Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation02F04Bank4[65] = {
 #include "assets/dryfield_water_tank_animation_02F04_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation02F04Bank4[65];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_02F04_bank4", _gDryfieldWaterTankAnimation02F04Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation02F04Records[123] = {
 #include "assets/dryfield_water_tank_animation_02F04_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation02F04Records[123];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_02F04_records", _gDryfieldWaterTankAnimation02F04Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation02F04Indices[20] = {
 #include "assets/dryfield_water_tank_animation_02F04_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation02F04Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_02F04_indices", _gDryfieldWaterTankAnimation02F04Indices);
 
 static AnimationSet _gDryfieldWaterTankAnimation02F04 = {
     _gDryfieldWaterTankAnimation02F04Records,
@@ -363,21 +424,41 @@ static TaskDesc _gDryfieldWaterTankMovieFadeTaskDescs[4] = {
 
 TaskDesc gDryfieldWaterTankMovieEventTaskDesc = { { { TASK_BODY_NONE, TASK_PRIORITY_CONTROL } }, _dryfieldWaterTankMovieEventTask, { .value = 0 } };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation034BCBank1[6] = {
 #include "assets/dryfield_water_tank_animation_034BC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation034BCBank1[6];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_034BC_bank1", _gDryfieldWaterTankAnimation034BCBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation034BCBank4[46] = {
 #include "assets/dryfield_water_tank_animation_034BC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation034BCBank4[46];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_034BC_bank4", _gDryfieldWaterTankAnimation034BCBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation034BCRecords[109] = {
 #include "assets/dryfield_water_tank_animation_034BC_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation034BCRecords[109];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_034BC_records", _gDryfieldWaterTankAnimation034BCRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation034BCIndices[20] = {
 #include "assets/dryfield_water_tank_animation_034BC_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation034BCIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_034BC_indices", _gDryfieldWaterTankAnimation034BCIndices);
 
 AnimationSet gDryfieldWaterTankAnimation034BC = {
     _gDryfieldWaterTankAnimation034BCRecords,
@@ -385,21 +466,41 @@ AnimationSet gDryfieldWaterTankAnimation034BC = {
     { NULL, _gDryfieldWaterTankAnimation034BCBank1, NULL, NULL, _gDryfieldWaterTankAnimation034BCBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation0377CBank1[4] = {
 #include "assets/dryfield_water_tank_animation_0377C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation0377CBank1[4];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_0377C_bank1", _gDryfieldWaterTankAnimation0377CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation0377CBank4[55] = {
 #include "assets/dryfield_water_tank_animation_0377C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation0377CBank4[55];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_0377C_bank4", _gDryfieldWaterTankAnimation0377CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation0377CRecords[89] = {
 #include "assets/dryfield_water_tank_animation_0377C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation0377CRecords[89];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_0377C_records", _gDryfieldWaterTankAnimation0377CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation0377CIndices[20] = {
 #include "assets/dryfield_water_tank_animation_0377C_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation0377CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_0377C_indices", _gDryfieldWaterTankAnimation0377CIndices);
 
 AnimationSet gDryfieldWaterTankAnimation0377C = {
     _gDryfieldWaterTankAnimation0377CRecords,
@@ -407,21 +508,41 @@ AnimationSet gDryfieldWaterTankAnimation0377C = {
     { NULL, _gDryfieldWaterTankAnimation0377CBank1, NULL, NULL, _gDryfieldWaterTankAnimation0377CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation03A60Bank1[5] = {
 #include "assets/dryfield_water_tank_animation_03A60_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation03A60Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_03A60_bank1", _gDryfieldWaterTankAnimation03A60Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation03A60Bank4[60] = {
 #include "assets/dryfield_water_tank_animation_03A60_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation03A60Bank4[60];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_03A60_bank4", _gDryfieldWaterTankAnimation03A60Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation03A60Records[90] = {
 #include "assets/dryfield_water_tank_animation_03A60_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation03A60Records[90];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_03A60_records", _gDryfieldWaterTankAnimation03A60Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation03A60Indices[20] = {
 #include "assets/dryfield_water_tank_animation_03A60_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation03A60Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_03A60_indices", _gDryfieldWaterTankAnimation03A60Indices);
 
 AnimationSet gDryfieldWaterTankAnimation03A60 = {
     _gDryfieldWaterTankAnimation03A60Records,
@@ -429,21 +550,41 @@ AnimationSet gDryfieldWaterTankAnimation03A60 = {
     { NULL, _gDryfieldWaterTankAnimation03A60Bank1, NULL, NULL, _gDryfieldWaterTankAnimation03A60Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation03CB4Bank1[2] = {
 #include "assets/dryfield_water_tank_animation_03CB4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation03CB4Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_03CB4_bank1", _gDryfieldWaterTankAnimation03CB4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation03CB4Bank4[30] = {
 #include "assets/dryfield_water_tank_animation_03CB4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation03CB4Bank4[30];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_03CB4_bank4", _gDryfieldWaterTankAnimation03CB4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation03CB4Records[93] = {
 #include "assets/dryfield_water_tank_animation_03CB4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation03CB4Records[93];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_03CB4_records", _gDryfieldWaterTankAnimation03CB4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation03CB4Indices[20] = {
 #include "assets/dryfield_water_tank_animation_03CB4_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation03CB4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_03CB4_indices", _gDryfieldWaterTankAnimation03CB4Indices);
 
 AnimationSet gDryfieldWaterTankAnimation03CB4 = {
     _gDryfieldWaterTankAnimation03CB4Records,
@@ -451,21 +592,41 @@ AnimationSet gDryfieldWaterTankAnimation03CB4 = {
     { NULL, _gDryfieldWaterTankAnimation03CB4Bank1, NULL, NULL, _gDryfieldWaterTankAnimation03CB4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation04000Bank1[6] = {
 #include "assets/dryfield_water_tank_animation_04000_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation04000Bank1[6];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04000_bank1", _gDryfieldWaterTankAnimation04000Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation04000Bank4[60] = {
 #include "assets/dryfield_water_tank_animation_04000_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation04000Bank4[60];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04000_bank4", _gDryfieldWaterTankAnimation04000Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation04000Records[113] = {
 #include "assets/dryfield_water_tank_animation_04000_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation04000Records[113];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04000_records", _gDryfieldWaterTankAnimation04000Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation04000Indices[20] = {
 #include "assets/dryfield_water_tank_animation_04000_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation04000Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04000_indices", _gDryfieldWaterTankAnimation04000Indices);
 
 AnimationSet gDryfieldWaterTankAnimation04000 = {
     _gDryfieldWaterTankAnimation04000Records,
@@ -473,21 +634,41 @@ AnimationSet gDryfieldWaterTankAnimation04000 = {
     { NULL, _gDryfieldWaterTankAnimation04000Bank1, NULL, NULL, _gDryfieldWaterTankAnimation04000Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation047BCBank1[22] = {
 #include "assets/dryfield_water_tank_animation_047BC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation047BCBank1[22];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_047BC_bank1", _gDryfieldWaterTankAnimation047BCBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation047BCBank4[170] = {
 #include "assets/dryfield_water_tank_animation_047BC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation047BCBank4[170];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_047BC_bank4", _gDryfieldWaterTankAnimation047BCBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation047BCRecords[239] = {
 #include "assets/dryfield_water_tank_animation_047BC_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation047BCRecords[239];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_047BC_records", _gDryfieldWaterTankAnimation047BCRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation047BCIndices[20] = {
 #include "assets/dryfield_water_tank_animation_047BC_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation047BCIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_047BC_indices", _gDryfieldWaterTankAnimation047BCIndices);
 
 AnimationSet gDryfieldWaterTankAnimation047BC = {
     _gDryfieldWaterTankAnimation047BCRecords,
@@ -495,21 +676,41 @@ AnimationSet gDryfieldWaterTankAnimation047BC = {
     { NULL, _gDryfieldWaterTankAnimation047BCBank1, NULL, NULL, _gDryfieldWaterTankAnimation047BCBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation04AA0Bank1[5] = {
 #include "assets/dryfield_water_tank_animation_04AA0_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation04AA0Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04AA0_bank1", _gDryfieldWaterTankAnimation04AA0Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation04AA0Bank4[60] = {
 #include "assets/dryfield_water_tank_animation_04AA0_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation04AA0Bank4[60];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04AA0_bank4", _gDryfieldWaterTankAnimation04AA0Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation04AA0Records[90] = {
 #include "assets/dryfield_water_tank_animation_04AA0_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation04AA0Records[90];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04AA0_records", _gDryfieldWaterTankAnimation04AA0Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation04AA0Indices[20] = {
 #include "assets/dryfield_water_tank_animation_04AA0_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation04AA0Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04AA0_indices", _gDryfieldWaterTankAnimation04AA0Indices);
 
 AnimationSet gDryfieldWaterTankAnimation04AA0 = {
     _gDryfieldWaterTankAnimation04AA0Records,
@@ -517,21 +718,41 @@ AnimationSet gDryfieldWaterTankAnimation04AA0 = {
     { NULL, _gDryfieldWaterTankAnimation04AA0Bank1, NULL, NULL, _gDryfieldWaterTankAnimation04AA0Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation04C98Bank1[3] = {
 #include "assets/dryfield_water_tank_animation_04C98_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation04C98Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04C98_bank1", _gDryfieldWaterTankAnimation04C98Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation04C98Bank4[34] = {
 #include "assets/dryfield_water_tank_animation_04C98_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation04C98Bank4[34];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04C98_bank4", _gDryfieldWaterTankAnimation04C98Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation04C98Records[63] = {
 #include "assets/dryfield_water_tank_animation_04C98_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation04C98Records[63];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04C98_records", _gDryfieldWaterTankAnimation04C98Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation04C98Indices[20] = {
 #include "assets/dryfield_water_tank_animation_04C98_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation04C98Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04C98_indices", _gDryfieldWaterTankAnimation04C98Indices);
 
 AnimationSet gDryfieldWaterTankAnimation04C98 = {
     _gDryfieldWaterTankAnimation04C98Records,
@@ -539,21 +760,41 @@ AnimationSet gDryfieldWaterTankAnimation04C98 = {
     { NULL, _gDryfieldWaterTankAnimation04C98Bank1, NULL, NULL, _gDryfieldWaterTankAnimation04C98Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation04FECBank1[5] = {
 #include "assets/dryfield_water_tank_animation_04FEC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation04FECBank1[5];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04FEC_bank1", _gDryfieldWaterTankAnimation04FECBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation04FECBank4[58] = {
 #include "assets/dryfield_water_tank_animation_04FEC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation04FECBank4[58];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04FEC_bank4", _gDryfieldWaterTankAnimation04FECBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation04FECRecords[120] = {
 #include "assets/dryfield_water_tank_animation_04FEC_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation04FECRecords[120];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04FEC_records", _gDryfieldWaterTankAnimation04FECRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation04FECIndices[20] = {
 #include "assets/dryfield_water_tank_animation_04FEC_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation04FECIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_04FEC_indices", _gDryfieldWaterTankAnimation04FECIndices);
 
 AnimationSet gDryfieldWaterTankAnimation04FEC = {
     _gDryfieldWaterTankAnimation04FECRecords,
@@ -561,21 +802,41 @@ AnimationSet gDryfieldWaterTankAnimation04FEC = {
     { NULL, _gDryfieldWaterTankAnimation04FECBank1, NULL, NULL, _gDryfieldWaterTankAnimation04FECBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation051E4Bank1[3] = {
 #include "assets/dryfield_water_tank_animation_051E4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation051E4Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_051E4_bank1", _gDryfieldWaterTankAnimation051E4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation051E4Bank4[34] = {
 #include "assets/dryfield_water_tank_animation_051E4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation051E4Bank4[34];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_051E4_bank4", _gDryfieldWaterTankAnimation051E4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation051E4Records[63] = {
 #include "assets/dryfield_water_tank_animation_051E4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation051E4Records[63];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_051E4_records", _gDryfieldWaterTankAnimation051E4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation051E4Indices[20] = {
 #include "assets/dryfield_water_tank_animation_051E4_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation051E4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_051E4_indices", _gDryfieldWaterTankAnimation051E4Indices);
 
 AnimationSet gDryfieldWaterTankAnimation051E4 = {
     _gDryfieldWaterTankAnimation051E4Records,
@@ -583,21 +844,41 @@ AnimationSet gDryfieldWaterTankAnimation051E4 = {
     { NULL, _gDryfieldWaterTankAnimation051E4Bank1, NULL, NULL, _gDryfieldWaterTankAnimation051E4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation05704Bank1[10] = {
 #include "assets/dryfield_water_tank_animation_05704_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation05704Bank1[10];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_05704_bank1", _gDryfieldWaterTankAnimation05704Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation05704Bank4[100] = {
 #include "assets/dryfield_water_tank_animation_05704_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation05704Bank4[100];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_05704_bank4", _gDryfieldWaterTankAnimation05704Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation05704Records[178] = {
 #include "assets/dryfield_water_tank_animation_05704_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation05704Records[178];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_05704_records", _gDryfieldWaterTankAnimation05704Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation05704Indices[20] = {
 #include "assets/dryfield_water_tank_animation_05704_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation05704Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_05704_indices", _gDryfieldWaterTankAnimation05704Indices);
 
 AnimationSet gDryfieldWaterTankAnimation05704 = {
     _gDryfieldWaterTankAnimation05704Records,
@@ -605,21 +886,41 @@ AnimationSet gDryfieldWaterTankAnimation05704 = {
     { NULL, _gDryfieldWaterTankAnimation05704Bank1, NULL, NULL, _gDryfieldWaterTankAnimation05704Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation059E4Bank1[5] = {
 #include "assets/dryfield_water_tank_animation_059E4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation059E4Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_059E4_bank1", _gDryfieldWaterTankAnimation059E4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation059E4Bank4[59] = {
 #include "assets/dryfield_water_tank_animation_059E4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation059E4Bank4[59];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_059E4_bank4", _gDryfieldWaterTankAnimation059E4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation059E4Records[90] = {
 #include "assets/dryfield_water_tank_animation_059E4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation059E4Records[90];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_059E4_records", _gDryfieldWaterTankAnimation059E4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation059E4Indices[20] = {
 #include "assets/dryfield_water_tank_animation_059E4_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation059E4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_059E4_indices", _gDryfieldWaterTankAnimation059E4Indices);
 
 AnimationSet gDryfieldWaterTankAnimation059E4 = {
     _gDryfieldWaterTankAnimation059E4Records,
@@ -627,21 +928,41 @@ AnimationSet gDryfieldWaterTankAnimation059E4 = {
     { NULL, _gDryfieldWaterTankAnimation059E4Bank1, NULL, NULL, _gDryfieldWaterTankAnimation059E4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation05DB8Bank1[8] = {
 #include "assets/dryfield_water_tank_animation_05DB8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation05DB8Bank1[8];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_05DB8_bank1", _gDryfieldWaterTankAnimation05DB8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation05DB8Bank4[84] = {
 #include "assets/dryfield_water_tank_animation_05DB8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation05DB8Bank4[84];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_05DB8_bank4", _gDryfieldWaterTankAnimation05DB8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation05DB8Records[117] = {
 #include "assets/dryfield_water_tank_animation_05DB8_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation05DB8Records[117];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_05DB8_records", _gDryfieldWaterTankAnimation05DB8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation05DB8Indices[20] = {
 #include "assets/dryfield_water_tank_animation_05DB8_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation05DB8Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_05DB8_indices", _gDryfieldWaterTankAnimation05DB8Indices);
 
 AnimationSet gDryfieldWaterTankAnimation05DB8 = {
     _gDryfieldWaterTankAnimation05DB8Records,
@@ -649,21 +970,41 @@ AnimationSet gDryfieldWaterTankAnimation05DB8 = {
     { NULL, _gDryfieldWaterTankAnimation05DB8Bank1, NULL, NULL, _gDryfieldWaterTankAnimation05DB8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation061A8Bank1[7] = {
 #include "assets/dryfield_water_tank_animation_061A8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation061A8Bank1[7];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_061A8_bank1", _gDryfieldWaterTankAnimation061A8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation061A8Bank4[62] = {
 #include "assets/dryfield_water_tank_animation_061A8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation061A8Bank4[62];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_061A8_bank4", _gDryfieldWaterTankAnimation061A8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation061A8Records[149] = {
 #include "assets/dryfield_water_tank_animation_061A8_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation061A8Records[149];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_061A8_records", _gDryfieldWaterTankAnimation061A8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation061A8Indices[20] = {
 #include "assets/dryfield_water_tank_animation_061A8_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation061A8Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_061A8_indices", _gDryfieldWaterTankAnimation061A8Indices);
 
 AnimationSet gDryfieldWaterTankAnimation061A8 = {
     _gDryfieldWaterTankAnimation061A8Records,
@@ -671,21 +1012,41 @@ AnimationSet gDryfieldWaterTankAnimation061A8 = {
     { NULL, _gDryfieldWaterTankAnimation061A8Bank1, NULL, NULL, _gDryfieldWaterTankAnimation061A8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation06514Bank1[7] = {
 #include "assets/dryfield_water_tank_animation_06514_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation06514Bank1[7];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06514_bank1", _gDryfieldWaterTankAnimation06514Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation06514Bank4[74] = {
 #include "assets/dryfield_water_tank_animation_06514_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation06514Bank4[74];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06514_bank4", _gDryfieldWaterTankAnimation06514Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation06514Records[104] = {
 #include "assets/dryfield_water_tank_animation_06514_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation06514Records[104];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06514_records", _gDryfieldWaterTankAnimation06514Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation06514Indices[20] = {
 #include "assets/dryfield_water_tank_animation_06514_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation06514Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06514_indices", _gDryfieldWaterTankAnimation06514Indices);
 
 AnimationSet gDryfieldWaterTankAnimation06514 = {
     _gDryfieldWaterTankAnimation06514Records,
@@ -693,21 +1054,41 @@ AnimationSet gDryfieldWaterTankAnimation06514 = {
     { NULL, _gDryfieldWaterTankAnimation06514Bank1, NULL, NULL, _gDryfieldWaterTankAnimation06514Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation06840Bank1[7] = {
 #include "assets/dryfield_water_tank_animation_06840_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation06840Bank1[7];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06840_bank1", _gDryfieldWaterTankAnimation06840Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation06840Bank4[56] = {
 #include "assets/dryfield_water_tank_animation_06840_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation06840Bank4[56];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06840_bank4", _gDryfieldWaterTankAnimation06840Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation06840Records[106] = {
 #include "assets/dryfield_water_tank_animation_06840_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation06840Records[106];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06840_records", _gDryfieldWaterTankAnimation06840Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation06840Indices[20] = {
 #include "assets/dryfield_water_tank_animation_06840_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation06840Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06840_indices", _gDryfieldWaterTankAnimation06840Indices);
 
 AnimationSet gDryfieldWaterTankAnimation06840 = {
     _gDryfieldWaterTankAnimation06840Records,
@@ -715,21 +1096,41 @@ AnimationSet gDryfieldWaterTankAnimation06840 = {
     { NULL, _gDryfieldWaterTankAnimation06840Bank1, NULL, NULL, _gDryfieldWaterTankAnimation06840Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation06C68Bank1[5] = {
 #include "assets/dryfield_water_tank_animation_06C68_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation06C68Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06C68_bank1", _gDryfieldWaterTankAnimation06C68Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation06C68Bank4[90] = {
 #include "assets/dryfield_water_tank_animation_06C68_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation06C68Bank4[90];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06C68_bank4", _gDryfieldWaterTankAnimation06C68Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation06C68Records[141] = {
 #include "assets/dryfield_water_tank_animation_06C68_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation06C68Records[141];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06C68_records", _gDryfieldWaterTankAnimation06C68Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation06C68Indices[20] = {
 #include "assets/dryfield_water_tank_animation_06C68_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation06C68Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06C68_indices", _gDryfieldWaterTankAnimation06C68Indices);
 
 AnimationSet gDryfieldWaterTankAnimation06C68 = {
     _gDryfieldWaterTankAnimation06C68Records,
@@ -737,21 +1138,41 @@ AnimationSet gDryfieldWaterTankAnimation06C68 = {
     { NULL, _gDryfieldWaterTankAnimation06C68Bank1, NULL, NULL, _gDryfieldWaterTankAnimation06C68Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldWaterTankAnimation06F48Bank1[3] = {
 #include "assets/dryfield_water_tank_animation_06F48_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldWaterTankAnimation06F48Bank1[3];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06F48_bank1", _gDryfieldWaterTankAnimation06F48Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldWaterTankAnimation06F48Bank4[51] = {
 #include "assets/dryfield_water_tank_animation_06F48_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldWaterTankAnimation06F48Bank4[51];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06F48_bank4", _gDryfieldWaterTankAnimation06F48Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldWaterTankAnimation06F48Records[104] = {
 #include "assets/dryfield_water_tank_animation_06F48_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldWaterTankAnimation06F48Records[104];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06F48_records", _gDryfieldWaterTankAnimation06F48Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldWaterTankAnimation06F48Indices[20] = {
 #include "assets/dryfield_water_tank_animation_06F48_indices.inc"
 };
+#else
+static u16 _gDryfieldWaterTankAnimation06F48Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_water_tank_animation_06F48_indices", _gDryfieldWaterTankAnimation06F48Indices);
 
 AnimationSet gDryfieldWaterTankAnimation06F48 = {
     _gDryfieldWaterTankAnimation06F48Records,

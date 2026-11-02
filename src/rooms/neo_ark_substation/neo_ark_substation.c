@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_substation.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -162,26 +163,46 @@ DirectionWarpEntry gNeoArkSubstationWarpEntries[2] = {
 };
 
 /// Room-space face normals for `_gNeoArkSubstationCollisionGrid`, with ONE for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkSubstationCollisionGridNormals[8] = {
 #include "assets/neo_ark_substation_collision_012E4_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkSubstationCollisionGridNormals[8];
+#endif
+PE_ASSET_BIND("neo_ark_substation_collision_012E4_normals", _gNeoArkSubstationCollisionGridNormals);
 
 /// Room-space vertices for `_gNeoArkSubstationCollisionGrid`, in signed game coordinates.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkSubstationCollisionGridVerts[42] = {
 #include "assets/neo_ark_substation_collision_012E4_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkSubstationCollisionGridVerts[42];
+#endif
+PE_ASSET_BIND("neo_ark_substation_collision_012E4_verts", _gNeoArkSubstationCollisionGridVerts);
 
 /// Indexed room floor and wall faces, using surface classes 0, 3 and 4.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkSubstationCollisionGridFaces[25] = {
 #include "assets/neo_ark_substation_collision_012E4_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkSubstationCollisionGridFaces[25];
+#endif
+PE_ASSET_BIND("neo_ark_substation_collision_012E4_faces", _gNeoArkSubstationCollisionGridFaces);
 
 /// Packed cell face-index lists ending in WORLD_COLLISION_GRID_CELL_END.
 ///
 /// Retains all 156 serialized halfwords, including words outside the indexed lists.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkSubstationCollisionGridCells[156] = {
 #include "assets/neo_ark_substation_collision_012E4_cells.inc"
 };
+#else
+static s16 _gNeoArkSubstationCollisionGridCells[156];
+#endif
+PE_ASSET_BIND("neo_ark_substation_collision_012E4_cells", _gNeoArkSubstationCollisionGridCells);
 
 // Bind the generated table's word offsets to this grid's cell-list storage.
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -194,9 +215,14 @@ static s16 _gNeoArkSubstationCollisionGridCells[156] = {
 /// The binding is undefined immediately after that include.
 #define NEO_ARK_SUBSTATION_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkSubstationCollisionGridCells[(halfwordOffset)])
 /// X-major 3-by-4 directory of face-index lists for the room collision grid.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkSubstationCollisionGridTable[12] = {
 #include "assets/neo_ark_substation_collision_012E4_table.inc"
 };
+#else
+static s16* _gNeoArkSubstationCollisionGridTable[12];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_substation_collision_012E4_table", _gNeoArkSubstationCollisionGridTable, _gNeoArkSubstationCollisionGridCells);
 #undef NEO_ARK_SUBSTATION_CELL_FACE_LIST_AT_OFFSET
 
 /// The substation's floor and wall mesh and its 4000-unit XZ collision cells.

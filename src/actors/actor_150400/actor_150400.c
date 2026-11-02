@@ -1,4 +1,5 @@
 #include "actors/actor_150400.h"
+#include "port/asset_bind.h"
 #include "actors/actor_150400.h"
 
 #include <psyz.h>
@@ -74,21 +75,41 @@ static void _actor150400ReloadMainCorridor(void);
 static void _actor150400StartControlRoomMovie(void);
 static void _actor150400SetSlidingModelState(s32 state);
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor150400Model00C44Skeleton[1] = {
 #include "assets/actor_150400_model_00C44_skeleton.inc"
 };
+#else
+static TmdBone _gActor150400Model00C44Skeleton[1];
+#endif
+PE_ASSET_BIND("actor_150400_model_00C44_skeleton", _gActor150400Model00C44Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor150400Model00C44PartVerts[1] = {
 #include "assets/actor_150400_model_00C44_partVerts.inc"
 };
+#else
+static u32 _gActor150400Model00C44PartVerts[1];
+#endif
+PE_ASSET_BIND("actor_150400_model_00C44_partVerts", _gActor150400Model00C44PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor150400Model00C44Verts[34] = {
 #include "assets/actor_150400_model_00C44_verts.inc"
 };
+#else
+static SVECTOR _gActor150400Model00C44Verts[34];
+#endif
+PE_ASSET_BIND("actor_150400_model_00C44_verts", _gActor150400Model00C44Verts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor150400Model00C44Stream[154] = {
 #include "assets/actor_150400_model_00C44_stream.inc"
 };
+#else
+static u32 _gActor150400Model00C44Stream[154];
+#endif
+PE_ASSET_BIND("actor_150400_model_00C44_stream", _gActor150400Model00C44Stream);
 
 static TmdSource _gActor150400Model00C44 = {
     0,

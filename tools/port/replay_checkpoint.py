@@ -597,6 +597,43 @@ def transition_command(debugger, command, result, internal_dict):
     snapshot["display"] = {name: display.GetChildMemberWithName(name).GetValueAsSigned()
                            for name in ("demoScene", "gameMode", "pendingMode")}
     snapshot["deathVariant"] = session.GetChildMemberWithName("deathVariant").GetValueAsSigned()
+    # Keep crash diagnostics usable even when collect() cannot find a player.
+    import lldb
+    snapshot["playerTask"] = session.GetChildMemberWithName("ptrSlots").GetChildAtIndex(3).GetValueAsUnsigned()
+    snapshot["display"].update({name: display.GetChildMemberWithName(name).GetValueAsSigned()
+                                for name in ("displayOwner", "holdState", "holdCount")})
+    combat = target.FindFirstGlobalVariable("gSceneCombatState")
+    snapshot["combat"] = {name: combat.GetChildMemberWithName(name).GetValueAsSigned()
+                          for name in ("actorControl", "battleRefs")}
+    for symbol_name in ("Psyz_PadsOverride.padFrame", "_Psyz_PadsOverride.padFrame"):
+        symbols = target.FindSymbols(symbol_name)
+        if symbols.GetSize():
+            address = symbols.GetContextAtIndex(0).GetSymbol().GetStartAddress().GetLoadAddress(target)
+            error = lldb.SBError()
+            index = target.GetProcess().ReadUnsignedFromMemory(address, 8, error)
+            if error.Success():
+                snapshot["inputSamples"] = index
+                break
+    snapshot["taskLists"] = {}
+    for label, global_name in (("game", "gTaskDefaultList"), ("display", "gDisplayTaskList")):
+        node = target.FindFirstGlobalVariable(global_name).GetChildMemberWithName("next")
+        rows, visited = [], set()
+        while node.GetValueAsUnsigned() and len(rows) < 256:
+            address = node.GetValueAsUnsigned()
+            if address in visited:
+                rows.append({"cycle": address})
+                break
+            visited.add(address)
+            task = node.Dereference()
+            if not task.IsValid() or task.GetError().Fail():
+                rows.append({"unreadable": address})
+                break
+            callback_address = task.GetChildMemberWithName("callback").GetValueAsUnsigned()
+            rows.append({"callback": target.ResolveLoadAddress(callback_address).GetSymbol().GetName() or "",
+                         "state": task.GetChildMemberWithName("state").GetValueAsSigned(),
+                         "address": address})
+            node = task.GetChildMemberWithName("node").GetChildMemberWithName("next")
+        snapshot["taskLists"][label] = rows
     result.AppendMessage("PE2_TRANSITION " + json.dumps(snapshot, sort_keys=True))
 
 

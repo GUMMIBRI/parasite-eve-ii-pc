@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_shrine.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -100,21 +101,41 @@ static TaskDesc _gNeoArkShrinePuzzleSessionTaskDescs[2] = {
 /// overlay load; word comparisons/stores precede signed-halfword CAP transport.
 static s32 _gNeoArkShrineObjectEventVariantKey = NEO_ARK_SHRINE_OBJECT_EVENT_FIRST_KEY;
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gNeoArkShrineModel049E8Skeleton[1] = {
 #include "assets/neo_ark_shrine_model_049E8_skeleton.inc"
 };
+#else
+static TmdBone _gNeoArkShrineModel049E8Skeleton[1];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_model_049E8_skeleton", _gNeoArkShrineModel049E8Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gNeoArkShrineModel049E8PartVerts[1] = {
 #include "assets/neo_ark_shrine_model_049E8_partVerts.inc"
 };
+#else
+static u32 _gNeoArkShrineModel049E8PartVerts[1];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_model_049E8_partVerts", _gNeoArkShrineModel049E8PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkShrineModel049E8Verts[33] = {
 #include "assets/neo_ark_shrine_model_049E8_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkShrineModel049E8Verts[33];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_model_049E8_verts", _gNeoArkShrineModel049E8Verts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gNeoArkShrineModel049E8Stream[106] = {
 #include "assets/neo_ark_shrine_model_049E8_stream.inc"
 };
+#else
+static u32 _gNeoArkShrineModel049E8Stream[106];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_model_049E8_stream", _gNeoArkShrineModel049E8Stream);
 
 static TmdSource _gNeoArkShrineModel049E8 = {
     0,
@@ -128,21 +149,41 @@ static TmdSource _gNeoArkShrineModel049E8 = {
     _gNeoArkShrineModel049E8Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gNeoArkShrineModel04C6CSkeleton[1] = {
 #include "assets/neo_ark_shrine_model_04C6C_skeleton.inc"
 };
+#else
+static TmdBone _gNeoArkShrineModel04C6CSkeleton[1];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_model_04C6C_skeleton", _gNeoArkShrineModel04C6CSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gNeoArkShrineModel04C6CPartVerts[1] = {
 #include "assets/neo_ark_shrine_model_04C6C_partVerts.inc"
 };
+#else
+static u32 _gNeoArkShrineModel04C6CPartVerts[1];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_model_04C6C_partVerts", _gNeoArkShrineModel04C6CPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkShrineModel04C6CVerts[18] = {
 #include "assets/neo_ark_shrine_model_04C6C_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkShrineModel04C6CVerts[18];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_model_04C6C_verts", _gNeoArkShrineModel04C6CVerts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gNeoArkShrineModel04C6CStream[109] = {
 #include "assets/neo_ark_shrine_model_04C6C_stream.inc"
 };
+#else
+static u32 _gNeoArkShrineModel04C6CStream[109];
+#endif
+PE_ASSET_BIND("neo_ark_shrine_model_04C6C_stream", _gNeoArkShrineModel04C6CStream);
 
 static TmdSource _gNeoArkShrineModel04C6C = {
     0,

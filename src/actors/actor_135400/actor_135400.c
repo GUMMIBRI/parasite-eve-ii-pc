@@ -1,4 +1,5 @@
 #include "actors/actor_135400.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -192,21 +193,41 @@ static void _actor135400GaryDouglasTask(Task* task);
 
 #include "assets/characters/gary/head_hat.inc"
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor135400Model071ACSkeleton[1] = {
 #include "assets/actor_135400_model_071AC_skeleton.inc"
 };
+#else
+static TmdBone _gActor135400Model071ACSkeleton[1];
+#endif
+PE_ASSET_BIND("actor_135400_model_071AC_skeleton", _gActor135400Model071ACSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor135400Model071ACPartVerts[1] = {
 #include "assets/actor_135400_model_071AC_partVerts.inc"
 };
+#else
+static u32 _gActor135400Model071ACPartVerts[1];
+#endif
+PE_ASSET_BIND("actor_135400_model_071AC_partVerts", _gActor135400Model071ACPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor135400Model071ACVerts[20] = {
 #include "assets/actor_135400_model_071AC_verts.inc"
 };
+#else
+static SVECTOR _gActor135400Model071ACVerts[20];
+#endif
+PE_ASSET_BIND("actor_135400_model_071AC_verts", _gActor135400Model071ACVerts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor135400Model071ACStream[106] = {
 #include "assets/actor_135400_model_071AC_stream.inc"
 };
+#else
+static u32 _gActor135400Model071ACStream[106];
+#endif
+PE_ASSET_BIND("actor_135400_model_071AC_stream", _gActor135400Model071ACStream);
 
 static TmdSource _gActor135400Model071AC = {
     0,

@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_general_store.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -110,27 +111,47 @@ DirectionWarpEntry gDryfieldNightGeneralStoreWarpEntries[DRYFIELD_NIGHT_GENERAL_
 };
 
 /// Collision-grid normal pool, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGeneralStoreCollisionGridNormals[13] = {
 #include "assets/dryfield_night_general_store_collision_01EC4_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGeneralStoreCollisionGridNormals[13];
+#endif
+PE_ASSET_BIND("dryfield_night_general_store_collision_01EC4_normals", _gDryfieldNightGeneralStoreCollisionGridNormals);
 
 /// Collision-grid vertex pool in signed room-local game coordinates.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGeneralStoreCollisionGridVerts[143] = {
 #include "assets/dryfield_night_general_store_collision_01EC4_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGeneralStoreCollisionGridVerts[143];
+#endif
+PE_ASSET_BIND("dryfield_night_general_store_collision_01EC4_verts", _gDryfieldNightGeneralStoreCollisionGridVerts);
 
 /// Indexed collision-grid faces with room-local surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightGeneralStoreCollisionGridFaces[88] = {
 #include "assets/dryfield_night_general_store_collision_01EC4_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightGeneralStoreCollisionGridFaces[88];
+#endif
+PE_ASSET_BIND("dryfield_night_general_store_collision_01EC4_faces", _gDryfieldNightGeneralStoreCollisionGridFaces);
 
 /// Packed signed face-index lists for the nine collision-grid cells.
 ///
 /// Each list ends with `WORLD_COLLISION_GRID_CELL_END`; the table points into
 /// this complete 310-halfword asset span, including zeros outside the lists.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightGeneralStoreCollisionGridCells[310] = {
 #include "assets/dryfield_night_general_store_collision_01EC4_cells.inc"
 };
+#else
+static s16 _gDryfieldNightGeneralStoreCollisionGridCells[310];
+#endif
+PE_ASSET_BIND("dryfield_night_general_store_collision_01EC4_cells", _gDryfieldNightGeneralStoreCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -141,9 +162,14 @@ static s16 _gDryfieldNightGeneralStoreCollisionGridCells[310] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_GENERAL_STORE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightGeneralStoreCollisionGridCells[(halfwordOffset)])
 /// X-major 3-by-3 cell directory into the collision grid's face-index pool.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightGeneralStoreCollisionGridTable[9] = {
 #include "assets/dryfield_night_general_store_collision_01EC4_table.inc"
 };
+#else
+static s16* _gDryfieldNightGeneralStoreCollisionGridTable[9];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_general_store_collision_01EC4_table", _gDryfieldNightGeneralStoreCollisionGridTable, _gDryfieldNightGeneralStoreCollisionGridCells);
 #undef DRYFIELD_NIGHT_GENERAL_STORE_CELL_FACE_LIST_AT_OFFSET
 
 /// Room 1's collision mesh and XZ face-selection grid.

@@ -1,4 +1,5 @@
 #include "types.h"
+#include "port/asset_bind.h"
 
 enum {
     MINE_CAVERN_FIRST_SCENE_REQUEST_IDLE     = 0,
@@ -105,25 +106,50 @@ static TaskDesc _gMineCavernTargetEffectsTaskDesc = {
     .data     = { .value = 0 }
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gMineCavernModel10F60Skeleton[1] = {
 #include "assets/mine_cavern_model_10F60_skeleton.inc"
 };
+#else
+static TmdBone _gMineCavernModel10F60Skeleton[1];
+#endif
+PE_ASSET_BIND("mine_cavern_model_10F60_skeleton", _gMineCavernModel10F60Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gMineCavernModel10F60PartVerts[1] = {
 #include "assets/mine_cavern_model_10F60_partVerts.inc"
 };
+#else
+static u32 _gMineCavernModel10F60PartVerts[1];
+#endif
+PE_ASSET_BIND("mine_cavern_model_10F60_partVerts", _gMineCavernModel10F60PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineCavernModel10F60Verts[20] = {
 #include "assets/mine_cavern_model_10F60_verts.inc"
 };
+#else
+static SVECTOR _gMineCavernModel10F60Verts[20];
+#endif
+PE_ASSET_BIND("mine_cavern_model_10F60_verts", _gMineCavernModel10F60Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineCavernModel10F60Normals[11] = {
 #include "assets/mine_cavern_model_10F60_normals.inc"
 };
+#else
+static SVECTOR _gMineCavernModel10F60Normals[11];
+#endif
+PE_ASSET_BIND("mine_cavern_model_10F60_normals", _gMineCavernModel10F60Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gMineCavernModel10F60Stream[104] = {
 #include "assets/mine_cavern_model_10F60_stream.inc"
 };
+#else
+static u32 _gMineCavernModel10F60Stream[104];
+#endif
+PE_ASSET_BIND("mine_cavern_model_10F60_stream", _gMineCavernModel10F60Stream);
 
 static TmdSource _gMineCavernModel10F60 = {
     0,
@@ -137,25 +163,50 @@ static TmdSource _gMineCavernModel10F60 = {
     _gMineCavernModel10F60Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gMineCavernModel11244Skeleton[1] = {
 #include "assets/mine_cavern_model_11244_skeleton.inc"
 };
+#else
+static TmdBone _gMineCavernModel11244Skeleton[1];
+#endif
+PE_ASSET_BIND("mine_cavern_model_11244_skeleton", _gMineCavernModel11244Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gMineCavernModel11244PartVerts[1] = {
 #include "assets/mine_cavern_model_11244_partVerts.inc"
 };
+#else
+static u32 _gMineCavernModel11244PartVerts[1];
+#endif
+PE_ASSET_BIND("mine_cavern_model_11244_partVerts", _gMineCavernModel11244PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineCavernModel11244Verts[20] = {
 #include "assets/mine_cavern_model_11244_verts.inc"
 };
+#else
+static SVECTOR _gMineCavernModel11244Verts[20];
+#endif
+PE_ASSET_BIND("mine_cavern_model_11244_verts", _gMineCavernModel11244Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gMineCavernModel11244Normals[11] = {
 #include "assets/mine_cavern_model_11244_normals.inc"
 };
+#else
+static SVECTOR _gMineCavernModel11244Normals[11];
+#endif
+PE_ASSET_BIND("mine_cavern_model_11244_normals", _gMineCavernModel11244Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gMineCavernModel11244Stream[174] = {
 #include "assets/mine_cavern_model_11244_stream.inc"
 };
+#else
+static u32 _gMineCavernModel11244Stream[174];
+#endif
+PE_ASSET_BIND("mine_cavern_model_11244_stream", _gMineCavernModel11244Stream);
 
 static TmdSource _gMineCavernModel11244 = {
     0,

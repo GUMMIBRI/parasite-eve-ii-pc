@@ -1,4 +1,5 @@
 #include "rooms/shelter_r49.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -78,21 +79,41 @@ DirectionWarpEntry gShelterR49WarpEntries[1] = {
     { { { .word = SHELTER_R49_ARRIVAL_YAW }, 0, -10000, 0 }, { 0, 0, 0, 0 }, { { .word = SHELTER_R49_ARRIVAL_YAW }, 0, 0, 0 }, { 0, 0, 0, 0 }, DIRECTION_WARP_SOUND_NONE, DIRECTION_WARP_SOUND_NONE, DIRECTION_WARP_SOUND_NONE, SHELTER_R49_ARRIVAL_VIEW, DIRECTION_WARP_FLAG_NONE, DIRECTION_WARP_MAP_FLAG_NONE },
 };
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterR49CollisionGridNormals[1] = {
 #include "assets/shelter_r49_collision_004EC_normals.inc"
 };
+#else
+static SVECTOR _gShelterR49CollisionGridNormals[1];
+#endif
+PE_ASSET_BIND("shelter_r49_collision_004EC_normals", _gShelterR49CollisionGridNormals);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterR49CollisionGridVerts[4] = {
 #include "assets/shelter_r49_collision_004EC_verts.inc"
 };
+#else
+static SVECTOR _gShelterR49CollisionGridVerts[4];
+#endif
+PE_ASSET_BIND("shelter_r49_collision_004EC_verts", _gShelterR49CollisionGridVerts);
 
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterR49CollisionGridFaces[1] = {
 #include "assets/shelter_r49_collision_004EC_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterR49CollisionGridFaces[1];
+#endif
+PE_ASSET_BIND("shelter_r49_collision_004EC_faces", _gShelterR49CollisionGridFaces);
 
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterR49CollisionGridCells[2] = {
 #include "assets/shelter_r49_collision_004EC_cells.inc"
 };
+#else
+static s16 _gShelterR49CollisionGridCells[2];
+#endif
+PE_ASSET_BIND("shelter_r49_collision_004EC_cells", _gShelterR49CollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
 ///
@@ -102,9 +123,14 @@ static s16 _gShelterR49CollisionGridCells[2] = {
 /// valid while this room is loaded; lists end at `WORLD_COLLISION_GRID_CELL_END`.
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_R49_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterR49CollisionGridCells[(halfwordOffset)])
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterR49CollisionGridTable[SHELTER_R49_GRID_CELL_COUNT_X * SHELTER_R49_GRID_CELL_COUNT_Z] = {
 #include "assets/shelter_r49_collision_004EC_table.inc"
 };
+#else
+static s16* _gShelterR49CollisionGridTable[1];
+#endif
+PE_ASSET_BIND_AUX("shelter_r49_collision_004EC_table", _gShelterR49CollisionGridTable, _gShelterR49CollisionGridCells);
 #undef SHELTER_R49_CELL_FACE_LIST_AT_OFFSET
 
 /// Floor quad at Y=0 spanning X/Z -4000..4000, with surface class 1.

@@ -1,4 +1,5 @@
 #include "rooms/shelter_b3_dumping_hole.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -58,25 +59,50 @@ static TaskMessageEntry _gShelterB3DumpingHoleRoomMessages[6] = {
     { TASK_MESSAGE_TABLE_END, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB3DumpingHoleModel0A0CCSkeleton[1] = {
 #include "assets/shelter_b3_dumping_hole_model_0A0CC_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB3DumpingHoleModel0A0CCSkeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A0CC_skeleton", _gShelterB3DumpingHoleModel0A0CCSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB3DumpingHoleModel0A0CCPartVerts[1] = {
 #include "assets/shelter_b3_dumping_hole_model_0A0CC_partVerts.inc"
 };
+#else
+static u32 _gShelterB3DumpingHoleModel0A0CCPartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A0CC_partVerts", _gShelterB3DumpingHoleModel0A0CCPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3DumpingHoleModel0A0CCVerts[9] = {
 #include "assets/shelter_b3_dumping_hole_model_0A0CC_verts.inc"
 };
+#else
+static SVECTOR _gShelterB3DumpingHoleModel0A0CCVerts[9];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A0CC_verts", _gShelterB3DumpingHoleModel0A0CCVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3DumpingHoleModel0A0CCNormals[15] = {
 #include "assets/shelter_b3_dumping_hole_model_0A0CC_normals.inc"
 };
+#else
+static SVECTOR _gShelterB3DumpingHoleModel0A0CCNormals[15];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A0CC_normals", _gShelterB3DumpingHoleModel0A0CCNormals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB3DumpingHoleModel0A0CCStream[90] = {
 #include "assets/shelter_b3_dumping_hole_model_0A0CC_stream.inc"
 };
+#else
+static u32 _gShelterB3DumpingHoleModel0A0CCStream[90];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A0CC_stream", _gShelterB3DumpingHoleModel0A0CCStream);
 
 TmdSource gShelterB3DumpingHoleModel0A0CC = {
     0,
@@ -90,25 +116,50 @@ TmdSource gShelterB3DumpingHoleModel0A0CC = {
     _gShelterB3DumpingHoleModel0A0CCStream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB3DumpingHoleModel0A348Skeleton[1] = {
 #include "assets/shelter_b3_dumping_hole_model_0A348_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB3DumpingHoleModel0A348Skeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A348_skeleton", _gShelterB3DumpingHoleModel0A348Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB3DumpingHoleModel0A348PartVerts[1] = {
 #include "assets/shelter_b3_dumping_hole_model_0A348_partVerts.inc"
 };
+#else
+static u32 _gShelterB3DumpingHoleModel0A348PartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A348_partVerts", _gShelterB3DumpingHoleModel0A348PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3DumpingHoleModel0A348Verts[9] = {
 #include "assets/shelter_b3_dumping_hole_model_0A348_verts.inc"
 };
+#else
+static SVECTOR _gShelterB3DumpingHoleModel0A348Verts[9];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A348_verts", _gShelterB3DumpingHoleModel0A348Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3DumpingHoleModel0A348Normals[16] = {
 #include "assets/shelter_b3_dumping_hole_model_0A348_normals.inc"
 };
+#else
+static SVECTOR _gShelterB3DumpingHoleModel0A348Normals[16];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A348_normals", _gShelterB3DumpingHoleModel0A348Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB3DumpingHoleModel0A348Stream[90] = {
 #include "assets/shelter_b3_dumping_hole_model_0A348_stream.inc"
 };
+#else
+static u32 _gShelterB3DumpingHoleModel0A348Stream[90];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A348_stream", _gShelterB3DumpingHoleModel0A348Stream);
 
 TmdSource gShelterB3DumpingHoleModel0A348 = {
     0,
@@ -122,25 +173,50 @@ TmdSource gShelterB3DumpingHoleModel0A348 = {
     _gShelterB3DumpingHoleModel0A348Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gShelterB3DumpingHoleModel0A5ECSkeleton[1] = {
 #include "assets/shelter_b3_dumping_hole_model_0A5EC_skeleton.inc"
 };
+#else
+static TmdBone _gShelterB3DumpingHoleModel0A5ECSkeleton[1];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A5EC_skeleton", _gShelterB3DumpingHoleModel0A5ECSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB3DumpingHoleModel0A5ECPartVerts[1] = {
 #include "assets/shelter_b3_dumping_hole_model_0A5EC_partVerts.inc"
 };
+#else
+static u32 _gShelterB3DumpingHoleModel0A5ECPartVerts[1];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A5EC_partVerts", _gShelterB3DumpingHoleModel0A5ECPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3DumpingHoleModel0A5ECVerts[11] = {
 #include "assets/shelter_b3_dumping_hole_model_0A5EC_verts.inc"
 };
+#else
+static SVECTOR _gShelterB3DumpingHoleModel0A5ECVerts[11];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A5EC_verts", _gShelterB3DumpingHoleModel0A5ECVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB3DumpingHoleModel0A5ECNormals[19] = {
 #include "assets/shelter_b3_dumping_hole_model_0A5EC_normals.inc"
 };
+#else
+static SVECTOR _gShelterB3DumpingHoleModel0A5ECNormals[19];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A5EC_normals", _gShelterB3DumpingHoleModel0A5ECNormals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gShelterB3DumpingHoleModel0A5ECStream[114] = {
 #include "assets/shelter_b3_dumping_hole_model_0A5EC_stream.inc"
 };
+#else
+static u32 _gShelterB3DumpingHoleModel0A5ECStream[114];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_model_0A5EC_stream", _gShelterB3DumpingHoleModel0A5ECStream);
 
 TmdSource gShelterB3DumpingHoleModel0A5EC = {
     0,
@@ -154,21 +230,41 @@ TmdSource gShelterB3DumpingHoleModel0A5EC = {
     _gShelterB3DumpingHoleModel0A5ECStream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gShelterB3DumpingHoleAnimation0AAB4Bank1[6] = {
 #include "assets/shelter_b3_dumping_hole_animation_0AAB4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gShelterB3DumpingHoleAnimation0AAB4Bank1[6];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0AAB4_bank1", _gShelterB3DumpingHoleAnimation0AAB4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gShelterB3DumpingHoleAnimation0AAB4Bank4[46] = {
 #include "assets/shelter_b3_dumping_hole_animation_0AAB4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gShelterB3DumpingHoleAnimation0AAB4Bank4[46];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0AAB4_bank4", _gShelterB3DumpingHoleAnimation0AAB4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gShelterB3DumpingHoleAnimation0AAB4Records[109] = {
 #include "assets/shelter_b3_dumping_hole_animation_0AAB4_records.inc"
 };
+#else
+static AnimationRecord _gShelterB3DumpingHoleAnimation0AAB4Records[109];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0AAB4_records", _gShelterB3DumpingHoleAnimation0AAB4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gShelterB3DumpingHoleAnimation0AAB4Indices[20] = {
 #include "assets/shelter_b3_dumping_hole_animation_0AAB4_indices.inc"
 };
+#else
+static u16 _gShelterB3DumpingHoleAnimation0AAB4Indices[20];
+#endif
+PE_ASSET_BIND("shelter_b3_dumping_hole_animation_0AAB4_indices", _gShelterB3DumpingHoleAnimation0AAB4Indices);
 
 static AnimationSet _gShelterB3DumpingHoleAnimation0AAB4 = {
     _gShelterB3DumpingHoleAnimation0AAB4Records,

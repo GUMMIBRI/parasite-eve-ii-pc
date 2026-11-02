@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_underpass.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -322,26 +323,46 @@ DirectionWarpEntry gDryfieldNightUnderpassWarpEntries[3] = {
 };
 
 /// Twelve room-space collision normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightUnderpassCollisionGridNormals[12] = {
 #include "assets/dryfield_night_underpass_collision_01114_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightUnderpassCollisionGridNormals[12];
+#endif
+PE_ASSET_BIND("dryfield_night_underpass_collision_01114_normals", _gDryfieldNightUnderpassCollisionGridNormals);
 
 /// Seventy mesh vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightUnderpassCollisionGridVerts[70] = {
 #include "assets/dryfield_night_underpass_collision_01114_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightUnderpassCollisionGridVerts[70];
+#endif
+PE_ASSET_BIND("dryfield_night_underpass_collision_01114_verts", _gDryfieldNightUnderpassCollisionGridVerts);
 
 /// Forty-six collision faces using surface classes 0, 2, 3 and 4.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightUnderpassCollisionGridFaces[46] = {
 #include "assets/dryfield_night_underpass_collision_01114_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightUnderpassCollisionGridFaces[46];
+#endif
+PE_ASSET_BIND("dryfield_night_underpass_collision_01114_faces", _gDryfieldNightUnderpassCollisionGridFaces);
 
 /// Twenty-four signed face-index lists, each ending in WORLD_COLLISION_GRID_CELL_END.
 ///
 /// The 346-halfword asset span also retains unused zeros between lists.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightUnderpassCollisionGridCells[346] = {
 #include "assets/dryfield_night_underpass_collision_01114_cells.inc"
 };
+#else
+static s16 _gDryfieldNightUnderpassCollisionGridCells[346];
+#endif
+PE_ASSET_BIND("dryfield_night_underpass_collision_01114_cells", _gDryfieldNightUnderpassCollisionGridCells);
 
 // The generated table supplies halfword offsets into this grid's cell-list pool.
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -353,9 +374,14 @@ static s16 _gDryfieldNightUnderpassCollisionGridCells[346] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_UNDERPASS_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightUnderpassCollisionGridCells[(halfwordOffset)])
 /// The six-by-four X-major directory of cell face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightUnderpassCollisionGridTable[24] = {
 #include "assets/dryfield_night_underpass_collision_01114_table.inc"
 };
+#else
+static s16* _gDryfieldNightUnderpassCollisionGridTable[24];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_underpass_collision_01114_table", _gDryfieldNightUnderpassCollisionGridTable, _gDryfieldNightUnderpassCollisionGridCells);
 #undef DRYFIELD_NIGHT_UNDERPASS_CELL_FACE_LIST_AT_OFFSET
 
 /// The collision mesh shared by nighttime underpass rooms 1..6.

@@ -1,4 +1,5 @@
 #include "rooms/shelter_b1_transfer_tunnel.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -163,24 +164,44 @@ DirectionWarpEntry gShelterB1TransferTunnelWarpEntries[2] = {
 };
 
 /// Room-axis wall, ceiling and floor normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1TransferTunnelRoomCollisionNormals[6] = {
 #include "assets/shelter_b1_transfer_tunnel_collision_0552C_normals.inc"
 };
+#else
+static SVECTOR _gShelterB1TransferTunnelRoomCollisionNormals[6];
+#endif
+PE_ASSET_BIND("shelter_b1_transfer_tunnel_collision_0552C_normals", _gShelterB1TransferTunnelRoomCollisionNormals);
 
 /// Collision-mesh vertices in signed world-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1TransferTunnelRoomCollisionVerts[12] = {
 #include "assets/shelter_b1_transfer_tunnel_collision_0552C_verts.inc"
 };
+#else
+static SVECTOR _gShelterB1TransferTunnelRoomCollisionVerts[12];
+#endif
+PE_ASSET_BIND("shelter_b1_transfer_tunnel_collision_0552C_verts", _gShelterB1TransferTunnelRoomCollisionVerts);
 
 /// Six quads: walls and ceiling in surface class 0, floor in class 1.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB1TransferTunnelRoomCollisionFaces[6] = {
 #include "assets/shelter_b1_transfer_tunnel_collision_0552C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB1TransferTunnelRoomCollisionFaces[6];
+#endif
+PE_ASSET_BIND("shelter_b1_transfer_tunnel_collision_0552C_faces", _gShelterB1TransferTunnelRoomCollisionFaces);
 
 /// Six terminated face-index lists concatenated in X-major cell order.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB1TransferTunnelRoomCollisionCells[24] = {
 #include "assets/shelter_b1_transfer_tunnel_collision_0552C_cells.inc"
 };
+#else
+static s16 _gShelterB1TransferTunnelRoomCollisionCells[24];
+#endif
+PE_ASSET_BIND("shelter_b1_transfer_tunnel_collision_0552C_cells", _gShelterB1TransferTunnelRoomCollisionCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -192,9 +213,14 @@ static s16 _gShelterB1TransferTunnelRoomCollisionCells[24] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_TRANSFER_TUNNEL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1TransferTunnelRoomCollisionCells[(halfwordOffset)])
 /// The 3-by-2 cell directory; each entry borrows a list ending at -1.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB1TransferTunnelRoomCollisionTable[6] = {
 #include "assets/shelter_b1_transfer_tunnel_collision_0552C_table.inc"
 };
+#else
+static s16* _gShelterB1TransferTunnelRoomCollisionTable[6];
+#endif
+PE_ASSET_BIND_AUX("shelter_b1_transfer_tunnel_collision_0552C_table", _gShelterB1TransferTunnelRoomCollisionTable, _gShelterB1TransferTunnelRoomCollisionCells);
 #undef SHELTER_B1_TRANSFER_TUNNEL_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB1TransferTunnelRoomCollision = { NULL, _gShelterB1TransferTunnelRoomCollisionNormals, _gShelterB1TransferTunnelRoomCollisionVerts, _gShelterB1TransferTunnelRoomCollisionFaces, _gShelterB1TransferTunnelRoomCollisionTable, 642, 1736, 3, 2, 4000, ARRAY_SIZE(_gShelterB1TransferTunnelRoomCollisionFaces) };

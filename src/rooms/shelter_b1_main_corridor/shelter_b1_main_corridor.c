@@ -1,4 +1,5 @@
 #include "rooms/shelter_b1_main_corridor.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -266,24 +267,44 @@ enum {
 };
 
 /// Collision-face normals in room axes, with ONE (4096) for unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1MainCorridorCollisionGridNormals[34] = {
 #include "assets/shelter_b1_main_corridor_collision_06B30_normals.inc"
 };
+#else
+static SVECTOR _gShelterB1MainCorridorCollisionGridNormals[34];
+#endif
+PE_ASSET_BIND("shelter_b1_main_corridor_collision_06B30_normals", _gShelterB1MainCorridorCollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units, indexed by the face pool.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB1MainCorridorCollisionGridVerts[172] = {
 #include "assets/shelter_b1_main_corridor_collision_06B30_verts.inc"
 };
+#else
+static SVECTOR _gShelterB1MainCorridorCollisionGridVerts[172];
+#endif
+PE_ASSET_BIND("shelter_b1_main_corridor_collision_06B30_verts", _gShelterB1MainCorridorCollisionGridVerts);
 
 /// Indexed room collision faces using blocking, pass-through and floor classes 0..2.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB1MainCorridorCollisionGridFaces[82] = {
 #include "assets/shelter_b1_main_corridor_collision_06B30_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB1MainCorridorCollisionGridFaces[82];
+#endif
+PE_ASSET_BIND("shelter_b1_main_corridor_collision_06B30_faces", _gShelterB1MainCorridorCollisionGridFaces);
 
 /// Face-index storage for eighteen lists, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB1MainCorridorCollisionGridCells[392] = {
 #include "assets/shelter_b1_main_corridor_collision_06B30_cells.inc"
 };
+#else
+static s16 _gShelterB1MainCorridorCollisionGridCells[392];
+#endif
+PE_ASSET_BIND("shelter_b1_main_corridor_collision_06B30_cells", _gShelterB1MainCorridorCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -295,9 +316,14 @@ static s16 _gShelterB1MainCorridorCollisionGridCells[392] = {
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_MAIN_CORRIDOR_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1MainCorridorCollisionGridCells[(halfwordOffset)])
 /// Cell lists in X-major order, indexed as x * cellCountZ + z.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB1MainCorridorCollisionGridTable[SHELTER_B1_MAIN_CORRIDOR_GRID_CELL_COUNT_X * SHELTER_B1_MAIN_CORRIDOR_GRID_CELL_COUNT_Z] = {
 #include "assets/shelter_b1_main_corridor_collision_06B30_table.inc"
 };
+#else
+static s16* _gShelterB1MainCorridorCollisionGridTable[18];
+#endif
+PE_ASSET_BIND_AUX("shelter_b1_main_corridor_collision_06B30_table", _gShelterB1MainCorridorCollisionGridTable, _gShelterB1MainCorridorCollisionGridCells);
 #undef SHELTER_B1_MAIN_CORRIDOR_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB1MainCorridorCollisionGrid = {

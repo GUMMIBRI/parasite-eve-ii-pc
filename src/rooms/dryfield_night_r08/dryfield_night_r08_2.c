@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_r08.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -131,24 +132,44 @@ DirectionWarpEntry gDryfieldNightR08WarpEntries[1] = {
 };
 
 /// Grid-local face normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightR08CollisionGridNormals[34] = {
 #include "assets/dryfield_night_r08_collision_03EB4_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightR08CollisionGridNormals[34];
+#endif
+PE_ASSET_BIND("dryfield_night_r08_collision_03EB4_normals", _gDryfieldNightR08CollisionGridNormals);
 
 /// Grid-local vertices in signed integer world units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightR08CollisionGridVerts[172] = {
 #include "assets/dryfield_night_r08_collision_03EB4_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightR08CollisionGridVerts[172];
+#endif
+PE_ASSET_BIND("dryfield_night_r08_collision_03EB4_verts", _gDryfieldNightR08CollisionGridVerts);
 
 /// Indexed collision faces using surface classes 0, 1 and 2.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightR08CollisionGridFaces[82] = {
 #include "assets/dryfield_night_r08_collision_03EB4_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightR08CollisionGridFaces[82];
+#endif
+PE_ASSET_BIND("dryfield_night_r08_collision_03EB4_faces", _gDryfieldNightR08CollisionGridFaces);
 
 /// Signed face-index lists ending in -1; retained inter-list halfwords are unused.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightR08CollisionGridCells[392] = {
 #include "assets/dryfield_night_r08_collision_03EB4_cells.inc"
 };
+#else
+static s16 _gDryfieldNightR08CollisionGridCells[392];
+#endif
+PE_ASSET_BIND("dryfield_night_r08_collision_03EB4_cells", _gDryfieldNightR08CollisionGridCells);
 
 /// Asset-initializer binding: a halfword index selects a cell list in this grid.
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -160,9 +181,14 @@ static s16 _gDryfieldNightR08CollisionGridCells[392] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_R08_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightR08CollisionGridCells[(halfwordOffset)])
 /// X-major pointers to the 3 by 6 grid's face-index lists.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightR08CollisionGridTable[18] = {
 #include "assets/dryfield_night_r08_collision_03EB4_table.inc"
 };
+#else
+static s16* _gDryfieldNightR08CollisionGridTable[18];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_r08_collision_03EB4_table", _gDryfieldNightR08CollisionGridTable, _gDryfieldNightR08CollisionGridCells);
 #undef DRYFIELD_NIGHT_R08_CELL_FACE_LIST_AT_OFFSET
 
 /// Room 8's collision mesh and 3 by 6 XZ index of 4000-unit square cells.

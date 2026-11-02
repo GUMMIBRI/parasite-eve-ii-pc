@@ -1,4 +1,5 @@
 #include "rooms/shelter_b2_pod_bottom.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -131,24 +132,44 @@ DirectionWarpEntry gShelterB2PodBottomWarpEntries[1] = {
 };
 
 /// Room-space face normals for the pod-bottom collision grid, with ONE as unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2PodBottomCollisionGridNormals[40] = {
 #include "assets/shelter_b2_pod_bottom_collision_0559C_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2PodBottomCollisionGridNormals[40];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_collision_0559C_normals", _gShelterB2PodBottomCollisionGridNormals);
 
 /// Room-space vertices for the pod-bottom collision grid, in signed game units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2PodBottomCollisionGridVerts[132] = {
 #include "assets/shelter_b2_pod_bottom_collision_0559C_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2PodBottomCollisionGridVerts[132];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_collision_0559C_verts", _gShelterB2PodBottomCollisionGridVerts);
 
 /// Indexed collision faces using the room's surface classes 0..3.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB2PodBottomCollisionGridFaces[88] = {
 #include "assets/shelter_b2_pod_bottom_collision_0559C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB2PodBottomCollisionGridFaces[88];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_collision_0559C_faces", _gShelterB2PodBottomCollisionGridFaces);
 
 /// Signed face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB2PodBottomCollisionGridCells[498] = {
 #include "assets/shelter_b2_pod_bottom_collision_0559C_cells.inc"
 };
+#else
+static s16 _gShelterB2PodBottomCollisionGridCells[498];
+#endif
+PE_ASSET_BIND("shelter_b2_pod_bottom_collision_0559C_cells", _gShelterB2PodBottomCollisionGridCells);
 
 /// Resolves a generated cell-directory entry's halfword offset to its face list.
 ///
@@ -159,9 +180,14 @@ static s16 _gShelterB2PodBottomCollisionGridCells[498] = {
 /// Defined only around this grid's table include; returns a borrowed s16*.
 #define SHELTER_B2_POD_BOTTOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB2PodBottomCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory: entry x * cellCountZ + z selects a terminated face list.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB2PodBottomCollisionGridTable[SHELTER_B2_POD_BOTTOM_COLLISION_GRID_CELL_COUNT_X * SHELTER_B2_POD_BOTTOM_COLLISION_GRID_CELL_COUNT_Z] = {
 #include "assets/shelter_b2_pod_bottom_collision_0559C_table.inc"
 };
+#else
+static s16* _gShelterB2PodBottomCollisionGridTable[35];
+#endif
+PE_ASSET_BIND_AUX("shelter_b2_pod_bottom_collision_0559C_table", _gShelterB2PodBottomCollisionGridTable, _gShelterB2PodBottomCollisionGridCells);
 #undef SHELTER_B2_POD_BOTTOM_CELL_FACE_LIST_AT_OFFSET
 
 /// The pod-bottom room's collision mesh and 5-by-7 XZ spatial index.

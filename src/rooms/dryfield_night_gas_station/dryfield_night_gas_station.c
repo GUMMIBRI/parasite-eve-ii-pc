@@ -1,4 +1,5 @@
 #include "rooms/dryfield_night_gas_station.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -315,24 +316,44 @@ static EvsCommand _gDryfieldNightGasStationJerryCanSkipScript[9] = {
 };
 
 /// Outward room-space normals of the cutscene obstacle's four walls; ONE is unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGasStationCompanionWaitingCollisionGridNormals[4] = {
 #include "assets/dryfield_night_gas_station_collision_06DB4_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGasStationCompanionWaitingCollisionGridNormals[4];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_06DB4_normals", _gDryfieldNightGasStationCompanionWaitingCollisionGridNormals);
 
 /// Corners of the obstacle box at X 13620..13931, Y -1823..50, Z -312..301.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGasStationCompanionWaitingCollisionGridVerts[8] = {
 #include "assets/dryfield_night_gas_station_collision_06DB4_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGasStationCompanionWaitingCollisionGridVerts[8];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_06DB4_verts", _gDryfieldNightGasStationCompanionWaitingCollisionGridVerts);
 
 /// Four vertical wall quads using blocking surface class zero, with no top or bottom.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightGasStationCompanionWaitingCollisionGridFaces[4] = {
 #include "assets/dryfield_night_gas_station_collision_06DB4_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightGasStationCompanionWaitingCollisionGridFaces[4];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_06DB4_faces", _gDryfieldNightGasStationCompanionWaitingCollisionGridFaces);
 
 /// One cell's four face IDs followed by WORLD_COLLISION_GRID_CELL_END and a retained unused zero.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightGasStationCompanionWaitingCollisionGridCells[6] = {
 #include "assets/dryfield_night_gas_station_collision_06DB4_cells.inc"
 };
+#else
+static s16 _gDryfieldNightGasStationCompanionWaitingCollisionGridCells[6];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_06DB4_cells", _gDryfieldNightGasStationCompanionWaitingCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -343,9 +364,14 @@ static s16 _gDryfieldNightGasStationCompanionWaitingCollisionGridCells[6] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_GAS_STATION_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightGasStationCompanionWaitingCollisionGridCells[(halfwordOffset)])
 /// Directory of the obstacle template's single XZ cell.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightGasStationCompanionWaitingCollisionGridTable[1] = {
 #include "assets/dryfield_night_gas_station_collision_06DB4_table.inc"
 };
+#else
+static s16* _gDryfieldNightGasStationCompanionWaitingCollisionGridTable[1];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_gas_station_collision_06DB4_table", _gDryfieldNightGasStationCompanionWaitingCollisionGridTable, _gDryfieldNightGasStationCompanionWaitingCollisionGridCells);
 #undef DRYFIELD_NIGHT_GAS_STATION_CELL_FACE_LIST_AT_OFFSET
 
 /// Collision-source box enclosing the companion's stationary waiting placement.
@@ -368,21 +394,41 @@ static WorldCollisionGrid _gDryfieldNightGasStationCompanionWaitingCollisionGrid
     .faceCount   = ARRAY_SIZE(_gDryfieldNightGasStationCompanionWaitingCollisionGridFaces),
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation070B4Bank1[6] = {
 #include "assets/dryfield_night_gas_station_animation_070B4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation070B4Bank1[6];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_070B4_bank1", _gDryfieldNightGasStationAnimation070B4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation070B4Bank4[46] = {
 #include "assets/dryfield_night_gas_station_animation_070B4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation070B4Bank4[46];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_070B4_bank4", _gDryfieldNightGasStationAnimation070B4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation070B4Records[109] = {
 #include "assets/dryfield_night_gas_station_animation_070B4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation070B4Records[109];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_070B4_records", _gDryfieldNightGasStationAnimation070B4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation070B4Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_070B4_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation070B4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_070B4_indices", _gDryfieldNightGasStationAnimation070B4Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation070B4 = {
     _gDryfieldNightGasStationAnimation070B4Records,
@@ -390,21 +436,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation070B4 = {
     { NULL, _gDryfieldNightGasStationAnimation070B4Bank1, NULL, NULL, _gDryfieldNightGasStationAnimation070B4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation073A4Bank1[5] = {
 #include "assets/dryfield_night_gas_station_animation_073A4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation073A4Bank1[5];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_073A4_bank1", _gDryfieldNightGasStationAnimation073A4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation073A4Bank4[48] = {
 #include "assets/dryfield_night_gas_station_animation_073A4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation073A4Bank4[48];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_073A4_bank4", _gDryfieldNightGasStationAnimation073A4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation073A4Records[105] = {
 #include "assets/dryfield_night_gas_station_animation_073A4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation073A4Records[105];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_073A4_records", _gDryfieldNightGasStationAnimation073A4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation073A4Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_073A4_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation073A4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_073A4_indices", _gDryfieldNightGasStationAnimation073A4Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation073A4 = {
     _gDryfieldNightGasStationAnimation073A4Records,
@@ -412,21 +478,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation073A4 = {
     { NULL, _gDryfieldNightGasStationAnimation073A4Bank1, NULL, NULL, _gDryfieldNightGasStationAnimation073A4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation077A4Bank1[10] = {
 #include "assets/dryfield_night_gas_station_animation_077A4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation077A4Bank1[10];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_077A4_bank1", _gDryfieldNightGasStationAnimation077A4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation077A4Bank4[85] = {
 #include "assets/dryfield_night_gas_station_animation_077A4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation077A4Bank4[85];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_077A4_bank4", _gDryfieldNightGasStationAnimation077A4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation077A4Records[121] = {
 #include "assets/dryfield_night_gas_station_animation_077A4_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation077A4Records[121];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_077A4_records", _gDryfieldNightGasStationAnimation077A4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation077A4Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_077A4_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation077A4Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_077A4_indices", _gDryfieldNightGasStationAnimation077A4Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation077A4 = {
     _gDryfieldNightGasStationAnimation077A4Records,
@@ -434,21 +520,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation077A4 = {
     { NULL, _gDryfieldNightGasStationAnimation077A4Bank1, NULL, NULL, _gDryfieldNightGasStationAnimation077A4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation07A58Bank1[4] = {
 #include "assets/dryfield_night_gas_station_animation_07A58_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation07A58Bank1[4];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07A58_bank1", _gDryfieldNightGasStationAnimation07A58Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation07A58Bank4[49] = {
 #include "assets/dryfield_night_gas_station_animation_07A58_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation07A58Bank4[49];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07A58_bank4", _gDryfieldNightGasStationAnimation07A58Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation07A58Records[92] = {
 #include "assets/dryfield_night_gas_station_animation_07A58_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation07A58Records[92];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07A58_records", _gDryfieldNightGasStationAnimation07A58Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation07A58Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_07A58_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation07A58Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07A58_indices", _gDryfieldNightGasStationAnimation07A58Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation07A58 = {
     _gDryfieldNightGasStationAnimation07A58Records,
@@ -456,21 +562,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation07A58 = {
     { NULL, _gDryfieldNightGasStationAnimation07A58Bank1, NULL, NULL, _gDryfieldNightGasStationAnimation07A58Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation07CFCBank1[5] = {
 #include "assets/dryfield_night_gas_station_animation_07CFC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation07CFCBank1[5];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07CFC_bank1", _gDryfieldNightGasStationAnimation07CFCBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation07CFCBank4[32] = {
 #include "assets/dryfield_night_gas_station_animation_07CFC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation07CFCBank4[32];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07CFC_bank4", _gDryfieldNightGasStationAnimation07CFCBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation07CFCRecords[102] = {
 #include "assets/dryfield_night_gas_station_animation_07CFC_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation07CFCRecords[102];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07CFC_records", _gDryfieldNightGasStationAnimation07CFCRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation07CFCIndices[20] = {
 #include "assets/dryfield_night_gas_station_animation_07CFC_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation07CFCIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07CFC_indices", _gDryfieldNightGasStationAnimation07CFCIndices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation07CFC = {
     _gDryfieldNightGasStationAnimation07CFCRecords,
@@ -478,21 +604,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation07CFC = {
     { NULL, _gDryfieldNightGasStationAnimation07CFCBank1, NULL, NULL, _gDryfieldNightGasStationAnimation07CFCBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation07F78Bank1[2] = {
 #include "assets/dryfield_night_gas_station_animation_07F78_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation07F78Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07F78_bank1", _gDryfieldNightGasStationAnimation07F78Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation07F78Bank4[32] = {
 #include "assets/dryfield_night_gas_station_animation_07F78_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation07F78Bank4[32];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07F78_bank4", _gDryfieldNightGasStationAnimation07F78Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation07F78Records[101] = {
 #include "assets/dryfield_night_gas_station_animation_07F78_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation07F78Records[101];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07F78_records", _gDryfieldNightGasStationAnimation07F78Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation07F78Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_07F78_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation07F78Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_07F78_indices", _gDryfieldNightGasStationAnimation07F78Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation07F78 = {
     _gDryfieldNightGasStationAnimation07F78Records,
@@ -500,21 +646,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation07F78 = {
     { NULL, _gDryfieldNightGasStationAnimation07F78Bank1, NULL, NULL, _gDryfieldNightGasStationAnimation07F78Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation08148Bank1[2] = {
 #include "assets/dryfield_night_gas_station_animation_08148_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation08148Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_08148_bank1", _gDryfieldNightGasStationAnimation08148Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation08148Bank4[30] = {
 #include "assets/dryfield_night_gas_station_animation_08148_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation08148Bank4[30];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_08148_bank4", _gDryfieldNightGasStationAnimation08148Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation08148Records[60] = {
 #include "assets/dryfield_night_gas_station_animation_08148_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation08148Records[60];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_08148_records", _gDryfieldNightGasStationAnimation08148Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation08148Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_08148_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation08148Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_08148_indices", _gDryfieldNightGasStationAnimation08148Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation08148 = {
     _gDryfieldNightGasStationAnimation08148Records,
@@ -522,21 +688,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation08148 = {
     { NULL, _gDryfieldNightGasStationAnimation08148Bank1, NULL, NULL, _gDryfieldNightGasStationAnimation08148Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation08318Bank1[2] = {
 #include "assets/dryfield_night_gas_station_animation_08318_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation08318Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_08318_bank1", _gDryfieldNightGasStationAnimation08318Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation08318Bank4[30] = {
 #include "assets/dryfield_night_gas_station_animation_08318_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation08318Bank4[30];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_08318_bank4", _gDryfieldNightGasStationAnimation08318Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation08318Records[60] = {
 #include "assets/dryfield_night_gas_station_animation_08318_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation08318Records[60];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_08318_records", _gDryfieldNightGasStationAnimation08318Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation08318Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_08318_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation08318Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_08318_indices", _gDryfieldNightGasStationAnimation08318Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation08318 = {
     _gDryfieldNightGasStationAnimation08318Records,
@@ -544,21 +730,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation08318 = {
     { NULL, _gDryfieldNightGasStationAnimation08318Bank1, NULL, NULL, _gDryfieldNightGasStationAnimation08318Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation0885CBank1[9] = {
 #include "assets/dryfield_night_gas_station_animation_0885C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation0885CBank1[9];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0885C_bank1", _gDryfieldNightGasStationAnimation0885CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation0885CBank4[127] = {
 #include "assets/dryfield_night_gas_station_animation_0885C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation0885CBank4[127];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0885C_bank4", _gDryfieldNightGasStationAnimation0885CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation0885CRecords[163] = {
 #include "assets/dryfield_night_gas_station_animation_0885C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation0885CRecords[163];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0885C_records", _gDryfieldNightGasStationAnimation0885CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation0885CIndices[20] = {
 #include "assets/dryfield_night_gas_station_animation_0885C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation0885CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0885C_indices", _gDryfieldNightGasStationAnimation0885CIndices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation0885C = {
     _gDryfieldNightGasStationAnimation0885CRecords,
@@ -566,21 +772,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation0885C = {
     { NULL, _gDryfieldNightGasStationAnimation0885CBank1, NULL, NULL, _gDryfieldNightGasStationAnimation0885CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation09344Bank1[24] = {
 #include "assets/dryfield_night_gas_station_animation_09344_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation09344Bank1[24];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_09344_bank1", _gDryfieldNightGasStationAnimation09344Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation09344Bank4[263] = {
 #include "assets/dryfield_night_gas_station_animation_09344_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation09344Bank4[263];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_09344_bank4", _gDryfieldNightGasStationAnimation09344Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation09344Records[343] = {
 #include "assets/dryfield_night_gas_station_animation_09344_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation09344Records[343];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_09344_records", _gDryfieldNightGasStationAnimation09344Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation09344Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_09344_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation09344Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_09344_indices", _gDryfieldNightGasStationAnimation09344Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation09344 = {
     _gDryfieldNightGasStationAnimation09344Records,
@@ -588,21 +814,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation09344 = {
     { NULL, _gDryfieldNightGasStationAnimation09344Bank1, NULL, NULL, _gDryfieldNightGasStationAnimation09344Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation09D80Bank1[23] = {
 #include "assets/dryfield_night_gas_station_animation_09D80_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation09D80Bank1[23];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_09D80_bank1", _gDryfieldNightGasStationAnimation09D80Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation09D80Bank4[243] = {
 #include "assets/dryfield_night_gas_station_animation_09D80_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation09D80Bank4[243];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_09D80_bank4", _gDryfieldNightGasStationAnimation09D80Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation09D80Records[323] = {
 #include "assets/dryfield_night_gas_station_animation_09D80_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation09D80Records[323];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_09D80_records", _gDryfieldNightGasStationAnimation09D80Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation09D80Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_09D80_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation09D80Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_09D80_indices", _gDryfieldNightGasStationAnimation09D80Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation09D80 = {
     _gDryfieldNightGasStationAnimation09D80Records,
@@ -610,21 +856,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation09D80 = {
     { NULL, _gDryfieldNightGasStationAnimation09D80Bank1, NULL, NULL, _gDryfieldNightGasStationAnimation09D80Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation0A3FCBank1[10] = {
 #include "assets/dryfield_night_gas_station_animation_0A3FC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation0A3FCBank1[10];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0A3FC_bank1", _gDryfieldNightGasStationAnimation0A3FCBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation0A3FCBank4[142] = {
 #include "assets/dryfield_night_gas_station_animation_0A3FC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation0A3FCBank4[142];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0A3FC_bank4", _gDryfieldNightGasStationAnimation0A3FCBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation0A3FCRecords[223] = {
 #include "assets/dryfield_night_gas_station_animation_0A3FC_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation0A3FCRecords[223];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0A3FC_records", _gDryfieldNightGasStationAnimation0A3FCRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation0A3FCIndices[20] = {
 #include "assets/dryfield_night_gas_station_animation_0A3FC_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation0A3FCIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0A3FC_indices", _gDryfieldNightGasStationAnimation0A3FCIndices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation0A3FC = {
     _gDryfieldNightGasStationAnimation0A3FCRecords,
@@ -632,21 +898,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation0A3FC = {
     { NULL, _gDryfieldNightGasStationAnimation0A3FCBank1, NULL, NULL, _gDryfieldNightGasStationAnimation0A3FCBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation0A698Bank1[2] = {
 #include "assets/dryfield_night_gas_station_animation_0A698_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation0A698Bank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0A698_bank1", _gDryfieldNightGasStationAnimation0A698Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation0A698Bank4[31] = {
 #include "assets/dryfield_night_gas_station_animation_0A698_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation0A698Bank4[31];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0A698_bank4", _gDryfieldNightGasStationAnimation0A698Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation0A698Records[110] = {
 #include "assets/dryfield_night_gas_station_animation_0A698_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation0A698Records[110];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0A698_records", _gDryfieldNightGasStationAnimation0A698Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation0A698Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_0A698_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation0A698Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0A698_indices", _gDryfieldNightGasStationAnimation0A698Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation0A698 = {
     _gDryfieldNightGasStationAnimation0A698Records,
@@ -654,21 +940,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation0A698 = {
     { NULL, _gDryfieldNightGasStationAnimation0A698Bank1, NULL, NULL, _gDryfieldNightGasStationAnimation0A698Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation0AA3CBank1[2] = {
 #include "assets/dryfield_night_gas_station_animation_0AA3C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation0AA3CBank1[2];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0AA3C_bank1", _gDryfieldNightGasStationAnimation0AA3CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation0AA3CBank4[72] = {
 #include "assets/dryfield_night_gas_station_animation_0AA3C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation0AA3CBank4[72];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0AA3C_bank4", _gDryfieldNightGasStationAnimation0AA3CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation0AA3CRecords[135] = {
 #include "assets/dryfield_night_gas_station_animation_0AA3C_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation0AA3CRecords[135];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0AA3C_records", _gDryfieldNightGasStationAnimation0AA3CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation0AA3CIndices[20] = {
 #include "assets/dryfield_night_gas_station_animation_0AA3C_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation0AA3CIndices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0AA3C_indices", _gDryfieldNightGasStationAnimation0AA3CIndices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation0AA3C = {
     _gDryfieldNightGasStationAnimation0AA3CRecords,
@@ -676,21 +982,41 @@ static AnimationSet _gDryfieldNightGasStationAnimation0AA3C = {
     { NULL, _gDryfieldNightGasStationAnimation0AA3CBank1, NULL, NULL, _gDryfieldNightGasStationAnimation0AA3CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gDryfieldNightGasStationAnimation0AF98Bank1[9] = {
 #include "assets/dryfield_night_gas_station_animation_0AF98_bank1.inc"
 };
+#else
+static AnimationPackedPose _gDryfieldNightGasStationAnimation0AF98Bank1[9];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0AF98_bank1", _gDryfieldNightGasStationAnimation0AF98Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gDryfieldNightGasStationAnimation0AF98Bank4[130] = {
 #include "assets/dryfield_night_gas_station_animation_0AF98_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gDryfieldNightGasStationAnimation0AF98Bank4[130];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0AF98_bank4", _gDryfieldNightGasStationAnimation0AF98Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gDryfieldNightGasStationAnimation0AF98Records[166] = {
 #include "assets/dryfield_night_gas_station_animation_0AF98_records.inc"
 };
+#else
+static AnimationRecord _gDryfieldNightGasStationAnimation0AF98Records[166];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0AF98_records", _gDryfieldNightGasStationAnimation0AF98Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gDryfieldNightGasStationAnimation0AF98Indices[20] = {
 #include "assets/dryfield_night_gas_station_animation_0AF98_indices.inc"
 };
+#else
+static u16 _gDryfieldNightGasStationAnimation0AF98Indices[20];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_animation_0AF98_indices", _gDryfieldNightGasStationAnimation0AF98Indices);
 
 static AnimationSet _gDryfieldNightGasStationAnimation0AF98 = {
     _gDryfieldNightGasStationAnimation0AF98Records,
@@ -1653,27 +1979,47 @@ DirectionWarpEntry gDryfieldNightGasStationWarpEntries[3] = {
 };
 
 /// Room-space unit normals for the rooms 1..3 grid, with four cutscene-obstacle slots.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGasStationRooms1To3CollisionGridNormals[34] = {
 #include "assets/dryfield_night_gas_station_collision_0D5FC_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGasStationRooms1To3CollisionGridNormals[34];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_0D5FC_normals", _gDryfieldNightGasStationRooms1To3CollisionGridNormals);
 
 /// Room-space vertices for the rooms 1..3 grid; the first eight are restored for the cutscene obstacle.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGasStationRooms1To3CollisionGridVerts[144] = {
 #include "assets/dryfield_night_gas_station_collision_0D5FC_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGasStationRooms1To3CollisionGridVerts[144];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_0D5FC_verts", _gDryfieldNightGasStationRooms1To3CollisionGridVerts);
 
 /// Indexed room surfaces for rooms 1..3, with four initially inactive obstacle faces.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightGasStationRooms1To3CollisionGridFaces[65] = {
 #include "assets/dryfield_night_gas_station_collision_0D5FC_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightGasStationRooms1To3CollisionGridFaces[65];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_0D5FC_faces", _gDryfieldNightGasStationRooms1To3CollisionGridFaces);
 
 /// Packed signed face-index lists for the rooms 1..3 grid, each ending with -1.
 ///
 /// Cell-table pointers select list starts; every list includes obstacle faces
 /// 0..3 so restoring that geometry does not require rebuilding the index.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightGasStationRooms1To3CollisionGridCells[456] = {
 #include "assets/dryfield_night_gas_station_collision_0D5FC_cells.inc"
 };
+#else
+static s16 _gDryfieldNightGasStationRooms1To3CollisionGridCells[456];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_0D5FC_cells", _gDryfieldNightGasStationRooms1To3CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -1684,9 +2030,14 @@ static s16 _gDryfieldNightGasStationRooms1To3CollisionGridCells[456] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_GAS_STATION_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightGasStationRooms1To3CollisionGridCells[(halfwordOffset)])
 /// X-major cell-list directory for six X cells by four Z cells.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightGasStationRooms1To3CollisionGridTable[24] = {
 #include "assets/dryfield_night_gas_station_collision_0D5FC_table.inc"
 };
+#else
+static s16* _gDryfieldNightGasStationRooms1To3CollisionGridTable[24];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_gas_station_collision_0D5FC_table", _gDryfieldNightGasStationRooms1To3CollisionGridTable, _gDryfieldNightGasStationRooms1To3CollisionGridCells);
 #undef DRYFIELD_NIGHT_GAS_STATION_CELL_FACE_LIST_AT_OFFSET
 
 /// Live room collision mesh shared by night gas station room variants 1..3.
@@ -1711,24 +2062,44 @@ static WorldCollisionGrid _gDryfieldNightGasStationRooms1To3CollisionGrid = {
 };
 
 /// Room-space face normals for room variant 4; ONE is unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGasStationRoom4CollisionGridNormals[32] = {
 #include "assets/dryfield_night_gas_station_collision_0E19C_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGasStationRoom4CollisionGridNormals[32];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_0E19C_normals", _gDryfieldNightGasStationRoom4CollisionGridNormals);
 
 /// Room variant 4's collision vertices in signed game-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightGasStationRoom4CollisionGridVerts[135] = {
 #include "assets/dryfield_night_gas_station_collision_0E19C_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldNightGasStationRoom4CollisionGridVerts[135];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_0E19C_verts", _gDryfieldNightGasStationRoom4CollisionGridVerts);
 
 /// Indexed collision triangles and quads for room variant 4.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gDryfieldNightGasStationRoom4CollisionGridFaces[64] = {
 #include "assets/dryfield_night_gas_station_collision_0E19C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gDryfieldNightGasStationRoom4CollisionGridFaces[64];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_0E19C_faces", _gDryfieldNightGasStationRoom4CollisionGridFaces);
 
 /// Packed room-4 cell face-ID lists, each terminated by WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gDryfieldNightGasStationRoom4CollisionGridCells[370] = {
 #include "assets/dryfield_night_gas_station_collision_0E19C_cells.inc"
 };
+#else
+static s16 _gDryfieldNightGasStationRoom4CollisionGridCells[370];
+#endif
+PE_ASSET_BIND("dryfield_night_gas_station_collision_0E19C_cells", _gDryfieldNightGasStationRoom4CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -1739,9 +2110,14 @@ static s16 _gDryfieldNightGasStationRoom4CollisionGridCells[370] = {
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_GAS_STATION_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightGasStationRoom4CollisionGridCells[(halfwordOffset)])
 /// X-major directory for room variant 4's six X cells by four Z cells.
+#ifdef PE_EMBED_ASSETS
 static s16* _gDryfieldNightGasStationRoom4CollisionGridTable[24] = {
 #include "assets/dryfield_night_gas_station_collision_0E19C_table.inc"
 };
+#else
+static s16* _gDryfieldNightGasStationRoom4CollisionGridTable[24];
+#endif
+PE_ASSET_BIND_AUX("dryfield_night_gas_station_collision_0E19C_table", _gDryfieldNightGasStationRoom4CollisionGridTable, _gDryfieldNightGasStationRoom4CollisionGridCells);
 #undef DRYFIELD_NIGHT_GAS_STATION_CELL_FACE_LIST_AT_OFFSET
 
 /// Collision mesh used only by night gas station room variant 4.

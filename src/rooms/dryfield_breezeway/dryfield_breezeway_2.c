@@ -1,4 +1,5 @@
 #include "rooms/dryfield_breezeway.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -375,25 +376,50 @@ TaskDesc gDryfieldBreezewayFirstEventTaskDescs[2] = {
 /// No room code spawns this descriptor.
 static TaskDesc _gDryfieldBreezewayImmediateExitTaskDesc = { { { TASK_BODY_NONE, TASK_PRIORITY_CONTROL } }, taskKill, { .value = 0 } };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gDryfieldBreezewayModel04E8CSkeleton[1] = {
 #include "assets/dryfield_breezeway_model_04E8C_skeleton.inc"
 };
+#else
+static TmdBone _gDryfieldBreezewayModel04E8CSkeleton[1];
+#endif
+PE_ASSET_BIND("dryfield_breezeway_model_04E8C_skeleton", _gDryfieldBreezewayModel04E8CSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gDryfieldBreezewayModel04E8CPartVerts[1] = {
 #include "assets/dryfield_breezeway_model_04E8C_partVerts.inc"
 };
+#else
+static u32 _gDryfieldBreezewayModel04E8CPartVerts[1];
+#endif
+PE_ASSET_BIND("dryfield_breezeway_model_04E8C_partVerts", _gDryfieldBreezewayModel04E8CPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldBreezewayModel04E8CVerts[88] = {
 #include "assets/dryfield_breezeway_model_04E8C_verts.inc"
 };
+#else
+static SVECTOR _gDryfieldBreezewayModel04E8CVerts[88];
+#endif
+PE_ASSET_BIND("dryfield_breezeway_model_04E8C_verts", _gDryfieldBreezewayModel04E8CVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldBreezewayModel04E8CNormals[18] = {
 #include "assets/dryfield_breezeway_model_04E8C_normals.inc"
 };
+#else
+static SVECTOR _gDryfieldBreezewayModel04E8CNormals[18];
+#endif
+PE_ASSET_BIND("dryfield_breezeway_model_04E8C_normals", _gDryfieldBreezewayModel04E8CNormals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gDryfieldBreezewayModel04E8CStream[596] = {
 #include "assets/dryfield_breezeway_model_04E8C_stream.inc"
 };
+#else
+static u32 _gDryfieldBreezewayModel04E8CStream[596];
+#endif
+PE_ASSET_BIND("dryfield_breezeway_model_04E8C_stream", _gDryfieldBreezewayModel04E8CStream);
 
 static TmdSource _gDryfieldBreezewayModel04E8C = {
     0,

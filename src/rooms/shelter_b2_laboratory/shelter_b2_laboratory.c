@@ -1,4 +1,5 @@
 #include "rooms/shelter_b2_laboratory.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -292,24 +293,44 @@ DirectionWarpEntry gShelterB2LaboratoryWarpEntries[2] = {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2LaboratoryCollisionGridNormals[23] = {
 #include "assets/shelter_b2_laboratory_collision_05F9C_normals.inc"
 };
+#else
+static SVECTOR _gShelterB2LaboratoryCollisionGridNormals[23];
+#endif
+PE_ASSET_BIND("shelter_b2_laboratory_collision_05F9C_normals", _gShelterB2LaboratoryCollisionGridNormals);
 
 /// Collision mesh vertices in signed room-coordinate units.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gShelterB2LaboratoryCollisionGridVerts[123] = {
 #include "assets/shelter_b2_laboratory_collision_05F9C_verts.inc"
 };
+#else
+static SVECTOR _gShelterB2LaboratoryCollisionGridVerts[123];
+#endif
+PE_ASSET_BIND("shelter_b2_laboratory_collision_05F9C_verts", _gShelterB2LaboratoryCollisionGridVerts);
 
 /// Indexed collision faces and their room-local surface classes.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gShelterB2LaboratoryCollisionGridFaces[51] = {
 #include "assets/shelter_b2_laboratory_collision_05F9C_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gShelterB2LaboratoryCollisionGridFaces[51];
+#endif
+PE_ASSET_BIND("shelter_b2_laboratory_collision_05F9C_faces", _gShelterB2LaboratoryCollisionGridFaces);
 
 /// Cell face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gShelterB2LaboratoryCollisionGridCells[220] = {
 #include "assets/shelter_b2_laboratory_collision_05F9C_cells.inc"
 };
+#else
+static s16 _gShelterB2LaboratoryCollisionGridCells[220];
+#endif
+PE_ASSET_BIND("shelter_b2_laboratory_collision_05F9C_cells", _gShelterB2LaboratoryCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
 ///
@@ -320,9 +341,14 @@ static s16 _gShelterB2LaboratoryCollisionGridCells[220] = {
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B2_LABORATORY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB2LaboratoryCollisionGridCells[(halfwordOffset)])
 /// X-major 4-by-3 directory of face-index lists in the cell pool.
+#ifdef PE_EMBED_ASSETS
 static s16* _gShelterB2LaboratoryCollisionGridTable[12] = {
 #include "assets/shelter_b2_laboratory_collision_05F9C_table.inc"
 };
+#else
+static s16* _gShelterB2LaboratoryCollisionGridTable[12];
+#endif
+PE_ASSET_BIND_AUX("shelter_b2_laboratory_collision_05F9C_table", _gShelterB2LaboratoryCollisionGridTable, _gShelterB2LaboratoryCollisionGridCells);
 #undef SHELTER_B2_LABORATORY_CELL_FACE_LIST_AT_OFFSET
 
 WorldCollisionGrid gShelterB2LaboratoryCollisionGrid = {

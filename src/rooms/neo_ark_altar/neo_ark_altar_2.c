@@ -1,4 +1,5 @@
 #include "rooms/neo_ark_altar.h"
+#include "port/asset_bind.h"
 
 #include <psyz.h>
 #include <libgte.h>
@@ -270,24 +271,44 @@ DirectionWarpEntry gNeoArkAltarWarpEntries[1] = {
 };
 
 /// Room-space normal pool of `_gNeoArkAltarCollisionGrid`, with ONE unit length.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkAltarCollisionGridNormals[9] = {
 #include "assets/neo_ark_altar_collision_01FBC_normals.inc"
 };
+#else
+static SVECTOR _gNeoArkAltarCollisionGridNormals[9];
+#endif
+PE_ASSET_BIND("neo_ark_altar_collision_01FBC_normals", _gNeoArkAltarCollisionGridNormals);
 
 /// Signed world-unit vertex pool of `_gNeoArkAltarCollisionGrid`.
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gNeoArkAltarCollisionGridVerts[58] = {
 #include "assets/neo_ark_altar_collision_01FBC_verts.inc"
 };
+#else
+static SVECTOR _gNeoArkAltarCollisionGridVerts[58];
+#endif
+PE_ASSET_BIND("neo_ark_altar_collision_01FBC_verts", _gNeoArkAltarCollisionGridVerts);
 
 /// Indexed collision faces using surface classes 0, 1 and 4.
+#ifdef PE_EMBED_ASSETS
 static WorldCollisionGridFace _gNeoArkAltarCollisionGridFaces[29] = {
 #include "assets/neo_ark_altar_collision_01FBC_faces.inc"
 };
+#else
+static WorldCollisionGridFace _gNeoArkAltarCollisionGridFaces[29];
+#endif
+PE_ASSET_BIND("neo_ark_altar_collision_01FBC_faces", _gNeoArkAltarCollisionGridFaces);
 
 /// Six cell face-index lists ending in WORLD_COLLISION_GRID_CELL_END.
+#ifdef PE_EMBED_ASSETS
 static s16 _gNeoArkAltarCollisionGridCells[94] = {
 #include "assets/neo_ark_altar_collision_01FBC_cells.inc"
 };
+#else
+static s16 _gNeoArkAltarCollisionGridCells[94];
+#endif
+PE_ASSET_BIND("neo_ark_altar_collision_01FBC_cells", _gNeoArkAltarCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 ///
@@ -299,9 +320,14 @@ static s16 _gNeoArkAltarCollisionGridCells[94] = {
 /// binding through the table include, then undefine it.
 #define NEO_ARK_ALTAR_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkAltarCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory of `_gNeoArkAltarCollisionGrid`, with two Z cells per X.
+#ifdef PE_EMBED_ASSETS
 static s16* _gNeoArkAltarCollisionGridTable[6] = {
 #include "assets/neo_ark_altar_collision_01FBC_table.inc"
 };
+#else
+static s16* _gNeoArkAltarCollisionGridTable[6];
+#endif
+PE_ASSET_BIND_AUX("neo_ark_altar_collision_01FBC_table", _gNeoArkAltarCollisionGridTable, _gNeoArkAltarCollisionGridCells);
 #undef NEO_ARK_ALTAR_CELL_FACE_LIST_AT_OFFSET
 
 /// Shared collision mesh for all three altar room variants.

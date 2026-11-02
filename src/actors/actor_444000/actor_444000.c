@@ -1,4 +1,5 @@
 #include "actors/actor_04400.h"
+#include "port/asset_bind.h"
 #include "actors/actor_444000.h"
 
 #include <psyz.h>
@@ -424,21 +425,41 @@ static void _actor444000GluttonTask(Task* task);
 static void _actor444000EventUpdateDescentRoom(s32 updateMode);
 static void _actor444000IncineratorEventTask(Task* task);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation124C4Bank1[6] = {
 #include "assets/actor_444000_animation_124C4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation124C4Bank1[6];
+#endif
+PE_ASSET_BIND("actor_444000_animation_124C4_bank1", _gActor444000Animation124C4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation124C4Bank4[46] = {
 #include "assets/actor_444000_animation_124C4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation124C4Bank4[46];
+#endif
+PE_ASSET_BIND("actor_444000_animation_124C4_bank4", _gActor444000Animation124C4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation124C4Records[109] = {
 #include "assets/actor_444000_animation_124C4_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation124C4Records[109];
+#endif
+PE_ASSET_BIND("actor_444000_animation_124C4_records", _gActor444000Animation124C4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation124C4Indices[20] = {
 #include "assets/actor_444000_animation_124C4_indices.inc"
 };
+#else
+static u16 _gActor444000Animation124C4Indices[20];
+#endif
+PE_ASSET_BIND("actor_444000_animation_124C4_indices", _gActor444000Animation124C4Indices);
 
 static AnimationSet _gActor444000Animation124C4 = {
     _gActor444000Animation124C4Records,
@@ -757,25 +778,50 @@ static PadScriptVibrationSegment _gActor444000GluttonInhalePadSegments[2] = {
 
 #include "assets/enemies/glutton/glob.inc"
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor444000Model1C814Skeleton[1] = {
 #include "assets/actor_444000_model_1C814_skeleton.inc"
 };
+#else
+static TmdBone _gActor444000Model1C814Skeleton[1];
+#endif
+PE_ASSET_BIND("actor_444000_model_1C814_skeleton", _gActor444000Model1C814Skeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor444000Model1C814PartVerts[1] = {
 #include "assets/actor_444000_model_1C814_partVerts.inc"
 };
+#else
+static u32 _gActor444000Model1C814PartVerts[1];
+#endif
+PE_ASSET_BIND("actor_444000_model_1C814_partVerts", _gActor444000Model1C814PartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor444000Model1C814Verts[101] = {
 #include "assets/actor_444000_model_1C814_verts.inc"
 };
+#else
+static SVECTOR _gActor444000Model1C814Verts[101];
+#endif
+PE_ASSET_BIND("actor_444000_model_1C814_verts", _gActor444000Model1C814Verts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor444000Model1C814Normals[20] = {
 #include "assets/actor_444000_model_1C814_normals.inc"
 };
+#else
+static SVECTOR _gActor444000Model1C814Normals[20];
+#endif
+PE_ASSET_BIND("actor_444000_model_1C814_normals", _gActor444000Model1C814Normals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor444000Model1C814Stream[465] = {
 #include "assets/actor_444000_model_1C814_stream.inc"
 };
+#else
+static u32 _gActor444000Model1C814Stream[465];
+#endif
+PE_ASSET_BIND("actor_444000_model_1C814_stream", _gActor444000Model1C814Stream);
 
 TmdSource gActor444000Model1C814 = {
     0,
@@ -789,25 +835,50 @@ TmdSource gActor444000Model1C814 = {
     _gActor444000Model1C814Stream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor444000Model1D36CSkeleton[1] = {
 #include "assets/actor_444000_model_1D36C_skeleton.inc"
 };
+#else
+static TmdBone _gActor444000Model1D36CSkeleton[1];
+#endif
+PE_ASSET_BIND("actor_444000_model_1D36C_skeleton", _gActor444000Model1D36CSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor444000Model1D36CPartVerts[1] = {
 #include "assets/actor_444000_model_1D36C_partVerts.inc"
 };
+#else
+static u32 _gActor444000Model1D36CPartVerts[1];
+#endif
+PE_ASSET_BIND("actor_444000_model_1D36C_partVerts", _gActor444000Model1D36CPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor444000Model1D36CVerts[101] = {
 #include "assets/actor_444000_model_1D36C_verts.inc"
 };
+#else
+static SVECTOR _gActor444000Model1D36CVerts[101];
+#endif
+PE_ASSET_BIND("actor_444000_model_1D36C_verts", _gActor444000Model1D36CVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor444000Model1D36CNormals[20] = {
 #include "assets/actor_444000_model_1D36C_normals.inc"
 };
+#else
+static SVECTOR _gActor444000Model1D36CNormals[20];
+#endif
+PE_ASSET_BIND("actor_444000_model_1D36C_normals", _gActor444000Model1D36CNormals);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor444000Model1D36CStream[461] = {
 #include "assets/actor_444000_model_1D36C_stream.inc"
 };
+#else
+static u32 _gActor444000Model1D36CStream[461];
+#endif
+PE_ASSET_BIND("actor_444000_model_1D36C_stream", _gActor444000Model1D36CStream);
 
 TmdSource gActor444000Model1D36C = {
     0,
@@ -821,21 +892,41 @@ TmdSource gActor444000Model1D36C = {
     _gActor444000Model1D36CStream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor444000Model1DC9CSkeleton[1] = {
 #include "assets/actor_444000_model_1DC9C_skeleton.inc"
 };
+#else
+static TmdBone _gActor444000Model1DC9CSkeleton[1];
+#endif
+PE_ASSET_BIND("actor_444000_model_1DC9C_skeleton", _gActor444000Model1DC9CSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor444000Model1DC9CPartVerts[1] = {
 #include "assets/actor_444000_model_1DC9C_partVerts.inc"
 };
+#else
+static u32 _gActor444000Model1DC9CPartVerts[1];
+#endif
+PE_ASSET_BIND("actor_444000_model_1DC9C_partVerts", _gActor444000Model1DC9CPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor444000Model1DC9CVerts[54] = {
 #include "assets/actor_444000_model_1DC9C_verts.inc"
 };
+#else
+static SVECTOR _gActor444000Model1DC9CVerts[54];
+#endif
+PE_ASSET_BIND("actor_444000_model_1DC9C_verts", _gActor444000Model1DC9CVerts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor444000Model1DC9CStream[209] = {
 #include "assets/actor_444000_model_1DC9C_stream.inc"
 };
+#else
+static u32 _gActor444000Model1DC9CStream[209];
+#endif
+PE_ASSET_BIND("actor_444000_model_1DC9C_stream", _gActor444000Model1DC9CStream);
 
 TmdSource gActor444000Model1DC9C = {
     0,
@@ -849,21 +940,41 @@ TmdSource gActor444000Model1DC9C = {
     _gActor444000Model1DC9CStream,
 };
 
+#ifdef PE_EMBED_ASSETS
 static TmdBone _gActor444000Model1E14CSkeleton[1] = {
 #include "assets/actor_444000_model_1E14C_skeleton.inc"
 };
+#else
+static TmdBone _gActor444000Model1E14CSkeleton[1];
+#endif
+PE_ASSET_BIND("actor_444000_model_1E14C_skeleton", _gActor444000Model1E14CSkeleton);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor444000Model1E14CPartVerts[1] = {
 #include "assets/actor_444000_model_1E14C_partVerts.inc"
 };
+#else
+static u32 _gActor444000Model1E14CPartVerts[1];
+#endif
+PE_ASSET_BIND("actor_444000_model_1E14C_partVerts", _gActor444000Model1E14CPartVerts);
 
+#ifdef PE_EMBED_ASSETS
 static SVECTOR _gActor444000Model1E14CVerts[36] = {
 #include "assets/actor_444000_model_1E14C_verts.inc"
 };
+#else
+static SVECTOR _gActor444000Model1E14CVerts[36];
+#endif
+PE_ASSET_BIND("actor_444000_model_1E14C_verts", _gActor444000Model1E14CVerts);
 
+#ifdef PE_EMBED_ASSETS
 static u32 _gActor444000Model1E14CStream[129] = {
 #include "assets/actor_444000_model_1E14C_stream.inc"
 };
+#else
+static u32 _gActor444000Model1E14CStream[129];
+#endif
+PE_ASSET_BIND("actor_444000_model_1E14C_stream", _gActor444000Model1E14CStream);
 
 TmdSource gActor444000Model1E14C = {
     0,
@@ -881,21 +992,41 @@ TmdSource gActor444000Model1E14C = {
 
 #include "assets/enemies/glutton/chunk.inc"
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation20BD4Bank1[4] = {
 #include "assets/actor_444000_animation_20BD4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation20BD4Bank1[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20BD4_bank1", _gActor444000Animation20BD4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation20BD4Bank4[7] = {
 #include "assets/actor_444000_animation_20BD4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation20BD4Bank4[7];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20BD4_bank4", _gActor444000Animation20BD4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation20BD4Records[38] = {
 #include "assets/actor_444000_animation_20BD4_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation20BD4Records[38];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20BD4_records", _gActor444000Animation20BD4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation20BD4Indices[8] = {
 #include "assets/actor_444000_animation_20BD4_indices.inc"
 };
+#else
+static u16 _gActor444000Animation20BD4Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20BD4_indices", _gActor444000Animation20BD4Indices);
 
 AnimationSet gActor444000Animation20BD4 = {
     _gActor444000Animation20BD4Records,
@@ -903,21 +1034,41 @@ AnimationSet gActor444000Animation20BD4 = {
     { NULL, _gActor444000Animation20BD4Bank1, NULL, NULL, _gActor444000Animation20BD4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation20C80Bank1[4] = {
 #include "assets/actor_444000_animation_20C80_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation20C80Bank1[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20C80_bank1", _gActor444000Animation20C80Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation20C80Bank4[1] = {
 #include "assets/actor_444000_animation_20C80_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation20C80Bank4[1];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20C80_bank4", _gActor444000Animation20C80Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation20C80Records[18] = {
 #include "assets/actor_444000_animation_20C80_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation20C80Records[18];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20C80_records", _gActor444000Animation20C80Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation20C80Indices[4] = {
 #include "assets/actor_444000_animation_20C80_indices.inc"
 };
+#else
+static u16 _gActor444000Animation20C80Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20C80_indices", _gActor444000Animation20C80Indices);
 
 AnimationSet gActor444000Animation20C80 = {
     _gActor444000Animation20C80Records,
@@ -925,21 +1076,41 @@ AnimationSet gActor444000Animation20C80 = {
     { NULL, _gActor444000Animation20C80Bank1, NULL, NULL, _gActor444000Animation20C80Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation20D2CBank1[4] = {
 #include "assets/actor_444000_animation_20D2C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation20D2CBank1[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20D2C_bank1", _gActor444000Animation20D2CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation20D2CBank4[1] = {
 #include "assets/actor_444000_animation_20D2C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation20D2CBank4[1];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20D2C_bank4", _gActor444000Animation20D2CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation20D2CRecords[18] = {
 #include "assets/actor_444000_animation_20D2C_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation20D2CRecords[18];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20D2C_records", _gActor444000Animation20D2CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation20D2CIndices[4] = {
 #include "assets/actor_444000_animation_20D2C_indices.inc"
 };
+#else
+static u16 _gActor444000Animation20D2CIndices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_20D2C_indices", _gActor444000Animation20D2CIndices);
 
 AnimationSet gActor444000Animation20D2C = {
     _gActor444000Animation20D2CRecords,
@@ -947,21 +1118,41 @@ AnimationSet gActor444000Animation20D2C = {
     { NULL, _gActor444000Animation20D2CBank1, NULL, NULL, _gActor444000Animation20D2CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation21014Bank1[7] = {
 #include "assets/actor_444000_animation_21014_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation21014Bank1[7];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21014_bank1", _gActor444000Animation21014Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation21014Bank4[49] = {
 #include "assets/actor_444000_animation_21014_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation21014Bank4[49];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21014_bank4", _gActor444000Animation21014Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation21014Records[102] = {
 #include "assets/actor_444000_animation_21014_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation21014Records[102];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21014_records", _gActor444000Animation21014Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation21014Indices[8] = {
 #include "assets/actor_444000_animation_21014_indices.inc"
 };
+#else
+static u16 _gActor444000Animation21014Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21014_indices", _gActor444000Animation21014Indices);
 
 AnimationSet gActor444000Animation21014 = {
     _gActor444000Animation21014Records,
@@ -969,21 +1160,41 @@ AnimationSet gActor444000Animation21014 = {
     { NULL, _gActor444000Animation21014Bank1, NULL, NULL, _gActor444000Animation21014Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation212D8Bank1[29] = {
 #include "assets/actor_444000_animation_212D8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation212D8Bank1[29];
+#endif
+PE_ASSET_BIND("actor_444000_animation_212D8_bank1", _gActor444000Animation212D8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation212D8Bank4[17] = {
 #include "assets/actor_444000_animation_212D8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation212D8Bank4[17];
+#endif
+PE_ASSET_BIND("actor_444000_animation_212D8_bank4", _gActor444000Animation212D8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation212D8Records[61] = {
 #include "assets/actor_444000_animation_212D8_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation212D8Records[61];
+#endif
+PE_ASSET_BIND("actor_444000_animation_212D8_records", _gActor444000Animation212D8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation212D8Indices[4] = {
 #include "assets/actor_444000_animation_212D8_indices.inc"
 };
+#else
+static u16 _gActor444000Animation212D8Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_212D8_indices", _gActor444000Animation212D8Indices);
 
 AnimationSet gActor444000Animation212D8 = {
     _gActor444000Animation212D8Records,
@@ -991,21 +1202,41 @@ AnimationSet gActor444000Animation212D8 = {
     { NULL, _gActor444000Animation212D8Bank1, NULL, NULL, _gActor444000Animation212D8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation215B4Bank1[30] = {
 #include "assets/actor_444000_animation_215B4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation215B4Bank1[30];
+#endif
+PE_ASSET_BIND("actor_444000_animation_215B4_bank1", _gActor444000Animation215B4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation215B4Bank4[18] = {
 #include "assets/actor_444000_animation_215B4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation215B4Bank4[18];
+#endif
+PE_ASSET_BIND("actor_444000_animation_215B4_bank4", _gActor444000Animation215B4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation215B4Records[63] = {
 #include "assets/actor_444000_animation_215B4_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation215B4Records[63];
+#endif
+PE_ASSET_BIND("actor_444000_animation_215B4_records", _gActor444000Animation215B4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation215B4Indices[4] = {
 #include "assets/actor_444000_animation_215B4_indices.inc"
 };
+#else
+static u16 _gActor444000Animation215B4Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_215B4_indices", _gActor444000Animation215B4Indices);
 
 AnimationSet gActor444000Animation215B4 = {
     _gActor444000Animation215B4Records,
@@ -1013,21 +1244,41 @@ AnimationSet gActor444000Animation215B4 = {
     { NULL, _gActor444000Animation215B4Bank1, NULL, NULL, _gActor444000Animation215B4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation21904Bank1[20] = {
 #include "assets/actor_444000_animation_21904_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation21904Bank1[20];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21904_bank1", _gActor444000Animation21904Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation21904Bank4[48] = {
 #include "assets/actor_444000_animation_21904_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation21904Bank4[48];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21904_bank4", _gActor444000Animation21904Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation21904Records[90] = {
 #include "assets/actor_444000_animation_21904_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation21904Records[90];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21904_records", _gActor444000Animation21904Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation21904Indices[8] = {
 #include "assets/actor_444000_animation_21904_indices.inc"
 };
+#else
+static u16 _gActor444000Animation21904Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21904_indices", _gActor444000Animation21904Indices);
 
 static AnimationSet _gActor444000Animation21904 = {
     _gActor444000Animation21904Records,
@@ -1035,21 +1286,41 @@ static AnimationSet _gActor444000Animation21904 = {
     { NULL, _gActor444000Animation21904Bank1, NULL, NULL, _gActor444000Animation21904Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation21AE4Bank1[18] = {
 #include "assets/actor_444000_animation_21AE4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation21AE4Bank1[18];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21AE4_bank1", _gActor444000Animation21AE4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation21AE4Bank4[13] = {
 #include "assets/actor_444000_animation_21AE4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation21AE4Bank4[13];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21AE4_bank4", _gActor444000Animation21AE4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation21AE4Records[41] = {
 #include "assets/actor_444000_animation_21AE4_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation21AE4Records[41];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21AE4_records", _gActor444000Animation21AE4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation21AE4Indices[4] = {
 #include "assets/actor_444000_animation_21AE4_indices.inc"
 };
+#else
+static u16 _gActor444000Animation21AE4Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21AE4_indices", _gActor444000Animation21AE4Indices);
 
 static AnimationSet _gActor444000Animation21AE4 = {
     _gActor444000Animation21AE4Records,
@@ -1057,21 +1328,41 @@ static AnimationSet _gActor444000Animation21AE4 = {
     { NULL, _gActor444000Animation21AE4Bank1, NULL, NULL, _gActor444000Animation21AE4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation21CC4Bank1[18] = {
 #include "assets/actor_444000_animation_21CC4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation21CC4Bank1[18];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21CC4_bank1", _gActor444000Animation21CC4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation21CC4Bank4[13] = {
 #include "assets/actor_444000_animation_21CC4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation21CC4Bank4[13];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21CC4_bank4", _gActor444000Animation21CC4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation21CC4Records[41] = {
 #include "assets/actor_444000_animation_21CC4_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation21CC4Records[41];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21CC4_records", _gActor444000Animation21CC4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation21CC4Indices[4] = {
 #include "assets/actor_444000_animation_21CC4_indices.inc"
 };
+#else
+static u16 _gActor444000Animation21CC4Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_21CC4_indices", _gActor444000Animation21CC4Indices);
 
 static AnimationSet _gActor444000Animation21CC4 = {
     _gActor444000Animation21CC4Records,
@@ -1079,21 +1370,41 @@ static AnimationSet _gActor444000Animation21CC4 = {
     { NULL, _gActor444000Animation21CC4Bank1, NULL, NULL, _gActor444000Animation21CC4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation220ACBank1[18] = {
 #include "assets/actor_444000_animation_220AC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation220ACBank1[18];
+#endif
+PE_ASSET_BIND("actor_444000_animation_220AC_bank1", _gActor444000Animation220ACBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation220ACBank4[72] = {
 #include "assets/actor_444000_animation_220AC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation220ACBank4[72];
+#endif
+PE_ASSET_BIND("actor_444000_animation_220AC_bank4", _gActor444000Animation220ACBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation220ACRecords[110] = {
 #include "assets/actor_444000_animation_220AC_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation220ACRecords[110];
+#endif
+PE_ASSET_BIND("actor_444000_animation_220AC_records", _gActor444000Animation220ACRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation220ACIndices[8] = {
 #include "assets/actor_444000_animation_220AC_indices.inc"
 };
+#else
+static u16 _gActor444000Animation220ACIndices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_220AC_indices", _gActor444000Animation220ACIndices);
 
 static AnimationSet _gActor444000Animation220AC = {
     _gActor444000Animation220ACRecords,
@@ -1101,21 +1412,41 @@ static AnimationSet _gActor444000Animation220AC = {
     { NULL, _gActor444000Animation220ACBank1, NULL, NULL, _gActor444000Animation220ACBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2246CBank1[39] = {
 #include "assets/actor_444000_animation_2246C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2246CBank1[39];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2246C_bank1", _gActor444000Animation2246CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2246CBank4[32] = {
 #include "assets/actor_444000_animation_2246C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2246CBank4[32];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2246C_bank4", _gActor444000Animation2246CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2246CRecords[79] = {
 #include "assets/actor_444000_animation_2246C_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2246CRecords[79];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2246C_records", _gActor444000Animation2246CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2246CIndices[4] = {
 #include "assets/actor_444000_animation_2246C_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2246CIndices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2246C_indices", _gActor444000Animation2246CIndices);
 
 static AnimationSet _gActor444000Animation2246C = {
     _gActor444000Animation2246CRecords,
@@ -1123,21 +1454,41 @@ static AnimationSet _gActor444000Animation2246C = {
     { NULL, _gActor444000Animation2246CBank1, NULL, NULL, _gActor444000Animation2246CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation22780Bank1[32] = {
 #include "assets/actor_444000_animation_22780_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation22780Bank1[32];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22780_bank1", _gActor444000Animation22780Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation22780Bank4[23] = {
 #include "assets/actor_444000_animation_22780_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation22780Bank4[23];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22780_bank4", _gActor444000Animation22780Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation22780Records[66] = {
 #include "assets/actor_444000_animation_22780_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation22780Records[66];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22780_records", _gActor444000Animation22780Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation22780Indices[4] = {
 #include "assets/actor_444000_animation_22780_indices.inc"
 };
+#else
+static u16 _gActor444000Animation22780Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22780_indices", _gActor444000Animation22780Indices);
 
 static AnimationSet _gActor444000Animation22780 = {
     _gActor444000Animation22780Records,
@@ -1145,21 +1496,41 @@ static AnimationSet _gActor444000Animation22780 = {
     { NULL, _gActor444000Animation22780Bank1, NULL, NULL, _gActor444000Animation22780Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation22B64Bank1[11] = {
 #include "assets/actor_444000_animation_22B64_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation22B64Bank1[11];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22B64_bank1", _gActor444000Animation22B64Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation22B64Bank4[78] = {
 #include "assets/actor_444000_animation_22B64_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation22B64Bank4[78];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22B64_bank4", _gActor444000Animation22B64Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation22B64Records[124] = {
 #include "assets/actor_444000_animation_22B64_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation22B64Records[124];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22B64_records", _gActor444000Animation22B64Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation22B64Indices[8] = {
 #include "assets/actor_444000_animation_22B64_indices.inc"
 };
+#else
+static u16 _gActor444000Animation22B64Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22B64_indices", _gActor444000Animation22B64Indices);
 
 static AnimationSet _gActor444000Animation22B64 = {
     _gActor444000Animation22B64Records,
@@ -1167,21 +1538,41 @@ static AnimationSet _gActor444000Animation22B64 = {
     { NULL, _gActor444000Animation22B64Bank1, NULL, NULL, _gActor444000Animation22B64Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation22FBCBank1[47] = {
 #include "assets/actor_444000_animation_22FBC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation22FBCBank1[47];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22FBC_bank1", _gActor444000Animation22FBCBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation22FBCBank4[30] = {
 #include "assets/actor_444000_animation_22FBC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation22FBCBank4[30];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22FBC_bank4", _gActor444000Animation22FBCBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation22FBCRecords[95] = {
 #include "assets/actor_444000_animation_22FBC_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation22FBCRecords[95];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22FBC_records", _gActor444000Animation22FBCRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation22FBCIndices[4] = {
 #include "assets/actor_444000_animation_22FBC_indices.inc"
 };
+#else
+static u16 _gActor444000Animation22FBCIndices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_22FBC_indices", _gActor444000Animation22FBCIndices);
 
 static AnimationSet _gActor444000Animation22FBC = {
     _gActor444000Animation22FBCRecords,
@@ -1189,21 +1580,41 @@ static AnimationSet _gActor444000Animation22FBC = {
     { NULL, _gActor444000Animation22FBCBank1, NULL, NULL, _gActor444000Animation22FBCBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation233E4Bank1[46] = {
 #include "assets/actor_444000_animation_233E4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation233E4Bank1[46];
+#endif
+PE_ASSET_BIND("actor_444000_animation_233E4_bank1", _gActor444000Animation233E4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation233E4Bank4[27] = {
 #include "assets/actor_444000_animation_233E4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation233E4Bank4[27];
+#endif
+PE_ASSET_BIND("actor_444000_animation_233E4_bank4", _gActor444000Animation233E4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation233E4Records[89] = {
 #include "assets/actor_444000_animation_233E4_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation233E4Records[89];
+#endif
+PE_ASSET_BIND("actor_444000_animation_233E4_records", _gActor444000Animation233E4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation233E4Indices[4] = {
 #include "assets/actor_444000_animation_233E4_indices.inc"
 };
+#else
+static u16 _gActor444000Animation233E4Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_233E4_indices", _gActor444000Animation233E4Indices);
 
 static AnimationSet _gActor444000Animation233E4 = {
     _gActor444000Animation233E4Records,
@@ -1211,21 +1622,41 @@ static AnimationSet _gActor444000Animation233E4 = {
     { NULL, _gActor444000Animation233E4Bank1, NULL, NULL, _gActor444000Animation233E4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation23790Bank1[13] = {
 #include "assets/actor_444000_animation_23790_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation23790Bank1[13];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23790_bank1", _gActor444000Animation23790Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation23790Bank4[77] = {
 #include "assets/actor_444000_animation_23790_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation23790Bank4[77];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23790_bank4", _gActor444000Animation23790Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation23790Records[105] = {
 #include "assets/actor_444000_animation_23790_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation23790Records[105];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23790_records", _gActor444000Animation23790Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation23790Indices[8] = {
 #include "assets/actor_444000_animation_23790_indices.inc"
 };
+#else
+static u16 _gActor444000Animation23790Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23790_indices", _gActor444000Animation23790Indices);
 
 static AnimationSet _gActor444000Animation23790 = {
     _gActor444000Animation23790Records,
@@ -1233,21 +1664,41 @@ static AnimationSet _gActor444000Animation23790 = {
     { NULL, _gActor444000Animation23790Bank1, NULL, NULL, _gActor444000Animation23790Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation23A98Bank1[33] = {
 #include "assets/actor_444000_animation_23A98_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation23A98Bank1[33];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23A98_bank1", _gActor444000Animation23A98Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation23A98Bank4[21] = {
 #include "assets/actor_444000_animation_23A98_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation23A98Bank4[21];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23A98_bank4", _gActor444000Animation23A98Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation23A98Records[62] = {
 #include "assets/actor_444000_animation_23A98_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation23A98Records[62];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23A98_records", _gActor444000Animation23A98Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation23A98Indices[4] = {
 #include "assets/actor_444000_animation_23A98_indices.inc"
 };
+#else
+static u16 _gActor444000Animation23A98Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23A98_indices", _gActor444000Animation23A98Indices);
 
 static AnimationSet _gActor444000Animation23A98 = {
     _gActor444000Animation23A98Records,
@@ -1255,21 +1706,41 @@ static AnimationSet _gActor444000Animation23A98 = {
     { NULL, _gActor444000Animation23A98Bank1, NULL, NULL, _gActor444000Animation23A98Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation23D80Bank1[31] = {
 #include "assets/actor_444000_animation_23D80_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation23D80Bank1[31];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23D80_bank1", _gActor444000Animation23D80Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation23D80Bank4[21] = {
 #include "assets/actor_444000_animation_23D80_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation23D80Bank4[21];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23D80_bank4", _gActor444000Animation23D80Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation23D80Records[60] = {
 #include "assets/actor_444000_animation_23D80_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation23D80Records[60];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23D80_records", _gActor444000Animation23D80Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation23D80Indices[4] = {
 #include "assets/actor_444000_animation_23D80_indices.inc"
 };
+#else
+static u16 _gActor444000Animation23D80Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23D80_indices", _gActor444000Animation23D80Indices);
 
 static AnimationSet _gActor444000Animation23D80 = {
     _gActor444000Animation23D80Records,
@@ -1277,21 +1748,41 @@ static AnimationSet _gActor444000Animation23D80 = {
     { NULL, _gActor444000Animation23D80Bank1, NULL, NULL, _gActor444000Animation23D80Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation23FE8Bank1[13] = {
 #include "assets/actor_444000_animation_23FE8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation23FE8Bank1[13];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23FE8_bank1", _gActor444000Animation23FE8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation23FE8Bank4[38] = {
 #include "assets/actor_444000_animation_23FE8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation23FE8Bank4[38];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23FE8_bank4", _gActor444000Animation23FE8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation23FE8Records[63] = {
 #include "assets/actor_444000_animation_23FE8_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation23FE8Records[63];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23FE8_records", _gActor444000Animation23FE8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation23FE8Indices[8] = {
 #include "assets/actor_444000_animation_23FE8_indices.inc"
 };
+#else
+static u16 _gActor444000Animation23FE8Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_23FE8_indices", _gActor444000Animation23FE8Indices);
 
 static AnimationSet _gActor444000Animation23FE8 = {
     _gActor444000Animation23FE8Records,
@@ -1299,21 +1790,41 @@ static AnimationSet _gActor444000Animation23FE8 = {
     { NULL, _gActor444000Animation23FE8Bank1, NULL, NULL, _gActor444000Animation23FE8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation240B4Bank1[6] = {
 #include "assets/actor_444000_animation_240B4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation240B4Bank1[6];
+#endif
+PE_ASSET_BIND("actor_444000_animation_240B4_bank1", _gActor444000Animation240B4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation240B4Bank4[5] = {
 #include "assets/actor_444000_animation_240B4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation240B4Bank4[5];
+#endif
+PE_ASSET_BIND("actor_444000_animation_240B4_bank4", _gActor444000Animation240B4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation240B4Records[16] = {
 #include "assets/actor_444000_animation_240B4_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation240B4Records[16];
+#endif
+PE_ASSET_BIND("actor_444000_animation_240B4_records", _gActor444000Animation240B4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation240B4Indices[4] = {
 #include "assets/actor_444000_animation_240B4_indices.inc"
 };
+#else
+static u16 _gActor444000Animation240B4Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_240B4_indices", _gActor444000Animation240B4Indices);
 
 static AnimationSet _gActor444000Animation240B4 = {
     _gActor444000Animation240B4Records,
@@ -1321,21 +1832,41 @@ static AnimationSet _gActor444000Animation240B4 = {
     { NULL, _gActor444000Animation240B4Bank1, NULL, NULL, _gActor444000Animation240B4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation24180Bank1[6] = {
 #include "assets/actor_444000_animation_24180_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation24180Bank1[6];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24180_bank1", _gActor444000Animation24180Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation24180Bank4[5] = {
 #include "assets/actor_444000_animation_24180_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation24180Bank4[5];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24180_bank4", _gActor444000Animation24180Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation24180Records[16] = {
 #include "assets/actor_444000_animation_24180_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation24180Records[16];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24180_records", _gActor444000Animation24180Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation24180Indices[4] = {
 #include "assets/actor_444000_animation_24180_indices.inc"
 };
+#else
+static u16 _gActor444000Animation24180Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24180_indices", _gActor444000Animation24180Indices);
 
 static AnimationSet _gActor444000Animation24180 = {
     _gActor444000Animation24180Records,
@@ -1343,21 +1874,41 @@ static AnimationSet _gActor444000Animation24180 = {
     { NULL, _gActor444000Animation24180Bank1, NULL, NULL, _gActor444000Animation24180Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation24458Bank1[8] = {
 #include "assets/actor_444000_animation_24458_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation24458Bank1[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24458_bank1", _gActor444000Animation24458Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation24458Bank4[49] = {
 #include "assets/actor_444000_animation_24458_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation24458Bank4[49];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24458_bank4", _gActor444000Animation24458Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation24458Records[95] = {
 #include "assets/actor_444000_animation_24458_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation24458Records[95];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24458_records", _gActor444000Animation24458Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation24458Indices[8] = {
 #include "assets/actor_444000_animation_24458_indices.inc"
 };
+#else
+static u16 _gActor444000Animation24458Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24458_indices", _gActor444000Animation24458Indices);
 
 static AnimationSet _gActor444000Animation24458 = {
     _gActor444000Animation24458Records,
@@ -1365,21 +1916,41 @@ static AnimationSet _gActor444000Animation24458 = {
     { NULL, _gActor444000Animation24458Bank1, NULL, NULL, _gActor444000Animation24458Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2469CBank1[22] = {
 #include "assets/actor_444000_animation_2469C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2469CBank1[22];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2469C_bank1", _gActor444000Animation2469CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2469CBank4[12] = {
 #include "assets/actor_444000_animation_2469C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2469CBank4[12];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2469C_bank4", _gActor444000Animation2469CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2469CRecords[55] = {
 #include "assets/actor_444000_animation_2469C_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2469CRecords[55];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2469C_records", _gActor444000Animation2469CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2469CIndices[4] = {
 #include "assets/actor_444000_animation_2469C_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2469CIndices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2469C_indices", _gActor444000Animation2469CIndices);
 
 static AnimationSet _gActor444000Animation2469C = {
     _gActor444000Animation2469CRecords,
@@ -1387,21 +1958,41 @@ static AnimationSet _gActor444000Animation2469C = {
     { NULL, _gActor444000Animation2469CBank1, NULL, NULL, _gActor444000Animation2469CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation248DCBank1[23] = {
 #include "assets/actor_444000_animation_248DC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation248DCBank1[23];
+#endif
+PE_ASSET_BIND("actor_444000_animation_248DC_bank1", _gActor444000Animation248DCBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation248DCBank4[10] = {
 #include "assets/actor_444000_animation_248DC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation248DCBank4[10];
+#endif
+PE_ASSET_BIND("actor_444000_animation_248DC_bank4", _gActor444000Animation248DCBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation248DCRecords[53] = {
 #include "assets/actor_444000_animation_248DC_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation248DCRecords[53];
+#endif
+PE_ASSET_BIND("actor_444000_animation_248DC_records", _gActor444000Animation248DCRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation248DCIndices[4] = {
 #include "assets/actor_444000_animation_248DC_indices.inc"
 };
+#else
+static u16 _gActor444000Animation248DCIndices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_248DC_indices", _gActor444000Animation248DCIndices);
 
 static AnimationSet _gActor444000Animation248DC = {
     _gActor444000Animation248DCRecords,
@@ -1409,21 +2000,41 @@ static AnimationSet _gActor444000Animation248DC = {
     { NULL, _gActor444000Animation248DCBank1, NULL, NULL, _gActor444000Animation248DCBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation24AE4Bank1[9] = {
 #include "assets/actor_444000_animation_24AE4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation24AE4Bank1[9];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24AE4_bank1", _gActor444000Animation24AE4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation24AE4Bank4[33] = {
 #include "assets/actor_444000_animation_24AE4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation24AE4Bank4[33];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24AE4_bank4", _gActor444000Animation24AE4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation24AE4Records[56] = {
 #include "assets/actor_444000_animation_24AE4_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation24AE4Records[56];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24AE4_records", _gActor444000Animation24AE4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation24AE4Indices[8] = {
 #include "assets/actor_444000_animation_24AE4_indices.inc"
 };
+#else
+static u16 _gActor444000Animation24AE4Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24AE4_indices", _gActor444000Animation24AE4Indices);
 
 static AnimationSet _gActor444000Animation24AE4 = {
     _gActor444000Animation24AE4Records,
@@ -1431,21 +2042,41 @@ static AnimationSet _gActor444000Animation24AE4 = {
     { NULL, _gActor444000Animation24AE4Bank1, NULL, NULL, _gActor444000Animation24AE4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation24C70Bank1[15] = {
 #include "assets/actor_444000_animation_24C70_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation24C70Bank1[15];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24C70_bank1", _gActor444000Animation24C70Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation24C70Bank4[11] = {
 #include "assets/actor_444000_animation_24C70_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation24C70Bank4[11];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24C70_bank4", _gActor444000Animation24C70Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation24C70Records[31] = {
 #include "assets/actor_444000_animation_24C70_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation24C70Records[31];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24C70_records", _gActor444000Animation24C70Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation24C70Indices[4] = {
 #include "assets/actor_444000_animation_24C70_indices.inc"
 };
+#else
+static u16 _gActor444000Animation24C70Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24C70_indices", _gActor444000Animation24C70Indices);
 
 static AnimationSet _gActor444000Animation24C70 = {
     _gActor444000Animation24C70Records,
@@ -1453,21 +2084,41 @@ static AnimationSet _gActor444000Animation24C70 = {
     { NULL, _gActor444000Animation24C70Bank1, NULL, NULL, _gActor444000Animation24C70Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation24E04Bank1[15] = {
 #include "assets/actor_444000_animation_24E04_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation24E04Bank1[15];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24E04_bank1", _gActor444000Animation24E04Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation24E04Bank4[12] = {
 #include "assets/actor_444000_animation_24E04_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation24E04Bank4[12];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24E04_bank4", _gActor444000Animation24E04Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation24E04Records[32] = {
 #include "assets/actor_444000_animation_24E04_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation24E04Records[32];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24E04_records", _gActor444000Animation24E04Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation24E04Indices[4] = {
 #include "assets/actor_444000_animation_24E04_indices.inc"
 };
+#else
+static u16 _gActor444000Animation24E04Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_24E04_indices", _gActor444000Animation24E04Indices);
 
 static AnimationSet _gActor444000Animation24E04 = {
     _gActor444000Animation24E04Records,
@@ -1475,21 +2126,41 @@ static AnimationSet _gActor444000Animation24E04 = {
     { NULL, _gActor444000Animation24E04Bank1, NULL, NULL, _gActor444000Animation24E04Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2523CBank1[22] = {
 #include "assets/actor_444000_animation_2523C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2523CBank1[22];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2523C_bank1", _gActor444000Animation2523CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2523CBank4[73] = {
 #include "assets/actor_444000_animation_2523C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2523CBank4[73];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2523C_bank4", _gActor444000Animation2523CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2523CRecords[117] = {
 #include "assets/actor_444000_animation_2523C_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2523CRecords[117];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2523C_records", _gActor444000Animation2523CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2523CIndices[8] = {
 #include "assets/actor_444000_animation_2523C_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2523CIndices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2523C_indices", _gActor444000Animation2523CIndices);
 
 static AnimationSet _gActor444000Animation2523C = {
     _gActor444000Animation2523CRecords,
@@ -1497,21 +2168,41 @@ static AnimationSet _gActor444000Animation2523C = {
     { NULL, _gActor444000Animation2523CBank1, NULL, NULL, _gActor444000Animation2523CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation25580Bank1[33] = {
 #include "assets/actor_444000_animation_25580_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation25580Bank1[33];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25580_bank1", _gActor444000Animation25580Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation25580Bank4[29] = {
 #include "assets/actor_444000_animation_25580_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation25580Bank4[29];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25580_bank4", _gActor444000Animation25580Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation25580Records[69] = {
 #include "assets/actor_444000_animation_25580_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation25580Records[69];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25580_records", _gActor444000Animation25580Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation25580Indices[4] = {
 #include "assets/actor_444000_animation_25580_indices.inc"
 };
+#else
+static u16 _gActor444000Animation25580Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25580_indices", _gActor444000Animation25580Indices);
 
 static AnimationSet _gActor444000Animation25580 = {
     _gActor444000Animation25580Records,
@@ -1519,21 +2210,41 @@ static AnimationSet _gActor444000Animation25580 = {
     { NULL, _gActor444000Animation25580Bank1, NULL, NULL, _gActor444000Animation25580Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation25898Bank1[31] = {
 #include "assets/actor_444000_animation_25898_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation25898Bank1[31];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25898_bank1", _gActor444000Animation25898Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation25898Bank4[26] = {
 #include "assets/actor_444000_animation_25898_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation25898Bank4[26];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25898_bank4", _gActor444000Animation25898Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation25898Records[67] = {
 #include "assets/actor_444000_animation_25898_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation25898Records[67];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25898_records", _gActor444000Animation25898Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation25898Indices[4] = {
 #include "assets/actor_444000_animation_25898_indices.inc"
 };
+#else
+static u16 _gActor444000Animation25898Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25898_indices", _gActor444000Animation25898Indices);
 
 static AnimationSet _gActor444000Animation25898 = {
     _gActor444000Animation25898Records,
@@ -1541,21 +2252,41 @@ static AnimationSet _gActor444000Animation25898 = {
     { NULL, _gActor444000Animation25898Bank1, NULL, NULL, _gActor444000Animation25898Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation25BE0Bank1[5] = {
 #include "assets/actor_444000_animation_25BE0_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation25BE0Bank1[5];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25BE0_bank1", _gActor444000Animation25BE0Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation25BE0Bank4[76] = {
 #include "assets/actor_444000_animation_25BE0_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation25BE0Bank4[76];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25BE0_bank4", _gActor444000Animation25BE0Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation25BE0Records[105] = {
 #include "assets/actor_444000_animation_25BE0_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation25BE0Records[105];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25BE0_records", _gActor444000Animation25BE0Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation25BE0Indices[8] = {
 #include "assets/actor_444000_animation_25BE0_indices.inc"
 };
+#else
+static u16 _gActor444000Animation25BE0Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25BE0_indices", _gActor444000Animation25BE0Indices);
 
 AnimationSet gActor444000Animation25BE0 = {
     _gActor444000Animation25BE0Records,
@@ -1563,21 +2294,41 @@ AnimationSet gActor444000Animation25BE0 = {
     { NULL, _gActor444000Animation25BE0Bank1, NULL, NULL, _gActor444000Animation25BE0Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation25F14Bank1[39] = {
 #include "assets/actor_444000_animation_25F14_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation25F14Bank1[39];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25F14_bank1", _gActor444000Animation25F14Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation25F14Bank4[14] = {
 #include "assets/actor_444000_animation_25F14_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation25F14Bank4[14];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25F14_bank4", _gActor444000Animation25F14Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation25F14Records[62] = {
 #include "assets/actor_444000_animation_25F14_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation25F14Records[62];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25F14_records", _gActor444000Animation25F14Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation25F14Indices[4] = {
 #include "assets/actor_444000_animation_25F14_indices.inc"
 };
+#else
+static u16 _gActor444000Animation25F14Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_25F14_indices", _gActor444000Animation25F14Indices);
 
 AnimationSet gActor444000Animation25F14 = {
     _gActor444000Animation25F14Records,
@@ -1585,21 +2336,41 @@ AnimationSet gActor444000Animation25F14 = {
     { NULL, _gActor444000Animation25F14Bank1, NULL, NULL, _gActor444000Animation25F14Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation26240Bank1[38] = {
 #include "assets/actor_444000_animation_26240_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation26240Bank1[38];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26240_bank1", _gActor444000Animation26240Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation26240Bank4[15] = {
 #include "assets/actor_444000_animation_26240_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation26240Bank4[15];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26240_bank4", _gActor444000Animation26240Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation26240Records[62] = {
 #include "assets/actor_444000_animation_26240_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation26240Records[62];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26240_records", _gActor444000Animation26240Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation26240Indices[4] = {
 #include "assets/actor_444000_animation_26240_indices.inc"
 };
+#else
+static u16 _gActor444000Animation26240Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26240_indices", _gActor444000Animation26240Indices);
 
 AnimationSet gActor444000Animation26240 = {
     _gActor444000Animation26240Records,
@@ -1607,21 +2378,41 @@ AnimationSet gActor444000Animation26240 = {
     { NULL, _gActor444000Animation26240Bank1, NULL, NULL, _gActor444000Animation26240Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation26720Bank1[24] = {
 #include "assets/actor_444000_animation_26720_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation26720Bank1[24];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26720_bank1", _gActor444000Animation26720Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation26720Bank4[88] = {
 #include "assets/actor_444000_animation_26720_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation26720Bank4[88];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26720_bank4", _gActor444000Animation26720Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation26720Records[138] = {
 #include "assets/actor_444000_animation_26720_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation26720Records[138];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26720_records", _gActor444000Animation26720Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation26720Indices[8] = {
 #include "assets/actor_444000_animation_26720_indices.inc"
 };
+#else
+static u16 _gActor444000Animation26720Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26720_indices", _gActor444000Animation26720Indices);
 
 static AnimationSet _gActor444000Animation26720 = {
     _gActor444000Animation26720Records,
@@ -1629,21 +2420,41 @@ static AnimationSet _gActor444000Animation26720 = {
     { NULL, _gActor444000Animation26720Bank1, NULL, NULL, _gActor444000Animation26720Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation269B4Bank1[26] = {
 #include "assets/actor_444000_animation_269B4_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation269B4Bank1[26];
+#endif
+PE_ASSET_BIND("actor_444000_animation_269B4_bank1", _gActor444000Animation269B4Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation269B4Bank4[19] = {
 #include "assets/actor_444000_animation_269B4_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation269B4Bank4[19];
+#endif
+PE_ASSET_BIND("actor_444000_animation_269B4_bank4", _gActor444000Animation269B4Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation269B4Records[56] = {
 #include "assets/actor_444000_animation_269B4_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation269B4Records[56];
+#endif
+PE_ASSET_BIND("actor_444000_animation_269B4_records", _gActor444000Animation269B4Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation269B4Indices[4] = {
 #include "assets/actor_444000_animation_269B4_indices.inc"
 };
+#else
+static u16 _gActor444000Animation269B4Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_269B4_indices", _gActor444000Animation269B4Indices);
 
 static AnimationSet _gActor444000Animation269B4 = {
     _gActor444000Animation269B4Records,
@@ -1651,21 +2462,41 @@ static AnimationSet _gActor444000Animation269B4 = {
     { NULL, _gActor444000Animation269B4Bank1, NULL, NULL, _gActor444000Animation269B4Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation26CC0Bank1[30] = {
 #include "assets/actor_444000_animation_26CC0_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation26CC0Bank1[30];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26CC0_bank1", _gActor444000Animation26CC0Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation26CC0Bank4[26] = {
 #include "assets/actor_444000_animation_26CC0_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation26CC0Bank4[26];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26CC0_bank4", _gActor444000Animation26CC0Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation26CC0Records[67] = {
 #include "assets/actor_444000_animation_26CC0_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation26CC0Records[67];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26CC0_records", _gActor444000Animation26CC0Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation26CC0Indices[4] = {
 #include "assets/actor_444000_animation_26CC0_indices.inc"
 };
+#else
+static u16 _gActor444000Animation26CC0Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_26CC0_indices", _gActor444000Animation26CC0Indices);
 
 static AnimationSet _gActor444000Animation26CC0 = {
     _gActor444000Animation26CC0Records,
@@ -1673,21 +2504,41 @@ static AnimationSet _gActor444000Animation26CC0 = {
     { NULL, _gActor444000Animation26CC0Bank1, NULL, NULL, _gActor444000Animation26CC0Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation27D84Bank1[53] = {
 #include "assets/actor_444000_animation_27D84_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation27D84Bank1[53];
+#endif
+PE_ASSET_BIND("actor_444000_animation_27D84_bank1", _gActor444000Animation27D84Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation27D84Bank4[373] = {
 #include "assets/actor_444000_animation_27D84_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation27D84Bank4[373];
+#endif
+PE_ASSET_BIND("actor_444000_animation_27D84_bank4", _gActor444000Animation27D84Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation27D84Records[521] = {
 #include "assets/actor_444000_animation_27D84_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation27D84Records[521];
+#endif
+PE_ASSET_BIND("actor_444000_animation_27D84_records", _gActor444000Animation27D84Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation27D84Indices[20] = {
 #include "assets/actor_444000_animation_27D84_indices.inc"
 };
+#else
+static u16 _gActor444000Animation27D84Indices[20];
+#endif
+PE_ASSET_BIND("actor_444000_animation_27D84_indices", _gActor444000Animation27D84Indices);
 
 static AnimationSet _gActor444000Animation27D84 = {
     _gActor444000Animation27D84Records,
@@ -1695,21 +2546,41 @@ static AnimationSet _gActor444000Animation27D84 = {
     { NULL, _gActor444000Animation27D84Bank1, NULL, NULL, _gActor444000Animation27D84Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation28920Bank1[36] = {
 #include "assets/actor_444000_animation_28920_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation28920Bank1[36];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28920_bank1", _gActor444000Animation28920Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation28920Bank4[255] = {
 #include "assets/actor_444000_animation_28920_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation28920Bank4[255];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28920_bank4", _gActor444000Animation28920Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation28920Records[360] = {
 #include "assets/actor_444000_animation_28920_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation28920Records[360];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28920_records", _gActor444000Animation28920Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation28920Indices[20] = {
 #include "assets/actor_444000_animation_28920_indices.inc"
 };
+#else
+static u16 _gActor444000Animation28920Indices[20];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28920_indices", _gActor444000Animation28920Indices);
 
 static AnimationSet _gActor444000Animation28920 = {
     _gActor444000Animation28920Records,
@@ -1717,21 +2588,41 @@ static AnimationSet _gActor444000Animation28920 = {
     { NULL, _gActor444000Animation28920Bank1, NULL, NULL, _gActor444000Animation28920Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation28A28Bank1[4] = {
 #include "assets/actor_444000_animation_28A28_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation28A28Bank1[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28A28_bank1", _gActor444000Animation28A28Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation28A28Bank4[10] = {
 #include "assets/actor_444000_animation_28A28_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation28A28Bank4[10];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28A28_bank4", _gActor444000Animation28A28Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation28A28Records[30] = {
 #include "assets/actor_444000_animation_28A28_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation28A28Records[30];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28A28_records", _gActor444000Animation28A28Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation28A28Indices[8] = {
 #include "assets/actor_444000_animation_28A28_indices.inc"
 };
+#else
+static u16 _gActor444000Animation28A28Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28A28_indices", _gActor444000Animation28A28Indices);
 
 static AnimationSet _gActor444000Animation28A28 = {
     _gActor444000Animation28A28Records,
@@ -1739,21 +2630,41 @@ static AnimationSet _gActor444000Animation28A28 = {
     { NULL, _gActor444000Animation28A28Bank1, NULL, NULL, _gActor444000Animation28A28Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation28B08Bank1[5] = {
 #include "assets/actor_444000_animation_28B08_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation28B08Bank1[5];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28B08_bank1", _gActor444000Animation28B08Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation28B08Bank4[8] = {
 #include "assets/actor_444000_animation_28B08_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation28B08Bank4[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28B08_bank4", _gActor444000Animation28B08Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation28B08Records[21] = {
 #include "assets/actor_444000_animation_28B08_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation28B08Records[21];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28B08_records", _gActor444000Animation28B08Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation28B08Indices[4] = {
 #include "assets/actor_444000_animation_28B08_indices.inc"
 };
+#else
+static u16 _gActor444000Animation28B08Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28B08_indices", _gActor444000Animation28B08Indices);
 
 static AnimationSet _gActor444000Animation28B08 = {
     _gActor444000Animation28B08Records,
@@ -1761,21 +2672,41 @@ static AnimationSet _gActor444000Animation28B08 = {
     { NULL, _gActor444000Animation28B08Bank1, NULL, NULL, _gActor444000Animation28B08Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation28BE8Bank1[5] = {
 #include "assets/actor_444000_animation_28BE8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation28BE8Bank1[5];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28BE8_bank1", _gActor444000Animation28BE8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation28BE8Bank4[8] = {
 #include "assets/actor_444000_animation_28BE8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation28BE8Bank4[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28BE8_bank4", _gActor444000Animation28BE8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation28BE8Records[21] = {
 #include "assets/actor_444000_animation_28BE8_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation28BE8Records[21];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28BE8_records", _gActor444000Animation28BE8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation28BE8Indices[4] = {
 #include "assets/actor_444000_animation_28BE8_indices.inc"
 };
+#else
+static u16 _gActor444000Animation28BE8Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28BE8_indices", _gActor444000Animation28BE8Indices);
 
 static AnimationSet _gActor444000Animation28BE8 = {
     _gActor444000Animation28BE8Records,
@@ -1783,21 +2714,41 @@ static AnimationSet _gActor444000Animation28BE8 = {
     { NULL, _gActor444000Animation28BE8Bank1, NULL, NULL, _gActor444000Animation28BE8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation28CF0Bank1[6] = {
 #include "assets/actor_444000_animation_28CF0_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation28CF0Bank1[6];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28CF0_bank1", _gActor444000Animation28CF0Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation28CF0Bank4[3] = {
 #include "assets/actor_444000_animation_28CF0_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation28CF0Bank4[3];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28CF0_bank4", _gActor444000Animation28CF0Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation28CF0Records[31] = {
 #include "assets/actor_444000_animation_28CF0_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation28CF0Records[31];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28CF0_records", _gActor444000Animation28CF0Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation28CF0Indices[8] = {
 #include "assets/actor_444000_animation_28CF0_indices.inc"
 };
+#else
+static u16 _gActor444000Animation28CF0Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28CF0_indices", _gActor444000Animation28CF0Indices);
 
 static AnimationSet _gActor444000Animation28CF0 = {
     _gActor444000Animation28CF0Records,
@@ -1805,21 +2756,41 @@ static AnimationSet _gActor444000Animation28CF0 = {
     { NULL, _gActor444000Animation28CF0Bank1, NULL, NULL, _gActor444000Animation28CF0Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation28DB8Bank1[6] = {
 #include "assets/actor_444000_animation_28DB8_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation28DB8Bank1[6];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28DB8_bank1", _gActor444000Animation28DB8Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation28DB8Bank4[1] = {
 #include "assets/actor_444000_animation_28DB8_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation28DB8Bank4[1];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28DB8_bank4", _gActor444000Animation28DB8Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation28DB8Records[19] = {
 #include "assets/actor_444000_animation_28DB8_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation28DB8Records[19];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28DB8_records", _gActor444000Animation28DB8Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation28DB8Indices[4] = {
 #include "assets/actor_444000_animation_28DB8_indices.inc"
 };
+#else
+static u16 _gActor444000Animation28DB8Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28DB8_indices", _gActor444000Animation28DB8Indices);
 
 static AnimationSet _gActor444000Animation28DB8 = {
     _gActor444000Animation28DB8Records,
@@ -1827,21 +2798,41 @@ static AnimationSet _gActor444000Animation28DB8 = {
     { NULL, _gActor444000Animation28DB8Bank1, NULL, NULL, _gActor444000Animation28DB8Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation28E80Bank1[6] = {
 #include "assets/actor_444000_animation_28E80_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation28E80Bank1[6];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28E80_bank1", _gActor444000Animation28E80Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation28E80Bank4[1] = {
 #include "assets/actor_444000_animation_28E80_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation28E80Bank4[1];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28E80_bank4", _gActor444000Animation28E80Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation28E80Records[19] = {
 #include "assets/actor_444000_animation_28E80_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation28E80Records[19];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28E80_records", _gActor444000Animation28E80Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation28E80Indices[4] = {
 #include "assets/actor_444000_animation_28E80_indices.inc"
 };
+#else
+static u16 _gActor444000Animation28E80Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28E80_indices", _gActor444000Animation28E80Indices);
 
 static AnimationSet _gActor444000Animation28E80 = {
     _gActor444000Animation28E80Records,
@@ -1849,21 +2840,41 @@ static AnimationSet _gActor444000Animation28E80 = {
     { NULL, _gActor444000Animation28E80Bank1, NULL, NULL, _gActor444000Animation28E80Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation28F78Bank1[2] = {
 #include "assets/actor_444000_animation_28F78_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation28F78Bank1[2];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28F78_bank1", _gActor444000Animation28F78Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation28F78Bank4[9] = {
 #include "assets/actor_444000_animation_28F78_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation28F78Bank4[9];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28F78_bank4", _gActor444000Animation28F78Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation28F78Records[33] = {
 #include "assets/actor_444000_animation_28F78_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation28F78Records[33];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28F78_records", _gActor444000Animation28F78Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation28F78Indices[8] = {
 #include "assets/actor_444000_animation_28F78_indices.inc"
 };
+#else
+static u16 _gActor444000Animation28F78Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_28F78_indices", _gActor444000Animation28F78Indices);
 
 static AnimationSet _gActor444000Animation28F78 = {
     _gActor444000Animation28F78Records,
@@ -1871,21 +2882,41 @@ static AnimationSet _gActor444000Animation28F78 = {
     { NULL, _gActor444000Animation28F78Bank1, NULL, NULL, _gActor444000Animation28F78Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation29040Bank1[4] = {
 #include "assets/actor_444000_animation_29040_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation29040Bank1[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29040_bank1", _gActor444000Animation29040Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation29040Bank4[5] = {
 #include "assets/actor_444000_animation_29040_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation29040Bank4[5];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29040_bank4", _gActor444000Animation29040Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation29040Records[21] = {
 #include "assets/actor_444000_animation_29040_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation29040Records[21];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29040_records", _gActor444000Animation29040Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation29040Indices[4] = {
 #include "assets/actor_444000_animation_29040_indices.inc"
 };
+#else
+static u16 _gActor444000Animation29040Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29040_indices", _gActor444000Animation29040Indices);
 
 static AnimationSet _gActor444000Animation29040 = {
     _gActor444000Animation29040Records,
@@ -1893,21 +2924,41 @@ static AnimationSet _gActor444000Animation29040 = {
     { NULL, _gActor444000Animation29040Bank1, NULL, NULL, _gActor444000Animation29040Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation29108Bank1[4] = {
 #include "assets/actor_444000_animation_29108_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation29108Bank1[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29108_bank1", _gActor444000Animation29108Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation29108Bank4[5] = {
 #include "assets/actor_444000_animation_29108_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation29108Bank4[5];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29108_bank4", _gActor444000Animation29108Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation29108Records[21] = {
 #include "assets/actor_444000_animation_29108_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation29108Records[21];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29108_records", _gActor444000Animation29108Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation29108Indices[4] = {
 #include "assets/actor_444000_animation_29108_indices.inc"
 };
+#else
+static u16 _gActor444000Animation29108Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29108_indices", _gActor444000Animation29108Indices);
 
 static AnimationSet _gActor444000Animation29108 = {
     _gActor444000Animation29108Records,
@@ -1915,21 +2966,41 @@ static AnimationSet _gActor444000Animation29108 = {
     { NULL, _gActor444000Animation29108Bank1, NULL, NULL, _gActor444000Animation29108Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation29840Bank1[3] = {
 #include "assets/actor_444000_animation_29840_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation29840Bank1[3];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29840_bank1", _gActor444000Animation29840Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation29840Bank4[203] = {
 #include "assets/actor_444000_animation_29840_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation29840Bank4[203];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29840_bank4", _gActor444000Animation29840Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation29840Records[236] = {
 #include "assets/actor_444000_animation_29840_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation29840Records[236];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29840_records", _gActor444000Animation29840Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation29840Indices[8] = {
 #include "assets/actor_444000_animation_29840_indices.inc"
 };
+#else
+static u16 _gActor444000Animation29840Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_29840_indices", _gActor444000Animation29840Indices);
 
 static AnimationSet _gActor444000Animation29840 = {
     _gActor444000Animation29840Records,
@@ -1937,21 +3008,41 @@ static AnimationSet _gActor444000Animation29840 = {
     { NULL, _gActor444000Animation29840Bank1, NULL, NULL, _gActor444000Animation29840Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2AC8CBank1[279] = {
 #include "assets/actor_444000_animation_2AC8C_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2AC8CBank1[279];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2AC8C_bank1", _gActor444000Animation2AC8CBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2AC8CBank4[73] = {
 #include "assets/actor_444000_animation_2AC8C_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2AC8CBank4[73];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2AC8C_bank4", _gActor444000Animation2AC8CBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2AC8CRecords[377] = {
 #include "assets/actor_444000_animation_2AC8C_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2AC8CRecords[377];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2AC8C_records", _gActor444000Animation2AC8CRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2AC8CIndices[4] = {
 #include "assets/actor_444000_animation_2AC8C_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2AC8CIndices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2AC8C_indices", _gActor444000Animation2AC8CIndices);
 
 static AnimationSet _gActor444000Animation2AC8C = {
     _gActor444000Animation2AC8CRecords,
@@ -1959,21 +3050,41 @@ static AnimationSet _gActor444000Animation2AC8C = {
     { NULL, _gActor444000Animation2AC8CBank1, NULL, NULL, _gActor444000Animation2AC8CBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2C160Bank1[287] = {
 #include "assets/actor_444000_animation_2C160_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2C160Bank1[287];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C160_bank1", _gActor444000Animation2C160Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2C160Bank4[72] = {
 #include "assets/actor_444000_animation_2C160_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2C160Bank4[72];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C160_bank4", _gActor444000Animation2C160Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2C160Records[388] = {
 #include "assets/actor_444000_animation_2C160_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2C160Records[388];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C160_records", _gActor444000Animation2C160Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2C160Indices[4] = {
 #include "assets/actor_444000_animation_2C160_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2C160Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C160_indices", _gActor444000Animation2C160Indices);
 
 static AnimationSet _gActor444000Animation2C160 = {
     _gActor444000Animation2C160Records,
@@ -1981,21 +3092,41 @@ static AnimationSet _gActor444000Animation2C160 = {
     { NULL, _gActor444000Animation2C160Bank1, NULL, NULL, _gActor444000Animation2C160Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2C240Bank1[3] = {
 #include "assets/actor_444000_animation_2C240_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2C240Bank1[3];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C240_bank1", _gActor444000Animation2C240Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2C240Bank4[7] = {
 #include "assets/actor_444000_animation_2C240_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2C240Bank4[7];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C240_bank4", _gActor444000Animation2C240Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2C240Records[26] = {
 #include "assets/actor_444000_animation_2C240_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2C240Records[26];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C240_records", _gActor444000Animation2C240Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2C240Indices[8] = {
 #include "assets/actor_444000_animation_2C240_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2C240Indices[8];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C240_indices", _gActor444000Animation2C240Indices);
 
 AnimationSet gActor444000Animation2C240 = {
     _gActor444000Animation2C240Records,
@@ -2003,21 +3134,41 @@ AnimationSet gActor444000Animation2C240 = {
     { NULL, _gActor444000Animation2C240Bank1, NULL, NULL, _gActor444000Animation2C240Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2C2CCBank1[3] = {
 #include "assets/actor_444000_animation_2C2CC_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2C2CCBank1[3];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C2CC_bank1", _gActor444000Animation2C2CCBank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2C2CCBank4[2] = {
 #include "assets/actor_444000_animation_2C2CC_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2C2CCBank4[2];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C2CC_bank4", _gActor444000Animation2C2CCBank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2C2CCRecords[12] = {
 #include "assets/actor_444000_animation_2C2CC_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2C2CCRecords[12];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C2CC_records", _gActor444000Animation2C2CCRecords);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2C2CCIndices[4] = {
 #include "assets/actor_444000_animation_2C2CC_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2C2CCIndices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C2CC_indices", _gActor444000Animation2C2CCIndices);
 
 AnimationSet gActor444000Animation2C2CC = {
     _gActor444000Animation2C2CCRecords,
@@ -2025,21 +3176,41 @@ AnimationSet gActor444000Animation2C2CC = {
     { NULL, _gActor444000Animation2C2CCBank1, NULL, NULL, _gActor444000Animation2C2CCBank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2C358Bank1[3] = {
 #include "assets/actor_444000_animation_2C358_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2C358Bank1[3];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C358_bank1", _gActor444000Animation2C358Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2C358Bank4[2] = {
 #include "assets/actor_444000_animation_2C358_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2C358Bank4[2];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C358_bank4", _gActor444000Animation2C358Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2C358Records[12] = {
 #include "assets/actor_444000_animation_2C358_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2C358Records[12];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C358_records", _gActor444000Animation2C358Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2C358Indices[4] = {
 #include "assets/actor_444000_animation_2C358_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2C358Indices[4];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2C358_indices", _gActor444000Animation2C358Indices);
 
 AnimationSet gActor444000Animation2C358 = {
     _gActor444000Animation2C358Records,
@@ -2047,21 +3218,41 @@ AnimationSet gActor444000Animation2C358 = {
     { NULL, _gActor444000Animation2C358Bank1, NULL, NULL, _gActor444000Animation2C358Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2CB24Bank1[14] = {
 #include "assets/actor_444000_animation_2CB24_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2CB24Bank1[14];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2CB24_bank1", _gActor444000Animation2CB24Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2CB24Bank4[158] = {
 #include "assets/actor_444000_animation_2CB24_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2CB24Bank4[158];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2CB24_bank4", _gActor444000Animation2CB24Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2CB24Records[279] = {
 #include "assets/actor_444000_animation_2CB24_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2CB24Records[279];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2CB24_records", _gActor444000Animation2CB24Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2CB24Indices[20] = {
 #include "assets/actor_444000_animation_2CB24_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2CB24Indices[20];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2CB24_indices", _gActor444000Animation2CB24Indices);
 
 static AnimationSet _gActor444000Animation2CB24 = {
     _gActor444000Animation2CB24Records,
@@ -2069,21 +3260,41 @@ static AnimationSet _gActor444000Animation2CB24 = {
     { NULL, _gActor444000Animation2CB24Bank1, NULL, NULL, _gActor444000Animation2CB24Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2D330Bank1[15] = {
 #include "assets/actor_444000_animation_2D330_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2D330Bank1[15];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2D330_bank1", _gActor444000Animation2D330Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2D330Bank4[206] = {
 #include "assets/actor_444000_animation_2D330_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2D330Bank4[206];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2D330_bank4", _gActor444000Animation2D330Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2D330Records[244] = {
 #include "assets/actor_444000_animation_2D330_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2D330Records[244];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2D330_records", _gActor444000Animation2D330Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2D330Indices[20] = {
 #include "assets/actor_444000_animation_2D330_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2D330Indices[20];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2D330_indices", _gActor444000Animation2D330Indices);
 
 static AnimationSet _gActor444000Animation2D330 = {
     _gActor444000Animation2D330Records,
@@ -2091,21 +3302,41 @@ static AnimationSet _gActor444000Animation2D330 = {
     { NULL, _gActor444000Animation2D330Bank1, NULL, NULL, _gActor444000Animation2D330Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2E198Bank1[39] = {
 #include "assets/actor_444000_animation_2E198_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2E198Bank1[39];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2E198_bank1", _gActor444000Animation2E198Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2E198Bank4[353] = {
 #include "assets/actor_444000_animation_2E198_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2E198Bank4[353];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2E198_bank4", _gActor444000Animation2E198Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2E198Records[432] = {
 #include "assets/actor_444000_animation_2E198_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2E198Records[432];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2E198_records", _gActor444000Animation2E198Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2E198Indices[20] = {
 #include "assets/actor_444000_animation_2E198_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2E198Indices[20];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2E198_indices", _gActor444000Animation2E198Indices);
 
 AnimationSet gActor444000Animation2E198 = {
     _gActor444000Animation2E198Records,
@@ -2113,21 +3344,41 @@ AnimationSet gActor444000Animation2E198 = {
     { NULL, _gActor444000Animation2E198Bank1, NULL, NULL, _gActor444000Animation2E198Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2E548Bank1[6] = {
 #include "assets/actor_444000_animation_2E548_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2E548Bank1[6];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2E548_bank1", _gActor444000Animation2E548Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2E548Bank4[73] = {
 #include "assets/actor_444000_animation_2E548_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2E548Bank4[73];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2E548_bank4", _gActor444000Animation2E548Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2E548Records[125] = {
 #include "assets/actor_444000_animation_2E548_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2E548Records[125];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2E548_records", _gActor444000Animation2E548Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2E548Indices[20] = {
 #include "assets/actor_444000_animation_2E548_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2E548Indices[20];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2E548_indices", _gActor444000Animation2E548Indices);
 
 AnimationSet gActor444000Animation2E548 = {
     _gActor444000Animation2E548Records,
@@ -2135,21 +3386,41 @@ AnimationSet gActor444000Animation2E548 = {
     { NULL, _gActor444000Animation2E548Bank1, NULL, NULL, _gActor444000Animation2E548Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2EA80Bank1[10] = {
 #include "assets/actor_444000_animation_2EA80_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2EA80Bank1[10];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2EA80_bank1", _gActor444000Animation2EA80Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2EA80Bank4[117] = {
 #include "assets/actor_444000_animation_2EA80_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2EA80Bank4[117];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2EA80_bank4", _gActor444000Animation2EA80Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2EA80Records[167] = {
 #include "assets/actor_444000_animation_2EA80_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2EA80Records[167];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2EA80_records", _gActor444000Animation2EA80Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2EA80Indices[20] = {
 #include "assets/actor_444000_animation_2EA80_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2EA80Indices[20];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2EA80_indices", _gActor444000Animation2EA80Indices);
 
 AnimationSet gActor444000Animation2EA80 = {
     _gActor444000Animation2EA80Records,
@@ -2157,21 +3428,41 @@ AnimationSet gActor444000Animation2EA80 = {
     { NULL, _gActor444000Animation2EA80Bank1, NULL, NULL, _gActor444000Animation2EA80Bank4, NULL, NULL, NULL },
 };
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedPose _gActor444000Animation2EE14Bank1[7] = {
 #include "assets/actor_444000_animation_2EE14_bank1.inc"
 };
+#else
+static AnimationPackedPose _gActor444000Animation2EE14Bank1[7];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2EE14_bank1", _gActor444000Animation2EE14Bank1);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationPackedRotation _gActor444000Animation2EE14Bank4[65] = {
 #include "assets/actor_444000_animation_2EE14_bank4.inc"
 };
+#else
+static AnimationPackedRotation _gActor444000Animation2EE14Bank4[65];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2EE14_bank4", _gActor444000Animation2EE14Bank4);
 
+#ifdef PE_EMBED_ASSETS
 static AnimationRecord _gActor444000Animation2EE14Records[123] = {
 #include "assets/actor_444000_animation_2EE14_records.inc"
 };
+#else
+static AnimationRecord _gActor444000Animation2EE14Records[123];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2EE14_records", _gActor444000Animation2EE14Records);
 
+#ifdef PE_EMBED_ASSETS
 static u16 _gActor444000Animation2EE14Indices[20] = {
 #include "assets/actor_444000_animation_2EE14_indices.inc"
 };
+#else
+static u16 _gActor444000Animation2EE14Indices[20];
+#endif
+PE_ASSET_BIND("actor_444000_animation_2EE14_indices", _gActor444000Animation2EE14Indices);
 
 AnimationSet gActor444000Animation2EE14 = {
     _gActor444000Animation2EE14Records,
