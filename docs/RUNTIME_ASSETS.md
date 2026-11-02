@@ -38,6 +38,16 @@ pointer (then the generator already emits symbol references).
 - A runtime lookup needs the disc location of each `.pe2pkg`/`main.exe`; the CDF tree in `asset_data.py` carries the
   disc ids and sha1s (no data), so the manifest can be generated without game data.
 
+## Manifest generator (first slice, done)
+
+`tools/port/gen_asset_manifest.py` writes a data-free JSON manifest from the generated includes and the CDF tree:
+3,655 entries (include file, source package, kind, offset) over 146 packages that it can locate on the disc
+(disc file number and chunk name, plus the sha1 of the decoded package). 57 further packages named by includes
+(`actor_120300`, `actor_121300`, `actor_135600`, ... ) are extracted into `assets/USA/pe2pkg/` but are **not
+registered** in `asset_data.ASSETS` (373 `pe2pkg` assets are), so the tree gives no disc location for them. Resolving
+them (by registering them in the catalog or by locating the chunk through the extraction manifests
+`assets/USA/iso_disk*.json`) is the next prerequisite, followed by the C reader.
+
 ## Plan
 
 1. **Manifest instead of bytes.** At configure time, `peassets` emits for each include a manifest entry
