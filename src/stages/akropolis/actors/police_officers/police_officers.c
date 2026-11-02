@@ -450,6 +450,15 @@ static inline void _policeOfficersFinishModelSwap(Task* displayTask, const _Offi
     modelTask = controllerWork->modelTask;
     placement = _policeOfficersFindPlacement(placementId);
     _policeOfficersPlaceAt(modelTask, placement);
+#ifdef __psyz
+    /* Spawning attaches the model but leaves work NULL until its first callback.
+     * The console stores the posed state through that NULL work pointer here;
+     * run the native model's initialization before accessing its work instead.
+     * Its state advances, so the next game-list walk does not initialize twice. */
+    if (modelTask->work == NULL) {
+        modelTask->callback(modelTask);
+    }
+#endif
     modelWork            = controllerWork->modelTask->work;
     modelWork->playState = PLAY_STATE_POSED;
     taskKill(displayTask);
@@ -888,6 +897,10 @@ static inline void _policeOfficersUpdateBody(Task* task, s32 placementId)
     switch (task->state) {
         case MODEL_INIT:
             _policeOfficersInitBody(task, placementId);
+#ifdef __psyz
+            // Initialization replaces the incoming (initially NULL) work pointer.
+            work = task->work;
+#endif
             task->state++;
             /* fallthrough */
         case MODEL_READY:

@@ -1,0 +1,614 @@
+{
+  "description": "Recorded normal controller route through both gallery airlocks, control room and parking departure to Akropolis Plaza. No game-state writes.",
+  "clock": "video",
+  "baseRoute": "video_clock_airlock",
+  "baseSamples": 23358,
+  "totalSamples": 39036,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          80,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          400,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          40,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 15,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          80,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          50,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 15,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          360,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          48,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          140,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          48,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 15,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          30,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          46,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          40,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          70,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          160,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          30,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          55,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          35,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          40,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          64
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          30,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 39,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          852,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          400,
+          16
+        ],
+        [
+          600,
+          0
+        ]
+      ]
+    }
+  ]
+}

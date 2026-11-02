@@ -16,6 +16,9 @@
 #include "gameplay/scene_combat.h"
 #include "gameplay/world_collision.h"
 #include "world_collision.h"
+#ifdef __psyz
+#include "port/room_collision.h"
+#endif
 
 #include "main/areas.h"
 #include "main/display.h"
@@ -627,26 +630,7 @@ void fadeResumeSessionTask(Task* task)
     }
 }
 
-s32 taskMessageDispatch(Task* receiver, s32 messageId, s32 firstArg, s32 secondArg)
-{
-    const TaskMessageEntry* entry;
 
-    if (receiver->msgTable == NULL) {
-        return 0;
-    }
-    entry = receiver->msgTable;
-
-    // Match the ID before testing the reserved end marker.
-    if (entry->messageId != messageId) {
-        do {
-            if (entry->messageId == TASK_MESSAGE_TABLE_END) {
-                return 0;
-            }
-            entry++;
-        } while (entry->messageId != messageId);
-    }
-    return entry->handler(receiver, messageId, firstArg, secondArg);
-}
 
 /// Binds borrowed collision records for initial room setup without clearing lists.
 ///
@@ -721,6 +705,11 @@ void loadingInitRoomResourcesTask(Task* task)
 
     location      = &gGameSession->location;
     roomResources = gWorldCollisionStageResources[location->stage - 1]->areaRooms[location->area - 1];
+#ifdef __psyz
+    if (roomResources != NULL) {
+        peResetRoomCollisionResources(&roomResources[location->roomState - 1]);
+    }
+#endif
     _loadingBindInitialRoomCollisionResources(location, roomResources);
     // The room task owns the sprite task in its teardown tree.
     viewSpriteTask = taskSpawn(LOADING_VIEW_SPRITE_TASK_BANK, LOADING_VIEW_SPRITE_TASK_TYPE, 0, 0);

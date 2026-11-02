@@ -1,6 +1,7 @@
 #ifndef GAMEPLAY_SPRITES_H
 #define GAMEPLAY_SPRITES_H
 
+#include <stddef.h>
 #include <psyz.h>
 #include <libgte.h>
 #include <libgpu.h>
@@ -171,7 +172,11 @@ STATIC_ASSERT_SIZEOF(SpriteAreaTable, 4);
 typedef union {
     SPRT sprt;        // SDK sprite. Command byte is 0x64 plus SPRITE_SOURCE_RAW_TEXTURE and SPRITE_SOURCE_SEMI_TRANSPARENT
     struct {
+#ifdef __psyz
+        O_TAG;        // Native pointer-width link and length, matching SPRT
+#else
         u32 tag;      // Next primitive address and packet length (4 words after the tag)
+#endif
         u32 color;    // Red, green, blue, and the command byte in bits 24..31
         u32 position; // Upper-left X in the low halfword, Y in the high halfword, in pixels
         u16 uv;       // Texture U in the low byte, V in the high byte
@@ -180,6 +185,13 @@ typedef union {
     } packed;         // Word and halfword transfers of the same primitive
 } SpritePacket;
 STATIC_ASSERT_SIZEOF(SpritePacket, 0x14);
+#ifdef __psyz
+_Static_assert(offsetof(SpritePacket, packed.color) == offsetof(SpritePacket, sprt.r0), "sprite colour view");
+_Static_assert(offsetof(SpritePacket, packed.position) == offsetof(SpritePacket, sprt.x0), "sprite position view");
+_Static_assert(offsetof(SpritePacket, packed.uv) == offsetof(SpritePacket, sprt.u0), "sprite UV view");
+_Static_assert(offsetof(SpritePacket, packed.clut) == offsetof(SpritePacket, sprt.clut), "sprite CLUT view");
+_Static_assert(offsetof(SpritePacket, packed.size) == offsetof(SpritePacket, sprt.w), "sprite size view");
+#endif
 
 /// A textured sprite preceded by the draw-mode command it is drawn with.
 ///

@@ -568,6 +568,10 @@ static EffectUnitQuadCorner _gAkropolisSecurityRoomFallingQuadUnitCorners[4] = {
 #include "assets/rooms/akropolis/security_room/cameras.inc"
 #include "assets/rooms/akropolis/security_room/updates.inc"
 #include "assets/rooms/akropolis/security_room/surfaces.inc"
+#ifdef __psyz
+// The model is referenced through an assembler alias; keep its local definition.
+static TmdSource _gItemBoxModel __attribute__((used));
+#endif
 #include "assets/rooms/item_box/model.inc"
 DEFINE_ALIAS(_gItemBoxModel, gAkropolisSecurityRoomItemBoxModel);
 
@@ -626,7 +630,7 @@ static s32 _akropolisSecurityRoomHandleRoomAction(Task* task, s32 messageId, con
     if (request->actionId == ACTION_MONITOR) {
         taskSpawnFromTable(_gAkropolisSecurityRoomPanelOpenerTaskDescs, MONITOR_OPENER, 0, 0);
     }
-    return;
+    return 0;
 }
 /// Room-message task states 0..2: register the receiver, idle and retire it.
 static const TaskFuncTable3 _gAkropolisSecurityRoomMessageStates = { {

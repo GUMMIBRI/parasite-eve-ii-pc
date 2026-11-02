@@ -147,6 +147,21 @@ void akropolisFountainEnableClimbTrigger(void)
 {
     enum { INSPECTION_TRIGGER = 5 };
 
+#ifdef __psyz
+    /* This extra record is outside the room's ordinary reset arrays. Retired
+     * native overlays keep its linked bit and backlinks, unlike a PS1 reload.
+     * Check only the current live list before discarding those old links. */
+    WorldCollisionTrigger* registered = gWorldCollisionActionTriggerListHead;
+    while (registered != NULL && registered != &_gAkropolisFountainClimbTrigger) {
+        registered = registered->next;
+    }
+    if (registered == NULL) {
+        _gAkropolisFountainClimbTrigger.next = NULL;
+        _gAkropolisFountainClimbTrigger.prevLink = NULL;
+        _gAkropolisFountainClimbTrigger.hit = 0;
+        _gAkropolisFountainClimbTrigger.flags &= WORLD_COLLISION_TRIGGER_PERSISTENT_FLAGS;
+    }
+#endif
     worldCollisionUnlinkTrigger(WORLD_COLLISION_TRIGGER_LIST_ACTION, &_gAkropolisFountainActionTriggers[INSPECTION_TRIGGER]);
     _gAkropolisFountainClimbTrigger.coord = &gGfxViewCoord;
     worldCollisionLinkTrigger(WORLD_COLLISION_TRIGGER_LIST_ACTION, &_gAkropolisFountainClimbTrigger);

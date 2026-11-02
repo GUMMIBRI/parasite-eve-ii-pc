@@ -118,7 +118,9 @@ s32 textDrawStream(TextStream* stream, u8* phase, s16* framesLeft, s32 skipMarke
             draw.b         = TEXT_STREAM_TEXTURE_SHADE_UNITY;
             draw.semiTrans = 0;
             draw.unused_12 = ONE;
-            if (stream->chars[stream->cursor - 1] != TEXT_STREAM_END) {
+            // The PS1 build reads the byte before the script when the cursor is 0; it is padding, never the
+            // terminator. The host layout has no such guarantee, so a zero cursor is treated as not ended.
+            if (stream->cursor == 0 || stream->chars[stream->cursor - 1] != TEXT_STREAM_END) {
                 TEXT_DRAW_STREAM_PREFIX();
                 *framesLeft = *framesLeft - 1;
                 if (*framesLeft < 0) {

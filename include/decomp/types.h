@@ -54,10 +54,19 @@ typedef enum { false,
 
 /// Smaller `VECTOR` with padding removed. Used for fixed-point positions.
 typedef struct {
-    long vx;
-    long vy;
-    long vz;
+    s32 vx;
+    s32 vy;
+    s32 vz;
 } VECTOR3;
+#ifdef __psyz
+/* GTE stores and MATRIX.t aliases exchange exactly three 32-bit words.
+ * Unlike pointer-bearing console structs, this layout must stay fixed on LP64. */
+#if defined(__cplusplus)
+static_assert(sizeof(VECTOR3) == 12, "VECTOR3 must match GTE XYZ words");
+#else
+_Static_assert(sizeof(VECTOR3) == 12, "VECTOR3 must match GTE XYZ words");
+#endif
+#endif
 
 /// Smaller `SVECTOR` with padding removed. Used for fixed-point rotations.
 typedef struct {

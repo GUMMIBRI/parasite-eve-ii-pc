@@ -345,6 +345,11 @@ def c_value(value, kind, pointer, layout: str = "") -> str:
             return c_value(value, fields[0][1], pointer, kind)
         parts, value = [], _filled(value, kind)
         for n, k, _o in fields:
+            # Image slots reserve physical PS1 RAM; unlike other unnamed
+            # pointers their targets are not linked symbols or stale bytes.
+            if kind == "GfxImageSlot" and n == "regionBase" and isinstance(value[n], int) and 0x80000000 <= value[n] < 0x80200000:
+                parts.append(f".{n} = PS1_RAM_PTR(0x{value[n]:08X})")
+                continue
             if isinstance(k, tuple) and k[0] == "word":
                 v = value[n]
                 member = k[2] if isinstance(v, str) else k[1]

@@ -115,7 +115,13 @@ void itemPickupActionPromptTask(Task* task)
         }
         spawnedRoot = uiSpawnObject(descriptor, (s32)((s8)(request->defaultPrompt ^ 1)), USER_INTERFACE_PANEL_ACTIVE, ITEM_PICKUP_ACTION_OPEN_DELAY_TICKS, NULL);
         if (spawnedRoot != NULL) {
+#ifdef __psyz
+            // Closing the UI detaches its root. Register the actual parent so
+            // that detachment clears this handle before the root task is freed.
+            taskReparent(task, spawnedRoot->owner);
+#else
             task->firstChild = spawnedRoot->owner;
+#endif
             task->state++;
         }
     }

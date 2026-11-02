@@ -1,0 +1,186 @@
+{
+  "description": "Physical controller capture: Cafeteria intro/film skips, boss defeated with M93R, follow-up accepted and normal return to Patio. No game-state writes.",
+  "clock": "video",
+  "baseRoute": "video_clock_cafeteria",
+  "baseSamples": 86228,
+  "totalSamples": 93030,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          10,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          100,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 10,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          51200
+        ],
+        [
+          22,
+          32768
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 10,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 30,
+      "steps": [
+        [
+          8,
+          51200
+        ],
+        [
+          22,
+          32768
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    }
+  ]
+}

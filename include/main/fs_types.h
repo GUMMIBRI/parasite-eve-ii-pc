@@ -319,7 +319,7 @@ enum {
 /// strips replace it, and the image-mode VLC table is built in the middle
 /// of that storage first.
 typedef struct {
-    u_long strips[FILE_SYSTEM_IMAGE_STRIP_COUNT][FILE_SYSTEM_IMAGE_STRIP_WORDS]; // 16×240 columns, two pixels per word
+    u32 strips[FILE_SYSTEM_IMAGE_STRIP_COUNT][FILE_SYSTEM_IMAGE_STRIP_WORDS]; // 16×240 columns, two pixels per word
 } FsImgBuffers;
 STATIC_ASSERT_SIZEOF(FsImgBuffers, 0x25800);
 

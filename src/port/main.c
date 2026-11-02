@@ -12,6 +12,7 @@
 
 /* Crash report: where it faulted and the call chain (also the link register, since a call through a
  * NULL function pointer leaves no frame of its own). */
+extern void* gHostCurrentTaskCallback;
 static void crashHandler(int sig, siginfo_t* info, void* ctx)
 {
     void* frames[32];
@@ -21,6 +22,11 @@ static void crashHandler(int sig, siginfo_t* info, void* ctx)
     fprintf(stderr, "\nCRASH signal %d addr=%p pc=%p lr=%p\n", sig, info->si_addr,
             (void*)uc->uc_mcontext->__ss.__pc, (void*)uc->uc_mcontext->__ss.__lr);
     frames[0] = (void*)uc->uc_mcontext->__ss.__lr;
+    fprintf(stderr, "last task callback:\n");
+    {
+        void* cb[1] = { gHostCurrentTaskCallback };
+        backtrace_symbols_fd(cb, 1, 2);
+    }
     count = backtrace(frames + 1, 30) + 1;
 #else
     (void)ctx;

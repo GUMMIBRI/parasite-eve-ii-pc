@@ -303,6 +303,11 @@ static void _squareGrinningStrangerTask(Task* task)
         case TASK_INITIALIZE:
             if ((gAttachmentState.mode != ATTACHMENT_MODE_WHEEL) && (gDisplayState.pendingMode == DISPLAY_MODE_NONE)) {
                 _squareGrinningStrangerInitBody(task);
+#ifdef __psyz
+                // Initialization replaces the callback's initially NULL work.
+                work = task->work;
+                if (work == NULL) return;
+#endif
                 task->state += 1;
                 break;
             }
@@ -321,6 +326,10 @@ static void _squareGrinningStrangerTask(Task* task)
             _squareGrinningStrangerRunSequence(task);
             if (gGameSession->eventState == 0) {
                 taskKill(task);
+#ifdef __psyz
+                // taskKill releases work before the joint-lighting phase below.
+                return;
+#endif
             }
             break;
     }

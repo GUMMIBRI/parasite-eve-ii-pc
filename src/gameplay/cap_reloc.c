@@ -1,3 +1,6 @@
+#ifdef __psyz
+#include "port/cap_asset.h"
+#endif
 #include "captions.h"
 
 #include <strings.h>
@@ -68,6 +71,13 @@ u8 gCapChoiceRowStride;
 
 bool capRelocateFile(CapFile* file)
 {
+#ifdef __psyz
+    file = peCapResolveResource(file);
+    if (file == NULL) return false;
+    gCapGlyphCells = file->glyphs.cells;
+    gCapCommandEntries = file->commands.table->entries;
+    return true;
+#else
     /// Relocates one CAP text byte offset, or skips a terminator's following slot.
     ///
     /// `recordCursor` is a writable `CapSequenceRecord*` local, `fileBase` is
@@ -141,4 +151,5 @@ bool capRelocateFile(CapFile* file)
     gCapGlyphCells     = file->glyphs.cells;
     gCapCommandEntries = file->commands.table->entries;
     return true;
+#endif
 }

@@ -9,6 +9,9 @@
 #include <strings.h>
 
 #include "common.h"
+#ifdef __psyz
+#include "port/cap_asset.h"
+#endif
 
 #include "cd_types.h"
 #include "main/display.h"
@@ -56,17 +59,21 @@ STATIC_ASSERT_SIZEOF(_FsStage0CategoryFile, 0x4);
 /// the chunk's load address, and `destination` is where each resource lands in
 /// that stream. The loader publishes only `kind` and `destination`, and arms
 /// `_gFsLoadRedirect` from an entry with a `redirectDestination`. `byteSize` is
-/// not read; retail bundles pack resources at 16-byte aligned destinations and
+/// used by the host CAP decoder for bounds checking; retail bundles pack
+/// resources at 16-byte aligned destinations and
 /// leave the redirect pair zero.
 typedef struct {
     u8    kind;                  // Resource kind (0 none, 2 image, 3 untyped data)
     u8    pad;                   // Aligns sectorsBeforeRedirect; zero in every retail bundle
     u16   sectorsBeforeRedirect; // Payload sectors written before the stream moves to `redirectDestination`
     u32   byteSize;              // Resource length in bytes
-    void* destination;           // Absolute RAM address of the resource
-    u8*   redirectDestination;   // Write pointer for the remaining payload sectors; NULL to stay contiguous
+    u32   destination;           // Serialized absolute PS1 RAM address
+    u32   redirectDestination;   // Serialized redirect address; zero to stay contiguous
 } _FsCdfResourceEntry;
 STATIC_ASSERT_SIZEOF(_FsCdfResourceEntry, 0x10);
+#ifdef __psyz
+_Static_assert(sizeof(_FsCdfResourceEntry) == 16, "disk bundle directory stride");
+#endif
 
 /// A pending jump of a resource bundle's payload stream to a second RAM address.
 ///
@@ -885,15 +892,27 @@ static u8 _fsReadChunkHeaderSector(void)
                 _gFsPayloadPhase = FILE_SYSTEM_PAYLOAD_SKIP;
                 return 1;
             }
+#ifdef __psyz
+            peCapResourcesReset();
+#endif
             resourceEntry = (_FsCdfResourceEntry*)gFsSectorBuffers.sector.chunk.data.bytes;
             // Publish resource destinations before streaming the bundle's payload.
             for (entryIndex = 0; entryIndex < ARRAY_SIZE(gFsResourceSlots); entryIndex++) {
                 gFsResourceSlots[entryIndex].kind = resourceEntry->kind;
-                gFsResourceSlots[entryIndex].data = resourceEntry->destination;
-                if (resourceEntry->redirectDestination != NULL) {
+#ifdef __psyz
+                gFsResourceSlots[entryIndex].data = Ps1AddrToHost(resourceEntry->destination);
+                peCapSetResourceSize(entryIndex, resourceEntry->byteSize);
+#else
+                gFsResourceSlots[entryIndex].data = (void*)resourceEntry->destination;
+#endif
+                if (resourceEntry->redirectDestination != 0) {
                     _gFsLoadRedirect.enabled               = true;
                     _gFsLoadRedirect.sectorsBeforeRedirect = resourceEntry->sectorsBeforeRedirect;
-                    _gFsLoadRedirect.destination           = resourceEntry->redirectDestination;
+#ifdef __psyz
+                    _gFsLoadRedirect.destination           = Ps1AddrToHost(resourceEntry->redirectDestination);
+#else
+                    _gFsLoadRedirect.destination           = (u8*)resourceEntry->redirectDestination;
+#endif
                 }
                 resourceEntry++;
             }
@@ -1189,6 +1208,9 @@ void fsStartFolderDirectoryRead(s32 stageIndex, s32 fileGroup, s32 folderIndex)
     s32 directorySector;
 
     // Retire published slots and pending redirects before loading another directory.
+#ifdef __psyz
+    peCapResourcesReset();
+#endif
     _gFsLoadRedirect.enabled               = false;
     _gFsLoadRedirect.sectorsRead           = 0;
     _gFsLoadRedirect.sectorsBeforeRedirect = 0;

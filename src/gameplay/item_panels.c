@@ -1440,8 +1440,13 @@ void itemPickupPanelTask(Task* task)
         if (task->spawnArg1.value != 0) {
             inventorySetCollectedBit(gItemPickupPublishedKind);
             sndEvtRequestScriptStart(SOUND_MENU_CONFIRM, 0, 0);
-            // This original one-past-table access reaches the separate adjacent notice recipe.
+            // The console table ends immediately before the notice recipe.
+            // Native linkers may place the preview there instead.
+#ifdef __psyz
+            noticeObject = uiSpawnObject(&_gItemPickupObtainedNoticeDesc, gItemPickupPublishedKind | ITEM_PICKUP_PANEL_TIMEOUT_ONLY, USER_INTERFACE_PANEL_ACTIVE, ITEM_PICKUP_PANEL_OPEN_DELAY, object);
+#else
             noticeObject = uiSpawnObject(pickupPanelDescs + ARRAY_SIZE(_gItemPickupChildPanelDescs), gItemPickupPublishedKind | ITEM_PICKUP_PANEL_TIMEOUT_ONLY, USER_INTERFACE_PANEL_ACTIVE, ITEM_PICKUP_PANEL_OPEN_DELAY, object);
+#endif
             if (noticeObject != NULL) {
                 noticeObject->resultValue = USER_INTERFACE_LIST_COMMAND_YES;
             }

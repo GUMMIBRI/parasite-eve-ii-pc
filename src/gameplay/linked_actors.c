@@ -685,7 +685,7 @@ void hudDrawStatusBlock(const HudState* hud)
         hpCapSprite->u0   = HUD_STATUS_BAR_FRAME_LEFT_U;
         hpCapSprite->v0   = HUD_STATUS_BAR_FRAME_TOP_V;
         hpCapSprite->clut = frameClut;
-        setlen(hpCapSprite, HUD_STATUS_BAR_CAP_WORDS);
+        setlen((SPRT_8*)hpCapSprite, HUD_STATUS_BAR_CAP_WORDS);
         setcode(hpCapSprite, HUD_STATUS_BAR_RAW_SPRITE8_CODE);
         addPrim(gGpuCurrentOt + HUD_STATUS_BLOCK_OT_INDEX, hpCapSprite);
 
@@ -696,7 +696,7 @@ void hudDrawStatusBlock(const HudState* hud)
         hpCapSprite->u0   = HUD_STATUS_BAR_FRAME_RIGHT_U;
         hpCapSprite->v0   = HUD_STATUS_BAR_FRAME_TOP_V;
         hpCapSprite->clut = frameClut;
-        setlen(hpCapSprite, HUD_STATUS_BAR_CAP_WORDS);
+        setlen((SPRT_8*)hpCapSprite, HUD_STATUS_BAR_CAP_WORDS);
         setcode(hpCapSprite, HUD_STATUS_BAR_RAW_SPRITE8_CODE);
         addPrim(gGpuCurrentOt + HUD_STATUS_BLOCK_OT_INDEX, hpCapSprite);
 
@@ -732,7 +732,7 @@ void hudDrawStatusBlock(const HudState* hud)
         mpCapSprite->v0   = HUD_STATUS_BAR_FRAME_TOP_V;
         mpCapSprite->clut = frameClut;
         mpCapSprite->x0  += 0x2B;
-        setlen(mpCapSprite, HUD_STATUS_BAR_CAP_WORDS);
+        setlen((SPRT_8*)mpCapSprite, HUD_STATUS_BAR_CAP_WORDS);
         setcode(mpCapSprite, HUD_STATUS_BAR_RAW_SPRITE8_CODE);
         addPrim(gGpuCurrentOt + HUD_STATUS_BLOCK_OT_INDEX, mpCapSprite);
 
@@ -741,7 +741,7 @@ void hudDrawStatusBlock(const HudState* hud)
         gGpuPrimCursor  = mpCapSprite + 1;
         mpCapSprite->u0 = HUD_STATUS_BAR_FRAME_RIGHT_U;
         mpCapSprite->v0 = HUD_STATUS_BAR_FRAME_TOP_V;
-        setlen(mpCapSprite, HUD_STATUS_BAR_CAP_WORDS);
+        setlen((SPRT_8*)mpCapSprite, HUD_STATUS_BAR_CAP_WORDS);
         setcode(mpCapSprite, HUD_STATUS_BAR_RAW_SPRITE8_CODE);
         mpCapSprite->x0  += 0x2B;
         mpCapSprite->y0   = frameTop;

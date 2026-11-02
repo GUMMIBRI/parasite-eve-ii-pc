@@ -112,7 +112,7 @@ static TmdSource    _gRupertBody;
 ///
 /// 24 VRAM halfwords per row by 16 rows (192 packed 32-bit words).
 /// The upload list borrows this word-aligned storage until GPU transfer completion.
-static u_long _gActor210700OpenEyesPixels[192] = {
+static u32 _gActor210700OpenEyesPixels[192] __attribute__((aligned(sizeof(u_long)))) = {
 #include "assets/characters/rupert/eyes_open.inc"
 };
 
@@ -129,7 +129,7 @@ enum {
 /// its destination relative to the model texture; pixel storage is borrowed
 /// until the queued GPU transfer completes. The list lives with the package.
 static GpuImageUpload _gActor210700OpenEyesUploads[2] = {
-    { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, ACTOR_210700_EYE_TEXTURE_WIDTH_WORDS, ACTOR_210700_EYE_TEXTURE_HEIGHT_ROWS }, _gActor210700OpenEyesPixels },
+    { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, ACTOR_210700_EYE_TEXTURE_WIDTH_WORDS, ACTOR_210700_EYE_TEXTURE_HEIGHT_ROWS }, (u_long*)_gActor210700OpenEyesPixels },
     { GPU_IMAGE_UPLOAD_END, 0, { 0, 0, 0, 0 }, NULL },
 };
 
@@ -137,7 +137,7 @@ static GpuImageUpload _gActor210700OpenEyesUploads[2] = {
 ///
 /// 24 VRAM halfwords per row by 16 rows (192 packed 32-bit words).
 /// The upload list borrows this word-aligned storage until GPU transfer completion.
-static u_long _gActor210700HalfOpenEyesPixels[192] = {
+static u32 _gActor210700HalfOpenEyesPixels[192] __attribute__((aligned(sizeof(u_long)))) = {
 #include "assets/characters/rupert/eyes_half_open.inc"
 };
 
@@ -147,7 +147,7 @@ static u_long _gActor210700HalfOpenEyesPixels[192] = {
 /// its destination relative to the model texture; pixel storage is borrowed
 /// until the queued GPU transfer completes. The list lives with the package.
 static GpuImageUpload _gActor210700HalfOpenEyesUploads[2] = {
-    { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, ACTOR_210700_EYE_TEXTURE_WIDTH_WORDS, ACTOR_210700_EYE_TEXTURE_HEIGHT_ROWS }, _gActor210700HalfOpenEyesPixels },
+    { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, ACTOR_210700_EYE_TEXTURE_WIDTH_WORDS, ACTOR_210700_EYE_TEXTURE_HEIGHT_ROWS }, (u_long*)_gActor210700HalfOpenEyesPixels },
     { GPU_IMAGE_UPLOAD_END, 0, { 0, 0, 0, 0 }, NULL },
 };
 
@@ -155,7 +155,7 @@ static GpuImageUpload _gActor210700HalfOpenEyesUploads[2] = {
 ///
 /// 24 VRAM halfwords per row by 16 rows (192 packed 32-bit words).
 /// The upload list borrows this word-aligned storage until GPU transfer completion.
-static u_long _gActor210700ClosedEyesPixels[192] = {
+static u32 _gActor210700ClosedEyesPixels[192] __attribute__((aligned(sizeof(u_long)))) = {
 #include "assets/characters/rupert/eyes_closed.inc"
 };
 
@@ -165,7 +165,7 @@ static u_long _gActor210700ClosedEyesPixels[192] = {
 /// its destination relative to the model texture; pixel storage is borrowed
 /// until the queued GPU transfer completes. The list lives with the package.
 static GpuImageUpload _gActor210700ClosedEyesUploads[2] = {
-    { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, ACTOR_210700_EYE_TEXTURE_WIDTH_WORDS, ACTOR_210700_EYE_TEXTURE_HEIGHT_ROWS }, _gActor210700ClosedEyesPixels },
+    { GPU_IMAGE_UPLOAD_COPY, 0, { 0, 0, ACTOR_210700_EYE_TEXTURE_WIDTH_WORDS, ACTOR_210700_EYE_TEXTURE_HEIGHT_ROWS }, (u_long*)_gActor210700ClosedEyesPixels },
     { GPU_IMAGE_UPLOAD_END, 0, { 0, 0, 0, 0 }, NULL },
 };
 

@@ -1,0 +1,201 @@
+{
+  "description": "Physical controller route through Plaza sergeant, wreck and entrance scenes with normal Start skips; settles in West Elevator Hall.",
+  "clock": "video",
+  "baseRoute": "video_clock_akropolis",
+  "baseSamples": 39036,
+  "totalSamples": 48288,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          300,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          240,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          200,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          300,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          200,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 19,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          16384
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          1852,
+          0
+        ]
+      ]
+    }
+  ]
+}

@@ -42,14 +42,18 @@ enum {
 ///
 /// `bodyAddress` takes the direction's place in one case: the entry a capsule
 /// with `WORLD_COLLISION_BODY_SINGLE_CONTACT` receives for a sphere it touched.
+/// Native builds retain the full pointer in `body` in the same response storage.
 /// It is that sphere's body, kept so that the capsule's next pair contact can
 /// release the reciprocal entry in the sphere's table before replacing this
-/// one. The third halfword stays zero. Nothing in the entry marks this reading:
+/// one. On the console the third halfword stays zero. Nothing marks this reading:
 /// it is assumed of the occupied non-grid entry a single-contact body holds.
 ///
 /// `direction.pad` carries no value. Component-wise writers and clears leave
 /// it alone, and a pair contact copies whatever its scratch block held there.
 typedef union {
+#ifdef __psyz
+    const struct WorldCollisionBody* body; // Full native reciprocal address; shares the eight-byte response storage
+#endif
     SVECTOR direction; // Unit direction (4096 per unit): grid face normal or capsule axis; zero when the contact has none
     struct {
         u16 low;       // Bits 0..15 of the contacted body's address

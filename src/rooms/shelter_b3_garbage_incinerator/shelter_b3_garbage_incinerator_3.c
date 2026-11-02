@@ -131,24 +131,9 @@ static TaskDesc _gShelterB3GarbageIncineratorResourceTaskDescs[SHELTER_B3_GARBAG
 static void     _shelterB3GarbageIncineratorGluttonEntranceTask(Task* task);
 static void     _shelterB3GarbageIncineratorKillTask(Task* task);
 
-OverlayEncounterSpot gShelterB3GarbageIncineratorEncounterSpots[16] = {
-    { 2000, -2500, 300, 2048 },
-    { 5000, -2500, 300, 2048 },
-    { 8000, -2500, 300, 2048 },
-    { 11000, -2500, 300, 2048 },
-    { 14000, -2500, 300, 2048 },
-    { 16800, -2500, -2500, 3072 },
-    { 16800, -2500, -5500, 3072 },
-    { 16800, -2500, -8500, 3072 },
-    { 16800, -2500, -11500, 3072 },
-    { 16800, -2500, -24500, 3072 },
-    { 2000, -2500, -5300, 0 },
-    { 5000, -2500, -5300, 0 },
-    { 8000, -2500, -5300, 0 },
-    { 11200, -2500, -8500, 1024 },
-    { 11200, -2500, -11500, 1024 },
-    { 11200, -2500, -24500, 1024 },
-};
+#ifndef __psyz
+#include "../../shared/encounters/shelter_b3_garbage_incinerator_spots.inc.c"
+#endif
 
 /// World-coordinate centres of the incinerator's lamp discs and layered glows.
 ///

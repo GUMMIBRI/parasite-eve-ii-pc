@@ -167,6 +167,17 @@ void capRunCommand(s32 commandIndex, s16 playbackMode)
 
     for (;;) {
         command = gCapCommandEntries[commandIndex].command;
+#ifdef __psyz
+        /* A zero CAP offset stays address 0 on PS1. After CD initialization
+         * the BIOS garbage word there is 3, so the retail lbu at 0x800E3534
+         * selects CAP_COMMAND_ROOM. Sanctuary uses this for Rupert (slot 0).
+         * Preserve that dispatch without dereferencing the host null page.
+         * See psx-spx, Kernel BIOS: Garbage Area at Address 00000000h. */
+        if (command == NULL) {
+            taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_ROOM), ROOM_MESSAGE_COMMAND, commandIndex, 0);
+            return;
+        }
+#endif
         flagId  = command->flagIndexLo | (command->flagIndexHi << 8);
         switch (command->opcode) {
             case CAP_COMMAND_PLAIN:

@@ -1,0 +1,414 @@
+{
+  "description": "Physical controller route from West Elevator Hall through Square stranger/telephone scenes and stair interactions to settled Patio entry.",
+  "clock": "video",
+  "baseRoute": "video_clock_tower",
+  "baseSamples": 48288,
+  "totalSamples": 67738,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          400,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          500,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 20,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          250,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          80,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 30,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 40,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 30,
+      "steps": [
+        [
+          8,
+          16448
+        ],
+        [
+          52,
+          64
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          90,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 7,
+      "steps": [
+        [
+          8,
+          24592
+        ],
+        [
+          52,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          24592
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          72,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          60,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 25,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 5,
+      "steps": [
+        [
+          8,
+          16400
+        ],
+        [
+          52,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          1800,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          110,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          32
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          100,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          200,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          24,
+          128
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          200,
+          16
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          1200,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 5,
+      "steps": [
+        [
+          8,
+          24592
+        ],
+        [
+          52,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          1100,
+          0
+        ]
+      ]
+    }
+  ]
+}

@@ -271,9 +271,11 @@ void playerActorClearLockTarget(Task* task);
 
 /// Selects an actor's lock target and transfers the targeted mark from its old node.
 ///
-/// Requires live `GameActor` work and a non-NULL target. The target is borrowed
-/// and must remain live while selected; a distinct previous target must stay
-/// live through this call. Selecting the same node marks it targeted again.
+/// Requires live `GameActor` work. A non-NULL target is borrowed and must stay
+/// live while selected; a distinct previous target must stay live through this
+/// call. Selecting the same node marks it targeted again. On the host, NULL
+/// clears the old selection without marking a node; scans may find nothing.
+/// The console build retains its original unconditional target-mark store.
 void playerActorSetLockTarget(Task* task, WorldTargetNode* target);
 
 #endif // GAMEPLAY_PRIVATE_PLAYER_ACTOR_H

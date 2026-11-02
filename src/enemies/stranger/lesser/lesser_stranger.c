@@ -1,3 +1,8 @@
+/* Console overlays own separate animation banks with this exported name. */
+#ifdef __psyz
+#define gStrangerLesserIdleClip gFireEscapeStrangerIdleClip
+#endif
+
 #include "enemies/stranger/lesser.h"
 
 #include <psyz.h>

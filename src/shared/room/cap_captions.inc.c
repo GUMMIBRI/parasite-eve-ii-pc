@@ -1,3 +1,6 @@
+#ifdef __psyz
+#include "port/cap_asset.h"
+#endif
 #include "cap_captions.h"
 
 #include <psyz.h>
@@ -167,6 +170,13 @@ static inline void _capCaptionStepCaretPulse(s32* pulseLevel, s32* falling)
 /// KSEG0 addresses only republish the tables and return true.
 static bool _capCaptionRelocateFile(CapFile* file)
 {
+#ifdef __psyz
+    file = peCapResolveResource(file);
+    if (file == NULL) return false;
+    CAP_CAPTION_GLYPH_CELLS = file->glyphs.cells;
+    CAP_CAPTION_COMMAND_REFS = file->commands.table->entries;
+    return true;
+#else
     /// Rebases a text reference, preserving terminal records and the next command.
     ///
     /// recordCursor is a writable CapSequenceRecord* local within fileBase,
@@ -237,6 +247,7 @@ static bool _capCaptionRelocateFile(CapFile* file)
     CAP_CAPTION_GLYPH_CELLS  = file->glyphs.cells;
     CAP_CAPTION_COMMAND_REFS = file->commands.table->entries;
     return true;
+#endif
 }
 
 /// Caches layout for the selected record and restarts its continuation-caret delay.
@@ -377,7 +388,7 @@ static s32 _capCaptionDrawText(const u16* textStream, s32 unusedDrawArg, s32 unu
     addPrim(&gGpuCurrentOt[CAP_CAPTION_BACKGROUND_OT_INDEX], backgroundCopy);
     drawMode       = gGpuPrimCursor;
     gGpuPrimCursor = drawMode + 1;
-    setlen(drawMode, 1);
+    setlen((DR_TPAGE*)drawMode, 1);
     drawMode->code[0] = CAP_CAPTION_BACKGROUND_DRAW_MODE;
     addPrim(&gGpuCurrentOt[CAP_CAPTION_BACKGROUND_OT_INDEX], drawMode);
 

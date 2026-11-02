@@ -102,7 +102,12 @@ u16 loadingPollAreaPlacementFiles(void)
             // The loaded destination must resolve before either table is read.
             layout                       = areaGetVariant(&gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location);
             _gLoadingAreaVariant         = layout;
+#ifdef __psyz
+            // PS1 permits the speculative low-RAM read before the NULL branch.
+            _gLoadingAreaPlacementCursor = layout != NULL ? layout->placements : NULL;
+#else
             _gLoadingAreaPlacementCursor = layout->placements;
+#endif
             if (layout == NULL) {
                 return 1;
             }
@@ -194,7 +199,12 @@ u16 loadingPollAreaBaseResources(void)
             // The loaded destination must resolve before either table is read.
             layout                      = areaGetVariant(&gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location);
             _gLoadingAreaVariant        = layout;
+#ifdef __psyz
+            // Rooms without placement variants still load their room resources.
+            _gLoadingAreaResourceCursor = layout != NULL ? layout->resources : NULL;
+#else
             _gLoadingAreaResourceCursor = layout->resources;
+#endif
             if (layout == NULL || layout->resources == NULL) {
                 return 1;
             }

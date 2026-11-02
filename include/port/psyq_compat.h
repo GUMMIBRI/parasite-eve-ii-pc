@@ -60,7 +60,7 @@ static inline long PortVectorNormal(VECTOR* v0, VECTOR* v1)
 #define SECTOR_SIZE 512
 #endif
 
-/* libgte/libmath: natural logarithm of an integer in Q12 (cln(2) == 2839). */
+/* libgte/libmath: Q12 natural logarithm (cln(4096) == 0, cln(8192) == 2839). */
 long cln(long x);
 
 /* libgs world-screen matrices (defined in main/gfxlight.c). */

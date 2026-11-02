@@ -5,6 +5,10 @@
 #include "types.h"
 #include "version.h"
 
+#ifndef __psyz
+#define PS1_RAM_PTR(addr) ((void*)(addr))
+#endif
+
 /// Byte-addressable base of the PlayStation's 1 KiB CPU scratchpad RAM.
 ///
 /// Storage is shared; callers manage the lifetime and alignment of their data.
@@ -89,9 +93,16 @@ extern u8 gHostScratchpad[0x400];
 /// global symbol at the same address, adding no bytes. The compiler has no
 /// alias attribute for this target, so the assembler makes it, and it has to be
 /// in the object that defines `orig`.
+#if defined(__psyz) && defined(__APPLE__)
+// Mach-O C symbols carry the underscore prefix in assembler declarations.
+#define DEFINE_ALIAS(orig, alias) \
+    extern __typeof__(orig) alias; \
+    __asm__(".globl _" #alias "\n_" #alias " = _" #orig)
+#else
 #define DEFINE_ALIAS(orig, alias)                                                                  \
     extern __typeof__(orig) alias;                                                                 \
     __asm__(".globl " #alias "\n" #alias " = " #orig)
+#endif
 
 /// Extra export declarations for the package's shared-source definitions.
 ///

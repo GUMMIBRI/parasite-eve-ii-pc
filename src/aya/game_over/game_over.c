@@ -63,9 +63,9 @@ enum {
 static inline void _gameOverFillRedImage(void)
 {
     enum { GAME_OVER_RED_FLASH_PIXEL = 0x001F };
-    u_long* imageWords;
-    u16     wordIndex;
-    u_long  redPixelPair;
+    u32* imageWords;
+    u16  wordIndex;
+    u32  redPixelPair;
 
     // Two RGB555 pixels occupy each word; all twenty strips are contiguous.
     imageWords   = gFsImageWorkspacePtr->strips[0];

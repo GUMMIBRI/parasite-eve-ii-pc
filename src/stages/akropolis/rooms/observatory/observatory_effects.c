@@ -113,6 +113,7 @@ static void _akropolisObservatoryScriptedBattleTask(Task* task)
     _SceneWork*           idleWork;
     _SceneWork*           playbackWork;
     _SceneWork*           allocatedWork;
+    _SceneWork            retiredWork;
     s16*                  followUpEntry;
     u16                   followUpAnimationId;
     s32                   allocationCheckOrClip;
@@ -175,19 +176,23 @@ static void _akropolisObservatoryScriptedBattleTask(Task* task)
             break;
         case RELEASE_PLAYER:
             taskMessageDispatch(sceneWork->playerTask, GAME_ACTOR_MESSAGE_END_SCRIPTED, 0, 0);
+            // The idle tail still runs after retirement. Host teardown frees
+            // work immediately, so retain its borrowed player/clip values.
+            retiredWork = *sceneWork;
             taskKill(task);
+            sceneWork = &retiredWork;
             break;
     }
 
-    // The original also runs the idle tail after task teardown.
-    idleWork        = task->work;
+    // Preserve the original post-teardown idle messages without freed storage.
+    idleWork        = sceneWork;
     followUpMessage = &followUpRequest;
     if (idleWork->playerTask != NULL && taskMessageDispatch(idleWork->playerTask, ANIMATION_MESSAGE_IS_PLAYING, 0, 0) == 0) {
         followUpEntry         = &_gAkropolisObservatorySceneFollowUpClips[idleWork->followUpIndex];
         allocationCheckOrClip = *followUpEntry;
         followUpAnimationId   = *followUpEntry;
         if (allocationCheckOrClip >= 0) {
-            playbackWork = task->work;
+            playbackWork = sceneWork;
             if (playbackWork->playerTask != NULL) {
                 followUpRequest.source.sets           = gAkropolisObservatoryPlayerAnimationSets;
                 followUpRequest.animationId           = followUpAnimationId;

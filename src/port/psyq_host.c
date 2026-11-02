@@ -1,10 +1,37 @@
 /* Host implementations of the PSY-Q calls PsyZ does not provide. */
+#include "port/pad_trace.h"
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#ifndef _WIN32
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+/* Define before SDK headers redirect open() to PS1 device/path translation. */
+static FILE* pePadOpenControlFifo(const char* path)
+{
+    struct stat info;
+    int fd = open(path, O_RDWR | O_NONBLOCK);
+    if (fd < 0) return NULL;
+    if (fstat(fd, &info) != 0 || !S_ISFIFO(info.st_mode) || fcntl(fd, F_SETFL, 0) < 0) {
+        close(fd);
+        return NULL;
+    }
+    FILE* stream = fdopen(fd, "r");
+    if (!stream) close(fd);
+    return stream;
+}
+#endif
 #include <psyz/video.h>
+/* SDL overlay header also imports stdbool, which conflicts with retail bool.
+ * Match its C99 boolean ABI without importing SDL into game headers. */
+extern void Psyz_PauseHostClock_SDL3(_Bool paused);
 #include "main/fs.h"
 #include "main/display.h"
+#include "main/gamemain.h"
 #include <stdio.h>
+#include <string.h>
 
 #include <psyz.h>
 #include <libcd.h>
@@ -100,13 +127,6 @@ SVECTOR* ApplyMatrixSV(MATRIX* m, SVECTOR* v0, SVECTOR* v1)
     return v1;
 }
 
-/* Natural log of a positive integer, scaled by 4096. Rounded to nearest so exact
- * powers of two divide cleanly by ln(2) * 4096 = 2839. */
-long cln(long x)
-{
-    return x > 0 ? lround(log((double)x) * 4096.0) : 0;
-}
-
 /* ---- PSY-Q calls PsyZ declares but does not implement ----------------------
  * Memory card, controller extras and SPU reverb are placeholders until their
  * subsystems are ported (phases 4-5): they report "nothing present". */
@@ -144,7 +164,6 @@ int PadInfoMode(int port, int term, int offs)
 int PadSetMainMode(int port, int offs, int lock) { (void)port; (void)offs; (void)lock; return 1; }
 
 long SpuReserveReverbWorkArea(long on_off) { return on_off; }
-void SpuLSetVoiceAttr(int num, SpuLVoiceAttr* argList) { (void)num; (void)argList; }
 
 unsigned long SetSp(unsigned long new_sp) { (void)new_sp; return 0; }
 void SetMem(unsigned long n) { (void)n; }
@@ -249,6 +268,61 @@ long MemCardWriteFile(long chan, char* file, unsigned long* adrs, long offset, l
     return 0;
 }
 
+/* Opt-in headless continuation after a finite trace. Only controller samples
+ * are supplied; the existing game loop and normal task scheduler do the work. */
+static void pePadControlRead(uint64_t index, char* frame, size_t length)
+{
+    static uint32_t remaining;
+    static uint16_t buttons;
+    static FILE* commands;
+    if (!commands) {
+        const char* fifo = getenv("PE2_PAD_CONTROL_FIFO");
+        commands = stdin;
+        if (fifo) {
+#ifndef _WIN32
+            if (!(commands = pePadOpenControlFifo(fifo))) {
+                fprintf(stderr, "[pad] control FIFO unavailable: %s\n", fifo);
+                exit(1);
+            }
+            /* Retain the write end so short-lived external writers cannot
+             * signal EOF between batches. Only the controller supplies bytes. */
+#else
+            fprintf(stderr, "[pad] control FIFO is unsupported on this host\n");
+            exit(1);
+#endif
+        }
+    }
+    if (!remaining) {
+        char line[128];
+        Psyz_PauseHostClock_SDL3(true);
+        fprintf(stderr, "[pad] control waiting at frame %llu\n", (unsigned long long)index);
+        fflush(stderr);
+        while (!fgets(line, sizeof line, commands)) {
+            if (ferror(commands) && errno == EINTR) {
+                clearerr(commands);
+                continue;
+            }
+            fprintf(stderr, "[pad] control %s\n", ferror(commands) ? "read failed" : "closed");
+            exit(ferror(commands) ? 1 : 0);
+        }
+        if (!strchr(line, '\n') && !feof(commands)) {
+            fprintf(stderr, "[pad] control command too long\n");
+            exit(1);
+        }
+        int result = pePadControlParse(line, &remaining, &buttons);
+        if (result <= 0) {
+            fprintf(stderr, "[pad] control %s\n", result == 0 ? "complete" : "invalid command");
+            exit(result == 0 ? 0 : 1);
+        }
+        Psyz_PauseHostClock_SDL3(false);
+    }
+    memset(frame, 0, length);
+    frame[1] = 0x41;
+    frame[2] = (char)~buttons;
+    frame[3] = (char)(~buttons >> 8);
+    --remaining;
+}
+
 /* Scripted input for automated runs: PE2_AUTOPRESS=<first tick> taps Start, then Cross, in turn (active-low bits
  * of the digital pad frame: byte 2 bit 3 = Start, byte 3 bit 6 = Cross). */
 void Psyz_PadsOverride(int port, char* frame, int len)
@@ -265,17 +339,76 @@ void Psyz_PadsOverride(int port, char* frame, int len)
     }
     static int tick;
     static int enabled = -1;
-    static int startTick;
+    /* PE2_SKIPINTRO=1: the game's own "skip the title intro" switch, so development runs reach the title directly. */
+    if (port == 0 && tick < 300 && getenv("PE2_SKIPINTRO")) {
+        gGameMainPersistentState.skipTitleIntro = 1;
+    }
+    static int startTick, endTick;
+    static unsigned holdMask;
+    static int holdStart, holdEnd;
     if (enabled < 0) {
         enabled = getenv("PE2_AUTOPRESS") != NULL;
         startTick = enabled ? atoi(getenv("PE2_AUTOPRESS")) : 0;
+        endTick = getenv("PE2_AUTOPRESS_UNTIL") ? atoi(getenv("PE2_AUTOPRESS_UNTIL")) : 0;
+        /* Optional development input, in the same legacy pad-poll ticks as autoplay.
+         * Mask uses PS1 button bits (Up=0010, Right=0020, Down=0040, Left=0080).
+         * A finite interval releases all injected buttons at its end. */
+        holdMask = getenv("PE2_PAD_HOLD") ? strtoul(getenv("PE2_PAD_HOLD"), NULL, 16) & 0xffff : 0;
+        holdStart = getenv("PE2_PAD_FROM") ? atoi(getenv("PE2_PAD_FROM")) : 0;
+        holdEnd = getenv("PE2_PAD_UNTIL") ? atoi(getenv("PE2_PAD_UNTIL")) : 0;
     }
     if (port == 0 && getenv("PE2_TRACE") && (tick % 60) == 0) {
         fprintf(stderr, "[trace] tick=%d movieStep=%d demo=%d\n", tick, gCdCmdQueue.movieStep, gDisplayState.demoScene);
     }
-    if (!enabled || port != 0 || len < 4) { tick++; return; }
-    if (tick++ < startTick) return;
-    int phase = ((tick - startTick) / 20) % 6;
-    if (phase == 0) frame[2] &= ~(1 << 3);
-    if (phase == 3) frame[3] &= ~(1 << 6);
+    int currentTick = tick++;
+    if (port != 0 || len < 4) return;
+    if (currentTick >= holdStart && holdEnd > currentTick) {
+        frame[2] &= ~(holdMask & 0xff);
+        frame[3] &= ~((holdMask >> 8) & 0xff);
+    }
+    if (enabled && currentTick >= startTick && (!endTick || currentTick < endTick)) {
+        int phase = ((tick - startTick) / 20) % 6;
+        if (phase == 0) frame[2] &= ~(1 << 3);
+        if (phase == 3) frame[3] &= ~(1 << 6);
+    }
+    /* Replays replace the complete sample after development overrides, so
+     * keyboard/controller input and autoplay cannot alter a recorded route. */
+    static FILE *record, *replay;
+    static int traceInitialized, controlEnabled, replayFinished;
+    static uint64_t padFrame;
+    if (!traceInitialized) {
+        const char *recordPath = getenv("PE2_PAD_RECORD"), *replayPath = getenv("PE2_PAD_REPLAY");
+        if (recordPath && replayPath && strcmp(recordPath, replayPath) == 0) {
+            fprintf(stderr, "[pad] recording and replay paths must differ\n"); exit(1);
+        }
+        if (replayPath && (!(replay = fopen(replayPath, "rb")) || !pePadTraceHeader(replay, 0))) {
+            fprintf(stderr, "[pad] cannot read replay: %s\n", replayPath); exit(1);
+        }
+        if (recordPath && (!(record = fopen(recordPath, "wb")) || !pePadTraceHeader(record, 1))) {
+            fprintf(stderr, "[pad] cannot write recording: %s\n", recordPath); exit(1);
+        }
+        const char* control = getenv("PE2_PAD_CONTROL");
+        controlEnabled = control && strcmp(control, "1") == 0;
+        if (controlEnabled) {
+            const char* headless = getenv("PSYZ_HEADLESS");
+            if (!replay || !headless || strcmp(headless, "1") != 0) {
+                fprintf(stderr, "[pad] control requires PE2_PAD_REPLAY and PSYZ_HEADLESS=1\n");
+                exit(1);
+            }
+        }
+        traceInitialized = 1;
+    }
+    if (replay && !replayFinished) {
+        int result = pePadTraceRead(replay, padFrame, frame, (size_t)len);
+        if (result <= 0) {
+            fprintf(stderr, "[pad] replay %s at frame %llu\n", result == 0 ? "complete" : "invalid", (unsigned long long)padFrame);
+            if (result < 0 || !controlEnabled) exit(result == 0 ? 0 : 1);
+            replayFinished = 1;
+        }
+    }
+    if (replayFinished) pePadControlRead(padFrame, frame, (size_t)len);
+    if (record && !pePadTraceWrite(record, padFrame, frame, (size_t)len)) {
+        fprintf(stderr, "[pad] recording failed at frame %llu\n", (unsigned long long)padFrame); exit(1);
+    }
+    padFrame++;
 }

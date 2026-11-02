@@ -49,8 +49,9 @@ extern u16 gLoadingAreaResourcePass;
 /// Start with `gLoadingAreaPlacementFilePhase == LOADING_AREA_INIT`, after
 /// `loadingPollAreaBaseResources` finishes. Both passes share cursors and
 /// must run serially, with the same live saved destination and loaded layout.
-/// The layout lookup must succeed: its placements are read before the NULL
-/// test. Missing tables complete immediately. Live nonzero entry IDs must
+/// On the host, an absent layout completes immediately without reading it.
+/// The console retains its low-RAM read before that NULL test. Missing tables
+/// complete immediately. Live nonzero entry IDs must
 /// match a resource with file-group selector 0..8 and a cataloged file number.
 /// Both tables must retain their `AREA_PLACEMENT_END` records through loading.
 /// Requests borrow stack bytes only until enqueue returns. Texture offsets
@@ -62,8 +63,9 @@ u16 loadingPollAreaPlacementFiles(void);
 /// Returns 0 while walking or waiting for CD idle, and 1 on completion.
 /// Start with `gLoadingAreaBaseResourcePhase == LOADING_AREA_INIT`; the saved destination and
 /// loaded layout/tables must remain valid until both area-loading passes finish.
-/// The layout lookup must succeed: its resources are read before the NULL
-/// test. A NULL resource table completes immediately; a live resource table
+/// On the host, an absent layout completes immediately without reading it.
+/// The console retains its low-RAM read before that NULL test.
+/// A NULL resource table completes immediately; a live resource table
 /// requires a placement table, both ended by `AREA_PLACEMENT_END`.
 /// File-group selectors are 0..8 and file numbers must name cataloged files.
 /// Base-60 resources load only if an entry has a placement with fileIdLow=0;

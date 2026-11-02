@@ -135,7 +135,9 @@ typedef struct {
     u8 slotTail[3];  // Unread. Zero in every retail command; the next sequence slot starts after them.
 } CapCommand;
 STATIC_ASSERT_SIZEOF(CapCommand, 0xC);
+#ifndef __psyz
 STATIC_ASSERT(sizeof(CapCommand) == sizeof(CapSequenceRecord), cap_command_sequence_slot);
+#endif
 
 /// Counted table of CAP sequence slots inside a `CapFile`.
 ///
@@ -151,6 +153,9 @@ STATIC_ASSERT(sizeof(CapCommand) == sizeof(CapSequenceRecord), cap_command_seque
 typedef struct {
     s16               count;        // Sequence records the relocation walk visits, including terminators.
     s16               slotSize;     // Bytes per command or sequence slot. 12 in every retail payload; unread.
+#ifdef __psyz
+    _Alignas(CapSequenceRecord)
+#endif
     CapCommand        firstCommand; // First sequence's command. Not a command when count is 0; unread.
     CapSequenceRecord records[0];   // Walk start, one slot after firstCommand.
 } CapSequenceTable;
@@ -233,10 +238,7 @@ STATIC_ASSERT_SIZEOF(CapFile, 0x14);
 /// it performs no relocation, bounds check or terminal-record test.
 static inline CapSequenceRecord* _capSequenceRecordAt(CapSequenceRecord* sequence, s32 recordIndex)
 {
-    CapCommandRef address;
-    address.sequence = sequence;
-    address.offset   = recordIndex * sizeof(CapSequenceRecord) + address.offset;
-    return address.sequence;
+    return sequence + recordIndex;
 }
 
 #endif // GAMEPLAY_CAP_H

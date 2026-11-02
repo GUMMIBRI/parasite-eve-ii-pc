@@ -510,7 +510,7 @@ static void _evsExecuteInterpreterTask(Task* task)
                 break;
 
             case EVENT_SCRIPT_OPCODE_CALLBACK:
-                work->command->operand0.callback(work->command->operand1.value);
+                work->command->operand0.callback(work->command->operand1.message.value);
                 break;
 
             case EVENT_SCRIPT_OPCODE_START_VIBRATION:

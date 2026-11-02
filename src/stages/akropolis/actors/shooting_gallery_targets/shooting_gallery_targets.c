@@ -964,8 +964,12 @@ static void _shootingGalleryTargetsInitMount(Task* task)
          playerActorPlanarLength(playerOffset->vx, playerOffset->vz) < PLAYER_EXCLUSION + 1) ||
         (u8)task->spawnArg1.value == TARGET_SPAWN_DEAD) {
     fail:
+        // Disabled room placements (spawn byte 0xFF) belong to the scene,
+        // whose work is not a gallery wave. Only a wave-owned mount was
+        // counted by the course controller and may release its live slot.
         if ((task->spawnArg1.value & SPAWN_BEHAVIOUR_MASK) !=
-            MOUNT_FIXED << SPAWN_BEHAVIOUR_SHIFT) {
+            MOUNT_FIXED << SPAWN_BEHAVIOUR_SHIFT &&
+            task->parent != NULL && task->parent == gMistShootingGalleryControllerTask) {
             MistShootingGalleryWork* gallery = task->parent->work;
 
             gallery->liveTargets--;

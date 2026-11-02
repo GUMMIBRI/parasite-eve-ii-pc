@@ -3932,3 +3932,7 @@ static void _actor01900Task(Task* task)
 #ifdef PACKAGE_ALIASES
 PACKAGE_ALIASES
 #endif
+#if defined(__psyz) && defined(PE_HOST_ALIAS_ACTOR301900)
+// Both manifest variants use this source with identical parameters.
+DEFINE_ALIAS(gActor01900GrinningStrangerTaskDesc, gActor301900GrinningStrangerTaskDesc);
+#endif

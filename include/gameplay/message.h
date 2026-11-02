@@ -126,12 +126,21 @@ struct GfxCoord;
 /// `pointer` transports arbitrary object addresses without changing their bits;
 /// its const qualification does not describe the receiver's write permission.
 /// The typed views identify command, room-transition, animation and actor-motion
-/// payloads. This union is one four-byte PS1 argument word, not the payload
-/// record itself. It is the stored form of a payload word, as an event script
+/// payloads. This union stores one argument word (four bytes on PS1,
+/// pointer-width on the host), not the payload record itself. It is the stored form of a payload word, as an event script
 /// command keeps it; message handlers declare their payload parameters with
 /// the type they read.
+/* Message payloads carry native object addresses as well as PS1 integer
+ * values. Keep the full register width through forwarding and dispatch. */
+#ifdef __psyz
+#include <stdint.h>
+typedef intptr_t TaskMessageWord;
+#else
+typedef s32 TaskMessageWord;
+#endif
+
 typedef union {
-    s32                                    value;             // Integer argument or the complete transported address bits
+    TaskMessageWord                        value;             // Integer argument or the complete transported address bits
     const void*                            pointer;           // Generic borrowed object address for transport
     struct ActorCommand*                   command;           // ACTOR_COMMAND_MESSAGE_APPLY: borrowed actor command
     RoomEventMsg*                          roomEvent;         // ROOM_EVENT_MESSAGE_RESOLVE: borrowed request or writable reply
@@ -619,7 +628,7 @@ STATIC_ASSERT_SIZEOF(ActorMotionWalkAnim, 8);
 /// otherwise forwards the handler's return word. Inspect that word only for
 /// messages whose handlers define a result; its meaning is receiver-specific,
 /// and zero is not a universal success or failure code.
-s32 taskMessageDispatch(Task* receiver, s32 messageId, s32 firstArg, s32 secondArg);
+s32 taskMessageDispatch(Task* receiver, s32 messageId, TaskMessageWord firstArg, TaskMessageWord secondArg);
 
 /// Dispatches a synchronous task message with an object address as its first payload.
 ///
@@ -631,11 +640,11 @@ s32 taskMessageDispatch(Task* receiver, s32 messageId, s32 firstArg, s32 secondA
 /// is returned unchanged, or zero if the task has no matching handler.
 ///
 /// Each argument is evaluated once, with ordinary function-argument ordering.
-/// The cast encodes the complete object address in the PS1's 32-bit integer
-/// message ABI. Keep it in the call expression: an inline parameter or union
+/// The cast encodes the complete object address in the message ABI word
+/// (32 bits on PS1, pointer-width on the host). Keep it in the call expression: an inline parameter or union
 /// temporary can make GCC retain a stack address across successive dispatches.
 #define TASK_MESSAGE_DISPATCH_POINTER(receiver, messageId, payload, secondArg) \
-    taskMessageDispatch((receiver), (messageId), (s32)(payload), (secondArg))
+    taskMessageDispatch((receiver), (messageId), (TaskMessageWord)(payload), (secondArg))
 
 /// Dispatches a synchronous task message with an object address as its second payload.
 ///
@@ -648,11 +657,11 @@ s32 taskMessageDispatch(Task* receiver, s32 messageId, s32 firstArg, s32 secondA
 /// zero if the task has no matching handler.
 ///
 /// Each argument is evaluated once, with ordinary function-argument ordering.
-/// The cast encodes the complete object address in the PS1's 32-bit integer
-/// message ABI. Keep it in the call expression: an inline parameter or union
+/// The cast encodes the complete object address in the message ABI word
+/// (32 bits on PS1, pointer-width on the host). Keep it in the call expression: an inline parameter or union
 /// temporary can make GCC retain a stack address across successive dispatches.
 #define TASK_MESSAGE_DISPATCH_SECOND_POINTER(receiver, messageId, firstArg, payload) \
-    taskMessageDispatch((receiver), (messageId), (firstArg), (s32)(payload))
+    taskMessageDispatch((receiver), (messageId), (firstArg), (TaskMessageWord)(payload))
 
 /// Dispatches a synchronous task message with object addresses in both payload words.
 ///
@@ -669,9 +678,9 @@ s32 taskMessageDispatch(Task* receiver, s32 messageId, s32 firstArg, s32 secondA
 /// marker returns zero.
 ///
 /// Each argument is evaluated once, with ordinary function-argument ordering.
-/// The casts encode the complete object addresses as the PS1's 32-bit integer
-/// message ABI words directly in the call expression.
+/// The casts encode complete addresses in message ABI words (32 bits on PS1,
+/// pointer-width on the host) directly in the call expression.
 #define TASK_MESSAGE_DISPATCH_POINTERS(receiver, messageId, firstPayload, secondPayload) \
-    taskMessageDispatch((receiver), (messageId), (s32)(firstPayload), (s32)(secondPayload))
+    taskMessageDispatch((receiver), (messageId), (TaskMessageWord)(firstPayload), (TaskMessageWord)(secondPayload))
 
 #endif // GAMEPLAY_MESSAGE_H

@@ -702,13 +702,83 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
         uses["types"], uses["symbols"] = set(), set()
         return list(header) + ([""] + needed if needed else []) + lines
 
+    # Console scans can cross named objects until LAST. Separate C objects
+    # need not remain adjacent (and native pointers change their stride).
+    # Keep private trigger spans in one host aggregate, preserving each name
+    # as a typed field alias. The console definitions remain byte-identical.
+    trigger_spans = {}
+    member_span = {}
+    for runs in parts.values():
+        for run in runs:
+            cursor = 0
+            while cursor < len(run):
+                members = [run[cursor]]
+                stop = cursor
+                while objects[members[-1]][1]["kind"] == "WorldCollisionTrigger":
+                    r = objects[members[-1]][1]
+                    values = [r["value"]] if "value" in r else r["values"]
+                    if values[-1]["flags"] & 0x80:
+                        if len(members) > 1 and all(n.startswith("_") for n in members):
+                            trigger_spans[members[0]] = members
+                            member_span.update({n: members[0] for n in members})
+                        break
+                    if stop + 1 == len(run) or end[members[-1]] != at[run[stop + 1]]:
+                        break
+                    stop += 1
+                    members.append(run[stop])
+                cursor = stop + 1
+
+    def span_name(first):
+        return "_peNativeTriggerSpan" + first
+
+    def span_declarations(first):
+        members = trigger_spans[first]
+        name = span_name(first)
+        lines = ["#ifdef __psyz", f"struct {name} {{"]
+        for index, symbol in enumerate(members):
+            r = objects[symbol][1]
+            dims = "" if "value" in r else f"[{count[symbol]}]"
+            lines.append(f"    WorldCollisionTrigger part{index}{dims};")
+        total = sum(count[symbol] for symbol in members)
+        lines += ["};", f'_Static_assert(sizeof(struct {name}) == {total} * sizeof(WorldCollisionTrigger), "contiguous trigger span");',
+                  f"static struct {name} {name};"]
+        lines += [f"#define {symbol} ({name}.part{index})" for index, symbol in enumerate(members)]
+        lines += ["#else"] + [f"{declarator(symbol)};" for symbol in members] + ["#endif"]
+        return lines
+
+    def span_definitions(first):
+        members = trigger_spans[first]
+        name = span_name(first)
+        lines = ["#ifdef __psyz", f"static struct {name} {name} = {{"]
+        for index, symbol in enumerate(members):
+            r = objects[symbol][1]
+            if "value" in r:
+                value = c_value(r["value"], r["kind"], pointer)
+            else:
+                value = "{ " + ", ".join(c_value(v, r["kind"], pointer) for v in r["values"]) + " }"
+            lines.append(f"    .part{index} = {value},")
+        lines += ["};", "#else"] + [line for symbol in members for line in definition(symbol)] + ["#endif"]
+        return lines
+
     for module, runs in parts.items():                   # one file per run
         for k, run in enumerate(runs, 1):
             name_k = f"{module}.inc" if len(runs) == 1 else f"{module}_{k}.inc"
-            files[name_k] = with_includes([""] + [line for s in run for line in definition(s)])
+            lines = []
+            for symbol in run:
+                if symbol in trigger_spans:
+                    lines.extend(span_definitions(symbol))
+                elif symbol not in member_span:
+                    lines.extend(definition(symbol))
+            files[name_k] = with_includes([""] + lines)
     for unit, mine in decl.items():
         name_u = "declarations.inc" if len(decl) == 1 else f"declarations_{unit}.inc"
-        files[name_u] = with_includes([""] + [f"{'extern ' if not s.startswith('_') else ''}{declarator(s)};" for s in mine])
+        lines = []
+        for symbol in mine:
+            if symbol in trigger_spans:
+                lines.extend(span_declarations(symbol))
+            elif symbol not in member_span:
+                lines.append(f"{'extern ' if not symbol.startswith('_') else ''}{declarator(symbol)};")
+        files[name_u] = with_includes([""] + lines)
     return {f: "\n".join(lines) + "\n" for f, lines in files.items()}
 
 

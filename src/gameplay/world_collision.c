@@ -17,17 +17,17 @@
 #include "main/session.h"
 #include "main/task_types.h"
 
-/// Word and pointer readings of a body's encoded reciprocal-contact address.
-///
-/// The unsigned word joins the contact's low halfword and masked signed high
-/// halfword into one complete 32-bit PlayStation address. The pointer borrows
-/// the previously contacted body so its reciprocal entry can be released;
-/// that body and its contact table must remain live until replacement.
-typedef union {
-    WorldCollisionBody* object;  // Borrowed contacted body; decoded address must refer to a live body
-    u32                 address; // Complete address bits, including the cached-RAM region bits
-} _WorldCollisionBodyAddress;
-STATIC_ASSERT_SIZEOF(_WorldCollisionBodyAddress, 4);
+/// Decodes the reciprocal sphere retained by a single-contact capsule.
+static inline const WorldCollisionBody* _worldCollisionContactBody(const WorldCollisionContactResponse* response)
+{
+#ifdef __psyz
+    return response->body;
+#else
+    union { WorldCollisionBody* body; u32 address; } decoded;
+    decoded.address = (((u32)response->bodyAddress.high << 16) & 0xFFFF0000) | response->bodyAddress.low;
+    return decoded.body;
+#endif
+}
 
 /// Claims an entry and marks its receiving-body index for a pair-contact writer.
 ///
@@ -44,7 +44,7 @@ STATIC_ASSERT_SIZEOF(_WorldCollisionBodyAddress, 4);
 /// Its inline helper and fixed labels require one expansion per function.
 #define WORLD_COLLISION_CLAIM_CONTACT(rec, obj)                                                                                             \
     do {                                                                                                                                    \
-        _WorldCollisionBodyAddress _otherAddress;                                                                                           \
+        const WorldCollisionBody*  _otherBody;                                                                                              \
         WorldCollisionContact*     _other;                                                                                                  \
         u16                        _recFlags;                                                                                               \
                                                                                                                                             \
@@ -54,8 +54,8 @@ STATIC_ASSERT_SIZEOF(_WorldCollisionBodyAddress, 4);
                 (rec)->flags = _recFlags | (((obj)->flags & WORLD_COLLISION_CONTACT_BODY_INDEX_MASK) + WORLD_COLLISION_CONTACT_OCCUPIED);   \
             } else {                                                                                                                        \
                 if (((rec)->key.value & WORLD_COLLISION_CONTACT_KIND_MASK) != WORLD_COLLISION_CONTACT_GRID) {                               \
-                    _otherAddress.address = (((u32)(rec)->response.bodyAddress.high << 16) & 0xFFFF0000) | (rec)->response.bodyAddress.low; \
-                    _other                = _worldCollisionGetBodyContacts(_otherAddress.object);                                           \
+                    _otherBody = _worldCollisionContactBody(&(rec)->response);                                                              \
+                    _other     = _worldCollisionGetBodyContacts(_otherBody);                                                                 \
                     if (_other == NULL) {                                                                                                   \
                         return;                                                                                                             \
                     }                                                                                                                       \
@@ -701,14 +701,19 @@ static s32 _worldCollisionCollideSphereCapsulePair(WorldCollisionBody* sphereBod
             scratch->contact.point.vz = scratch->sphereCenter.vz;
         }
         if (capsuleBody->flags & WORLD_COLLISION_BODY_SINGLE_CONTACT) {
-            s32 sphereAddress                          = (s32)sphereBody;
-            scratch->contact.response.bodyAddress.low  = sphereAddress;
+#ifdef __psyz
+            scratch->contact.response.body = sphereBody;
+#else
+            s32 sphereAddress = (s32)sphereBody;
+            scratch->contact.response.bodyAddress.low = sphereAddress;
             scratch->contact.response.bodyAddress.high = sphereAddress >> 16;
+            scratch->contact.response.direction.vz = 0;
+#endif
         } else {
             scratch->contact.response.direction.vx = 0;
             scratch->contact.response.direction.vy = 0;
+            scratch->contact.response.direction.vz = 0;
         }
-        scratch->contact.response.direction.vz = 0;
         scratch->contact.distance              = 0;
         _worldCollisionRecordPairContact(capsuleBody, sphereBody, &scratch->contact);
         overlaps = 1;

@@ -111,7 +111,11 @@ static const GfxImageSlot* _gGfxImageSlotTablesByStage[6];
 /// in rodata and must retain that position.
 static const char _gBootBuildStamp[sizeof("2000/05/01 19:24 ver2.49")] = "2000/05/01 19:24 ver2.49";
 
+#ifdef __psyz
+FsImgBuffers* gFsImageWorkspacePtr = (FsImgBuffers*)PS1_RAM_PTR(0x801D7000);
+#else
 FsImgBuffers* gFsImageWorkspacePtr = &gFsImageWorkspace;
+#endif
 /// Retained unused byte pointer to the exclusive image-memory region end.
 ///
 /// No reader or active allocation/stack-bound role is established.

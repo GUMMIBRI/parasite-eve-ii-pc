@@ -394,6 +394,10 @@ static s32 _gAkropolisSanctuaryMosaicCleanupLatched = MOSAIC_CLEANUP_CLEAR;
 #include "assets/rooms/akropolis/sanctuary/surfaces.inc"
 #include "assets/rooms/akropolis/sanctuary/updates.inc"
 
+#ifdef __psyz
+// Keep the local model that is exported through the assembler alias below.
+static TmdSource _gItemBoxModel __attribute__((used));
+#endif
 #include "assets/rooms/item_box/model.inc"
 DEFINE_ALIAS(_gItemBoxModel, gAkropolisSanctuaryItemBoxModel);
 

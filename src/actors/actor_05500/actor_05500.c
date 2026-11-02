@@ -334,3 +334,8 @@ TaskDesc gActor05500MaggotCaterpillarTasks[2] = {
 #ifdef PACKAGE_ALIASES
 PACKAGE_ALIASES
 #endif
+
+#if defined(__psyz) && defined(PE_HOST_ALIAS_ACTOR205500)
+/* Both manifest slots compile this unit without gameplay defines. */
+DEFINE_ALIAS(gActor05500MaggotCaterpillarTasks, gActor205500MaggotCaterpillarTasks);
+#endif

@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "decomp/types.h"
 #include "decomp/gte.h"
+#include "main/gfx.h"
 
 static int g_fail;
 #define CHECK(cond)                                                            \
@@ -447,7 +448,33 @@ static void test_matrixnormal2(void) {
     CHECK_NEAR(n.m[1][0], 0, 2);
 }
 
+/* VECTOR3 is passed directly to GTE 32-bit XYZ loads/stores and aliases
+ * MATRIX.t in target placement. Exercise both real interoperability paths. */
+static void test_vector3_abi(void) {
+    short id[3][3] = {{4096,0,0},{0,4096,0},{0,0,4096}};
+    MATRIX m = make_matrix(id, 100, 200, 300);
+    VECTOR3 input = {7230, -580, -6789};
+    struct { VECTOR3 xyz; uint32_t guard[2]; } output;
+    memset(&output, 0x55, sizeof output);
+    gte_SetRotMatrix(&m); gte_SetTransMatrix(&m);
+    gte_ldlvl(&input); gte_rtirtr(); gte_stlvl(&output.xyz);
+    CHECK_EQ(output.xyz.vx, 7330);
+    CHECK_EQ(output.xyz.vy, -380);
+    CHECK_EQ(output.xyz.vz, -6489);
+    CHECK_EQ(output.guard[0], 0x55555555);
+    CHECK_EQ(output.guard[1], 0x55555555);
+    struct { MATRIX matrix; uint32_t guard[4]; } placed;
+    memset(&placed, 0x55, sizeof placed);
+    VECTOR3* translation = GRAPHICS_MATRIX_TRANSLATION(&placed.matrix);
+    translation->vx = -6800; translation->vy = -1258; translation->vz = 2796;
+    CHECK_EQ(placed.matrix.t[0], -6800);
+    CHECK_EQ(placed.matrix.t[1], -1258);
+    CHECK_EQ(placed.matrix.t[2], 2796);
+    for (int i=0; i<4; ++i) CHECK_EQ(placed.guard[i], 0x55555555);
+}
+
 int main(void) {
+    test_vector3_abi();
     test_ldsv_stsv();
     test_ldlvl_ldcv_stcv();
     test_transpose();

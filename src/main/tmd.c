@@ -1,4 +1,9 @@
 #include "main/tmd.h"
+#ifdef __psyz
+#include "port/tmd_layout.h"
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 
 #include <psyz.h>
 #include <libgte.h>
@@ -91,8 +96,8 @@ enum {
     /// handler slot using its opcode and the current location. The stream must be
     /// writable and well formed; group markers have no handler slot. Reaching
     /// `TMD_STREAM_END`, including at entry to an empty stream, changes the state
-    /// to `TMD_SOURCE_HANDLERS_RESOLVED`. Nonzero states skip this pass, so later
-    /// creations sharing the source reuse the handlers selected on the first pass.
+    /// to `TMD_SOURCE_HANDLERS_RESOLVED`. The host also accepts the intermediate
+    /// packet-layout-ready state; later creations reuse the resolved handlers.
     TMD_SOURCE_HANDLERS_UNRESOLVED = 0,
     /// Completion value for resolving a shared source's draw-handler slots.
     ///
@@ -185,8 +190,8 @@ static const TaskFuncTable3 _gTmdReleaseBufferTaskStates = { {
 
 /// Resolves and caches the shared source's per-record draw callbacks in place.
 ///
-/// Only a zero `handlersResolved` runs the walk; completion stores one, even
-/// for an empty stream. Each complete opcode chooses a callback for the command's
+/// Zero, or the host's packet-layout-ready state, runs the walk; completion
+/// stores one, even for an empty stream. Each complete opcode chooses a callback for the command's
 /// second word. Unknown combinations use `tmdSkipStreamRecord`. Packed dimensions
 /// give an unsigned element count and stride in u32 words; group markers occupy
 /// one word without a callback slot. The writable, word-aligned stream must end
@@ -239,7 +244,11 @@ static void _tmdResolveSourceDrawHandlers(TmdSource* source)
     } while (0)
 
     stream = (_TmdStreamWord*)source->stream;
-    if (source->handlersResolved == TMD_SOURCE_HANDLERS_UNRESOLVED) {
+    if (source->handlersResolved == TMD_SOURCE_HANDLERS_UNRESOLVED
+#ifdef __psyz
+        || source->handlersResolved == PE_TMD_HOST_LAYOUT_READY
+#endif
+    ) {
         stageAreaDifference = GAME_LOCATION_WORD(gGameSession->location);
         stageAreaDifference = (stageAreaDifference & GAME_LOCATION_STAGE_AREA_MASK) ^ GAME_LOCATION_KEY(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_TOILET, 0, 0);
         useOffsetLayer      = stageAreaDifference < 1;
@@ -667,6 +676,13 @@ TmdObject* tmdCreateModel(TmdSource* source, s32 bufferFlags)
     u32            partIndex;
     void*          buffer = NULL;
 
+#ifdef __psyz
+    if (peTmdPreparePacketLayout(source) != 0) {
+        fprintf(stderr, "invalid TMD packet layout: source=%p stream=%p\n", (void*)source,
+                source ? (void*)source->stream : NULL);
+        abort();
+    }
+#endif
     // Resolve shared draw slots before either allocation, including failure paths.
     _tmdResolveSourceDrawHandlers(source);
     allocation = memCalloc((source->partCount * sizeof(allocation->coords[0])) + sizeof(*allocation), false);

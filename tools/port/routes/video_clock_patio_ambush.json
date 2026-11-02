@@ -1,0 +1,102 @@
+{
+  "description": "Physical controller capture: post-Cafeteria Patio ambush, both 160HP Strangers defeated with M93R, rewards completed. No game-state writes.",
+  "clock": "video",
+  "baseRoute": "video_clock_cafeteria_clear",
+  "baseSamples": 93030,
+  "totalSamples": 96058,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          155,
+          8208
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          120,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 35,
+      "steps": [
+        [
+          8,
+          51200
+        ],
+        [
+          22,
+          32768
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          15,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 12,
+      "steps": [
+        [
+          8,
+          51200
+        ],
+        [
+          22,
+          32768
+        ]
+      ]
+    },
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    },
+    {
+      "repeat": 10,
+      "steps": [
+        [
+          8,
+          16384
+        ],
+        [
+          52,
+          0
+        ]
+      ]
+    }
+  ]
+}

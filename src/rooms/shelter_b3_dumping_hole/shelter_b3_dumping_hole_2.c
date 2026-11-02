@@ -1236,20 +1236,9 @@ DirectionWarpEntry gShelterB3DumpingHoleWarpEntries[3] = {
     { { { .word = ACTOR_TRANSFORM_ANGLE_TURN * 3 / 4 }, 19500, 0, -4450 }, { 0, 0, 0, 0 }, { { .word = ACTOR_TRANSFORM_ANGLE_TURN * 3 / 4 }, 19500, 0, -4450 }, { 0, 0, 0, 0 }, DIRECTION_WARP_SOUND_NONE, DIRECTION_WARP_SOUND_NONE, DIRECTION_WARP_SOUND_NONE, 15, DIRECTION_WARP_FLAG_NONE, DIRECTION_WARP_MAP_FLAG_NONE },
 };
 
-OverlayEncounterSpot gShelterB3DumpingHoleEncounterSpots[12] = {
-    { 1500, -3950, -550, ACTOR_TRANSFORM_ANGLE_HALF_TURN },
-    { 4500, -3950, -550, ACTOR_TRANSFORM_ANGLE_HALF_TURN },
-    { 7500, -3950, -550, ACTOR_TRANSFORM_ANGLE_HALF_TURN },
-    { 10500, -3950, -550, ACTOR_TRANSFORM_ANGLE_HALF_TURN },
-    { 13500, -3950, -550, ACTOR_TRANSFORM_ANGLE_HALF_TURN },
-    { 16500, -3950, -550, ACTOR_TRANSFORM_ANGLE_HALF_TURN },
-    { 1500, -3950, -12450, 0 },
-    { 4500, -3950, -12450, 0 },
-    { 7500, -3950, -12450, 0 },
-    { 10500, -3950, -12450, 0 },
-    { 13500, -3950, -12450, 0 },
-    { 16500, -3950, -12450, 0 },
-};
+#ifndef __psyz
+#include "../../shared/encounters/shelter_b3_dumping_hole_spots.inc.c"
+#endif
 
 /// Encounter-controller stop-command handler followed by the message-table terminator.
 ///

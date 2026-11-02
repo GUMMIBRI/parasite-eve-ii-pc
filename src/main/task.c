@@ -1,3 +1,4 @@
+#include <execinfo.h>
 #include <stdio.h>
 #include "task.h"
 
@@ -35,6 +36,11 @@ TaskNode gTaskDefaultList;
 u8 D_800716E8[8];
 
 #include "main/task.h"
+
+#ifdef __psyz
+void* gHostCurrentTaskCallback; /* last dispatched task callback, for the crash report */
+#endif
+
 
 /// Mask selecting the low-byte body kind from a task descriptor's flags halfword.
 ///
@@ -403,7 +409,14 @@ Task* (taskSpawn)(s32 bank, TaskSpawnArg selector, TaskSpawnArg spawnArg1, TaskS
 
     if (bank >= 0) {
         desc = gTaskDescBanks[bank];
+#ifdef __psyz
+        // Bit 31 of the selector is ignored by the PS1 build: its 32-bit index arithmetic wraps
+        // (0x80000000 * sizeof(TaskDesc) is a multiple of 2^32). The room controller relies on this
+        // for selector 0x80000007. Host pointers do not wrap, so drop the bit explicitly.
+        desc = &desc[selector.unsignedValue & 0x7FFFFFFF];
+#else
         desc = &desc[selector.value];
+#endif
     } else {
         desc = selector.pointer;
     }
@@ -584,6 +597,9 @@ void taskExecList(TaskNode* listHead)
     if (currentTask != NULL) {
         display = &gDisplayState;
     dispatchTask:
+#ifdef __psyz
+        gHostCurrentTaskCallback = (void*)currentTask->callback;
+#endif
         currentTask->callback(currentTask);
         // A callback can replace the world; stop before reading its cursor again.
         if (display->stopTaskWalk == TASK_WALK_STOP_REQUESTED) {

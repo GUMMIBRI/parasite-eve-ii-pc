@@ -42,7 +42,11 @@ STATIC_ASSERT_SIZEOF(GfxImageSlot, 0x8);
 /// argument occurs twice and must have no side effects; static tables require
 /// an integer constant expression. Captures the resident workspace symbol.
 /// Zero does not make an empty slot; use a zero initializer for one.
+#ifdef __psyz
+#define GRAPHICS_IMAGE_SLOT(extentBytes) { .regionBase = (u8*)PS1_RAM_PTR(0x801D7000) - (extentBytes), .byteExtent = (extentBytes) }
+#else
 #define GRAPHICS_IMAGE_SLOT(extentBytes) { .regionBase = (u8*)&gFsImageWorkspace - (extentBytes), .byteExtent = (extentBytes) }
+#endif
 
 /// Word-access view of a `MATRIX`'s nine fixed-point rotation coefficients.
 ///

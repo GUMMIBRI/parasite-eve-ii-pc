@@ -718,7 +718,7 @@ void hudDrawHpReadout(s32 x, s32 y, s32 hp, s32 hpMax, s32 layout)
         capSprite->y0   = y + 0xB;
         capSprite->v0   = 0x68;
         capSprite->clut = HUD_HP_BAR_CLUT;
-        setlen(capSprite, HUD_HP_CAP_PAYLOAD_WORDS);
+        setlen((SPRT_8*)capSprite, HUD_HP_CAP_PAYLOAD_WORDS);
         setcode(capSprite, HUD_HP_CAP_RAW_SPRITE_CODE);
         addPrim(gGpuCurrentOt - 2, capSprite);
 
@@ -730,7 +730,7 @@ void hudDrawHpReadout(s32 x, s32 y, s32 hp, s32 hpMax, s32 layout)
         capSprite->clut = HUD_HP_BAR_CLUT;
         capSprite->u0   = 0xA8;
         capSprite->v0   = 0x68;
-        setlen(capSprite, HUD_HP_CAP_PAYLOAD_WORDS);
+        setlen((SPRT_8*)capSprite, HUD_HP_CAP_PAYLOAD_WORDS);
         setcode(capSprite, HUD_HP_CAP_RAW_SPRITE_CODE);
         addPrim(gGpuCurrentOt - 2, capSprite);
 

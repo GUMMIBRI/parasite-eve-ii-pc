@@ -455,7 +455,7 @@ static s32 _sceneFindOtherChild(Task* scene, s32 messageId, s32 childId, Task** 
 
 static s32 _sceneExitPlacedActors(Task* scene, s32 messageId, s32 firstArg, s32 secondArg);
 
-static s32 _sceneBroadcastToPlacedActors(Task* scene, s32 messageId, s32 payload, s32 childMessage);
+static s32 _sceneBroadcastToPlacedActors(Task* scene, s32 messageId, TaskMessageWord payload, s32 childMessage);
 
 static Enemy* _enemyAllocateWork(Task* task, Enemy* parent);
 
@@ -723,8 +723,9 @@ s32 streamReadSceneImageSector(s32 unused0, s32 unused1)
     queue = &gCdCmdQueue;
     switch (_gStreamSceneReadState.phase) {
         case STREAM_SCENE_READ_HEADER:
+            // CD transfers count 32-bit words, including on LP64 hosts.
             // Read the serialized header before choosing or reusing its payload buffer.
-            CdGetSector(&header, sizeof(header) / sizeof(u_long));
+            CdGetSector(&header, sizeof(header) / sizeof(u32));
             _gStreamScenePayloadTransferEnabled = STREAM_SCENE_PAYLOAD_COPY;
             _gStreamScenePayloadForceReload     = header.forceReload;
             if ((_gStreamScenePayloadForceReload == 0) && ((s16)queue->scenePayloadReusable != 0)) {
@@ -740,9 +741,9 @@ s32 streamReadSceneImageSector(s32 unused0, s32 unused1)
                 STREAM_SELECT_PAYLOAD_DESTINATION(queue, *(&_gStreamSceneReadState.bufferKind), header.nextDecodeBufferBytes);
 #undef STREAM_SELECT_PAYLOAD_DESTINATION
                 if (_gStreamScenePayloadTransferEnabled != 0) {
-                    CdGetSector(_gStreamScenePayloadWriteCursor, SECTOR_SIZE - sizeof(header) / sizeof(u_long));
+                    CdGetSector(_gStreamScenePayloadWriteCursor, SECTOR_SIZE - sizeof(header) / sizeof(u32));
                 }
-                _gStreamScenePayloadWriteCursor     += SECTOR_SIZE * sizeof(u_long) - sizeof(header);
+                _gStreamScenePayloadWriteCursor     += SECTOR_SIZE * sizeof(u32) - sizeof(header);
                 _gStreamSceneReadState.phase         = STREAM_SCENE_READ_PAYLOAD;
                 _gStreamScenePayloadSectorsRemaining = header.sectorCount - 1;
             }
@@ -752,7 +753,7 @@ s32 streamReadSceneImageSector(s32 unused0, s32 unused1)
                 if (_gStreamScenePayloadTransferEnabled != 0) {
                     CdGetSector(_gStreamScenePayloadWriteCursor, SECTOR_SIZE);
                 }
-                _gStreamScenePayloadWriteCursor     += SECTOR_SIZE * sizeof(u_long);
+                _gStreamScenePayloadWriteCursor     += SECTOR_SIZE * sizeof(u32);
                 _gStreamScenePayloadSectorsRemaining = (u16)_gStreamScenePayloadSectorsRemaining - 1;
             }
             if (_gStreamScenePayloadSectorsRemaining == 0) {
@@ -4360,7 +4361,7 @@ static s32 _sceneExitPlacedActors(Task* scene, s32 messageId, s32 firstArg, s32 
 /// Children publish live `Enemy` work. Save the next sibling before dispatch can
 /// unlink the child; callbacks must leave it and the traversal boundary usable.
 /// Returns 0 and discards child results.
-static s32 _sceneBroadcastToPlacedActors(Task* scene, s32 messageId, s32 payload, s32 childMessage)
+static s32 _sceneBroadcastToPlacedActors(Task* scene, s32 messageId, TaskMessageWord payload, s32 childMessage)
 {
     Task*  head;
     Task*  child;

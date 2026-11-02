@@ -1,0 +1,12 @@
+{
+  "description": "Native input after implementing batched SPU attributes; both gallery airlocks, normal corridor control. Physical PS1 masks only.",
+  "clock": "video",
+  "baseRoute": "leave_booth",
+  "baseSamples": 21654,
+  "totalSamples": 23358,
+  "blocks": [
+    {"repeat": 1, "steps": [[360, 0], [80, 16], [24, 32], [40, 16], [60, 0]]},
+    {"repeat": 15, "steps": [[8, 16384], [52, 0]]},
+    {"repeat": 1, "steps": [[240, 0]]}
+  ]
+}

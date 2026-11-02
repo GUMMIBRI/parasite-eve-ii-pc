@@ -2509,8 +2509,8 @@ static inline void _sndScriptDiscardVoices(_SndVoice* voice)
 /// and released before the slot borrows the new bank and its oneC byte cursor.
 /// `soundId` is already resolved; pan and attenuation retain signed-byte mix
 /// units. The bank image and sample tables must stay loaded through playback.
-/// This stores the new cursor and unducked-volume policy; the interpreter
-/// reloads `entryControls` when oneC executes, rather than on this call.
+/// Publish controls with the new cursor so another start in the same event
+/// batch can survey this slot. The interpreter reloads them when oneC executes.
 static void _sndScriptStartSlot(s32 scriptSlotIndex, s8 panOffset, s8 attenuation, s32 soundId, SndBankSlot* bankSlot, SndScriptEntryControls* entryControls)
 {
     _SndScript*             script;
@@ -2524,6 +2524,7 @@ static void _sndScriptStartSlot(s32 scriptSlotIndex, s8 panOffset, s8 attenuatio
     script->state             = SOUND_SCRIPT_STARTING;
     script->voices            = NULL;
     script->bankSlot          = bankSlot;
+    script->entryControls     = entryControls;
     script->soundId           = soundId;
     script->runningTicks      = 0;
     script->panOffset         = panOffset;

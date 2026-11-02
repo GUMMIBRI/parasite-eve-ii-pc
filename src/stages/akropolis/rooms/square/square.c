@@ -185,7 +185,9 @@ static s32 _gAkropolisSquareTelephoneLightMode = AKROPOLIS_SQUARE_TELEPHONE_LIGH
 #include "assets/rooms/akropolis/square/sprites.inc"
 #include "assets/rooms/akropolis/square/cameras.inc"
 #include "assets/rooms/akropolis/square/surfaces.inc"
+#ifndef __psyz
 #include "assets/rooms/akropolis/square/updates.inc"
+#endif
 
 /// Frames since the last ring.
 static s32 _gAkropolisSquareTelephoneRingFrames = 0;

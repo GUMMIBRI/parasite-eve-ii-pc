@@ -3991,3 +3991,7 @@ static void _actor01100SpitCloudTick(Task* task)
 }
 
 PACKAGE_ALIASES
+#if defined(__psyz) && defined(PE_HOST_ALIAS_ACTOR101100)
+// Both manifest variants compile this source with identical parameters.
+DEFINE_ALIAS(gActor01100Tasks, gActor101100Tasks);
+#endif

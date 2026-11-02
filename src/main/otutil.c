@@ -50,11 +50,11 @@ TaskNode gDisplayTaskList;
 /// byte. The selector values' original roles are unproven; BSS starts at zero.
 s32 _gDisplayHoldStateSelector;
 
-/// Two resident 64-word DMA tag banks for modal task presentation.
+/// Two resident 64-entry DMA tag banks for modal task presentation.
 ///
-/// Each four-byte word carries a 24-bit DMA link and 8-bit packet length.
+/// Console tags are four bytes; host tags contain a native link and length.
 /// The SDK borrows each half through its `GsOT_TAG` view until drawing ends.
-u_long _gDisplaySmallTaskOtTags[2 * GPU_SMALL_ORDERING_TABLE_ENTRIES];
+GsOT_TAG _gDisplaySmallTaskOtTags[2 * GPU_SMALL_ORDERING_TABLE_ENTRIES];
 
 #include "main/display.h"
 #include "display.h"

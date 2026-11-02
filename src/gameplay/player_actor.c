@@ -506,7 +506,6 @@ static void _playerActorStartParalysis(Task* task);
 
 static void _playerActorTickScriptedRunTo(Task* task);
 
-static inline void _playerActorSetTargetNode(Task* task, WorldTargetNode* target);
 
 static void _playerActorTickDamage(Task* task);
 
@@ -10033,32 +10032,6 @@ void playerActorMode2State6(Task* task)
     playerActorTickChildSlots(task);
 }
 
-/// Selects the actor's target and transfers the targeted mark from its old node.
-///
-/// `target` must be non-NULL and live while retained by the actor. Re-selecting
-/// the same node still marks it targeted. A distinct old node must remain live
-/// for this call so its mark can be cleared; no ownership is transferred.
-static inline void _playerActorSetTargetNode(Task* task, WorldTargetNode* target)
-{
-    GameActor*       actor;
-    WorldTargetNode* previousTarget;
-
-    actor          = task->work;
-    previousTarget = actor->targetNode;
-    if (previousTarget != target) {
-        if (previousTarget != NULL) {
-            previousTarget->state.parts.targeted = 0;
-        }
-        actor->targetNode = target;
-    }
-    target->state.parts.targeted = 1;
-}
-
-void playerActorSetLockTarget(Task* task, WorldTargetNode* target)
-{
-    _playerActorSetTargetNode(task, target);
-}
-
 /// Damage-mode handlers selected by `GameActor::hitRegion`, interpreted as u16.
 ///
 /// Selectors 0..2 run the damage reaction; selector 3 is an empty continuation.
@@ -10413,8 +10386,7 @@ static void _playerActorUpdateAimRequest(Task* task)
 /// Cross press has priority over selection. Existing locks cycle on Square
 /// press or held Square plus a direction edge; new locks require Square press
 /// without Darkness. Targets are borrowed, and old/new nodes must remain live.
-/// Selection retains the binary's unguarded target-mark store when a scan
-/// returns NULL; the runtime invariant preventing that case is unproven.
+/// A scan returning NULL clears the native lock without marking a node.
 static void _playerActorUpdateLockTargetFromPad(Task* task)
 {
     GameActor* actor;
@@ -10426,11 +10398,11 @@ static void _playerActorUpdateLockTargetFromPad(Task* task)
         if (pressedButtons & PAD_BUTTON_CROSS) {
             playerActorClearLockTarget(task);
         } else if (((actor->padHeld & PAD_BUTTON_SQUARE) && (pressedButtons & (PAD_BUTTON_LEFT | PAD_BUTTON_RIGHT))) || (pressedButtons & PAD_BUTTON_SQUARE)) {
-            _playerActorSetTargetNode(task, worldTargetFindLockNodeFromPad(task));
+            playerActorSetLockTarget(task, worldTargetFindLockNodeFromPad(task));
         }
     } else if ((actor->padPressed & PAD_BUTTON_SQUARE) && !(gPlayerStatus.statusFlags & PLAYER_STATUS_DARKNESS)) {
         actor->aimTrackingState = GAME_ACTOR_AIM_TRACKING_TARGET;
-        _playerActorSetTargetNode(task, worldTargetFindLockNode(task));
+        playerActorSetLockTarget(task, worldTargetFindLockNode(task));
     }
 }
 

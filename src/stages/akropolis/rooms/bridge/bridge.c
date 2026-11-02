@@ -1,6 +1,11 @@
 #include "stages/akropolis/rooms/bridge.h"
 
 #include "config.h"
+
+#ifdef __psyz
+/* Console overlays each own this helper; keep both copies resident on host. */
+#define glowDrawTintedDiscNoBias akropolisBridgeGlowDrawTintedDiscNoBias
+#endif
 #include "../../event_flags.h"
 #include "../../room_states.h"
 
