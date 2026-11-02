@@ -103,3 +103,20 @@ Still embedded: 39 sites the converter does not match and about 1,100 includes w
 
 Step 1 touches 4,968 include sites and the generator that writes them; step 4 needs the real disc in CI. It is the
 largest remaining piece of Phase 0 and should be done before any binary release.
+
+## Remaining generated includes (measured 2026-11-02)
+
+Converted to runtime loading: 3,731 package parts plus 76 flat assets (all animation, grid-header, model, collision-patch and flat `EMBEDDED` includes); 56 bindings are linked in the current executable and match the embedded build byte for byte (hash dump).
+
+Still compiled from generated C text in `build/include/assets/` (not flat byte ranges: they are initialised structs with pointers and enum/macro references, written by `gen_room_inc.py` and the USD-to-C generators):
+
+| Group | Files | Size of generated C |
+| --- | ---: | ---: |
+| rooms | 679 | 13.1 MB |
+| enemies | 246 | 13.2 MB |
+| weapons | 83 | 9.4 MB |
+| characters | 92 | 3.5 MB |
+| encounters | 40 | 1.3 MB |
+| ui | 5 | 43 KB |
+
+These need a per-type decoder that rebuilds the host structs from the disc bytes (pointer fields become host pointers into the loaded blobs), not another `PE_ASSET_BIND`. Group by type (room descriptors, spawn tables, enemy model sets, weapon sets) and do one decoder per type, verified against the embedded build as above.
