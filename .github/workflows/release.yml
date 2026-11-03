@@ -12,6 +12,11 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: Version for the archive names (for example 0.1); empty uses the ref name
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -36,7 +41,8 @@ jobs:
           cmake --build build --parallel 4 --target parasite-eve-ii-pc
       - name: Package (ad-hoc signed)
         run: |
-          version=${GITHUB_REF_NAME:-dev}
+          version=${{ inputs.version }}
+          version=${version:-${GITHUB_REF_NAME:-dev}}
           version=${version#v}
           cargo build --manifest-path save-editor/Cargo.toml --locked --release
           archive=$(tools/release/package_app.sh build/parasite-eve-ii-pc "$version" dist "" save-editor/target/release/pe2-save-editor | tail -n1)
@@ -87,7 +93,8 @@ jobs:
         run: cargo build --manifest-path save-editor/Cargo.toml --locked --release
       - name: Package
         run: |
-          version=${GITHUB_REF_NAME:-dev}
+          version=${{ inputs.version }}
+          version=${version:-${GITHUB_REF_NAME:-dev}}
           version=${version#v}
           name=Parasite-Eve-II-${version}-linux-${{ matrix.arch }}
           editor=Parasite-Eve-II-Save-Editor-${version}-linux-${{ matrix.arch }}
@@ -147,7 +154,7 @@ jobs:
       - name: Package
         shell: pwsh
         run: |
-          $version = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME -replace '^v','' } else { 'dev' }
+          $version = if ('${{ inputs.version }}') { '${{ inputs.version }}' } elseif ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME -replace '^v','' } else { 'dev' }
           $game = "dist/Parasite-Eve-II-$version-windows-x86_64"
           $editor = "dist/Parasite-Eve-II-Save-Editor-$version-windows-x86_64"
           New-Item -ItemType Directory -Force $game, $editor | Out-Null
