@@ -30,9 +30,12 @@ Binary releases need the embedded data above gone. The packaging model of the fi
 ## Known link status (measured 2026-11-03)
 
 - Default build (`build-port`, Akropolis and a few packages): links and runs.
-- `-DPE_ALL_OVERLAYS=ON -DPE_ALL_VARIANTS=ON` (every overlay and every per-package variant): compiles, and since
-  2026-11-03 has **no undefined symbols** (it had 442). It fails to link on 669 duplicate symbols: overlays that the PS1
-  loaded one at a time export the same names (`gRoomEventMsg`, `gChaserMadBurstHead`, ...). Closing those is the module
-  registry's naming scheme (phase 2 in `docs/PORT_PLAN.md`): give each package its own name space and resolve
-  cross-package references by name. Without `PE_ALL_VARIANTS` the link reports the enemy task tables that only the
-  variants export. Dryfield, the Shelter, the Neo Ark and the Mine are unreachable until this is closed.
+- `-DPE_ALL_OVERLAYS=ON -DPE_ALL_VARIANTS=ON` (every overlay and every per-package variant): **links** (2026-11-03;
+  it had 442 undefined symbols) and starts. Overlays that the PS1 loaded one at a time export the same names
+  (`gRoomEventMsg`, `gChaserMadBurstHead`, ...: 669 clashes). `cmake/overlay_renames.cmake` gives each object private
+  names for them (`-Dname=PE_<object>_name`); a name another object refers to stays public in one definition.
+  Regenerate with `BUILD=build-all sh tools/port/regen_stubs.sh` (the tables for that configuration) and then
+  `sh tools/port/regen_overlay_renames.sh`; restore the default build's tables with plain `regen_stubs.sh`.
+  What this is not yet: a module registry. Nothing loads, unloads or resets an overlay at run time, so Dryfield, the
+  Shelter, the Neo Ark and the Mine are still unreachable in play. That wiring (load by package, state reset, the
+  54 `func_8070xxxx` calls from `main`) is the remaining phase 2 work.
