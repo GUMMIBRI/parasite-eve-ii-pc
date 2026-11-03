@@ -681,6 +681,12 @@ static void _actor341900InitGluttonModel(Task* task)
     AreaPlacement*                texturePlacement;
 
     model      = task->extra.tmd;
+#ifdef __psyz
+    if (model == NULL) {
+        taskKill(task); // model data not bound by this package
+        return;
+    }
+#endif
     work       = memMalloc(sizeof(*work), false);
     task->work = work;
     if (work == NULL) {
@@ -691,6 +697,12 @@ static void _actor341900InitGluttonModel(Task* task)
     initializedWork = work;
     memFillBytes(initializedWork, 0, sizeof(*initializedWork));
     initializedWork->parent = task->spawnArg2.pointer;
+#ifdef __psyz
+    if (initializedWork->parent == NULL && task->spawnArg1.value != ACTOR_341900_GLUTTON_PART_BODY) {
+        taskKill(task); // the body task has no model on this host
+        return;
+    }
+#endif
     model->lightMtx         = &initializedWork->light;
     model->colorMtx         = &initializedWork->color;
     task->msgTable          = _gActor341900GluttonMessages;
@@ -746,6 +758,11 @@ static void _actor341900GluttonPartTask(Task* task)
     if (task->state == ACTOR_341900_MODEL_STATE_INITIALIZE) {
         _actor341900InitGluttonModel(task);
         work = task->work;
+#ifdef __psyz
+        if (task->extra.tmd == NULL || work == NULL || work->parent == NULL || work->parent->extra.tmd == NULL) {
+            return; // killed by the init above: no model bound on this host
+        }
+#endif
 
         model                   = task->extra.tmd;
         rootCoord               = model->coords;

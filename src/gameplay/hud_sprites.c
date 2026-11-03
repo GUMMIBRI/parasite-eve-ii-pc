@@ -1624,6 +1624,11 @@ void viewApplyCurrentCamera(void)
     location    = &gGameSession->location;
     cameraTable = gViewCameraTables[location->stage - 1];
     cameras     = cameraTable->cameras[location->area - 1];
+#ifdef __psyz
+    if (cameras == NULL) {
+        return; // cut rooms (e.g. MIST_R21) have no camera table
+    }
+#endif
     cameraIndex = viewGetMappedIndex();
 
     viewRotation    = &gGfxViewRotCoord.coord;

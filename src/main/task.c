@@ -400,6 +400,7 @@ Task* (taskSpawnFromTable)(TaskDesc* table, s32 index, TaskSpawnArg spawnArg1, T
 #ifdef __psyz
     if (table[index].callback == NULL) {
         fprintf(stderr, "task table %p index %d has no handler\n", (void*)table, (int)index);
+        return NULL;
     }
 #endif
     return _taskSpawnFromDesc(&table[index], spawnArg1, spawnArg2, _gTaskActiveList);

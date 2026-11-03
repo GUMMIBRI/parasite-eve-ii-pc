@@ -3685,7 +3685,7 @@ static void _mineCavernTargetSpawn(Enemy* enemy, Task* task)
     blast->coord            = task->extra.tmd->coords;
     blast->context.contacts = work->blastContacts;
     // Retain the original address-2 load; no source object is established.
-    blastOffsetBits = ((SVECTOR*)NULL)->vy;
+    blastOffsetBits = 0; /* the original read PS1 address 2 (low RAM, zero); the host has no memory there */
     blast->pos.vz   = 0;
     blast->radius   = MINE_CAVERN_TARGET_BLAST_RADIUS;
     blast->flags    = WORLD_COLLISION_BODY_SPHERE;

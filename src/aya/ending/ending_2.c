@@ -459,6 +459,15 @@ static void _endingCreditsTask(Task* task)
     u16                    endHoldTicksLeft;
     const EndingStfParams* creditsParams;
 
+#ifdef __psyz
+    // The credits file is relocated with 32-bit file-relative pointer words,
+    // which do not survive 64-bit host pointers; end the credits instead of
+    // crashing until that table is ported.
+    if (task->state == ENDING_CREDITS_INITIALIZE) {
+        taskKill(task);
+        return;
+    }
+#endif
     switch (task->state) {
         case ENDING_CREDITS_INITIALIZE:
             // Keep both picture pages black until the first decode and fade-in.

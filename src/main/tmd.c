@@ -486,6 +486,9 @@ void tmdBuildBufferHalf(TmdObject* model)
     TmdStreamWorkspace*    reservedWorkspace;
     TmdStreamWorkspace*    scratchEnd;
 
+    if (model->source == NULL) { /* nothing to build from (a coordinate-only child, or a model whose package is not resident) */
+        return;
+    }
     useOffsetLayer                           = 0;
     source                                   = model->source;
     scratchEnd                               = SCRATCH_STACK_CURSOR(TmdStreamWorkspace);
@@ -680,6 +683,9 @@ TmdObject* tmdCreateModel(TmdSource* source, s32 bufferFlags)
     if (peTmdPreparePacketLayout(source) != 0) {
         fprintf(stderr, "invalid TMD packet layout: source=%p stream=%p\n", (void*)source,
                 source ? (void*)source->stream : NULL);
+        if (source == NULL || source->stream == NULL) {
+            return NULL; // model data that this package did not bind
+        }
         abort();
     }
 #endif

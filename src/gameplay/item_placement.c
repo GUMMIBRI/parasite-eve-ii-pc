@@ -351,6 +351,9 @@ void areaSpawnRoomObjects(const GameLocationKey* location)
     if (place->flagIndex == tableEnd) {
         return;
     }
+    if (areaObjects[location->area].spawns == NULL) { /* places without a spawn table: nothing to spawn */
+        return;
+    }
     do {
         spawnEntry = areaObjects[location->area].spawns;
         spawnKind  = spawnEntry->kind;

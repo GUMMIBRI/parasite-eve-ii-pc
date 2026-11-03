@@ -1482,6 +1482,9 @@ static void _loadingFinishRestart(Task* task)
 
 void animationAimHeadAtTask(Task* subject, Task* targetTask, s32 maxYaw, s32 maxPitch, s32 blendWeight)
 {
+    if (subject == NULL || targetTask == NULL) { /* the original read low PS1 RAM here; the host has no memory at address 0 */
+        return;
+    }
     VECTOR    transformedTranslation;
     VECTOR    subjectPosition;
     VECTOR    targetPosition;
@@ -1753,6 +1756,9 @@ void gfxBlendOrthonormalRotation(const MATRIX* fromRotation, const MATRIX* toRot
 
 void animationAimHeadAt(Task* subject, Task* targetTask, AnimationHeadAim* aim)
 {
+    if (subject == NULL || targetTask == NULL) { /* the original read low PS1 RAM here; the host has no memory at address 0 */
+        return;
+    }
     /// Blends head pitch/yaw toward the target while preserving the current roll.
     ///
     /// aimAngles is a writable SVECTOR lvalue, distinct from currentAngles.

@@ -2423,7 +2423,7 @@ static void _dryfieldWaterTowerFallingPropTask(Task* task)
         _dryfieldWaterTowerLightFallingProp(task);
     }
     // Retain the entry work pointer for the shadow, including the initialization frame.
-    if (work->shadowEnabled != 0) {
+    if (work != 0 && work->shadowEnabled != 0) {
         _dryfieldWaterTowerDrawFallingPropShadow(task, coord);
     }
 }

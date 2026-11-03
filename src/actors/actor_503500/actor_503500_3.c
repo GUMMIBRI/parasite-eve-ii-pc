@@ -433,8 +433,8 @@ static inline void _actor503500InheritBossSlotTextures(Task* task, Enemy* slotEn
     slotModel->texturePageOffset = placement->texturePageOffset;
     slotModel->clutRowOffset     = placement->clutRowOffset;
     if (slotModel->buffer != NULL) {
-        tmdBuildBufferHalf(slotModel);
-        tmdBuildBufferHalf(slotModel);
+        if (slotModel->source != NULL && (uintptr_t)slotModel->source < 0x100000000000ULL) tmdBuildBufferHalf(slotModel);
+        if (slotModel->source != NULL && (uintptr_t)slotModel->source < 0x100000000000ULL) tmdBuildBufferHalf(slotModel);
     }
 }
 
@@ -2139,8 +2139,8 @@ Enemy* actor503500SpawnSlotEnemy(Task* task, s32 slot)
         slotModel->clutRowOffset     = placement->clutRowOffset;
         // Rebuild both halves with the inherited texture offsets, preserving the half selector.
         if (slotModel->buffer != NULL) {
-            tmdBuildBufferHalf(slotModel);
-            tmdBuildBufferHalf(slotModel);
+            if (slotModel->source != NULL && (uintptr_t)slotModel->source < 0x100000000000ULL) tmdBuildBufferHalf(slotModel);
+            if (slotModel->source != NULL && (uintptr_t)slotModel->source < 0x100000000000ULL) tmdBuildBufferHalf(slotModel);
         }
         bossWork->enemies[slot] = slotEnemy;
     }

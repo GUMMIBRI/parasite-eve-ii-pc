@@ -1704,6 +1704,9 @@ static void _worldCoordEvaluatePointLightAtParentOrigin(WorldCoordPointLight* li
 
 void worldCoordSetActorColorMode(Enemy* enemy, s32 colorMode)
 {
+    if (enemy == NULL) { /* the original read low PS1 RAM here; the host has no memory at address 0 */
+        return;
+    }
     u8 packedModes;
 
     packedModes = enemy->colorMode;

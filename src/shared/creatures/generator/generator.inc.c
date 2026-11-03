@@ -714,12 +714,16 @@ static void _generatorSpawn(Enemy* enemy, Task* task)
     areaSyncLocationVariant(&location);
     areaVariant                             = areaGetVariant(&location);
     placement                               = AREA_PLACEMENT_AT(areaVariant->placements, placementIndex);
+#ifndef __psyz /* the original reuses bytes of a coordinate-only child as a TmdObject; on the host the layouts differ and the child has no model */
     lifeSupportModelView->texturePageOffset = placement->texturePageOffset;
     lifeSupportModelView->clutRowOffset     = placement->clutRowOffset;
     if (lifeSupportModelView->buffer != NULL) {
         tmdBuildBufferHalf(lifeSupportModelView);
         tmdBuildBufferHalf(lifeSupportModelView);
     }
+#else
+    (void)placement;
+#endif
     soundId              = _gGeneratorRunningSoundId | ((((Enemy*)task->spawnArg2.pointer)->placeKey >> ENEMY_PLACE_INDEX_SHIFT) << 8);
     work->runningSoundId = soundId;
     sndEvtRequestScriptStart(soundId, (s8)_gGeneratorViewSound[gGameSession->location.view].panOffset,

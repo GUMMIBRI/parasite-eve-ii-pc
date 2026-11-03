@@ -1333,6 +1333,12 @@ void shelterB6TrainingRoomEnergyArcTask(Task* task)
     GfxCoord*   coord;
 
     work  = task->spawnArg2.pointer;
+#ifdef __psyz
+    if (work == NULL || task->extra.coordBody == NULL) {
+        taskKill(task);
+        return;
+    }
+#endif
     coord = task->extra.coordBody->coord;
     if (gRoomEffectState->effectControl == ROOM_EFFECT_CONTROL_RUNNING) {
         work->age++;
@@ -1427,6 +1433,11 @@ static void _shelterB6TrainingRoomDrawEnergyStrip(const GfxCoord* startCoord, co
     gte_stsxy((screenPoint));                                                                  \
     gte_stflg((projectionFlags));
 
+#ifdef __psyz
+    if (startCoord == NULL || endCoord == NULL) {
+        return;
+    }
+#endif
     // Stage both cached world translations, retaining their low 16 bits.
     block                = SCRATCH_STACK_RESERVE_BLOCK(EffectStripScratch);
     block->worldStart.vx = startCoord->workm.t[0];

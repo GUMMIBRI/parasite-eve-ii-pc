@@ -234,6 +234,12 @@ void areaStartRoomRuntime(s32 skipViewGate)
     // The destination endpoint supplies actor placements and the default view.
     stage     = location->stage;
     warpId    = location->warp;
+#ifdef __psyz
+    // Rooms the game never warps into (e.g. MIST_R21) have no entry rows.
+    if (gDirectionAreaWarpEntriesByStage[stage - 1][location->area - 1] == NULL) {
+        memset(&warpEntry, 0, sizeof(warpEntry));
+    } else
+#endif
     warpEntry = gDirectionAreaWarpEntriesByStage[stage - 1][location->area - 1][warpId - 1];
     if (!(gDisplayState.control.word & DISPLAY_ROOM_START_KEEP_VIEW_MASK)) {
         if (((GAME_LOCATION_WORD(gGameSession->location) & GAME_LOCATION_KEY(0xFF, 0xFF, 0xFF, 0)) == GAME_LOCATION_KEY(GAME_STAGE_DRYFIELD_NIGHT, GAME_AREA_DRYFIELD_NIGHT_GARAGE, AREA_ROOM_GARAGE_ROOM, 0)) && (gGameSession->location.warp == AREA_ROOM_GARAGE_WARP)) {
