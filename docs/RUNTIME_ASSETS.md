@@ -159,3 +159,16 @@ identical dumps (the dump hashes a pointer as its target array and offset, so tw
 files (types and macros). About 75 carry data: room events (38), geometry (22), markers, spawns, header, jukebox,
 waves, one object, surface and action-trigger table, the inventory catalog, one encounter, one enemy and one motion
 table.
+
+### After the single structs and const tables (2026-11-03)
+
+5,850 arrays are bound and load from the disc; embedded and disc-loaded builds give identical dumps. **272 includes
+remain**, and only one carries disc data:
+
+- 241 animation banks (`AnimationSet*` slot tables: no disc bytes, only which clip sits in which slot);
+- 30 declaration files (types, macros, forward declarations: no data);
+- `inventory/catalog` (44 KB of item text and a table of pointers to it): needs a text decoder.
+
+One more table (`actor_341700_motion_142DC`) is bound but its actor is not linked yet; `verify_asset_parts.py` covers
+it. So the data left in the build is the item catalog, plus whatever the globals and `asm_data.c` hold (the next
+blocker for a binary release).

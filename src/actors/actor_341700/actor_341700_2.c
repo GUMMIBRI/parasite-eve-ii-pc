@@ -226,9 +226,14 @@ static SVECTOR _gActor341700PropSpriteOffsets[48] = {
 /// Row 0 corresponds to frame 120; only rows 0..120 (frames 120..240) are used.
 /// All 150 rows are retained. Rows 104, 106 and 109 select 50, 58 and 52 beyond
 /// the 48-vector offset table; the meaning of those adjacent reads is unproven.
+#ifdef PE_EMBED_ASSETS
 static u8 _gActor341700PropSpriteSchedule[150][4] = {
 #include "assets/actor_341700_motion_142DC.inc"
 };
+#else
+static u8 _gActor341700PropSpriteSchedule[150][4];
+#endif
+PE_ASSET_BIND("actor_341700_motion_142DC", _gActor341700PropSpriteSchedule);
 
 TaskDesc gActor341700PropTaskDesc = { { { (TASK_BODY_TMD | TASK_DESC_SKIP_AUTO_MODEL_BUFFER), TASK_PRIORITY_ACTOR } }, _actor341700PropTask, { .model = &_gActor341700Model13558 } };
 
