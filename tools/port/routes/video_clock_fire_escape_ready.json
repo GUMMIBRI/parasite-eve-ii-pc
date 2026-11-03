@@ -1,0 +1,19 @@
+{
+  "description": "Settle Fire Escape after repaired Lesser Stranger initialization and presence queries.",
+  "clock": "video",
+  "rasterClock": "virtual",
+  "baseRoute": "video_clock_fire_escape_entry",
+  "baseSamples": 238611,
+  "totalSamples": 239211,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    }
+  ]
+}

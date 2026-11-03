@@ -1,0 +1,19 @@
+{
+  "description": "Settled Helicopter Landing Pad entry with real room resources and initialized No9 actor.",
+  "clock": "video",
+  "rasterClock": "virtual",
+  "baseRoute": "video_clock_landing_entry",
+  "baseSamples": 250634,
+  "totalSamples": 251234,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          600,
+          0
+        ]
+      ]
+    }
+  ]
+}

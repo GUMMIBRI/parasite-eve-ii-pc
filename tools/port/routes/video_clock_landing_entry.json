@@ -1,0 +1,87 @@
+{
+  "description": "Diagnostic landing pad entry reproducing unlinked room lights crash before integration.",
+  "clock": "video",
+  "rasterClock": "virtual",
+  "baseRoute": "video_clock_fire_escape_phone",
+  "baseSamples": 249259,
+  "totalSamples": 250634,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          46,
+          32
+        ],
+        [
+          30,
+          0
+        ],
+        [
+          32,
+          8208
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          30,
+          0
+        ],
+        [
+          35,
+          16400
+        ],
+        [
+          220,
+          0
+        ],
+        [
+          35,
+          16400
+        ],
+        [
+          80,
+          0
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          240,
+          0
+        ],
+        [
+          16,
+          16400
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          204,
+          0
+        ]
+      ]
+    }
+  ]
+}

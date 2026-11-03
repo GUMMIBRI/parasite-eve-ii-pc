@@ -11,8 +11,22 @@ from pathlib import Path
 import shutil
 import shlex
 import subprocess
+import tempfile
 
 PREFIX = "PE2_CHECKPOINT "
+
+
+def checkpoint_value(snapshot, path):
+    """Resolve dict keys and list indices in a dotted expectation path."""
+    value = snapshot
+    for part in path.split("."):
+        if isinstance(value, dict):
+            value = value.get(part)
+        elif isinstance(value, list) and part.isdecimal() and int(part) < len(value):
+            value = value[int(part)]
+        else:
+            return None
+    return value
 
 
 def collect(target):
@@ -81,6 +95,12 @@ def collect(target):
         "bp": number(child(status, "bp")),
         "playerStatus": {name: number(child(status, name)) for name in
                          ("hp", "hpMax", "mp", "mpMax", "exp", "weapon", "weaponSlotItem", "armor", "statusFlags")},
+        "weaponLoads": {
+            str(index + 0x80): {field: number(child(child(save, "weaponItems").GetChildAtIndex(index), field))
+                                for field in ("primaryItemId", "primaryQty", "secondaryItemId", "secondaryQty")}
+            for index in range(32)
+            if number(child(child(save, "weaponItems").GetChildAtIndex(index), "primaryItemId"))
+        },
         "carried": inventory,
         "inventoryRows": [
             {"index": index - first, **{field: number(child(rows.GetChildAtIndex(index), field))
@@ -127,7 +147,7 @@ def collect(target):
     attachment = target.FindFirstGlobalVariable("gAttachmentState")
     snapshot["parasiteEnergy"] = {
         "levels": [number(child(save, "attachLevels").GetChildAtIndex(i)) for i in range(12)],
-        **{name: number(child(attachment, name)) for name in ("mode", "wheelIndex", "activeIndex")},
+        **{name: number(child(attachment, name)) for name in ("mode", "wheelIndex", "activeIndex", "flags", "queuedIndex", "menuOpen", "soundStep", "duration")},
         "elementSelection": [number(child(target.FindFirstGlobalVariable("gItemMenuPeElementLists").GetChildAtIndex(i), "selectedItemIndex")) for i in range(4)],
     }
     display = target.FindFirstGlobalVariable("gDisplayState")
@@ -466,6 +486,12 @@ def collect(target):
             "sceneEvent": number(child(save, "sceneEvent")),
         }
         snapshot["roofGarden"]["redKey"] = bool(number(child(save, "collectedBits").GetChildAtIndex(0)) & 8)
+    if snapshot["location"]["stage"] == 1 and snapshot["location"]["area"] == 15:
+        snapshot["fireEscape"] = {
+            "telephoneInspected": number(packed.GetChildAtIndex(0x16A // 2)) >> 4,
+            "telephoneDialogueCounter": number(packed.GetChildAtIndex(0x003 // 2)) & 15,
+            "sceneEvent": number(child(save, "sceneEvent")),
+        }
     if snapshot["location"]["stage"] == 1 and snapshot["location"]["area"] in (9, 10, 11, 15):
         queue = target.FindFirstGlobalVariable("gCdCmdQueue")
         snapshot["roomMovie"] = {
@@ -489,7 +515,7 @@ def collect(target):
             if (name.startswith(("_akropolisForkedRoad", "_akropolisObservatory", "_akropolisPromenade")) and ("MoviePathTask" in name or "SkipFade" in name or name == "_akropolisObservatoryScriptedBattleTask")) or (snapshot["location"]["area"] == 15 and name in ("_roomCutsceneTask", "_roomCutsceneSoundTask")):
                 snapshot["roomMovie"]["tasks"].append({"callback": name, "state": number(child(value, "state"))})
             task = child(child(value, "node"), "next")
-    if snapshot["location"]["stage"] == 1 and snapshot["location"]["area"] in (3, 4, 7, 8, 9, 10, 11, 13, 14, 15):
+    if snapshot["location"]["stage"] == 1 and snapshot["location"]["area"] in (3, 4, 7, 8, 9, 10, 11, 13, 14, 15, 16):
         snapshot["roomEnemies"] = []
         task = child(target.FindFirstGlobalVariable("gTaskDefaultList"), "next")
         visited = set()
@@ -501,11 +527,46 @@ def collect(target):
             value = task.Dereference()
             callback = child(value, "callback").GetValueAsUnsigned()
             name = target.ResolveLoadAddress(callback).GetSymbol().GetName() or ""
-            if name in ("_ratTask", "_mothTask", "_actor401800Task", "_actor01100Task", "_actor03700Task", "_akropolisBridgeEnemyTask", "_maggotCaterpillarTask", "_lesserStrangerTask") or (snapshot["location"]["area"] in (3, 4, 7, 9, 10) and name == "_actor01900Task"):
+            if name in ("_ratTask", "_mothTask", "_actor401000StrangerTask", "_actor401800Task", "_actor01100Task", "_actor03700Task", "_akropolisBridgeEnemyTask", "_maggotCaterpillarTask", "_lesserStrangerTask", "_helicopterLandingPadNo9BodyTask", "_helicopterLandingPadNo9TransformerTask") or (snapshot["location"]["area"] in (3, 4, 7, 9, 10) and name == "_actor01900Task"):
                 enemy_address = child(child(value, "spawnArg2"), "pointer").GetValueAsUnsigned()
                 if enemy_address:
                     enemy = target.CreateValueFromAddress("enemy", lldb.SBAddress(enemy_address, target), target.FindFirstType("Enemy"))
                     record = {"callback": name, "hp": number(child(enemy, "hp")), "taskState": number(child(value, "state"))}
+                    if name in ("_ratTask", "_actor401800Task", "_actor401000StrangerTask", "_actor01900Task"):
+                        model = child(child(value, "extra"), "tmd").Dereference()
+                        coord = child(child(model, "coords").Dereference(), "coord")
+                        record["rootPosition"] = [number(child(coord, "t").GetChildAtIndex(i)) for i in range(3)]
+                    if name == "_helicopterLandingPadNo9TransformerTask":
+                        work_address = child(value, "work").GetValueAsUnsigned()
+                        if work_address:
+                            work = target.CreateValueFromAddress("transformer", lldb.SBAddress(work_address, target), target.FindFirstType("_TransformerWork"))
+                            record.update({field: number(child(work, field)) for field in ("state", "transformerIndex", "status", "sparkFrames")})
+                            record["blastFlags"] = number(child(child(work, "blast"), "flags"))
+                            record["targeted"] = number(child(child(child(child(enemy, "node"), "state"), "parts"), "targeted"))
+                        coord = child(child(enemy, "coord").Dereference(), "workm")
+                        record["contactViewPosition"] = [number(child(coord, "t").GetChildAtIndex(i)) for i in range(3)]
+                        view_matrix = child(target.FindFirstGlobalVariable("gGfxViewCoord"), "workm")
+                        view_translation = [number(child(view_matrix, "t").GetChildAtIndex(i)) for i in range(3)]
+                        view_rotation = child(view_matrix, "m")
+                        delta = [record["contactViewPosition"][i] - view_translation[i] for i in range(3)]
+                        record["contactWorldPosition"] = [round(sum(number(view_rotation.GetChildAtIndex(j).GetChildAtIndex(i)) * delta[j] for j in range(3)) / 4096) for i in range(3)]
+                        root = child(child(child(value, "extra"), "tmd").Dereference(), "coords").Dereference()
+                        record["rootPosition"] = [number(child(child(root, "coord"), "t").GetChildAtIndex(i)) for i in range(3)]
+                    if name == "_helicopterLandingPadNo9BodyTask":
+                        model = child(child(value, "extra"), "tmd").Dereference()
+                        coord = child(child(model, "coords").Dereference(), "coord")
+                        record["rootPosition"] = [number(child(coord, "t").GetChildAtIndex(i)) for i in range(3)]
+                        work_address = child(value, "work").GetValueAsUnsigned()
+                        if work_address:
+                            work = target.CreateValueFromAddress("helipadNo9", lldb.SBAddress(work_address, target), target.FindFirstType("HelicopterLandingPadNo9Work"))
+                            record.update({field: number(child(work, field)) for field in ("state", "subState", "animationFrame", "stateCounter")})
+                    if name == "_actor01100Task":
+                        model = child(child(value, "extra"), "tmd").Dereference()
+                        coord = child(child(model, "coords").Dereference(), "coord")
+                        record["rootPosition"] = [number(child(coord, "t").GetChildAtIndex(i)) for i in range(3)]
+                        work_address = child(value, "work").GetValueAsUnsigned()
+                        work = target.CreateValueFromAddress("mossback", lldb.SBAddress(work_address, target), target.FindFirstType("_Actor01100Work"))
+                        record.update({field: number(child(work, field)) for field in ("state", "mode", "reaction", "recentDamage", "hidden")})
                     if name == "_actor03700Task":
                         model = child(child(value, "extra"), "tmd").Dereference()
                         coord = child(child(model, "coords").Dereference(), "coord")
@@ -570,7 +631,19 @@ def collect(target):
 
 def checkpoint_command(debugger, command, result, internal_dict):
     try:
-        result.AppendMessage(PREFIX + json.dumps(collect(debugger.GetSelectedTarget()), sort_keys=True))
+        import lldb
+        target = debugger.GetSelectedTarget()
+        process = target.GetProcess()
+        if process.GetState() != lldb.eStateStopped:
+            raise RuntimeError("checkpoint requires a stopped process")
+        for thread in process:
+            if thread.GetStopReason() in (lldb.eStopReasonException, lldb.eStopReasonSignal):
+                description = thread.GetStopDescription(512) or "signal/exception"
+                # SIGINT is used to inspect a controlled replay waiting on its FIFO.
+                if thread.GetStopReason() == lldb.eStopReasonSignal and thread.GetStopReasonDataAtIndex(0) == 2:
+                    continue
+                raise RuntimeError(f"checkpoint rejected after target fault: {description}; use pe2-transition and bt")
+        result.AppendMessage(PREFIX + json.dumps(collect(target), sort_keys=True))
     except Exception as error:
         result.SetError(str(error))
 
@@ -690,8 +763,12 @@ def main():
     parser.add_argument("--disc", type=Path, default=Path("rom/image/SLUS-01042.cue"))
     parser.add_argument("--log", type=Path, default=Path("build-port/replay-checkpoint.log"))
     parser.add_argument("--vram", type=Path, help="save the complete software VRAM at EOF (RGB555, 1024x512)")
+    parser.add_argument("--memory-card-dir", type=Path,
+                        help="persistent cards for save/load fixtures (default: isolated temporary empty cards)")
     parser.add_argument("--clock", choices=("host", "video"),
                         help="select PsyZ wall/device time or offline video/audio time (default inherits environment)")
+    parser.add_argument("--raster-clock", choices=("host", "virtual"),
+                        help="scanline clock: virtual removes host frame-budget jitter (requires a matching PsyZ build)")
     parser.add_argument("--expect", action="append", default=[], metavar="KEY=JSON")
     args = parser.parse_args()
     if not shutil.which("lldb"):
@@ -724,13 +801,22 @@ def main():
     env = dict(os.environ, PSYZ_HEADLESS="1", PE2_SKIPINTRO="1", PE2_PAD_REPLAY=str(args.replay.resolve()))
     if args.clock:
         env["PSYZ_AUDIO_CLOCK"] = args.clock
+    if args.raster_clock:
+        env["PSYZ_RASTER_CLOCK"] = args.raster_clock
     for key in ("PE2_FAST", "PE2_PAD_RECORD", "PE2_PAD_CONTROL", "PE2_PAD_CONTROL_FIFO"):
         env.pop(key, None)
     args.log.parent.mkdir(parents=True, exist_ok=True)
     with args.log.open("w") as log:
         log.write("PE2_REPLAY_CLOCK " + env.get("PSYZ_AUDIO_CLOCK", "host") + "\n")
+        log.write("PE2_REPLAY_RASTER_CLOCK " + env.get("PSYZ_RASTER_CLOCK", "host") + "\n")
         log.flush()
-        completed = subprocess.run(invocation, env=env, stdout=log, stderr=subprocess.STDOUT)
+        with tempfile.TemporaryDirectory(prefix="pe2-replay-card-") as temporary_card:
+            card_root = args.memory_card_dir.resolve() if args.memory_card_dir else Path(temporary_card)
+            card_root.mkdir(parents=True, exist_ok=True)
+            env["PE2_MEMORY_CARD_DIR"] = str(card_root)
+            log.write("PE2_REPLAY_MEMORY_CARD_DIR " + str(card_root) + "\n")
+            log.flush()
+            completed = subprocess.run(invocation, env=env, stdout=log, stderr=subprocess.STDOUT)
     output = args.log.read_text()
     snapshots = [json.loads(line.split(PREFIX, 1)[1]) for line in output.splitlines() if line.startswith(PREFIX)]
     if completed.returncode or len(snapshots) != 1 or "[pad] replay complete at frame" not in output:
@@ -739,9 +825,7 @@ def main():
     print(json.dumps(snapshot, indent=2, sort_keys=True))
     for expectation in args.expect:
         key, expected = expectation.split("=", 1)
-        actual = snapshot
-        for part in key.split("."):
-            actual = actual.get(part) if isinstance(actual, dict) else None
+        actual = checkpoint_value(snapshot, key)
         if actual != json.loads(expected):
             raise SystemExit(f"FAIL {key}: expected {expected}, got {actual!r}; see {args.log}")
     print(f"Replay checkpoint OK ({len(args.expect)} expectations); log: {args.log}")

@@ -753,7 +753,7 @@ def write_captured_route(path: Path, name: str) -> None:
     route = json.loads((Path(__file__).parent / f"routes/{name}.json").read_text())
     with tempfile.TemporaryDirectory(prefix="pe2_route_") as directory:
         base = Path(directory) / "base.pad"
-        if route.get("baseRoute") in ("audio_fixed_east_hall", "video_clock_airlock", "video_clock_akropolis", "video_clock_tower", "video_clock_patio", "video_clock_patio_clear", "video_clock_parthenon_key", "video_clock_cafeteria", "video_clock_cafeteria_clear", "video_clock_patio_ambush", "video_clock_mist_report", "video_clock_fountain", "video_clock_fountain_path", "video_clock_fountain_protein", "video_clock_hallway_clear", "video_clock_security", "video_clock_rupert", "video_clock_blue_key", "video_clock_blue_unlock", "video_clock_forked_road"):
+        if route.get("baseRoute") in ("audio_fixed_east_hall", "video_clock_airlock", "video_clock_akropolis", "video_clock_tower", "video_clock_patio", "video_clock_patio_clear", "video_clock_parthenon_key", "video_clock_cafeteria", "video_clock_cafeteria_clear", "video_clock_patio_ambush", "video_clock_mist_report", "video_clock_fountain", "video_clock_fountain_path", "video_clock_fountain_protein", "video_clock_hallway_clear", "video_clock_security", "video_clock_rupert", "video_clock_blue_key", "video_clock_blue_unlock", "video_clock_forked_road", "video_clock_observatory", "video_clock_promenade", "video_clock_sanctuary", "video_clock_roof_garden", "video_clock_red_key", "video_clock_roof_clear", "video_clock_bomb", "video_clock_observatory_return", "video_clock_mossbacks_clear", "video_clock_prepared_return", "video_clock_fountain_return", "video_clock_red_unlock", "video_clock_powered_fountain", "video_clock_powered_patio", "video_clock_powered_forked", "video_clock_forked_ambush_clear", "video_clock_powered_observatory", "video_clock_observatory_bats_clear", "video_clock_bridge_arrival", "video_clock_bridge_raised", "video_clock_fire_escape_entry", "video_clock_fire_escape_ready", "video_clock_fire_escape_clear", "video_clock_fire_escape_phone", "video_clock_landing_entry", "video_clock_landing_ready", "video_clock_no9_prepared", "video_clock_no9_ranged_ready"):
             write_captured_route(base, route["baseRoute"])
         elif route.get("baseRoute") == "leave_booth":
             write_route(base, 20000, 180, leave_booth=True)
@@ -825,6 +825,51 @@ def main() -> None:
                         help="revisit Fountain and enter unlocked Forked Road; run with --clock video")
     parser.add_argument("--video-clock-observatory", action="store_true",
                         help="ride original escalator scenes into Observatory; run with --clock video")
+    parser.add_argument("--video-clock-promenade", action="store_true",
+                        help="cross Observatory and finish Promenade arrival; use video audio and virtual raster clocks")
+    parser.add_argument("--video-clock-sanctuary", action="store_true",
+                        help="use Protein Capsule and enter Sanctuary; use video audio and virtual raster clocks")
+    parser.add_argument("--video-clock-roof-garden", action="store_true",
+                        help="finish Sanctuary bomb departure and Roof Garden arrival; use video/virtual clocks")
+    parser.add_argument("--video-clock-red-key", action="store_true",
+                        help="return to Sanctuary and collect Red Key; use video/virtual clocks")
+    parser.add_argument("--video-clock-roof-clear", action="store_true",
+                        help="defeat Roof Garden Caterpillars and collect loot; use video/virtual clocks")
+    parser.add_argument("--video-clock-bomb", action="store_true",
+                        help="examine Roof Garden bomb and restore control; use video/virtual clocks")
+    parser.add_argument("--video-clock-observatory-return", action="store_true",
+                        help="return with Red Key from bomb to Observatory; use video/virtual clocks")
+    parser.add_argument("--video-clock-mossbacks-clear", action="store_true",
+                        help="clear Observatory Mossbacks and collect 9mm; use video/virtual clocks")
+    parser.add_argument("--video-clock-prepared-return", action="store_true",
+                        help="revive/cast Healing and equip/load M93R; use video/virtual clocks")
+    parser.add_argument("--video-clock-fountain-return", action="store_true",
+                        help="clear Forked Road and return with Red Key to Fountain; use video/virtual clocks")
+    parser.add_argument("--video-clock-red-unlock", action="store_true",
+                        help="return to Security and use Red Key in right lock; use video/virtual clocks")
+    parser.add_argument("--video-clock-powered-fountain", action="store_true",
+                        help="leave unlocked Security and heal in powered Fountain; use video/virtual clocks")
+    parser.add_argument("--video-clock-powered-patio", action="store_true",
+                        help="use MP Boost and Healing, unlock Fountain gate to Patio; use video/virtual clocks")
+    parser.add_argument("--video-clock-powered-forked", action="store_true",
+                        help="cross powered Fountain to post-Red Forked Road; use video/virtual clocks")
+    parser.add_argument("--video-clock-square-save", action="store_true", help="Replay first Square save to a fresh memory card")
+    parser.add_argument("--video-clock-no9-transformer-shot", action="store_true", help="Replay M93R firing at No9 transformer0")
+    parser.add_argument("--video-clock-no9-ranged-ready", action="store_true", help="Replay attached M93R and3Hydra rounds for No9")
+    parser.add_argument("--video-clock-no9-prepared", action="store_true", help="Replay prebattle Healing and equipped Recovery2")
+    parser.add_argument("--video-clock-no9-battle-start", action="store_true", help="Replay No9 intro and active encounter Healing")
+    parser.add_argument("--video-clock-landing-ready", action="store_true", help="Replay verified Helicopter Landing Pad initialization")
+    parser.add_argument("--video-clock-landing-entry", action="store_true", help="Replay diagnostic Helicopter Landing Pad entry")
+    parser.add_argument("--video-clock-fire-escape-phone", action="store_true", help="Replay Fire Escape bomb captions and telephone conversation")
+    parser.add_argument("--video-clock-fire-escape-clear", action="store_true", help="Replay Lesser Stranger victory and Fire Escape loot")
+    parser.add_argument("--video-clock-fire-escape-ready", action="store_true", help="Replay verified Fire Escape initialization after native crash fixes")
+    parser.add_argument("--video-clock-fire-escape-entry", action="store_true", help="Replay bridge crossing to diagnostic Fire Escape entry")
+    parser.add_argument("--video-clock-bridge-raised", action="store_true", help="Replay accepted bridge keypad code and completed bridge movie")
+    parser.add_argument("--video-clock-bridge-arrival", action="store_true", help="Replay Observatory and Promenade traversal to powered Bridge")
+    parser.add_argument("--video-clock-observatory-bats-clear", action="store_true", help="Replay post-Red Observatory bat ambush victory")
+    parser.add_argument("--video-clock-powered-observatory", action="store_true", help="Replay post-Red Observatory arrival after Forked Road victory")
+    parser.add_argument("--video-clock-forked-ambush-clear", action="store_true",
+                        help="clear post-Red Forked Road ambush and collect Recovery1; use video/virtual clocks")
     parser.add_argument("--frames", type=int, default=12000)
     parser.add_argument("--aim-cycle", type=int, default=0,
                         help="release aim for 15 samples every N samples (0 holds continuously)")
@@ -915,7 +960,7 @@ def main() -> None:
     parser.add_argument("--bridge-entry", action="store_true",
                         help="use Red Key, clear the Observatory bat ambush and enter Bridge through Promenade")
     args = parser.parse_args()
-    captured = [name for name in ("audio_fixed_east_hall", "audio_fixed_cafeteria", "video_clock_airlock", "video_clock_akropolis", "video_clock_tower", "video_clock_patio", "video_clock_patio_clear", "video_clock_parthenon_key", "video_clock_cafeteria", "video_clock_cafeteria_clear", "video_clock_patio_ambush", "video_clock_mist_report", "video_clock_fountain", "video_clock_fountain_path", "video_clock_fountain_protein", "video_clock_hallway_clear", "video_clock_security", "video_clock_rupert", "video_clock_blue_key", "video_clock_blue_unlock", "video_clock_forked_road", "video_clock_observatory") if getattr(args, name)]
+    captured = [name for name in ("audio_fixed_east_hall", "audio_fixed_cafeteria", "video_clock_airlock", "video_clock_akropolis", "video_clock_tower", "video_clock_patio", "video_clock_patio_clear", "video_clock_parthenon_key", "video_clock_cafeteria", "video_clock_cafeteria_clear", "video_clock_patio_ambush", "video_clock_mist_report", "video_clock_fountain", "video_clock_fountain_path", "video_clock_fountain_protein", "video_clock_hallway_clear", "video_clock_security", "video_clock_rupert", "video_clock_blue_key", "video_clock_blue_unlock", "video_clock_forked_road", "video_clock_observatory", "video_clock_promenade", "video_clock_sanctuary", "video_clock_roof_garden", "video_clock_red_key", "video_clock_roof_clear", "video_clock_bomb", "video_clock_observatory_return", "video_clock_mossbacks_clear", "video_clock_prepared_return", "video_clock_fountain_return", "video_clock_red_unlock", "video_clock_powered_fountain", "video_clock_powered_patio", "video_clock_powered_forked", "video_clock_forked_ambush_clear", "video_clock_powered_observatory", "video_clock_observatory_bats_clear", "video_clock_bridge_arrival", "video_clock_bridge_raised", "video_clock_fire_escape_entry", "video_clock_fire_escape_ready", "video_clock_fire_escape_clear", "video_clock_fire_escape_phone", "video_clock_landing_entry", "video_clock_landing_ready", "video_clock_no9_battle_start", "video_clock_no9_prepared", "video_clock_no9_ranged_ready", "video_clock_no9_transformer_shot", "video_clock_square_save") if getattr(args, name)]
     if captured:
         if len(captured) != 1 or any(value is True for name, value in vars(args).items() if name != captured[0]):
             parser.error("select one captured route without legacy progression flags")

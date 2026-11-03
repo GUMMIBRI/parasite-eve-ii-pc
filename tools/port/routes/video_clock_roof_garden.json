@@ -1,0 +1,115 @@
+{
+  "description": "Navigate Sanctuary outer aisle, trigger bomb departure, normal Start skip departure and Roof Garden arrival; control restored and Rupert departed.",
+  "clock": "video",
+  "rasterClock": "virtual",
+  "baseRoute": "video_clock_sanctuary",
+  "baseSamples": 175544,
+  "totalSamples": 178571,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          23,
+          128
+        ],
+        [
+          60,
+          8208
+        ],
+        [
+          23,
+          32
+        ],
+        [
+          90,
+          24592
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          44,
+          32
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          27,
+          8208
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          90,
+          24592
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          35,
+          8208
+        ],
+        [
+          23,
+          32
+        ],
+        [
+          100,
+          8208
+        ],
+        [
+          24,
+          32
+        ],
+        [
+          55,
+          8208
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          200,
+          0
+        ],
+        [
+          8,
+          8
+        ],
+        [
+          1500,
+          0
+        ],
+        [
+          8,
+          8
+        ],
+        [
+          600,
+          0
+        ]
+      ]
+    }
+  ]
+}

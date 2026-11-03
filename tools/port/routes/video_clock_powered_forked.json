@@ -1,0 +1,111 @@
+{
+  "description": "Return Patio to powered Fountain, cross north strip then east path, confirm escape and enter post-Red Forked Road variant4 before its ambush.",
+  "clock": "video",
+  "rasterClock": "virtual",
+  "baseRoute": "video_clock_powered_patio",
+  "baseSamples": 215064,
+  "totalSamples": 217251,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          47,
+          32
+        ],
+        [
+          15,
+          16400
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          260,
+          0
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          20,
+          0
+        ],
+        [
+          210,
+          8208
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          22,
+          32
+        ],
+        [
+          200,
+          8208
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          100,
+          8208
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          260,
+          8208
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          180,
+          8208
+        ],
+        [
+          60,
+          0
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          120,
+          0
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          300,
+          0
+        ]
+      ]
+    }
+  ]
+}

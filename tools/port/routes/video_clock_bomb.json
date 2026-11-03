@@ -1,0 +1,119 @@
+{
+  "description": "Navigate around garden pedestal, examine bomb, advance helicopter objective, dismiss captions and retreat from repeatable trigger.",
+  "clock": "video",
+  "rasterClock": "virtual",
+  "baseRoute": "video_clock_roof_clear",
+  "baseSamples": 185499,
+  "totalSamples": 186579,
+  "blocks": [
+    {
+      "repeat": 1,
+      "steps": [
+        [
+          28,
+          32
+        ],
+        [
+          55,
+          8208
+        ],
+        [
+          23,
+          32
+        ],
+        [
+          70,
+          8208
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          55,
+          8208
+        ],
+        [
+          21,
+          32
+        ],
+        [
+          35,
+          8208
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          65,
+          8208
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          30,
+          8208
+        ],
+        [
+          23,
+          128
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          200,
+          0
+        ],
+        [
+          8,
+          16384
+        ],
+        [
+          30,
+          0
+        ],
+        [
+          8,
+          16448
+        ],
+        [
+          52,
+          64
+        ],
+        [
+          8,
+          16448
+        ],
+        [
+          52,
+          64
+        ],
+        [
+          8,
+          16448
+        ],
+        [
+          52,
+          64
+        ],
+        [
+          8,
+          16448
+        ],
+        [
+          52,
+          64
+        ],
+        [
+          120,
+          0
+        ]
+      ]
+    }
+  ]
+}
