@@ -16,7 +16,7 @@ first game). Matching the PS1 binaries is not a goal.
 
 ## Phases
 
-0. **Foundation.** CMake and PsyZ submodule; compile `src/main` on the host; drop the matching toolchain once nothing depends on it. *Done:* CMake/PsyZ, `src/main` builds as `game_main`, matching hacks and GTE MIPS asm removed. *Left, gated:* `ninja_config.py`, `configs/` and `linkers/` still generate the asset includes `game_main` reads, so they go with the runtime loader (phase 2); `src/main/hasm/*.s` stays as the reference for the C rewrite (phase 1); `DEFINE_ALIAS` goes with the overlay registry (phase 2). Sources outside `src/main` are not yet compiled.
+0. **Foundation.** CMake and PsyZ submodule; compile `src/main` on the host; drop the matching toolchain once nothing depends on it. *Done:* CMake/PsyZ, `src/main` builds as `game_main`, matching hacks and GTE MIPS asm removed. *Toolchain:* the build reads committed layout sources and the disc at run time (`tools/port/refresh_layout.sh` is the contributor-only refresh); `src/main/hasm/*.s` stays as the reference for the C rewrite (phase 1); `DEFINE_ALIAS` goes with the overlay registry (phase 2). Sources outside `src/main` are not yet compiled.
 1. **Boot to title.** Memory, task system, disc image mount (both discs), `fs`/`cdcmd` on PsyZ, LZSS and TMD in C, pad, fonts, `title` overlay.
 2. **Overlays.** Module registry, naming, runtime data loader; first room with Aya and collision.
 3. **Gameplay.** Actors, combat, items, menus, by family; verify against emulator traces (`tools/gametrace`).
@@ -27,11 +27,13 @@ Throughout: native tests per module and headless frame captures.
 
 ## Status (updated 2026-11-03)
 
-**Phase 0** (foundation) is done as the plan defines it: CMake and PsyZ, `src/main` as `game_main`, matching hacks and
-GTE MIPS asm removed. The one part the plan gates on a later phase is removing the decomp toolchain
-(`ninja_config.py`, `configs/`, `linkers/`): it still generates the asset includes and the split sources, and goes
-when the runtime loader covers everything it generates. Phases 1 and 2 are well advanced, because the work was allowed
-to cut into them:
+**Phase 0** (foundation) is done: CMake and PsyZ, `src/main` as `game_main`, matching hacks and GTE MIPS asm removed,
+and the build no longer depends on the decomp toolchain. Everything the compiler reads from the disc extraction is now
+committed as layout only (`include/generated`, 633 files, 4 MB; `src/port/asm_data.c`, `asset_parts_table.c`): types,
+sizes, decoders and registrations, with no game data. Cloning, building and playing need CMake and a C compiler plus
+the user's discs; `ninja_config.py`, `splat`, `dumpsxiso` and the `configs/`/`linkers/` trees are used only by
+`tools/port/refresh_layout.sh`, which contributors run when a generator changes. Phases 1 and 2 are well advanced,
+because the work was allowed to cut into them:
 
 - Disc data: 27,419 arrays (clips, models, room structs, item catalog, and 10,622 globals converted from the
   disassembly) load from the user's discs at run time and match the build-time data bit for bit.
@@ -46,7 +48,6 @@ Open, and owned by later phases rather than Phase 0:
   change); crossing rooms/stages during play is unobserved.
 - **Phase 5:** saves beyond the host card, the first game's extra options (antialiasing, model filtering, frame
   interpolation, lighting, HD packs) and its Mods page.
-- The decomp toolchain removal above.
 
 ## TMD stream renderer (hasm) — scoping notes
 

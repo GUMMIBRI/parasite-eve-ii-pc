@@ -28,49 +28,31 @@ Known limits:
 Your own **North American CUE/BIN images of both discs**. Game data is not included and never will be: the port reads
 your discs at run time.
 
-Today the build also needs data extracted from your disc, because some generated sources are still produced at build
-time (a handful of files with data, tracked in [docs/RUNTIME_ASSETS.md](docs/RUNTIME_ASSETS.md)). Everything already converted
-(4,176 arrays: package parts, clips, models, fonts) is loaded from the disc when the game starts.
+Nothing else: the build uses committed layout sources (types, sizes, decoders; no game data) and the game reads the
+discs when it starts. The tools that extract data from a disc are only for contributors (see below).
 
 ## Build
 
-Requires Git, CMake 3.21 or newer, a C11 compiler, and (to build the game) Python 3 and `dumpsxiso` from a
-[mkpsxiso release](https://github.com/Lameguy64/mkpsxiso/releases) on your `PATH`.
+Requires Git, CMake 3.21 or newer and a C11 compiler.
 
 ```sh
 git clone https://github.com/khasinski/parasite-eve-ii-pc
 cd parasite-eve-ii-pc
 git submodule update --init third_party/psyz
 git -C third_party/psyz submodule update --init external/SDL
+cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build --parallel
+./build/parasite-eve-ii-pc "path/to/Parasite Eve II (Disc 1).cue"
 ```
 
-**Without game data** (what CI does) you can build and run the host tests:
+Put the second disc next to the first (or pick it when the game asks for it). You can also set `PE2_DISC` instead of
+passing the path. Host tests: `cmake --build build --target host_tests && ctest --test-dir build`. Nothing from your
+disc is ever committed: `tools/ci/check_no_game_data.sh` enforces that.
 
-```sh
-cmake -S . -B build -DBUILD_TESTING=ON
-cmake --build build --target host_tests --parallel
-ctest --test-dir build --output-on-failure
-```
-
-**The game** needs your discs and data extracted from them once (this fills the git-ignored `assets/`, `asm/`, `build/` and
-`rom/`). Put the images in `rom/image/` as `SLUS-01042.bin/.cue` (disc 1) and `SLUS-01055.bin/.cue` (disc 2); the
-details and system packages are in [docs/decomp/README.md](docs/decomp/README.md).
-
-```sh
-python3 -m venv venv && venv/bin/pip install -r requirements.txt
-venv/bin/python ninja_config.py --iso_extract       # extract from your discs
-venv/bin/python ninja_config.py                  # configure (splits the executable, writes build.ninja)
-venv/bin/ninja generated-asset-includes             # sources generated from the extracted assets (a few minutes)
-sh tools/port/regen_assets.sh                       # layout table for the runtime loader (no game data in it)
-cmake -S . -B build-port -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-sh tools/port/regen_stubs.sh                        # globals and data tables converted from your disc
-cmake --build build-port --parallel
-./build-port/parasite-eve-ii-pc "rom/image/SLUS-01042.cue"
-```
-
-You can also set `PE2_DISC` instead of passing the path. When the generated sources are present CMake enables
-`PE_BUILD_GAME` by itself; without them it builds the tests only. Nothing from your disc is ever committed:
-`tools/ci/check_no_game_data.sh` enforces that.
+**Contributors** who change the generators or the decompiled sources' data layout refresh the committed layout with
+`sh tools/port/refresh_layout.sh`, which needs Python 3, `dumpsxiso` from a
+[mkpsxiso release](https://github.com/Lameguy64/mkpsxiso/releases) and your images in `rom/image/` as
+`SLUS-01042.bin/.cue` and `SLUS-01055.bin/.cue` (details in [docs/decomp/README.md](docs/decomp/README.md)).
 
 ### Development switches
 

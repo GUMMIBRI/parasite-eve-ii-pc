@@ -1,0 +1,22 @@
+/* rooms/akropolis/helicopter_landing_pad/package: written from its room instance by tools/buildsteps/gen_room_inc.py. */
+
+#include "gameplay/message.h"
+
+static ActorTransform _gAkropolisHelicopterLandingPadSceneOriginPlacement;
+#include "port/asset_bind.h"
+PE_ASSET_BIND("room/akropolis_helicopter_landing_pad/_gAkropolisHelicopterLandingPadSceneOriginPlacement", _gAkropolisHelicopterLandingPadSceneOriginPlacement);
+static ActorTransform _gAkropolisHelicopterLandingPadEncounterPlayerPlacement;
+#include "port/asset_bind.h"
+PE_ASSET_BIND("room/akropolis_helicopter_landing_pad/_gAkropolisHelicopterLandingPadEncounterPlayerPlacement", _gAkropolisHelicopterLandingPadEncounterPlayerPlacement);
+static ActorTransform _gAkropolisHelicopterLandingPadEncounterPlayerTurnPlacement;
+#include "port/asset_bind.h"
+PE_ASSET_BIND("room/akropolis_helicopter_landing_pad/_gAkropolisHelicopterLandingPadEncounterPlayerTurnPlacement", _gAkropolisHelicopterLandingPadEncounterPlayerTurnPlacement);
+static ActorTransform _gAkropolisHelicopterLandingPadUnusedTransform;
+#include "port/asset_bind.h"
+PE_ASSET_BIND("room/akropolis_helicopter_landing_pad/_gAkropolisHelicopterLandingPadUnusedTransform", _gAkropolisHelicopterLandingPadUnusedTransform);
+ActorTransform gAkropolisHelicopterLandingPadLiftPlayerPlacement;
+#include "port/asset_bind.h"
+PE_ASSET_BIND("room/akropolis_helicopter_landing_pad/gAkropolisHelicopterLandingPadLiftPlayerPlacement", gAkropolisHelicopterLandingPadLiftPlayerPlacement);
+static ActorTransform _gAkropolisHelicopterLandingPadDeparturePlayerPlacement;
+#include "port/asset_bind.h"
+PE_ASSET_BIND("room/akropolis_helicopter_landing_pad/_gAkropolisHelicopterLandingPadDeparturePlayerPlacement", _gAkropolisHelicopterLandingPadDeparturePlayerPlacement);

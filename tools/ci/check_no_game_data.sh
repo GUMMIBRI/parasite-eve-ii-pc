@@ -5,14 +5,14 @@ set -eu
 cd "$(dirname "$0")/../.."
 bad=$(git ls-files | grep -Ei '\.(bin|cue|iso|img|exe|cdf|hed|pe2pkg|tmd|tim|vab|vh|vb|xa|str|mdec|sbi|7z|zip)$' || true)
 bad="$bad
-$(git ls-files | grep -E '^(assets|asm|rom|build|build-[^/]+)/|^src/port/(asm_data|asset_parts_table)\.c$' || true)"
+$(git ls-files | grep -E '^(assets|asm|rom|build|build-[^/]+)/' || true)"
 bad=$(printf '%s\n' "$bad" | sed '/^$/d')
 if [ -n "$bad" ]; then
     echo "Tracked files that must not be in the repository:" >&2
     printf '%s\n' "$bad" >&2
     exit 1
 fi
-big=$(git ls-files -z | xargs -0 ls -l 2>/dev/null | awk '$5 > 12000000 {print $9 " (" $5 " bytes)"}')
+big=$(git ls-files -z | xargs -0 ls -l 2>/dev/null | awk '$5 > 20000000 {print $9 " (" $5 " bytes)"}')
 if [ -n "$big" ]; then
     echo "Unexpectedly large tracked files:" >&2
     printf '%s\n' "$big" >&2

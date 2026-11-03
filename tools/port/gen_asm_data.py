@@ -565,7 +565,14 @@ parts = sorted(bound_parts)
 table = ('\nconst PeAssetPart gPeAsmParts[] = {\n' + ''.join(
     f'    {{ "{k}", {pk}, {o}u, {z}u, PE_ASSET_OP_DECODE, {z}u, 0 }},\n' for k, pk, o, z in parts) +
     '    { 0 }\n};\nconst int gPeAsmPartCount = %d;\n' % len(parts))
-pathlib.Path('src/port/asm_data.c').write_text(''.join(hdr) + ''.join(fwd) + ''.join(out) + table)
+text = ''.join(hdr) + ''.join(fwd) + ''.join(out) + table
+if not os.environ.get('PE_KEEP_EMBED'):
+    # the committed source is layout only: the data of every binding is loaded from the disc at run time. PE_KEEP_EMBED=1
+    # keeps the compiled initializers for the -DPE_EMBED_ASSETS comparison build.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from freeze_includes import strip_embed
+    text = strip_embed(text)
+pathlib.Path('src/port/asm_data.c').write_text(text)
 pathlib.Path('src/port/globals.c').write_text(''.join(keep))
 print(f'{done} initialized from asm, {len(skipped)} skipped, {len(unbound)} keep their initializer', file=sys.stderr)
 if os.environ.get('GEN_UNBOUND'):

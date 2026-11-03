@@ -1,0 +1,68 @@
+/* rooms/akropolis/east_elevator_hall/package: written from its room instance by tools/buildsteps/gen_room_inc.py. */
+
+#include "types.h"
+#include "gameplay/area.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/evs.h"
+#include "gameplay/light.h"
+#include "gameplay/message.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+static SVECTOR _gAkropolisEastElevatorHallFirstBeaconOffset;
+static AnimationPlayRequest _gAkropolisEastElevatorHallOpeningPlayerMainAnimationRequest;
+static AnimationPlayRequest _gAkropolisEastElevatorHallOpeningPlayerLeadInAnimationRequest;
+static AnimationPlayRequest _gAkropolisEastElevatorHallOpeningPlayerExitAnimationRequest;
+static AnimationPlayRequest _gAkropolisEastElevatorHallWeaponAnimationRequest;
+static AnimationPlayRequest _gAkropolisEastElevatorHallSwatFreezeAnimationRequest;
+static AnimationPlayRequest _gAkropolisEastElevatorHallSwatOpeningTalkAnimationRequest;
+static AnimationPlayRequest _gAkropolisEastElevatorHallSwatWatchYourBackAnimationRequest;
+static AnimationPlayRequest _gAkropolisEastElevatorHallSwatRestAnimationRequest;
+static AnimationPlayRequest _gAkropolisEastElevatorHallSwatUrgeHurryAnimationRequest;
+static EvsSceneKey _gAkropolisEastElevatorHallOpeningSceneKey;
+static EvsSceneKey _gAkropolisEastElevatorHallUnusedSceneKey;
+static ActorTransform _gAkropolisEastElevatorHallUnusedTransform;
+static ActorTransform _gAkropolisEastElevatorHallOpeningPlayerWalkTarget;
+static ActorTransform _gAkropolisEastElevatorHallOpeningOriginTransform;
+static ActorTransform _gAkropolisEastElevatorHallOpeningPlayerLeadInTransform;
+static ActorTransform _gAkropolisEastElevatorHallUnusedEndTurnTransform;
+static ActorTransform _gAkropolisEastElevatorHallOpeningPlayerEndTransform;
+static EvsCommand _gAkropolisEastElevatorHallOpeningScript[36];
+static EvsCommand _gAkropolisEastElevatorHallOpeningSkipScript[15];
+static EvsCommand _gAkropolisEastElevatorHallUrgeHurryScript[9];
+extern WorldCollisionRoomResources gAkropolisEastElevatorHallRoomCollisionResources[1];
+extern u8* gAkropolisEastElevatorHallViewMaps[1];
+extern ViewCount gAkropolisEastElevatorHallViewCounts[1];
+extern WorldCoordRoomLighting gAkropolisEastElevatorHallRoomLightingTable[1];
+extern DirectionWarpEntry gAkropolisEastElevatorHallWarpEntries[1];
+static SVECTOR _gAkropolisEastElevatorHallCollisionGridNormals[10];
+static SVECTOR _gAkropolisEastElevatorHallCollisionGridVerts[66];
+static WorldCollisionGridFace _gAkropolisEastElevatorHallCollisionGridFaces[33];
+static s16 _gAkropolisEastElevatorHallCollisionGridCells[90];
+static s16* _gAkropolisEastElevatorHallCollisionGridTable[8];
+static WorldCollisionGrid _gAkropolisEastElevatorHallCollisionGrid;
+static WorldCollisionTrigger _gAkropolisEastElevatorHallViewBoundaryTriggers[6];
+static WorldCollisionTrigger _gAkropolisEastElevatorHallActionTriggers[7];
+static AreaResource _gAkropolisEastElevatorHallAreaResources[2];
+extern AreaVariant gAkropolisEastElevatorHallAreaVariants[3];
+static SpriteBatch _gAkropolisEastElevatorHallView1SpriteBatches[2];
+static SpriteSource _gAkropolisEastElevatorHallView2SpriteSources[39];
+static SpriteBatch _gAkropolisEastElevatorHallView2SpriteBatches[4];
+static SpriteSource _gAkropolisEastElevatorHallView3SpriteSources[41];
+static SpriteBatch _gAkropolisEastElevatorHallView3SpriteBatches[4];
+static SpriteSource _gAkropolisEastElevatorHallView4SpriteSources[38];
+static SpriteBatch _gAkropolisEastElevatorHallView4SpriteBatches[3];
+static SpriteSource _gAkropolisEastElevatorHallView5SpriteSources[28];
+static SpriteBatch _gAkropolisEastElevatorHallView5SpriteBatches[3];
+static SpriteBatch _gAkropolisEastElevatorHallView6SpriteBatches[2];
+static SpriteBatch _gAkropolisEastElevatorHallView7SpriteBatches[2];
+extern SpriteView gAkropolisEastElevatorHallSpriteViews[7];
+static WorldCoordPointLight _gAkropolisEastElevatorHallPointLights[4];
+static WorldCoordRoomLights _gAkropolisEastElevatorHallRoomLights;
+extern ViewCamera gAkropolisEastElevatorHallViewCameras[7];
+static WorldCollisionFootstepSounds _gAkropolisEastElevatorHallFootstepSounds;
+static WorldCollisionSurfaceProperties _gAkropolisEastElevatorHallDefaultSurfaceProperties;
+static WorldCollisionSurfaceProperties _gAkropolisEastElevatorHallClass1SurfaceProperties;
+extern WorldCollisionSurfaceProperties* gAkropolisEastElevatorHallSurfacePropertiesByClass[8];

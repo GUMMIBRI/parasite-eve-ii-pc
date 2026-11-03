@@ -70,12 +70,12 @@ build-port/
 /tools/m2c/
 /tools/patches/
 
-# Local build trees and data generated from the user's disc (never committed)
+# Local build trees (never committed). include/generated, src/port/asm_data.c and asset_parts_table.c ARE committed:
+# layout only, the data is read from the user's disc at run time
 build-all/
 build-*/
-src/port/asm_data.c
-src/port/asset_parts_table.c
 
 # Screenshots stay on disk only; the one the README shows is tracked.
 docs/images/*
 !docs/images/shooting-gallery.png
+src/main/hasm/

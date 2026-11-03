@@ -1,0 +1,119 @@
+/* rooms/akropolis/sanctuary/package: written from its room instance by tools/buildsteps/gen_room_inc.py. */
+
+#include "types.h"
+#include "gameplay/area.h"
+#include "gameplay/area_flags.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/evs.h"
+#include "gameplay/light.h"
+#include "gameplay/message.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+static SVECTOR _gAkropolisSanctuaryMosaicOffset;
+static ActorTransform _gAkropolisSanctuaryPlayerSceneStartPlacement;
+static ActorTransform _gAkropolisSanctuarySceneOriginPlacement;
+static ActorTransform _gAkropolisSanctuaryUnusedTransform;
+static ActorTransform _gAkropolisSanctuaryPlayerSceneClip48Placement;
+static ActorTransform _gAkropolisSanctuaryPlayerSceneClip49Placement;
+static ActorTransform _gAkropolisSanctuaryRupertRestoredPlacement;
+static ActorTransform _gAkropolisSanctuaryPlayerSceneClosingPlacement;
+static ActorTransform _gAkropolisSanctuaryPlayerSceneEndPlacement;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerWeaponClip1Request;
+static AnimationBankCopyRequest _gAkropolisSanctuaryPlayerSceneBankExtensionRequest;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerSceneClip47Request;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerSceneClip48Request;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerSceneClip49Request;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerSceneClip50Request;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerSceneClip51Request;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerSceneClip52Request;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerSceneClip52LongBlendRequest;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerSceneClip53Request;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerSceneClip54Request;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerSpecialWeaponRestoreRequest;
+static AnimationPlayRequest _gAkropolisSanctuaryPlayerWeaponRestoreRequest;
+static AnimationPlayRequest _gAkropolisSanctuaryNo9Clip1Request;
+static AnimationPlayRequest _gAkropolisSanctuaryNo9Clip2Request;
+static AnimationPlayRequest _gAkropolisSanctuaryNo9Clip3Request;
+static AnimationPlayRequest _gAkropolisSanctuaryNo9Clip4Request;
+static AnimationPlayRequest _gAkropolisSanctuaryRupertClip1Request;
+static AnimationPlayRequest _gAkropolisSanctuaryRupertClip2Request;
+static AnimationPlayRequest _gAkropolisSanctuaryRupertClip3Request;
+static AnimationPlayRequest _gAkropolisSanctuaryRupertClip4Request;
+static AnimationPlayRequest _gAkropolisSanctuaryRupertClip5Request;
+static AnimationPlayRequest _gAkropolisSanctuaryRupertClip6Request;
+static AnimationPlayRequest _gAkropolisSanctuaryRupertRestoredClip3Request;
+static EvsSceneKey _gAkropolisSanctuaryArrivalSceneKey;
+static EvsSceneKey _gAkropolisSanctuaryUnusedSceneKey;
+static EvsCommand _gAkropolisSanctuaryArrivalScript[121];
+static EvsCommand _gAkropolisSanctuaryArrivalSkipScript[18];
+static EvsCommand _gAkropolisSanctuaryBlockerScript[11];
+static EvsSceneKey _gAkropolisSanctuaryUnusedSceneKey2;
+static EvsCommand _gAkropolisSanctuaryDepartureScript[9];
+static EvsCommand _gAkropolisSanctuaryDepartureSkipScript[5];
+static SVECTOR _gAkropolisSanctuaryBlockerCollisionGridNormals[4];
+static SVECTOR _gAkropolisSanctuaryBlockerCollisionGridVerts[8];
+static WorldCollisionGridFace _gAkropolisSanctuaryBlockerCollisionGridFaces[4];
+static s16 _gAkropolisSanctuaryBlockerCollisionGridCells[6];
+static s16* _gAkropolisSanctuaryBlockerCollisionGridTable[1];
+static WorldCollisionGrid _gAkropolisSanctuaryBlockerCollisionGrid;
+static SVECTOR _gAkropolisSanctuaryFlamePositions[12];
+static u16 _gAkropolisSanctuaryFlameViewMasks[12];
+extern WorldCollisionRoomResources gAkropolisSanctuaryRoomCollisionResources[1];
+extern u8* gAkropolisSanctuaryViewMaps[1];
+extern ViewCount gAkropolisSanctuaryViewCounts[1];
+extern WorldCoordRoomLighting gAkropolisSanctuaryRoomLightingTable[1];
+extern DirectionWarpEntry gAkropolisSanctuaryWarpEntries[3];
+static SVECTOR _gAkropolisSanctuaryCollisionGridNormals[42];
+static SVECTOR _gAkropolisSanctuaryCollisionGridVerts[136];
+static WorldCollisionGridFace _gAkropolisSanctuaryCollisionGridFaces[85];
+static s16 _gAkropolisSanctuaryCollisionGridCells[386];
+static s16* _gAkropolisSanctuaryCollisionGridTable[9];
+static WorldCollisionGrid _gAkropolisSanctuaryCollisionGrid;
+static WorldCollisionTrigger _gAkropolisSanctuaryViewBoundaryTriggers[18];
+static WorldCollisionTrigger _gAkropolisSanctuaryActionTriggers[17];
+static AreaResource _gAkropolisSanctuaryNo9AndRupertResources[3];
+static AreaResource _gAkropolisSanctuaryRupertResources[2];
+extern AreaVariant gAkropolisSanctuaryAreaVariants[12];
+static WorldCoordPointLight _gAkropolisSanctuaryPointLights[9];
+static WorldCoordRoomLights _gAkropolisSanctuaryRoomLights;
+static SpriteBatch _gAkropolisSanctuaryView1SpriteBatches[2];
+static SpriteSource _gAkropolisSanctuaryView2SpriteSources[40];
+static SpriteBatch _gAkropolisSanctuaryView2SpriteBatches[6];
+static SpriteSource _gAkropolisSanctuaryView3SpriteSources[50];
+static SpriteBatch _gAkropolisSanctuaryView3SpriteBatches[8];
+static SpriteSource _gAkropolisSanctuaryView4SpriteSources[46];
+static SpriteBatch _gAkropolisSanctuaryView4SpriteBatches[10];
+static SpriteSource _gAkropolisSanctuaryView5SpriteSources[41];
+static SpriteBatch _gAkropolisSanctuaryView5SpriteBatches[9];
+static SpriteSource _gAkropolisSanctuaryView6SpriteSources[32];
+static SpriteBatch _gAkropolisSanctuaryView6SpriteBatches[6];
+static SpriteSource _gAkropolisSanctuaryView7SpriteSources[24];
+static SpriteBatch _gAkropolisSanctuaryView7SpriteBatches[7];
+static SpriteSource _gAkropolisSanctuaryView8SpriteSources[9];
+static SpriteBatch _gAkropolisSanctuaryView8SpriteBatches[4];
+static SpriteSource _gAkropolisSanctuaryView9SpriteSources[4];
+static SpriteBatch _gAkropolisSanctuaryView9SpriteBatches[3];
+static SpriteBatch _gAkropolisSanctuaryView10SpriteBatches[2];
+static SpriteSource _gAkropolisSanctuaryView11SpriteSources[8];
+static SpriteBatch _gAkropolisSanctuaryView11SpriteBatches[3];
+static SpriteSource _gAkropolisSanctuaryView12SpriteSources[32];
+static SpriteBatch _gAkropolisSanctuaryView12SpriteBatches[5];
+static SpriteSource _gAkropolisSanctuaryView13SpriteSources[5];
+static SpriteBatch _gAkropolisSanctuaryView13SpriteBatches[3];
+static SpriteSource _gAkropolisSanctuaryView14SpriteSources[8];
+static SpriteBatch _gAkropolisSanctuaryView14SpriteBatches[3];
+static SpriteBatch _gAkropolisSanctuaryView15SpriteBatches[2];
+static SpriteSource _gAkropolisSanctuaryView16SpriteSources[38];
+static SpriteBatch _gAkropolisSanctuaryView16SpriteBatches[5];
+extern SpriteView gAkropolisSanctuarySpriteViews[16];
+extern ViewCamera gAkropolisSanctuaryViewCameras[16];
+static WorldCollisionFootstepSounds _gAkropolisSanctuarySurfaceClass1FootstepSounds;
+static WorldCollisionFootstepSounds _gAkropolisSanctuarySurfaceClass2FootstepSounds;
+static WorldCollisionSurfaceProperties _gAkropolisSanctuaryDefaultSurfaceProperties;
+static WorldCollisionSurfaceProperties _gAkropolisSanctuarySurfaceClass1Properties;
+static WorldCollisionSurfaceProperties _gAkropolisSanctuarySurfaceClass2Properties;
+extern WorldCollisionSurfaceProperties* gAkropolisSanctuarySurfacePropertiesByClass[8];
+static AreaApplyRec _gAkropolisSanctuaryArrivalAreaUpdates[11];

@@ -1,0 +1,130 @@
+/* rooms/akropolis/patio/package: written from its room instance by tools/buildsteps/gen_room_inc.py. */
+
+#include "types.h"
+#include "gameplay/area.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/evs.h"
+#include "gameplay/light.h"
+#include "gameplay/message.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+static ActorTransform _gAkropolisPatioFollowUpPlayerStartPlacement;
+static ActorTransform _gAkropolisPatioFollowUpPlayerWalkDestination;
+static ActorTransform _gAkropolisPatioFollowUpPlayerAnimationPlacement;
+static ActorTransform _gAkropolisPatioFollowUpPlayerEndPlacement;
+static ActorTransform _gAkropolisPatioOpeningPlayerEndPlacement;
+static AnimationPlayRequest _gAkropolisPatioFollowUpPlayerAnimation47Request;
+static AnimationPlayRequest _gAkropolisPatioRetainedBank1Animation48Request;
+static AnimationPlayRequest _gAkropolisPatioFollowUpPlayerAnimation49Request;
+static AnimationPlayRequest _gAkropolisPatioFollowUpPlayerAnimation50Request;
+static AnimationPlayRequest _gAkropolisPatioFollowUpPlayerAnimation51Request;
+static AnimationPlayRequest _gAkropolisPatioFollowUpPlayerAnimation52Request;
+static AnimationBankCopyRequest _gAkropolisPatioFollowUpPlayerBankCopyRequest;
+static AnimationPlayRequest _gAkropolisPatioPlayerIdleAnimationRequest;
+static ActorTransform _gAkropolisPatioOpeningSwatPlacement;
+static ActorTransform _gAkropolisPatioRestoredSwatPlacement;
+static ActorCommand _gAkropolisPatioHideStrangerCommand;
+static ActorCommand _gAkropolisPatioOpeningActorsStartCommand;
+static ActorCommand _gAkropolisPatioSwatWarnCommand;
+static ActorCommand _gAkropolisPatioSwatSlumpCommand;
+static ActorCommand _gAkropolisPatioSwatRestCommand;
+static ActorTransform _gAkropolisPatioOpeningStrangerPlacement;
+static ActorTransform _gAkropolisPatioRestoredStrangerPlacement;
+static EvsCommand _gAkropolisPatioOpeningScript[23];
+static EvsCommand _gAkropolisPatioOpeningSkipScript[16];
+static EvsCommand _gAkropolisPatioFollowUpScript[45];
+static EvsCommand _gAkropolisPatioFollowUpSkipScript[16];
+static EvsSceneKey _gAkropolisPatioCafeteriaDoorSceneKey;
+static EvsCommand _gAkropolisPatioCafeteriaDoorScript[10];
+static EvsCommand _gAkropolisPatioCafeteriaDoorSkipScript[9];
+static AnimationBankCopyRequest _gAkropolisPatioAmbushPlayerBankCopyRequest;
+static AnimationPlayRequest _gAkropolisPatioRetainedBank1AnimationRequests[4];
+static AnimationPlayRequest _gAkropolisPatioAmbushPlayerAnimation9Request;
+static ActorTransform _gAkropolisPatioAmbushPlayerStartPlacement;
+static ActorTransform _gAkropolisPatioUnusedAmbushTransforms[2];
+static ActorTransform _gAkropolisPatioAmbushPlayerRunDestination;
+static ActorTransform _gAkropolisPatioAmbushPlayerSkipPlacement;
+static AnimationPlayRequest _gAkropolisPatioRetainedBank0Animation1To4Requests[5];
+static AnimationPlayRequest _gAkropolisPatioLeapingStranger1AnimationRequest;
+static AnimationPlayRequest _gAkropolisPatioLeapingStranger2AnimationRequest;
+static AnimationPlayRequest _gAkropolisPatioRetainedBank0Animation7And8Requests[2];
+static ActorTransform _gAkropolisPatioLeapingStranger1StartPlacement;
+static ActorTransform _gAkropolisPatioLeapingStranger1Launch;
+static ActorTransform _gAkropolisPatioLeapingStranger2StartPlacement;
+static ActorTransform _gAkropolisPatioLeapingStranger2Launch;
+static ActorTransform _gAkropolisPatioAmbushStranger1BattlePlacement;
+static ActorTransform _gAkropolisPatioAmbushStranger2BattlePlacement;
+static ActorMotionWalkAnim _gAkropolisPatioStrangerLeapAnimations;
+static ActorCommand _gAkropolisPatioLowerStrangerHeadWeightCommand;
+static ActorCommand _gAkropolisPatioRaiseStrangerHeadWeightCommand;
+static ActorCommand _gAkropolisPatioPrintStrangerTransformCommand;
+static EvsCommand _gAkropolisPatioAmbushScript[41];
+static EvsCommand _gAkropolisPatioAmbushSkipScript[21];
+static SVECTOR _gAkropolisPatioLightAnchors[14];
+static u16 _gAkropolisPatioLightViewMasks[14];
+extern WorldCollisionRoomResources gAkropolisPatioRoomCollisionResources[3];
+static u8 _gAkropolisPatioRoom2ViewMap[20];
+static u8 _gAkropolisPatioRoom3ViewMap[20];
+extern u8* gAkropolisPatioViewMaps[3];
+extern ViewCount gAkropolisPatioViewCounts[3];
+extern WorldCoordRoomLighting gAkropolisPatioRoomLightingTable[3];
+extern DirectionWarpEntry gAkropolisPatioWarpEntries[4];
+static SVECTOR _gAkropolisPatioCollisionGridNormals[33];
+static SVECTOR _gAkropolisPatioCollisionGridVerts[201];
+static WorldCollisionGridFace _gAkropolisPatioCollisionGridFaces[70];
+static s16 _gAkropolisPatioCollisionGridCells[402];
+static s16* _gAkropolisPatioCollisionGridTable[28];
+static WorldCollisionGrid _gAkropolisPatioCollisionGrid;
+static WorldCollisionTrigger _gAkropolisPatioViewBoundaryTriggers[14];
+static WorldCollisionTrigger _gAkropolisPatioRoom1ActionTriggers[12];
+static WorldCollisionTrigger _gAkropolisPatioRooms2And3ActionTriggers[12];
+static WorldCollisionOccluder _gAkropolisPatioOccluders[2];
+static AreaResource _gAkropolisPatioVariant1ActorResources[3];
+static AreaResource _gAkropolisPatioVariant2ActorResources[3];
+static AreaResource _gAkropolisPatioVariant3ActorResources[3];
+static AreaResource _gAkropolisPatioVariant4ActorResources[3];
+static AreaResource _gAkropolisPatioVariant5ActorResources[2];
+static AreaResource _gAkropolisPatioVariant10ActorResources[1];
+extern AreaVariant gAkropolisPatioAreaVariants[12];
+static SpriteBatch _gAkropolisPatioView1SpriteBatches[2];
+static SpriteSource _gAkropolisPatioView2SpriteSources[27];
+static SpriteBatch _gAkropolisPatioView2SpriteBatches[7];
+static SpriteSource _gAkropolisPatioView3SpriteSources[45];
+static SpriteBatch _gAkropolisPatioView3SpriteBatches[15];
+static SpriteSource _gAkropolisPatioView4SpriteSources[15];
+static SpriteBatch _gAkropolisPatioView4SpriteBatches[5];
+static SpriteBatch _gAkropolisPatioView5SpriteBatches[2];
+static SpriteSource _gAkropolisPatioView6SpriteSources[13];
+static SpriteBatch _gAkropolisPatioView6SpriteBatches[4];
+static SpriteSource _gAkropolisPatioView7SpriteSources[21];
+static SpriteBatch _gAkropolisPatioView7SpriteBatches[5];
+static SpriteSource _gAkropolisPatioView8SpriteSources[56];
+static SpriteBatch _gAkropolisPatioView8SpriteBatches[20];
+static SpriteSource _gAkropolisPatioView9SpriteSources[47];
+static SpriteBatch _gAkropolisPatioView9SpriteBatches[15];
+static SpriteBatch _gAkropolisPatioView10SpriteBatches[2];
+static SpriteBatch _gAkropolisPatioView11SpriteBatches[2];
+static SpriteBatch _gAkropolisPatioView12SpriteBatches[2];
+static SpriteBatch _gAkropolisPatioUnusedBackgroundSpriteBatches1[2];
+static SpriteBatch _gAkropolisPatioView14SpriteBatches[2];
+static SpriteBatch _gAkropolisPatioView15SpriteBatches[2];
+static SpriteBatch _gAkropolisPatioView16SpriteBatches[2];
+static SpriteBatch _gAkropolisPatioUnusedBackgroundSpriteBatches2[2];
+static SpriteSource _gAkropolisPatioView18SpriteSources[20];
+static SpriteBatch _gAkropolisPatioView18SpriteBatches[3];
+static SpriteSource _gAkropolisPatioView19SpriteSources[30];
+static SpriteBatch _gAkropolisPatioView19SpriteBatches[3];
+extern SpriteView gAkropolisPatioSpriteViews[19];
+static WorldCoordPointLight _gAkropolisPatioPointLights[24];
+static WorldCoordRoomLights _gAkropolisPatioRoomLights;
+extern ViewCamera gAkropolisPatioViewCameras[19];
+static WorldCollisionFootstepSounds _gAkropolisPatioClass4FootstepSounds;
+static WorldCollisionSurfaceProperties _gAkropolisPatioDefaultSurfaceProperties;
+static WorldCollisionSurfaceProperties _gAkropolisPatioClass1SurfaceProperties;
+static WorldCollisionSurfaceProperties _gAkropolisPatioClass2SurfaceProperties;
+static WorldCollisionSurfaceProperties _gAkropolisPatioClass3SurfaceProperties;
+static WorldCollisionSurfaceProperties _gAkropolisPatioClass4SurfaceProperties;
+extern WorldCollisionSurfaceProperties* gAkropolisPatioSurfacePropertiesByClass[9];

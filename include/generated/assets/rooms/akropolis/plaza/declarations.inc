@@ -1,0 +1,107 @@
+/* rooms/akropolis/plaza/package: written from its room instance by tools/buildsteps/gen_room_inc.py. */
+
+#include "types.h"
+#include "gameplay/area.h"
+#include "gameplay/collision.h"
+#include "gameplay/direction.h"
+#include "gameplay/evs.h"
+#include "gameplay/light.h"
+#include "gameplay/message.h"
+#include "gameplay/room.h"
+#include "gameplay/sprites.h"
+#include "gameplay/view.h"
+
+static AnimationPlayRequest _gAkropolisPlazaPlayerShowBadgeRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantIdleRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantClearedForEntryRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantSlot3Request;
+static AnimationPlayRequest _gAkropolisPlazaSergeantGoRightInRequest;
+static AnimationPlayRequest _gAkropolisPlazaPlayerTurnToSergeantRequest;
+static AnimationPlayRequest _gAkropolisPlazaPlayerAskSituationRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantOuttaControlRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantOuttaControlGestureRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantHelicopterDownRequest;
+static AnimationPlayRequest _gAkropolisPlazaPlayerTurnFromSergeantRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantScenePlayerPutAwayBadgeRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantScenePlayerIdleRequest;
+static AnimationPlayRequest _gAkropolisPlazaPlayerIdleRequest;
+static EvsCommand _gAkropolisPlazaSergeantSceneScript[32];
+static EvsCommand _gAkropolisPlazaSergeantSceneSkipScript[10];
+static EvsCommand _gAkropolisPlazaHelicopterWreckScript[6];
+static AnimationPlayRequest _gAkropolisPlazaPlayerAskAboutRoofRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerLookAtBadgeRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerExplainSwatRequest;
+static AnimationPlayRequest _gAkropolisPlazaPlayerThankOfficerRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerStepAsideRequest;
+static AnimationPlayRequest _gAkropolisPlazaPlayerAskAboutCiviliansRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerScenePlayerIdleRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerShiftStanceRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerScenePlayerIdleBlendRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerScenePlayerShowBadgeRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerScenePlayerPutAwayBadgeRequest;
+static EvsCommand _gAkropolisPlazaEntranceOfficerTalkScript[27];
+static EvsCommand _gAkropolisPlazaEntranceOfficerTalkSkipScript[6];
+static AnimationPlayRequest _gAkropolisPlazaOfficerWalkToSergeantRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerHaltRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerReportAgentRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerAskSergeantRequest;
+static AnimationPlayRequest _gAkropolisPlazaOfficerTurnAwayRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantRaiseArmRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantLowerArmRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantListenRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantTurnHeadRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantHunterFromMistRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantHeardOfThemRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantDamnRookiesRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantTurnAwayRequest;
+static ActorTransform _gAkropolisPlazaOfficersTalkOfficerPlacement;
+static ActorTransform _gAkropolisPlazaOfficersTalkSergeantPlacement;
+static EvsCommand _gAkropolisPlazaOfficersTalkScript[41];
+static EvsCommand _gAkropolisPlazaOfficersTalkEndScript[5];
+static AnimationPlayRequest _gAkropolisPlazaSergeantSomethingBigRequest;
+static AnimationPlayRequest _gAkropolisPlazaSergeantWatchYourselfRequest;
+static EvsCommand _gAkropolisPlazaSergeantAgain1Script[11];
+static EvsCommand _gAkropolisPlazaSergeantAgain2Script[11];
+static EvsCommand _gAkropolisPlazaSergeantAgainLaterScript[8];
+static s16 _gAkropolisPlazaLightRingSamples[32];
+static SVECTOR _gAkropolisPlazaAmbientLightPlacements[19];
+extern WorldCollisionRoomResources gAkropolisPlazaRoomCollisionResources[1];
+extern u8* gAkropolisPlazaViewMaps[1];
+extern ViewCount gAkropolisPlazaViewCounts[1];
+extern WorldCoordRoomLighting gAkropolisPlazaRoomLightingTable[1];
+extern ViewCamera gAkropolisPlazaViewCameras[8];
+static SpriteBatch _gAkropolisPlazaHideImageSpriteBatches[1];
+static SpriteBatch _gAkropolisPlazaShowImageSpriteBatches[1];
+extern SpriteView gAkropolisPlazaSpriteViews[8];
+extern DirectionWarpEntry gAkropolisPlazaWarpEntries[1];
+static SVECTOR _gAkropolisPlazaCollisionGridNormals[30];
+static SVECTOR _gAkropolisPlazaCollisionGridVerts[80];
+static WorldCollisionGridFace _gAkropolisPlazaCollisionGridFaces[32];
+static s16 _gAkropolisPlazaCollisionGridCells[192];
+static s16* _gAkropolisPlazaCollisionGridTable[28];
+static WorldCollisionGrid _gAkropolisPlazaCollisionGrid;
+#ifdef __psyz
+struct _peNativeTriggerSpan_gAkropolisPlazaHelicopterWreckTrigger {
+    WorldCollisionTrigger part0[1];
+    WorldCollisionTrigger part1;
+    WorldCollisionTrigger part2[4];
+};
+_Static_assert(sizeof(struct _peNativeTriggerSpan_gAkropolisPlazaHelicopterWreckTrigger) == 6 * sizeof(WorldCollisionTrigger), "contiguous trigger span");
+static struct _peNativeTriggerSpan_gAkropolisPlazaHelicopterWreckTrigger _peNativeTriggerSpan_gAkropolisPlazaHelicopterWreckTrigger;
+#define _gAkropolisPlazaHelicopterWreckTrigger (_peNativeTriggerSpan_gAkropolisPlazaHelicopterWreckTrigger.part0)
+#define _gAkropolisPlazaSergeantTrigger (_peNativeTriggerSpan_gAkropolisPlazaHelicopterWreckTrigger.part1)
+#define _gAkropolisPlazaEntranceAndExamineTriggers (_peNativeTriggerSpan_gAkropolisPlazaHelicopterWreckTrigger.part2)
+#else
+static WorldCollisionTrigger _gAkropolisPlazaHelicopterWreckTrigger[1];
+static WorldCollisionTrigger _gAkropolisPlazaSergeantTrigger;
+static WorldCollisionTrigger _gAkropolisPlazaEntranceAndExamineTriggers[4];
+#endif
+static AreaResource _gAkropolisPlazaVariant1Resources[3];
+extern AreaVariant gAkropolisPlazaAreaVariants[3];
+static WorldCoordPointLight _gAkropolisPlazaPointLights[30];
+static WorldCoordRoomLights _gAkropolisPlazaRoomLights;
+static WorldCollisionFootstepSounds _gAkropolisPlazaDefaultFootstepSounds;
+static WorldCollisionFootstepSounds _gAkropolisPlazaClass1FootstepSounds;
+static WorldCollisionSurfaceProperties _gAkropolisPlazaDefaultSurfaceProperties;
+static WorldCollisionSurfaceProperties _gAkropolisPlazaClass1SurfaceProperties;
+extern WorldCollisionSurfaceProperties* gAkropolisPlazaSurfacePropertiesByClass[8];

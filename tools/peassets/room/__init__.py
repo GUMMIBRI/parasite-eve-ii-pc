@@ -724,13 +724,16 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
         if r["kind"] in GEOMETRY:
             part = GEOMETRY[r["kind"]]
             grid = part_grid.get(s) or next(g for g, v in grids.items() if end[v["faces"]] == at[s])   # cells follow faces
-            inc = f'#include "assets/{package}_collision_{im.addresses[grid] - ROOM_LOAD:05X}_{part}.inc"'
+            stem = f"{package}_collision_{im.addresses[grid] - ROOM_LOAD:05X}_{part}"
+            inc = f'#include "assets/{stem}.inc"'
+            bind = ["#else", f"{writable(s)};", "#endif", '#include "port/asset_bind.h"', f'PE_ASSET_BIND("{stem}", {s});']
             if part != "table":
-                return [f"{declarator(s)} = {{", inc, "};"]
+                return ["#ifdef PE_EMBED_ASSETS", f"{declarator(s)} = {{", inc, "};"] + bind
             cells = next(c for c, (m, v) in objects.items() if v["kind"] == "CollisionCells" and end[c] == at[s])
             macro = _cell_macro(package, im.addresses[grid] - ROOM_LOAD)
-            return [f"#define {macro}(halfwordOffset) (&{cells}[(halfwordOffset)])", f"{declarator(s)} = {{", inc, "};",
-                    f"#undef {macro}"]
+            bind[-1] = f'PE_ASSET_BIND_AUX("{stem}", {s}, {cells});'      # the loader turns cell offsets into pointers
+            return ["#ifdef PE_EMBED_ASSETS", f"#define {macro}(halfwordOffset) (&{cells}[(halfwordOffset)])",
+                    f"{declarator(s)} = {{", inc, "};", f"#undef {macro}"] + bind
         if "value" in r:
             init = f"{declarator(s)} = {c_value(r['value'], r['kind'], pointer)};"
             if r["kind"] in GEOMETRY:
