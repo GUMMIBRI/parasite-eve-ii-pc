@@ -413,6 +413,7 @@ int peHostStartup(int argc,char** argv,const char** disc) {
 }
 
 int peHostSwapDisc(int number) {
+    if(getenv("PE2_TRACE"))fprintf(stderr,"[disc] swap to disc %d requested (path: %s)\n",number,number>=1&&number<=2&&*discPaths[number-1]?discPaths[number-1]:"none");
     if(number<1||number>2)return 0;
     requiredDisc=number;selectedDisc=0;
     s_overlayState.page=3;s_overlayState.row=number-1;

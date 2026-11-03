@@ -3505,9 +3505,11 @@ Continued live to 165575: Hallway area7/state1/variant4/warp2, position [2271,-8
 
 ### All-overlays executable, observed (2026-11-03)
 
-With `PE2_START_LOCATION` and `PE2_DUMP_VRAM` (frames written from the port itself, no screen capture), the all-overlays
-build, started on disc 1: Dryfield (stage 2) shows its "Now Loading" card and then the scene with the HUD and the
-weapon menu; Dryfield by night (stage 3) renders its HUD and a dark scene; stages 4 and 5 (the mine, the Shelter, the
-Neo Ark) stop at the game's own "Change to DISC 2" prompt even with `--disc2` given, so the disc swap does not run
-headless and those stages are not observed. Nothing crashes or reaches an aborting stub in these runs. Not yet
-checked: walking, room changes, saving, and any behaviour after stage changes (package state is not reset).
+With `PE2_START_LOCATION`, `PE2_DUMP_VRAM` (frames written from the port itself, no screen capture) and both discs
+(`--disc2`), the all-overlays build shows, for each stage, its scene behind the HUD or the Triangle menu that the
+scripted input opens: Dryfield (2, "Now Loading" card then the scene), Dryfield by night (3), the mine (4, Aya in a
+cave) and the Shelter / Neo Ark (5, a corridor with a vehicle). The disc swap works: stages 4 and 5 first showed the
+game's "Change to DISC 2" card because PsyZ kept read/play bits in the drive status across the lid cycle, so the
+game's wait for a plain "standby" status never ended (fixed in the fork: `Psyz_CdShellOpen(0)` resets the status).
+No crash and no aborting stub in these runs. Not yet checked: walking, room changes, saving, and what happens when the
+stage changes during play (package state is not reset).
