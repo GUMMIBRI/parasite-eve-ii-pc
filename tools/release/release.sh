@@ -21,7 +21,8 @@ cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
 cmake --build build-release --parallel --target parasite-eve-ii-pc
 
 out=dist
-zip=$(tools/release/package_app.sh build-release/parasite-eve-ii-pc "$version" "$out" "$identity" | tail -n1)
+cargo build --manifest-path save-editor/Cargo.toml --locked --release
+zip=$(tools/release/package_app.sh build-release/parasite-eve-ii-pc "$version" "$out" "$identity" save-editor/target/release/pe2-save-editor | tail -n1)
 tools/release/notarize.sh "$zip"
 
 tag="v$version"

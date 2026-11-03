@@ -38,7 +38,8 @@ jobs:
         run: |
           version=${GITHUB_REF_NAME:-dev}
           version=${version#v}
-          archive=$(tools/release/package_app.sh build/parasite-eve-ii-pc "$version" dist | tail -n1)
+          cargo build --manifest-path save-editor/Cargo.toml --locked --release
+          archive=$(tools/release/package_app.sh build/parasite-eve-ii-pc "$version" dist "" save-editor/target/release/pe2-save-editor | tail -n1)
           (cd dist && shasum -a 256 "$(basename "$archive")" > SHA256SUMS)
           echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4

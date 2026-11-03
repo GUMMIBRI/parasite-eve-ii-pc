@@ -18,8 +18,10 @@ name=${file%.zip}
 xcrun notarytool submit "$dir/$file" --keychain-profile "$profile" --wait
 rm -rf "$dir/$name"
 ditto -x -k "$dir/$file" "$dir"
-xcrun stapler staple "$dir/$name/Parasite Eve II.app"
-spctl --assess --type execute --verbose=2 "$dir/$name/Parasite Eve II.app"
+for app in "$dir/$name"/*.app; do
+    xcrun stapler staple "$app"
+    spctl --assess --type execute --verbose=2 "$app"
+done
 rm -f "$dir/$file"
 (cd "$dir" && ditto -c -k --sequesterRsrc --keepParent "$name" "$file" && shasum -a 256 "$file" > SHA256SUMS)
 echo "$dir/$file"

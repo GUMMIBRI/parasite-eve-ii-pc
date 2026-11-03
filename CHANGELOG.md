@@ -7,5 +7,6 @@
 - Added a host menu (**Esc**): **Graphics** (picture detail, aspect ratio, dithering, geometry correction, fullscreen, antialiasing, model filtering, smooth lighting), **Controls** (keyboard remapping), **Audio** (volume) and **Discs** (choose the images, swap to disc 2 when the game asks). Settings are saved.
 - Game data is loaded from the discs at start (models, animations, room collision, fonts and the tables converted from the original program) instead of being compiled in.
 - The disc images are validated on selection: wrong region, wrong disc or a missing BIN is reported with what to fix.
-- Builds with CMake and a C compiler; no extraction tools are needed. Host tests (32) run on macOS and Linux in CI.
+- Builds with CMake and a C compiler; no extraction tools are needed. Host tests (37, plus the save editor's) run on macOS and Linux in CI.
+- Added a save editor (`Parasite Eve II Save Editor.app`, GUI and CLI; `save-editor/` in the source): edits a save's character, items, weapons, Parasite Energy and progression and keeps its checksums valid. It follows the layout in the decompilation but has not been tried on a retail save yet: work on a copy.
 - Known limits: audio, movies and saves are incomplete; tested on macOS (Apple silicon) only; the story after the Akropolis landing pad is unverified.
