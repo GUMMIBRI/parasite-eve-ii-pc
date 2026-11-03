@@ -93,6 +93,10 @@ extern u8 gHostScratchpad[0x400];
 /// global symbol at the same address, adding no bytes. The compiler has no
 /// alias attribute for this target, so the assembler makes it, and it has to be
 /// in the object that defines `orig`.
+/* Expands identifier macros before stringifying, so a per-object name change (cmake/overlay_renames.cmake) reaches the
+ * assembler alias as well. */
+#define DEFINE_ALIAS_STR2(x) #x
+#define DEFINE_ALIAS_STR(x) DEFINE_ALIAS_STR2(x)
 #define DEFINE_ALIAS_CAT2(a, b) a##b
 #define DEFINE_ALIAS_CAT(a, b) DEFINE_ALIAS_CAT2(a, b)
 /* Taking the address keeps a static original from being dropped as unused: only the assembler alias refers to it. */
@@ -102,12 +106,12 @@ extern u8 gHostScratchpad[0x400];
 #define DEFINE_ALIAS(orig, alias) \
     extern __typeof__(orig) alias; \
     static const void* const __attribute__((used)) DEFINE_ALIAS_KEEP(alias) = (const void*)&(orig); \
-    __asm__(".globl _" #alias "\n_" #alias " = _" #orig)
+    __asm__(".globl _" DEFINE_ALIAS_STR(alias) "\n_" DEFINE_ALIAS_STR(alias) " = _" DEFINE_ALIAS_STR(orig))
 #else
 #define DEFINE_ALIAS(orig, alias)                                                                  \
     extern __typeof__(orig) alias;                                                                 \
     static const void* const __attribute__((used)) DEFINE_ALIAS_KEEP(alias) = (const void*)&(orig); \
-    __asm__(".globl " #alias "\n" #alias " = " #orig)
+    __asm__(".globl " DEFINE_ALIAS_STR(alias) "\n" DEFINE_ALIAS_STR(alias) " = " DEFINE_ALIAS_STR(orig))
 #endif
 
 /// Extra export declarations for the package's shared-source definitions.
