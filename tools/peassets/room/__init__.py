@@ -693,6 +693,16 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
         uses["types"].add(LAYOUTS[r["kind"]][0])
         return f"{storage}{LAYOUTS[r['kind']][0]} {s}{dims}"
 
+    def binds(s: str) -> bool:
+        """Whether the loader fills this object (flat or decodable, not geometry)."""
+        r = objects[s][1]
+        vals = [r["value"]] if "value" in r else r.get("values")
+        return bool(vals) and not _is_rows(r) and r["kind"] not in GEOMETRY and (flat(r["kind"]) or decodable(r))
+
+    def writable(s: str) -> str:
+        """The zero-filled definition the loader fills: a const original is writable here (the embedded build keeps it)."""
+        return declarator(s).replace("const ", "", 1)
+
     def decoded(s: str, r: dict, values: list, embedded_def: list[str]) -> list[str]:
         """An array (or a single struct) of a kind the host lays out differently from the disc: the embedded build keeps
         its initializer; otherwise it is zero-filled and bound to a generated decoder that reads the numbers from the
@@ -705,7 +715,7 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
                    + "\n".join(fix) + "\n}")
         return ([f"#ifndef PE_DECODE_{kind}", f"#define PE_DECODE_{kind}", "#include <stdint.h>", "#include <stdlib.h>",
                  "#include <string.h>", decoders.decoder(kind, skip_ptr=True), "#endif",
-                 "#ifdef PE_EMBED_ASSETS"] + embedded_def + ["#else", f"{declarator(s)};", "#endif",
+                 "#ifdef PE_EMBED_ASSETS"] + embedded_def + ["#else", f"{writable(s)};", "#endif",
                 wrapper, '#include "port/asset_bind.h"',
                 f'PE_ASSET_BIND_DECODE("room/{package}/{s}", {s}, peDecodeArr_{s.lstrip("_")});'])
 
@@ -723,10 +733,10 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
                     f"#undef {macro}"]
         if "value" in r:
             init = f"{declarator(s)} = {c_value(r['value'], r['kind'], pointer)};"
-            if s in rodata or r["kind"] in GEOMETRY:
+            if r["kind"] in GEOMETRY:
                 return [init]
             if flat(r["kind"]):
-                return ["#ifdef PE_EMBED_ASSETS", init, "#else", f"{declarator(s)};", "#endif",
+                return ["#ifdef PE_EMBED_ASSETS", init, "#else", f"{writable(s)};", "#endif",
                         '#include "port/asset_bind.h"', f'PE_ASSET_BIND("room/{package}/{s}", {s});']
             if decodable(r):
                 return decoded(s, r, [r["value"]], [init])
@@ -735,10 +745,10 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
             rows = ["{ " + ", ".join(c_value(v, r["kind"], pointer) for v in row) + " }" for row in r["values"]]
             return [f"{declarator(s)} = {{"] + [f"    {e}," for e in rows] + ["};"]
         rows = [f"    {c_value(v, r['kind'], pointer)}," for v in r["values"]]
-        if flat(r["kind"]) and s not in rodata:           # the disc's bytes: loaded at start, not compiled in
-            return ["#ifdef PE_EMBED_ASSETS", f"{declarator(s)} = {{"] + rows + ["};", "#else", f"{declarator(s)};", "#endif",
+        if flat(r["kind"]):                               # the disc's bytes: loaded at start, not compiled in
+            return ["#ifdef PE_EMBED_ASSETS", f"{declarator(s)} = {{"] + rows + ["};", "#else", f"{writable(s)};", "#endif",
                     '#include "port/asset_bind.h"', f'PE_ASSET_BIND("room/{package}/{s}", {s});']
-        if s not in rodata and decodable(r):               # numbers from the disc, pointers as fixups
+        if decodable(r):                                   # numbers from the disc, pointers as fixups
             return decoded(s, r, r["values"], [f"{declarator(s)} = {{"] + rows + ["};"])
         return [f"{declarator(s)} = {{"] + rows + ["};"]
 
@@ -845,7 +855,10 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
             if symbol in trigger_spans:
                 lines.extend(span_declarations(symbol))
             elif symbol not in member_span:
-                lines.append(f"{'extern ' if not symbol.startswith('_') else ''}{declarator(symbol)};")
+                text = f"{'extern ' if not symbol.startswith('_') else ''}{declarator(symbol)};"
+                if symbol in rodata and binds(symbol):          # writable in the disc-loaded build, const in the embedded one
+                    text = ("#ifdef PE_EMBED_ASSETS\n" + text + "\n#else\n" + text.replace("const ", "", 1) + "\n#endif")
+                lines.append(text)
         files[name_u] = with_includes([""] + lines)
     return {f: "\n".join(lines) + "\n" for f, lines in files.items()}
 
