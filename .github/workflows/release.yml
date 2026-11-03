@@ -50,7 +50,15 @@ jobs:
             dist/SHA256SUMS
 
   linux:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -70,25 +78,86 @@ jobs:
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel 4 --target parasite-eve-ii-pc
+      - name: The executable starts
+        run: build/parasite-eve-ii-pc --help
+      - name: Build the save editor
+        run: cargo build --manifest-path save-editor/Cargo.toml --locked --release
       - name: Package
         run: |
           version=${GITHUB_REF_NAME:-dev}
           version=${version#v}
-          name=Parasite-Eve-II-${version}-linux-x86_64
-          mkdir -p "dist/$name"
+          name=Parasite-Eve-II-${version}-linux-${{ matrix.arch }}
+          editor=Parasite-Eve-II-Save-Editor-${version}-linux-${{ matrix.arch }}
+          mkdir -p "dist/$name" "dist/$editor"
           cp build/parasite-eve-ii-pc "dist/$name/"
           cp README.md LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md "dist/$name/"
           ldd build/parasite-eve-ii-pc > "dist/$name/runtime-dependencies.txt"
           git rev-parse HEAD > "dist/$name/source-commit.txt"
+          cp save-editor/target/release/pe2-save-editor LICENSE "dist/$editor/"
+          echo "Run pe2-save-editor on a COPY of your save (the card0 folder in the game's data directory). Untested against retail saves." > "dist/$editor/README.txt"
           tar -czf "dist/$name.tar.gz" -C dist "$name"
-          (cd dist && sha256sum "$name.tar.gz" > SHA256SUMS)
-          echo "ARCHIVE=dist/$name.tar.gz" >> "$GITHUB_ENV"
+          tar -czf "dist/$editor.tar.gz" -C dist "$editor"
+          (cd dist && sha256sum "$name.tar.gz" "$editor.tar.gz" > SHA256SUMS-linux-${{ matrix.arch }})
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-x86_64
+          name: linux-${{ matrix.arch }}
           path: |
-            ${{ env.ARCHIVE }}
-            dist/SHA256SUMS
+            dist/*.tar.gz
+            dist/SHA256SUMS-linux-${{ matrix.arch }}
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-python
+      - name: Fetch PsyZ and SDL
+        run: |
+          git submodule update --init third_party/psyz
+          git -C third_party/psyz submodule update --init external/SDL
+      - name: Build
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel 2 --target parasite-eve-ii-pc
+      - name: The executable starts
+        run: build/parasite-eve-ii-pc.exe --help
+      - name: Build the save editor
+        shell: pwsh
+        run: cargo build --manifest-path save-editor/Cargo.toml --locked --release
+      - name: Package
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME -replace '^v','' } else { 'dev' }
+          $game = "dist/Parasite-Eve-II-$version-windows-x86_64"
+          $editor = "dist/Parasite-Eve-II-Save-Editor-$version-windows-x86_64"
+          New-Item -ItemType Directory -Force $game, $editor | Out-Null
+          Copy-Item build/parasite-eve-ii-pc.exe, README.md, LICENSE, THIRD_PARTY_NOTICES.md, CHANGELOG.md $game
+          git rev-parse HEAD | Set-Content "$game/source-commit.txt"
+          Copy-Item save-editor/target/release/pe2-save-editor.exe, LICENSE $editor
+          'Open pe2-save-editor.exe to edit a COPY of your save. Untested against retail saves.' | Set-Content "$editor/Read me.txt"
+          Compress-Archive -Path $game -DestinationPath "$game-experimental.zip"
+          Compress-Archive -Path $editor -DestinationPath "$editor.zip"
+          Get-ChildItem dist/*.zip | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content dist/SHA256SUMS-windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86_64
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS-windows
 
   save-editor:
     runs-on: ubuntu-24.04
