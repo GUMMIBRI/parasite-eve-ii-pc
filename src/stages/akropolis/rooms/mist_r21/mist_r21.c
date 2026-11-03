@@ -113,6 +113,4 @@ void mistR21RoomTask(Task* task)
 /// Keeps the auxiliary task spawned on room entry alive without per-frame work.
 static void _mistR21IdleAuxiliaryTask(Task* unusedTask)
 {
-    // Unused in the binary; the original local's purpose is unproven.
-    char unusedStackBytes[16];
 }

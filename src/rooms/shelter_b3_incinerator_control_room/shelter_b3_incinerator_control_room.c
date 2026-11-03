@@ -263,8 +263,6 @@ static void _shelterB3IncineratorControlRoomInitializeRoom(Task* task)
 /// The room controller's state 1 performs no per-frame work or state change.
 static void _shelterB3IncineratorControlRoomIdleRoom(Task* task)
 {
-    // Retained unused storage preserves the original 16-byte stack frame.
-    char unusedStackBytes[0x10];
 }
 
 /// State handlers for room setup, message-service idle and task release.

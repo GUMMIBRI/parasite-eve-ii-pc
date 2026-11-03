@@ -283,9 +283,6 @@ u32 textMeasureUiTextSize(const u8* text)
         textAlignLine(measureRequest, lineText);
 
         if (maxWidthPixels < -request.x) {
-            // Keep selector initialization scheduled inside the parse loop.
-            do {
-            } while (0);
             maxWidthPixels = -request.x;
         }
         heightPixels += TEXT_UI_LINE_ADVANCE_PIXELS;

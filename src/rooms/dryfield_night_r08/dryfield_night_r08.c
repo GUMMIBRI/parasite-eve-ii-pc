@@ -104,7 +104,6 @@ static void _dryfieldNightR08InitializeRoom(Task* task)
 /// Keeps the initialized room task alive to receive messages in state 1.
 static void _dryfieldNightR08IdleState(Task* unusedTask)
 {
-    char unusedFrame[0x10]; // Retains the original stack reservation; no bytes are accessed.
 }
 
 /// Room-task handlers indexed by state 0..2.

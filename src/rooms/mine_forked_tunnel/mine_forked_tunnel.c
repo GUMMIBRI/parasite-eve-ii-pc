@@ -1811,8 +1811,6 @@ static void _mineForkedTunnelInitRoomTask(Task* task)
 /// Keeps the initialized room task available to receive messages without per-frame work.
 static void _mineForkedTunnelIdleRoomTask(Task* unusedTask)
 {
-    // Preserve the idle callback's otherwise unused 16-byte stack frame.
-    char unusedStackFrame[0x10];
 }
 
 void mineForkedTunnelRoomTask(Task* task)

@@ -137,8 +137,6 @@ UiObjectDesc gMcMenuPromptDesc[1] = {
 
 void taskNoopBank0Slot12(Task* unusedTask)
 {
-    // Preserve the otherwise unused sixteen-byte stack frame.
-    char unusedStackFrame[0x10];
 }
 
 /// Updates a list, then eases and draws an additional cursor at its content center Y.

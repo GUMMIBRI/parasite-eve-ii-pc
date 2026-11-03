@@ -1815,8 +1815,6 @@ static void _shelterB1PodAccessTunnelInitializeRoomTask(Task* task)
 /// Keeps the initialized room task alive without advancing its state or changing it.
 static void _shelterB1PodAccessTunnelIdleTaskState(Task* task)
 {
-    // Retain the target's otherwise unused 16-byte stack frame.
-    char unusedStackFrame[0x10];
 }
 
 void shelterB1PodAccessTunnelRoomTask(Task* task)

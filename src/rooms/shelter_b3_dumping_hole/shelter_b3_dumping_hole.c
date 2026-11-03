@@ -292,8 +292,6 @@ static void _shelterB3DumpingHoleInitializeRoomTask(Task* task)
 /// The room controller's state 1 performs no per-frame work or state change.
 static void _shelterB3DumpingHoleIdleRoom(Task* task)
 {
-    // Retained unused storage preserves the original 16-byte stack frame.
-    char unusedStackBytes[0x10];
 }
 
 /// Room-controller callbacks indexed by state: 0 initialize, 1 idle, 2 release.

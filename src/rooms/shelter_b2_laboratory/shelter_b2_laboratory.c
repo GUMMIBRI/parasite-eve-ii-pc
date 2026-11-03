@@ -1583,8 +1583,6 @@ static void _shelterB2LaboratoryInitRoomTask(Task* task)
 /// independent of this per-frame callback.
 static void _shelterB2LaboratoryIdleMessageTask(Task* task)
 {
-    // Preserve the callback's stack reservation.
-    char unusedStack[0x10];
 }
 
 void shelterB2LaboratoryTask(Task* task)

@@ -45,10 +45,6 @@ static void _pairWalkUpdate(Task* task)
         return;
     }
     if (work->st.state == ACTOR_ENEMY_ANIM_TICK) {
-        // The loop-end note ends cse's first block here, so the actor-freeze check
-        // loads its own 1 instead of reusing the state test's.
-        do {
-        } while (0);
         requestedAnimId = work->st.animId;
         if (requestedAnimId == PAIR_WALK_ANIM_WALK && work->st.travel != 0) {
             _actorMovementStepForward(task->extra.tmd->coords, PAIR_WALK_STEP_UNITS);

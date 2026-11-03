@@ -52,10 +52,6 @@ static void _strideWalkUpdate(Task* task)
         return;
     }
     if (work->st.state == ACTOR_ENEMY_ANIM_TICK) {
-        // The loop-end note keeps the freeze comparison's constant separate
-        // from the animation-state comparison in this compiler's CSE pass.
-        do {
-        } while (0);
         requestedAnimId = work->st.animId;
         if (requestedAnimId == STRIDE_WALK_ANIM_WALK && work->st.travel != 0) {
             _actorMovementStepForward(task->extra.tmd->coords, STRIDE_WALK_STEP_DISTANCE);

@@ -68,10 +68,6 @@ static void PACED_WALK_UPDATE(Task* task)
         return;
     }
     if (work->st.state == ACTOR_ENEMY_ANIM_TICK) {
-        // The loop-end note ends cse's first block here, so the actor-freeze check
-        // loads its own 1 instead of reusing the state test's.
-        do {
-        } while (0);
         if (work->st.animId == PACED_WALK_ANIM_WALK && work->st.travel != 0) {
             _actorMovementStepForward(task->extra.tmd->coords, PACED_WALK_STEP_UNITS);
             // Frozen actors still consume the scheduled travel attempt.

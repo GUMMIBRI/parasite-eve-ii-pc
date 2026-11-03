@@ -2901,7 +2901,6 @@ static void _dryfieldNightSaloonGRInitializeRoom(Task* task)
 /// Keeps the room task alive between messages without advancing its idle state.
 static void _dryfieldNightSaloonGRIdleState(Task* task)
 {
-    char unusedFrame[0x10]; // Retains the original stack reservation; no bytes are accessed.
 }
 
 void dryfieldNightSaloonGRRoomTask(Task* task)

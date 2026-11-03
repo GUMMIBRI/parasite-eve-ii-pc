@@ -339,8 +339,6 @@ static void _shelterB3GarbageIncineratorInitializeRoom(Task* task)
 /// values at least 61 are preserved. `task` is unused.
 static void _shelterB3GarbageIncineratorAdvanceSwitchTimer(Task* task)
 {
-    // Retained unused storage preserves the original 16-byte stack frame.
-    char unusedStackBytes[0x10];
 
     if (_gShelterB3GarbageIncineratorSwitchNoticeTicks < SHELTER_B3_GARBAGE_INCINERATOR_SWITCH_READY_TICKS) {
         _gShelterB3GarbageIncineratorSwitchNoticeTicks++;

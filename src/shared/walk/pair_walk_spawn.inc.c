@@ -120,9 +120,6 @@ static void _pairWalkUpdate(Task* task)
         return;
     }
     if (work->st.state == ACTOR_ENEMY_ANIM_TICK) {
-        // Keep the actor-freeze test's constant separate from the state test's.
-        do {
-        } while (0);
         requestedAnimId = work->st.animId;
         if (requestedAnimId == PAIR_WALK_ANIM_WALK && work->st.travel != 0) {
             _actorMovementStepModelForward(task, PAIR_WALK_MODEL_STEP_UNITS);

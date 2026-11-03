@@ -493,8 +493,6 @@ static s32 _dryfieldNightGarageIgnoreCommand(Task* unusedTask, s32 unusedMessage
 /// Keeps the initialized room task alive for synchronous messages without per-frame work.
 static void _dryfieldNightGarageIdleRoomTask(Task* unusedTask)
 {
-    // The binary reserves this unused stack storage; its original purpose is unproven.
-    char unusedStackBytes[0x10];
 }
 
 /// Initialize, idle and teardown states of the persistent garage room task.

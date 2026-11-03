@@ -790,8 +790,6 @@ static void _neoArkR26InitializeRoom(Task* task)
 /// intact; state 2 selects the teardown handler.
 static void _neoArkR26RoomIdleState(Task* unusedTask)
 {
-    // Retain the idle callback's unused 16-byte stack frame.
-    char unusedStackFrame[0x10];
 }
 
 /// Room-controller states: initialize (0), message-only idle (1) and teardown (2).

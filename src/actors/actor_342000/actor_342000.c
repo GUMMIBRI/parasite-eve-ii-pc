@@ -697,9 +697,6 @@ static void _actor342000InitGluttonModel(Task* task)
             animationInitContext(&modelWork->rig.anim, _gActor342000GluttonBodyAnimationSets, model, modelWork->rig.poses, modelWork->rig.slots);
             _actor342000InitGluttonAnimationSlots(task, 1, ACTOR_342000_GLUTTON_BODY_SLOT_COUNT);
             break;
-            // Retains the switch dispatch's delay-slot layout.
-            do {
-            } while (0);
         case ACTOR_342000_GLUTTON_PART_RIGHT_LEG:
             modelWork->parentCoord = modelWork->parent->extra.tmd->coords;
             _actor342000AttachGluttonModelCoord(task, modelWork);
@@ -707,8 +704,6 @@ static void _actor342000InitGluttonModel(Task* task)
             animationInitContext(&modelWork->rig.anim, _gActor342000GluttonRightLegAnimationSets, model, modelWork->rig.poses, modelWork->rig.slots);
             _actor342000InitGluttonAnimationSlots(task, 0, ACTOR_342000_GLUTTON_LEG_SLOT_COUNT);
             break;
-            do {
-            } while (0);
         case ACTOR_342000_GLUTTON_PART_LEFT_LEG:
             modelWork->parentCoord = modelWork->parent->extra.tmd->coords;
             _actor342000AttachGluttonModelCoord(task, modelWork);

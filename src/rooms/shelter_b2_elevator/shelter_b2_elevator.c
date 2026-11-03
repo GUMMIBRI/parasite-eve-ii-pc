@@ -729,8 +729,6 @@ static s32 _shelterB2ElevatorCloseDoorMessage(Task* task, s32 messageId, s32 unu
 /// Keeps the initialized room task idle without changing its state or resources.
 static void _shelterB2ElevatorRoomIdleState(Task* unusedTask)
 {
-    // Preserve the original 16-byte idle frame; no stack bytes are accessed.
-    char unusedFrame[0x10];
 }
 
 void shelterB2ElevatorRoomTask(Task* task)

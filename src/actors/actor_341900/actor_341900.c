@@ -720,10 +720,6 @@ static void _actor341900InitGluttonModel(Task* task)
             animationInitContext(&initializedWork->rig.anim, _gActor341900GluttonBodyAnimationSets, model, initializedWork->rig.poses, initializedWork->rig.slots);
             _actor341900InitGluttonAnimationSlots(task, 1, ACTOR_341900_GLUTTON_BODY_SLOT_COUNT);
             break;
-            /* Retained empty loop: removing it changes the right-leg dispatch
-             * delay slot even with the slot initialization factored out. */
-            do {
-            } while (0);
         case ACTOR_341900_GLUTTON_PART_RIGHT_LEG:
             parentWork           = initializedWork->parent->work;
             parentWork->legRight = task;

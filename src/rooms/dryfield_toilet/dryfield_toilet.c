@@ -253,8 +253,6 @@ static void _dryfieldToiletInitRoom(Task* task)
 /// Keeps the room task alive in idle state 1 to receive messages.
 static void _dryfieldToiletIdleRoom(Task* unusedTask)
 {
-    // The binary retains this otherwise unused sixteen-byte stack frame.
-    char unusedStackFrame[0x10];
 }
 
 void dryfieldToiletRoomTask(Task* task)

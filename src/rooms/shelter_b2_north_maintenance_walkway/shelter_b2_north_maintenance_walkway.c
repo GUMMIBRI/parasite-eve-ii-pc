@@ -1069,7 +1069,6 @@ static void _shelterB2NorthMaintenanceWalkwayInitRoomTask(Task* task)
 /// The binary reserves 16 stack bytes without accessing them.
 static void _shelterB2NorthMaintenanceWalkwayIdleRoomTask(Task* unusedTask)
 {
-    char unusedStackSpace[0x10];
 }
 
 /// Room-controller states 0..2: initialize the receiver and actor-script handle, idle, teardown.

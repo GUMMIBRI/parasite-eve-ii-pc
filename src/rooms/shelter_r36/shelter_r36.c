@@ -1312,8 +1312,6 @@ static void _shelterR36InitializeTask(Task* task)
 /// Keeps the room task available for messages after entry setup.
 static void _shelterR36MessageIdle(Task* task)
 {
-    // The original idle callback retains an otherwise unused 16-byte stack frame.
-    char unusedStackFrame[0x10];
 }
 
 /// Room-controller callbacks indexed by state: 0 initialize, 1 idle, 2 release.

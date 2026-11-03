@@ -323,8 +323,6 @@ static void _dryfieldNightDilapidatedHouseSetupRoomTask(Task* task)
 /// Keeps the registered room task alive without performing per-frame work.
 static void _dryfieldNightDilapidatedHouseIdleRoomTask(Task* task)
 {
-    // Retain the idle state's unused 16-byte stack frame.
-    char unusedStackFrame[16];
 }
 
 /// Room-task lifecycle: state 0 initializes, state 1 waits or updates, state 2 releases.

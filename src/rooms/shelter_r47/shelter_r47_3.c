@@ -2167,9 +2167,6 @@ static void _shelterR47MapTerminalInitTask(Task* task)
     displayAcquireMenuHold();
     // The tour exposes only navigation; discard hits from an earlier session.
     work->hotspots = task->spawnArg1.value == SHELTER_R47_MAP_MODE_TOUR ? gShelterR47MapTerminalTourHotspots : gShelterR47MapTerminalHotspots;
-    // Retained scheduling boundary before walking the stored table pointer.
-    do {
-    } while (0);
     for (hotspot = work->hotspots; hotspot->id != ACTION_PROMPT_HOTSPOT_END; hotspot++) {
         hotspot->hit = 0;
     }
@@ -2181,9 +2178,6 @@ static void _shelterR47MapTerminalInitTask(Task* task)
     panelWidth                 = SHELTER_R47_MAP_PANEL_WIDTH;
     panelHeight                = SHELTER_R47_MAP_PANEL_HEIGHT;
     labelX                     = SHELTER_R47_MAP_LABEL_X;
-    // Retained scheduling boundary keeps the shared opening sizes grouped.
-    do {
-    } while (0);
     savedView                                              = gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view;
     work->labelX                                           = SHELTER_R47_MAP_LABEL_X_AWAY;
     work->mapTargetWidth                                   = mapWidth;

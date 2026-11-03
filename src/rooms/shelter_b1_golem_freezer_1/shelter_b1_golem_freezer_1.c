@@ -563,8 +563,6 @@ static void _shelterB1GolemFreezer1InitRoomState(Task* task)
 /// Leaves the initialized room task waiting for messages without advancing its state.
 static void _shelterB1GolemFreezer1IdleRoomState(Task* task)
 {
-    // Retain the original unused stack reservation.
-    char unusedStackFrame[0x10];
 }
 
 /// Room-controller states 0..2: initialize the receiver and meeting obstacle, idle, teardown.

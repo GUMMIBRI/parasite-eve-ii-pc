@@ -1242,8 +1242,6 @@ static void _shelterB6NurseryInitializeRoomTask(Task* task)
 /// Keeps the room message task alive while it waits for messages.
 static void _shelterB6NurseryMessageIdle(Task* task)
 {
-    // Retain the original idle state's otherwise unused 16-byte stack frame.
-    char unusedStackFrame[0x10];
 }
 
 void shelterB6NurseryRoomTask(Task* task)

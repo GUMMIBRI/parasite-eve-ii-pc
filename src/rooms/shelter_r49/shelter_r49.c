@@ -112,7 +112,6 @@ static void _shelterR49InitializeRoomTask(Task* task)
 /// The unused array preserves the original idle stub's 16-byte stack frame.
 static void _shelterR49RoomIdle(Task* unusedTask)
 {
-    char unusedStack[0x10];
 }
 
 void shelterR49RoomTask(Task* task)

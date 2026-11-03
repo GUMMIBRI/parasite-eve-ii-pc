@@ -1307,7 +1307,6 @@ static void _shelterB2PodBottomInitializeRoomTask(Task* task)
 /// The binary reserves 16 stack bytes without accessing them.
 static void _shelterB2PodBottomIdleRoomTask(Task* unusedTask)
 {
-    char unusedStackSpace[0x10];
 }
 
 void shelterB2PodBottomRoomTask(Task* task)

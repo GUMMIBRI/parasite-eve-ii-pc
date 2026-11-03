@@ -1983,8 +1983,6 @@ static void _dryfieldGeneralStoreInitRoomTask(Task* task)
 /// Keeps the room task idle after initialization, leaving its state unchanged.
 static void _dryfieldGeneralStoreIdleRoomTask(Task* task)
 {
-    // Preserve the idle callback's otherwise unused 16-byte stack frame.
-    char unusedStack[0x10];
 }
 
 void dryfieldGeneralStoreRoomTask(Task* task)

@@ -1230,15 +1230,11 @@ static void _actor361100DrawStreamRefraction(Task* task)
             // Retain the allocator-visible one-pass wave latches required by this image.
             if (fullWave == 0) {
                 fadedDisplacement = (fadedDisplacement * waveScale) >> ACTOR_361100_REFRACTION_TRIG_SHIFT;
-                do {
-                    waveDisplacement  = fadedDisplacement;
-                    fadedDisplacement = waveDisplacement + 1;
-                } while (0);
+                waveDisplacement  = fadedDisplacement;
+                fadedDisplacement = waveDisplacement + 1;
             } else {
-                do {
-                    waveDisplacement  = fadedDisplacement;
-                    fadedDisplacement = waveDisplacement + 1;
-                } while (0);
+                waveDisplacement  = fadedDisplacement;
+                fadedDisplacement = waveDisplacement + 1;
             }
             if (fadeStartY != 1) {
                 fadeDistance = screenY - fadeStartY;

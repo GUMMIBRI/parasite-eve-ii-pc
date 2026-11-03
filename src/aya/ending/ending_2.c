@@ -579,8 +579,6 @@ static void _endingCreditsTask(Task* task)
 /// Integer halving makes adjacent fade amounts share a brightness level.
 static void _endingSetCreditsFade(u8 fadeAmount)
 {
-    // Unused storage retains the leaf routine's sixteen-byte stack frame.
-    char unusedStackBytes[0x10];
 
     _gEndingCreditsBrightness = ENDING_CREDITS_MAX_BRIGHTNESS - (fadeAmount >> ENDING_CREDITS_FADE_SHIFT);
 }
