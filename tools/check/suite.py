@@ -141,7 +141,11 @@ def tasks(jobs: int, skip: set[str]) -> list[tuple[str, str, tuple, tuple[str, .
         out.append(("decls", "decls", (run_command, ([PY, str(ROOT / "tools" / "refactor" / "check_decls.py"),
                                                      "src/actors", "src/kyle", "src/rooms", "src/stages"],)), ()))
     if "repack" not in skip:
-        out.append(("repack", "repack", (repack, ()), ()))
+        if (ASSETS / "txt").is_dir():
+            out.append(("repack", "repack", (repack, ()), ()))
+        else:
+            # needs a full disc extraction (text included); the extraction tooling lives at the git tag pe2-layout-tooling
+            print("repack: not run (no assets/USA/txt; needs the full disc extraction)", file=sys.stderr)
     if "growth" not in skip:
         out.append(("growth", "growth", (run_command, ([PY, str(ROOT / "tools" / "check" / "check_asset_data_growth.py")],)), ()))
     if "map" not in skip:
