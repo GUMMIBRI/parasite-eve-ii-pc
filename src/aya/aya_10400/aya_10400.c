@@ -270,11 +270,11 @@ TmdSource gAya10400SecondPairHand1Model = {
 };
 
 #ifdef PE_EMBED_ASSETS
-static u_long _gAya10400Image066C4[] = {
+static u32 _gAya10400Image066C4[] = {
 #include "assets/aya_10400_image_066C4.inc"
 };
 #else
-static u_long _gAya10400Image066C4[200];
+static u32 _gAya10400Image066C4[200];
 #endif
 PE_ASSET_BIND("aya_10400_image_066C4", _gAya10400Image066C4);
 /// One-copy upload list for open eyes: 50x16 8-bit texels.
@@ -287,11 +287,11 @@ static GpuImageUpload _gAya10400EyesOpenUploads[2] = {
 };
 
 #ifdef PE_EMBED_ASSETS
-static u_long _gAya10400Image06A04[] = {
+static u32 _gAya10400Image06A04[] = {
 #include "assets/aya_10400_image_06A04.inc"
 };
 #else
-static u_long _gAya10400Image06A04[200];
+static u32 _gAya10400Image06A04[200];
 #endif
 PE_ASSET_BIND("aya_10400_image_06A04", _gAya10400Image06A04);
 /// One-copy upload list for half-closed eyes: 50x16 8-bit texels.
@@ -303,11 +303,11 @@ static GpuImageUpload _gAya10400EyesHalfClosedUploads[2] = {
 };
 
 #ifdef PE_EMBED_ASSETS
-static u_long _gAya10400Image06D44[] = {
+static u32 _gAya10400Image06D44[] = {
 #include "assets/aya_10400_image_06D44.inc"
 };
 #else
-static u_long _gAya10400Image06D44[200];
+static u32 _gAya10400Image06D44[200];
 #endif
 PE_ASSET_BIND("aya_10400_image_06D44", _gAya10400Image06D44);
 /// One-copy upload list for closed eyes: 50x16 8-bit texels.
@@ -319,11 +319,11 @@ static GpuImageUpload _gAya10400EyesClosedUploads[2] = {
 };
 
 #ifdef PE_EMBED_ASSETS
-static u_long _gAya10400Image07084[] = {
+static u32 _gAya10400Image07084[] = {
 #include "assets/aya_10400_image_07084.inc"
 };
 #else
-static u_long _gAya10400Image07084[140];
+static u32 _gAya10400Image07084[140];
 #endif
 PE_ASSET_BIND("aya_10400_image_07084", _gAya10400Image07084);
 /// One-copy upload list for the resting, closed mouth: 28x20 8-bit texels.
@@ -336,11 +336,11 @@ static GpuImageUpload _gAya10400MouthClosedUploads[2] = {
 };
 
 #ifdef PE_EMBED_ASSETS
-static u_long _gAya10400Image072D4[] = {
+static u32 _gAya10400Image072D4[] = {
 #include "assets/aya_10400_image_072D4.inc"
 };
 #else
-static u_long _gAya10400Image072D4[140];
+static u32 _gAya10400Image072D4[140];
 #endif
 PE_ASSET_BIND("aya_10400_image_072D4", _gAya10400Image072D4);
 /// One-copy upload list for the open mouth: 28x20 8-bit texels.

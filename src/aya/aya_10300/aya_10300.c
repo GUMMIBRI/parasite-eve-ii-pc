@@ -336,11 +336,11 @@ TmdSource gAya10300SecondPairHand1Model = {
 };
 
 #ifdef PE_EMBED_ASSETS
-static u_long _gAya10300Image0674C[] = {
+static u32 _gAya10300Image0674C[] = {
 #include "assets/aya_10300_image_0674C.inc"
 };
 #else
-static u_long _gAya10300Image0674C[200];
+static u32 _gAya10300Image0674C[200];
 #endif
 PE_ASSET_BIND("aya_10300_image_0674C", _gAya10300Image0674C);
 /// Open eyes: one copy and an upload terminator; playback rewrites the destination.
@@ -350,11 +350,11 @@ static GpuImageUpload _gAya10300EyesOpenUploads[2] = {
 };
 
 #ifdef PE_EMBED_ASSETS
-static u_long _gAya10300Image06A8C[] = {
+static u32 _gAya10300Image06A8C[] = {
 #include "assets/aya_10300_image_06A8C.inc"
 };
 #else
-static u_long _gAya10300Image06A8C[200];
+static u32 _gAya10300Image06A8C[200];
 #endif
 PE_ASSET_BIND("aya_10300_image_06A8C", _gAya10300Image06A8C);
 /// Half-closed eyes: one copy and an upload terminator; playback rewrites the destination.
@@ -364,11 +364,11 @@ static GpuImageUpload _gAya10300EyesHalfClosedUploads[2] = {
 };
 
 #ifdef PE_EMBED_ASSETS
-static u_long _gAya10300Image06DCC[] = {
+static u32 _gAya10300Image06DCC[] = {
 #include "assets/aya_10300_image_06DCC.inc"
 };
 #else
-static u_long _gAya10300Image06DCC[200];
+static u32 _gAya10300Image06DCC[200];
 #endif
 PE_ASSET_BIND("aya_10300_image_06DCC", _gAya10300Image06DCC);
 /// Closed eyes: one copy and an upload terminator; playback rewrites the destination.
@@ -378,11 +378,11 @@ static GpuImageUpload _gAya10300EyesClosedUploads[2] = {
 };
 
 #ifdef PE_EMBED_ASSETS
-static u_long _gAya10300Image0710C[] = {
+static u32 _gAya10300Image0710C[] = {
 #include "assets/aya_10300_image_0710C.inc"
 };
 #else
-static u_long _gAya10300Image0710C[140];
+static u32 _gAya10300Image0710C[140];
 #endif
 PE_ASSET_BIND("aya_10300_image_0710C", _gAya10300Image0710C);
 /// Resting mouth: one copy and an upload terminator; playback rewrites the destination.
@@ -392,11 +392,11 @@ static GpuImageUpload _gAya10300MouthRestUploads[2] = {
 };
 
 #ifdef PE_EMBED_ASSETS
-static u_long _gAya10300Image0735C[] = {
+static u32 _gAya10300Image0735C[] = {
 #include "assets/aya_10300_image_0735C.inc"
 };
 #else
-static u_long _gAya10300Image0735C[140];
+static u32 _gAya10300Image0735C[140];
 #endif
 PE_ASSET_BIND("aya_10300_image_0735C", _gAya10300Image0735C);
 /// Open mouth: one copy and an upload terminator; playback rewrites the destination.

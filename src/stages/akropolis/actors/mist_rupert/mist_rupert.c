@@ -95,11 +95,11 @@ static void         _mistRupertTask(Task* task);
 
 /// Packed open-eye texture pixels for the actor's face band.
 #ifdef PE_EMBED_ASSETS
-static u_long _gMistRupertOpenEyesPixels[256] = {
+static u32 _gMistRupertOpenEyesPixels[256] = {
 #include "assets/characters/rupert/hurt_eyes_open.inc"
 };
 #else
-static u_long _gMistRupertOpenEyesPixels[256];
+static u32 _gMistRupertOpenEyesPixels[256];
 #endif
 PE_ASSET_BIND("characters/rupert/hurt_eyes_open", _gMistRupertOpenEyesPixels);
 
@@ -111,11 +111,11 @@ static GpuImageUpload _gMistRupertOpenEyesUploads[2] = {
 
 /// Packed half-open-eye pixels for the actor's face texture band.
 #ifdef PE_EMBED_ASSETS
-static u_long _gMistRupertHalfOpenEyesPixels[256] = {
+static u32 _gMistRupertHalfOpenEyesPixels[256] = {
 #include "assets/characters/rupert/hurt_eyes_half_open.inc"
 };
 #else
-static u_long _gMistRupertHalfOpenEyesPixels[256];
+static u32 _gMistRupertHalfOpenEyesPixels[256];
 #endif
 PE_ASSET_BIND("characters/rupert/hurt_eyes_half_open", _gMistRupertHalfOpenEyesPixels);
 
@@ -127,11 +127,11 @@ static GpuImageUpload _gMistRupertHalfOpenEyesUploads[2] = {
 
 /// Packed closed-eye pixels for the actor's face texture band.
 #ifdef PE_EMBED_ASSETS
-static u_long _gMistRupertClosedEyesPixels[256] = {
+static u32 _gMistRupertClosedEyesPixels[256] = {
 #include "assets/characters/rupert/hurt_eyes_closed.inc"
 };
 #else
-static u_long _gMistRupertClosedEyesPixels[256];
+static u32 _gMistRupertClosedEyesPixels[256];
 #endif
 PE_ASSET_BIND("characters/rupert/hurt_eyes_closed", _gMistRupertClosedEyesPixels);
 

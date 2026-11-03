@@ -69,11 +69,11 @@ static WorldCoordRoomLights  _gDryfieldBreezewayRoomLights;
 ///
 /// Borrowed by the GPU until its complete transfer finishes; keep this room loaded.
 #ifdef PE_EMBED_ASSETS
-static u_long _gDryfieldBreezewayKeyItemLineClut[128] = {
+static u32 _gDryfieldBreezewayKeyItemLineClut[128] = {
 #include "assets/dryfield_breezeway_clut_05984.inc"
 };
 #else
-static u_long _gDryfieldBreezewayKeyItemLineClut[128];
+static u32 _gDryfieldBreezewayKeyItemLineClut[128];
 #endif
 PE_ASSET_BIND("dryfield_breezeway_clut_05984", _gDryfieldBreezewayKeyItemLineClut);
 

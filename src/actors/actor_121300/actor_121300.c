@@ -533,11 +533,11 @@ static s32 _gScreenWaveAmplitude = 256;
 /// restores it after the half-closed patch. Uploaded at base VRAM (384, 320),
 /// relocated by the double's 64-word texture-page offset.
 #ifdef PE_EMBED_ASSETS
-static u_long _gActor121300EyesOpenPixels[250] = {
+static u32 _gActor121300EyesOpenPixels[250] = {
 #include "assets/characters/eve/eyes_open.inc"
 };
 #else
-static u_long _gActor121300EyesOpenPixels[250];
+static u32 _gActor121300EyesOpenPixels[250];
 #endif
 PE_ASSET_BIND("characters/eve/eyes_open", _gActor121300EyesOpenPixels);
 
@@ -547,11 +547,11 @@ PE_ASSET_BIND("characters/eve/eyes_open", _gActor121300EyesOpenPixels);
 /// (384, 320) on the first update of both closing and reopening sequences.
 /// The double's texture-page offset relocates X in 64-word columns.
 #ifdef PE_EMBED_ASSETS
-static u_long _gActor121300EyesHalfClosedPixels[250] = {
+static u32 _gActor121300EyesHalfClosedPixels[250] = {
 #include "assets/characters/eve/eyes_half_closed.inc"
 };
 #else
-static u_long _gActor121300EyesHalfClosedPixels[250];
+static u32 _gActor121300EyesHalfClosedPixels[250];
 #endif
 PE_ASSET_BIND("characters/eve/eyes_half_closed", _gActor121300EyesHalfClosedPixels);
 
@@ -561,11 +561,11 @@ PE_ASSET_BIND("characters/eve/eyes_half_closed", _gActor121300EyesHalfClosedPixe
 /// (384, 320) on sequence 1's second update. The double's texture-page offset
 /// relocates X in 64-word columns.
 #ifdef PE_EMBED_ASSETS
-static u_long _gActor121300EyesClosedPixels[250] = {
+static u32 _gActor121300EyesClosedPixels[250] = {
 #include "assets/characters/eve/eyes_closed.inc"
 };
 #else
-static u_long _gActor121300EyesClosedPixels[250];
+static u32 _gActor121300EyesClosedPixels[250];
 #endif
 PE_ASSET_BIND("characters/eve/eyes_closed", _gActor121300EyesClosedPixels);
 
@@ -574,11 +574,11 @@ PE_ASSET_BIND("characters/eve/eyes_closed", _gActor121300EyesClosedPixels);
 /// Packed as 140 32-bit transfer words (28 by 20 8-bit texels), uploaded at base VRAM
 /// (396, 416), with X relocated by the double's 64-word texture-page offset.
 #ifdef PE_EMBED_ASSETS
-static u_long _gActor121300MouthClosedPixels[140] = {
+static u32 _gActor121300MouthClosedPixels[140] = {
 #include "assets/characters/eve/mouth_closed.inc"
 };
 #else
-static u_long _gActor121300MouthClosedPixels[140];
+static u32 _gActor121300MouthClosedPixels[140];
 #endif
 PE_ASSET_BIND("characters/eve/mouth_closed", _gActor121300MouthClosedPixels);
 
@@ -587,11 +587,11 @@ PE_ASSET_BIND("characters/eve/mouth_closed", _gActor121300MouthClosedPixels);
 /// Packed as 140 32-bit transfer words (28 by 20 8-bit texels), uploaded at base VRAM
 /// (396, 416), with X relocated by the double's 64-word texture-page offset.
 #ifdef PE_EMBED_ASSETS
-static u_long _gActor121300MouthOpenPixels[140] = {
+static u32 _gActor121300MouthOpenPixels[140] = {
 #include "assets/characters/eve/mouth_open.inc"
 };
 #else
-static u_long _gActor121300MouthOpenPixels[140];
+static u32 _gActor121300MouthOpenPixels[140];
 #endif
 PE_ASSET_BIND("characters/eve/mouth_open", _gActor121300MouthOpenPixels);
 

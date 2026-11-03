@@ -962,6 +962,20 @@ static void _mcSeedNewGameRecords(void)
     openingSave->state.location.warp      = MEMORY_CARD_NEW_GAME_WARP;
     openingSave->state.location.variant   = MEMORY_CARD_NEW_GAME_VARIANT;
     openingSave->state.sceneEvent         = initialSceneEvent;
+#ifdef __psyz
+    {   // Development: PE2_START_LOCATION=stage,area,view,roomState,warp,variant starts a new game elsewhere.
+        const char* spec = getenv("PE2_START_LOCATION");
+        unsigned    v[6];
+        if (spec && sscanf(spec, "%u,%u,%u,%u,%u,%u", &v[0], &v[1], &v[2], &v[3], &v[4], &v[5]) == 6) {
+            openingSave->state.location.stage     = (u8)v[0];
+            openingSave->state.location.area      = (u8)v[1];
+            openingSave->state.location.view      = (u8)v[2];
+            openingSave->state.location.roomState = (u8)v[3];
+            openingSave->state.location.warp      = (u8)v[4];
+            openingSave->state.location.variant   = (u8)v[5];
+        }
+    }
+#endif
     openingSave->state.characterId        = MEMORY_CARD_NEW_GAME_CHARACTER;
     playerSeedNewGameStatus();
     characterIndex                          = openingSave->state.characterId - 1;

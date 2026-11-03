@@ -239,7 +239,7 @@ static const SVECTOR _gActor141000FlightPositions[ARRAY_SIZE(_gActor141000Flight
 #include "assets/rooms/shelter/b1_pod_access_tunnel/flame_position_track.inc"
 };
 #else
-static SVECTOR _gActor141000FlightPositions[360] SECTION(".data");
+static SVECTOR _gActor141000FlightPositions[ARRAY_SIZE(_gActor141000FlightRotations)] SECTION(".data");
 #endif
 PE_ASSET_BIND("rooms/shelter/b1_pod_access_tunnel/flame_position_track", _gActor141000FlightPositions);
 
@@ -358,11 +358,11 @@ TaskDesc gActor141000FlightTasks[3] = {
 ///
 /// Borrowed by the corresponding upload list until GPU transfer completes.
 #ifdef PE_EMBED_ASSETS
-static u_long _gActor141000EveEyesOpenPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
+static u32 _gActor141000EveEyesOpenPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/eve/eyes_open.inc"
 };
 #else
-static u_long _gActor141000EveEyesOpenPixels[250];
+static u32 _gActor141000EveEyesOpenPixels[250];
 #endif
 PE_ASSET_BIND("characters/eve/eyes_open", _gActor141000EveEyesOpenPixels);
 
@@ -381,11 +381,11 @@ static GpuImageUpload _gActor141000EveEyesOpenUploads[2] = {
 ///
 /// Borrowed through GPU completion during the middle step of a blink.
 #ifdef PE_EMBED_ASSETS
-static u_long _gActor141000EveEyesHalfOpenPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
+static u32 _gActor141000EveEyesHalfOpenPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/eve/eyes_half_closed.inc"
 };
 #else
-static u_long _gActor141000EveEyesHalfOpenPixels[250];
+static u32 _gActor141000EveEyesHalfOpenPixels[250];
 #endif
 PE_ASSET_BIND("characters/eve/eyes_half_closed", _gActor141000EveEyesHalfOpenPixels);
 
@@ -404,11 +404,11 @@ static GpuImageUpload _gActor141000EveEyesHalfOpenUploads[2] = {
 ///
 /// Borrowed through GPU completion for static closed eyes and blink onset.
 #ifdef PE_EMBED_ASSETS
-static u_long _gActor141000EveEyesClosedPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
+static u32 _gActor141000EveEyesClosedPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/eve/eyes_closed.inc"
 };
 #else
-static u_long _gActor141000EveEyesClosedPixels[250];
+static u32 _gActor141000EveEyesClosedPixels[250];
 #endif
 PE_ASSET_BIND("characters/eve/eyes_closed", _gActor141000EveEyesClosedPixels);
 
@@ -428,11 +428,11 @@ static GpuImageUpload _gActor141000EveEyesClosedUploads[2] = {
 /// The 140 words cover the normal mouth upload. Retained texture mode 2 requests
 /// 250 words from this base, reading 440 bytes beyond the payload into later data.
 #ifdef PE_EMBED_ASSETS
-static u_long _gActor141000EveMouthClosedPixels[ACTOR_141000_MOUTH_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
+static u32 _gActor141000EveMouthClosedPixels[ACTOR_141000_MOUTH_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/eve/mouth_closed.inc"
 };
 #else
-static u_long _gActor141000EveMouthClosedPixels[140];
+static u32 _gActor141000EveMouthClosedPixels[140];
 #endif
 PE_ASSET_BIND("characters/eve/mouth_closed", _gActor141000EveMouthClosedPixels);
 
@@ -453,11 +453,11 @@ static GpuImageUpload _gActor141000EveMouthClosedUploads[2] = {
 /// The 140 words cover the normal mouth upload. Retained texture mode 3 requests
 /// 250 words: 440 bytes beyond the payload, including 292 beyond this loaded image.
 #ifdef PE_EMBED_ASSETS
-static u_long _gActor141000EveMouthOpenPixels[ACTOR_141000_MOUTH_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
+static u32 _gActor141000EveMouthOpenPixels[ACTOR_141000_MOUTH_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
 #include "assets/characters/eve/mouth_open.inc"
 };
 #else
-static u_long _gActor141000EveMouthOpenPixels[140];
+static u32 _gActor141000EveMouthOpenPixels[140];
 #endif
 PE_ASSET_BIND("characters/eve/mouth_open", _gActor141000EveMouthOpenPixels);
 

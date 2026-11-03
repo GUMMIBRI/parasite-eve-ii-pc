@@ -479,11 +479,11 @@ TaskDesc gDryfieldBreezewayKeyItemModelTaskDesc = { { { TASK_BODY_TMD, TASK_PRIO
 /// The line samples U 0..16 and V 0..4 from this image with its separate CLUT.
 /// GPU transfer borrows the word-aligned room storage until completion.
 #ifdef PE_EMBED_ASSETS
-static u_long _gDryfieldBreezewayKeyItemLinePixels[64] = {
+static u32 _gDryfieldBreezewayKeyItemLinePixels[64] = {
 #include "assets/dryfield_breezeway_image_05864.inc"
 };
 #else
-static u_long _gDryfieldBreezewayKeyItemLinePixels[64];
+static u32 _gDryfieldBreezewayKeyItemLinePixels[64];
 #endif
 PE_ASSET_BIND("dryfield_breezeway_image_05864", _gDryfieldBreezewayKeyItemLinePixels);
 

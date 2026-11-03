@@ -77,6 +77,7 @@ You can also set `PE2_DISC` instead of passing the path. When the generated sour
 | Variable | Effect |
 | --- | --- |
 | `PE2_SKIPINTRO=1` | skip the opening movie |
+| `PE2_START_LOCATION=stage,area,view,roomState,warp,variant` | new game starts there (stages 1-5; needs the overlays for it) |
 | `PE2_FAST=1` | no frame limiter during movies |
 | `PE2_AUTOPRESS=<tick>` | scripted Start/Cross from that tick |
 | `PE2_PAD_REPLAY=<file>` / `PE2_PAD_RECORD=<file>` | replay or record input (see `tools/port/make_gallery_input.py`) |
