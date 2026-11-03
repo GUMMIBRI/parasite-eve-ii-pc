@@ -75,3 +75,7 @@ build-all/
 build-*/
 src/port/asm_data.c
 src/port/asset_parts_table.c
+
+# Screenshots stay on disk only; the one the README shows is tracked.
+docs/images/*
+!docs/images/shooting-gallery.png
