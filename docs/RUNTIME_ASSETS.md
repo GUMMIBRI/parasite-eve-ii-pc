@@ -189,9 +189,9 @@ offset (the loader searches it after `gPeAssetParts`). A global is bound only wh
 the `.s` and the extracted package agree byte for byte (ignoring relocated words); the rest keeps its initializer in
 every build. `-DPE_EMBED_ASSETS=ON` keeps all initializers for the A/B comparison.
 
-Result: 9,940 globals are bound; embedded and disc dumps agree on all 15,960 bindings except one hash
+Result: 10,622 globals are bound (including data the disassembler left inside code files); embedded and disc dumps agree on all bindings (an earlier run differed in one hash
 (`_gNeoArkShrineViewBoundaryTriggers`), whose bytes are identical in both builds. The dump's address heuristic
-mistakes packed shorts for pointers there. `PE2_DISC2_ASSETS=<cue>` loads disc 2 right after disc 1 so one dump
+mistakes packed shorts for pointers). `PE2_DISC2_ASSETS=<cue>` loads disc 2 right after disc 1 so one dump
 covers both.
 
 ### Item catalog (2026-11-03)
