@@ -14,13 +14,21 @@ typedef struct PeAssetBinding {
 
 #define PE_ASSET_CAT2(a, b) a##b
 #define PE_ASSET_CAT(a, b)  PE_ASSET_CAT2(a, b)
+/* The linker set is traversed as contiguous records. ASan global redzones
+ * would become fake records; only this immutable registry omits redzones.
+ * The destination arrays and loader accesses remain instrumented. */
+#ifdef __clang__
+#define PE_ASSET_REGISTRY_ATTR __attribute__((no_sanitize("address")))
+#else
+#define PE_ASSET_REGISTRY_ATTR
+#endif
 #ifdef __APPLE__
 #define PE_ASSET_SECTION __attribute__((section("__DATA,__peassets")))
 #else
 #define PE_ASSET_SECTION __attribute__((section("peassets")))
 #endif
 #define PE_ASSET_BIND_AUX(key, array, auxArray)                                                         \
-    static const PeAssetBinding PE_ASSET_CAT(_peAssetBinding_, __COUNTER__) PE_ASSET_SECTION __attribute__((used)) = { \
+    static const PeAssetBinding PE_ASSET_CAT(_peAssetBinding_, __COUNTER__) PE_ASSET_SECTION PE_ASSET_REGISTRY_ATTR __attribute__((used)) = { \
         key, (void*)&(array), sizeof(array), (auxArray) }
 #define PE_ASSET_BIND(key, array) PE_ASSET_BIND_AUX(key, array, NULL)
 

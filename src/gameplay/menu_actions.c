@@ -1015,7 +1015,8 @@ void itemMenuDrawAttachmentExchangeRow(UiList* list, UiObject* object)
 
 void itemMenuApplySelectedHealingItem(UiObject* object, Task* task)
 {
-    itemMenuApplyHealingPanel(object, task, gItemMenuSelectedRow->itemId);
+    // The use task retains the item id after its inventory row is consumed.
+    itemMenuApplyHealingPanel(object, task, task->spawnArg1.value);
 }
 
 void itemMenuUseItemTask(Task* task)

@@ -96,6 +96,10 @@ enum {
 /// slot-list UI they spawn. It holds the card channel, the prompt and its
 /// timers, the `MemCardSync` result, the transfer buffer, the directory and
 /// each file's preview, and the map from card blocks to those files.
+#ifdef __psyz
+#include "port/memory_card.h"
+typedef PeMemoryCardDirectoryEntry McDirectoryEntry;
+#else
 /// A memory card directory entry in the layout the game reads. PsyZ's `DIRENTRY` has no `head`
 /// field (a card's entry carries the file's first sector there), so the game keeps its own.
 typedef struct {
@@ -106,6 +110,8 @@ typedef struct {
     s32  head; // First data sector of the file
     char system[4];
 } McDirectoryEntry;
+
+#endif
 
 typedef struct {
     s32             promptTimer;                               // Lead-in, then dismiss count. Opens at 16 and steps toward 0 by 2; a closing prompt counts down by 1 and ends below -16

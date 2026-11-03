@@ -7136,6 +7136,11 @@ static s32 _playerActorPlayScriptedAnimation(Task* task, s32 unusedMessageId, co
 /// Both models must be live. A non-NULL `bufferOperation` receives `parentModel`
 /// after the flag copy, including when the operation was already applied to it.
 /// NULL only copies flags; the attachment's buffer is never the operation's target.
+static void _playerActorAllocateDrawBuffer(TmdObject* model)
+{
+    (void)tmdAllocPrimitiveBuffer(model);
+}
+
 static inline void _playerActorApplyDrawToAttachment(Task* attachment, TmdObject* parentModel, void (*bufferOperation)(TmdObject*))
 {
     attachment->extra.tmd->flags = parentModel->flags;
@@ -7158,7 +7163,7 @@ s32 playerActorSetModelDraw(Task* task, s32 unusedMessageId, s32 drawMode, s32 u
     bufferOperation = NULL;
     switch (drawMode) {
         case PLAYER_ACTOR_MODEL_DRAW_HIDE_ALLOCATE:
-            bufferOperation = tmdAllocPrimitiveBuffer;
+            bufferOperation = _playerActorAllocateDrawBuffer;
             model->flags    = (model->flags | TMD_OBJECT_SKIP_ACTIVE_DRAW) & (u16)~TMD_OBJECT_SKIP_AUTO_BUFFER;
             break;
         case PLAYER_ACTOR_MODEL_DRAW_SHOW_AUTO:
@@ -7172,7 +7177,7 @@ s32 playerActorSetModelDraw(Task* task, s32 unusedMessageId, s32 drawMode, s32 u
             model->flags = model->flags | (TMD_OBJECT_SKIP_ACTIVE_DRAW | TMD_OBJECT_SKIP_AUTO_BUFFER);
             break;
         case PLAYER_ACTOR_MODEL_DRAW_SHOW_ALLOCATE:
-            bufferOperation = tmdAllocPrimitiveBuffer;
+            bufferOperation = _playerActorAllocateDrawBuffer;
             model->flags    = model->flags & (u16) ~(TMD_OBJECT_SKIP_ACTIVE_DRAW | TMD_OBJECT_SKIP_AUTO_BUFFER);
             break;
     }

@@ -603,9 +603,14 @@ static void _lesserStrangerTask(Task* actorTask)
 
     work  = actorTask->work;
     model = actorTask->extra.tmd;
+    // PHASE_INIT allocates work on the first running tick. A paused or hidden
+    // actor has no saved presentation state until that tick has completed.
+    if (work == NULL && gSceneCombatState.actorControl != SCENE_COMBAT_ACTORS_RUNNING) {
+        return;
+    }
     switch (gSceneCombatState.actorControl) {
         case SCENE_COMBAT_ACTORS_RUNNING:
-            if (work->prevActorControl != SCENE_COMBAT_ACTORS_RUNNING) {
+            if (work != NULL && work->prevActorControl != SCENE_COMBAT_ACTORS_RUNNING) {
                 model->flags = work->savedModelFlags;
             }
             switch (actorTask->state) {
@@ -616,6 +621,9 @@ static void _lesserStrangerTask(Task* actorTask)
                     memCopyBytes(_gLesserStrangerBarrierPatchFaces, gAkropolisFireEscapeCollisionGridFaces, sizeof(_gLesserStrangerBarrierPatchFaces));
                     _lesserStrangerInit(actorTask);
                     work = actorTask->work;
+                    if (work == NULL) {
+                        return;
+                    }
                     _lesserStrangerTickAnim(actorTask);
                     actorTask->state += 1;
                     break;

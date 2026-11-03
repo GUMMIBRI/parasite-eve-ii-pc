@@ -103,9 +103,11 @@
 ///
 /// Bind a side-effect-free, parenthesized array lvalue before including this
 /// header and retain it through the selected renderer fragment. The default
-/// names the carrier's static `_gScreenWaveColumnWaves`; actor_205200, the
-/// submarine tunnel and the garbage incinerator bind overlay-private
-/// `gScreenWaveColumnWaves` defined in another translation unit. Declare the
+/// names the carrier's static `_gScreenWaveColumnWaves`; actor_205200 binds
+/// `gActor205200ScreenWaveColumnWaves`, the garbage incinerator
+/// `gShelterB3GarbageIncineratorScreenWaveColumnWaves` and the submarine
+/// tunnel `gNeoArkSubmarineTunnelScreenWaveColumnWaves`, each defined in
+/// another translation unit. Declare the
 /// storage in the carrier or its private header at the existing BSS position.
 ///
 /// `_screenWaveTask` requires `ScreenWaveOscillator` elements 0..10 for its
@@ -128,9 +130,11 @@
 ///
 /// Bind a side-effect-free, parenthesized array lvalue before including this
 /// header and retain it through the selected renderer fragment. The default
-/// names the carrier's static `_gScreenWaveRowWaves`; actor_205200, the
-/// submarine tunnel and the garbage incinerator bind overlay-private
-/// `gScreenWaveRowWaves` defined in another translation unit. Declare storage
+/// names the carrier's static `_gScreenWaveRowWaves`; actor_205200 binds
+/// `gActor205200ScreenWaveRowWaves`, the garbage incinerator
+/// `gShelterB3GarbageIncineratorScreenWaveRowWaves` and the submarine
+/// tunnel `gNeoArkSubmarineTunnelScreenWaveRowWaves`, each defined in
+/// another translation unit. Declare storage
 /// in the carrier or its private header at the existing BSS position.
 ///
 /// Both renderers require elements 0..29, one for each horizontal edge below

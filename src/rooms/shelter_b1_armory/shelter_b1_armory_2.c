@@ -38,7 +38,7 @@
 #include "../../shared/effects/glow_draw.h"
 
 // The flag symbol is four bytes; the gate writes the first.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveBytes.eventStarted
 #include "../../shared/room/room_events.h"
 
 /// The armory's beam endpoint pairs and indicator centres in signed world units.
@@ -750,7 +750,7 @@ RoomSavedViewStorage gShelterB1ArmoryShopSavedView = { 0 };
 
 RoomEventMsg gRoomEventMsg = { 0, 0, 0, 0, 0, 0 };
 
-RoomEventActiveBytes gRoomEventActive = { 0, { 237, 62, 46 } };
+RoomEventActiveBytes gRoomEventActiveBytes = { 0, { 237, 62, 46 } };
 
 RoomEventReq gRoomEventReq;
 

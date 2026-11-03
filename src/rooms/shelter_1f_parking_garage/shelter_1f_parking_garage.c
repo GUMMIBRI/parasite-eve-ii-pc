@@ -54,14 +54,14 @@
 #include "rooms/room_common.h"
 #include "../../shared/room/room_visual_effects.h"
 // This room's fade symbol is the ScreenFade itself, with no following word.
-#define ROOM_EVENT_FADE gRoomEventFade
+#define ROOM_EVENT_FADE gRoomEventScreenFade
 #include "../../shared/room/room_events.h"
 #include "../../shared/effects/glow_draw.h"
 #include "../../shared/room/room_variants.h"
 
 static s32 _roomVariantResolveShelter(RoomEventMsg* request, RoomEventMsg* reply);
 
-extern ScreenFade       gRoomEventFade;
+extern ScreenFade       gRoomEventScreenFade;
 static RoomEventMsg     _gRoomEventStagedMsg;
 extern RoomDeparture    gRoomDeparture;
 extern RoomLatchedEvent gRoomEventLatched;
@@ -463,7 +463,7 @@ WorldCollisionSurfaceProperties* gShelter1fParkingGarageSurfaceProperties[8] = {
     &_gShelter1fParkingGarageBlockingSurface,
 };
 
-ScreenFade gRoomEventFade = { 0 };
+ScreenFade gRoomEventScreenFade = { 0 };
 
 /// Mutable 30-frame blackout for confirmed travel to the underground parking area.
 ///

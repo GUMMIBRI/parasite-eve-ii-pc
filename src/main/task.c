@@ -317,16 +317,18 @@ void taskKill(Task* task)
     Task* parent;
     Task* nextSibling;
 
-    // Children lose their parent before dispatch so their exit handlers leave
-    // this sibling ring intact. The successor is read after each handler returns.
+    // Exit handlers may immediately free a child (e.g. weapon reflections).
+    // Save its ring successor before dispatch; no child storage is live after
+    // that call. Clearing parent keeps teardown from unlinking the saved ring.
     childHead = task->firstChild;
     if (childHead != NULL) {
         firstChild = childHead;
         ringCursor = firstChild;
         do {
+            nextSibling = ringCursor->nextSibling;
             ringCursor->parent = NULL;
             ringCursor->exitCallback(ringCursor);
-            ringCursor = ringCursor->nextSibling;
+            ringCursor = nextSibling;
         } while (ringCursor != firstChild);
     }
 

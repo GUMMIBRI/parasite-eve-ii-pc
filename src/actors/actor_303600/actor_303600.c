@@ -528,7 +528,7 @@ const Actor303600RotSample gActor303600SceneFigureRotationSamples[ACTOR_303600_R
 #include "assets/rooms/shelter/b2_pod_bottom/ending_figure_rotation_track.inc"
 };
 #else
-Actor303600RotSample gActor303600SceneFigureRotationSamples[1400] SECTION(".data");
+Actor303600RotSample gActor303600SceneFigureRotationSamples[ACTOR_303600_ROT_SAMPLE_COUNT] SECTION(".data");
 #endif
 PE_ASSET_BIND("rooms/shelter/b2_pod_bottom/ending_figure_rotation_track", gActor303600SceneFigureRotationSamples);
 
@@ -537,7 +537,7 @@ const Actor303600ViewKey gActor303600SceneCameraKeys[ACTOR_303600_VIEW_KEY_COUNT
 #include "assets/rooms/shelter/b2_pod_bottom/ending_camera_track.inc"
 };
 #else
-Actor303600ViewKey gActor303600SceneCameraKeys[6840] SECTION(".data");
+Actor303600ViewKey gActor303600SceneCameraKeys[ACTOR_303600_VIEW_KEY_COUNT] SECTION(".data");
 #endif
 PE_ASSET_BIND("rooms/shelter/b2_pod_bottom/ending_camera_track", gActor303600SceneCameraKeys);
 

@@ -70,9 +70,9 @@
 #include "../../shared/room/room_visual_effects.h"
 #include "../../shared/effects/glow_draw.h"
 // The flag symbol carries seven unproven bytes after the flag.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveStart.eventStarted
 // The request symbol carries twelve unproven bytes after the request.
-#define ROOM_EVENT_REQ gRoomEventReq.request
+#define ROOM_EVENT_REQ gRoomEventReqStorage.request
 /// Selects the gate's TU-local room-transition task descriptor.
 ///
 /// Addressable `TaskDesc` lvalue; see `room_events.h` for the spawn contract.
@@ -86,11 +86,11 @@
 extern RoomFadeStorage gRoomEventFade;
 
 /// The request the event gate latched for its event task.
-extern RoomEventReqStorage gRoomEventReq;
+extern RoomEventReqStorage gRoomEventReqStorage;
 
 /// Set by the event gate when its last call latched a request and spawned the
 /// event task; every call clears it first.
-extern RoomEventStartStorage gRoomEventActive;
+extern RoomEventStartStorage gRoomEventActiveStart;
 
 /// The message and the event the walkway's handler latched for its event task,
 /// and the flag saying its last call did so.
@@ -634,7 +634,7 @@ RoomFadeStorage gRoomEventFade = { 0 };
 /// Keep this room loaded and the snapshot unchanged until that task finishes.
 static RoomEventMsg _gRoomEventMsg = { 0 };
 
-RoomEventStartStorage gRoomEventActive = { 0 };
+RoomEventStartStorage gRoomEventActiveStart = { 0 };
 
 /// Destination snapshot retained from event acceptance through staged scene reload.
 ///
@@ -653,7 +653,7 @@ static RoomEventActiveBytes _gShelterB2SouthMaintenanceWalkwayStagedEventStart =
     .unknown      = { 7, 123, 189 },
 };
 
-RoomEventReqStorage gRoomEventReq;
+RoomEventReqStorage gRoomEventReqStorage;
 
 RoomLatchedEvent gRoomEventLatched;
 

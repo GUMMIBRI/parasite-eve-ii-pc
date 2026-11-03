@@ -70,7 +70,7 @@
 #include "../../shared/effects/glow_draw.h"
 
 // The flag symbol is four bytes; the gate writes the first.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveBytes.eventStarted
 /// Selects the gate's TU-local room-transition task descriptor.
 ///
 /// Addressable `TaskDesc` lvalue; see `room_events.h` for the spawn contract.
@@ -93,7 +93,7 @@ extern RoomEventReq gRoomEventReq;
 /// copies the recorded message's area, warp and room into the save location,
 /// spawns task 0x11 and ends.
 
-extern RoomEventActiveBytes gRoomEventActive;
+extern RoomEventActiveBytes gRoomEventActiveBytes;
 
 static void _shelterB2ElevatorHallInitRoomTask(Task* task);
 static void _shelterB2ElevatorHallIdleRoomTask(Task* task);
@@ -764,7 +764,7 @@ WorldCollisionSurfaceProperties* gShelterB2ElevatorHallSurfacePropertiesByClass[
 /// Keep this room loaded and the snapshot unchanged until that task finishes.
 static RoomEventMsg _gRoomEventMsg = { 0 };
 
-RoomEventActiveBytes gRoomEventActive = { 0, { 253, 152, 217 } };
+RoomEventActiveBytes gRoomEventActiveBytes = { 0, { 253, 152, 217 } };
 
 RoomEventReq gRoomEventReq;
 
@@ -826,7 +826,7 @@ static s32 _shelterB2ElevatorHallResolveRoomTransition(Task* unusedTask, s32 mes
         doorEvent.flagId        = GAME_FLAG_B2_HALL_SOUTH_WALKWAY_DOOR_UNLOCKED;
         doorEvent.collectedBit  = INVENTORY_COLLECTION_ID_BOWMANS_CARD & SHELTER_B2_ELEVATOR_HALL_COLLECTION_BIT_MASK;
         gateResult              = _roomEventGate(&doorEvent, reply);
-        if (gRoomEventActive.eventStarted != 0) {
+        if (gRoomEventActiveBytes.eventStarted != 0) {
             itemSetIdentified(INVENTORY_COLLECTION_ID_BOWMANS_CARD, SHELTER_B2_ELEVATOR_HALL_CARD_IDENTIFIED);
         }
         return gateResult;

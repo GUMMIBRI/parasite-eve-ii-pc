@@ -1,5 +1,6 @@
 /* Host implementations of the PSY-Q calls PsyZ does not provide. */
 #include "port/pad_trace.h"
+#include "port/memory_card.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -128,32 +129,14 @@ SVECTOR* ApplyMatrixSV(MATRIX* m, SVECTOR* v0, SVECTOR* v1)
 }
 
 /* ---- PSY-Q calls PsyZ declares but does not implement ----------------------
- * Memory card, controller extras and SPU reverb are placeholders until their
- * subsystems are ported (phases 4-5): they report "nothing present". */
+ * Controller extras and SPU reverb retain compatibility shims here.
+ * Memory-card storage lives in memory_card.c. */
 
 #include <libgpu.h>
 #include <libmcrd.h>
 #include <libspu.h>
 #include <libetc.h>
 #include <psyz/gte.h>
-
-void MemCardInit(long val) { (void)val; }
-void MemCardStart(void) {}
-void MemCardClose(void) {}
-long MemCardExist(long chan) { (void)chan; return 0; }
-long MemCardAccept(long chan) { (void)chan; return 0; }
-long MemCardOpen(long chan, char* file, long flag) { (void)chan; (void)file; (void)flag; return 0; }
-long MemCardCreateFile(long chan, char* file, long blocks) { (void)chan; (void)file; (void)blocks; return 0; }
-long MemCardFormat(long chan) { (void)chan; return 0; }
-long MemCardReadData(unsigned long* adrs, long offset, long bytes) { (void)adrs; (void)offset; (void)bytes; return 0; }
-long MemCardWriteData(unsigned long* adrs, long offset, long bytes) { (void)adrs; (void)offset; (void)bytes; return 0; }
-long MemCardSync(long mode, long* cmds, long* result)
-{
-    (void)mode;
-    if (cmds) *cmds = 0;
-    if (result) *result = 0;
-    return 1; /* nothing pending */
-}
 
 /* The emulated controller is a digital pad (ID 4): InfoModeCurID = 1 reports its type; no extended ID. */
 int PadInfoMode(int port, int term, int offs)
@@ -255,19 +238,6 @@ int LoadImage2(RECT* rect, u_long* p) { return LoadImage(rect, p); }
 int MoveImage2(RECT* rect, int x, int y) { return MoveImage(rect, x, y); }
 int IsIdleGPU(int max_count) { (void)max_count; return 0; }
 
-/* Memory card: no card is present until the save layer exists (phase 7). */
-long MemCardGetDirentry(long chan, char* name, struct DIRENTRY* dir, long* files, long ofs, long max)
-{
-    (void)chan; (void)name; (void)dir; (void)ofs; (void)max;
-    if (files) { *files = 0; }
-    return 0;
-}
-long MemCardWriteFile(long chan, char* file, unsigned long* adrs, long offset, long bytes)
-{
-    (void)chan; (void)file; (void)adrs; (void)offset; (void)bytes;
-    return 0;
-}
-
 /* Opt-in headless continuation after a finite trace. Only controller samples
  * are supplied; the existing game loop and normal task scheduler do the work. */
 static void pePadControlRead(uint64_t index, char* frame, size_t length)
@@ -362,6 +332,7 @@ void Psyz_PadsOverride(int port, char* frame, int len)
     }
     int currentTick = tick++;
     if (port != 0 || len < 4) return;
+    peMemoryCardAdvanceIo();
     if (currentTick >= holdStart && holdEnd > currentTick) {
         frame[2] &= ~(holdMask & 0xff);
         frame[3] &= ~((holdMask >> 8) & 0xff);

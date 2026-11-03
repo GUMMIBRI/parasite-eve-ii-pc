@@ -54,23 +54,23 @@
 #define SCREEN_WAVE_ACTIVE_CONTEXT (gScreenWaveContext)
 /// Writable column waves for the tunnel's scripted horizontal screen ripple.
 ///
-/// Binds the per-frame renderer to `gScreenWaveColumnWaves`, the
+/// Binds the per-frame renderer to `gNeoArkSubmarineTunnelScreenWaveColumnWaves`, the
 /// `ScreenWaveOscillator[13]` defined in neo_ark_submarine_tunnel_2.c.
 /// Only entries 0..10 are seeded, advanced and sampled; entries 11..12 are
 /// outside the mesh. Keep the binding through the per-frame fragment and the
 /// overlay loaded through the wave's final drawing tick. Only one wave may
 /// use this storage at a time.
-#define SCREEN_WAVE_COLUMN_OSCILLATORS (gScreenWaveColumnWaves)
+#define SCREEN_WAVE_COLUMN_OSCILLATORS (gNeoArkSubmarineTunnelScreenWaveColumnWaves)
 /// Writable row waves for the tunnel's scripted vertical screen ripple.
 ///
-/// Binds the per-frame renderer to the overlay-private `gScreenWaveRowWaves`,
+/// Binds the per-frame renderer to the overlay-private `gNeoArkSubmarineTunnelScreenWaveRowWaves`,
 /// a `ScreenWaveOscillator[32]` defined in neo_ark_submarine_tunnel_2.c.
 /// Entries 0..29 control the horizontal mesh edges below the pinned top edge;
 /// entries 30..31 are outside the active mesh. Every drawing tick advances
 /// the active phases, including while actors are frozen.
 /// Keep this binding through the per-frame fragment and the overlay loaded
 /// through the final drawing tick. Only one wave may use this storage at a time.
-#define SCREEN_WAVE_ROW_OSCILLATORS (gScreenWaveRowWaves)
+#define SCREEN_WAVE_ROW_OSCILLATORS (gNeoArkSubmarineTunnelScreenWaveRowWaves)
 #include "../../shared/screen/screen_wave.h"
 #include "../../shared/effects/water_effects.h"
 

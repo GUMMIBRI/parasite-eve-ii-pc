@@ -101,6 +101,7 @@ if(NOT PE_ALL_OVERLAYS)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/actors/square_grinning_stranger/square_grinning_stranger.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/actors/police_officers/police_officers.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/mist_parking/mist_parking.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/mist_r18/mist_r18.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/mist_parking/mist_parking_scenes.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/mist_parking/mist_parking_conversation.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/mist_parking/mist_parking_glows.c
@@ -247,12 +248,13 @@ set_property(SOURCE src/stages/akropolis/actors/helicopter_landing_pad_no_9/heli
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/port/asm_data.c)
     file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/port/asm_data.c "")
 endif()
-add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/fixed_log.c src/port/pad_trace.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c src/port/mdec_vlc.c src/port/tmd_source.c src/port/tmd_layout.c src/port/cap_asset.c src/port/cap_resource.c src/port/disc_assets.c src/port/asset_loader.c src/port/asset_parts_table.c src/port/asm_data.c src/port/globals.c src/port/unresolved_stubs.c $<TARGET_OBJECTS:game_main>
+add_executable(parasite-eve-ii-pc src/port/main.c src/port/psyq_host.c src/port/memory_card.c src/port/fixed_log.c src/port/pad_trace.c src/port/lzss.c src/port/tmd_dispatch.c src/port/tmd_prim.c src/port/tmd_ops.c src/port/mdec_vlc.c src/port/tmd_source.c src/port/tmd_layout.c src/port/cap_asset.c src/port/cap_resource.c src/port/disc_assets.c src/port/asset_loader.c src/port/asset_parts_table.c src/port/asm_data.c src/port/globals.c src/port/unresolved_stubs.c $<TARGET_OBJECTS:game_main>
     $<TARGET_OBJECTS:game_overlays>)
 target_include_directories(parasite-eve-ii-pc PRIVATE include include/decomp src/main)
 target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz SKIP_ASM)
 target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)
 target_sources(parasite-eve-ii-pc PRIVATE src/port/spu_voice_attributes.c)
+target_sources(parasite-eve-ii-pc PRIVATE src/port/host_ui.c)
 
 # Variant units: a package compiled from another package's shared source with its own -D parameters.
 # Each is a separate object library so the parameters stay per package (see docs/PORT_PLAN.md).

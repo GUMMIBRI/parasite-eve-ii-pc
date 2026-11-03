@@ -77,9 +77,9 @@
 #define WATER_SHARED_U16_DRAWERS
 #include "../../shared/effects/water_effects.h"
 // The latched-event symbol carries four unproven bytes after the event.
-#define ROOM_EVENT_LATCHED gRoomEventLatched.event
+#define ROOM_EVENT_LATCHED gRoomEventLatchedStorage.event
 // The departure symbol carries four unproven bytes after the record.
-#define ROOM_DEPARTURE gRoomDeparture.departure
+#define ROOM_DEPARTURE gRoomDepartureStorage.departure
 #include "../../shared/room/room_events.h"
 #include "../../shared/room/room_variants.h"
 
@@ -88,7 +88,7 @@ static s32 _roomVariantResolveNeoArk(RoomEventMsg* request, RoomEventMsg* reply)
 /// Storage of the departure task's descriptor, with the four bytes before it.
 ///
 /// `desc` is the spawn recipe the room's exit task hands to the task system
-/// once it has staged `gRoomDeparture`: a bodyless task running
+/// once it has staged `gRoomDepartureStorage`: a bodyless task running
 /// `roomEventDepartureTask`. It is addressed on its own, as a single descriptor.
 ///
 /// The four bytes before it open the room's initialised data. They are zero
@@ -125,10 +125,10 @@ static RoomEventMsg _gRoomEventStagedMsg;
 
 /// A second copy of the staged event block, taken whole once the block has been
 /// passed through `_roomVariantResolveNeoArk`.
-extern _RoomDepartureStorage gRoomDeparture;
+extern _RoomDepartureStorage gRoomDepartureStorage;
 
 /// The exit being taken, read by the exit task.
-extern RoomLatchedEventStorage gRoomEventLatched;
+extern RoomLatchedEventStorage gRoomEventLatchedStorage;
 
 static void _shelterB2MainCorridorResetCompanionScheduleOnDeparture(const RoomEventMsg* request);
 static void _shelterB2MainCorridorInitializeRoomTask(Task* task);
@@ -1847,9 +1847,9 @@ static u8 D_shelter_b2_main_corridor_8018965F = 44;
 /// until the GPU finishes the frame's ordering table.
 static u8* _gShelterB2MainCorridorWaterPacketCursor = NULL;
 
-_RoomDepartureStorage gRoomDeparture = { 0 };
+_RoomDepartureStorage gRoomDepartureStorage = { 0 };
 
-RoomLatchedEventStorage gRoomEventLatched = { { 0 }, { 0 } };
+RoomLatchedEventStorage gRoomEventLatchedStorage = { { 0 }, { 0 } };
 
 /// Pending destination for the corridor's observatory or EVE travel choice.
 ///
@@ -1885,7 +1885,7 @@ static inline s32 _shelterB2MainCorridorStartEvent(RoomEventMsg* reply, const Ro
             return ROOM_VARIANT_TRANSITION_HANDLED;
         }
         ROOM_EVENT_STAGED_DESTINATION = *reply;
-        gRoomEventLatched.event       = *eventPtr;
+        gRoomEventLatchedStorage.event       = *eventPtr;
         if (eventPtr->flagId != SHELTER_B2_MAIN_CORRIDOR_NO_EVENT_FLAG) {
             gameFlagSetNibble(eventPtr->flagId, SHELTER_B2_MAIN_CORRIDOR_EVENT_STARTED);
         }
@@ -2154,7 +2154,7 @@ static void _shelterB2MainCorridorStagedDepartureTask(Task* task)
             resolve = _roomVariantResolveNeoArk;
             playerActorSetScriptedControl(GAME_ACTOR_SCRIPTED_CONTROL_HOLD);
             _roomVariantResolveDeparture(&_gShelterB2MainCorridorStagedDeparture, resolve);
-            gRoomDeparture.departure = _gShelterB2MainCorridorStagedDeparture;
+            gRoomDepartureStorage.departure = _gShelterB2MainCorridorStagedDeparture;
             taskSpawnFromTable(&_gShelterB2MainCorridorDepartureTaskDescriptorStorage.desc, 0, 0, 0);
             taskKill(task);
             break;

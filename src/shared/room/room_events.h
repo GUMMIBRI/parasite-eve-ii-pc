@@ -58,7 +58,7 @@
  *                       and binds `.departure`.
  *   ROOM_EVENT_FADE     lvalue `ScreenFade`. Default `gRoomEventFade.fade`,
  *                       the record inside `RoomFadeStorage`. A room whose
- *                       symbol is the `ScreenFade` itself binds `gRoomEventFade`.
+ *                       symbol is the `ScreenFade` itself binds `gRoomEventScreenFade`.
  *
  * Each binding names an object the room defines. The wider objects are
  * `RoomEventActiveBytes`, `RoomEventStartStorage`, `RoomEventReqStorage`

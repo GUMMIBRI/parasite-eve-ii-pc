@@ -4,6 +4,9 @@
 #include <psyz.h>
 #include <romio.h>
 #include <libmcrd.h>
+#ifdef __psyz
+#define MemCardGetDirentry peMemoryCardGetDirentry
+#endif
 #include <memory.h>
 #include <stdlib.h>
 #include <strings.h>

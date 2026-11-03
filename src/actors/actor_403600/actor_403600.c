@@ -1680,9 +1680,13 @@ static inline s32  _actor403600RippleHasDiedOut(const Actor403600Ripple* state);
 /// no side effects. The packet takes the old low-24-bit link before the entry
 /// takes the packet's encoded DMA address. Returns the updated entry tag.
 /// Linked storage must remain valid until GPU submission has consumed it.
+#ifdef __psyz
+#define ACTOR_403600_LINK_PRIMITIVE(otEntry, packet) addPrim((otEntry), (packet))
+#else
 #define ACTOR_403600_LINK_PRIMITIVE(otEntry, packet)                                                          \
     ((packet)->tag = ((packet)->tag & GPU_DMA_PACKET_LENGTH_MASK) | (*(otEntry) & GPU_DMA_LINK_ADDRESS_MASK), \
      *(otEntry)    = (*(otEntry) & GPU_DMA_PACKET_LENGTH_MASK) | ((u32)(packet) & GPU_DMA_LINK_ADDRESS_MASK))
+#endif
 
 #include "../../shared/screen/frame_capture.inc.c"
 

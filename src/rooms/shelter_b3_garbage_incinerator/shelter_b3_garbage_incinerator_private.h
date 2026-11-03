@@ -143,13 +143,13 @@ extern CapCaptionCaretDelayStorage CapCaption_Data_8015E66C;
 ///
 /// The per-frame renderer uses entries 0..10; the prebuilt-grid renderer uses
 /// 0..8. Any remaining declared capacity is unaccessed; its role is unproven.
-extern ScreenWaveGridOscillator gScreenWaveColumnWaves[10];
+extern ScreenWaveGridOscillator gShelterB3GarbageIncineratorScreenWaveColumnWaves[10];
 
 /// Thirty active row sine oscillators for vertical screen displacement.
 ///
 /// Seeded at wave startup and advanced on drawing updates. Any declared
 /// entries beyond 29 are unaccessed; their role is unproven.
-extern ScreenWaveGridOscillator gScreenWaveRowWaves[30];
+extern ScreenWaveGridOscillator gShelterB3GarbageIncineratorScreenWaveRowWaves[30];
 
 /// Double-buffered 8 by 30 meshes of textured quads, one mesh per frame
 /// buffer. `_screenWaveGridTask` builds them once and moves their corners.

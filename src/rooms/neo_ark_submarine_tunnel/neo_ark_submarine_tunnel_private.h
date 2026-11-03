@@ -22,13 +22,13 @@ extern ScreenWaveCtx* gScreenWaveContext;
 ///
 /// The per-frame renderer uses entries 0..10; the prebuilt-grid renderer uses
 /// 0..8. Any remaining declared capacity is unaccessed; its role is unproven.
-extern ScreenWaveOscillator gScreenWaveColumnWaves[13];
+extern ScreenWaveOscillator gNeoArkSubmarineTunnelScreenWaveColumnWaves[13];
 
 /// Thirty active row sine oscillators for vertical screen displacement.
 ///
 /// Seeded at wave startup and advanced on drawing updates. Any declared
 /// entries beyond 29 are unaccessed; their role is unproven.
-extern ScreenWaveOscillator gScreenWaveRowWaves[32];
+extern ScreenWaveOscillator gNeoArkSubmarineTunnelScreenWaveRowWaves[32];
 
 /// Persistent ramp and tint context borrowed by the tunnel's scripted screen wave.
 ///

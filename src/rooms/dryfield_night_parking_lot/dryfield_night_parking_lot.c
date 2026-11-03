@@ -30,11 +30,11 @@
 
 #include "rooms/room_common.h"
 // The flag symbol is four bytes; the gate writes the first.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveBytes.eventStarted
 #include "../../shared/room/room_events.h"
 #include "../../shared/parking_lot.h"
 
-extern RoomEventActiveBytes gRoomEventActive;
+extern RoomEventActiveBytes gRoomEventActiveBytes;
 
 /// The request the event gate latched for its event task.
 extern RoomEventReq gRoomEventReq;
@@ -55,7 +55,7 @@ static RoomEventMsg _gRoomEventMsg = { 0 };
 
 /// Set by the event gate when its last call latched a request and spawned the
 /// event task; every call clears it first.
-RoomEventActiveBytes gRoomEventActive = { 0, { 63, 252, 16 } };
+RoomEventActiveBytes gRoomEventActiveBytes = { 0, { 63, 252, 16 } };
 
 RoomEventReq gRoomEventReq;
 

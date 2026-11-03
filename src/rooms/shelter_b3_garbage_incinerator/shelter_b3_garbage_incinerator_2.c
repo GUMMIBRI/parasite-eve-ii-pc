@@ -73,16 +73,16 @@
 #define SCREEN_WAVE_ACTIVE_CONTEXT (gScreenWaveContext)
 /// Writable column waves for the burn scene's horizontal heat-haze displacement.
 ///
-/// Binds the grid renderer to `gScreenWaveColumnWaves`, the word-aligned
+/// Binds the grid renderer to `gShelterB3GarbageIncineratorScreenWaveColumnWaves`, the word-aligned
 /// `ScreenWaveGridOscillator[10]` defined in shelter_b3_garbage_incinerator_3.c.
 /// Only entries 0..8 are seeded, advanced and snapshotted; entry 9 is outside
 /// the mesh. Keep the binding through the grid fragment and the overlay loaded
 /// through the wave's final drawing tick. Only one wave may use this storage
 /// at a time.
-#define SCREEN_WAVE_COLUMN_OSCILLATORS (gScreenWaveColumnWaves)
+#define SCREEN_WAVE_COLUMN_OSCILLATORS (gShelterB3GarbageIncineratorScreenWaveColumnWaves)
 /// Writable row waves for the burn scene's vertical heat-haze displacement.
 ///
-/// Binds the grid renderer to the overlay-private `gScreenWaveRowWaves`, a
+/// Binds the grid renderer to the overlay-private `gShelterB3GarbageIncineratorScreenWaveRowWaves`, a
 /// word-aligned `ScreenWaveGridOscillator[30]` defined in
 /// shelter_b3_garbage_incinerator_3.c. Entries 0..29 control the horizontal
 /// mesh edges below the pinned top edge. Drawing ticks advance them only
@@ -90,7 +90,7 @@
 /// unknown tail stay in persistent storage.
 /// Keep this binding through the grid fragment and the overlay loaded through
 /// the final drawing tick. Only one wave may use this storage at a time.
-#define SCREEN_WAVE_ROW_OSCILLATORS (gScreenWaveRowWaves)
+#define SCREEN_WAVE_ROW_OSCILLATORS (gShelterB3GarbageIncineratorScreenWaveRowWaves)
 #include "../../shared/screen/screen_wave.h"
 #include "../../shared/actor/actor_messages.h"
 #include "../../shared/effects/incinerator_blaze.h"

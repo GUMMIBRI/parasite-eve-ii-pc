@@ -63,13 +63,13 @@
 #include "rooms/room_common.h"
 #include "../../shared/room/room_visual_effects.h"
 // This room's fade symbol is the ScreenFade itself, with no following word.
-#define ROOM_EVENT_FADE gRoomEventFade
+#define ROOM_EVENT_FADE gRoomEventScreenFade
 #include "../../shared/room/room_events.h"
 #include "../../shared/room/room_variants.h"
 #include "../../shared/effects/glow_draw.h"
 #include "../../shared/room/streamed_scene.h"
 
-extern ScreenFade       gRoomEventFade;
+extern ScreenFade       gRoomEventScreenFade;
 static RoomEventMsg     _gRoomEventStagedMsg;
 extern RoomLatchedEvent gRoomEventLatched;
 
@@ -423,7 +423,7 @@ WorldCollisionSurfaceProperties* gShelter1fBulwarkSurfaceProperties[8] = {
     &_gShelter1fBulwarkSilentSurface,
 };
 
-ScreenFade gRoomEventFade = { 0 };
+ScreenFade gRoomEventScreenFade = { 0 };
 
 /// Mutable 30-frame departure blackout lent to the fade task before the heliport movie.
 ///

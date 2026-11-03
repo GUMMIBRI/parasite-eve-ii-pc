@@ -3171,8 +3171,8 @@ void playClockRestartSessionTask(Task* task)
     if (gGameSession->restartMode == GAME_SESSION_RESTART_ENDING) {
         gGpuPrimitiveBufferBytes = PLAY_CLOCK_ENDING_PRIMITIVE_HEAP_BYTES;
         gMemActiveAuxHeapBytes   = PLAY_CLOCK_ENDING_AUXILIARY_HEAP_BYTES;
-        gGpuPrimitiveBufferBase  = (u8*)((u32)gFsImageWorkspacePtr - PLAY_CLOCK_ENDING_PRIMITIVE_BEFORE_IMAGE_BYTES);
-        gMemActiveAuxHeap        = (void*)((u32)gFsImageWorkspacePtr - PLAY_CLOCK_ENDING_AUXILIARY_BEFORE_IMAGE_BYTES);
+        gGpuPrimitiveBufferBase  = (u8*)gFsImageWorkspacePtr - PLAY_CLOCK_ENDING_PRIMITIVE_BEFORE_IMAGE_BYTES;
+        gMemActiveAuxHeap        = (u8*)gFsImageWorkspacePtr - PLAY_CLOCK_ENDING_AUXILIARY_BEFORE_IMAGE_BYTES;
     }
     memInitHeaps();
     memInitAuxHeap();

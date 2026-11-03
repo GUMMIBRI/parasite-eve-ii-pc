@@ -42,8 +42,9 @@ static const PeAssetPart* findPart(const char* key)
 
 int peAssetsLoad(struct PeDisc* disc)
 {
-    static uint8_t* pkgData[4096];
-    static size_t   pkgSize[4096];
+    /* A cache belongs to this mounted image. Package IDs recur on the other disc. */
+    uint8_t* pkgData[4096] = {0};
+    size_t   pkgSize[4096] = {0};
     size_t          n;
     const PeAssetBinding* b = bindings(&n);
     int filled = 0, missing = 0, wrong = 0;
@@ -86,6 +87,7 @@ int peAssetsLoad(struct PeDisc* disc)
     }
     if (wrong) fprintf(stderr, "[assets] %d bindings could not be filled\n", wrong);
     if (missing) fprintf(stderr, "[assets] %d bindings wait for the other disc\n", missing);
+    for (size_t i = 0; i < 4096; i++) free(pkgData[i]);
     return filled;
 }
 

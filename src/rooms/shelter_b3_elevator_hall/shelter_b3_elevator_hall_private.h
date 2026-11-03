@@ -22,7 +22,7 @@ extern RoomEventMsg gRoomEventMsg;
 /// loaded and unchanged until the task commits area/warp/room and requests reload.
 #define ROOM_EVENT_DESTINATION (gRoomEventMsg)
 
-extern RoomEventActiveBytes gRoomEventActive;
+extern RoomEventActiveBytes gRoomEventActiveBytes;
 extern RoomEventReq         gRoomEventReq;
 
 #endif // SRC_ROOMS_SHELTER_B3_ELEVATOR_HALL_SHELTER_B3_ELEVATOR_HALL_PRIVATE_H

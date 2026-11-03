@@ -58,7 +58,11 @@ STATIC_ASSERT_SIZEOF(Actor303600ViewKey, 0x18);
 /// saturates at 699. Unsigned halfword angles use 4096 units per turn and narrow
 /// into the figure's signed Euler vector. Pitch stays fixed at 1024. The Eve
 /// package loads actor_303600 and borrows these samples through scene playback.
+#ifdef PE_EMBED_ASSETS
 extern const Actor303600RotSample gActor303600SceneFigureRotationSamples[ACTOR_303600_ROT_SAMPLE_COUNT];
+#else
+extern Actor303600RotSample gActor303600SceneFigureRotationSamples[ACTOR_303600_ROT_SAMPLE_COUNT];
+#endif
 
 /// Compact camera transforms, one 24-byte key per scene update through frame 569.
 ///
@@ -66,7 +70,11 @@ extern const Actor303600RotSample gActor303600SceneFigureRotationSamples[ACTOR_3
 /// from signed halfwords as the negated world-space camera origin. Projection
 /// distance is supplied separately. The Eve scene figure borrows this read-only
 /// track while actor_303600 remains loaded alongside it.
+#ifdef PE_EMBED_ASSETS
 extern const Actor303600ViewKey gActor303600SceneCameraKeys[ACTOR_303600_VIEW_KEY_COUNT];
+#else
+extern Actor303600ViewKey gActor303600SceneCameraKeys[ACTOR_303600_VIEW_KEY_COUNT];
+#endif
 
 extern AnimationSet gActor303600Animation075A0;
 

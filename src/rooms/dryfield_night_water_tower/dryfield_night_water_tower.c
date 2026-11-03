@@ -25,12 +25,12 @@
 
 #include "rooms/room_common.h"
 // The flag symbol is four bytes; the gate writes the first.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveBytes.eventStarted
 #include "../../shared/room/room_events.h"
 #include "../../shared/room/room_variants.h"
 #include "../../shared/water_tower.h"
 
-extern RoomEventActiveBytes gRoomEventActive;
+extern RoomEventActiveBytes gRoomEventActiveBytes;
 
 /// The event the room's gate `_roomEventGate`
 /// latched: the incoming message and the request, kept for the event task it
@@ -45,7 +45,7 @@ extern RoomEventReq gRoomEventReq;
 /// Keep this room loaded and the snapshot unchanged until that task finishes.
 static RoomEventMsg _gRoomEventMsg = { 0 };
 
-RoomEventActiveBytes gRoomEventActive = { 0, { 1, 238, 253 } };
+RoomEventActiveBytes gRoomEventActiveBytes = { 0, { 1, 238, 253 } };
 
 RoomEventReq gRoomEventReq = { 0 };
 

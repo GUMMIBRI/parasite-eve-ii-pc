@@ -1,5 +1,6 @@
 #include "port/disc_assets.h"
 #include "port/asset_bind.h"
+#include "port/host_ui.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -46,11 +47,9 @@ int main(int argc, char** argv) {
     sigaction(SIGSEGV, &sa, NULL);
     sigaction(SIGBUS, &sa, NULL);
     /* Disc image: first argument, or PE2_DISC. Game data is read from it at run time. */
-    const char* disc = argc > 1 ? argv[1] : getenv("PE2_DISC");
-    if (disc == NULL) {
-        fprintf(stderr, "usage: %s <disc.cue>   (or set PE2_DISC)\n", argv[0]);
-        return 2;
-    }
+    const char* disc = NULL;
+    int startup = peHostStartup(argc, argv, &disc);
+    if (startup <= 0) return startup < 0 ? 2 : 0;
     if (Psyz_CdSetDiskPath(disc) != 0) {
         fprintf(stderr, "cannot open disc image: %s\n", disc);
         return 2;
@@ -68,6 +67,7 @@ int main(int argc, char** argv) {
         fprintf(stderr, "[assets] %d arrays loaded from the disc\n", peAssetsLoad(assets));
 #endif
         if (getenv("PE2_DUMP_ASSETS")) peAssetsDump(getenv("PE2_DUMP_ASSETS"));
+        peDiscClose(assets);
     }
     ResetGraph(0);
     gameMainRun();

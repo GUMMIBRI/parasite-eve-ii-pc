@@ -74,7 +74,7 @@
 #define ROOM_EVENT_TASK_DESC (_gRoomEventTaskDesc)
 #include "../../shared/room/room_events.h"
 // Symbol is `RoomCutsceneSoundTaskStorage`; the runner reads `task`.
-#define ROOM_CUTSCENE_SOUND_TASK gRoomCutsceneSoundTask.task
+#define ROOM_CUTSCENE_SOUND_TASK gRoomCutsceneSoundTaskStorage.task
 #include "../../shared/room/room_cutscene.h"
 
 static void _roomCutsceneTask(Task* task);
@@ -110,7 +110,7 @@ STATIC_ASSERT_SIZEOF(_ShelterB2LaboratoryGlowDiamondScratch, 0x18);
 /// Task descriptor for the flag-gated exit's transition.
 
 /// This room's cutscene sound-task slot. The runner uses `task`.
-extern RoomCutsceneSoundTaskStorage gRoomCutsceneSoundTask;
+extern RoomCutsceneSoundTaskStorage gRoomCutsceneSoundTaskStorage;
 
 /// Copy of the request that started the pending exit
 /// transition, read back by `roomEventTask`.
@@ -1155,7 +1155,7 @@ AreaApplyRec gShelterB2LaboratoryPodTunnelAreaUpdates[2] = {
     { AREA_APPLY_END, 0, 0, 0 },
 };
 
-RoomCutsceneSoundTaskStorage gRoomCutsceneSoundTask = { NULL, { 0 } };
+RoomCutsceneSoundTaskStorage gRoomCutsceneSoundTaskStorage = { NULL, { 0 } };
 
 /// Snapshot of the accepted transition for the deferred room event.
 ///

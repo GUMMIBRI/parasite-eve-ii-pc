@@ -2062,6 +2062,13 @@ void fsResumeRequestedRead(void)
 
 u8 cdSyncWaitForDiscSwap(void)
 {
+#ifdef __psyz
+    /* The host supplies the requested image, then the retail path observes
+     * the tray cycle and rebuilds its own filesystem tables as usual. */
+    extern int peHostSwapDisc(int requiredDisc);
+    extern void Psyz_CdShellOpen(int open);
+    if (!peHostSwapDisc(fsGetRequiredStageDisc())) return CD_SYNC_DISC_SWAP_ERROR;
+#endif
     enum {
         CD_SYNC_VOLUME_DESCRIPTOR_SECTOR = 16,
         CD_SYNC_TOC_RETRY_VBLANKS        = 30,
@@ -2077,6 +2084,10 @@ u8 cdSyncWaitForDiscSwap(void)
     do {
         CdControlB(CdlNop, NULL, commandResult);
     } while ((commandResult[0] & CdlStatShellOpen) == 0);
+
+#ifdef __psyz
+    Psyz_CdShellOpen(0);
+#endif
 
     do {
         CdControlB(CdlNop, NULL, commandResult);

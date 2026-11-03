@@ -54,7 +54,7 @@
 #include "rooms/room_common.h"
 #include "../../shared/room/room_visual_effects.h"
 // The flag symbol is four bytes; the gate writes the first.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveBytes.eventStarted
 #include "../../shared/room/room_events.h"
 
 #include "../../shared/room/room_visual_effects_disc_data.inc.c"
@@ -945,7 +945,7 @@ WorldCollisionSurfaceProperties* gShelterB3ElevatorHallSurfacePropertiesByClass[
 
 RoomEventMsg gRoomEventMsg = { 0 };
 
-RoomEventActiveBytes gRoomEventActive = { 0, { 18, 230, 216 } };
+RoomEventActiveBytes gRoomEventActiveBytes = { 0, { 18, 230, 216 } };
 
 RoomEventReq gRoomEventReq = { 0 };
 #include "../../shared/room/room_visual_effects_flying_tasks.inc.c"

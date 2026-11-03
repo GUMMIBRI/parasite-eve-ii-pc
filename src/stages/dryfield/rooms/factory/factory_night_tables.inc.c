@@ -75,7 +75,6 @@ enum {
 #ifdef PE_EMBED_ASSETS
 static SVECTOR _gDryfieldNightFactoryCollisionGridNormals[28] = {
 #include "assets/dryfield_night_factory_collision_0A630_normals.inc"
-#include "port/asset_bind.h"
 };
 #else
 static SVECTOR _gDryfieldNightFactoryCollisionGridNormals[28];

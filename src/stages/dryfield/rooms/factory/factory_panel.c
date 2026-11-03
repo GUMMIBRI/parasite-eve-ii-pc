@@ -1,4 +1,5 @@
 #include <psyz.h>
+#include "port/asset_bind.h"
 #include <libgte.h>
 
 #include "factory_private.h"

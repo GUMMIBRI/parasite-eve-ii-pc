@@ -72,9 +72,9 @@
 #include "../../shared/effects/glow_draw.h"
 
 // The flag symbol carries seven unproven bytes after the flag.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveStart.eventStarted
 // The request symbol carries twelve unproven bytes after the request.
-#define ROOM_EVENT_REQ gRoomEventReq.request
+#define ROOM_EVENT_REQ gRoomEventReqStorage.request
 /// Selects the gate's TU-local room-transition task descriptor.
 ///
 /// Addressable `TaskDesc` lvalue; see `room_events.h` for the spawn contract.
@@ -85,9 +85,9 @@
 /// The event the gate last accepted: the message that triggered it, whose
 /// `msgId`, `field_2` and `field_3` name the area, warp and room the event
 /// task finally loads, and the request whose CAP command and sounds it runs.
-extern RoomEventReqStorage gRoomEventReq;
+extern RoomEventReqStorage gRoomEventReqStorage;
 /// Set once the gate has latched an event and spawned its task.
-extern RoomEventStartStorage gRoomEventActive;
+extern RoomEventStartStorage gRoomEventActiveStart;
 /// Spawn descriptor of the event task, `roomEventTask`.
 
 /// The event the message handler last started: the message that triggered it,
@@ -934,7 +934,7 @@ RoomFadeStorage gRoomEventFade = { 0 };
 /// Keep this room loaded and the snapshot unchanged until that task finishes.
 static RoomEventMsg _gRoomEventMsg = { 0 };
 
-RoomEventStartStorage gRoomEventActive = { 0 };
+RoomEventStartStorage gRoomEventActiveStart = { 0 };
 
 /// Destination snapshot retained from event acceptance through staged scene reload.
 ///
@@ -951,7 +951,7 @@ static RoomEventMsg _gRoomEventStagedMsg = { 0 };
 /// and their role and grouping are unproven.
 static RoomEventActiveBytes _gShelterB1MainCorridorStagedEventStart = { 0, { 7, 132, 0 } };
 
-RoomEventReqStorage gRoomEventReq;
+RoomEventReqStorage gRoomEventReqStorage;
 
 RoomLatchedEvent gRoomEventLatched;
 

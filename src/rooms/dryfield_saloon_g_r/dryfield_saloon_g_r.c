@@ -50,7 +50,7 @@
 
 #include "rooms/room_common.h"
 // The flag symbol is four bytes; the gate writes the first.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveBytes.eventStarted
 /// Selects the gate's TU-local room-transition task descriptor.
 ///
 /// Addressable `TaskDesc` lvalue; see `room_events.h` for the spawn contract.
@@ -60,7 +60,7 @@
 #include "../../shared/effects/glow_draw.h"
 #include "../../shared/room/room_variants.h"
 
-extern RoomEventActiveBytes gRoomEventActive;
+extern RoomEventActiveBytes gRoomEventActiveBytes;
 
 /// The event request the gate latched for the event task, and the
 /// flag saying one was latched this call.
@@ -929,7 +929,7 @@ WorldCollisionSurfaceProperties* gDryfieldSaloonGRSurfacePropertiesByClass[8] = 
 /// Keep this room loaded and the snapshot unchanged until that task finishes.
 static RoomEventMsg _gRoomEventMsg = { 0 };
 
-RoomEventActiveBytes gRoomEventActive = { 0, { 32, 1, 0 } };
+RoomEventActiveBytes gRoomEventActiveBytes = { 0, { 32, 1, 0 } };
 
 RoomEventReq gRoomEventReq;
 

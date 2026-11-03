@@ -65,7 +65,7 @@
 
 #include "../../shared/room/room_visual_effects.h"
 // The flag symbol is four bytes; the gate writes the first.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveBytes.eventStarted
 /// Selects the gate's TU-local room-transition task descriptor.
 ///
 /// Addressable `TaskDesc` lvalue; see `room_events.h` for the spawn contract.
@@ -77,7 +77,7 @@
 static s32 _roomVariantMotelBalconyDoorsMsg(Task* task, s32 messageId, const RoomEventMsg* request, RoomEventMsg* reply);
 static s32 _motelBalconyCueSoundMsg(Task* task, s32 messageId, s32 cueKey, s32 secondArg);
 
-extern RoomEventActiveBytes gRoomEventActive;
+extern RoomEventActiveBytes gRoomEventActiveBytes;
 
 /// Descriptor of the event task the gate spawns.
 
@@ -1543,7 +1543,7 @@ WorldCollisionSurfaceProperties* gDryfieldMotelBalconySurfaceClasses[8] = {
 /// Keep this room loaded and the snapshot unchanged until that task finishes.
 static RoomEventMsg _gRoomEventMsg = { 0 };
 
-RoomEventActiveBytes gRoomEventActive = { 0, { 238, 254, 37 } };
+RoomEventActiveBytes gRoomEventActiveBytes = { 0, { 238, 254, 37 } };
 
 RoomEventReq gRoomEventReq;
 

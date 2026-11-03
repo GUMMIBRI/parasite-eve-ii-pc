@@ -69,7 +69,7 @@
 #include "../../shared/effects/glow_draw.h"
 
 // The latched-event symbol carries four unproven bytes after the event.
-#define ROOM_EVENT_LATCHED gRoomEventLatched.event
+#define ROOM_EVENT_LATCHED gRoomEventLatchedStorage.event
 /// Selects the gate's TU-local room-transition task descriptor.
 ///
 /// Addressable `TaskDesc` lvalue; see `room_events.h` for the spawn contract.
@@ -131,7 +131,7 @@ extern RoomFadeStorage gRoomEventFade;
 /// task, and the flag it raises once it has spawned that task.
 static RoomEventMsg            _gRoomEventStagedMsg;
 static RoomEventStartStorage   _gMainStreetStagedSceneStartStorage;
-extern RoomLatchedEventStorage gRoomEventLatched;
+extern RoomLatchedEventStorage gRoomEventLatchedStorage;
 
 /// The request the event gate latched for its event task.
 extern RoomEventReq gRoomEventReq;
@@ -1929,7 +1929,7 @@ static RoomEventMsg _gRoomEventMsg = { 0 };
 
 u8 gRoomEventActive = 0;
 
-RoomLatchedEventStorage gRoomEventLatched;
+RoomLatchedEventStorage gRoomEventLatchedStorage;
 
 RoomEventReq gRoomEventReq;
 

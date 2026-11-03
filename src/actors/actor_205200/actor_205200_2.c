@@ -218,9 +218,9 @@ static TaskMessageEntry _gActor205200BodyMessages[3] = {
 
 ScreenWaveCtx* gScreenWaveContext = NULL;
 
-ScreenWaveGridOscillator gScreenWaveColumnWaves[10];
+ScreenWaveGridOscillator gActor205200ScreenWaveColumnWaves[10];
 
-ScreenWaveGridOscillator gScreenWaveRowWaves[30];
+ScreenWaveGridOscillator gActor205200ScreenWaveRowWaves[30];
 
 POLY_FT4 gScreenWaveGrid[2][30][8];
 

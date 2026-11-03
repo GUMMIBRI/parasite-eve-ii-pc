@@ -209,7 +209,7 @@ static s32 _akropolisFireEscapeHandleRoomCommand(Task* unusedTask, s32 unusedMes
     };
     Task* actorTask;
     s32   capCommand;
-    s32   actorPresent;
+    u32   actorPresent;
 
     if (command == AKROPOLIS_FIRE_ESCAPE_ROOM_COMMAND_TELEPHONE) {
         if (gameFlagGetNibble(EVENT_FLAG_AKROPOLIS_FIRE_ESCAPE_TELEPHONE_INSPECTED) == 0) {
@@ -232,8 +232,8 @@ static s32 _akropolisFireEscapeHandleRoomCommand(Task* unusedTask, s32 unusedMes
         actorTask  = sceneFindPlacedActor(CREATURE_ACTOR);
         capCommand = GATE_CAP_COMMAND;
         if (actorTask != NULL) {
-            // Retain the original zero output payload; this actor also writes through it.
-            actorPresent = taskMessageDispatch(actorTask, ACTOR_MESSAGE_IS_PRESENT, 0, 0);
+            // The presence handler returns the value and writes its output word.
+            actorPresent = TASK_MESSAGE_DISPATCH_SECOND_POINTER(actorTask, ACTOR_MESSAGE_IS_PRESENT, 0, &actorPresent);
             capCommand   = CREATURE_ALIVE_CAP_COMMAND;
             if (actorPresent == 0) {
                 capCommand = GATE_CAP_COMMAND;
@@ -367,9 +367,10 @@ static void _akropolisFireEscapeDisableAbsentActorInteraction(Task* unusedTask)
 {
     enum { ACTOR_INTERACTION_TRIGGER = 5 };
     Task* actorTask;
+    u32   actorPresent;
 
     actorTask = sceneFindPlacedActor(0);
-    if (actorTask == NULL || taskMessageDispatch(actorTask, ACTOR_MESSAGE_IS_PRESENT, 0, 0) == 0) {
+    if (actorTask == NULL || TASK_MESSAGE_DISPATCH_SECOND_POINTER(actorTask, ACTOR_MESSAGE_IS_PRESENT, 0, &actorPresent) == 0) {
         WorldCollisionTrigger* interaction = &_gAkropolisFireEscapeActionTriggers[ACTOR_INTERACTION_TRIGGER];
         interaction->flags                &= (0xFF ^ WORLD_COLLISION_TRIGGER_ENABLED);
     }

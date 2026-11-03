@@ -33,11 +33,11 @@
 
 #include "rooms/room_common.h"
 // The flag symbol is four bytes; the gate writes the first.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveBytes.eventStarted
 #include "../../shared/room/room_events.h"
 #include "../../shared/room/room_variants.h"
 
-extern RoomEventActiveBytes gRoomEventActive;
+extern RoomEventActiveBytes gRoomEventActiveBytes;
 
 /// A gameplay state byte; the one-shot balcony event waits while it is 1.
 
@@ -58,7 +58,7 @@ const AreaApplyRec gDryfieldNightMotelBalconyBurnerTurnAreaUpdates[2] SECTION(".
 /// Keep this room loaded and the snapshot unchanged until that task finishes.
 static RoomEventMsg _gRoomEventMsg = { 0 };
 
-RoomEventActiveBytes gRoomEventActive = { 0, { 115, 55, 136 } };
+RoomEventActiveBytes gRoomEventActiveBytes = { 0, { 115, 55, 136 } };
 
 RoomEventReq gRoomEventReq;
 

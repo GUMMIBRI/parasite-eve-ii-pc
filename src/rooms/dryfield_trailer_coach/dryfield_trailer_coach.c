@@ -71,7 +71,7 @@
 #include "rooms/room_common.h"
 #include "rooms/shop_tier.h"
 // Symbol is `RoomCutsceneSoundTaskStorage`; the runner reads `task`.
-#define ROOM_CUTSCENE_SOUND_TASK gRoomCutsceneSoundTask.task
+#define ROOM_CUTSCENE_SOUND_TASK gRoomCutsceneSoundTaskStorage.task
 #include "../../shared/room/room_cutscene.h"
 #include "../../shared/effects/glow_draw.h"
 static void _roomCutsceneTask(Task* task);
@@ -2120,7 +2120,7 @@ static s32 _gShopRefillDisplayQuantityFixed = 0;
 /// closes; gameplay and its catalog must remain loaded throughout the session.
 static const EquipmentWeaponSupply* _gShopRefillSupply = NULL;
 
-RoomCutsceneSoundTaskStorage gRoomCutsceneSoundTask = { 0 };
+RoomCutsceneSoundTaskStorage gRoomCutsceneSoundTaskStorage = { 0 };
 
 /// Persistent presentation record for the repeat trailer-coach story scene.
 ///
@@ -2131,7 +2131,7 @@ RoomCutsceneSoundTaskStorage gRoomCutsceneSoundTask = { 0 };
 static RoomCutsceneRec _gDryfieldTrailerCoachRepeatStoryScene = { 0 };
 
 /// This room's cutscene sound-task slot. The runner uses `task`.
-extern RoomCutsceneSoundTaskStorage gRoomCutsceneSoundTask;
+extern RoomCutsceneSoundTaskStorage gRoomCutsceneSoundTaskStorage;
 
 static void _dryfieldTrailerCoachExitTopicChoice(Task* task);
 

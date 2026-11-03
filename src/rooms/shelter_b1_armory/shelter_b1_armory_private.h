@@ -36,7 +36,7 @@ extern RoomEventMsg gRoomEventMsg;
 /// loaded and unchanged until the task commits area/warp/room and requests reload.
 #define ROOM_EVENT_DESTINATION (gRoomEventMsg)
 
-extern RoomEventActiveBytes gRoomEventActive;
+extern RoomEventActiveBytes gRoomEventActiveBytes;
 extern RoomEventReq         gRoomEventReq;
 
 /// View slot saved while the armory shop scene temporarily selects view 13.

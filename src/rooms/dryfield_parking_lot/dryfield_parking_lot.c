@@ -48,7 +48,7 @@
 
 #include "rooms/room_common.h"
 // The flag symbol is four bytes; the gate writes the first.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveBytes.eventStarted
 /// Selects the gate's TU-local room-transition task descriptor.
 ///
 /// Addressable `TaskDesc` lvalue; see `room_events.h` for the spawn contract.
@@ -59,7 +59,7 @@
 
 static s32 _parkingLotSoundMsg(Task* unusedTask, s32 unusedMessageId, s32 cueKey, s32 unusedSecondArg);
 
-extern RoomEventActiveBytes gRoomEventActive;
+extern RoomEventActiveBytes gRoomEventActiveBytes;
 
 /// Descriptor of the event task the event gate spawns.
 
@@ -770,7 +770,7 @@ WorldCollisionSurfaceProperties* gDryfieldParkingLotSurfacePropertiesByClass[DRY
 /// Keep this room loaded and the snapshot unchanged until that task finishes.
 static RoomEventMsg _gRoomEventMsg = { 0 };
 
-RoomEventActiveBytes gRoomEventActive = { 0, { 156, 190, 128 } };
+RoomEventActiveBytes gRoomEventActiveBytes = { 0, { 156, 190, 128 } };
 
 RoomEventReq gRoomEventReq = { 0 };
 

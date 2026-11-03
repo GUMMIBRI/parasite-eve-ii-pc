@@ -57,7 +57,7 @@
 
 #include "rooms/room_common.h"
 // The latched-event symbol carries four unproven bytes after the event.
-#define ROOM_EVENT_LATCHED gRoomEventLatched.event
+#define ROOM_EVENT_LATCHED gRoomEventLatchedStorage.event
 #include "../../shared/room/room_events.h"
 #include "../../shared/room/room_variants.h"
 
@@ -67,7 +67,7 @@ extern RoomFadeStorage gRoomEventFade;
 /// The message and the event the walkway's handler latched for its event task,
 /// and the flag saying its last call did so.
 static RoomEventMsg            _gRoomEventStagedMsg;
-extern RoomLatchedEventStorage gRoomEventLatched;
+extern RoomLatchedEventStorage gRoomEventLatchedStorage;
 
 /// The request the event gate latched for the event task.
 extern RoomEventReq gRoomEventReq;
@@ -956,7 +956,7 @@ static RoomEventMsg _gRoomEventMsg = { 0 };
 
 u8 gRoomEventActive = 0;
 
-RoomLatchedEventStorage gRoomEventLatched = { { 0 }, { 0 } };
+RoomLatchedEventStorage gRoomEventLatchedStorage = { { 0 }, { 0 } };
 
 RoomEventReq gRoomEventReq = { 0, 0, 0, 0, 0, 0 };
 
@@ -978,7 +978,7 @@ static inline s32 _walkwayStartEvent(RoomEventMsg* dst, RoomLatchedEvent* event)
     if (gameFlagGetNibble(event->flagId) == 0 || event->flagId == 0) {
         if (dst->queryOnly == ROOM_EVENT_EXECUTE) {
             ROOM_EVENT_STAGED_DESTINATION = *dst;
-            gRoomEventLatched.event       = *event;
+            gRoomEventLatchedStorage.event       = *event;
             if (event->flagId != 0) {
                 gameFlagSetNibble(event->flagId, 1);
             }

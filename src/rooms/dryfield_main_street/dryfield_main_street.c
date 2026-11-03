@@ -72,9 +72,9 @@
 #include "rooms/room_common.h"
 #include "../../shared/room/room_visual_effects.h"
 // The flag symbol is four bytes; the gate writes the first.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveBytes.eventStarted
 // The latched-event symbol carries four unproven bytes after the event.
-#define ROOM_EVENT_LATCHED gRoomEventLatched.event
+#define ROOM_EVENT_LATCHED gRoomEventLatchedStorage.event
 /// Selects the gate's TU-local room-transition task descriptor.
 ///
 /// Addressable `TaskDesc` lvalue; see `room_events.h` for the spawn contract.
@@ -99,7 +99,7 @@ static s32 _mainStreetCapSoundCue(Task* unusedTask, s32 unusedMessageId, s32 cue
 /// Each invocation consumes one draw, so callers must preserve draw order.
 #define DRYFIELD_MAIN_STREET_RAND() ((RANDOM_LCG_ADVANCE()) >> 16)
 
-extern RoomEventActiveBytes gRoomEventActive;
+extern RoomEventActiveBytes gRoomEventActiveBytes;
 
 /// Spawn argument of the helper task 0x31 the room's event task starts.
 extern RoomFadeStorage gRoomEventFade;
@@ -107,7 +107,7 @@ extern RoomFadeStorage gRoomEventFade;
 /// The message and event the message handler latched for the room's event
 /// task.
 static RoomEventMsg            _gRoomEventStagedMsg;
-extern RoomLatchedEventStorage gRoomEventLatched;
+extern RoomLatchedEventStorage gRoomEventLatchedStorage;
 
 static RoomEventStartStorage _gMainStreetStagedSceneStartStorage;
 
@@ -1464,7 +1464,7 @@ static RoomEventStartStorage _gMainStreetStagedSceneStartStorage = { 0 };
 /// Keep this room loaded and the snapshot unchanged until that task finishes.
 static RoomEventMsg _gRoomEventMsg = { 0 };
 
-RoomEventActiveBytes gRoomEventActive = { 0, { 3, 190, 28 } };
+RoomEventActiveBytes gRoomEventActiveBytes = { 0, { 3, 190, 28 } };
 
 /// Retained, non-owning handle for the first-visit scene's player head aiming.
 ///
@@ -1474,7 +1474,7 @@ RoomEventActiveBytes gRoomEventActive = { 0, { 3, 190, 28 } };
 /// not clear this slot. Keep the room loaded while the task can be dispatched.
 static Task* _gDryfieldMainStreetPlayerHeadAimTask = NULL;
 
-RoomLatchedEventStorage gRoomEventLatched = { { 0 }, { 0 } };
+RoomLatchedEventStorage gRoomEventLatchedStorage = { { 0 }, { 0 } };
 
 RoomEventReq gRoomEventReq = { 0, 0, 0, 0, 0, 0 };
 

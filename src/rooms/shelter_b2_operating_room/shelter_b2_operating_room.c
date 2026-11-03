@@ -66,9 +66,9 @@
 #include "../../shared/effects/glow_draw.h"
 
 // The flag symbol carries seven unproven bytes after the flag.
-#define ROOM_EVENT_ACTIVE gRoomEventActive.eventStarted
+#define ROOM_EVENT_ACTIVE gRoomEventActiveStart.eventStarted
 // The request symbol carries twelve unproven bytes after the request.
-#define ROOM_EVENT_REQ gRoomEventReq.request
+#define ROOM_EVENT_REQ gRoomEventReqStorage.request
 /// Selects the gate's TU-local room-transition task descriptor.
 ///
 /// Addressable `TaskDesc` lvalue; see `room_events.h` for the spawn contract.
@@ -83,8 +83,8 @@ extern RoomFadeStorage gRoomEventFade;
 
 /// The request of the exit the gate last accepted, latched for
 /// the transition task, and the flag saying the gate spawned it.
-extern RoomEventStartStorage gRoomEventActive;
-extern RoomEventReqStorage   gRoomEventReq;
+extern RoomEventStartStorage gRoomEventActiveStart;
+extern RoomEventReqStorage   gRoomEventReqStorage;
 
 /// The message and event the message handler latched for the room's event
 /// task, and the flag saying the handler spawned it.
@@ -1095,7 +1095,7 @@ RoomFadeStorage gRoomEventFade = { 0 };
 /// Keep this room loaded and the snapshot unchanged until that task finishes.
 static RoomEventMsg _gRoomEventMsg = { 0 };
 
-RoomEventStartStorage gRoomEventActive = { 0 };
+RoomEventStartStorage gRoomEventActiveStart = { 0 };
 
 /// Destination snapshot retained from event acceptance through staged scene reload.
 ///
@@ -1112,7 +1112,7 @@ static RoomEventMsg _gRoomEventStagedMsg = { 0 };
 /// and their role and grouping are unproven.
 static RoomEventActiveBytes _gShelterB2OperatingRoomStagedEventStart = { 0, { 37, 9, 8 } };
 
-RoomEventReqStorage gRoomEventReq;
+RoomEventReqStorage gRoomEventReqStorage;
 
 RoomLatchedEvent gRoomEventLatched;
 

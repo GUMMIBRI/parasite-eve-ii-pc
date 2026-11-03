@@ -10,6 +10,8 @@ typedef struct PeDisc PeDisc;
 
 PeDisc* peDiscOpen(const char* cuePath);
 void    peDiscClose(PeDisc* disc);
+/* Supported USA release, verified by executable and PE_DISK marker. 0 if unknown. */
+int     peDiscNumber(PeDisc* disc);
 
 /* Reads the package chunk (LZSS room package, chunk type 0) of one CDF file and returns its decoded bytes
  * (malloc'd, caller frees). stage 0: `folder` is ignored and `file` is the full STAGE0 file id (e.g. 120300).

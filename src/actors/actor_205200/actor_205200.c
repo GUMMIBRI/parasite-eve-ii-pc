@@ -65,22 +65,22 @@
 #define SCREEN_WAVE_ACTIVE_CONTEXT (gScreenWaveContext)
 /// Writable column waves for the controller's horizontal screen pulses.
 ///
-/// Binds the grid renderer to `gScreenWaveColumnWaves`, the word-aligned
+/// Binds the grid renderer to `gActor205200ScreenWaveColumnWaves`, the word-aligned
 /// `ScreenWaveGridOscillator[10]` defined in actor_205200_2.c. Only entries
 /// 0..8 are seeded, advanced and snapshotted; entry 9 is outside the mesh.
 /// Keep the binding through the grid fragment and the overlay loaded through
 /// the wave's final drawing tick. Only one wave may use this storage at a time.
-#define SCREEN_WAVE_COLUMN_OSCILLATORS (gScreenWaveColumnWaves)
+#define SCREEN_WAVE_COLUMN_OSCILLATORS (gActor205200ScreenWaveColumnWaves)
 /// Writable row waves for the controller's vertical screen pulses.
 ///
-/// Binds the grid renderer to the overlay-private `gScreenWaveRowWaves`, a
+/// Binds the grid renderer to the overlay-private `gActor205200ScreenWaveRowWaves`, a
 /// word-aligned `ScreenWaveGridOscillator[30]` defined in actor_205200_2.c.
 /// Entries 0..29 control the horizontal mesh edges below the pinned top edge.
 /// Drawing ticks advance them only while actors run, then snapshot each
 /// phase/offset word; speed and the unknown tail stay in persistent storage.
 /// Keep this binding through the grid fragment and the overlay loaded through
 /// the final drawing tick. Only one wave may use this storage at a time.
-#define SCREEN_WAVE_ROW_OSCILLATORS (gScreenWaveRowWaves)
+#define SCREEN_WAVE_ROW_OSCILLATORS (gActor205200ScreenWaveRowWaves)
 #include "../../shared/screen/screen_wave.h"
 
 /// Room a controller is placed in, taken from its placement's `mode` and

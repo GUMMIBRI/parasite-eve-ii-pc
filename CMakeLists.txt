@@ -103,6 +103,16 @@ target_include_directories(task_message_test PRIVATE include include/decomp)
 target_compile_definitions(task_message_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(task_message_test PRIVATE psyz)
 
+add_executable(task_teardown_test EXCLUDE_FROM_ALL tests/task_teardown_test.c src/main/task.c)
+target_include_directories(task_teardown_test PRIVATE include include/decomp src/main)
+target_compile_definitions(task_teardown_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(task_teardown_test PRIVATE psyz)
+if(APPLE)
+    target_link_options(task_teardown_test PRIVATE -Wl,-dead_strip)
+else()
+    target_link_options(task_teardown_test PRIVATE -Wl,--gc-sections)
+endif()
+
 add_executable(cd_pump_test EXCLUDE_FROM_ALL tests/cd_pump_test.c)
 target_include_directories(cd_pump_test PRIVATE include include/decomp)
 target_compile_definitions(cd_pump_test PRIVATE __psyz SKIP_ASM)
@@ -160,6 +170,9 @@ else()
     target_link_options(observatory_scene_lifecycle_test PRIVATE -Wl,--gc-sections)
 endif()
 
+add_executable(raster_clock_test EXCLUDE_FROM_ALL tests/raster_clock_test.c)
+target_compile_definitions(raster_clock_test PRIVATE __psyz)
+target_link_libraries(raster_clock_test PRIVATE psyz)
 
 add_executable(gpu_tpage_test EXCLUDE_FROM_ALL tests/gpu_tpage_test.c)
 target_include_directories(gpu_tpage_test PRIVATE include include/decomp)
@@ -275,12 +288,22 @@ else()
     target_link_options(cap_room_command_test PRIVATE -Wl,--gc-sections)
 endif()
 
+add_executable(memory_card_test EXCLUDE_FROM_ALL tests/memory_card_test.c src/port/memory_card.c)
+target_include_directories(memory_card_test PRIVATE include)
+target_link_libraries(memory_card_test PRIVATE psyz)
 
 # Host tests: `cmake --build build --target host_tests && ctest --test-dir build`. They need no game data, except
 # the ones in PE_DATA_TESTS, which read extracted assets given on the command line and are left to local runs.
+add_executable(asset_disc_cache_test EXCLUDE_FROM_ALL tests/asset_disc_cache_test.c src/port/asset_loader.c)
+target_include_directories(asset_disc_cache_test PRIVATE include)
+add_executable(disc_identity_test EXCLUDE_FROM_ALL tests/disc_identity_test.c src/port/disc_assets.c)
+target_include_directories(disc_identity_test PRIVATE include)
+
 enable_testing()
 set(PE_DATA_TESTS cap_room_command_test rupert_eyes_test tmd_layout_assets_test text_palette_test
     observatory_scene_lifecycle_test action_trigger_test fountain_trigger_test)
+# raster_clock_test asserts the video backend honours VSync, which a headless runner does not.
+list(APPEND PE_DATA_TESTS raster_clock_test)
 get_property(_pe_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
 add_custom_target(host_tests)
 foreach(_t IN LISTS _pe_targets)

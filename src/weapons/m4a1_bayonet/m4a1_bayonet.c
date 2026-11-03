@@ -102,10 +102,15 @@ void m4a1BayonetTrailTask(Task* task)
 
                 // Only endpoint translations feed the ribbon; the temporary rotation is left uninitialized.
                 // The seed chains the second endpoint beneath the tip; recording uses the weapon parent.
-                // This retained one-past access reads the adjacent near-offset bytes in the image,
-                // but is outside the C array's bounds. A bounded pair still needs rematching.
+                // On the console the near offset follows the one-element tip array.
+                // Host globals need not be adjacent; address the actual near endpoint.
+#ifdef __psyz
+                offsetX                   = _gM4a1BayonetTrailNearOffset.vx;
+                nearOffset                = &_gM4a1BayonetTrailNearOffset;
+#else
                 offsetX                   = _gM4a1BayonetTrailTipOffset[1].vx;
                 nearOffset                = &_gM4a1BayonetTrailTipOffset[1];
+#endif
                 offsetY                   = nearOffset->vy;
                 offsetZ                   = nearOffset->vz;
                 nearEndpoint.parent       = tipCoord;

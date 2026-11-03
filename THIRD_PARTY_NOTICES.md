@@ -26,3 +26,9 @@ PsyZ builds on PSY-Q reimplementation work from [Xeeynamo/sotn-decomp](https://g
 
 *Parasite Eve II* was built with Sony's PSY-Q SDK. No PSY-Q library or header from the SDK is distributed here; the
 port uses PsyZ instead.
+
+## stb_truetype and IBM Plex Sans (host menu)
+
+`src/port/ui/stb_truetype.h` is Sean Barrett's stb_truetype (public domain). `src/port/ui/fonts/ibm_plex_sans.ttf.inc`
+embeds IBM Plex Sans under the SIL Open Font License 1.1; the licence text is `src/port/ui/fonts/OFL-IBMPlex.txt`. Both
+are used by the settings overlay, as in the first game's port.

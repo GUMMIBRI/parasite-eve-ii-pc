@@ -1522,9 +1522,9 @@ WorldCollisionSurfaceProperties* gNeoArkSubmarineTunnelSurfaceProperties[NEO_ARK
 
 ScreenWaveCtx* gScreenWaveContext = NULL;
 
-ScreenWaveOscillator gScreenWaveColumnWaves[13];
+ScreenWaveOscillator gNeoArkSubmarineTunnelScreenWaveColumnWaves[13];
 
-ScreenWaveOscillator gScreenWaveRowWaves[32];
+ScreenWaveOscillator gNeoArkSubmarineTunnelScreenWaveRowWaves[32];
 
 ScreenWaveCtx gScreenWaveSpawnCtx;
 

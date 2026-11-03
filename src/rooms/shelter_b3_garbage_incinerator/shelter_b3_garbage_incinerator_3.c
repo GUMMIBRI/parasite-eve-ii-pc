@@ -2510,9 +2510,9 @@ CapCaptionCaretDelayStorage CapCaption_Data_8015E66C = {
     { 196, 94, 51 },
 };
 
-ScreenWaveGridOscillator gScreenWaveColumnWaves[10];
+ScreenWaveGridOscillator gShelterB3GarbageIncineratorScreenWaveColumnWaves[10];
 
-ScreenWaveGridOscillator gScreenWaveRowWaves[30];
+ScreenWaveGridOscillator gShelterB3GarbageIncineratorScreenWaveRowWaves[30];
 
 POLY_FT4 gScreenWaveGrid[2][30][8];
 

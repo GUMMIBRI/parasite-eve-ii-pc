@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 enum { SECTOR_USER = 2048, SECTOR_RAW = 2352, MODE2_USER_OFFSET = 24 };
 
@@ -30,12 +31,15 @@ static int cueBinPath(const char* cue, char* out, size_t cap)
     char  line[1024];
     if (!f) return 0;
     while (fgets(line, sizeof line, f)) {
-        char* q = strchr(line, '"');
+        char* start = line;
+        while (isspace((unsigned char)*start)) start++;
+        char* q = strchr(start, '"');
         char* e = q ? strchr(q + 1, '"') : NULL;
-        if (strncmp(line, "FILE", 4) == 0 && q && e) {
+        if (strncmp(start, "FILE", 4) == 0 && q && e) {
             const char* slash = strrchr(cue, '/');
             size_t      dir = slash ? (size_t)(slash - cue + 1) : 0;
             *e = 0;
+            if (q[1] == '/' || q[1] == '\\' || (q[1] && q[2] == ':')) dir = 0;
             if (dir + strlen(q + 1) + 1 > cap) { fclose(f); return 0; }
             memcpy(out, cue, dir);
             strcpy(out + dir, q + 1);
@@ -56,7 +60,10 @@ static int isoFind(PeDisc* d, const char* name, uint32_t* lba, uint32_t* size)
     for (uint32_t s = 0; s * SECTOR_USER < rootSize; s++) {
         if (!readSector(d, rootLba + s, dir)) return 0;
         for (size_t o = 0; o < SECTOR_USER && dir[o];) {
-            size_t len = dir[o], nl = dir[o + 32];
+            size_t len = dir[o];
+            if (len < 34 || len > SECTOR_USER - o) return 0;
+            size_t nl = dir[o + 32];
+            if (nl > len - 33) return 0;
             char   n[64] = {0};
             if (nl < sizeof n) {
                 memcpy(n, dir + o + 33, nl);
@@ -89,9 +96,28 @@ PeDisc* peDiscOpen(const char* cuePath)
     }
     if (isoFind(d, "STAGE0.HED", &lba, &size)) {
         d->hed = malloc(4 * SECTOR_USER);
-        for (int i = 0; i < 4; i++) readSector(d, lba + i, d->hed + i * SECTOR_USER);
+        if (!d->hed) { peDiscClose(d); return NULL; }
+        for (int i = 0; i < 4; i++) {
+            if (!readSector(d, lba + i, d->hed + i * SECTOR_USER)) {
+                peDiscClose(d);
+                return NULL;
+            }
+        }
     }
     return d;
+}
+
+int peDiscNumber(PeDisc* d)
+{
+    uint32_t lba, size;
+    if (!d) return 0;
+    if (d->cdfStart[1] && d->cdfStart[2] &&
+        isoFind(d, "PE_DISK.01", &lba, &size) &&
+        isoFind(d, "SLUS_010.42", &lba, &size)) return 1;
+    if (d->cdfStart[4] && d->cdfStart[5] &&
+        isoFind(d, "PE_DISK.02", &lba, &size) &&
+        isoFind(d, "SLUS_010.55", &lba, &size)) return 2;
+    return 0;
 }
 
 void peDiscClose(PeDisc* d)
