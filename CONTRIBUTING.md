@@ -14,8 +14,8 @@ order for the linker) can be removed when the code is repaired.
   endianness. Host pointers use pointer types; never squeeze a pointer into a 32-bit field. Validate layouts against the
   serialized format (see [docs/SIZE_AUDIT.md](docs/SIZE_AUDIT.md)).
 - **Load data from the disc at run time**, not from build-time includes ([docs/RUNTIME_ASSETS.md](docs/RUNTIME_ASSETS.md)).
-  A converted array must hash identically to the embedded one: build with `-DPE_EMBED_ASSETS=ON` next to the normal
-  build and compare the `PE2_DUMP_ASSETS` dumps.
+  The game never carries disc data: it needs your discs to start. Compare `PE2_DUMP_ASSETS` dumps before and after a
+  change to see which arrays moved.
 - Assembly that does real work is translated to portable C, not replaced with a no-op stub.
 
 ## Workflow

@@ -18,9 +18,6 @@ target_link_libraries(game_main PUBLIC psyz)
 set(PE_PACKAGES
     src/title/title.c;src/mapui/map_dryfield/map_dryfield.c;src/mapui/map_dryfield_full/map_dryfield_full.c;src/mapui/map_neo_ark/map_neo_ark.c;src/mapui/map_shelter/map_shelter.c;src/options/options/options.c
     CACHE STRING "Overlay sources linked into the executable")
-if(PE_EMBED_ASSETS)
-    add_compile_definitions(PE_EMBED_ASSETS=1)
-endif()
 option(PE_ALL_VARIANTS "With PE_ALL_OVERLAYS, link every per-package variant too (experimental)" OFF)
 option(PE_ALL_OVERLAYS "Compile every overlay package that builds on the host (experimental; does not link)" OFF)
 if(PE_ALL_OVERLAYS)

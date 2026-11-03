@@ -67,7 +67,7 @@ and copy the result back (see [docs/PORT_PLAN.md](docs/PORT_PLAN.md)).
 | `PE2_FAST=1` | no frame limiter during movies |
 | `PE2_AUTOPRESS=<tick>` | scripted Start/Cross from that tick |
 | `PE2_PAD_REPLAY=<file>` / `PE2_PAD_RECORD=<file>` | replay or record input (see `tools/port/make_gallery_input.py`) |
-| `PE2_DUMP_ASSETS=<file>` | hash every runtime-loaded array (compare with `-DPE_EMBED_ASSETS=ON`) |
+| `PE2_DUMP_ASSETS=<file>` | write one hash per array loaded from the disc (to compare two builds or two discs) |
 
 ## How it is built
 
