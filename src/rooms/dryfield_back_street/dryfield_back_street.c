@@ -128,43 +128,19 @@ DirectionWarpEntry gDryfieldBackStreetWarpEntries[4] = {
 };
 
 /// Room-space collision normals, with 4096 for unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldBackStreetCollisionGridNormals[23] = {
-#include "assets/dryfield_back_street_collision_02CC4_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldBackStreetCollisionGridNormals[23];
-#endif
 PE_ASSET_BIND("dryfield_back_street_collision_02CC4_normals", _gDryfieldBackStreetCollisionGridNormals);
 
 /// Room-space mesh vertices in signed integer game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldBackStreetCollisionGridVerts[88] = {
-#include "assets/dryfield_back_street_collision_02CC4_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldBackStreetCollisionGridVerts[88];
-#endif
 PE_ASSET_BIND("dryfield_back_street_collision_02CC4_verts", _gDryfieldBackStreetCollisionGridVerts);
 
 /// Indexed collision quads using room-local surface classes 0..2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldBackStreetCollisionGridFaces[39] = {
-#include "assets/dryfield_back_street_collision_02CC4_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldBackStreetCollisionGridFaces[39];
-#endif
 PE_ASSET_BIND("dryfield_back_street_collision_02CC4_faces", _gDryfieldBackStreetCollisionGridFaces);
 
 /// Packed signed face-index lists for the 28 grid cells, each terminated by -1.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldBackStreetCollisionGridCells[266] = {
-#include "assets/dryfield_back_street_collision_02CC4_cells.inc"
-};
-#else
 static s16 _gDryfieldBackStreetCollisionGridCells[266];
-#endif
 PE_ASSET_BIND("dryfield_back_street_collision_02CC4_cells", _gDryfieldBackStreetCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -180,13 +156,7 @@ PE_ASSET_BIND("dryfield_back_street_collision_02CC4_cells", _gDryfieldBackStreet
 #define DRYFIELD_BACK_STREET_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldBackStreetCollisionGridCells[(halfwordOffset)])
 
 /// X-major cell pointers into the face-list pool for the 7 by 4 grid.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldBackStreetCollisionGridTable[28] = {
-#include "assets/dryfield_back_street_collision_02CC4_table.inc"
-};
-#else
 static s16* _gDryfieldBackStreetCollisionGridTable[28];
-#endif
 PE_ASSET_BIND_AUX("dryfield_back_street_collision_02CC4_table", _gDryfieldBackStreetCollisionGridTable, _gDryfieldBackStreetCollisionGridCells);
 #undef DRYFIELD_BACK_STREET_CELL_FACE_LIST_AT_OFFSET
 

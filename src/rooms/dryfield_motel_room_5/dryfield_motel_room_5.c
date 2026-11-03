@@ -92,46 +92,22 @@ DirectionWarpEntry gDryfieldMotelRoom5WarpEntries[1] = {
 };
 
 /// Grid-local unit normals, with 4096 units per unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMotelRoom5CollisionGridNormals[12] = {
-#include "assets/dryfield_motel_room_5_collision_006DC_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldMotelRoom5CollisionGridNormals[12];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_5_collision_006DC_normals", _gDryfieldMotelRoom5CollisionGridNormals);
 
 /// Collision-mesh vertices in signed grid-local world units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMotelRoom5CollisionGridVerts[85] = {
-#include "assets/dryfield_motel_room_5_collision_006DC_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldMotelRoom5CollisionGridVerts[85];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_5_collision_006DC_verts", _gDryfieldMotelRoom5CollisionGridVerts);
 
 /// Room triangles/quads, indexing the vertex/normal pools and surface classes 0..2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldMotelRoom5CollisionGridFaces[38] = {
-#include "assets/dryfield_motel_room_5_collision_006DC_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldMotelRoom5CollisionGridFaces[38];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_5_collision_006DC_faces", _gDryfieldMotelRoom5CollisionGridFaces);
 
 /// Four terminated face-index lists and the asset's retained final halfword.
 ///
 /// Lists begin at elements 0, 30, 52 and 60 and end at 29, 50, 59 and 66.
 /// Element 51 is outside those scans; element 67 is retained from the asset.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldMotelRoom5CollisionGridCells[68] = {
-#include "assets/dryfield_motel_room_5_collision_006DC_cells.inc"
-};
-#else
 static s16 _gDryfieldMotelRoom5CollisionGridCells[68];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_5_collision_006DC_cells", _gDryfieldMotelRoom5CollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -147,13 +123,7 @@ PE_ASSET_BIND("dryfield_motel_room_5_collision_006DC_cells", _gDryfieldMotelRoom
 #define DRYFIELD_MOTEL_ROOM_5_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldMotelRoom5CollisionGridCells[(halfwordOffset)])
 
 /// X-major 2-by-2 table borrowing the grid's terminated face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldMotelRoom5CollisionGridTable[4] = {
-#include "assets/dryfield_motel_room_5_collision_006DC_table.inc"
-};
-#else
 static s16* _gDryfieldMotelRoom5CollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("dryfield_motel_room_5_collision_006DC_table", _gDryfieldMotelRoom5CollisionGridTable, _gDryfieldMotelRoom5CollisionGridCells);
 #undef DRYFIELD_MOTEL_ROOM_5_CELL_FACE_LIST_AT_OFFSET
 

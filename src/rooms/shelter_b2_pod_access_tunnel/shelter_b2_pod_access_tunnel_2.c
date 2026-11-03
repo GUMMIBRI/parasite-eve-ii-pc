@@ -298,43 +298,19 @@ DirectionWarpEntry gShelterB2PodAccessTunnelWarpEntries[3] = {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB2PodAccessTunnelCollisionGridNormals[5] = {
-#include "assets/shelter_b2_pod_access_tunnel_collision_06BF4_normals.inc"
-};
-#else
 static SVECTOR _gShelterB2PodAccessTunnelCollisionGridNormals[5];
-#endif
 PE_ASSET_BIND("shelter_b2_pod_access_tunnel_collision_06BF4_normals", _gShelterB2PodAccessTunnelCollisionGridNormals);
 
 /// Room-space collision vertices in signed game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB2PodAccessTunnelCollisionGridVerts[40] = {
-#include "assets/shelter_b2_pod_access_tunnel_collision_06BF4_verts.inc"
-};
-#else
 static SVECTOR _gShelterB2PodAccessTunnelCollisionGridVerts[40];
-#endif
 PE_ASSET_BIND("shelter_b2_pod_access_tunnel_collision_06BF4_verts", _gShelterB2PodAccessTunnelCollisionGridVerts);
 
 /// Seventeen collision faces indexing the grid's vertex and normal pools.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB2PodAccessTunnelCollisionGridFaces[17] = {
-#include "assets/shelter_b2_pod_access_tunnel_collision_06BF4_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB2PodAccessTunnelCollisionGridFaces[17];
-#endif
 PE_ASSET_BIND("shelter_b2_pod_access_tunnel_collision_06BF4_faces", _gShelterB2PodAccessTunnelCollisionGridFaces);
 
 /// Face-index lists for the six grid cells, each terminated by -1.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB2PodAccessTunnelCollisionGridCells[72] = {
-#include "assets/shelter_b2_pod_access_tunnel_collision_06BF4_cells.inc"
-};
-#else
 static s16 _gShelterB2PodAccessTunnelCollisionGridCells[72];
-#endif
 PE_ASSET_BIND("shelter_b2_pod_access_tunnel_collision_06BF4_cells", _gShelterB2PodAccessTunnelCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
@@ -346,13 +322,7 @@ PE_ASSET_BIND("shelter_b2_pod_access_tunnel_collision_06BF4_cells", _gShelterB2P
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B2_POD_ACCESS_TUNNEL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB2PodAccessTunnelCollisionGridCells[(halfwordOffset)])
 /// X-major 2-by-3 directory into the collision grid's face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB2PodAccessTunnelCollisionGridTable[6] = {
-#include "assets/shelter_b2_pod_access_tunnel_collision_06BF4_table.inc"
-};
-#else
 static s16* _gShelterB2PodAccessTunnelCollisionGridTable[6];
-#endif
 PE_ASSET_BIND_AUX("shelter_b2_pod_access_tunnel_collision_06BF4_table", _gShelterB2PodAccessTunnelCollisionGridTable, _gShelterB2PodAccessTunnelCollisionGridCells);
 #undef SHELTER_B2_POD_ACCESS_TUNNEL_CELL_FACE_LIST_AT_OFFSET
 

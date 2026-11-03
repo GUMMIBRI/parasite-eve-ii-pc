@@ -119,45 +119,21 @@ DirectionWarpEntry gShelter1fGuardroomWarpEntries[1] = {
 };
 
 /// Collision-grid normals in room space, with `ONE` per unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelter1fGuardroomCollisionGridNormals[] = {
-#include "assets/shelter_1f_guardroom_collision_00630_normals.inc"
-};
-#else
 static SVECTOR _gShelter1fGuardroomCollisionGridNormals[7];
-#endif
 PE_ASSET_BIND("shelter_1f_guardroom_collision_00630_normals", _gShelter1fGuardroomCollisionGridNormals);
 
 /// Collision-grid vertices in signed room-space game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelter1fGuardroomCollisionGridVerts[] = {
-#include "assets/shelter_1f_guardroom_collision_00630_verts.inc"
-};
-#else
 static SVECTOR _gShelter1fGuardroomCollisionGridVerts[14];
-#endif
 PE_ASSET_BIND("shelter_1f_guardroom_collision_00630_verts", _gShelter1fGuardroomCollisionGridVerts);
 
 /// Eight indexed grid quads: class 1 floor, class 0 walls and ceiling.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelter1fGuardroomCollisionGridFaces[] = {
-#include "assets/shelter_1f_guardroom_collision_00630_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelter1fGuardroomCollisionGridFaces[8];
-#endif
 PE_ASSET_BIND("shelter_1f_guardroom_collision_00630_faces", _gShelter1fGuardroomCollisionGridFaces);
 
 /// Serialized cell-list words; the live list names faces 0..7 and ends at -1.
 ///
 /// The asset retains one further zero word beyond the terminated list.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelter1fGuardroomCollisionGridCells[] = {
-#include "assets/shelter_1f_guardroom_collision_00630_cells.inc"
-};
-#else
 static s16 _gShelter1fGuardroomCollisionGridCells[10];
-#endif
 PE_ASSET_BIND("shelter_1f_guardroom_collision_00630_cells", _gShelter1fGuardroomCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -170,13 +146,7 @@ PE_ASSET_BIND("shelter_1f_guardroom_collision_00630_cells", _gShelter1fGuardroom
 /// The binding is undefined immediately after that include.
 #define SHELTER_1F_GUARDROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelter1fGuardroomCollisionGridCells[(halfwordOffset)])
 /// The grid's single XZ cell, referencing its terminated face-index list.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelter1fGuardroomCollisionGridTable[] = {
-#include "assets/shelter_1f_guardroom_collision_00630_table.inc"
-};
-#else
 static s16* _gShelter1fGuardroomCollisionGridTable[1];
-#endif
 PE_ASSET_BIND_AUX("shelter_1f_guardroom_collision_00630_table", _gShelter1fGuardroomCollisionGridTable, _gShelter1fGuardroomCollisionGridCells);
 #undef SHELTER_1F_GUARDROOM_CELL_FACE_LIST_AT_OFFSET
 

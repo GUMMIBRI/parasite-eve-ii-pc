@@ -113,45 +113,21 @@ DirectionWarpEntry gDryfieldSouvenirShopWarpEntries[1] = {
 };
 
 /// Unit-length collision normals in room space, with ONE (4096) per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldSouvenirShopCollisionGridNormals[11] = {
-#include "assets/dryfield_souvenir_shop_collision_0101C_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldSouvenirShopCollisionGridNormals[11];
-#endif
 PE_ASSET_BIND("dryfield_souvenir_shop_collision_0101C_normals", _gDryfieldSouvenirShopCollisionGridNormals);
 
 /// Collision-mesh vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldSouvenirShopCollisionGridVerts[62] = {
-#include "assets/dryfield_souvenir_shop_collision_0101C_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldSouvenirShopCollisionGridVerts[62];
-#endif
 PE_ASSET_BIND("dryfield_souvenir_shop_collision_0101C_verts", _gDryfieldSouvenirShopCollisionGridVerts);
 
 /// Indexed collision triangles and quads using room-local surface classes 0..2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldSouvenirShopCollisionGridFaces[34] = {
-#include "assets/dryfield_souvenir_shop_collision_0101C_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldSouvenirShopCollisionGridFaces[34];
-#endif
 PE_ASSET_BIND("dryfield_souvenir_shop_collision_0101C_faces", _gDryfieldSouvenirShopCollisionGridFaces);
 
 /// Face-index lists for the four XZ cells, each ending with WORLD_COLLISION_GRID_CELL_END.
 ///
 /// The serialized pool retains two zero entries outside the selected lists.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldSouvenirShopCollisionGridCells[108] = {
-#include "assets/dryfield_souvenir_shop_collision_0101C_cells.inc"
-};
-#else
 static s16 _gDryfieldSouvenirShopCollisionGridCells[108];
-#endif
 PE_ASSET_BIND("dryfield_souvenir_shop_collision_0101C_cells", _gDryfieldSouvenirShopCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -163,13 +139,7 @@ PE_ASSET_BIND("dryfield_souvenir_shop_collision_0101C_cells", _gDryfieldSouvenir
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_SOUVENIR_SHOP_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldSouvenirShopCollisionGridCells[(halfwordOffset)])
 /// X-major 2-by-2 directory of face-index lists within the collision-cell pool.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldSouvenirShopCollisionGridTable[4] = {
-#include "assets/dryfield_souvenir_shop_collision_0101C_table.inc"
-};
-#else
 static s16* _gDryfieldSouvenirShopCollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("dryfield_souvenir_shop_collision_0101C_table", _gDryfieldSouvenirShopCollisionGridTable, _gDryfieldSouvenirShopCollisionGridCells);
 #undef DRYFIELD_SOUVENIR_SHOP_CELL_FACE_LIST_AT_OFFSET
 

@@ -147,45 +147,21 @@ DirectionWarpEntry gNeoArkSouthPromenadeWarpEntries[2] = {
 };
 
 /// Room-space face normals for the promenade collision grid, with ONE per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkSouthPromenadeCollisionGridNormals[] = {
-#include "assets/neo_ark_south_promenade_collision_027CC_normals.inc"
-};
-#else
 static SVECTOR _gNeoArkSouthPromenadeCollisionGridNormals[13];
-#endif
 PE_ASSET_BIND("neo_ark_south_promenade_collision_027CC_normals", _gNeoArkSouthPromenadeCollisionGridNormals);
 
 /// Room-space collision vertices in signed game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkSouthPromenadeCollisionGridVerts[] = {
-#include "assets/neo_ark_south_promenade_collision_027CC_verts.inc"
-};
-#else
 static SVECTOR _gNeoArkSouthPromenadeCollisionGridVerts[81];
-#endif
 PE_ASSET_BIND("neo_ark_south_promenade_collision_027CC_verts", _gNeoArkSouthPromenadeCollisionGridVerts);
 
 /// Indexed collision quads selecting the room's surface classes 0, 1 and 2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gNeoArkSouthPromenadeCollisionGridFaces[] = {
-#include "assets/neo_ark_south_promenade_collision_027CC_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gNeoArkSouthPromenadeCollisionGridFaces[35];
-#endif
 PE_ASSET_BIND("neo_ark_south_promenade_collision_027CC_faces", _gNeoArkSouthPromenadeCollisionGridFaces);
 
 /// Serialized signed face-index lists ending at WORLD_COLLISION_GRID_CELL_END.
 ///
 /// Retained words between lists remain outside the lists selected by the cell table.
-#ifdef PE_EMBED_ASSETS
-static s16 _gNeoArkSouthPromenadeCollisionGridCells[] = {
-#include "assets/neo_ark_south_promenade_collision_027CC_cells.inc"
-};
-#else
 static s16 _gNeoArkSouthPromenadeCollisionGridCells[158];
-#endif
 PE_ASSET_BIND("neo_ark_south_promenade_collision_027CC_cells", _gNeoArkSouthPromenadeCollisionGridCells);
 
 /// XZ dimensions of the collision asset's X-major cell table.
@@ -205,13 +181,7 @@ enum {
 /// The binding is undefined immediately after that include.
 #define NEO_ARK_SOUTH_PROMENADE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkSouthPromenadeCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory; NULL entries are empty cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gNeoArkSouthPromenadeCollisionGridTable[] = {
-#include "assets/neo_ark_south_promenade_collision_027CC_table.inc"
-};
-#else
 static s16* _gNeoArkSouthPromenadeCollisionGridTable[16];
-#endif
 PE_ASSET_BIND_AUX("neo_ark_south_promenade_collision_027CC_table", _gNeoArkSouthPromenadeCollisionGridTable, _gNeoArkSouthPromenadeCollisionGridCells);
 #undef NEO_ARK_SOUTH_PROMENADE_CELL_FACE_LIST_AT_OFFSET
 

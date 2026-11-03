@@ -7,13 +7,7 @@
 /// The 32 `u32` words hold 64 VRAM colors uploaded at (256,243), yielding
 /// CLUTs 0x3CD0..0x3CD3. These retain a nontransparent glyph-cell background;
 /// the separate glyph palette row supplies transparent cell padding.
-#ifdef PE_EMBED_ASSETS
-_Alignas(u_long) static u32 _gTextFontPaletteWords[] = {
-#include "assets/text_clut0.inc"
-};
-#else
 _Alignas(u_long) static u32 _gTextFontPaletteWords[32];
-#endif
 PE_ASSET_BIND("text_clut0", _gTextFontPaletteWords);
 STATIC_ASSERT_SIZEOF(_gTextFontPaletteWords, 32 * sizeof(u32));
 
@@ -37,13 +31,7 @@ static GpuImageUpload _gTextFontPaletteUploadList[2] = {
 /// translucent-text outline, then ordinary/standalone outline. The live upload
 /// at (976,511) yields CLUTs 0x7FFD, 0x7FFE and 0x7FFF. Fill indices 0..10
 /// are transparent, including the font texture's cell-padding index 5.
-#ifdef PE_EMBED_ASSETS
-_Alignas(u_long) static u32 _gTextGlyphPaletteWords[] = {
-#include "assets/ui/font/glyph_palettes.inc"
-};
-#else
 _Alignas(u_long) static u32 _gTextGlyphPaletteWords[24];
-#endif
 PE_ASSET_BIND("ui/font/glyph_palettes", _gTextGlyphPaletteWords);
 STATIC_ASSERT_SIZEOF(_gTextGlyphPaletteWords, 24 * sizeof(u32));
 

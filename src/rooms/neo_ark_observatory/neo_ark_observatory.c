@@ -152,40 +152,16 @@ enum {
 /// room overlay must remain live until the departure task completes.
 static TaskDesc _gNeoArkObservatoryDepartureTaskDesc = { { { TASK_BODY_NONE, TASK_PRIORITY_SCENE } }, roomEventDepartureTask, { .value = 0 } };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gNeoArkObservatoryAnimation03BC4Bank1[6] = {
-#include "assets/neo_ark_observatory_animation_03BC4_bank1.inc"
-};
-#else
 static AnimationPackedPose _gNeoArkObservatoryAnimation03BC4Bank1[6];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_animation_03BC4_bank1", _gNeoArkObservatoryAnimation03BC4Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gNeoArkObservatoryAnimation03BC4Bank4[64] = {
-#include "assets/neo_ark_observatory_animation_03BC4_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gNeoArkObservatoryAnimation03BC4Bank4[64];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_animation_03BC4_bank4", _gNeoArkObservatoryAnimation03BC4Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gNeoArkObservatoryAnimation03BC4Records[141] = {
-#include "assets/neo_ark_observatory_animation_03BC4_records.inc"
-};
-#else
 static AnimationRecord _gNeoArkObservatoryAnimation03BC4Records[141];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_animation_03BC4_records", _gNeoArkObservatoryAnimation03BC4Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gNeoArkObservatoryAnimation03BC4Indices[20] = {
-#include "assets/neo_ark_observatory_animation_03BC4_indices.inc"
-};
-#else
 static u16 _gNeoArkObservatoryAnimation03BC4Indices[20];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_animation_03BC4_indices", _gNeoArkObservatoryAnimation03BC4Indices);
 
 static AnimationSet _gNeoArkObservatoryAnimation03BC4 = {
@@ -276,43 +252,19 @@ static EvsCommand _gNeoArkObservatorySceneSkipScript[7] = {
 static SVECTOR _gNeoArkObservatoryCompanionObstacleOffset = { 0, 0, -200, 0 };
 
 /// Four model-local obstacle normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkObservatoryCompanionObstacleTemplateNormals[4] = {
-#include "assets/neo_ark_observatory_collision_03E50_normals.inc"
-};
-#else
 static SVECTOR _gNeoArkObservatoryCompanionObstacleTemplateNormals[4];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_collision_03E50_normals", _gNeoArkObservatoryCompanionObstacleTemplateNormals);
 
 /// Eight model-local obstacle corners in signed game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkObservatoryCompanionObstacleTemplateVerts[8] = {
-#include "assets/neo_ark_observatory_collision_03E50_verts.inc"
-};
-#else
 static SVECTOR _gNeoArkObservatoryCompanionObstacleTemplateVerts[8];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_collision_03E50_verts", _gNeoArkObservatoryCompanionObstacleTemplateVerts);
 
 /// Four side quads using vertices 0..7, normals 0..3 and room surface class 0.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gNeoArkObservatoryCompanionObstacleTemplateFaces[4] = {
-#include "assets/neo_ark_observatory_collision_03E50_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gNeoArkObservatoryCompanionObstacleTemplateFaces[4];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_collision_03E50_faces", _gNeoArkObservatoryCompanionObstacleTemplateFaces);
 
 /// Single-cell face list (0..3, END) and the final retained zero halfword.
-#ifdef PE_EMBED_ASSETS
-static s16 _gNeoArkObservatoryCompanionObstacleTemplateCells[6] = {
-#include "assets/neo_ark_observatory_collision_03E50_cells.inc"
-};
-#else
 static s16 _gNeoArkObservatoryCompanionObstacleTemplateCells[6];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_collision_03E50_cells", _gNeoArkObservatoryCompanionObstacleTemplateCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -325,13 +277,7 @@ PE_ASSET_BIND("neo_ark_observatory_collision_03E50_cells", _gNeoArkObservatoryCo
 /// binding through the table include, then undefine it.
 #define NEO_ARK_OBSERVATORY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkObservatoryCompanionObstacleTemplateCells[(halfwordOffset)])
 /// One-cell directory retained with the obstacle template; the rebuild uses only its mesh.
-#ifdef PE_EMBED_ASSETS
-static s16* _gNeoArkObservatoryCompanionObstacleTemplateTable[1] = {
-#include "assets/neo_ark_observatory_collision_03E50_table.inc"
-};
-#else
 static s16* _gNeoArkObservatoryCompanionObstacleTemplateTable[1];
-#endif
 PE_ASSET_BIND_AUX("neo_ark_observatory_collision_03E50_table", _gNeoArkObservatoryCompanionObstacleTemplateTable, _gNeoArkObservatoryCompanionObstacleTemplateCells);
 #undef NEO_ARK_OBSERVATORY_CELL_FACE_LIST_AT_OFFSET
 
@@ -463,43 +409,19 @@ enum { NEO_ARK_OBSERVATORY_COLLISION_CELLS_X = 4,
        NEO_ARK_OBSERVATORY_COLLISION_CELLS_Z = 5 };
 
 /// Room-space collision normals; the first four are rebuilt for the companion obstacle.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkObservatoryCollisionGridNormals[26] = {
-#include "assets/neo_ark_observatory_collision_049E4_normals.inc"
-};
-#else
 static SVECTOR _gNeoArkObservatoryCollisionGridNormals[26];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_collision_049E4_normals", _gNeoArkObservatoryCollisionGridNormals);
 
 /// Room-space collision vertices; the first eight are rebuilt for the companion obstacle.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkObservatoryCollisionGridVerts[106] = {
-#include "assets/neo_ark_observatory_collision_049E4_verts.inc"
-};
-#else
 static SVECTOR _gNeoArkObservatoryCollisionGridVerts[106];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_collision_049E4_verts", _gNeoArkObservatoryCollisionGridVerts);
 
 /// Indexed room collision faces, with four leading slots reserved for the companion obstacle.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gNeoArkObservatoryCollisionGridFaces[48] = {
-#include "assets/neo_ark_observatory_collision_049E4_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gNeoArkObservatoryCollisionGridFaces[48];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_collision_049E4_faces", _gNeoArkObservatoryCollisionGridFaces);
 
 /// Serialized face-index lists, each terminated by `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gNeoArkObservatoryCollisionGridCells[306] = {
-#include "assets/neo_ark_observatory_collision_049E4_cells.inc"
-};
-#else
 static s16 _gNeoArkObservatoryCollisionGridCells[306];
-#endif
 PE_ASSET_BIND("neo_ark_observatory_collision_049E4_cells", _gNeoArkObservatoryCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -512,13 +434,7 @@ PE_ASSET_BIND("neo_ark_observatory_collision_049E4_cells", _gNeoArkObservatoryCo
 /// binding through the table include, then undefine it.
 #define NEO_ARK_OBSERVATORY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkObservatoryCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory; every cell includes the four companion-obstacle face slots.
-#ifdef PE_EMBED_ASSETS
-static s16* _gNeoArkObservatoryCollisionGridTable[NEO_ARK_OBSERVATORY_COLLISION_CELLS_X * NEO_ARK_OBSERVATORY_COLLISION_CELLS_Z] = {
-#include "assets/neo_ark_observatory_collision_049E4_table.inc"
-};
-#else
 static s16* _gNeoArkObservatoryCollisionGridTable[20];
-#endif
 PE_ASSET_BIND_AUX("neo_ark_observatory_collision_049E4_table", _gNeoArkObservatoryCollisionGridTable, _gNeoArkObservatoryCollisionGridCells);
 #undef NEO_ARK_OBSERVATORY_CELL_FACE_LIST_AT_OFFSET
 

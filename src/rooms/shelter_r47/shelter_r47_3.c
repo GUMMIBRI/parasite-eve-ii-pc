@@ -332,41 +332,17 @@ AreaVariant gShelterR47AreaVariants[12] = {
     [2] = { .placements = _gShelterR47Variant2Placements, .resources = _gShelterR47Variant2Resources },
 };
 
-#ifdef PE_EMBED_ASSETS
-SVECTOR gShelterR47CollisionGridNormals[13] = {
-#include "assets/shelter_r47_collision_0ACCC_normals.inc"
-};
-#else
 SVECTOR gShelterR47CollisionGridNormals[13];
-#endif
 PE_ASSET_BIND("shelter_r47_collision_0ACCC_normals", gShelterR47CollisionGridNormals);
 
-#ifdef PE_EMBED_ASSETS
-SVECTOR gShelterR47CollisionGridVerts[66] = {
-#include "assets/shelter_r47_collision_0ACCC_verts.inc"
-};
-#else
 SVECTOR gShelterR47CollisionGridVerts[66];
-#endif
 PE_ASSET_BIND("shelter_r47_collision_0ACCC_verts", gShelterR47CollisionGridVerts);
 
-#ifdef PE_EMBED_ASSETS
-WorldCollisionGridFace gShelterR47CollisionGridFaces[30] = {
-#include "assets/shelter_r47_collision_0ACCC_faces.inc"
-};
-#else
 WorldCollisionGridFace gShelterR47CollisionGridFaces[30];
-#endif
 PE_ASSET_BIND("shelter_r47_collision_0ACCC_faces", gShelterR47CollisionGridFaces);
 
 /// Concatenated cell face-index lists; each nonempty list ends with -1.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterR47CollisionGridCells[172] = {
-#include "assets/shelter_r47_collision_0ACCC_cells.inc"
-};
-#else
 static s16 _gShelterR47CollisionGridCells[172];
-#endif
 PE_ASSET_BIND("shelter_r47_collision_0ACCC_cells", _gShelterR47CollisionGridCells);
 
 /// Address of a cell's first face ID in the room's packed face-list pool.
@@ -378,13 +354,7 @@ PE_ASSET_BIND("shelter_r47_collision_0ACCC_cells", _gShelterR47CollisionGridCell
 /// its collisionSource manifest entry selects this identifier for generation.
 #define SHELTER_R47_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterR47CollisionGridCells[(halfwordOffset)])
 /// X-major pointers for the grid's 5-by-3 cells; NULL entries are empty.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterR47CollisionGridTable[15] = {
-#include "assets/shelter_r47_collision_0ACCC_table.inc"
-};
-#else
 static s16* _gShelterR47CollisionGridTable[15];
-#endif
 PE_ASSET_BIND_AUX("shelter_r47_collision_0ACCC_table", _gShelterR47CollisionGridTable, _gShelterR47CollisionGridCells);
 #undef SHELTER_R47_CELL_FACE_LIST_AT_OFFSET
 

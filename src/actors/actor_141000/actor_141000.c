@@ -221,26 +221,14 @@ static void         _actor141000EveWalkerTask(Task* task);
 ///
 /// Paired by index with `_gActor141000FlightPositions`; completed flight holds
 /// frame 89. Kept writable for the SDK's non-const `RotMatrix` interface.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gActor141000FlightRotations[90] = {
-#include "assets/rooms/shelter/b1_pod_access_tunnel/flame_rotation_track.inc"
-};
-#else
 static SVECTOR _gActor141000FlightRotations[90];
-#endif
 PE_ASSET_BIND("rooms/shelter/b1_pod_access_tunnel/flame_rotation_track", _gActor141000FlightRotations);
 
 /// Recorded flight XYZ for frames 0..89, in integer root-parent coordinates.
 ///
 /// Paired with `_gActor141000FlightRotations`; applying a frame subtracts 40
 /// from its X. The fourth halfword is unused.
-#ifdef PE_EMBED_ASSETS
-static const SVECTOR _gActor141000FlightPositions[ARRAY_SIZE(_gActor141000FlightRotations)] SECTION(".data") = {
-#include "assets/rooms/shelter/b1_pod_access_tunnel/flame_position_track.inc"
-};
-#else
 static SVECTOR _gActor141000FlightPositions[ARRAY_SIZE(_gActor141000FlightRotations)] SECTION(".data");
-#endif
 PE_ASSET_BIND("rooms/shelter/b1_pod_access_tunnel/flame_position_track", _gActor141000FlightPositions);
 
 /// Capped-beam topology: six lit-core quads followed by ten fading halo quads.
@@ -357,13 +345,7 @@ TaskDesc gActor141000FlightTasks[3] = {
 /// Open-eye 8bpp pixels: 50 texels by 20 rows, packed four texels per word.
 ///
 /// Borrowed by the corresponding upload list until GPU transfer completes.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor141000EveEyesOpenPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
-#include "assets/characters/eve/eyes_open.inc"
-};
-#else
 static u32 _gActor141000EveEyesOpenPixels[250];
-#endif
 PE_ASSET_BIND("characters/eve/eyes_open", _gActor141000EveEyesOpenPixels);
 
 /// Terminated open-eye upload, used by static-eye requests and blink completion.
@@ -380,13 +362,7 @@ static GpuImageUpload _gActor141000EveEyesOpenUploads[2] = {
 /// Half-open-eye 8bpp pixels: 50 texels by 20 rows, four texels per word.
 ///
 /// Borrowed through GPU completion during the middle step of a blink.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor141000EveEyesHalfOpenPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
-#include "assets/characters/eve/eyes_half_closed.inc"
-};
-#else
 static u32 _gActor141000EveEyesHalfOpenPixels[250];
-#endif
 PE_ASSET_BIND("characters/eve/eyes_half_closed", _gActor141000EveEyesHalfOpenPixels);
 
 /// Terminated half-open-eye upload for the middle step of a blink.
@@ -403,13 +379,7 @@ static GpuImageUpload _gActor141000EveEyesHalfOpenUploads[2] = {
 /// Closed-eye 8bpp pixels: 50 texels by 20 rows, four texels per word.
 ///
 /// Borrowed through GPU completion for static closed eyes and blink onset.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor141000EveEyesClosedPixels[ACTOR_141000_EYES_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
-#include "assets/characters/eve/eyes_closed.inc"
-};
-#else
 static u32 _gActor141000EveEyesClosedPixels[250];
-#endif
 PE_ASSET_BIND("characters/eve/eyes_closed", _gActor141000EveEyesClosedPixels);
 
 /// Terminated closed-eye upload for static closed eyes and the first blink step.
@@ -427,13 +397,7 @@ static GpuImageUpload _gActor141000EveEyesClosedUploads[2] = {
 ///
 /// The 140 words cover the normal mouth upload. Retained texture mode 2 requests
 /// 250 words from this base, reading 440 bytes beyond the payload into later data.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor141000EveMouthClosedPixels[ACTOR_141000_MOUTH_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
-#include "assets/characters/eve/mouth_closed.inc"
-};
-#else
 static u32 _gActor141000EveMouthClosedPixels[140];
-#endif
 PE_ASSET_BIND("characters/eve/mouth_closed", _gActor141000EveMouthClosedPixels);
 
 /// Terminated closed-mouth upload, normally placed in the 14-word-wide mouth rect.
@@ -452,13 +416,7 @@ static GpuImageUpload _gActor141000EveMouthClosedUploads[2] = {
 ///
 /// The 140 words cover the normal mouth upload. Retained texture mode 3 requests
 /// 250 words: 440 bytes beyond the payload, including 292 beyond this loaded image.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor141000EveMouthOpenPixels[ACTOR_141000_MOUTH_WIDTH_WORDS * ACTOR_141000_FACE_HEIGHT_ROWS / 2] = {
-#include "assets/characters/eve/mouth_open.inc"
-};
-#else
 static u32 _gActor141000EveMouthOpenPixels[140];
-#endif
 PE_ASSET_BIND("characters/eve/mouth_open", _gActor141000EveMouthOpenPixels);
 
 /// Terminated open-mouth upload, normally placed in the 14-word-wide mouth rect.

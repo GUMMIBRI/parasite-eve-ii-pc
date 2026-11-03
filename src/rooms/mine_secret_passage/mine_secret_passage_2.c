@@ -210,43 +210,19 @@ enum {
 };
 
 /// Room-space Q12 normals for the passage's collision mesh.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineSecretPassageCollisionGridNormals[21] = {
-#include "assets/mine_secret_passage_collision_04020_normals.inc"
-};
-#else
 static SVECTOR _gMineSecretPassageCollisionGridNormals[21];
-#endif
 PE_ASSET_BIND("mine_secret_passage_collision_04020_normals", _gMineSecretPassageCollisionGridNormals);
 
 /// Room-space vertices in game-coordinate units for the passage's collision mesh.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineSecretPassageCollisionGridVerts[66] = {
-#include "assets/mine_secret_passage_collision_04020_verts.inc"
-};
-#else
 static SVECTOR _gMineSecretPassageCollisionGridVerts[66];
-#endif
 PE_ASSET_BIND("mine_secret_passage_collision_04020_verts", _gMineSecretPassageCollisionGridVerts);
 
 /// Passage collision quads, indexing the vertex/normal pools and surface classes 0..3.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gMineSecretPassageCollisionGridFaces[27] = {
-#include "assets/mine_secret_passage_collision_04020_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gMineSecretPassageCollisionGridFaces[27];
-#endif
 PE_ASSET_BIND("mine_secret_passage_collision_04020_faces", _gMineSecretPassageCollisionGridFaces);
 
 /// Packed face-index lists, each ending at `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gMineSecretPassageCollisionGridCells[172] = {
-#include "assets/mine_secret_passage_collision_04020_cells.inc"
-};
-#else
 static s16 _gMineSecretPassageCollisionGridCells[172];
-#endif
 PE_ASSET_BIND("mine_secret_passage_collision_04020_cells", _gMineSecretPassageCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -259,13 +235,7 @@ PE_ASSET_BIND("mine_secret_passage_collision_04020_cells", _gMineSecretPassageCo
 /// binding through the table include, then undefine it.
 #define MINE_SECRET_PASSAGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineSecretPassageCollisionGridCells[(halfwordOffset)])
 /// X-major cell pointers: four Z cells per X row, each borrowing a terminated list.
-#ifdef PE_EMBED_ASSETS
-static s16* _gMineSecretPassageCollisionGridTable[MINE_SECRET_PASSAGE_COLLISION_CELL_COUNT_X * MINE_SECRET_PASSAGE_COLLISION_CELL_COUNT_Z] = {
-#include "assets/mine_secret_passage_collision_04020_table.inc"
-};
-#else
 static s16* _gMineSecretPassageCollisionGridTable[24];
-#endif
 PE_ASSET_BIND_AUX("mine_secret_passage_collision_04020_table", _gMineSecretPassageCollisionGridTable, _gMineSecretPassageCollisionGridCells);
 #undef MINE_SECRET_PASSAGE_CELL_FACE_LIST_AT_OFFSET
 

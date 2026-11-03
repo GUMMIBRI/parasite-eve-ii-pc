@@ -117,45 +117,21 @@ DirectionWarpEntry gDryfieldNightToiletWarpEntries[1] = {
 enum { DRYFIELD_NIGHT_TOILET_COLLISION_CELL_SIZE = 4000 };
 
 /// Room-space unit normals with 4096 representing one for the toilet mesh.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightToiletCollisionGridNormals[7] = {
-#include "assets/dryfield_night_toilet_collision_007C8_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightToiletCollisionGridNormals[7];
-#endif
 PE_ASSET_BIND("dryfield_night_toilet_collision_007C8_normals", _gDryfieldNightToiletCollisionGridNormals);
 
 /// Signed room-coordinate vertices in game units for the toilet mesh.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightToiletCollisionGridVerts[36] = {
-#include "assets/dryfield_night_toilet_collision_007C8_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightToiletCollisionGridVerts[36];
-#endif
 PE_ASSET_BIND("dryfield_night_toilet_collision_007C8_verts", _gDryfieldNightToiletCollisionGridVerts);
 
 /// Indexed quads and one triangle carrying surface classes 0..2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightToiletCollisionGridFaces[18] = {
-#include "assets/dryfield_night_toilet_collision_007C8_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightToiletCollisionGridFaces[18];
-#endif
 PE_ASSET_BIND("dryfield_night_toilet_collision_007C8_faces", _gDryfieldNightToiletCollisionGridFaces);
 
 /// Two face-index lists ending in `WORLD_COLLISION_GRID_CELL_END`.
 ///
 /// The zero between the lists is retained asset storage outside either list.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightToiletCollisionGridCells[36] = {
-#include "assets/dryfield_night_toilet_collision_007C8_cells.inc"
-};
-#else
 static s16 _gDryfieldNightToiletCollisionGridCells[36];
-#endif
 PE_ASSET_BIND("dryfield_night_toilet_collision_007C8_cells", _gDryfieldNightToiletCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -167,13 +143,7 @@ PE_ASSET_BIND("dryfield_night_toilet_collision_007C8_cells", _gDryfieldNightToil
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_TOILET_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightToiletCollisionGridCells[(halfwordOffset)])
 /// X-major cell-list directory for one X cell and two Z cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightToiletCollisionGridTable[2] = {
-#include "assets/dryfield_night_toilet_collision_007C8_table.inc"
-};
-#else
 static s16* _gDryfieldNightToiletCollisionGridTable[2];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_toilet_collision_007C8_table", _gDryfieldNightToiletCollisionGridTable, _gDryfieldNightToiletCollisionGridCells);
 #undef DRYFIELD_NIGHT_TOILET_CELL_FACE_LIST_AT_OFFSET
 

@@ -280,46 +280,22 @@ SVECTOR gNeoArkPavilionDiverSurfaceSpots[8] = {
 };
 
 /// Room-space normals for the pavilion collision grid, with 4096 per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkPavilionCollisionGridNormals[8] = {
-#include "assets/neo_ark_pavilion_collision_06C24_normals.inc"
-};
-#else
 static SVECTOR _gNeoArkPavilionCollisionGridNormals[8];
-#endif
 PE_ASSET_BIND("neo_ark_pavilion_collision_06C24_normals", _gNeoArkPavilionCollisionGridNormals);
 
 /// Signed room-coordinate vertices for the pavilion collision grid.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkPavilionCollisionGridVerts[102] = {
-#include "assets/neo_ark_pavilion_collision_06C24_verts.inc"
-};
-#else
 static SVECTOR _gNeoArkPavilionCollisionGridVerts[102];
-#endif
 PE_ASSET_BIND("neo_ark_pavilion_collision_06C24_verts", _gNeoArkPavilionCollisionGridVerts);
 
 /// Indexed pavilion collision quads using room-local surface classes 0, 1 and 4.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gNeoArkPavilionCollisionGridFaces[52] = {
-#include "assets/neo_ark_pavilion_collision_06C24_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gNeoArkPavilionCollisionGridFaces[52];
-#endif
 PE_ASSET_BIND("neo_ark_pavilion_collision_06C24_faces", _gNeoArkPavilionCollisionGridFaces);
 
 /// Face-index lists for the six pavilion cells, each ending with -1.
 ///
 /// The complete authored storage includes unreferenced zeros at entries 69,
 /// 97 and 155; these are outside the terminated lists.
-#ifdef PE_EMBED_ASSETS
-static s16 _gNeoArkPavilionCollisionGridCells[156] = {
-#include "assets/neo_ark_pavilion_collision_06C24_cells.inc"
-};
-#else
 static s16 _gNeoArkPavilionCollisionGridCells[156];
-#endif
 PE_ASSET_BIND("neo_ark_pavilion_collision_06C24_cells", _gNeoArkPavilionCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -332,13 +308,7 @@ PE_ASSET_BIND("neo_ark_pavilion_collision_06C24_cells", _gNeoArkPavilionCollisio
 /// binding through the table include, then undefine it.
 #define NEO_ARK_PAVILION_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkPavilionCollisionGridCells[(halfwordOffset)])
 /// X-major table of the grid's 3 by 2 cell lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gNeoArkPavilionCollisionGridTable[6] = {
-#include "assets/neo_ark_pavilion_collision_06C24_table.inc"
-};
-#else
 static s16* _gNeoArkPavilionCollisionGridTable[6];
-#endif
 PE_ASSET_BIND_AUX("neo_ark_pavilion_collision_06C24_table", _gNeoArkPavilionCollisionGridTable, _gNeoArkPavilionCollisionGridCells);
 #undef NEO_ARK_PAVILION_CELL_FACE_LIST_AT_OFFSET
 

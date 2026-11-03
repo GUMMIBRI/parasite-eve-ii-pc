@@ -135,40 +135,16 @@ DirectionWarpEntry gDryfieldMotelLobbyWarpEntries[1] = {
     },
 };
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMotelLobbyCollisionGridNormals[9] = {
-#include "assets/dryfield_motel_lobby_collision_02624_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldMotelLobbyCollisionGridNormals[9];
-#endif
 PE_ASSET_BIND("dryfield_motel_lobby_collision_02624_normals", _gDryfieldMotelLobbyCollisionGridNormals);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMotelLobbyCollisionGridVerts[42] = {
-#include "assets/dryfield_motel_lobby_collision_02624_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldMotelLobbyCollisionGridVerts[42];
-#endif
 PE_ASSET_BIND("dryfield_motel_lobby_collision_02624_verts", _gDryfieldMotelLobbyCollisionGridVerts);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldMotelLobbyCollisionGridFaces[25] = {
-#include "assets/dryfield_motel_lobby_collision_02624_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldMotelLobbyCollisionGridFaces[25];
-#endif
 PE_ASSET_BIND("dryfield_motel_lobby_collision_02624_faces", _gDryfieldMotelLobbyCollisionGridFaces);
 
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldMotelLobbyCollisionGridCells[64] = {
-#include "assets/dryfield_motel_lobby_collision_02624_cells.inc"
-};
-#else
 static s16 _gDryfieldMotelLobbyCollisionGridCells[64];
-#endif
 PE_ASSET_BIND("dryfield_motel_lobby_collision_02624_cells", _gDryfieldMotelLobbyCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -183,13 +159,7 @@ PE_ASSET_BIND("dryfield_motel_lobby_collision_02624_cells", _gDryfieldMotelLobby
 /// it is defined only around the table include.
 #define DRYFIELD_MOTEL_LOBBY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldMotelLobbyCollisionGridCells[(halfwordOffset)])
 
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldMotelLobbyCollisionGridTable[DRYFIELD_MOTEL_LOBBY_GRID_CELLS_X * DRYFIELD_MOTEL_LOBBY_GRID_CELLS_Z] = {
-#include "assets/dryfield_motel_lobby_collision_02624_table.inc"
-};
-#else
 static s16* _gDryfieldMotelLobbyCollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("dryfield_motel_lobby_collision_02624_table", _gDryfieldMotelLobbyCollisionGridTable, _gDryfieldMotelLobbyCollisionGridCells);
 #undef DRYFIELD_MOTEL_LOBBY_CELL_FACE_LIST_AT_OFFSET
 

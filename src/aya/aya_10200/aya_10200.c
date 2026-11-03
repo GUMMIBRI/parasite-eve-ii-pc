@@ -19,55 +19,25 @@ enum {
 /// Initial local transform and self-parented root for first-pair hand slot 0.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-#ifdef PE_EMBED_ASSETS
-static const TmdBone _gAya10200FirstPairHand0ModelSkeleton[1] SECTION(".data") = {
-#include "assets/aya_10200_model_0019C_skeleton.inc"
-};
-#else
 static TmdBone _gAya10200FirstPairHand0ModelSkeleton[1] SECTION(".data");
-#endif
 PE_ASSET_BIND("aya_10200_model_0019C_skeleton", _gAya10200FirstPairHand0ModelSkeleton);
 
 /// Vertex count of the hand's sole part: 23.
-#ifdef PE_EMBED_ASSETS
-static const u32 _gAya10200FirstPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10200FirstPairHand0ModelSkeleton)] SECTION(".data") = {
-#include "assets/aya_10200_model_0019C_partVerts.inc"
-};
-#else
 static u32 _gAya10200FirstPairHand0ModelPartVerts[1] SECTION(".data");
-#endif
 PE_ASSET_BIND("aya_10200_model_0019C_partVerts", _gAya10200FirstPairHand0ModelPartVerts);
 
 /// Writable first-pair hand-0 vertices in integer coordinates local to the wrist.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAya10200FirstPairHand0ModelVerts[23] = {
-#include "assets/aya_10200_model_0019C_verts.inc"
-};
-#else
 static SVECTOR _gAya10200FirstPairHand0ModelVerts[23];
-#endif
 PE_ASSET_BIND("aya_10200_model_0019C_verts", _gAya10200FirstPairHand0ModelVerts);
 
 /// Writable first-pair hand-0 lighting normals with twelve fractional bits and independent indices.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAya10200FirstPairHand0ModelNormals[23] = {
-#include "assets/aya_10200_model_0019C_normals.inc"
-};
-#else
 static SVECTOR _gAya10200FirstPairHand0ModelNormals[23];
-#endif
 PE_ASSET_BIND("aya_10200_model_0019C_normals", _gAya10200FirstPairHand0ModelNormals);
 
 /// Writable commands for two textured triangles and twenty textured quads, ending in `TMD_STREAM_END`.
 ///
 /// First model creation resolves each command's draw-handler slot in place.
-#ifdef PE_EMBED_ASSETS
-static u32 _gAya10200FirstPairHand0ModelStream[161] = {
-#include "assets/aya_10200_model_0019C_stream.inc"
-};
-#else
 static u32 _gAya10200FirstPairHand0ModelStream[161];
-#endif
 PE_ASSET_BIND("aya_10200_model_0019C_stream", _gAya10200FirstPairHand0ModelStream);
 
 TmdSource gAya10200FirstPairHand0Model = {
@@ -85,55 +55,25 @@ TmdSource gAya10200FirstPairHand0Model = {
 /// Initial local transform and self-parented root for second-pair hand slot 0.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-#ifdef PE_EMBED_ASSETS
-static const TmdBone _gAya10200SecondPairHand0ModelSkeleton[1] SECTION(".data") = {
-#include "assets/aya_10200_model_0019C_skeleton.inc"
-};
-#else
 static TmdBone _gAya10200SecondPairHand0ModelSkeleton[1] SECTION(".data");
-#endif
 PE_ASSET_BIND("aya_10200_model_0019C_skeleton", _gAya10200SecondPairHand0ModelSkeleton);
 
 /// Vertex count of the hand's sole part: 23.
-#ifdef PE_EMBED_ASSETS
-static const u32 _gAya10200SecondPairHand0ModelPartVerts[ARRAY_SIZE(_gAya10200SecondPairHand0ModelSkeleton)] SECTION(".data") = {
-#include "assets/aya_10200_model_0019C_partVerts.inc"
-};
-#else
 static u32 _gAya10200SecondPairHand0ModelPartVerts[1] SECTION(".data");
-#endif
 PE_ASSET_BIND("aya_10200_model_0019C_partVerts", _gAya10200SecondPairHand0ModelPartVerts);
 
 /// Writable second-pair hand-0 vertices in integer coordinates local to the wrist.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAya10200SecondPairHand0ModelVerts[23] = {
-#include "assets/aya_10200_model_0019C_verts.inc"
-};
-#else
 static SVECTOR _gAya10200SecondPairHand0ModelVerts[23];
-#endif
 PE_ASSET_BIND("aya_10200_model_0019C_verts", _gAya10200SecondPairHand0ModelVerts);
 
 /// Writable second-pair hand-0 lighting normals with twelve fractional bits and independent indices.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAya10200SecondPairHand0ModelNormals[23] = {
-#include "assets/aya_10200_model_0019C_normals.inc"
-};
-#else
 static SVECTOR _gAya10200SecondPairHand0ModelNormals[23];
-#endif
 PE_ASSET_BIND("aya_10200_model_0019C_normals", _gAya10200SecondPairHand0ModelNormals);
 
 /// Writable commands for two textured triangles and twenty textured quads, ending in `TMD_STREAM_END`.
 ///
 /// First model creation resolves each command's draw-handler slot in place.
-#ifdef PE_EMBED_ASSETS
-static u32 _gAya10200SecondPairHand0ModelStream[161] = {
-#include "assets/aya_10200_model_0019C_stream.inc"
-};
-#else
 static u32 _gAya10200SecondPairHand0ModelStream[161];
-#endif
 PE_ASSET_BIND("aya_10200_model_0019C_stream", _gAya10200SecondPairHand0ModelStream);
 
 TmdSource gAya10200SecondPairHand0Model = {
@@ -151,55 +91,25 @@ TmdSource gAya10200SecondPairHand0Model = {
 /// Initial local transform and self-parented root for first-pair hand slot 1.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-#ifdef PE_EMBED_ASSETS
-static const TmdBone _gAya10200FirstPairHand1ModelSkeleton[1] SECTION(".data") = {
-#include "assets/aya_10200_model_00A5C_skeleton.inc"
-};
-#else
 static TmdBone _gAya10200FirstPairHand1ModelSkeleton[1] SECTION(".data");
-#endif
 PE_ASSET_BIND("aya_10200_model_00A5C_skeleton", _gAya10200FirstPairHand1ModelSkeleton);
 
 /// Vertex count of the hand's sole part: 27.
-#ifdef PE_EMBED_ASSETS
-static const u32 _gAya10200FirstPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10200FirstPairHand1ModelSkeleton)] SECTION(".data") = {
-#include "assets/aya_10200_model_00A5C_partVerts.inc"
-};
-#else
 static u32 _gAya10200FirstPairHand1ModelPartVerts[1] SECTION(".data");
-#endif
 PE_ASSET_BIND("aya_10200_model_00A5C_partVerts", _gAya10200FirstPairHand1ModelPartVerts);
 
 /// Writable first-pair hand-1 vertices in integer coordinates local to the wrist.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAya10200FirstPairHand1ModelVerts[27] = {
-#include "assets/aya_10200_model_00A5C_verts.inc"
-};
-#else
 static SVECTOR _gAya10200FirstPairHand1ModelVerts[27];
-#endif
 PE_ASSET_BIND("aya_10200_model_00A5C_verts", _gAya10200FirstPairHand1ModelVerts);
 
 /// Writable part-local lighting normals with twelve fractional bits and independent indices.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAya10200FirstPairHand1ModelNormals[27] = {
-#include "assets/aya_10200_model_00A5C_normals.inc"
-};
-#else
 static SVECTOR _gAya10200FirstPairHand1ModelNormals[27];
-#endif
 PE_ASSET_BIND("aya_10200_model_00A5C_normals", _gAya10200FirstPairHand1ModelNormals);
 
 /// Writable commands for two textured triangles and 24 textured quads, ending in `TMD_STREAM_END`.
 ///
 /// First model creation resolves each command's draw-handler slot in place.
-#ifdef PE_EMBED_ASSETS
-static u32 _gAya10200FirstPairHand1ModelStream[189] = {
-#include "assets/aya_10200_model_00A5C_stream.inc"
-};
-#else
 static u32 _gAya10200FirstPairHand1ModelStream[189];
-#endif
 PE_ASSET_BIND("aya_10200_model_00A5C_stream", _gAya10200FirstPairHand1ModelStream);
 
 TmdSource gAya10200FirstPairHand1Model = {
@@ -217,55 +127,25 @@ TmdSource gAya10200FirstPairHand1Model = {
 /// Initial local transform and self-parented root for second-pair hand slot 1.
 ///
 /// Read-only source tables retain their serialized positions in the data section.
-#ifdef PE_EMBED_ASSETS
-static const TmdBone _gAya10200SecondPairHand1ModelSkeleton[1] SECTION(".data") = {
-#include "assets/aya_10200_model_00F0C_skeleton.inc"
-};
-#else
 static TmdBone _gAya10200SecondPairHand1ModelSkeleton[1] SECTION(".data");
-#endif
 PE_ASSET_BIND("aya_10200_model_00F0C_skeleton", _gAya10200SecondPairHand1ModelSkeleton);
 
 /// Vertex count of the hand's sole part: 23.
-#ifdef PE_EMBED_ASSETS
-static const u32 _gAya10200SecondPairHand1ModelPartVerts[ARRAY_SIZE(_gAya10200SecondPairHand1ModelSkeleton)] SECTION(".data") = {
-#include "assets/aya_10200_model_00F0C_partVerts.inc"
-};
-#else
 static u32 _gAya10200SecondPairHand1ModelPartVerts[1] SECTION(".data");
-#endif
 PE_ASSET_BIND("aya_10200_model_00F0C_partVerts", _gAya10200SecondPairHand1ModelPartVerts);
 
 /// Writable second-pair hand-1 vertices in integer coordinates local to the wrist.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAya10200SecondPairHand1ModelVerts[23] = {
-#include "assets/aya_10200_model_00F0C_verts.inc"
-};
-#else
 static SVECTOR _gAya10200SecondPairHand1ModelVerts[23];
-#endif
 PE_ASSET_BIND("aya_10200_model_00F0C_verts", _gAya10200SecondPairHand1ModelVerts);
 
 /// Writable part-local lighting normals with twelve fractional bits and independent indices.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAya10200SecondPairHand1ModelNormals[23] = {
-#include "assets/aya_10200_model_00F0C_normals.inc"
-};
-#else
 static SVECTOR _gAya10200SecondPairHand1ModelNormals[23];
-#endif
 PE_ASSET_BIND("aya_10200_model_00F0C_normals", _gAya10200SecondPairHand1ModelNormals);
 
 /// Writable commands for two textured triangles and twenty textured quads, ending in `TMD_STREAM_END`.
 ///
 /// First model creation resolves each command's draw-handler slot in place.
-#ifdef PE_EMBED_ASSETS
-static u32 _gAya10200SecondPairHand1ModelStream[161] = {
-#include "assets/aya_10200_model_00F0C_stream.inc"
-};
-#else
 static u32 _gAya10200SecondPairHand1ModelStream[161];
-#endif
 PE_ASSET_BIND("aya_10200_model_00F0C_stream", _gAya10200SecondPairHand1ModelStream);
 
 TmdSource gAya10200SecondPairHand1Model = {
@@ -285,13 +165,7 @@ TmdSource gAya10200SecondPairHand1Model = {
 /// tools/buildsteps/gen_model_source.py.
 #include "assets/characters/aya/10200/body.inc"
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gAya10200Image06AC4[] = {
-#include "assets/aya_10200_image_06AC4.inc"
-};
-#else
 static u32 _gAya10200Image06AC4[200];
-#endif
 PE_ASSET_BIND("aya_10200_image_06AC4", _gAya10200Image06AC4);
 /// One open-eyes frame followed by the upload terminator; the destination is rewritten at playback.
 static GpuImageUpload _gAya10200EyesOpenUploads[] = {
@@ -299,13 +173,7 @@ static GpuImageUpload _gAya10200EyesOpenUploads[] = {
     { GPU_IMAGE_UPLOAD_END },
 };
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gAya10200Image06E04[] = {
-#include "assets/aya_10200_image_06E04.inc"
-};
-#else
 static u32 _gAya10200Image06E04[200];
-#endif
 PE_ASSET_BIND("aya_10200_image_06E04", _gAya10200Image06E04);
 /// One half-closed-eyes frame followed by the upload terminator; the destination is rewritten at playback.
 static GpuImageUpload _gAya10200EyesHalfClosedUploads[] = {
@@ -313,13 +181,7 @@ static GpuImageUpload _gAya10200EyesHalfClosedUploads[] = {
     { GPU_IMAGE_UPLOAD_END },
 };
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gAya10200Image07144[] = {
-#include "assets/aya_10200_image_07144.inc"
-};
-#else
 static u32 _gAya10200Image07144[200];
-#endif
 PE_ASSET_BIND("aya_10200_image_07144", _gAya10200Image07144);
 /// One closed-eyes frame followed by the upload terminator; the destination is rewritten at playback.
 static GpuImageUpload _gAya10200EyesClosedUploads[] = {
@@ -328,13 +190,7 @@ static GpuImageUpload _gAya10200EyesClosedUploads[] = {
 };
 
 /// Default mouth frame: packed 8-bit indices, two texels per VRAM word and four per u_long.
-#ifdef PE_EMBED_ASSETS
-static u32 _gAya10200MouthRestPixels[AYA_10200_MOUTH_FRAME_WIDTH_WORDS * AYA_10200_MOUTH_FRAME_HEIGHT_ROWS / 2] = {
-#include "assets/aya_10200_image_07484.inc"
-};
-#else
 static u32 _gAya10200MouthRestPixels[140];
-#endif
 PE_ASSET_BIND("aya_10200_image_07484", _gAya10200MouthRestPixels);
 /// One default mouth frame followed by the upload terminator; the destination is rewritten at playback.
 static GpuImageUpload _gAya10200MouthRestUploads[] = {
@@ -343,13 +199,7 @@ static GpuImageUpload _gAya10200MouthRestUploads[] = {
 };
 
 /// Alternate mouth selector's packed 8-bit frame, identical to the default frame in this package.
-#ifdef PE_EMBED_ASSETS
-static u32 _gAya10200MouthAlternatePixels[AYA_10200_MOUTH_FRAME_WIDTH_WORDS * AYA_10200_MOUTH_FRAME_HEIGHT_ROWS / 2] = {
-#include "assets/aya_10200_image_07484.inc"
-};
-#else
 static u32 _gAya10200MouthAlternatePixels[140];
-#endif
 PE_ASSET_BIND("aya_10200_image_07484", _gAya10200MouthAlternatePixels);
 /// One alternate mouth frame followed by the upload terminator; the destination is rewritten at playback.
 static GpuImageUpload _gAya10200MouthAlternateUploads[] = {

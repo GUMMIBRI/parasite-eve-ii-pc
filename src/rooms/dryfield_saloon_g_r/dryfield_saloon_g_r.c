@@ -217,46 +217,22 @@ DirectionWarpEntry gDryfieldSaloonGRWarpEntries[2] = {
 };
 
 /// Nine grid-local normals, with ONE (4096) per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldSaloonGRCollisionGridNormals[9] = {
-#include "assets/dryfield_saloon_g_r_collision_021C0_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldSaloonGRCollisionGridNormals[9];
-#endif
 PE_ASSET_BIND("dryfield_saloon_g_r_collision_021C0_normals", _gDryfieldSaloonGRCollisionGridNormals);
 
 /// 116 signed-halfword vertex positions in room-local game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldSaloonGRCollisionGridVerts[116] = {
-#include "assets/dryfield_saloon_g_r_collision_021C0_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldSaloonGRCollisionGridVerts[116];
-#endif
 PE_ASSET_BIND("dryfield_saloon_g_r_collision_021C0_verts", _gDryfieldSaloonGRCollisionGridVerts);
 
 /// 61 collision quads indexing the vertex/normal pools and surface classes 0..3.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldSaloonGRCollisionGridFaces[61] = {
-#include "assets/dryfield_saloon_g_r_collision_021C0_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldSaloonGRCollisionGridFaces[61];
-#endif
 PE_ASSET_BIND("dryfield_saloon_g_r_collision_021C0_faces", _gDryfieldSaloonGRCollisionGridFaces);
 
 /// Twelve END-terminated face-index lists in 280 retained signed halfwords.
 ///
 /// Unreferenced authored zeros at indices 17, 75 and 161 are retained.
 /// Every live list index is in 0..60; WORLD_COLLISION_GRID_CELL_END ends a list.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldSaloonGRCollisionGridCells[280] = {
-#include "assets/dryfield_saloon_g_r_collision_021C0_cells.inc"
-};
-#else
 static s16 _gDryfieldSaloonGRCollisionGridCells[280];
-#endif
 PE_ASSET_BIND("dryfield_saloon_g_r_collision_021C0_cells", _gDryfieldSaloonGRCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -268,13 +244,7 @@ PE_ASSET_BIND("dryfield_saloon_g_r_collision_021C0_cells", _gDryfieldSaloonGRCol
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_SALOON_G_R_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldSaloonGRCollisionGridCells[(halfwordOffset)])
 /// X-major pointers to three rows of four Z-cell face lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldSaloonGRCollisionGridTable[12] = {
-#include "assets/dryfield_saloon_g_r_collision_021C0_table.inc"
-};
-#else
 static s16* _gDryfieldSaloonGRCollisionGridTable[12];
-#endif
 PE_ASSET_BIND_AUX("dryfield_saloon_g_r_collision_021C0_table", _gDryfieldSaloonGRCollisionGridTable, _gDryfieldSaloonGRCollisionGridCells);
 #undef DRYFIELD_SALOON_G_R_CELL_FACE_LIST_AT_OFFSET
 

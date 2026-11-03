@@ -142,45 +142,21 @@ enum {
 };
 
 /// Room-space unit normals, scaled by `ONE`, for the armory collision mesh.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1ArmoryCollisionGridNormals[11] = {
-#include "assets/shelter_b1_armory_collision_05910_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1ArmoryCollisionGridNormals[11];
-#endif
 PE_ASSET_BIND("shelter_b1_armory_collision_05910_normals", _gShelterB1ArmoryCollisionGridNormals);
 
 /// Room-space vertices in game units for the armory collision mesh.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1ArmoryCollisionGridVerts[111] = {
-#include "assets/shelter_b1_armory_collision_05910_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1ArmoryCollisionGridVerts[111];
-#endif
 PE_ASSET_BIND("shelter_b1_armory_collision_05910_verts", _gShelterB1ArmoryCollisionGridVerts);
 
 /// Indexed collision quads carrying the armory's surface classes 0 and 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1ArmoryCollisionGridFaces[55] = {
-#include "assets/shelter_b1_armory_collision_05910_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1ArmoryCollisionGridFaces[55];
-#endif
 PE_ASSET_BIND("shelter_b1_armory_collision_05910_faces", _gShelterB1ArmoryCollisionGridFaces);
 
 /// Cell face-index lists ending in `WORLD_COLLISION_GRID_CELL_END`.
 ///
 /// Inter-list storage is retained from the asset and is outside the terminated lists.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1ArmoryCollisionGridCells[234] = {
-#include "assets/shelter_b1_armory_collision_05910_cells.inc"
-};
-#else
 static s16 _gShelterB1ArmoryCollisionGridCells[234];
-#endif
 PE_ASSET_BIND("shelter_b1_armory_collision_05910_cells", _gShelterB1ArmoryCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -193,13 +169,7 @@ PE_ASSET_BIND("shelter_b1_armory_collision_05910_cells", _gShelterB1ArmoryCollis
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_ARMORY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1ArmoryCollisionGridCells[(halfwordOffset)])
 /// X-major cell list directory: index is X * cellCountZ + Z.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1ArmoryCollisionGridTable[SHELTER_B1_ARMORY_COLLISION_CELL_COUNT_X * SHELTER_B1_ARMORY_COLLISION_CELL_COUNT_Z] = {
-#include "assets/shelter_b1_armory_collision_05910_table.inc"
-};
-#else
 static s16* _gShelterB1ArmoryCollisionGridTable[12];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_armory_collision_05910_table", _gShelterB1ArmoryCollisionGridTable, _gShelterB1ArmoryCollisionGridCells);
 #undef SHELTER_B1_ARMORY_CELL_FACE_LIST_AT_OFFSET
 

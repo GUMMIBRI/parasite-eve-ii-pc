@@ -152,46 +152,22 @@ DirectionWarpEntry gDryfieldGRKitchenWarpEntries[2] = {
 };
 
 /// Room-grid normal pool; six vectors with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldGRKitchenCollisionGridNormals[6] = {
-#include "assets/dryfield_g_r_kitchen_collision_01900_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldGRKitchenCollisionGridNormals[6];
-#endif
 PE_ASSET_BIND("dryfield_g_r_kitchen_collision_01900_normals", _gDryfieldGRKitchenCollisionGridNormals);
 
 /// Room-grid vertex pool; 26 signed-halfword positions in room-local game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldGRKitchenCollisionGridVerts[26] = {
-#include "assets/dryfield_g_r_kitchen_collision_01900_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldGRKitchenCollisionGridVerts[26];
-#endif
 PE_ASSET_BIND("dryfield_g_r_kitchen_collision_01900_verts", _gDryfieldGRKitchenCollisionGridVerts);
 
 /// Sixteen room-grid quads indexing the vertex/normal pools and surface classes 0/1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldGRKitchenCollisionGridFaces[16] = {
-#include "assets/dryfield_g_r_kitchen_collision_01900_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldGRKitchenCollisionGridFaces[16];
-#endif
 PE_ASSET_BIND("dryfield_g_r_kitchen_collision_01900_faces", _gDryfieldGRKitchenCollisionGridFaces);
 
 /// Two terminated face-index lists in the grid's retained 32-halfword storage.
 ///
 /// The lists start at 0 and 18 and end at 16 and 31; entry 17 is an unreferenced
 /// authored zero. Their indices stay within the 16-face pool.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldGRKitchenCollisionGridCells[32] = {
-#include "assets/dryfield_g_r_kitchen_collision_01900_cells.inc"
-};
-#else
 static s16 _gDryfieldGRKitchenCollisionGridCells[32];
-#endif
 PE_ASSET_BIND("dryfield_g_r_kitchen_collision_01900_cells", _gDryfieldGRKitchenCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -207,13 +183,7 @@ PE_ASSET_BIND("dryfield_g_r_kitchen_collision_01900_cells", _gDryfieldGRKitchenC
 #define DRYFIELD_G_R_KITCHEN_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldGRKitchenCollisionGridCells[(halfwordOffset)])
 
 /// X-major pointers to the grid's two Z-cell face lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldGRKitchenCollisionGridTable[2] = {
-#include "assets/dryfield_g_r_kitchen_collision_01900_table.inc"
-};
-#else
 static s16* _gDryfieldGRKitchenCollisionGridTable[2];
-#endif
 PE_ASSET_BIND_AUX("dryfield_g_r_kitchen_collision_01900_table", _gDryfieldGRKitchenCollisionGridTable, _gDryfieldGRKitchenCollisionGridCells);
 #undef DRYFIELD_G_R_KITCHEN_CELL_FACE_LIST_AT_OFFSET
 

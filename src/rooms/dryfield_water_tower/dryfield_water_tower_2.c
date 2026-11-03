@@ -419,40 +419,16 @@ TaskDesc gDryfieldWaterTowerMechanismPromptTasks[2] = {
     { { { TASK_DESC_END, 0 } }, NULL, { .model = NULL } },
 };
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gDryfieldWaterTowerDryfieldWaterTankModel020D4Skeleton[1] = {
-#include "assets/dryfield_water_tank_model_020D4_skeleton.inc"
-};
-#else
 static TmdBone _gDryfieldWaterTowerDryfieldWaterTankModel020D4Skeleton[1];
-#endif
 PE_ASSET_BIND("dryfield_water_tank_model_020D4_skeleton", _gDryfieldWaterTowerDryfieldWaterTankModel020D4Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldWaterTowerDryfieldWaterTankModel020D4PartVerts[1] = {
-#include "assets/dryfield_water_tank_model_020D4_partVerts.inc"
-};
-#else
 static u32 _gDryfieldWaterTowerDryfieldWaterTankModel020D4PartVerts[1];
-#endif
 PE_ASSET_BIND("dryfield_water_tank_model_020D4_partVerts", _gDryfieldWaterTowerDryfieldWaterTankModel020D4PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterTowerDryfieldWaterTankModel020D4Verts[97] = {
-#include "assets/dryfield_water_tank_model_020D4_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterTowerDryfieldWaterTankModel020D4Verts[97];
-#endif
 PE_ASSET_BIND("dryfield_water_tank_model_020D4_verts", _gDryfieldWaterTowerDryfieldWaterTankModel020D4Verts);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldWaterTowerDryfieldWaterTankModel020D4Stream[426] = {
-#include "assets/dryfield_water_tank_model_020D4_stream.inc"
-};
-#else
 static u32 _gDryfieldWaterTowerDryfieldWaterTankModel020D4Stream[426];
-#endif
 PE_ASSET_BIND("dryfield_water_tank_model_020D4_stream", _gDryfieldWaterTowerDryfieldWaterTankModel020D4Stream);
 
 static TmdSource _gDryfieldWaterTowerDryfieldWaterTankModel020D4 = {
@@ -467,40 +443,16 @@ static TmdSource _gDryfieldWaterTowerDryfieldWaterTankModel020D4 = {
     _gDryfieldWaterTowerDryfieldWaterTankModel020D4Stream,
 };
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gDryfieldWaterTowerModel03D14Skeleton[1] = {
-#include "assets/dryfield_water_tower_model_03D14_skeleton.inc"
-};
-#else
 static TmdBone _gDryfieldWaterTowerModel03D14Skeleton[1];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_model_03D14_skeleton", _gDryfieldWaterTowerModel03D14Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldWaterTowerModel03D14PartVerts[1] = {
-#include "assets/dryfield_water_tower_model_03D14_partVerts.inc"
-};
-#else
 static u32 _gDryfieldWaterTowerModel03D14PartVerts[1];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_model_03D14_partVerts", _gDryfieldWaterTowerModel03D14PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterTowerModel03D14Verts[152] = {
-#include "assets/dryfield_water_tower_model_03D14_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterTowerModel03D14Verts[152];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_model_03D14_verts", _gDryfieldWaterTowerModel03D14Verts);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldWaterTowerModel03D14Stream[466] = {
-#include "assets/dryfield_water_tower_model_03D14_stream.inc"
-};
-#else
 static u32 _gDryfieldWaterTowerModel03D14Stream[466];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_model_03D14_stream", _gDryfieldWaterTowerModel03D14Stream);
 
 static TmdSource _gDryfieldWaterTowerModel03D14 = {
@@ -583,76 +535,28 @@ static TaskMessageEntry _gDryfieldWaterTowerPropMessages[2] = {
     { ACTOR_COMMAND_MESSAGE_APPLY, _dryfieldWaterTowerApplyPropCommand },
 };
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterTowerCollision04550[2] = {
-#include "assets/dryfield_water_tower_collision_04550.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterTowerCollision04550[2];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_04550", _gDryfieldWaterTowerCollision04550);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterTowerCollision04560[8] = {
-#include "assets/dryfield_water_tower_collision_04560.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterTowerCollision04560[8];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_04560", _gDryfieldWaterTowerCollision04560);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterTowerCollision045A0[8] = {
-#include "assets/dryfield_water_tower_collision_045A0.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterTowerCollision045A0[8];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_045A0", _gDryfieldWaterTowerCollision045A0);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldWaterTowerCollision045E0[2] = {
-#include "assets/dryfield_water_tower_collision_045E0.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldWaterTowerCollision045E0[2];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_045E0", _gDryfieldWaterTowerCollision045E0);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterTowerCollision045F8[2] = {
-#include "assets/dryfield_water_tower_collision_045F8.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterTowerCollision045F8[2];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_045F8", _gDryfieldWaterTowerCollision045F8);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterTowerCollision04608[8] = {
-#include "assets/dryfield_water_tower_collision_04608.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterTowerCollision04608[8];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_04608", _gDryfieldWaterTowerCollision04608);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterTowerCollision04648[8] = {
-#include "assets/dryfield_water_tower_collision_04648.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterTowerCollision04648[8];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_04648", _gDryfieldWaterTowerCollision04648);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldWaterTowerCollision04688[2] = {
-#include "assets/dryfield_water_tower_collision_04688.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldWaterTowerCollision04688[2];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_04688", _gDryfieldWaterTowerCollision04688);
 
 /// Signed local X offsets for the sliding prop's cyclic dust puffs.
@@ -1018,45 +922,21 @@ DirectionWarpEntry gDryfieldWaterTowerWarpEntries[4] = {
 };
 
 /// Writable room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterTowerRoomCollisionGridNormals[29] = {
-#include "assets/dryfield_water_tower_collision_06004_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterTowerRoomCollisionGridNormals[29];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_06004_normals", _gDryfieldWaterTowerRoomCollisionGridNormals);
 
 /// Writable room-space mesh vertices, including the two prop collision patches.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterTowerRoomCollisionGridVerts[175] = {
-#include "assets/dryfield_water_tower_collision_06004_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterTowerRoomCollisionGridVerts[175];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_06004_verts", _gDryfieldWaterTowerRoomCollisionGridVerts);
 
 /// Indexed room mesh faces, using surface classes 0..2.
 ///
 /// Prop motion replaces faces 0..3 in place while preserving their cell membership.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldWaterTowerRoomCollisionGridFaces[73] = {
-#include "assets/dryfield_water_tower_collision_06004_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldWaterTowerRoomCollisionGridFaces[73];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_06004_faces", _gDryfieldWaterTowerRoomCollisionGridFaces);
 
 /// Sixteen packed cell face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldWaterTowerRoomCollisionGridCells[374] = {
-#include "assets/dryfield_water_tower_collision_06004_cells.inc"
-};
-#else
 static s16 _gDryfieldWaterTowerRoomCollisionGridCells[374];
-#endif
 PE_ASSET_BIND("dryfield_water_tower_collision_06004_cells", _gDryfieldWaterTowerRoomCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -1069,13 +949,7 @@ PE_ASSET_BIND("dryfield_water_tower_collision_06004_cells", _gDryfieldWaterTower
 /// binding through the table include, then undefine it.
 #define DRYFIELD_WATER_TOWER_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldWaterTowerRoomCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory for the room's four-by-four collision grid.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldWaterTowerRoomCollisionGridTable[16] = {
-#include "assets/dryfield_water_tower_collision_06004_table.inc"
-};
-#else
 static s16* _gDryfieldWaterTowerRoomCollisionGridTable[16];
-#endif
 PE_ASSET_BIND_AUX("dryfield_water_tower_collision_06004_table", _gDryfieldWaterTowerRoomCollisionGridTable, _gDryfieldWaterTowerRoomCollisionGridCells);
 #undef DRYFIELD_WATER_TOWER_CELL_FACE_LIST_AT_OFFSET
 

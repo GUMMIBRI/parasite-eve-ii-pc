@@ -45,23 +45,11 @@ TaskDesc gAkropolisObservatoryArrivalTaskDescs[4] = {
 };
 
 /// Player-root XYZ samples for the movie arrival from the forked road.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAkropolisObservatoryForkedRoadArrivalPlayerPath[300] = {
-#include "assets/rooms/akropolis/observatory/forked_road_arrival_player_path.inc"
-};
-#else
 static SVECTOR _gAkropolisObservatoryForkedRoadArrivalPlayerPath[300];
-#endif
 PE_ASSET_BIND("rooms/akropolis/observatory/forked_road_arrival_player_path", _gAkropolisObservatoryForkedRoadArrivalPlayerPath);
 
 /// Player-root XYZ samples for the movie arrival from the promenade.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAkropolisObservatoryPromenadeArrivalPlayerPath[300] = {
-#include "assets/rooms/akropolis/observatory/promenade_arrival_player_path.inc"
-};
-#else
 static SVECTOR _gAkropolisObservatoryPromenadeArrivalPlayerPath[300];
-#endif
 PE_ASSET_BIND("rooms/akropolis/observatory/promenade_arrival_player_path", _gAkropolisObservatoryPromenadeArrivalPlayerPath);
 
 #include "assets/rooms/akropolis/observatory/clips.inc"

@@ -37,40 +37,16 @@ static TmdBone _gShelterB2BreedingRoomModel02E04Skeleton[1];
 static u32     _gShelterB2BreedingRoomModel02E04PartVerts[1];
 static u32     _gShelterB2BreedingRoomModel02E04Stream[11];
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gShelterB2BreedingRoomModel02E04Skeleton[1] = {
-#include "assets/shelter_b2_breeding_room_model_02E04_skeleton.inc"
-};
-#else
 static TmdBone _gShelterB2BreedingRoomModel02E04Skeleton[1];
-#endif
 PE_ASSET_BIND("shelter_b2_breeding_room_model_02E04_skeleton", _gShelterB2BreedingRoomModel02E04Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gShelterB2BreedingRoomModel02E04PartVerts[1] = {
-#include "assets/shelter_b2_breeding_room_model_02E04_partVerts.inc"
-};
-#else
 static u32 _gShelterB2BreedingRoomModel02E04PartVerts[1];
-#endif
 PE_ASSET_BIND("shelter_b2_breeding_room_model_02E04_partVerts", _gShelterB2BreedingRoomModel02E04PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB2BreedingRoomModel02E04Verts[4] = {
-#include "assets/shelter_b2_breeding_room_model_02E04_verts.inc"
-};
-#else
 static SVECTOR _gShelterB2BreedingRoomModel02E04Verts[4];
-#endif
 PE_ASSET_BIND("shelter_b2_breeding_room_model_02E04_verts", _gShelterB2BreedingRoomModel02E04Verts);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gShelterB2BreedingRoomModel02E04Stream[11] = {
-#include "assets/shelter_b2_breeding_room_model_02E04_stream.inc"
-};
-#else
 static u32 _gShelterB2BreedingRoomModel02E04Stream[11];
-#endif
 PE_ASSET_BIND("shelter_b2_breeding_room_model_02E04_stream", _gShelterB2BreedingRoomModel02E04Stream);
 
 TmdSource gShelterB2BreedingRoomModel02E04 = { 0, 40, 0, 1, _gShelterB2BreedingRoomModel02E04PartVerts, _gShelterB2BreedingRoomModel02E04Verts, &_gShelterB2BreedingRoomModel02E04Verts[4], _gShelterB2BreedingRoomModel02E04Skeleton, _gShelterB2BreedingRoomModel02E04Stream };

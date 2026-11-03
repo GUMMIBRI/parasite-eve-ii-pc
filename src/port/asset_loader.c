@@ -115,7 +115,7 @@ int peAssetsLoad(struct PeDisc* disc)
 }
 
 /* Development check: one line per binding, "<key> <hash of the bytes>". Grid tables hash their cell indices, not
- * addresses. Running this on a build with PE_EMBED_ASSETS and on a runtime-loaded build must give identical files. */
+ * addresses. The dump is a fingerprint of what the disc filled in. */
 int peAssetsDump(const char* path)
 {
     size_t n;

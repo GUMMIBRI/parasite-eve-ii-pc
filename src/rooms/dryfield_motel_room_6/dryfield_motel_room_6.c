@@ -244,46 +244,22 @@ DirectionWarpEntry gDryfieldMotelRoom6WarpEntries[2] = {
 };
 
 /// Unit normals for the room's collision faces, in room axes with 4096 per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMotelRoom6CollisionGridNormals[24] = {
-#include "assets/dryfield_motel_room_6_collision_0625C_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldMotelRoom6CollisionGridNormals[24];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_6_collision_0625C_normals", _gDryfieldMotelRoom6CollisionGridNormals);
 
 /// Collision-mesh vertices in signed room-coordinate game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMotelRoom6CollisionGridVerts[158] = {
-#include "assets/dryfield_motel_room_6_collision_0625C_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldMotelRoom6CollisionGridVerts[158];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_6_collision_0625C_verts", _gDryfieldMotelRoom6CollisionGridVerts);
 
 /// Collision quads indexing the room's vertices, normals and surface classes 0..3.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldMotelRoom6CollisionGridFaces[56] = {
-#include "assets/dryfield_motel_room_6_collision_0625C_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldMotelRoom6CollisionGridFaces[56];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_6_collision_0625C_faces", _gDryfieldMotelRoom6CollisionGridFaces);
 
 /// Serialized face-index lists for the collision grid's six XZ cells.
 ///
 /// Each referenced list ends at WORLD_COLLISION_GRID_CELL_END; retained bytes
 /// between and after the lists are outside those traversals.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldMotelRoom6CollisionGridCells[198] = {
-#include "assets/dryfield_motel_room_6_collision_0625C_cells.inc"
-};
-#else
 static s16 _gDryfieldMotelRoom6CollisionGridCells[198];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_6_collision_0625C_cells", _gDryfieldMotelRoom6CollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -299,13 +275,7 @@ PE_ASSET_BIND("dryfield_motel_room_6_collision_0625C_cells", _gDryfieldMotelRoom
 #define DRYFIELD_MOTEL_ROOM_6_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldMotelRoom6CollisionGridCells[(halfwordOffset)])
 
 /// X-major cell-list directory, indexed as X * 3 + Z for the 2-by-3 grid.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldMotelRoom6CollisionGridTable[6] = {
-#include "assets/dryfield_motel_room_6_collision_0625C_table.inc"
-};
-#else
 static s16* _gDryfieldMotelRoom6CollisionGridTable[6];
-#endif
 PE_ASSET_BIND_AUX("dryfield_motel_room_6_collision_0625C_table", _gDryfieldMotelRoom6CollisionGridTable, _gDryfieldMotelRoom6CollisionGridCells);
 #undef DRYFIELD_MOTEL_ROOM_6_CELL_FACE_LIST_AT_OFFSET
 

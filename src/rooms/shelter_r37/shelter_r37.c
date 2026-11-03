@@ -61,43 +61,19 @@ DirectionWarpEntry gShelterR37WarpEntries[1] = {
 };
 
 /// Room-space face normals, scaled by ONE for unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterR37RoomCollisionNormals[6] = {
-#include "assets/shelter_r37_collision_00360_normals.inc"
-};
-#else
 static SVECTOR _gShelterR37RoomCollisionNormals[6];
-#endif
 PE_ASSET_BIND("shelter_r37_collision_00360_normals", _gShelterR37RoomCollisionNormals);
 
 /// Signed room-space vertices in whole game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterR37RoomCollisionVerts[22] = {
-#include "assets/shelter_r37_collision_00360_verts.inc"
-};
-#else
 static SVECTOR _gShelterR37RoomCollisionVerts[22];
-#endif
 PE_ASSET_BIND("shelter_r37_collision_00360_verts", _gShelterR37RoomCollisionVerts);
 
 /// Twelve indexed quads using surface classes 0 and 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterR37RoomCollisionFaces[12] = {
-#include "assets/shelter_r37_collision_00360_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterR37RoomCollisionFaces[12];
-#endif
 PE_ASSET_BIND("shelter_r37_collision_00360_faces", _gShelterR37RoomCollisionFaces);
 
 /// Six cell face-index lists, each ending at -1 within its eight-halfword span.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterR37RoomCollisionCells[48] = {
-#include "assets/shelter_r37_collision_00360_cells.inc"
-};
-#else
 static s16 _gShelterR37RoomCollisionCells[48];
-#endif
 PE_ASSET_BIND("shelter_r37_collision_00360_cells", _gShelterR37RoomCollisionCells);
 
 /// Supplies a cell face-list address for the generated collision table.
@@ -109,13 +85,7 @@ PE_ASSET_BIND("shelter_r37_collision_00360_cells", _gShelterR37RoomCollisionCell
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_R37_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterR37RoomCollisionCells[(halfwordOffset)])
 /// X-major cell directory; each X row contains two Z cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterR37RoomCollisionTable[6] = {
-#include "assets/shelter_r37_collision_00360_table.inc"
-};
-#else
 static s16* _gShelterR37RoomCollisionTable[6];
-#endif
 PE_ASSET_BIND_AUX("shelter_r37_collision_00360_table", _gShelterR37RoomCollisionTable, _gShelterR37RoomCollisionCells);
 #undef SHELTER_R37_CELL_FACE_LIST_AT_OFFSET
 

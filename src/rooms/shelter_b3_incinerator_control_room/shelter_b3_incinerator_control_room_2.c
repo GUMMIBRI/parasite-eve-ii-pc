@@ -139,43 +139,19 @@ DirectionWarpEntry gShelterB3IncineratorControlRoomWarpEntries[SHELTER_B3_INCINE
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB3IncineratorControlRoomCollisionGridNormals[10] = {
-#include "assets/shelter_b3_incinerator_control_room_collision_04700_normals.inc"
-};
-#else
 static SVECTOR _gShelterB3IncineratorControlRoomCollisionGridNormals[10];
-#endif
 PE_ASSET_BIND("shelter_b3_incinerator_control_room_collision_04700_normals", _gShelterB3IncineratorControlRoomCollisionGridNormals);
 
 /// Collision vertices in signed world-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB3IncineratorControlRoomCollisionGridVerts[27] = {
-#include "assets/shelter_b3_incinerator_control_room_collision_04700_verts.inc"
-};
-#else
 static SVECTOR _gShelterB3IncineratorControlRoomCollisionGridVerts[27];
-#endif
 PE_ASSET_BIND("shelter_b3_incinerator_control_room_collision_04700_verts", _gShelterB3IncineratorControlRoomCollisionGridVerts);
 
 /// Indexed collision quads using this room's surface classes 0, 1 and 3.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB3IncineratorControlRoomCollisionGridFaces[19] = {
-#include "assets/shelter_b3_incinerator_control_room_collision_04700_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB3IncineratorControlRoomCollisionGridFaces[19];
-#endif
 PE_ASSET_BIND("shelter_b3_incinerator_control_room_collision_04700_faces", _gShelterB3IncineratorControlRoomCollisionGridFaces);
 
 /// Signed face-index lists ending at -1, retaining all 68 authored halfwords.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB3IncineratorControlRoomCollisionGridCells[68] = {
-#include "assets/shelter_b3_incinerator_control_room_collision_04700_cells.inc"
-};
-#else
 static s16 _gShelterB3IncineratorControlRoomCollisionGridCells[68];
-#endif
 PE_ASSET_BIND("shelter_b3_incinerator_control_room_collision_04700_cells", _gShelterB3IncineratorControlRoomCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
@@ -187,13 +163,7 @@ PE_ASSET_BIND("shelter_b3_incinerator_control_room_collision_04700_cells", _gShe
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B3_INCINERATOR_CONTROL_ROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB3IncineratorControlRoomCollisionGridCells[(halfwordOffset)])
 /// X-major 4-by-2 cell directory; NULL cells contain no faces.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB3IncineratorControlRoomCollisionGridTable[8] = {
-#include "assets/shelter_b3_incinerator_control_room_collision_04700_table.inc"
-};
-#else
 static s16* _gShelterB3IncineratorControlRoomCollisionGridTable[8];
-#endif
 PE_ASSET_BIND_AUX("shelter_b3_incinerator_control_room_collision_04700_table", _gShelterB3IncineratorControlRoomCollisionGridTable, _gShelterB3IncineratorControlRoomCollisionGridCells);
 #undef SHELTER_B3_INCINERATOR_CONTROL_ROOM_CELL_FACE_LIST_AT_OFFSET
 

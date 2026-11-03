@@ -42,51 +42,21 @@ TaskDesc gMistParkingDepartureMovieTaskDescs[2] = {
 };
 
 #include "assets/rooms/mist/parking/events_6.inc"
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMistParkingPierceCollisionPatchNormals[2] = {
-#include "assets/mist_parking_collision_126F8_normals.inc"
-};
-#else
 static SVECTOR _gMistParkingPierceCollisionPatchNormals[2];
-#endif
 PE_ASSET_BIND("mist_parking_collision_126F8_normals", _gMistParkingPierceCollisionPatchNormals);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMistParkingPierceCollisionPatchVerts[6] = {
-#include "assets/mist_parking_collision_126F8_verts.inc"
-};
-#else
 static SVECTOR _gMistParkingPierceCollisionPatchVerts[6];
-#endif
 PE_ASSET_BIND("mist_parking_collision_126F8_verts", _gMistParkingPierceCollisionPatchVerts);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gMistParkingPierceCollisionPatchFaces[2] = {
-#include "assets/mist_parking_collision_126F8_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gMistParkingPierceCollisionPatchFaces[2];
-#endif
 PE_ASSET_BIND("mist_parking_collision_126F8_faces", _gMistParkingPierceCollisionPatchFaces);
 
-#ifdef PE_EMBED_ASSETS
-static s16 _gMistParkingPierceCollisionPatchCells[4] = {
-#include "assets/mist_parking_collision_126F8_cells.inc"
-};
-#else
 static s16 _gMistParkingPierceCollisionPatchCells[4];
-#endif
 PE_ASSET_BIND("mist_parking_collision_126F8_cells", _gMistParkingPierceCollisionPatchCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
 #define MIST_PARKING_PIERCE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMistParkingPierceCollisionPatchCells[(halfwordOffset)])
-#ifdef PE_EMBED_ASSETS
-static s16* _gMistParkingPierceCollisionPatchTable[1] = {
-#include "assets/mist_parking_collision_126F8_table.inc"
-};
-#else
 static s16* _gMistParkingPierceCollisionPatchTable[1];
-#endif
 PE_ASSET_BIND_AUX("mist_parking_collision_126F8_table", _gMistParkingPierceCollisionPatchTable, _gMistParkingPierceCollisionPatchCells);
 #undef MIST_PARKING_PIERCE_CELL_FACE_LIST_AT_OFFSET
 

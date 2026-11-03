@@ -185,40 +185,16 @@ static ActorCommand _gDryfieldMainStreetInitialChaserHideCommand __attribute__((
     .command = DRYFIELD_MAIN_STREET_INITIAL_CHASER_HIDE,
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldMainStreetAnimation03BF0Bank1[6] = {
-#include "assets/dryfield_main_street_animation_03BF0_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldMainStreetAnimation03BF0Bank1[6];
-#endif
 PE_ASSET_BIND("dryfield_main_street_animation_03BF0_bank1", _gDryfieldMainStreetAnimation03BF0Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldMainStreetAnimation03BF0Bank4[46] = {
-#include "assets/dryfield_main_street_animation_03BF0_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldMainStreetAnimation03BF0Bank4[46];
-#endif
 PE_ASSET_BIND("dryfield_main_street_animation_03BF0_bank4", _gDryfieldMainStreetAnimation03BF0Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldMainStreetAnimation03BF0Records[109] = {
-#include "assets/dryfield_main_street_animation_03BF0_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldMainStreetAnimation03BF0Records[109];
-#endif
 PE_ASSET_BIND("dryfield_main_street_animation_03BF0_records", _gDryfieldMainStreetAnimation03BF0Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldMainStreetAnimation03BF0Indices[20] = {
-#include "assets/dryfield_main_street_animation_03BF0_indices.inc"
-};
-#else
 static u16 _gDryfieldMainStreetAnimation03BF0Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_main_street_animation_03BF0_indices", _gDryfieldMainStreetAnimation03BF0Indices);
 
 static AnimationSet _gDryfieldMainStreetAnimation03BF0 = {
@@ -227,40 +203,16 @@ static AnimationSet _gDryfieldMainStreetAnimation03BF0 = {
     { NULL, _gDryfieldMainStreetAnimation03BF0Bank1, NULL, NULL, _gDryfieldMainStreetAnimation03BF0Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldMainStreetAnimation03F84Bank1[7] = {
-#include "assets/dryfield_main_street_animation_03F84_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldMainStreetAnimation03F84Bank1[7];
-#endif
 PE_ASSET_BIND("dryfield_main_street_animation_03F84_bank1", _gDryfieldMainStreetAnimation03F84Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldMainStreetAnimation03F84Bank4[65] = {
-#include "assets/dryfield_main_street_animation_03F84_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldMainStreetAnimation03F84Bank4[65];
-#endif
 PE_ASSET_BIND("dryfield_main_street_animation_03F84_bank4", _gDryfieldMainStreetAnimation03F84Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldMainStreetAnimation03F84Records[123] = {
-#include "assets/dryfield_main_street_animation_03F84_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldMainStreetAnimation03F84Records[123];
-#endif
 PE_ASSET_BIND("dryfield_main_street_animation_03F84_records", _gDryfieldMainStreetAnimation03F84Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldMainStreetAnimation03F84Indices[20] = {
-#include "assets/dryfield_main_street_animation_03F84_indices.inc"
-};
-#else
 static u16 _gDryfieldMainStreetAnimation03F84Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_main_street_animation_03F84_indices", _gDryfieldMainStreetAnimation03F84Indices);
 
 static AnimationSet _gDryfieldMainStreetAnimation03F84 = {
@@ -602,43 +554,19 @@ DirectionWarpEntry gDryfieldMainStreetWarpEntries[7] = {
 };
 
 /// Collision face normals in room space, with ONE (4096) for unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMainStreetCollisionGridNormals[20] = {
-#include "assets/dryfield_main_street_collision_056DC_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldMainStreetCollisionGridNormals[20];
-#endif
 PE_ASSET_BIND("dryfield_main_street_collision_056DC_normals", _gDryfieldMainStreetCollisionGridNormals);
 
 /// Collision mesh vertices in signed room-coordinate game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMainStreetCollisionGridVerts[180] = {
-#include "assets/dryfield_main_street_collision_056DC_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldMainStreetCollisionGridVerts[180];
-#endif
 PE_ASSET_BIND("dryfield_main_street_collision_056DC_verts", _gDryfieldMainStreetCollisionGridVerts);
 
 /// Indexed collision faces selecting room-local surface classes 0..4.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldMainStreetCollisionGridFaces[85] = {
-#include "assets/dryfield_main_street_collision_056DC_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldMainStreetCollisionGridFaces[85];
-#endif
 PE_ASSET_BIND("dryfield_main_street_collision_056DC_faces", _gDryfieldMainStreetCollisionGridFaces);
 
 /// Halfword face-index pool containing lists ended by WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldMainStreetCollisionGridCells[554] = {
-#include "assets/dryfield_main_street_collision_056DC_cells.inc"
-};
-#else
 static s16 _gDryfieldMainStreetCollisionGridCells[554];
-#endif
 PE_ASSET_BIND("dryfield_main_street_collision_056DC_cells", _gDryfieldMainStreetCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -654,13 +582,7 @@ PE_ASSET_BIND("dryfield_main_street_collision_056DC_cells", _gDryfieldMainStreet
 #define DRYFIELD_MAIN_STREET_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldMainStreetCollisionGridCells[(halfwordOffset)])
 
 /// X-major cell pointers into the face-index pool for the 6 by 7 grid.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldMainStreetCollisionGridTable[42] = {
-#include "assets/dryfield_main_street_collision_056DC_table.inc"
-};
-#else
 static s16* _gDryfieldMainStreetCollisionGridTable[42];
-#endif
 PE_ASSET_BIND_AUX("dryfield_main_street_collision_056DC_table", _gDryfieldMainStreetCollisionGridTable, _gDryfieldMainStreetCollisionGridCells);
 #undef DRYFIELD_MAIN_STREET_CELL_FACE_LIST_AT_OFFSET
 

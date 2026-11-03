@@ -188,13 +188,7 @@ static GpuImageUpload** _gActor800300MouthTextureSequences[2] = {
 /// The upload covers 25 sixteen-bit VRAM words by 20 rows: 500 halfwords,
 /// or 250 packed u_long words. Texture-A sequences share this frame; storage
 /// stays live and unchanged until queued GPU transfers finish.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor800300TextureAFirstFramePixels[250] = {
-#include "assets/characters/eve/eyes_open.inc"
-};
-#else
 static u32 _gActor800300TextureAFirstFramePixels[250];
-#endif
 PE_ASSET_BIND("characters/eve/eyes_open", _gActor800300TextureAFirstFramePixels);
 
 /// Open-eye upload followed by its nonzero-operation terminator.
@@ -211,13 +205,7 @@ static GpuImageUpload _gActor800300EyesOpenUploads[2] = {
 ///
 /// Borrowed by its upload list; keep loaded and unchanged until queued GPU
 /// transfers finish. Closing, opening and blink sequences share this frame.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor800300EyesHalfClosedPixels[ACTOR_800300_EYE_PATCH_TRANSFER_WORDS] = {
-#include "assets/characters/eve/eyes_half_closed.inc"
-};
-#else
 static u32 _gActor800300EyesHalfClosedPixels[ACTOR_800300_EYE_PATCH_TRANSFER_WORDS];
-#endif
 PE_ASSET_BIND("characters/eve/eyes_half_closed", _gActor800300EyesHalfClosedPixels);
 
 /// Half-closed-eye upload followed by its nonzero-operation terminator.
@@ -234,13 +222,7 @@ static GpuImageUpload _gActor800300EyesHalfClosedUploads[2] = {
 ///
 /// Borrowed by its upload list; keep loaded and unchanged until queued GPU
 /// transfers finish. Closing, opening and blink sequences share this frame.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor800300EyesClosedPixels[ACTOR_800300_EYE_PATCH_TRANSFER_WORDS] = {
-#include "assets/characters/eve/eyes_closed.inc"
-};
-#else
 static u32 _gActor800300EyesClosedPixels[ACTOR_800300_EYE_PATCH_TRANSFER_WORDS];
-#endif
 PE_ASSET_BIND("characters/eve/eyes_closed", _gActor800300EyesClosedPixels);
 
 /// Closed-eye upload followed by its nonzero-operation terminator.
@@ -257,13 +239,7 @@ static GpuImageUpload _gActor800300EyesClosedUploads[2] = {
 ///
 /// Borrowed by its upload list; keep loaded and unchanged until queued GPU
 /// transfers finish.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor800300MouthClosedPixels[ACTOR_800300_MOUTH_PATCH_TRANSFER_WORDS] = {
-#include "assets/characters/eve/mouth_closed.inc"
-};
-#else
 static u32 _gActor800300MouthClosedPixels[ACTOR_800300_MOUTH_PATCH_TRANSFER_WORDS];
-#endif
 PE_ASSET_BIND("characters/eve/mouth_closed", _gActor800300MouthClosedPixels);
 
 /// Closed-mouth upload followed by its nonzero-operation terminator.
@@ -280,13 +256,7 @@ static GpuImageUpload _gActor800300MouthClosedUploads[2] = {
 ///
 /// Borrowed by its upload list; keep loaded and unchanged until queued GPU
 /// transfers finish.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor800300MouthOpenPixels[ACTOR_800300_MOUTH_PATCH_TRANSFER_WORDS] = {
-#include "assets/characters/eve/mouth_open.inc"
-};
-#else
 static u32 _gActor800300MouthOpenPixels[ACTOR_800300_MOUTH_PATCH_TRANSFER_WORDS];
-#endif
 PE_ASSET_BIND("characters/eve/mouth_open", _gActor800300MouthOpenPixels);
 
 /// Open-mouth upload followed by its nonzero-operation terminator.

@@ -75,13 +75,7 @@ TaskDesc gAkropolisForkedRoadMovieTaskDescriptors[AKROPOLIS_FORKED_ROAD_MOVIE_TA
 };
 
 /// Player-root translations sampled along the observatory route's movie path.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAkropolisForkedRoadMoviePlayerPositions[300] = {
-#include "assets/rooms/akropolis/forked_road/movie_player_path.inc"
-};
-#else
 static SVECTOR _gAkropolisForkedRoadMoviePlayerPositions[300];
-#endif
 PE_ASSET_BIND("rooms/akropolis/forked_road/movie_player_path", _gAkropolisForkedRoadMoviePlayerPositions);
 
 #include "assets/rooms/akropolis/forked_road/clips.inc"

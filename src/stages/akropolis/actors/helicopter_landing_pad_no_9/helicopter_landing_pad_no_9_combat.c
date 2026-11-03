@@ -579,61 +579,25 @@ static _LapStrip _gHelicopterLandingPadNo9LapStrips[4] = {
     { -7200, -4608, -6000, 6000 },
 };
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gHelicopterLandingPadNo9Collision35DA4[3] = {
-#include "assets/helicopter_landing_pad_no_9_collision_35DA4.inc"
-};
-#else
 static SVECTOR _gHelicopterLandingPadNo9Collision35DA4[3];
-#endif
 PE_ASSET_BIND("helicopter_landing_pad_no_9_collision_35DA4", _gHelicopterLandingPadNo9Collision35DA4);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gHelicopterLandingPadNo9Collision35DBC[12] = {
-#include "assets/helicopter_landing_pad_no_9_collision_35DBC.inc"
-};
-#else
 static SVECTOR _gHelicopterLandingPadNo9Collision35DBC[12];
-#endif
 PE_ASSET_BIND("helicopter_landing_pad_no_9_collision_35DBC", _gHelicopterLandingPadNo9Collision35DBC);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gHelicopterLandingPadNo9Collision35E1C[3] = {
-#include "assets/helicopter_landing_pad_no_9_collision_35E1C.inc"
-};
-#else
 static WorldCollisionGridFace _gHelicopterLandingPadNo9Collision35E1C[3];
-#endif
 PE_ASSET_BIND("helicopter_landing_pad_no_9_collision_35E1C", _gHelicopterLandingPadNo9Collision35E1C);
 
 /// Q12 normal of the extra landing-pad collision face, installed at normal index 3.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gHelicopterLandingPadNo9ExtraGridNormals[1] = {
-#include "assets/helicopter_landing_pad_no_9_collision_35E40.inc"
-};
-#else
 static SVECTOR _gHelicopterLandingPadNo9ExtraGridNormals[1];
-#endif
 PE_ASSET_BIND("helicopter_landing_pad_no_9_collision_35E40", _gHelicopterLandingPadNo9ExtraGridNormals);
 
 /// Four world-coordinate vertices of the extra landing-pad face, installed at indices 12..15.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gHelicopterLandingPadNo9ExtraGridVertices[4] = {
-#include "assets/helicopter_landing_pad_no_9_collision_35E48.inc"
-};
-#else
 static SVECTOR _gHelicopterLandingPadNo9ExtraGridVertices[4];
-#endif
 PE_ASSET_BIND("helicopter_landing_pad_no_9_collision_35E48", _gHelicopterLandingPadNo9ExtraGridVertices);
 
 /// Extra landing-pad face linking vertices 12..15 to normal 3.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gHelicopterLandingPadNo9ExtraGridFaces[1] = {
-#include "assets/helicopter_landing_pad_no_9_collision_35E68.inc"
-};
-#else
 static WorldCollisionGridFace _gHelicopterLandingPadNo9ExtraGridFaces[1];
-#endif
 PE_ASSET_BIND("helicopter_landing_pad_no_9_collision_35E68", _gHelicopterLandingPadNo9ExtraGridFaces);
 
 /// Grenade pitch-step magnitudes per flight frame, in angle units of 4096 per turn.

@@ -152,40 +152,16 @@ TaskDesc gDryfieldWarehouseRoomTaskDescs[2] = {
     { { { TASK_BODY_NONE, TASK_PRIORITY_SCENE } }, dryfieldWarehouseAmbienceTask, { .value = 0 } },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldWarehouseAnimation02260Bank1[2] = {
-#include "assets/dryfield_warehouse_animation_02260_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldWarehouseAnimation02260Bank1[2];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_animation_02260_bank1", _gDryfieldWarehouseAnimation02260Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldWarehouseAnimation02260Bank4[28] = {
-#include "assets/dryfield_warehouse_animation_02260_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldWarehouseAnimation02260Bank4[28];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_animation_02260_bank4", _gDryfieldWarehouseAnimation02260Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldWarehouseAnimation02260Records[123] = {
-#include "assets/dryfield_warehouse_animation_02260_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldWarehouseAnimation02260Records[123];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_animation_02260_records", _gDryfieldWarehouseAnimation02260Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldWarehouseAnimation02260Indices[20] = {
-#include "assets/dryfield_warehouse_animation_02260_indices.inc"
-};
-#else
 static u16 _gDryfieldWarehouseAnimation02260Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_animation_02260_indices", _gDryfieldWarehouseAnimation02260Indices);
 
 static AnimationSet _gDryfieldWarehouseAnimation02260 = {
@@ -422,40 +398,16 @@ DirectionWarpEntry gDryfieldWarehouseWarpEntries[2] = {
 /// Side length of every warehouse collision cell, in game-coordinate units.
 enum { DRYFIELD_WAREHOUSE_COLLISION_CELL_SIZE = 4000 };
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWarehouseBeforeEventCollisionGridNormals[7] = {
-#include "assets/dryfield_warehouse_collision_02CE8_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldWarehouseBeforeEventCollisionGridNormals[7];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_02CE8_normals", _gDryfieldWarehouseBeforeEventCollisionGridNormals);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWarehouseBeforeEventCollisionGridVerts[90] = {
-#include "assets/dryfield_warehouse_collision_02CE8_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldWarehouseBeforeEventCollisionGridVerts[90];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_02CE8_verts", _gDryfieldWarehouseBeforeEventCollisionGridVerts);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldWarehouseBeforeEventCollisionGridFaces[50] = {
-#include "assets/dryfield_warehouse_collision_02CE8_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldWarehouseBeforeEventCollisionGridFaces[50];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_02CE8_faces", _gDryfieldWarehouseBeforeEventCollisionGridFaces);
 
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldWarehouseBeforeEventCollisionGridCells[80] = {
-#include "assets/dryfield_warehouse_collision_02CE8_cells.inc"
-};
-#else
 static s16 _gDryfieldWarehouseBeforeEventCollisionGridCells[80];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_02CE8_cells", _gDryfieldWarehouseBeforeEventCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -467,13 +419,7 @@ PE_ASSET_BIND("dryfield_warehouse_collision_02CE8_cells", _gDryfieldWarehouseBef
 /// Set `collisionSource.cell_face_list_macro` to this identifier; keep the
 /// binding through the table include, then undefine it.
 #define DRYFIELD_WAREHOUSE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldWarehouseBeforeEventCollisionGridCells[(halfwordOffset)])
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldWarehouseBeforeEventCollisionGridTable[2] = {
-#include "assets/dryfield_warehouse_collision_02CE8_table.inc"
-};
-#else
 static s16* _gDryfieldWarehouseBeforeEventCollisionGridTable[2];
-#endif
 PE_ASSET_BIND_AUX("dryfield_warehouse_collision_02CE8_table", _gDryfieldWarehouseBeforeEventCollisionGridTable, _gDryfieldWarehouseBeforeEventCollisionGridCells);
 #undef DRYFIELD_WAREHOUSE_CELL_FACE_LIST_AT_OFFSET
 
@@ -496,40 +442,16 @@ static WorldCollisionGrid _gDryfieldWarehouseBeforeEventCollisionGrid = {
     .faceCount   = ARRAY_SIZE(_gDryfieldWarehouseBeforeEventCollisionGridFaces),
 };
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWarehouseAfterEventCollisionGridNormals[7] = {
-#include "assets/dryfield_warehouse_collision_033EC_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldWarehouseAfterEventCollisionGridNormals[7];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_033EC_normals", _gDryfieldWarehouseAfterEventCollisionGridNormals);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWarehouseAfterEventCollisionGridVerts[99] = {
-#include "assets/dryfield_warehouse_collision_033EC_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldWarehouseAfterEventCollisionGridVerts[99];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_033EC_verts", _gDryfieldWarehouseAfterEventCollisionGridVerts);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldWarehouseAfterEventCollisionGridFaces[56] = {
-#include "assets/dryfield_warehouse_collision_033EC_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldWarehouseAfterEventCollisionGridFaces[56];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_033EC_faces", _gDryfieldWarehouseAfterEventCollisionGridFaces);
 
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldWarehouseAfterEventCollisionGridCells[112] = {
-#include "assets/dryfield_warehouse_collision_033EC_cells.inc"
-};
-#else
 static s16 _gDryfieldWarehouseAfterEventCollisionGridCells[112];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_033EC_cells", _gDryfieldWarehouseAfterEventCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -541,13 +463,7 @@ PE_ASSET_BIND("dryfield_warehouse_collision_033EC_cells", _gDryfieldWarehouseAft
 /// Set `collisionSource.cell_face_list_macro` to this identifier; keep the
 /// binding through the table include, then undefine it.
 #define DRYFIELD_WAREHOUSE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldWarehouseAfterEventCollisionGridCells[(halfwordOffset)])
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldWarehouseAfterEventCollisionGridTable[4] = {
-#include "assets/dryfield_warehouse_collision_033EC_table.inc"
-};
-#else
 static s16* _gDryfieldWarehouseAfterEventCollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("dryfield_warehouse_collision_033EC_table", _gDryfieldWarehouseAfterEventCollisionGridTable, _gDryfieldWarehouseAfterEventCollisionGridCells);
 #undef DRYFIELD_WAREHOUSE_CELL_FACE_LIST_AT_OFFSET
 
@@ -570,40 +486,16 @@ static WorldCollisionGrid _gDryfieldWarehouseAfterEventCollisionGrid = {
     .faceCount   = ARRAY_SIZE(_gDryfieldWarehouseAfterEventCollisionGridFaces),
 };
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWarehouseRoom3CollisionGridNormals[7] = {
-#include "assets/dryfield_warehouse_collision_03A78_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldWarehouseRoom3CollisionGridNormals[7];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_03A78_normals", _gDryfieldWarehouseRoom3CollisionGridNormals);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWarehouseRoom3CollisionGridVerts[91] = {
-#include "assets/dryfield_warehouse_collision_03A78_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldWarehouseRoom3CollisionGridVerts[91];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_03A78_verts", _gDryfieldWarehouseRoom3CollisionGridVerts);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldWarehouseRoom3CollisionGridFaces[52] = {
-#include "assets/dryfield_warehouse_collision_03A78_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldWarehouseRoom3CollisionGridFaces[52];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_03A78_faces", _gDryfieldWarehouseRoom3CollisionGridFaces);
 
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldWarehouseRoom3CollisionGridCells[108] = {
-#include "assets/dryfield_warehouse_collision_03A78_cells.inc"
-};
-#else
 static s16 _gDryfieldWarehouseRoom3CollisionGridCells[108];
-#endif
 PE_ASSET_BIND("dryfield_warehouse_collision_03A78_cells", _gDryfieldWarehouseRoom3CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -615,13 +507,7 @@ PE_ASSET_BIND("dryfield_warehouse_collision_03A78_cells", _gDryfieldWarehouseRoo
 /// Set `collisionSource.cell_face_list_macro` to this identifier; keep the
 /// binding through the table include, then undefine it.
 #define DRYFIELD_WAREHOUSE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldWarehouseRoom3CollisionGridCells[(halfwordOffset)])
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldWarehouseRoom3CollisionGridTable[4] = {
-#include "assets/dryfield_warehouse_collision_03A78_table.inc"
-};
-#else
 static s16* _gDryfieldWarehouseRoom3CollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("dryfield_warehouse_collision_03A78_table", _gDryfieldWarehouseRoom3CollisionGridTable, _gDryfieldWarehouseRoom3CollisionGridCells);
 #undef DRYFIELD_WAREHOUSE_CELL_FACE_LIST_AT_OFFSET
 

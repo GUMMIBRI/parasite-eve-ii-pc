@@ -167,43 +167,19 @@ AreaVariant gShelterB1PodServiceGantryAreaVariants[SHELTER_B1_POD_SERVICE_GANTRY
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1PodServiceGantryRoomCollisionNormals[13] = {
-#include "assets/shelter_b1_pod_service_gantry_collision_02C04_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1PodServiceGantryRoomCollisionNormals[13];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_service_gantry_collision_02C04_normals", _gShelterB1PodServiceGantryRoomCollisionNormals);
 
 /// Collision vertices in signed room-coordinate game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1PodServiceGantryRoomCollisionVerts[66] = {
-#include "assets/shelter_b1_pod_service_gantry_collision_02C04_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1PodServiceGantryRoomCollisionVerts[66];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_service_gantry_collision_02C04_verts", _gShelterB1PodServiceGantryRoomCollisionVerts);
 
 /// Indexed collision faces selecting the room's vertex, normal and surface pools.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1PodServiceGantryRoomCollisionFaces[30] = {
-#include "assets/shelter_b1_pod_service_gantry_collision_02C04_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1PodServiceGantryRoomCollisionFaces[30];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_service_gantry_collision_02C04_faces", _gShelterB1PodServiceGantryRoomCollisionFaces);
 
 /// Face-index lists for nonempty grid cells, each ending with WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1PodServiceGantryRoomCollisionCells[172] = {
-#include "assets/shelter_b1_pod_service_gantry_collision_02C04_cells.inc"
-};
-#else
 static s16 _gShelterB1PodServiceGantryRoomCollisionCells[172];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_service_gantry_collision_02C04_cells", _gShelterB1PodServiceGantryRoomCollisionCells);
 
 // The generated table supplies zero-based element offsets into the cell-list pool.
@@ -217,13 +193,7 @@ PE_ASSET_BIND("shelter_b1_pod_service_gantry_collision_02C04_cells", _gShelterB1
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_POD_SERVICE_GANTRY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1PodServiceGantryRoomCollisionCells[(halfwordOffset)])
 /// X-major cell-list pointers: five X rows of three Z cells; NULL marks an empty cell.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1PodServiceGantryRoomCollisionTable[15] = {
-#include "assets/shelter_b1_pod_service_gantry_collision_02C04_table.inc"
-};
-#else
 static s16* _gShelterB1PodServiceGantryRoomCollisionTable[15];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_pod_service_gantry_collision_02C04_table", _gShelterB1PodServiceGantryRoomCollisionTable, _gShelterB1PodServiceGantryRoomCollisionCells);
 #undef SHELTER_B1_POD_SERVICE_GANTRY_CELL_FACE_LIST_AT_OFFSET
 

@@ -139,40 +139,16 @@ TaskDesc gDryfieldGasStationArrivalTaskDescs[3] = {
     { { { TASK_BODY_NONE, TASK_PRIORITY_CONTROL } }, screenFadeInTask, { .value = 0 } },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldGasStationAnimation04A70Bank1[2] = {
-#include "assets/dryfield_gas_station_animation_04A70_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldGasStationAnimation04A70Bank1[2];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_04A70_bank1", _gDryfieldGasStationAnimation04A70Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldGasStationAnimation04A70Bank4[8] = {
-#include "assets/dryfield_gas_station_animation_04A70_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldGasStationAnimation04A70Bank4[8];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_04A70_bank4", _gDryfieldGasStationAnimation04A70Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldGasStationAnimation04A70Records[76] = {
-#include "assets/dryfield_gas_station_animation_04A70_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldGasStationAnimation04A70Records[76];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_04A70_records", _gDryfieldGasStationAnimation04A70Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldGasStationAnimation04A70Indices[20] = {
-#include "assets/dryfield_gas_station_animation_04A70_indices.inc"
-};
-#else
 static u16 _gDryfieldGasStationAnimation04A70Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_04A70_indices", _gDryfieldGasStationAnimation04A70Indices);
 
 static AnimationSet _gDryfieldGasStationAnimation04A70 = {
@@ -181,40 +157,16 @@ static AnimationSet _gDryfieldGasStationAnimation04A70 = {
     { NULL, _gDryfieldGasStationAnimation04A70Bank1, NULL, NULL, _gDryfieldGasStationAnimation04A70Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldGasStationAnimation05210Bank1[13] = {
-#include "assets/dryfield_gas_station_animation_05210_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldGasStationAnimation05210Bank1[13];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_05210_bank1", _gDryfieldGasStationAnimation05210Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldGasStationAnimation05210Bank4[179] = {
-#include "assets/dryfield_gas_station_animation_05210_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldGasStationAnimation05210Bank4[179];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_05210_bank4", _gDryfieldGasStationAnimation05210Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldGasStationAnimation05210Records[250] = {
-#include "assets/dryfield_gas_station_animation_05210_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldGasStationAnimation05210Records[250];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_05210_records", _gDryfieldGasStationAnimation05210Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldGasStationAnimation05210Indices[20] = {
-#include "assets/dryfield_gas_station_animation_05210_indices.inc"
-};
-#else
 static u16 _gDryfieldGasStationAnimation05210Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_05210_indices", _gDryfieldGasStationAnimation05210Indices);
 
 static AnimationSet _gDryfieldGasStationAnimation05210 = {
@@ -223,40 +175,16 @@ static AnimationSet _gDryfieldGasStationAnimation05210 = {
     { NULL, _gDryfieldGasStationAnimation05210Bank1, NULL, NULL, _gDryfieldGasStationAnimation05210Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldGasStationAnimation055A4Bank1[7] = {
-#include "assets/dryfield_gas_station_animation_055A4_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldGasStationAnimation055A4Bank1[7];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_055A4_bank1", _gDryfieldGasStationAnimation055A4Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldGasStationAnimation055A4Bank4[65] = {
-#include "assets/dryfield_gas_station_animation_055A4_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldGasStationAnimation055A4Bank4[65];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_055A4_bank4", _gDryfieldGasStationAnimation055A4Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldGasStationAnimation055A4Records[123] = {
-#include "assets/dryfield_gas_station_animation_055A4_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldGasStationAnimation055A4Records[123];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_055A4_records", _gDryfieldGasStationAnimation055A4Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldGasStationAnimation055A4Indices[20] = {
-#include "assets/dryfield_gas_station_animation_055A4_indices.inc"
-};
-#else
 static u16 _gDryfieldGasStationAnimation055A4Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_055A4_indices", _gDryfieldGasStationAnimation055A4Indices);
 
 static AnimationSet _gDryfieldGasStationAnimation055A4 = {
@@ -265,40 +193,16 @@ static AnimationSet _gDryfieldGasStationAnimation055A4 = {
     { NULL, _gDryfieldGasStationAnimation055A4Bank1, NULL, NULL, _gDryfieldGasStationAnimation055A4Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldGasStationAnimation05848Bank1[2] = {
-#include "assets/dryfield_gas_station_animation_05848_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldGasStationAnimation05848Bank1[2];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_05848_bank1", _gDryfieldGasStationAnimation05848Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldGasStationAnimation05848Bank4[48] = {
-#include "assets/dryfield_gas_station_animation_05848_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldGasStationAnimation05848Bank4[48];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_05848_bank4", _gDryfieldGasStationAnimation05848Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldGasStationAnimation05848Records[95] = {
-#include "assets/dryfield_gas_station_animation_05848_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldGasStationAnimation05848Records[95];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_05848_records", _gDryfieldGasStationAnimation05848Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldGasStationAnimation05848Indices[20] = {
-#include "assets/dryfield_gas_station_animation_05848_indices.inc"
-};
-#else
 static u16 _gDryfieldGasStationAnimation05848Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_animation_05848_indices", _gDryfieldGasStationAnimation05848Indices);
 
 static AnimationSet _gDryfieldGasStationAnimation05848 = {
@@ -455,46 +359,22 @@ enum {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldGasStationCollisionGridNormals[32] = {
-#include "assets/dryfield_gas_station_collision_068E4_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldGasStationCollisionGridNormals[32];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_collision_068E4_normals", _gDryfieldGasStationCollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldGasStationCollisionGridVerts[126] = {
-#include "assets/dryfield_gas_station_collision_068E4_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldGasStationCollisionGridVerts[126];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_collision_068E4_verts", _gDryfieldGasStationCollisionGridVerts);
 
 /// Indexed collision triangles and quads carrying room-local surface classes 0..4.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldGasStationCollisionGridFaces[63] = {
-#include "assets/dryfield_gas_station_collision_068E4_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldGasStationCollisionGridFaces[63];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_collision_068E4_faces", _gDryfieldGasStationCollisionGridFaces);
 
 /// Signed face-index lists ending with `WORLD_COLLISION_GRID_CELL_END`.
 ///
 /// Retains the complete authored halfword storage, including values beyond
 /// each terminator; the cell directory selects the starts of the live lists.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldGasStationCollisionGridCells[502] = {
-#include "assets/dryfield_gas_station_collision_068E4_cells.inc"
-};
-#else
 static s16 _gDryfieldGasStationCollisionGridCells[502];
-#endif
 PE_ASSET_BIND("dryfield_gas_station_collision_068E4_cells", _gDryfieldGasStationCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -510,13 +390,7 @@ PE_ASSET_BIND("dryfield_gas_station_collision_068E4_cells", _gDryfieldGasStation
 #define DRYFIELD_GAS_STATION_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldGasStationCollisionGridCells[(halfwordOffset)])
 
 /// X-major directory of cell lists, indexed by X * cellCountZ + Z.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldGasStationCollisionGridTable[DRYFIELD_GAS_STATION_COLLISION_CELLS_X * DRYFIELD_GAS_STATION_COLLISION_CELLS_Z] = {
-#include "assets/dryfield_gas_station_collision_068E4_table.inc"
-};
-#else
 static s16* _gDryfieldGasStationCollisionGridTable[48];
-#endif
 PE_ASSET_BIND_AUX("dryfield_gas_station_collision_068E4_table", _gDryfieldGasStationCollisionGridTable, _gDryfieldGasStationCollisionGridCells);
 #undef DRYFIELD_GAS_STATION_CELL_FACE_LIST_AT_OFFSET
 

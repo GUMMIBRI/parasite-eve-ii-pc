@@ -97,46 +97,22 @@ DirectionWarpEntry gDryfieldMotelRoom2WarpEntries[1] = {
 };
 
 /// Grid-local normals, with 4096 units per unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMotelRoom2CollisionGridNormals[13] = {
-#include "assets/dryfield_motel_room_2_collision_0084C_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldMotelRoom2CollisionGridNormals[13];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_2_collision_0084C_normals", _gDryfieldMotelRoom2CollisionGridNormals);
 
 /// Collision-mesh vertices in signed grid-local game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMotelRoom2CollisionGridVerts[105] = {
-#include "assets/dryfield_motel_room_2_collision_0084C_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldMotelRoom2CollisionGridVerts[105];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_2_collision_0084C_verts", _gDryfieldMotelRoom2CollisionGridVerts);
 
 /// Indexed room quads using surface classes 0..3.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldMotelRoom2CollisionGridFaces[43] = {
-#include "assets/dryfield_motel_room_2_collision_0084C_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldMotelRoom2CollisionGridFaces[43];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_2_collision_0084C_faces", _gDryfieldMotelRoom2CollisionGridFaces);
 
 /// Four face-index lists ending at elements 43, 81, 112 and 132.
 ///
 /// Element 113 repeats face 0 outside the lists; the final halfword is retained
 /// authored storage, also outside every cell scan.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldMotelRoom2CollisionGridCells[134] = {
-#include "assets/dryfield_motel_room_2_collision_0084C_cells.inc"
-};
-#else
 static s16 _gDryfieldMotelRoom2CollisionGridCells[134];
-#endif
 PE_ASSET_BIND("dryfield_motel_room_2_collision_0084C_cells", _gDryfieldMotelRoom2CollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -152,13 +128,7 @@ PE_ASSET_BIND("dryfield_motel_room_2_collision_0084C_cells", _gDryfieldMotelRoom
 #define DRYFIELD_MOTEL_ROOM_2_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldMotelRoom2CollisionGridCells[(halfwordOffset)])
 
 /// X-major 2-by-2 cell table, with list starts at elements 0, 44, 82 and 114.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldMotelRoom2CollisionGridTable[4] = {
-#include "assets/dryfield_motel_room_2_collision_0084C_table.inc"
-};
-#else
 static s16* _gDryfieldMotelRoom2CollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("dryfield_motel_room_2_collision_0084C_table", _gDryfieldMotelRoom2CollisionGridTable, _gDryfieldMotelRoom2CollisionGridCells);
 #undef DRYFIELD_MOTEL_ROOM_2_CELL_FACE_LIST_AT_OFFSET
 

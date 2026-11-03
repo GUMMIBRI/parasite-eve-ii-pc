@@ -680,40 +680,16 @@ SVECTOR gActor503500PhaseTransitionPuffOffsets[7] = {
     { 300, -800, 2500, 0 },
 };
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gActor503500BossBodyCollisionGridNormals[4] = {
-#include "assets/actor_503500_collision_3D21C_normals.inc"
-};
-#else
 static SVECTOR _gActor503500BossBodyCollisionGridNormals[4];
-#endif
 PE_ASSET_BIND("actor_503500_collision_3D21C_normals", _gActor503500BossBodyCollisionGridNormals);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gActor503500BossBodyCollisionGridVerts[8] = {
-#include "assets/actor_503500_collision_3D21C_verts.inc"
-};
-#else
 static SVECTOR _gActor503500BossBodyCollisionGridVerts[8];
-#endif
 PE_ASSET_BIND("actor_503500_collision_3D21C_verts", _gActor503500BossBodyCollisionGridVerts);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gActor503500BossBodyCollisionGridFaces[4] = {
-#include "assets/actor_503500_collision_3D21C_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gActor503500BossBodyCollisionGridFaces[4];
-#endif
 PE_ASSET_BIND("actor_503500_collision_3D21C_faces", _gActor503500BossBodyCollisionGridFaces);
 
-#ifdef PE_EMBED_ASSETS
-static s16 _gActor503500BossBodyCollisionGridCells[10] = {
-#include "assets/actor_503500_collision_3D21C_cells.inc"
-};
-#else
 static s16 _gActor503500BossBodyCollisionGridCells[10];
-#endif
 PE_ASSET_BIND("actor_503500_collision_3D21C_cells", _gActor503500BossBodyCollisionGridCells);
 
 /// Resolves a halfword offset into the boss-body grid's packed face-list pool.
@@ -724,13 +700,7 @@ PE_ASSET_BIND("actor_503500_collision_3D21C_cells", _gActor503500BossBodyCollisi
 /// `cell_face_list_macro` binding selects this name for the included initializer;
 /// the binding is undefined after the table.
 #define ACTOR_503500_BOSS_BODY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gActor503500BossBodyCollisionGridCells[(halfwordOffset)])
-#ifdef PE_EMBED_ASSETS
-static s16* _gActor503500BossBodyCollisionGridTable[2] = {
-#include "assets/actor_503500_collision_3D21C_table.inc"
-};
-#else
 static s16* _gActor503500BossBodyCollisionGridTable[2];
-#endif
 PE_ASSET_BIND_AUX("actor_503500_collision_3D21C_table", _gActor503500BossBodyCollisionGridTable, _gActor503500BossBodyCollisionGridCells);
 #undef ACTOR_503500_BOSS_BODY_CELL_FACE_LIST_AT_OFFSET
 

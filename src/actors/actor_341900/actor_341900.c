@@ -163,40 +163,16 @@ static void _actor341900FinishScene(void);
 static void _actor341900PlayGluttonAnimation(Task* task, s32 messageId, const AnimationPlayRequest* request, s32 unusedArg);
 static void _actor341900IgnoreActorCommand(Task* task, s32 messageId, const ActorCommand* command, s32 unusedArg);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gActor341900Animation01B5CBank1[6] = {
-#include "assets/actor_341900_animation_01B5C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gActor341900Animation01B5CBank1[6];
-#endif
 PE_ASSET_BIND("actor_341900_animation_01B5C_bank1", _gActor341900Animation01B5CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gActor341900Animation01B5CBank4[46] = {
-#include "assets/actor_341900_animation_01B5C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gActor341900Animation01B5CBank4[46];
-#endif
 PE_ASSET_BIND("actor_341900_animation_01B5C_bank4", _gActor341900Animation01B5CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gActor341900Animation01B5CRecords[109] = {
-#include "assets/actor_341900_animation_01B5C_records.inc"
-};
-#else
 static AnimationRecord _gActor341900Animation01B5CRecords[109];
-#endif
 PE_ASSET_BIND("actor_341900_animation_01B5C_records", _gActor341900Animation01B5CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gActor341900Animation01B5CIndices[20] = {
-#include "assets/actor_341900_animation_01B5C_indices.inc"
-};
-#else
 static u16 _gActor341900Animation01B5CIndices[20];
-#endif
 PE_ASSET_BIND("actor_341900_animation_01B5C_indices", _gActor341900Animation01B5CIndices);
 
 static AnimationSet _gActor341900Animation01B5C = {

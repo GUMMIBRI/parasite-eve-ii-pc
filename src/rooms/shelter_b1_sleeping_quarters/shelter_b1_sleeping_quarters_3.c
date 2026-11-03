@@ -84,45 +84,21 @@ DirectionWarpEntry gShelterB1SleepingQuartersWarpEntries[2] = {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1SleepingQuartersCollisionGridNormals[7] = {
-#include "assets/shelter_b1_sleeping_quarters_collision_03B14_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1SleepingQuartersCollisionGridNormals[7];
-#endif
 PE_ASSET_BIND("shelter_b1_sleeping_quarters_collision_03B14_normals", _gShelterB1SleepingQuartersCollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1SleepingQuartersCollisionGridVerts[143] = {
-#include "assets/shelter_b1_sleeping_quarters_collision_03B14_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1SleepingQuartersCollisionGridVerts[143];
-#endif
 PE_ASSET_BIND("shelter_b1_sleeping_quarters_collision_03B14_verts", _gShelterB1SleepingQuartersCollisionGridVerts);
 
 /// Indexed collision quads; their surface classes select this room's policies.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1SleepingQuartersCollisionGridFaces[64] = {
-#include "assets/shelter_b1_sleeping_quarters_collision_03B14_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1SleepingQuartersCollisionGridFaces[64];
-#endif
 PE_ASSET_BIND("shelter_b1_sleeping_quarters_collision_03B14_faces", _gShelterB1SleepingQuartersCollisionGridFaces);
 
 /// Signed face-index lists for the collision cells, each ending at -1.
 ///
 /// The authored storage also retains zeros between lists and after the last list.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1SleepingQuartersCollisionGridCells[274] = {
-#include "assets/shelter_b1_sleeping_quarters_collision_03B14_cells.inc"
-};
-#else
 static s16 _gShelterB1SleepingQuartersCollisionGridCells[274];
-#endif
 PE_ASSET_BIND("shelter_b1_sleeping_quarters_collision_03B14_cells", _gShelterB1SleepingQuartersCollisionGridCells);
 
 enum {
@@ -140,13 +116,7 @@ enum {
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_SLEEPING_QUARTERS_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1SleepingQuartersCollisionGridCells[(halfwordOffset)])
 /// X-major cell pointers, indexed by x * cellCountZ + z.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1SleepingQuartersCollisionGridTable[SHELTER_B1_SLEEPING_QUARTERS_COLLISION_CELL_COUNT_X * SHELTER_B1_SLEEPING_QUARTERS_COLLISION_CELL_COUNT_Z] = {
-#include "assets/shelter_b1_sleeping_quarters_collision_03B14_table.inc"
-};
-#else
 static s16* _gShelterB1SleepingQuartersCollisionGridTable[12];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_sleeping_quarters_collision_03B14_table", _gShelterB1SleepingQuartersCollisionGridTable, _gShelterB1SleepingQuartersCollisionGridCells);
 #undef SHELTER_B1_SLEEPING_QUARTERS_CELL_FACE_LIST_AT_OFFSET
 

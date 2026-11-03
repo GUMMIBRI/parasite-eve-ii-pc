@@ -178,40 +178,16 @@ static TaskDesc _gDryfieldNightSaloonGRJukeboxSceneTaskDesc = {
     .data     = { .value = 0 },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation02668Bank1[6] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02668_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation02668Bank1[6];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02668_bank1", _gDryfieldNightSaloonGRAnimation02668Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation02668Bank4[46] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02668_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation02668Bank4[46];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02668_bank4", _gDryfieldNightSaloonGRAnimation02668Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation02668Records[109] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02668_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation02668Records[109];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02668_records", _gDryfieldNightSaloonGRAnimation02668Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation02668Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02668_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation02668Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02668_indices", _gDryfieldNightSaloonGRAnimation02668Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation02668 = {
@@ -220,40 +196,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation02668 = {
     { NULL, _gDryfieldNightSaloonGRAnimation02668Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation02668Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation02A3CBank1[8] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02A3C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation02A3CBank1[8];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02A3C_bank1", _gDryfieldNightSaloonGRAnimation02A3CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation02A3CBank4[84] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02A3C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation02A3CBank4[84];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02A3C_bank4", _gDryfieldNightSaloonGRAnimation02A3CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation02A3CRecords[117] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02A3C_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation02A3CRecords[117];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02A3C_records", _gDryfieldNightSaloonGRAnimation02A3CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation02A3CIndices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02A3C_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation02A3CIndices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02A3C_indices", _gDryfieldNightSaloonGRAnimation02A3CIndices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation02A3C = {
@@ -262,40 +214,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation02A3C = {
     { NULL, _gDryfieldNightSaloonGRAnimation02A3CBank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation02A3CBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation02E2CBank1[7] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02E2C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation02E2CBank1[7];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02E2C_bank1", _gDryfieldNightSaloonGRAnimation02E2CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation02E2CBank4[62] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02E2C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation02E2CBank4[62];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02E2C_bank4", _gDryfieldNightSaloonGRAnimation02E2CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation02E2CRecords[149] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02E2C_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation02E2CRecords[149];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02E2C_records", _gDryfieldNightSaloonGRAnimation02E2CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation02E2CIndices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_02E2C_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation02E2CIndices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_02E2C_indices", _gDryfieldNightSaloonGRAnimation02E2CIndices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation02E2C = {
@@ -304,40 +232,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation02E2C = {
     { NULL, _gDryfieldNightSaloonGRAnimation02E2CBank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation02E2CBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation03198Bank1[7] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03198_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation03198Bank1[7];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03198_bank1", _gDryfieldNightSaloonGRAnimation03198Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation03198Bank4[74] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03198_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation03198Bank4[74];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03198_bank4", _gDryfieldNightSaloonGRAnimation03198Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation03198Records[104] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03198_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation03198Records[104];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03198_records", _gDryfieldNightSaloonGRAnimation03198Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation03198Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03198_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation03198Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03198_indices", _gDryfieldNightSaloonGRAnimation03198Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation03198 = {
@@ -346,40 +250,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation03198 = {
     { NULL, _gDryfieldNightSaloonGRAnimation03198Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation03198Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation036B8Bank1[10] = {
-#include "assets/dryfield_night_saloon_g_r_animation_036B8_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation036B8Bank1[10];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_036B8_bank1", _gDryfieldNightSaloonGRAnimation036B8Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation036B8Bank4[100] = {
-#include "assets/dryfield_night_saloon_g_r_animation_036B8_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation036B8Bank4[100];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_036B8_bank4", _gDryfieldNightSaloonGRAnimation036B8Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation036B8Records[178] = {
-#include "assets/dryfield_night_saloon_g_r_animation_036B8_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation036B8Records[178];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_036B8_records", _gDryfieldNightSaloonGRAnimation036B8Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation036B8Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_036B8_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation036B8Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_036B8_indices", _gDryfieldNightSaloonGRAnimation036B8Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation036B8 = {
@@ -388,40 +268,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation036B8 = {
     { NULL, _gDryfieldNightSaloonGRAnimation036B8Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation036B8Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation03998Bank1[5] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03998_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation03998Bank1[5];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03998_bank1", _gDryfieldNightSaloonGRAnimation03998Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation03998Bank4[59] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03998_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation03998Bank4[59];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03998_bank4", _gDryfieldNightSaloonGRAnimation03998Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation03998Records[90] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03998_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation03998Records[90];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03998_records", _gDryfieldNightSaloonGRAnimation03998Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation03998Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03998_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation03998Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03998_indices", _gDryfieldNightSaloonGRAnimation03998Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation03998 = {
@@ -430,40 +286,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation03998 = {
     { NULL, _gDryfieldNightSaloonGRAnimation03998Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation03998Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation03E80Bank1[6] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03E80_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation03E80Bank1[6];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03E80_bank1", _gDryfieldNightSaloonGRAnimation03E80Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation03E80Bank4[110] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03E80_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation03E80Bank4[110];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03E80_bank4", _gDryfieldNightSaloonGRAnimation03E80Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation03E80Records[166] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03E80_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation03E80Records[166];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03E80_records", _gDryfieldNightSaloonGRAnimation03E80Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation03E80Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_03E80_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation03E80Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_03E80_indices", _gDryfieldNightSaloonGRAnimation03E80Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation03E80 = {
@@ -472,40 +304,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation03E80 = {
     { NULL, _gDryfieldNightSaloonGRAnimation03E80Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation03E80Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation04238Bank1[3] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04238_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation04238Bank1[3];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04238_bank1", _gDryfieldNightSaloonGRAnimation04238Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation04238Bank4[81] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04238_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation04238Bank4[81];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04238_bank4", _gDryfieldNightSaloonGRAnimation04238Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation04238Records[128] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04238_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation04238Records[128];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04238_records", _gDryfieldNightSaloonGRAnimation04238Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation04238Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04238_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation04238Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04238_indices", _gDryfieldNightSaloonGRAnimation04238Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation04238 = {
@@ -514,40 +322,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation04238 = {
     { NULL, _gDryfieldNightSaloonGRAnimation04238Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation04238Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation04430Bank1[3] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04430_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation04430Bank1[3];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04430_bank1", _gDryfieldNightSaloonGRAnimation04430Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation04430Bank4[34] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04430_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation04430Bank4[34];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04430_bank4", _gDryfieldNightSaloonGRAnimation04430Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation04430Records[63] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04430_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation04430Records[63];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04430_records", _gDryfieldNightSaloonGRAnimation04430Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation04430Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04430_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation04430Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04430_indices", _gDryfieldNightSaloonGRAnimation04430Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation04430 = {
@@ -556,40 +340,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation04430 = {
     { NULL, _gDryfieldNightSaloonGRAnimation04430Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation04430Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation04784Bank1[5] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04784_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation04784Bank1[5];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04784_bank1", _gDryfieldNightSaloonGRAnimation04784Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation04784Bank4[58] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04784_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation04784Bank4[58];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04784_bank4", _gDryfieldNightSaloonGRAnimation04784Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation04784Records[120] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04784_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation04784Records[120];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04784_records", _gDryfieldNightSaloonGRAnimation04784Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation04784Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04784_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation04784Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04784_indices", _gDryfieldNightSaloonGRAnimation04784Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation04784 = {
@@ -598,40 +358,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation04784 = {
     { NULL, _gDryfieldNightSaloonGRAnimation04784Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation04784Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation0497CBank1[3] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0497C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation0497CBank1[3];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0497C_bank1", _gDryfieldNightSaloonGRAnimation0497CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation0497CBank4[34] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0497C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation0497CBank4[34];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0497C_bank4", _gDryfieldNightSaloonGRAnimation0497CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation0497CRecords[63] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0497C_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation0497CRecords[63];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0497C_records", _gDryfieldNightSaloonGRAnimation0497CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation0497CIndices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0497C_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation0497CIndices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0497C_indices", _gDryfieldNightSaloonGRAnimation0497CIndices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation0497C = {
@@ -640,40 +376,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation0497C = {
     { NULL, _gDryfieldNightSaloonGRAnimation0497CBank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation0497CBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation04C24Bank1[4] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04C24_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation04C24Bank1[4];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04C24_bank1", _gDryfieldNightSaloonGRAnimation04C24Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation04C24Bank4[46] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04C24_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation04C24Bank4[46];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04C24_bank4", _gDryfieldNightSaloonGRAnimation04C24Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation04C24Records[92] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04C24_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation04C24Records[92];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04C24_records", _gDryfieldNightSaloonGRAnimation04C24Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation04C24Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04C24_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation04C24Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04C24_indices", _gDryfieldNightSaloonGRAnimation04C24Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation04C24 = {
@@ -682,40 +394,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation04C24 = {
     { NULL, _gDryfieldNightSaloonGRAnimation04C24Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation04C24Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation04F58Bank1[6] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04F58_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation04F58Bank1[6];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04F58_bank1", _gDryfieldNightSaloonGRAnimation04F58Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation04F58Bank4[68] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04F58_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation04F58Bank4[68];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04F58_bank4", _gDryfieldNightSaloonGRAnimation04F58Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation04F58Records[99] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04F58_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation04F58Records[99];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04F58_records", _gDryfieldNightSaloonGRAnimation04F58Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation04F58Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_04F58_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation04F58Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_04F58_indices", _gDryfieldNightSaloonGRAnimation04F58Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation04F58 = {
@@ -724,40 +412,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation04F58 = {
     { NULL, _gDryfieldNightSaloonGRAnimation04F58Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation04F58Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation053C0Bank1[10] = {
-#include "assets/dryfield_night_saloon_g_r_animation_053C0_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation053C0Bank1[10];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_053C0_bank1", _gDryfieldNightSaloonGRAnimation053C0Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation053C0Bank4[96] = {
-#include "assets/dryfield_night_saloon_g_r_animation_053C0_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation053C0Bank4[96];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_053C0_bank4", _gDryfieldNightSaloonGRAnimation053C0Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation053C0Records[136] = {
-#include "assets/dryfield_night_saloon_g_r_animation_053C0_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation053C0Records[136];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_053C0_records", _gDryfieldNightSaloonGRAnimation053C0Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation053C0Indices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_053C0_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation053C0Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_053C0_indices", _gDryfieldNightSaloonGRAnimation053C0Indices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation053C0 = {
@@ -766,40 +430,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation053C0 = {
     { NULL, _gDryfieldNightSaloonGRAnimation053C0Bank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation053C0Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation0570CBank1[6] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0570C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation0570CBank1[6];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0570C_bank1", _gDryfieldNightSaloonGRAnimation0570CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation0570CBank4[71] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0570C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation0570CBank4[71];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0570C_bank4", _gDryfieldNightSaloonGRAnimation0570CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation0570CRecords[102] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0570C_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation0570CRecords[102];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0570C_records", _gDryfieldNightSaloonGRAnimation0570CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation0570CIndices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0570C_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation0570CIndices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0570C_indices", _gDryfieldNightSaloonGRAnimation0570CIndices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation0570C = {
@@ -808,40 +448,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation0570C = {
     { NULL, _gDryfieldNightSaloonGRAnimation0570CBank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation0570CBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation05B7CBank1[5] = {
-#include "assets/dryfield_night_saloon_g_r_animation_05B7C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation05B7CBank1[5];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_05B7C_bank1", _gDryfieldNightSaloonGRAnimation05B7CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation05B7CBank4[99] = {
-#include "assets/dryfield_night_saloon_g_r_animation_05B7C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation05B7CBank4[99];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_05B7C_bank4", _gDryfieldNightSaloonGRAnimation05B7CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation05B7CRecords[150] = {
-#include "assets/dryfield_night_saloon_g_r_animation_05B7C_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation05B7CRecords[150];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_05B7C_records", _gDryfieldNightSaloonGRAnimation05B7CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation05B7CIndices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_05B7C_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation05B7CIndices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_05B7C_indices", _gDryfieldNightSaloonGRAnimation05B7CIndices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation05B7C = {
@@ -850,40 +466,16 @@ static AnimationSet _gDryfieldNightSaloonGRAnimation05B7C = {
     { NULL, _gDryfieldNightSaloonGRAnimation05B7CBank1, NULL, NULL, _gDryfieldNightSaloonGRAnimation05B7CBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightSaloonGRAnimation0631CBank1[13] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0631C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightSaloonGRAnimation0631CBank1[13];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0631C_bank1", _gDryfieldNightSaloonGRAnimation0631CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation0631CBank4[179] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0631C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightSaloonGRAnimation0631CBank4[179];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0631C_bank4", _gDryfieldNightSaloonGRAnimation0631CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightSaloonGRAnimation0631CRecords[250] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0631C_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightSaloonGRAnimation0631CRecords[250];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0631C_records", _gDryfieldNightSaloonGRAnimation0631CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightSaloonGRAnimation0631CIndices[20] = {
-#include "assets/dryfield_night_saloon_g_r_animation_0631C_indices.inc"
-};
-#else
 static u16 _gDryfieldNightSaloonGRAnimation0631CIndices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_animation_0631C_indices", _gDryfieldNightSaloonGRAnimation0631CIndices);
 
 static AnimationSet _gDryfieldNightSaloonGRAnimation0631C = {
@@ -2007,46 +1599,22 @@ enum {
 };
 
 /// Nine room-space collision-plane normals, with 4096 representing one unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightSaloonGRCollisionGridNormals[] = {
-#include "assets/dryfield_night_saloon_g_r_collision_08590_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightSaloonGRCollisionGridNormals[9];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_collision_08590_normals", _gDryfieldNightSaloonGRCollisionGridNormals);
 
 /// 116 collision-mesh vertices in signed room-local game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightSaloonGRCollisionGridVerts[] = {
-#include "assets/dryfield_night_saloon_g_r_collision_08590_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightSaloonGRCollisionGridVerts[116];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_collision_08590_verts", _gDryfieldNightSaloonGRCollisionGridVerts);
 
 /// 61 indexed collision quads referencing the grid's vertex and normal pools.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightSaloonGRCollisionGridFaces[] = {
-#include "assets/dryfield_night_saloon_g_r_collision_08590_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightSaloonGRCollisionGridFaces[61];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_collision_08590_faces", _gDryfieldNightSaloonGRCollisionGridFaces);
 
 /// Serialized cell face-index lists, each ending at WORLD_COLLISION_GRID_CELL_END.
 ///
 /// Includes all 280 halfwords between the face pool and cell-pointer table;
 /// only the sentinel-terminated runs reached by the table are traversed.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightSaloonGRCollisionGridCells[] = {
-#include "assets/dryfield_night_saloon_g_r_collision_08590_cells.inc"
-};
-#else
 static s16 _gDryfieldNightSaloonGRCollisionGridCells[280];
-#endif
 PE_ASSET_BIND("dryfield_night_saloon_g_r_collision_08590_cells", _gDryfieldNightSaloonGRCollisionGridCells);
 
 // The generated initializer supplies halfword offsets into this grid's cell pool.
@@ -2059,13 +1627,7 @@ PE_ASSET_BIND("dryfield_night_saloon_g_r_collision_08590_cells", _gDryfieldNight
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_SALOON_G_R_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightSaloonGRCollisionGridCells[(halfwordOffset)])
 /// X-major 3-by-4 table of borrowed, sentinel-terminated cell face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightSaloonGRCollisionGridTable[DRYFIELD_NIGHT_SALOON_G_R_COLLISION_CELL_COUNT_X * DRYFIELD_NIGHT_SALOON_G_R_COLLISION_CELL_COUNT_Z] = {
-#include "assets/dryfield_night_saloon_g_r_collision_08590_table.inc"
-};
-#else
 static s16* _gDryfieldNightSaloonGRCollisionGridTable[12];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_saloon_g_r_collision_08590_table", _gDryfieldNightSaloonGRCollisionGridTable, _gDryfieldNightSaloonGRCollisionGridCells);
 #undef DRYFIELD_NIGHT_SALOON_G_R_CELL_FACE_LIST_AT_OFFSET
 

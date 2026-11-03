@@ -79,40 +79,16 @@ static void                  _dryfieldDrivewayInitRoomTask(Task* task);
 /// The script releases actor 03700's staged entrance before combat waves advance.
 enum { DRYFIELD_DRIVEWAY_ENCOUNTER_WAVE_BEGIN = 1 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldDrivewayAnimation00D08Bank1[10] = {
-#include "assets/dryfield_driveway_animation_00D08_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldDrivewayAnimation00D08Bank1[10];
-#endif
 PE_ASSET_BIND("dryfield_driveway_animation_00D08_bank1", _gDryfieldDrivewayAnimation00D08Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldDrivewayAnimation00D08Bank4[95] = {
-#include "assets/dryfield_driveway_animation_00D08_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldDrivewayAnimation00D08Bank4[95];
-#endif
 PE_ASSET_BIND("dryfield_driveway_animation_00D08_bank4", _gDryfieldDrivewayAnimation00D08Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldDrivewayAnimation00D08Records[139] = {
-#include "assets/dryfield_driveway_animation_00D08_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldDrivewayAnimation00D08Records[139];
-#endif
 PE_ASSET_BIND("dryfield_driveway_animation_00D08_records", _gDryfieldDrivewayAnimation00D08Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldDrivewayAnimation00D08Indices[20] = {
-#include "assets/dryfield_driveway_animation_00D08_indices.inc"
-};
-#else
 static u16 _gDryfieldDrivewayAnimation00D08Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_driveway_animation_00D08_indices", _gDryfieldDrivewayAnimation00D08Indices);
 
 static AnimationSet _gDryfieldDrivewayAnimation00D08 = {
@@ -346,43 +322,19 @@ DirectionWarpEntry gDryfieldDrivewayWarpEntries[3] = {
 };
 
 /// Room-space collision normals, with `ONE` representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldDrivewayCollisionGridNormals[13] = {
-#include "assets/dryfield_driveway_collision_017B4_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldDrivewayCollisionGridNormals[13];
-#endif
 PE_ASSET_BIND("dryfield_driveway_collision_017B4_normals", _gDryfieldDrivewayCollisionGridNormals);
 
 /// Collision vertices in signed room-space game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldDrivewayCollisionGridVerts[64] = {
-#include "assets/dryfield_driveway_collision_017B4_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldDrivewayCollisionGridVerts[64];
-#endif
 PE_ASSET_BIND("dryfield_driveway_collision_017B4_verts", _gDryfieldDrivewayCollisionGridVerts);
 
 /// Indexed collision quads and their room-local surface classes.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldDrivewayCollisionGridFaces[23] = {
-#include "assets/dryfield_driveway_collision_017B4_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldDrivewayCollisionGridFaces[23];
-#endif
 PE_ASSET_BIND("dryfield_driveway_collision_017B4_faces", _gDryfieldDrivewayCollisionGridFaces);
 
 /// Signed face-index lists ending with `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldDrivewayCollisionGridCells[154] = {
-#include "assets/dryfield_driveway_collision_017B4_cells.inc"
-};
-#else
 static s16 _gDryfieldDrivewayCollisionGridCells[154];
-#endif
 PE_ASSET_BIND("dryfield_driveway_collision_017B4_cells", _gDryfieldDrivewayCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -398,13 +350,7 @@ PE_ASSET_BIND("dryfield_driveway_collision_017B4_cells", _gDryfieldDrivewayColli
 #define DRYFIELD_DRIVEWAY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldDrivewayCollisionGridCells[(halfwordOffset)])
 
 /// X-major face-list pointers for the seven by three XZ cells; NULL is empty.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldDrivewayCollisionGridTable[21] = {
-#include "assets/dryfield_driveway_collision_017B4_table.inc"
-};
-#else
 static s16* _gDryfieldDrivewayCollisionGridTable[21];
-#endif
 PE_ASSET_BIND_AUX("dryfield_driveway_collision_017B4_table", _gDryfieldDrivewayCollisionGridTable, _gDryfieldDrivewayCollisionGridCells);
 #undef DRYFIELD_DRIVEWAY_CELL_FACE_LIST_AT_OFFSET
 

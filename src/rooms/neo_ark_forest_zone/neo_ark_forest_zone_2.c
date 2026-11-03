@@ -91,40 +91,16 @@ static WorldCoordRoomLights  _gNeoArkForestZoneRoomLights;
 static void _neoArkForestZoneRoamerPoolATask(Task* task);
 static void _neoArkForestZoneRoamerPoolBTask(Task* task);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gNeoArkForestZoneAnimation04364Bank1[6] = {
-#include "assets/neo_ark_forest_zone_animation_04364_bank1.inc"
-};
-#else
 static AnimationPackedPose _gNeoArkForestZoneAnimation04364Bank1[6];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_animation_04364_bank1", _gNeoArkForestZoneAnimation04364Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gNeoArkForestZoneAnimation04364Bank4[64] = {
-#include "assets/neo_ark_forest_zone_animation_04364_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gNeoArkForestZoneAnimation04364Bank4[64];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_animation_04364_bank4", _gNeoArkForestZoneAnimation04364Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gNeoArkForestZoneAnimation04364Records[141] = {
-#include "assets/neo_ark_forest_zone_animation_04364_records.inc"
-};
-#else
 static AnimationRecord _gNeoArkForestZoneAnimation04364Records[141];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_animation_04364_records", _gNeoArkForestZoneAnimation04364Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gNeoArkForestZoneAnimation04364Indices[20] = {
-#include "assets/neo_ark_forest_zone_animation_04364_indices.inc"
-};
-#else
 static u16 _gNeoArkForestZoneAnimation04364Indices[20];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_animation_04364_indices", _gNeoArkForestZoneAnimation04364Indices);
 
 static AnimationSet _gNeoArkForestZoneAnimation04364 = {
@@ -133,40 +109,16 @@ static AnimationSet _gNeoArkForestZoneAnimation04364 = {
     { NULL, _gNeoArkForestZoneAnimation04364Bank1, NULL, NULL, _gNeoArkForestZoneAnimation04364Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gNeoArkForestZoneAnimation047D4Bank1[10] = {
-#include "assets/neo_ark_forest_zone_animation_047D4_bank1.inc"
-};
-#else
 static AnimationPackedPose _gNeoArkForestZoneAnimation047D4Bank1[10];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_animation_047D4_bank1", _gNeoArkForestZoneAnimation047D4Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gNeoArkForestZoneAnimation047D4Bank4[95] = {
-#include "assets/neo_ark_forest_zone_animation_047D4_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gNeoArkForestZoneAnimation047D4Bank4[95];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_animation_047D4_bank4", _gNeoArkForestZoneAnimation047D4Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gNeoArkForestZoneAnimation047D4Records[139] = {
-#include "assets/neo_ark_forest_zone_animation_047D4_records.inc"
-};
-#else
 static AnimationRecord _gNeoArkForestZoneAnimation047D4Records[139];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_animation_047D4_records", _gNeoArkForestZoneAnimation047D4Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gNeoArkForestZoneAnimation047D4Indices[20] = {
-#include "assets/neo_ark_forest_zone_animation_047D4_indices.inc"
-};
-#else
 static u16 _gNeoArkForestZoneAnimation047D4Indices[20];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_animation_047D4_indices", _gNeoArkForestZoneAnimation047D4Indices);
 
 static AnimationSet _gNeoArkForestZoneAnimation047D4 = {
@@ -365,43 +317,19 @@ DirectionWarpEntry gNeoArkForestZoneWarpEntries[3] = {
 };
 
 /// Room-space face normals of the forest zone box, with ONE per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkForestZoneCollisionGridNormals[] = {
-#include "assets/neo_ark_forest_zone_collision_04CB4_normals.inc"
-};
-#else
 static SVECTOR _gNeoArkForestZoneCollisionGridNormals[6];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_collision_04CB4_normals", _gNeoArkForestZoneCollisionGridNormals);
 
 /// Corners of the room box in signed game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkForestZoneCollisionGridVerts[] = {
-#include "assets/neo_ark_forest_zone_collision_04CB4_verts.inc"
-};
-#else
 static SVECTOR _gNeoArkForestZoneCollisionGridVerts[8];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_collision_04CB4_verts", _gNeoArkForestZoneCollisionGridVerts);
 
 /// Six box faces: class 1 on the Y=0 floor and class 0 on every other face.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gNeoArkForestZoneCollisionGridFaces[] = {
-#include "assets/neo_ark_forest_zone_collision_04CB4_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gNeoArkForestZoneCollisionGridFaces[6];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_collision_04CB4_faces", _gNeoArkForestZoneCollisionGridFaces);
 
 /// Serialized signed face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gNeoArkForestZoneCollisionGridCells[] = {
-#include "assets/neo_ark_forest_zone_collision_04CB4_cells.inc"
-};
-#else
 static s16 _gNeoArkForestZoneCollisionGridCells[30];
-#endif
 PE_ASSET_BIND("neo_ark_forest_zone_collision_04CB4_cells", _gNeoArkForestZoneCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -414,13 +342,7 @@ PE_ASSET_BIND("neo_ark_forest_zone_collision_04CB4_cells", _gNeoArkForestZoneCol
 /// binding through the table include, then undefine it.
 #define NEO_ARK_FOREST_ZONE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkForestZoneCollisionGridCells[(halfwordOffset)])
 /// Five X-major cells in one Z row, borrowing terminated face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gNeoArkForestZoneCollisionGridTable[] = {
-#include "assets/neo_ark_forest_zone_collision_04CB4_table.inc"
-};
-#else
 static s16* _gNeoArkForestZoneCollisionGridTable[5];
-#endif
 PE_ASSET_BIND_AUX("neo_ark_forest_zone_collision_04CB4_table", _gNeoArkForestZoneCollisionGridTable, _gNeoArkForestZoneCollisionGridCells);
 #undef NEO_ARK_FOREST_ZONE_CELL_FACE_LIST_AT_OFFSET
 

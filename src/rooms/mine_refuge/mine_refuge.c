@@ -218,45 +218,21 @@ DirectionWarpEntry gMineRefugeWarpEntries[1] = {
 };
 
 /// Room-space face normals of the refuge collision grid, with ONE per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineRefugeCollisionGridNormals[12] = {
-#include "assets/mine_refuge_collision_045E4_normals.inc"
-};
-#else
 static SVECTOR _gMineRefugeCollisionGridNormals[12];
-#endif
 PE_ASSET_BIND("mine_refuge_collision_045E4_normals", _gMineRefugeCollisionGridNormals);
 
 /// Vertices of the refuge collision grid, in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineRefugeCollisionGridVerts[34] = {
-#include "assets/mine_refuge_collision_045E4_verts.inc"
-};
-#else
 static SVECTOR _gMineRefugeCollisionGridVerts[34];
-#endif
 PE_ASSET_BIND("mine_refuge_collision_045E4_verts", _gMineRefugeCollisionGridVerts);
 
 /// Indexed collision quads: one class-1 floor and fourteen class-0 wall faces.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gMineRefugeCollisionGridFaces[15] = {
-#include "assets/mine_refuge_collision_045E4_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gMineRefugeCollisionGridFaces[15];
-#endif
 PE_ASSET_BIND("mine_refuge_collision_045E4_faces", _gMineRefugeCollisionGridFaces);
 
 /// Storage for the grid's two face-index lists, each ending at -1.
 ///
 /// The lists start at elements 0 and 16; unused stored words are retained.
-#ifdef PE_EMBED_ASSETS
-static s16 _gMineRefugeCollisionGridCells[24] = {
-#include "assets/mine_refuge_collision_045E4_cells.inc"
-};
-#else
 static s16 _gMineRefugeCollisionGridCells[24];
-#endif
 PE_ASSET_BIND("mine_refuge_collision_045E4_cells", _gMineRefugeCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -269,13 +245,7 @@ PE_ASSET_BIND("mine_refuge_collision_045E4_cells", _gMineRefugeCollisionGridCell
 /// binding through the table include, then undefine it.
 #define MINE_REFUGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineRefugeCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory borrowing the two terminated face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gMineRefugeCollisionGridTable[MINE_REFUGE_COLLISION_GRID_CELL_COUNT_X * MINE_REFUGE_COLLISION_GRID_CELL_COUNT_Z] = {
-#include "assets/mine_refuge_collision_045E4_table.inc"
-};
-#else
 static s16* _gMineRefugeCollisionGridTable[2];
-#endif
 PE_ASSET_BIND_AUX("mine_refuge_collision_045E4_table", _gMineRefugeCollisionGridTable, _gMineRefugeCollisionGridCells);
 #undef MINE_REFUGE_CELL_FACE_LIST_AT_OFFSET
 

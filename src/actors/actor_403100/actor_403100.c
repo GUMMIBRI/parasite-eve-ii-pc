@@ -611,13 +611,7 @@ enum {
 ///
 /// Two 16-bit VRAM words per element: 30 words across and 130 rows, exactly
 /// 1950 elements. The overlay keeps them live through GPU transfer completion.
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor403100LowHealthTextureWords[ACTOR_403100_LOW_HEALTH_TEXTURE_WIDTH_WORDS * ACTOR_403100_LOW_HEALTH_TEXTURE_ROWS / 2] = {
-#include "assets/actor_403100_image_21954.inc"
-};
-#else
 static u32 _gActor403100LowHealthTextureWords[1950];
-#endif
 PE_ASSET_BIND("actor_403100_image_21954", _gActor403100LowHealthTextureWords);
 
 /// Low-health scene texture upload to VRAM (384,256), followed by its terminator.

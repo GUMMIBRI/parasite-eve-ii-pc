@@ -161,45 +161,21 @@ enum {
 };
 
 /// Collision-face normals in room coordinates, with unit length scaled by ONE.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkSubmarineTunnelCollisionGridNormals[] = {
-#include "assets/neo_ark_submarine_tunnel_collision_04F1C_normals.inc"
-};
-#else
 static SVECTOR _gNeoArkSubmarineTunnelCollisionGridNormals[27];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_collision_04F1C_normals", _gNeoArkSubmarineTunnelCollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkSubmarineTunnelCollisionGridVerts[] = {
-#include "assets/neo_ark_submarine_tunnel_collision_04F1C_verts.inc"
-};
-#else
 static SVECTOR _gNeoArkSubmarineTunnelCollisionGridVerts[65];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_collision_04F1C_verts", _gNeoArkSubmarineTunnelCollisionGridVerts);
 
 /// Indexed collision quads carrying the tunnel's surface classes 0 and 4.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gNeoArkSubmarineTunnelCollisionGridFaces[] = {
-#include "assets/neo_ark_submarine_tunnel_collision_04F1C_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gNeoArkSubmarineTunnelCollisionGridFaces[31];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_collision_04F1C_faces", _gNeoArkSubmarineTunnelCollisionGridFaces);
 
 /// Serialized face-index lists, terminated by WORLD_COLLISION_GRID_CELL_END.
 ///
 /// Retains the complete authored storage, including words outside the selected lists.
-#ifdef PE_EMBED_ASSETS
-static s16 _gNeoArkSubmarineTunnelCollisionGridCells[] = {
-#include "assets/neo_ark_submarine_tunnel_collision_04F1C_cells.inc"
-};
-#else
 static s16 _gNeoArkSubmarineTunnelCollisionGridCells[102];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_collision_04F1C_cells", _gNeoArkSubmarineTunnelCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -212,13 +188,7 @@ PE_ASSET_BIND("neo_ark_submarine_tunnel_collision_04F1C_cells", _gNeoArkSubmarin
 /// The binding is undefined immediately after that include.
 #define NEO_ARK_SUBMARINE_TUNNEL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkSubmarineTunnelCollisionGridCells[(halfwordOffset)])
 /// X-major pointers to the tunnel grid's six-by-one cell face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gNeoArkSubmarineTunnelCollisionGridTable[NEO_ARK_SUBMARINE_TUNNEL_GRID_CELL_COUNT_X * NEO_ARK_SUBMARINE_TUNNEL_GRID_CELL_COUNT_Z] = {
-#include "assets/neo_ark_submarine_tunnel_collision_04F1C_table.inc"
-};
-#else
 static s16* _gNeoArkSubmarineTunnelCollisionGridTable[6];
-#endif
 PE_ASSET_BIND_AUX("neo_ark_submarine_tunnel_collision_04F1C_table", _gNeoArkSubmarineTunnelCollisionGridTable, _gNeoArkSubmarineTunnelCollisionGridCells);
 #undef NEO_ARK_SUBMARINE_TUNNEL_CELL_FACE_LIST_AT_OFFSET
 

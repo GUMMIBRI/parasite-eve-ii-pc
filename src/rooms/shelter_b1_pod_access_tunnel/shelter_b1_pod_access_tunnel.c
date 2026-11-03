@@ -248,40 +248,16 @@ static TaskDesc _gShelterB1PodAccessTunnelPostGantryDialogueTaskDesc = {
     .data     = { .value = 0 },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation03EF0Bank1[6] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_03EF0_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation03EF0Bank1[6];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_03EF0_bank1", _gShelterB1PodAccessTunnelAnimation03EF0Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation03EF0Bank4[46] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_03EF0_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation03EF0Bank4[46];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_03EF0_bank4", _gShelterB1PodAccessTunnelAnimation03EF0Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB1PodAccessTunnelAnimation03EF0Records[109] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_03EF0_records.inc"
-};
-#else
 static AnimationRecord _gShelterB1PodAccessTunnelAnimation03EF0Records[109];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_03EF0_records", _gShelterB1PodAccessTunnelAnimation03EF0Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB1PodAccessTunnelAnimation03EF0Indices[20] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_03EF0_indices.inc"
-};
-#else
 static u16 _gShelterB1PodAccessTunnelAnimation03EF0Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_03EF0_indices", _gShelterB1PodAccessTunnelAnimation03EF0Indices);
 
 static AnimationSet _gShelterB1PodAccessTunnelAnimation03EF0 = {
@@ -290,40 +266,16 @@ static AnimationSet _gShelterB1PodAccessTunnelAnimation03EF0 = {
     { NULL, _gShelterB1PodAccessTunnelAnimation03EF0Bank1, NULL, NULL, _gShelterB1PodAccessTunnelAnimation03EF0Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation041A4Bank1[4] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_041A4_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation041A4Bank1[4];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_041A4_bank1", _gShelterB1PodAccessTunnelAnimation041A4Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation041A4Bank4[49] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_041A4_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation041A4Bank4[49];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_041A4_bank4", _gShelterB1PodAccessTunnelAnimation041A4Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB1PodAccessTunnelAnimation041A4Records[92] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_041A4_records.inc"
-};
-#else
 static AnimationRecord _gShelterB1PodAccessTunnelAnimation041A4Records[92];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_041A4_records", _gShelterB1PodAccessTunnelAnimation041A4Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB1PodAccessTunnelAnimation041A4Indices[20] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_041A4_indices.inc"
-};
-#else
 static u16 _gShelterB1PodAccessTunnelAnimation041A4Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_041A4_indices", _gShelterB1PodAccessTunnelAnimation041A4Indices);
 
 static AnimationSet _gShelterB1PodAccessTunnelAnimation041A4 = {
@@ -332,40 +284,16 @@ static AnimationSet _gShelterB1PodAccessTunnelAnimation041A4 = {
     { NULL, _gShelterB1PodAccessTunnelAnimation041A4Bank1, NULL, NULL, _gShelterB1PodAccessTunnelAnimation041A4Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation048DCBank1[14] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_048DC_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation048DCBank1[14];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_048DC_bank1", _gShelterB1PodAccessTunnelAnimation048DCBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation048DCBank4[159] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_048DC_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation048DCBank4[159];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_048DC_bank4", _gShelterB1PodAccessTunnelAnimation048DCBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB1PodAccessTunnelAnimation048DCRecords[241] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_048DC_records.inc"
-};
-#else
 static AnimationRecord _gShelterB1PodAccessTunnelAnimation048DCRecords[241];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_048DC_records", _gShelterB1PodAccessTunnelAnimation048DCRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB1PodAccessTunnelAnimation048DCIndices[20] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_048DC_indices.inc"
-};
-#else
 static u16 _gShelterB1PodAccessTunnelAnimation048DCIndices[20];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_048DC_indices", _gShelterB1PodAccessTunnelAnimation048DCIndices);
 
 static AnimationSet _gShelterB1PodAccessTunnelAnimation048DC = {
@@ -374,40 +302,16 @@ static AnimationSet _gShelterB1PodAccessTunnelAnimation048DC = {
     { NULL, _gShelterB1PodAccessTunnelAnimation048DCBank1, NULL, NULL, _gShelterB1PodAccessTunnelAnimation048DCBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation04BA0Bank1[4] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_04BA0_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation04BA0Bank1[4];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_04BA0_bank1", _gShelterB1PodAccessTunnelAnimation04BA0Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation04BA0Bank4[35] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_04BA0_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation04BA0Bank4[35];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_04BA0_bank4", _gShelterB1PodAccessTunnelAnimation04BA0Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB1PodAccessTunnelAnimation04BA0Records[110] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_04BA0_records.inc"
-};
-#else
 static AnimationRecord _gShelterB1PodAccessTunnelAnimation04BA0Records[110];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_04BA0_records", _gShelterB1PodAccessTunnelAnimation04BA0Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB1PodAccessTunnelAnimation04BA0Indices[20] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_04BA0_indices.inc"
-};
-#else
 static u16 _gShelterB1PodAccessTunnelAnimation04BA0Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_04BA0_indices", _gShelterB1PodAccessTunnelAnimation04BA0Indices);
 
 static AnimationSet _gShelterB1PodAccessTunnelAnimation04BA0 = {
@@ -416,40 +320,16 @@ static AnimationSet _gShelterB1PodAccessTunnelAnimation04BA0 = {
     { NULL, _gShelterB1PodAccessTunnelAnimation04BA0Bank1, NULL, NULL, _gShelterB1PodAccessTunnelAnimation04BA0Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation04DF4Bank1[2] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_04DF4_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation04DF4Bank1[2];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_04DF4_bank1", _gShelterB1PodAccessTunnelAnimation04DF4Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation04DF4Bank4[29] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_04DF4_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation04DF4Bank4[29];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_04DF4_bank4", _gShelterB1PodAccessTunnelAnimation04DF4Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB1PodAccessTunnelAnimation04DF4Records[94] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_04DF4_records.inc"
-};
-#else
 static AnimationRecord _gShelterB1PodAccessTunnelAnimation04DF4Records[94];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_04DF4_records", _gShelterB1PodAccessTunnelAnimation04DF4Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB1PodAccessTunnelAnimation04DF4Indices[20] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_04DF4_indices.inc"
-};
-#else
 static u16 _gShelterB1PodAccessTunnelAnimation04DF4Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_04DF4_indices", _gShelterB1PodAccessTunnelAnimation04DF4Indices);
 
 static AnimationSet _gShelterB1PodAccessTunnelAnimation04DF4 = {
@@ -458,40 +338,16 @@ static AnimationSet _gShelterB1PodAccessTunnelAnimation04DF4 = {
     { NULL, _gShelterB1PodAccessTunnelAnimation04DF4Bank1, NULL, NULL, _gShelterB1PodAccessTunnelAnimation04DF4Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation05378Bank1[10] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_05378_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation05378Bank1[10];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_05378_bank1", _gShelterB1PodAccessTunnelAnimation05378Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation05378Bank4[135] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_05378_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation05378Bank4[135];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_05378_bank4", _gShelterB1PodAccessTunnelAnimation05378Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB1PodAccessTunnelAnimation05378Records[168] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_05378_records.inc"
-};
-#else
 static AnimationRecord _gShelterB1PodAccessTunnelAnimation05378Records[168];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_05378_records", _gShelterB1PodAccessTunnelAnimation05378Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB1PodAccessTunnelAnimation05378Indices[20] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_05378_indices.inc"
-};
-#else
 static u16 _gShelterB1PodAccessTunnelAnimation05378Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_05378_indices", _gShelterB1PodAccessTunnelAnimation05378Indices);
 
 static AnimationSet _gShelterB1PodAccessTunnelAnimation05378 = {
@@ -500,40 +356,16 @@ static AnimationSet _gShelterB1PodAccessTunnelAnimation05378 = {
     { NULL, _gShelterB1PodAccessTunnelAnimation05378Bank1, NULL, NULL, _gShelterB1PodAccessTunnelAnimation05378Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation05744Bank1[6] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_05744_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB1PodAccessTunnelAnimation05744Bank1[6];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_05744_bank1", _gShelterB1PodAccessTunnelAnimation05744Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation05744Bank4[64] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_05744_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB1PodAccessTunnelAnimation05744Bank4[64];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_05744_bank4", _gShelterB1PodAccessTunnelAnimation05744Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB1PodAccessTunnelAnimation05744Records[141] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_05744_records.inc"
-};
-#else
 static AnimationRecord _gShelterB1PodAccessTunnelAnimation05744Records[141];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_05744_records", _gShelterB1PodAccessTunnelAnimation05744Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB1PodAccessTunnelAnimation05744Indices[20] = {
-#include "assets/shelter_b1_pod_access_tunnel_animation_05744_indices.inc"
-};
-#else
 static u16 _gShelterB1PodAccessTunnelAnimation05744Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_animation_05744_indices", _gShelterB1PodAccessTunnelAnimation05744Indices);
 
 static AnimationSet _gShelterB1PodAccessTunnelAnimation05744 = {
@@ -1070,33 +902,15 @@ DirectionWarpEntry gShelterB1PodAccessTunnelWarpEntries[3] = {
 };
 
 /// Axis-aligned collision normals in Q12 (ONE is unit length).
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1PodAccessTunnelCollisionGridNormals[6] = {
-#include "assets/shelter_b1_pod_access_tunnel_collision_06664_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1PodAccessTunnelCollisionGridNormals[6];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_collision_06664_normals", _gShelterB1PodAccessTunnelCollisionGridNormals);
 
 /// Tunnel boundary vertices at Y=0 and Y=-3200, in game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1PodAccessTunnelCollisionGridVerts[12] = {
-#include "assets/shelter_b1_pod_access_tunnel_collision_06664_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1PodAccessTunnelCollisionGridVerts[12];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_collision_06664_verts", _gShelterB1PodAccessTunnelCollisionGridVerts);
 
 /// Ten tunnel quads: class-2 floor faces and class-0 walls and ceiling.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1PodAccessTunnelCollisionGridFaces[10] = {
-#include "assets/shelter_b1_pod_access_tunnel_collision_06664_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1PodAccessTunnelCollisionGridFaces[10];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_collision_06664_faces", _gShelterB1PodAccessTunnelCollisionGridFaces);
 
 /// Signed face-index pool for four lists ending at WORLD_COLLISION_GRID_CELL_END.
@@ -1104,13 +918,7 @@ PE_ASSET_BIND("shelter_b1_pod_access_tunnel_collision_06664_faces", _gShelterB1P
 /// Lists at offsets 0, 10, 20 and 30 contain 10, 9, 9 and 6 halfwords including
 /// their end markers. The stored face-zero entries at offsets 19 and 29 have
 /// no cell pointer; retain them as authored data.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1PodAccessTunnelCollisionGridCells[36] = {
-#include "assets/shelter_b1_pod_access_tunnel_collision_06664_cells.inc"
-};
-#else
 static s16 _gShelterB1PodAccessTunnelCollisionGridCells[36];
-#endif
 PE_ASSET_BIND("shelter_b1_pod_access_tunnel_collision_06664_cells", _gShelterB1PodAccessTunnelCollisionGridCells);
 
 // The generated table supplies halfword offsets into the contiguous face-index lists.
@@ -1124,13 +932,7 @@ PE_ASSET_BIND("shelter_b1_pod_access_tunnel_collision_06664_cells", _gShelterB1P
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_POD_ACCESS_TUNNEL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1PodAccessTunnelCollisionGridCells[(halfwordOffset)])
 /// X-major directory for two X cells by two Z cells; all four cells are populated.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1PodAccessTunnelCollisionGridTable[4] = {
-#include "assets/shelter_b1_pod_access_tunnel_collision_06664_table.inc"
-};
-#else
 static s16* _gShelterB1PodAccessTunnelCollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_pod_access_tunnel_collision_06664_table", _gShelterB1PodAccessTunnelCollisionGridTable, _gShelterB1PodAccessTunnelCollisionGridCells);
 #undef SHELTER_B1_POD_ACCESS_TUNNEL_CELL_FACE_LIST_AT_OFFSET
 

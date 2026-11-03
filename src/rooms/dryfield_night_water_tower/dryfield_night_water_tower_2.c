@@ -187,43 +187,19 @@ enum {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightWaterTowerCollisionGridNormals[25] = {
-#include "assets/dryfield_night_water_tower_collision_01E34_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightWaterTowerCollisionGridNormals[25];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tower_collision_01E34_normals", _gDryfieldNightWaterTowerCollisionGridNormals);
 
 /// Room-space collision vertices in signed whole game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightWaterTowerCollisionGridVerts[159] = {
-#include "assets/dryfield_night_water_tower_collision_01E34_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightWaterTowerCollisionGridVerts[159];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tower_collision_01E34_verts", _gDryfieldNightWaterTowerCollisionGridVerts);
 
 /// Indexed room collision quads with room-local surface classes.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightWaterTowerCollisionGridFaces[69] = {
-#include "assets/dryfield_night_water_tower_collision_01E34_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightWaterTowerCollisionGridFaces[69];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tower_collision_01E34_faces", _gDryfieldNightWaterTowerCollisionGridFaces);
 
 /// Packed signed face-index lists, each ending at `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightWaterTowerCollisionGridCells[310] = {
-#include "assets/dryfield_night_water_tower_collision_01E34_cells.inc"
-};
-#else
 static s16 _gDryfieldNightWaterTowerCollisionGridCells[310];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tower_collision_01E34_cells", _gDryfieldNightWaterTowerCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -235,13 +211,7 @@ PE_ASSET_BIND("dryfield_night_water_tower_collision_01E34_cells", _gDryfieldNigh
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_WATER_TOWER_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightWaterTowerCollisionGridCells[(halfwordOffset)])
 /// X-major 4-by-4 directory of face-index lists borrowed by the collision grid.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightWaterTowerCollisionGridTable[DRYFIELD_NIGHT_WATER_TOWER_COLLISION_CELL_COUNT_X * DRYFIELD_NIGHT_WATER_TOWER_COLLISION_CELL_COUNT_Z] = {
-#include "assets/dryfield_night_water_tower_collision_01E34_table.inc"
-};
-#else
 static s16* _gDryfieldNightWaterTowerCollisionGridTable[16];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_water_tower_collision_01E34_table", _gDryfieldNightWaterTowerCollisionGridTable, _gDryfieldNightWaterTowerCollisionGridCells);
 #undef DRYFIELD_NIGHT_WATER_TOWER_CELL_FACE_LIST_AT_OFFSET
 

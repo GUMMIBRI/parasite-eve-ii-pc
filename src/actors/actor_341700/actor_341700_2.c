@@ -95,49 +95,19 @@ static s32 _actor341700PropCommandMessage(Task* task, s32 messageId, const Actor
 
 #include "../../shared/actor/actor_contacts.h"
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gActor341700Model13558Skeleton[11] = {
-#include "assets/actor_341700_model_13558_skeleton.inc"
-};
-#else
 static TmdBone _gActor341700Model13558Skeleton[11];
-#endif
 PE_ASSET_BIND("actor_341700_model_13558_skeleton", _gActor341700Model13558Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor341700Model13558PartVerts[11] = {
-#include "assets/actor_341700_model_13558_partVerts.inc"
-};
-#else
 static u32 _gActor341700Model13558PartVerts[11];
-#endif
 PE_ASSET_BIND("actor_341700_model_13558_partVerts", _gActor341700Model13558PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gActor341700Model13558Verts[81] = {
-#include "assets/actor_341700_model_13558_verts.inc"
-};
-#else
 static SVECTOR _gActor341700Model13558Verts[81];
-#endif
 PE_ASSET_BIND("actor_341700_model_13558_verts", _gActor341700Model13558Verts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gActor341700Model13558Normals[46] = {
-#include "assets/actor_341700_model_13558_normals.inc"
-};
-#else
 static SVECTOR _gActor341700Model13558Normals[46];
-#endif
 PE_ASSET_BIND("actor_341700_model_13558_normals", _gActor341700Model13558Normals);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor341700Model13558Stream[753] = {
-#include "assets/actor_341700_model_13558_stream.inc"
-};
-#else
 static u32 _gActor341700Model13558Stream[753];
-#endif
 PE_ASSET_BIND("actor_341700_model_13558_stream", _gActor341700Model13558Stream);
 
 static TmdSource _gActor341700Model13558 = {
@@ -226,13 +196,7 @@ static SVECTOR _gActor341700PropSpriteOffsets[48] = {
 /// Row 0 corresponds to frame 120; only rows 0..120 (frames 120..240) are used.
 /// All 150 rows are retained. Rows 104, 106 and 109 select 50, 58 and 52 beyond
 /// the 48-vector offset table; the meaning of those adjacent reads is unproven.
-#ifdef PE_EMBED_ASSETS
-static u8 _gActor341700PropSpriteSchedule[150][4] = {
-#include "assets/actor_341700_motion_142DC.inc"
-};
-#else
 static u8 _gActor341700PropSpriteSchedule[150][4];
-#endif
 PE_ASSET_BIND("actor_341700_motion_142DC", _gActor341700PropSpriteSchedule);
 
 TaskDesc gActor341700PropTaskDesc = { { { (TASK_BODY_TMD | TASK_DESC_SKIP_AUTO_MODEL_BUFFER), TASK_PRIORITY_ACTOR } }, _actor341700PropTask, { .model = &_gActor341700Model13558 } };

@@ -230,43 +230,19 @@ DirectionWarpEntry gDryfieldWaterHoleWarpEntries[3] = {
 };
 
 /// Room-axis normals for the water-hole collision grid, with unit length 4096.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterHoleCollisionGridNormals[10] = {
-#include "assets/dryfield_water_hole_collision_02CA0_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterHoleCollisionGridNormals[10];
-#endif
 PE_ASSET_BIND("dryfield_water_hole_collision_02CA0_normals", _gDryfieldWaterHoleCollisionGridNormals);
 
 /// Room-space vertices for the water-hole collision grid, in signed game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldWaterHoleCollisionGridVerts[54] = {
-#include "assets/dryfield_water_hole_collision_02CA0_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldWaterHoleCollisionGridVerts[54];
-#endif
 PE_ASSET_BIND("dryfield_water_hole_collision_02CA0_verts", _gDryfieldWaterHoleCollisionGridVerts);
 
 /// Indexed collision faces carrying this room's surface classes 0, 2, 3 and 4.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldWaterHoleCollisionGridFaces[23] = {
-#include "assets/dryfield_water_hole_collision_02CA0_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldWaterHoleCollisionGridFaces[23];
-#endif
 PE_ASSET_BIND("dryfield_water_hole_collision_02CA0_faces", _gDryfieldWaterHoleCollisionGridFaces);
 
 /// Packed signed face-index lists; each cell list ends at WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldWaterHoleCollisionGridCells[92] = {
-#include "assets/dryfield_water_hole_collision_02CA0_cells.inc"
-};
-#else
 static s16 _gDryfieldWaterHoleCollisionGridCells[92];
-#endif
 PE_ASSET_BIND("dryfield_water_hole_collision_02CA0_cells", _gDryfieldWaterHoleCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -279,13 +255,7 @@ PE_ASSET_BIND("dryfield_water_hole_collision_02CA0_cells", _gDryfieldWaterHoleCo
 /// binding through the table include, then undefine it.
 #define DRYFIELD_WATER_HOLE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldWaterHoleCollisionGridCells[(halfwordOffset)])
 /// Twelve cell-list pointers in X-major order, with two Z cells per X row.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldWaterHoleCollisionGridTable[12] = {
-#include "assets/dryfield_water_hole_collision_02CA0_table.inc"
-};
-#else
 static s16* _gDryfieldWaterHoleCollisionGridTable[12];
-#endif
 PE_ASSET_BIND_AUX("dryfield_water_hole_collision_02CA0_table", _gDryfieldWaterHoleCollisionGridTable, _gDryfieldWaterHoleCollisionGridCells);
 #undef DRYFIELD_WATER_HOLE_CELL_FACE_LIST_AT_OFFSET
 

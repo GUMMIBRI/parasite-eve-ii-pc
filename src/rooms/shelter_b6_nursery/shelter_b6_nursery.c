@@ -262,49 +262,19 @@ static _ShelterB6NurseryEffectAnchors _gShelterB6NurseryEffectAnchors = {
     .sparkShowerOrigin         = { 7000, -1500, 2000, 0 },
 };
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gShelterB6NurseryModel07BACSkeleton[1] = {
-#include "assets/shelter_b6_nursery_model_07BAC_skeleton.inc"
-};
-#else
 static TmdBone _gShelterB6NurseryModel07BACSkeleton[1];
-#endif
 PE_ASSET_BIND("shelter_b6_nursery_model_07BAC_skeleton", _gShelterB6NurseryModel07BACSkeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gShelterB6NurseryModel07BACPartVerts[1] = {
-#include "assets/shelter_b6_nursery_model_07BAC_partVerts.inc"
-};
-#else
 static u32 _gShelterB6NurseryModel07BACPartVerts[1];
-#endif
 PE_ASSET_BIND("shelter_b6_nursery_model_07BAC_partVerts", _gShelterB6NurseryModel07BACPartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB6NurseryModel07BACVerts[12] = {
-#include "assets/shelter_b6_nursery_model_07BAC_verts.inc"
-};
-#else
 static SVECTOR _gShelterB6NurseryModel07BACVerts[12];
-#endif
 PE_ASSET_BIND("shelter_b6_nursery_model_07BAC_verts", _gShelterB6NurseryModel07BACVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB6NurseryModel07BACNormals[12] = {
-#include "assets/shelter_b6_nursery_model_07BAC_normals.inc"
-};
-#else
 static SVECTOR _gShelterB6NurseryModel07BACNormals[12];
-#endif
 PE_ASSET_BIND("shelter_b6_nursery_model_07BAC_normals", _gShelterB6NurseryModel07BACNormals);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gShelterB6NurseryModel07BACStream[89] = {
-#include "assets/shelter_b6_nursery_model_07BAC_stream.inc"
-};
-#else
 static u32 _gShelterB6NurseryModel07BACStream[89];
-#endif
 PE_ASSET_BIND("shelter_b6_nursery_model_07BAC_stream", _gShelterB6NurseryModel07BACStream);
 
 TmdSource gShelterB6NurseryModel07BAC = {
@@ -355,43 +325,19 @@ DirectionWarpEntry gShelterB6NurseryWarpEntries[2] = {
 };
 
 /// Q12 room-space normals referenced by the nursery collision mesh.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB6NurseryCollisionGridNormals[14] = {
-#include "assets/shelter_b6_nursery_collision_082E0_normals.inc"
-};
-#else
 static SVECTOR _gShelterB6NurseryCollisionGridNormals[14];
-#endif
 PE_ASSET_BIND("shelter_b6_nursery_collision_082E0_normals", _gShelterB6NurseryCollisionGridNormals);
 
 /// Room-space vertices in signed game-coordinate units for the nursery mesh.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB6NurseryCollisionGridVerts[54] = {
-#include "assets/shelter_b6_nursery_collision_082E0_verts.inc"
-};
-#else
 static SVECTOR _gShelterB6NurseryCollisionGridVerts[54];
-#endif
 PE_ASSET_BIND("shelter_b6_nursery_collision_082E0_verts", _gShelterB6NurseryCollisionGridVerts);
 
 /// Nursery collision triangles/quads, with room-local surface classes 0 and 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB6NurseryCollisionGridFaces[43] = {
-#include "assets/shelter_b6_nursery_collision_082E0_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB6NurseryCollisionGridFaces[43];
-#endif
 PE_ASSET_BIND("shelter_b6_nursery_collision_082E0_faces", _gShelterB6NurseryCollisionGridFaces);
 
 /// Four terminated face-index lists and the final retained serialized halfword.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB6NurseryCollisionGridCells[120] = {
-#include "assets/shelter_b6_nursery_collision_082E0_cells.inc"
-};
-#else
 static s16 _gShelterB6NurseryCollisionGridCells[120];
-#endif
 PE_ASSET_BIND("shelter_b6_nursery_collision_082E0_cells", _gShelterB6NurseryCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
@@ -403,13 +349,7 @@ PE_ASSET_BIND("shelter_b6_nursery_collision_082E0_cells", _gShelterB6NurseryColl
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B6_NURSERY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB6NurseryCollisionGridCells[(halfwordOffset)])
 /// X-major pointers into the nursery grid's four face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB6NurseryCollisionGridTable[4] = {
-#include "assets/shelter_b6_nursery_collision_082E0_table.inc"
-};
-#else
 static s16* _gShelterB6NurseryCollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("shelter_b6_nursery_collision_082E0_table", _gShelterB6NurseryCollisionGridTable, _gShelterB6NurseryCollisionGridCells);
 #undef SHELTER_B6_NURSERY_CELL_FACE_LIST_AT_OFFSET
 

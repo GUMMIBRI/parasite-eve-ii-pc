@@ -59,41 +59,16 @@ enum {
     MINE_GORGE_ENCOUNTER_RELEASE_WAVE = 20
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineGorgeAnimation00C98Bank1[10] = {
-#include "assets/mine_gorge_animation_00C98_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineGorgeAnimation00C98Bank1[10];
-#endif
 PE_ASSET_BIND("mine_gorge_animation_00C98_bank1", _gMineGorgeAnimation00C98Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineGorgeAnimation00C98Bank4[95] = {
-#include "assets/mine_gorge_animation_00C98_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineGorgeAnimation00C98Bank4[95];
-#endif
 PE_ASSET_BIND("mine_gorge_animation_00C98_bank4", _gMineGorgeAnimation00C98Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineGorgeAnimation00C98Records[139] = {
-#include "assets/mine_gorge_animation_00C98_records.inc"
-};
-#else
 static AnimationRecord _gMineGorgeAnimation00C98Records[139];
-#endif
 PE_ASSET_BIND("mine_gorge_animation_00C98_records", _gMineGorgeAnimation00C98Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineGorgeAnimation00C98Indices[20] = {
-#include "assets/mine_gorge_animation_00C98_indices.inc"
-
-};
-#else
 static u16 _gMineGorgeAnimation00C98Indices[20];
-#endif
 PE_ASSET_BIND("mine_gorge_animation_00C98_indices", _gMineGorgeAnimation00C98Indices);
 
 static AnimationSet _gMineGorgeAnimation00C98 = {

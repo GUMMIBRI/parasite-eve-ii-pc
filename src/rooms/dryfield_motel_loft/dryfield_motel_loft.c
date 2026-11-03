@@ -94,45 +94,21 @@ DirectionWarpEntry gDryfieldMotelLoftWarpEntries[1] = {
 };
 
 /// Eight grid-local collision normals, with 4096 for unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMotelLoftCollisionGridNormals[8] = {
-#include "assets/dryfield_motel_loft_collision_003FC_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldMotelLoftCollisionGridNormals[8];
-#endif
 PE_ASSET_BIND("dryfield_motel_loft_collision_003FC_normals", _gDryfieldMotelLoftCollisionGridNormals);
 
 /// Thirty grid-local mesh vertices in signed game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldMotelLoftCollisionGridVerts[30] = {
-#include "assets/dryfield_motel_loft_collision_003FC_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldMotelLoftCollisionGridVerts[30];
-#endif
 PE_ASSET_BIND("dryfield_motel_loft_collision_003FC_verts", _gDryfieldMotelLoftCollisionGridVerts);
 
 /// Seventeen indexed quads: class 1 is the room floor; the rest use class 0.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldMotelLoftCollisionGridFaces[17] = {
-#include "assets/dryfield_motel_loft_collision_003FC_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldMotelLoftCollisionGridFaces[17];
-#endif
 PE_ASSET_BIND("dryfield_motel_loft_collision_003FC_faces", _gDryfieldMotelLoftCollisionGridFaces);
 
 /// Signed face-index pool for six cells, whose lists each end with -1.
 ///
 /// Retains all 58 serialized halfwords, including values after list terminators.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldMotelLoftCollisionGridCells[58] = {
-#include "assets/dryfield_motel_loft_collision_003FC_cells.inc"
-};
-#else
 static s16 _gDryfieldMotelLoftCollisionGridCells[58];
-#endif
 PE_ASSET_BIND("dryfield_motel_loft_collision_003FC_cells", _gDryfieldMotelLoftCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -148,13 +124,7 @@ PE_ASSET_BIND("dryfield_motel_loft_collision_003FC_cells", _gDryfieldMotelLoftCo
 #define DRYFIELD_MOTEL_LOFT_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldMotelLoftCollisionGridCells[(halfwordOffset)])
 
 /// X-major pointers into the face-index pool for the grid's three by two cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldMotelLoftCollisionGridTable[6] = {
-#include "assets/dryfield_motel_loft_collision_003FC_table.inc"
-};
-#else
 static s16* _gDryfieldMotelLoftCollisionGridTable[6];
-#endif
 PE_ASSET_BIND_AUX("dryfield_motel_loft_collision_003FC_table", _gDryfieldMotelLoftCollisionGridTable, _gDryfieldMotelLoftCollisionGridCells);
 #undef DRYFIELD_MOTEL_LOFT_CELL_FACE_LIST_AT_OFFSET
 

@@ -89,40 +89,16 @@ static WorldCollisionTrigger      _gShelter1fVehicularAirlockActionTriggers[7];
 static WorldCoordRoomAmbientEntry _gShelter1fVehicularAirlockViewAmbientLights[4];
 static WorldCoordRoomLights       _gShelter1fVehicularAirlockRoomLights;
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gShelter1fVehicularAirlockModel03A58Skeleton[1] = {
-#include "assets/shelter_1f_vehicular_airlock_model_03A58_skeleton.inc"
-};
-#else
 static TmdBone _gShelter1fVehicularAirlockModel03A58Skeleton[1];
-#endif
 PE_ASSET_BIND("shelter_1f_vehicular_airlock_model_03A58_skeleton", _gShelter1fVehicularAirlockModel03A58Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gShelter1fVehicularAirlockModel03A58PartVerts[1] = {
-#include "assets/shelter_1f_vehicular_airlock_model_03A58_partVerts.inc"
-};
-#else
 static u32 _gShelter1fVehicularAirlockModel03A58PartVerts[1];
-#endif
 PE_ASSET_BIND("shelter_1f_vehicular_airlock_model_03A58_partVerts", _gShelter1fVehicularAirlockModel03A58PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelter1fVehicularAirlockModel03A58Verts[116] = {
-#include "assets/shelter_1f_vehicular_airlock_model_03A58_verts.inc"
-};
-#else
 static SVECTOR _gShelter1fVehicularAirlockModel03A58Verts[116];
-#endif
 PE_ASSET_BIND("shelter_1f_vehicular_airlock_model_03A58_verts", _gShelter1fVehicularAirlockModel03A58Verts);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gShelter1fVehicularAirlockModel03A58Stream[1019] = {
-#include "assets/shelter_1f_vehicular_airlock_model_03A58_stream.inc"
-};
-#else
 static u32 _gShelter1fVehicularAirlockModel03A58Stream[1019];
-#endif
 PE_ASSET_BIND("shelter_1f_vehicular_airlock_model_03A58_stream", _gShelter1fVehicularAirlockModel03A58Stream);
 
 TmdSource gShelter1fVehicularAirlockModel03A58 = {
@@ -211,43 +187,19 @@ DirectionWarpEntry gShelter1fVehicularAirlockWarpEntries[3] = {
 };
 
 /// Unit normals for the vehicular airlock collision grid, with 4096 per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelter1fVehicularAirlockCollisionGridNormals[10] = {
-#include "assets/shelter_1f_vehicular_airlock_collision_04E78_normals.inc"
-};
-#else
 static SVECTOR _gShelter1fVehicularAirlockCollisionGridNormals[10];
-#endif
 PE_ASSET_BIND("shelter_1f_vehicular_airlock_collision_04E78_normals", _gShelter1fVehicularAirlockCollisionGridNormals);
 
 /// Room-space vertices of the vehicular airlock collision grid, in game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelter1fVehicularAirlockCollisionGridVerts[33] = {
-#include "assets/shelter_1f_vehicular_airlock_collision_04E78_verts.inc"
-};
-#else
 static SVECTOR _gShelter1fVehicularAirlockCollisionGridVerts[33];
-#endif
 PE_ASSET_BIND("shelter_1f_vehicular_airlock_collision_04E78_verts", _gShelter1fVehicularAirlockCollisionGridVerts);
 
 /// Indexed collision quads; the main floor uses surface class 1 and the others class 0.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelter1fVehicularAirlockCollisionGridFaces[12] = {
-#include "assets/shelter_1f_vehicular_airlock_collision_04E78_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelter1fVehicularAirlockCollisionGridFaces[12];
-#endif
 PE_ASSET_BIND("shelter_1f_vehicular_airlock_collision_04E78_faces", _gShelter1fVehicularAirlockCollisionGridFaces);
 
 /// Packed signed face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelter1fVehicularAirlockCollisionGridCells[52] = {
-#include "assets/shelter_1f_vehicular_airlock_collision_04E78_cells.inc"
-};
-#else
 static s16 _gShelter1fVehicularAirlockCollisionGridCells[52];
-#endif
 PE_ASSET_BIND("shelter_1f_vehicular_airlock_collision_04E78_cells", _gShelter1fVehicularAirlockCollisionGridCells);
 
 // The generated table supplies element offsets into the packed cell lists.
@@ -261,13 +213,7 @@ PE_ASSET_BIND("shelter_1f_vehicular_airlock_collision_04E78_cells", _gShelter1fV
 /// The binding is undefined immediately after that include.
 #define SHELTER_1F_VEHICULAR_AIRLOCK_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelter1fVehicularAirlockCollisionGridCells[(halfwordOffset)])
 /// X-major 3-by-3 cell directory; NULL entries select empty cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelter1fVehicularAirlockCollisionGridTable[9] = {
-#include "assets/shelter_1f_vehicular_airlock_collision_04E78_table.inc"
-};
-#else
 static s16* _gShelter1fVehicularAirlockCollisionGridTable[9];
-#endif
 PE_ASSET_BIND_AUX("shelter_1f_vehicular_airlock_collision_04E78_table", _gShelter1fVehicularAirlockCollisionGridTable, _gShelter1fVehicularAirlockCollisionGridCells);
 #undef SHELTER_1F_VEHICULAR_AIRLOCK_CELL_FACE_LIST_AT_OFFSET
 

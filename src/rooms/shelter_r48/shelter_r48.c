@@ -200,43 +200,19 @@ enum {
 };
 
 /// Room-space Q12 normals; the first four are rebuilt from the boss's body.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterR48CollisionGridNormals[40] = {
-#include "assets/shelter_r48_collision_0692C_normals.inc"
-};
-#else
 static SVECTOR _gShelterR48CollisionGridNormals[40];
-#endif
 PE_ASSET_BIND("shelter_r48_collision_0692C_normals", _gShelterR48CollisionGridNormals);
 
 /// Room-space vertices in game units; the first eight track the boss's body.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterR48CollisionGridVerts[136] = {
-#include "assets/shelter_r48_collision_0692C_verts.inc"
-};
-#else
 static SVECTOR _gShelterR48CollisionGridVerts[136];
-#endif
 PE_ASSET_BIND("shelter_r48_collision_0692C_verts", _gShelterR48CollisionGridVerts);
 
 /// Arena topology with four initially empty face slots for the boss's body.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterR48CollisionGridFaces[83] = {
-#include "assets/shelter_r48_collision_0692C_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterR48CollisionGridFaces[83];
-#endif
 PE_ASSET_BIND("shelter_r48_collision_0692C_faces", _gShelterR48CollisionGridFaces);
 
 /// Face-index lists ending in `WORLD_COLLISION_GRID_CELL_END`, shared by grid cells.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterR48CollisionGridCells[584] = {
-#include "assets/shelter_r48_collision_0692C_cells.inc"
-};
-#else
 static s16 _gShelterR48CollisionGridCells[584];
-#endif
 PE_ASSET_BIND("shelter_r48_collision_0692C_cells", _gShelterR48CollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
@@ -248,13 +224,7 @@ PE_ASSET_BIND("shelter_r48_collision_0692C_cells", _gShelterR48CollisionGridCell
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_R48_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterR48CollisionGridCells[(halfwordOffset)])
 /// X-major cell directory; each entry borrows a terminated face-index list.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterR48CollisionGridTable[SHELTER_R48_COLLISION_CELL_COUNT_X * SHELTER_R48_COLLISION_CELL_COUNT_Z] = {
-#include "assets/shelter_r48_collision_0692C_table.inc"
-};
-#else
 static s16* _gShelterR48CollisionGridTable[35];
-#endif
 PE_ASSET_BIND_AUX("shelter_r48_collision_0692C_table", _gShelterR48CollisionGridTable, _gShelterR48CollisionGridCells);
 #undef SHELTER_R48_CELL_FACE_LIST_AT_OFFSET
 

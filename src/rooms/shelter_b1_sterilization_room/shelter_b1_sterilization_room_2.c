@@ -514,43 +514,19 @@ DirectionWarpEntry gShelterB1SterilizationRoomWarpEntries[3] = {
 };
 
 /// Q12 mesh normals, including four writable slots reserved for the actor obstacle.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1SterilizationRoomCollisionGridNormals[14] = {
-#include "assets/shelter_b1_sterilization_room_collision_0C884_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1SterilizationRoomCollisionGridNormals[14];
-#endif
 PE_ASSET_BIND("shelter_b1_sterilization_room_collision_0C884_normals", _gShelterB1SterilizationRoomCollisionGridNormals);
 
 /// Mesh vertices in room game units, including eight writable actor-obstacle slots.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1SterilizationRoomCollisionGridVerts[124] = {
-#include "assets/shelter_b1_sterilization_room_collision_0C884_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1SterilizationRoomCollisionGridVerts[124];
-#endif
 PE_ASSET_BIND("shelter_b1_sterilization_room_collision_0C884_verts", _gShelterB1SterilizationRoomCollisionGridVerts);
 
 /// Mesh faces; the leading four are disabled until the actor obstacle is rebuilt.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1SterilizationRoomCollisionGridFaces[68] = {
-#include "assets/shelter_b1_sterilization_room_collision_0C884_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1SterilizationRoomCollisionGridFaces[68];
-#endif
 PE_ASSET_BIND("shelter_b1_sterilization_room_collision_0C884_faces", _gShelterB1SterilizationRoomCollisionGridFaces);
 
 /// Eight signed face-index lists, each terminated by WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1SterilizationRoomCollisionGridCells[270] = {
-#include "assets/shelter_b1_sterilization_room_collision_0C884_cells.inc"
-};
-#else
 static s16 _gShelterB1SterilizationRoomCollisionGridCells[270];
-#endif
 PE_ASSET_BIND("shelter_b1_sterilization_room_collision_0C884_cells", _gShelterB1SterilizationRoomCollisionGridCells);
 
 // The generated table supplies constant element offsets within this cell-list pool.
@@ -564,13 +540,7 @@ PE_ASSET_BIND("shelter_b1_sterilization_room_collision_0C884_cells", _gShelterB1
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_STERILIZATION_ROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1SterilizationRoomCollisionGridCells[(halfwordOffset)])
 /// X-major 2-by-4 cell directory borrowing the embedded face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1SterilizationRoomCollisionGridTable[8] = {
-#include "assets/shelter_b1_sterilization_room_collision_0C884_table.inc"
-};
-#else
 static s16* _gShelterB1SterilizationRoomCollisionGridTable[8];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_sterilization_room_collision_0C884_table", _gShelterB1SterilizationRoomCollisionGridTable, _gShelterB1SterilizationRoomCollisionGridCells);
 #undef SHELTER_B1_STERILIZATION_ROOM_CELL_FACE_LIST_AT_OFFSET
 

@@ -73,40 +73,16 @@ static WorldCollisionGrid _gDryfieldNightMotelLoftCollisionGrid;
 
 static void _dryfieldNightMotelLoftDrawShard(const GfxCoord* coord, s16 radius, s16 shade);
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gDryfieldNightMotelLoftActor135400Model071ACSkeleton[1] = {
-#include "assets/actor_135400_model_071AC_skeleton.inc"
-};
-#else
 static TmdBone _gDryfieldNightMotelLoftActor135400Model071ACSkeleton[1];
-#endif
 PE_ASSET_BIND("actor_135400_model_071AC_skeleton", _gDryfieldNightMotelLoftActor135400Model071ACSkeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldNightMotelLoftActor135400Model071ACPartVerts[1] = {
-#include "assets/actor_135400_model_071AC_partVerts.inc"
-};
-#else
 static u32 _gDryfieldNightMotelLoftActor135400Model071ACPartVerts[1];
-#endif
 PE_ASSET_BIND("actor_135400_model_071AC_partVerts", _gDryfieldNightMotelLoftActor135400Model071ACPartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMotelLoftActor135400Model071ACVerts[20] = {
-#include "assets/actor_135400_model_071AC_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMotelLoftActor135400Model071ACVerts[20];
-#endif
 PE_ASSET_BIND("actor_135400_model_071AC_verts", _gDryfieldNightMotelLoftActor135400Model071ACVerts);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldNightMotelLoftActor135400Model071ACStream[106] = {
-#include "assets/actor_135400_model_071AC_stream.inc"
-};
-#else
 static u32 _gDryfieldNightMotelLoftActor135400Model071ACStream[106];
-#endif
 PE_ASSET_BIND("actor_135400_model_071AC_stream", _gDryfieldNightMotelLoftActor135400Model071ACStream);
 
 TmdSource gDryfieldNightMotelLoftActor135400Model071AC = {
@@ -197,40 +173,16 @@ EvsCommand gDryfieldNightMotelLoftStalkerEncounterScript[17] = {
     { .opcode = EVENT_SCRIPT_OPCODE_END },
 };
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMotelLoftJerryCanBarrierTemplateNormals[1] = {
-#include "assets/dryfield_night_motel_loft_collision_01794_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMotelLoftJerryCanBarrierTemplateNormals[1];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_loft_collision_01794_normals", _gDryfieldNightMotelLoftJerryCanBarrierTemplateNormals);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMotelLoftJerryCanBarrierTemplateVerts[4] = {
-#include "assets/dryfield_night_motel_loft_collision_01794_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMotelLoftJerryCanBarrierTemplateVerts[4];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_loft_collision_01794_verts", _gDryfieldNightMotelLoftJerryCanBarrierTemplateVerts);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightMotelLoftJerryCanBarrierTemplateFaces[1] = {
-#include "assets/dryfield_night_motel_loft_collision_01794_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightMotelLoftJerryCanBarrierTemplateFaces[1];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_loft_collision_01794_faces", _gDryfieldNightMotelLoftJerryCanBarrierTemplateFaces);
 
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightMotelLoftJerryCanBarrierTemplateCells[4] = {
-#include "assets/dryfield_night_motel_loft_collision_01794_cells.inc"
-};
-#else
 static s16 _gDryfieldNightMotelLoftJerryCanBarrierTemplateCells[4];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_loft_collision_01794_cells", _gDryfieldNightMotelLoftJerryCanBarrierTemplateCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -241,13 +193,7 @@ PE_ASSET_BIND("dryfield_night_motel_loft_collision_01794_cells", _gDryfieldNight
 /// Returns a borrowed s16* without modifying the pool. `cell_face_list_macro`
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_MOTEL_LOFT_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMotelLoftJerryCanBarrierTemplateCells[(halfwordOffset)])
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightMotelLoftJerryCanBarrierTemplateTable[2] = {
-#include "assets/dryfield_night_motel_loft_collision_01794_table.inc"
-};
-#else
 static s16* _gDryfieldNightMotelLoftJerryCanBarrierTemplateTable[2];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_motel_loft_collision_01794_table", _gDryfieldNightMotelLoftJerryCanBarrierTemplateTable, _gDryfieldNightMotelLoftJerryCanBarrierTemplateCells);
 #undef DRYFIELD_NIGHT_MOTEL_LOFT_CELL_FACE_LIST_AT_OFFSET
 
@@ -357,40 +303,16 @@ DirectionWarpEntry gDryfieldNightMotelLoftWarpEntries[1] = {
     },
 };
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMotelLoftCollisionGridNormals[9] = {
-#include "assets/dryfield_night_motel_loft_collision_01B60_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMotelLoftCollisionGridNormals[9];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_loft_collision_01B60_normals", _gDryfieldNightMotelLoftCollisionGridNormals);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMotelLoftCollisionGridVerts[34] = {
-#include "assets/dryfield_night_motel_loft_collision_01B60_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMotelLoftCollisionGridVerts[34];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_loft_collision_01B60_verts", _gDryfieldNightMotelLoftCollisionGridVerts);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightMotelLoftCollisionGridFaces[18] = {
-#include "assets/dryfield_night_motel_loft_collision_01B60_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightMotelLoftCollisionGridFaces[18];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_loft_collision_01B60_faces", _gDryfieldNightMotelLoftCollisionGridFaces);
 
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightMotelLoftCollisionGridCells[82] = {
-#include "assets/dryfield_night_motel_loft_collision_01B60_cells.inc"
-};
-#else
 static s16 _gDryfieldNightMotelLoftCollisionGridCells[82];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_loft_collision_01B60_cells", _gDryfieldNightMotelLoftCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -401,13 +323,7 @@ PE_ASSET_BIND("dryfield_night_motel_loft_collision_01B60_cells", _gDryfieldNight
 /// Returns a borrowed s16* without modifying the pool. `cell_face_list_macro`
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_MOTEL_LOFT_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMotelLoftCollisionGridCells[(halfwordOffset)])
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightMotelLoftCollisionGridTable[6] = {
-#include "assets/dryfield_night_motel_loft_collision_01B60_table.inc"
-};
-#else
 static s16* _gDryfieldNightMotelLoftCollisionGridTable[6];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_motel_loft_collision_01B60_table", _gDryfieldNightMotelLoftCollisionGridTable, _gDryfieldNightMotelLoftCollisionGridCells);
 #undef DRYFIELD_NIGHT_MOTEL_LOFT_CELL_FACE_LIST_AT_OFFSET
 

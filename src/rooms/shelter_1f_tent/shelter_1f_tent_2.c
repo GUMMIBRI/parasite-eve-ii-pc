@@ -101,43 +101,19 @@ DirectionWarpEntry gShelter1fTentWarpEntries[1] = {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelter1fTentCollisionGridNormals[17] = {
-#include "assets/shelter_1f_tent_collision_04D30_normals.inc"
-};
-#else
 static SVECTOR _gShelter1fTentCollisionGridNormals[17];
-#endif
 PE_ASSET_BIND("shelter_1f_tent_collision_04D30_normals", _gShelter1fTentCollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelter1fTentCollisionGridVerts[66] = {
-#include "assets/shelter_1f_tent_collision_04D30_verts.inc"
-};
-#else
 static SVECTOR _gShelter1fTentCollisionGridVerts[66];
-#endif
 PE_ASSET_BIND("shelter_1f_tent_collision_04D30_verts", _gShelter1fTentCollisionGridVerts);
 
 /// Indexed collision faces referencing the grid's vertex and normal pools.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelter1fTentCollisionGridFaces[37] = {
-#include "assets/shelter_1f_tent_collision_04D30_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelter1fTentCollisionGridFaces[37];
-#endif
 PE_ASSET_BIND("shelter_1f_tent_collision_04D30_faces", _gShelter1fTentCollisionGridFaces);
 
 /// Face-index lists for six cells, each ending with `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelter1fTentCollisionGridCells[128] = {
-#include "assets/shelter_1f_tent_collision_04D30_cells.inc"
-};
-#else
 static s16 _gShelter1fTentCollisionGridCells[128];
-#endif
 PE_ASSET_BIND("shelter_1f_tent_collision_04D30_cells", _gShelter1fTentCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -150,13 +126,7 @@ PE_ASSET_BIND("shelter_1f_tent_collision_04D30_cells", _gShelter1fTentCollisionG
 /// The binding is undefined immediately after that include.
 #define SHELTER_1F_TENT_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelter1fTentCollisionGridCells[(halfwordOffset)])
 /// X-major 2-by-3 directory of the grid's face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelter1fTentCollisionGridTable[6] = {
-#include "assets/shelter_1f_tent_collision_04D30_table.inc"
-};
-#else
 static s16* _gShelter1fTentCollisionGridTable[6];
-#endif
 PE_ASSET_BIND_AUX("shelter_1f_tent_collision_04D30_table", _gShelter1fTentCollisionGridTable, _gShelter1fTentCollisionGridCells);
 #undef SHELTER_1F_TENT_CELL_FACE_LIST_AT_OFFSET
 

@@ -232,45 +232,21 @@ SVECTOR gNeoArkSubmarineGalleryDiverSurfaceSpots[6] = {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkSubmarineGalleryCollisionGridNormals[31] = {
-#include "assets/neo_ark_submarine_gallery_collision_04DDC_normals.inc"
-};
-#else
 static SVECTOR _gNeoArkSubmarineGalleryCollisionGridNormals[31];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_gallery_collision_04DDC_normals", _gNeoArkSubmarineGalleryCollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkSubmarineGalleryCollisionGridVerts[104] = {
-#include "assets/neo_ark_submarine_gallery_collision_04DDC_verts.inc"
-};
-#else
 static SVECTOR _gNeoArkSubmarineGalleryCollisionGridVerts[104];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_gallery_collision_04DDC_verts", _gNeoArkSubmarineGalleryCollisionGridVerts);
 
 /// Indexed gallery quads selecting local surface classes 0, 3 and 4.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gNeoArkSubmarineGalleryCollisionGridFaces[50] = {
-#include "assets/neo_ark_submarine_gallery_collision_04DDC_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gNeoArkSubmarineGalleryCollisionGridFaces[50];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_gallery_collision_04DDC_faces", _gNeoArkSubmarineGalleryCollisionGridFaces);
 
 /// Authored cell face-index lists, each ending with WORLD_COLLISION_GRID_CELL_END.
 ///
 /// Halfwords between selected lists remain part of the asset storage.
-#ifdef PE_EMBED_ASSETS
-static s16 _gNeoArkSubmarineGalleryCollisionGridCells[206] = {
-#include "assets/neo_ark_submarine_gallery_collision_04DDC_cells.inc"
-};
-#else
 static s16 _gNeoArkSubmarineGalleryCollisionGridCells[206];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_gallery_collision_04DDC_cells", _gNeoArkSubmarineGalleryCollisionGridCells);
 
 enum {
@@ -289,13 +265,7 @@ enum {
 /// The binding is undefined immediately after that include.
 #define NEO_ARK_SUBMARINE_GALLERY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkSubmarineGalleryCollisionGridCells[(halfwordOffset)])
 /// X-major directory of the gallery's nine 4000-unit collision cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gNeoArkSubmarineGalleryCollisionGridTable[NEO_ARK_SUBMARINE_GALLERY_GRID_CELL_COUNT_X * NEO_ARK_SUBMARINE_GALLERY_GRID_CELL_COUNT_Z] = {
-#include "assets/neo_ark_submarine_gallery_collision_04DDC_table.inc"
-};
-#else
 static s16* _gNeoArkSubmarineGalleryCollisionGridTable[9];
-#endif
 PE_ASSET_BIND_AUX("neo_ark_submarine_gallery_collision_04DDC_table", _gNeoArkSubmarineGalleryCollisionGridTable, _gNeoArkSubmarineGalleryCollisionGridCells);
 #undef NEO_ARK_SUBMARINE_GALLERY_CELL_FACE_LIST_AT_OFFSET
 

@@ -119,46 +119,22 @@ enum {
 };
 
 /// Q12 room-space normal pool for the room collision mesh.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMotelRoom1CollisionGridNormals[] = {
-#include "assets/dryfield_night_motel_room_1_collision_00AD8_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMotelRoom1CollisionGridNormals[9];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_room_1_collision_00AD8_normals", _gDryfieldNightMotelRoom1CollisionGridNormals);
 
 /// Room-space collision vertices in signed game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMotelRoom1CollisionGridVerts[] = {
-#include "assets/dryfield_night_motel_room_1_collision_00AD8_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMotelRoom1CollisionGridVerts[85];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_room_1_collision_00AD8_verts", _gDryfieldNightMotelRoom1CollisionGridVerts);
 
 /// Indexed room collision quads, with room-local surface classes 0..3.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightMotelRoom1CollisionGridFaces[] = {
-#include "assets/dryfield_night_motel_room_1_collision_00AD8_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightMotelRoom1CollisionGridFaces[38];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_room_1_collision_00AD8_faces", _gDryfieldNightMotelRoom1CollisionGridFaces);
 
 /// Four signed face-index lists, each ending at WORLD_COLLISION_GRID_CELL_END.
 ///
 /// The final stored zero follows the last list's terminator and is not a face
 /// candidate. The whole serialized pool remains resident with the active grid.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightMotelRoom1CollisionGridCells[] = {
-#include "assets/dryfield_night_motel_room_1_collision_00AD8_cells.inc"
-};
-#else
 static s16 _gDryfieldNightMotelRoom1CollisionGridCells[120];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_room_1_collision_00AD8_cells", _gDryfieldNightMotelRoom1CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -170,13 +146,7 @@ PE_ASSET_BIND("dryfield_night_motel_room_1_collision_00AD8_cells", _gDryfieldNig
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_MOTEL_ROOM_1_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMotelRoom1CollisionGridCells[(halfwordOffset)])
 /// X-major pointers into the four cell lists, indexed as x * cellCountZ + z.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightMotelRoom1CollisionGridTable[DRYFIELD_NIGHT_MOTEL_ROOM_1_COLLISION_GRID_CELLS_X * DRYFIELD_NIGHT_MOTEL_ROOM_1_COLLISION_GRID_CELLS_Z] = {
-#include "assets/dryfield_night_motel_room_1_collision_00AD8_table.inc"
-};
-#else
 static s16* _gDryfieldNightMotelRoom1CollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_motel_room_1_collision_00AD8_table", _gDryfieldNightMotelRoom1CollisionGridTable, _gDryfieldNightMotelRoom1CollisionGridCells);
 #undef DRYFIELD_NIGHT_MOTEL_ROOM_1_CELL_FACE_LIST_AT_OFFSET
 

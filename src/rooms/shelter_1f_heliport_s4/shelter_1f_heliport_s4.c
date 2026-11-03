@@ -51,43 +51,19 @@ DirectionWarpEntry gShelter1fHeliportS4WarpEntries[1] = {
 };
 
 /// Room-space unit face normals, with `ONE` per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelter1fHeliportS4CollisionGridNormals[7] = {
-#include "assets/shelter_1f_heliport_s4_collision_00408_normals.inc"
-};
-#else
 static SVECTOR _gShelter1fHeliportS4CollisionGridNormals[7];
-#endif
 PE_ASSET_BIND("shelter_1f_heliport_s4_collision_00408_normals", _gShelter1fHeliportS4CollisionGridNormals);
 
 /// Collision-mesh vertices in signed room-space game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelter1fHeliportS4CollisionGridVerts[34] = {
-#include "assets/shelter_1f_heliport_s4_collision_00408_verts.inc"
-};
-#else
 static SVECTOR _gShelter1fHeliportS4CollisionGridVerts[34];
-#endif
 PE_ASSET_BIND("shelter_1f_heliport_s4_collision_00408_verts", _gShelter1fHeliportS4CollisionGridVerts);
 
 /// Indexed collision quads, all using surface class 0.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelter1fHeliportS4CollisionGridFaces[15] = {
-#include "assets/shelter_1f_heliport_s4_collision_00408_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelter1fHeliportS4CollisionGridFaces[15];
-#endif
 PE_ASSET_BIND("shelter_1f_heliport_s4_collision_00408_faces", _gShelter1fHeliportS4CollisionGridFaces);
 
 /// Nine -1-terminated face-index lists and their retained intervening zero halfwords.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelter1fHeliportS4CollisionGridCells[56] = {
-#include "assets/shelter_1f_heliport_s4_collision_00408_cells.inc"
-};
-#else
 static s16 _gShelter1fHeliportS4CollisionGridCells[56];
-#endif
 PE_ASSET_BIND("shelter_1f_heliport_s4_collision_00408_cells", _gShelter1fHeliportS4CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -100,13 +76,7 @@ PE_ASSET_BIND("shelter_1f_heliport_s4_collision_00408_cells", _gShelter1fHelipor
 /// The binding is undefined immediately after that include.
 #define SHELTER_1F_HELIPORT_S4_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelter1fHeliportS4CollisionGridCells[(halfwordOffset)])
 /// X-major pointers to the nine lists in the 3x3 collision grid.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelter1fHeliportS4CollisionGridTable[9] = {
-#include "assets/shelter_1f_heliport_s4_collision_00408_table.inc"
-};
-#else
 static s16* _gShelter1fHeliportS4CollisionGridTable[9];
-#endif
 PE_ASSET_BIND_AUX("shelter_1f_heliport_s4_collision_00408_table", _gShelter1fHeliportS4CollisionGridTable, _gShelter1fHeliportS4CollisionGridCells);
 #undef SHELTER_1F_HELIPORT_S4_CELL_FACE_LIST_AT_OFFSET
 

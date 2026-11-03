@@ -163,40 +163,16 @@ static _ShelterB2MainCorridorDepartureTaskDescStorage _gShelterB2MainCorridorDep
     { 0 }, { { { TASK_BODY_NONE, TASK_PRIORITY_SCENE } }, roomEventDepartureTask, { .value = 0 } }
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB2MainCorridorAnimation05620Bank1[2] = {
-#include "assets/shelter_b2_main_corridor_animation_05620_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB2MainCorridorAnimation05620Bank1[2];
-#endif
 PE_ASSET_BIND("shelter_b2_main_corridor_animation_05620_bank1", _gShelterB2MainCorridorAnimation05620Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB2MainCorridorAnimation05620Bank4[62] = {
-#include "assets/shelter_b2_main_corridor_animation_05620_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB2MainCorridorAnimation05620Bank4[62];
-#endif
 PE_ASSET_BIND("shelter_b2_main_corridor_animation_05620_bank4", _gShelterB2MainCorridorAnimation05620Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB2MainCorridorAnimation05620Records[110] = {
-#include "assets/shelter_b2_main_corridor_animation_05620_records.inc"
-};
-#else
 static AnimationRecord _gShelterB2MainCorridorAnimation05620Records[110];
-#endif
 PE_ASSET_BIND("shelter_b2_main_corridor_animation_05620_records", _gShelterB2MainCorridorAnimation05620Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB2MainCorridorAnimation05620Indices[20] = {
-#include "assets/shelter_b2_main_corridor_animation_05620_indices.inc"
-};
-#else
 static u16 _gShelterB2MainCorridorAnimation05620Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b2_main_corridor_animation_05620_indices", _gShelterB2MainCorridorAnimation05620Indices);
 
 static AnimationSet _gShelterB2MainCorridorAnimation05620 = {
@@ -497,43 +473,19 @@ enum {
 };
 
 /// Room-space normals of `gShelterB2MainCorridorCollisionGrid`, using `ONE` per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB2MainCorridorCollisionGridNormals[50] = {
-#include "assets/shelter_b2_main_corridor_collision_06E80_normals.inc"
-};
-#else
 static SVECTOR _gShelterB2MainCorridorCollisionGridNormals[50];
-#endif
 PE_ASSET_BIND("shelter_b2_main_corridor_collision_06E80_normals", _gShelterB2MainCorridorCollisionGridNormals);
 
 /// Signed room-coordinate vertices of `gShelterB2MainCorridorCollisionGrid`.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB2MainCorridorCollisionGridVerts[220] = {
-#include "assets/shelter_b2_main_corridor_collision_06E80_verts.inc"
-};
-#else
 static SVECTOR _gShelterB2MainCorridorCollisionGridVerts[220];
-#endif
 PE_ASSET_BIND("shelter_b2_main_corridor_collision_06E80_verts", _gShelterB2MainCorridorCollisionGridVerts);
 
 /// Indexed collision faces with room-local surface classes 0, 1 and 2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB2MainCorridorCollisionGridFaces[104] = {
-#include "assets/shelter_b2_main_corridor_collision_06E80_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB2MainCorridorCollisionGridFaces[104];
-#endif
 PE_ASSET_BIND("shelter_b2_main_corridor_collision_06E80_faces", _gShelterB2MainCorridorCollisionGridFaces);
 
 /// Packed face-index lists of `gShelterB2MainCorridorCollisionGrid`, ending with `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB2MainCorridorCollisionGridCells[550] = {
-#include "assets/shelter_b2_main_corridor_collision_06E80_cells.inc"
-};
-#else
 static s16 _gShelterB2MainCorridorCollisionGridCells[550];
-#endif
 PE_ASSET_BIND("shelter_b2_main_corridor_collision_06E80_cells", _gShelterB2MainCorridorCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
@@ -545,13 +497,7 @@ PE_ASSET_BIND("shelter_b2_main_corridor_collision_06E80_cells", _gShelterB2MainC
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B2_MAIN_CORRIDOR_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB2MainCorridorCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory; NULL cells contain no collision faces.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB2MainCorridorCollisionGridTable[SHELTER_B2_MAIN_CORRIDOR_GRID_CELLS_X * SHELTER_B2_MAIN_CORRIDOR_GRID_CELLS_Z] = {
-#include "assets/shelter_b2_main_corridor_collision_06E80_table.inc"
-};
-#else
 static s16* _gShelterB2MainCorridorCollisionGridTable[32];
-#endif
 PE_ASSET_BIND_AUX("shelter_b2_main_corridor_collision_06E80_table", _gShelterB2MainCorridorCollisionGridTable, _gShelterB2MainCorridorCollisionGridCells);
 #undef SHELTER_B2_MAIN_CORRIDOR_CELL_FACE_LIST_AT_OFFSET
 

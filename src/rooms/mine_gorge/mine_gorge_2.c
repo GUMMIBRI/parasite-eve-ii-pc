@@ -172,43 +172,19 @@ DirectionWarpEntry gMineGorgeWarpEntries[3] = {
 };
 
 /// Room-1 mesh normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineGorgeRoom1CollisionNormals[30] = {
-#include "assets/mine_gorge_collision_01BC4_normals.inc"
-};
-#else
 static SVECTOR _gMineGorgeRoom1CollisionNormals[30];
-#endif
 PE_ASSET_BIND("mine_gorge_collision_01BC4_normals", _gMineGorgeRoom1CollisionNormals);
 
 /// Room-1 mesh vertices in signed room-local game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineGorgeRoom1CollisionVerts[120] = {
-#include "assets/mine_gorge_collision_01BC4_verts.inc"
-};
-#else
 static SVECTOR _gMineGorgeRoom1CollisionVerts[120];
-#endif
 PE_ASSET_BIND("mine_gorge_collision_01BC4_verts", _gMineGorgeRoom1CollisionVerts);
 
 /// Room-1 indexed collision faces using the room's surface classes 0..4.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gMineGorgeRoom1CollisionFaces[49] = {
-#include "assets/mine_gorge_collision_01BC4_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gMineGorgeRoom1CollisionFaces[49];
-#endif
 PE_ASSET_BIND("mine_gorge_collision_01BC4_faces", _gMineGorgeRoom1CollisionFaces);
 
 /// Room-1 cell face-index lists, each ending in WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gMineGorgeRoom1CollisionCells[224] = {
-#include "assets/mine_gorge_collision_01BC4_cells.inc"
-};
-#else
 static s16 _gMineGorgeRoom1CollisionCells[224];
-#endif
 PE_ASSET_BIND("mine_gorge_collision_01BC4_cells", _gMineGorgeRoom1CollisionCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -221,13 +197,7 @@ PE_ASSET_BIND("mine_gorge_collision_01BC4_cells", _gMineGorgeRoom1CollisionCells
 /// binding through the table include, then undefine it.
 #define MINE_GORGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineGorgeRoom1CollisionCells[(halfwordOffset)])
 /// Room-1 X-major cell directory, indexed as x * 2 + z for x in 0..5 and z in 0..1.
-#ifdef PE_EMBED_ASSETS
-static s16* _gMineGorgeRoom1CollisionTable[12] = {
-#include "assets/mine_gorge_collision_01BC4_table.inc"
-};
-#else
 static s16* _gMineGorgeRoom1CollisionTable[12];
-#endif
 PE_ASSET_BIND_AUX("mine_gorge_collision_01BC4_table", _gMineGorgeRoom1CollisionTable, _gMineGorgeRoom1CollisionCells);
 #undef MINE_GORGE_CELL_FACE_LIST_AT_OFFSET
 
@@ -251,43 +221,19 @@ static WorldCollisionGrid _gMineGorgeRoom1Collision = {
 };
 
 /// Room-2 mesh normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineGorgeRoom2CollisionNormals[28] = {
-#include "assets/mine_gorge_collision_02430_normals.inc"
-};
-#else
 static SVECTOR _gMineGorgeRoom2CollisionNormals[28];
-#endif
 PE_ASSET_BIND("mine_gorge_collision_02430_normals", _gMineGorgeRoom2CollisionNormals);
 
 /// Room-2 mesh vertices in signed room-local game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineGorgeRoom2CollisionVerts[108] = {
-#include "assets/mine_gorge_collision_02430_verts.inc"
-};
-#else
 static SVECTOR _gMineGorgeRoom2CollisionVerts[108];
-#endif
 PE_ASSET_BIND("mine_gorge_collision_02430_verts", _gMineGorgeRoom2CollisionVerts);
 
 /// Room-2 indexed collision faces using the room's surface classes 0..4.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gMineGorgeRoom2CollisionFaces[46] = {
-#include "assets/mine_gorge_collision_02430_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gMineGorgeRoom2CollisionFaces[46];
-#endif
 PE_ASSET_BIND("mine_gorge_collision_02430_faces", _gMineGorgeRoom2CollisionFaces);
 
 /// Room-2 cell face-index lists, each ending in WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gMineGorgeRoom2CollisionCells[216] = {
-#include "assets/mine_gorge_collision_02430_cells.inc"
-};
-#else
 static s16 _gMineGorgeRoom2CollisionCells[216];
-#endif
 PE_ASSET_BIND("mine_gorge_collision_02430_cells", _gMineGorgeRoom2CollisionCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -300,13 +246,7 @@ PE_ASSET_BIND("mine_gorge_collision_02430_cells", _gMineGorgeRoom2CollisionCells
 /// binding through the table include, then undefine it.
 #define MINE_GORGE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineGorgeRoom2CollisionCells[(halfwordOffset)])
 /// Room-2 X-major cell directory, indexed as x * 2 + z for x in 0..5 and z in 0..1.
-#ifdef PE_EMBED_ASSETS
-static s16* _gMineGorgeRoom2CollisionTable[12] = {
-#include "assets/mine_gorge_collision_02430_table.inc"
-};
-#else
 static s16* _gMineGorgeRoom2CollisionTable[12];
-#endif
 PE_ASSET_BIND_AUX("mine_gorge_collision_02430_table", _gMineGorgeRoom2CollisionTable, _gMineGorgeRoom2CollisionCells);
 #undef MINE_GORGE_CELL_FACE_LIST_AT_OFFSET
 

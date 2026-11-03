@@ -40,40 +40,16 @@ enum {
     MINE_TUNNEL_ENEMY_WAVE_ENGAGE   = 2,
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineTunnelAnimation009DCBank1[10] = {
-#include "assets/mine_tunnel_animation_009DC_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineTunnelAnimation009DCBank1[10];
-#endif
 PE_ASSET_BIND("mine_tunnel_animation_009DC_bank1", _gMineTunnelAnimation009DCBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineTunnelAnimation009DCBank4[95] = {
-#include "assets/mine_tunnel_animation_009DC_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineTunnelAnimation009DCBank4[95];
-#endif
 PE_ASSET_BIND("mine_tunnel_animation_009DC_bank4", _gMineTunnelAnimation009DCBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineTunnelAnimation009DCRecords[139] = {
-#include "assets/mine_tunnel_animation_009DC_records.inc"
-};
-#else
 static AnimationRecord _gMineTunnelAnimation009DCRecords[139];
-#endif
 PE_ASSET_BIND("mine_tunnel_animation_009DC_records", _gMineTunnelAnimation009DCRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineTunnelAnimation009DCIndices[20] = {
-#include "assets/mine_tunnel_animation_009DC_indices.inc"
-};
-#else
 static u16 _gMineTunnelAnimation009DCIndices[20];
-#endif
 PE_ASSET_BIND("mine_tunnel_animation_009DC_indices", _gMineTunnelAnimation009DCIndices);
 
 static AnimationSet _gMineTunnelAnimation009DC = {

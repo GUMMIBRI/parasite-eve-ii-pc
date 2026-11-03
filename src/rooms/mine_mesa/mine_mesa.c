@@ -362,40 +362,16 @@ static TaskDesc _gMineMesaHoldBlackScreenTaskDesc = {
     .data     = { .value = 0 },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineMesaAnimation046D0Bank1[6] = {
-#include "assets/mine_mesa_animation_046D0_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineMesaAnimation046D0Bank1[6];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_046D0_bank1", _gMineMesaAnimation046D0Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineMesaAnimation046D0Bank4[46] = {
-#include "assets/mine_mesa_animation_046D0_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineMesaAnimation046D0Bank4[46];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_046D0_bank4", _gMineMesaAnimation046D0Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineMesaAnimation046D0Records[109] = {
-#include "assets/mine_mesa_animation_046D0_records.inc"
-};
-#else
 static AnimationRecord _gMineMesaAnimation046D0Records[109];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_046D0_records", _gMineMesaAnimation046D0Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineMesaAnimation046D0Indices[20] = {
-#include "assets/mine_mesa_animation_046D0_indices.inc"
-};
-#else
 static u16 _gMineMesaAnimation046D0Indices[20];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_046D0_indices", _gMineMesaAnimation046D0Indices);
 
 static AnimationSet _gMineMesaAnimation046D0 = {
@@ -404,40 +380,16 @@ static AnimationSet _gMineMesaAnimation046D0 = {
     { NULL, _gMineMesaAnimation046D0Bank1, NULL, NULL, _gMineMesaAnimation046D0Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineMesaAnimation0494CBank1[2] = {
-#include "assets/mine_mesa_animation_0494C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineMesaAnimation0494CBank1[2];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0494C_bank1", _gMineMesaAnimation0494CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineMesaAnimation0494CBank4[32] = {
-#include "assets/mine_mesa_animation_0494C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineMesaAnimation0494CBank4[32];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0494C_bank4", _gMineMesaAnimation0494CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineMesaAnimation0494CRecords[101] = {
-#include "assets/mine_mesa_animation_0494C_records.inc"
-};
-#else
 static AnimationRecord _gMineMesaAnimation0494CRecords[101];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0494C_records", _gMineMesaAnimation0494CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineMesaAnimation0494CIndices[20] = {
-#include "assets/mine_mesa_animation_0494C_indices.inc"
-};
-#else
 static u16 _gMineMesaAnimation0494CIndices[20];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0494C_indices", _gMineMesaAnimation0494CIndices);
 
 static AnimationSet _gMineMesaAnimation0494C = {
@@ -446,40 +398,16 @@ static AnimationSet _gMineMesaAnimation0494C = {
     { NULL, _gMineMesaAnimation0494CBank1, NULL, NULL, _gMineMesaAnimation0494CBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineMesaAnimation04B54Bank1[4] = {
-#include "assets/mine_mesa_animation_04B54_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineMesaAnimation04B54Bank1[4];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_04B54_bank1", _gMineMesaAnimation04B54Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineMesaAnimation04B54Bank4[34] = {
-#include "assets/mine_mesa_animation_04B54_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineMesaAnimation04B54Bank4[34];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_04B54_bank4", _gMineMesaAnimation04B54Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineMesaAnimation04B54Records[64] = {
-#include "assets/mine_mesa_animation_04B54_records.inc"
-};
-#else
 static AnimationRecord _gMineMesaAnimation04B54Records[64];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_04B54_records", _gMineMesaAnimation04B54Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineMesaAnimation04B54Indices[20] = {
-#include "assets/mine_mesa_animation_04B54_indices.inc"
-};
-#else
 static u16 _gMineMesaAnimation04B54Indices[20];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_04B54_indices", _gMineMesaAnimation04B54Indices);
 
 static AnimationSet _gMineMesaAnimation04B54 = {
@@ -488,40 +416,16 @@ static AnimationSet _gMineMesaAnimation04B54 = {
     { NULL, _gMineMesaAnimation04B54Bank1, NULL, NULL, _gMineMesaAnimation04B54Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineMesaAnimation04ED8Bank1[6] = {
-#include "assets/mine_mesa_animation_04ED8_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineMesaAnimation04ED8Bank1[6];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_04ED8_bank1", _gMineMesaAnimation04ED8Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineMesaAnimation04ED8Bank4[71] = {
-#include "assets/mine_mesa_animation_04ED8_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineMesaAnimation04ED8Bank4[71];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_04ED8_bank4", _gMineMesaAnimation04ED8Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineMesaAnimation04ED8Records[116] = {
-#include "assets/mine_mesa_animation_04ED8_records.inc"
-};
-#else
 static AnimationRecord _gMineMesaAnimation04ED8Records[116];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_04ED8_records", _gMineMesaAnimation04ED8Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineMesaAnimation04ED8Indices[20] = {
-#include "assets/mine_mesa_animation_04ED8_indices.inc"
-};
-#else
 static u16 _gMineMesaAnimation04ED8Indices[20];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_04ED8_indices", _gMineMesaAnimation04ED8Indices);
 
 static AnimationSet _gMineMesaAnimation04ED8 = {
@@ -530,40 +434,16 @@ static AnimationSet _gMineMesaAnimation04ED8 = {
     { NULL, _gMineMesaAnimation04ED8Bank1, NULL, NULL, _gMineMesaAnimation04ED8Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineMesaAnimation0515CBank1[3] = {
-#include "assets/mine_mesa_animation_0515C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineMesaAnimation0515CBank1[3];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0515C_bank1", _gMineMesaAnimation0515CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineMesaAnimation0515CBank4[34] = {
-#include "assets/mine_mesa_animation_0515C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineMesaAnimation0515CBank4[34];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0515C_bank4", _gMineMesaAnimation0515CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineMesaAnimation0515CRecords[98] = {
-#include "assets/mine_mesa_animation_0515C_records.inc"
-};
-#else
 static AnimationRecord _gMineMesaAnimation0515CRecords[98];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0515C_records", _gMineMesaAnimation0515CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineMesaAnimation0515CIndices[20] = {
-#include "assets/mine_mesa_animation_0515C_indices.inc"
-};
-#else
 static u16 _gMineMesaAnimation0515CIndices[20];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0515C_indices", _gMineMesaAnimation0515CIndices);
 
 static AnimationSet _gMineMesaAnimation0515C = {
@@ -572,40 +452,16 @@ static AnimationSet _gMineMesaAnimation0515C = {
     { NULL, _gMineMesaAnimation0515CBank1, NULL, NULL, _gMineMesaAnimation0515CBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineMesaAnimation06160Bank1[28] = {
-#include "assets/mine_mesa_animation_06160_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineMesaAnimation06160Bank1[28];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_06160_bank1", _gMineMesaAnimation06160Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineMesaAnimation06160Bank4[423] = {
-#include "assets/mine_mesa_animation_06160_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineMesaAnimation06160Bank4[423];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_06160_bank4", _gMineMesaAnimation06160Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineMesaAnimation06160Records[498] = {
-#include "assets/mine_mesa_animation_06160_records.inc"
-};
-#else
 static AnimationRecord _gMineMesaAnimation06160Records[498];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_06160_records", _gMineMesaAnimation06160Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineMesaAnimation06160Indices[20] = {
-#include "assets/mine_mesa_animation_06160_indices.inc"
-};
-#else
 static u16 _gMineMesaAnimation06160Indices[20];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_06160_indices", _gMineMesaAnimation06160Indices);
 
 static AnimationSet _gMineMesaAnimation06160 = {
@@ -614,40 +470,16 @@ static AnimationSet _gMineMesaAnimation06160 = {
     { NULL, _gMineMesaAnimation06160Bank1, NULL, NULL, _gMineMesaAnimation06160Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineMesaAnimation0645CBank1[4] = {
-#include "assets/mine_mesa_animation_0645C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineMesaAnimation0645CBank1[4];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0645C_bank1", _gMineMesaAnimation0645CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineMesaAnimation0645CBank4[56] = {
-#include "assets/mine_mesa_animation_0645C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineMesaAnimation0645CBank4[56];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0645C_bank4", _gMineMesaAnimation0645CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineMesaAnimation0645CRecords[103] = {
-#include "assets/mine_mesa_animation_0645C_records.inc"
-};
-#else
 static AnimationRecord _gMineMesaAnimation0645CRecords[103];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0645C_records", _gMineMesaAnimation0645CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineMesaAnimation0645CIndices[20] = {
-#include "assets/mine_mesa_animation_0645C_indices.inc"
-};
-#else
 static u16 _gMineMesaAnimation0645CIndices[20];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_0645C_indices", _gMineMesaAnimation0645CIndices);
 
 static AnimationSet _gMineMesaAnimation0645C = {
@@ -656,40 +488,16 @@ static AnimationSet _gMineMesaAnimation0645C = {
     { NULL, _gMineMesaAnimation0645CBank1, NULL, NULL, _gMineMesaAnimation0645CBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineMesaAnimation065FCBank1[2] = {
-#include "assets/mine_mesa_animation_065FC_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineMesaAnimation065FCBank1[2];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_065FC_bank1", _gMineMesaAnimation065FCBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineMesaAnimation065FCBank4[18] = {
-#include "assets/mine_mesa_animation_065FC_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineMesaAnimation065FCBank4[18];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_065FC_bank4", _gMineMesaAnimation065FCBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineMesaAnimation065FCRecords[60] = {
-#include "assets/mine_mesa_animation_065FC_records.inc"
-};
-#else
 static AnimationRecord _gMineMesaAnimation065FCRecords[60];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_065FC_records", _gMineMesaAnimation065FCRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineMesaAnimation065FCIndices[20] = {
-#include "assets/mine_mesa_animation_065FC_indices.inc"
-};
-#else
 static u16 _gMineMesaAnimation065FCIndices[20];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_065FC_indices", _gMineMesaAnimation065FCIndices);
 
 static AnimationSet _gMineMesaAnimation065FC = {
@@ -698,40 +506,16 @@ static AnimationSet _gMineMesaAnimation065FC = {
     { NULL, _gMineMesaAnimation065FCBank1, NULL, NULL, _gMineMesaAnimation065FCBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineMesaAnimation068E4Bank1[4] = {
-#include "assets/mine_mesa_animation_068E4_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineMesaAnimation068E4Bank1[4];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_068E4_bank1", _gMineMesaAnimation068E4Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineMesaAnimation068E4Bank4[45] = {
-#include "assets/mine_mesa_animation_068E4_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineMesaAnimation068E4Bank4[45];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_068E4_bank4", _gMineMesaAnimation068E4Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineMesaAnimation068E4Records[109] = {
-#include "assets/mine_mesa_animation_068E4_records.inc"
-};
-#else
 static AnimationRecord _gMineMesaAnimation068E4Records[109];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_068E4_records", _gMineMesaAnimation068E4Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineMesaAnimation068E4Indices[20] = {
-#include "assets/mine_mesa_animation_068E4_indices.inc"
-};
-#else
 static u16 _gMineMesaAnimation068E4Indices[20];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_068E4_indices", _gMineMesaAnimation068E4Indices);
 
 static AnimationSet _gMineMesaAnimation068E4 = {
@@ -740,41 +524,16 @@ static AnimationSet _gMineMesaAnimation068E4 = {
     { NULL, _gMineMesaAnimation068E4Bank1, NULL, NULL, _gMineMesaAnimation068E4Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineMesaAnimation06B9CBank1[2] = {
-#include "assets/mine_mesa_animation_06B9C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineMesaAnimation06B9CBank1[2];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_06B9C_bank1", _gMineMesaAnimation06B9CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineMesaAnimation06B9CBank4[39] = {
-#include "assets/mine_mesa_animation_06B9C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineMesaAnimation06B9CBank4[39];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_06B9C_bank4", _gMineMesaAnimation06B9CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineMesaAnimation06B9CRecords[109] = {
-#include "assets/mine_mesa_animation_06B9C_records.inc"
-};
-#else
 static AnimationRecord _gMineMesaAnimation06B9CRecords[109];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_06B9C_records", _gMineMesaAnimation06B9CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineMesaAnimation06B9CIndices[20] = {
-#include "assets/mine_mesa_animation_06B9C_indices.inc"
-
-};
-#else
 static u16 _gMineMesaAnimation06B9CIndices[20];
-#endif
 PE_ASSET_BIND("mine_mesa_animation_06B9C_indices", _gMineMesaAnimation06B9CIndices);
 
 static AnimationSet _gMineMesaAnimation06B9C = {
@@ -788,13 +547,7 @@ static AnimationSet _gMineMesaAnimation06B9C = {
 /// One signed XYZ sample per task tick, in game-coordinate units; all 46 are
 /// consumed unless the scene is skipped. Playback adds (-100, 0, 200) and
 /// supplies yaw separately. Borrowed only while this room overlay is loaded.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineMesaPlayerRunPath[46] = {
-#include "assets/mine_mesa_motion_06BC4.inc"
-};
-#else
 static SVECTOR _gMineMesaPlayerRunPath[46];
-#endif
 PE_ASSET_BIND("mine_mesa_motion_06BC4", _gMineMesaPlayerRunPath);
 
 static void _mineMesaCompanionHeadAimTask(Task* task);
@@ -1844,43 +1597,19 @@ static EvsCommand _gMineMesaArrivalSkipScript[24] = {
 };
 
 /// Local Q12 unit normals of the three-face scene collision template.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineMesaSceneCollisionTemplateNormals[3] = {
-#include "assets/mine_mesa_collision_08EE4_normals.inc"
-};
-#else
 static SVECTOR _gMineMesaSceneCollisionTemplateNormals[3];
-#endif
 PE_ASSET_BIND("mine_mesa_collision_08EE4_normals", _gMineMesaSceneCollisionTemplateNormals);
 
 /// Eight local-space corners of the scene collision template, in game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineMesaSceneCollisionTemplateVerts[8] = {
-#include "assets/mine_mesa_collision_08EE4_verts.inc"
-};
-#else
 static SVECTOR _gMineMesaSceneCollisionTemplateVerts[8];
-#endif
 PE_ASSET_BIND("mine_mesa_collision_08EE4_verts", _gMineMesaSceneCollisionTemplateVerts);
 
 /// Three quads copied into the live grid before scene placement.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gMineMesaSceneCollisionTemplateFaces[3] = {
-#include "assets/mine_mesa_collision_08EE4_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gMineMesaSceneCollisionTemplateFaces[3];
-#endif
 PE_ASSET_BIND("mine_mesa_collision_08EE4_faces", _gMineMesaSceneCollisionTemplateFaces);
 
 /// Complete face-index list of the template's single cell, terminated by -1.
-#ifdef PE_EMBED_ASSETS
-static s16 _gMineMesaSceneCollisionTemplateCells[4] = {
-#include "assets/mine_mesa_collision_08EE4_cells.inc"
-};
-#else
 static s16 _gMineMesaSceneCollisionTemplateCells[4];
-#endif
 PE_ASSET_BIND("mine_mesa_collision_08EE4_cells", _gMineMesaSceneCollisionTemplateCells);
 
 /// Resolves a generated face-list start in this grid's packed halfword pool.
@@ -1892,13 +1621,7 @@ PE_ASSET_BIND("mine_mesa_collision_08EE4_cells", _gMineMesaSceneCollisionTemplat
 /// Define only for that include and undefine immediately afterward.
 #define MINE_MESA_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineMesaSceneCollisionTemplateCells[(halfwordOffset)])
 /// Single XZ cell borrowing the scene template's complete face-index list.
-#ifdef PE_EMBED_ASSETS
-static s16* _gMineMesaSceneCollisionTemplateTable[1] = {
-#include "assets/mine_mesa_collision_08EE4_table.inc"
-};
-#else
 static s16* _gMineMesaSceneCollisionTemplateTable[1];
-#endif
 PE_ASSET_BIND_AUX("mine_mesa_collision_08EE4_table", _gMineMesaSceneCollisionTemplateTable, _gMineMesaSceneCollisionTemplateCells);
 #undef MINE_MESA_CELL_FACE_LIST_AT_OFFSET
 
@@ -1978,43 +1701,19 @@ enum {
 };
 
 /// Writable Q12 unit normals for Mine Mesa's live collision grid.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineMesaCollisionGridNormals[37] = {
-#include "assets/mine_mesa_collision_09A4C_normals.inc"
-};
-#else
 static SVECTOR _gMineMesaCollisionGridNormals[37];
-#endif
 PE_ASSET_BIND("mine_mesa_collision_09A4C_normals", _gMineMesaCollisionGridNormals);
 
 /// Writable room-space vertices for Mine Mesa's live collision grid.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineMesaCollisionGridVerts[117] = {
-#include "assets/mine_mesa_collision_09A4C_verts.inc"
-};
-#else
 static SVECTOR _gMineMesaCollisionGridVerts[117];
-#endif
 PE_ASSET_BIND("mine_mesa_collision_09A4C_verts", _gMineMesaCollisionGridVerts);
 
 /// Writable indexed faces for Mine Mesa's live collision grid.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gMineMesaCollisionGridFaces[53] = {
-#include "assets/mine_mesa_collision_09A4C_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gMineMesaCollisionGridFaces[53];
-#endif
 PE_ASSET_BIND("mine_mesa_collision_09A4C_faces", _gMineMesaCollisionGridFaces);
 
 /// Sentinel-terminated face-index lists for Mine Mesa's sixteen collision cells.
-#ifdef PE_EMBED_ASSETS
-static s16 _gMineMesaCollisionGridCells[348] = {
-#include "assets/mine_mesa_collision_09A4C_cells.inc"
-};
-#else
 static s16 _gMineMesaCollisionGridCells[348];
-#endif
 PE_ASSET_BIND("mine_mesa_collision_09A4C_cells", _gMineMesaCollisionGridCells);
 
 /// Resolves a generated face-list start in this grid's packed halfword pool.
@@ -2026,13 +1725,7 @@ PE_ASSET_BIND("mine_mesa_collision_09A4C_cells", _gMineMesaCollisionGridCells);
 /// Define only for that include and undefine immediately afterward.
 #define MINE_MESA_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineMesaCollisionGridCells[(halfwordOffset)])
 /// X-major directory of Mine Mesa's 4 by 4 collision-cell face lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gMineMesaCollisionGridTable[MINE_MESA_COLLISION_GRID_AXIS_CELL_COUNT * MINE_MESA_COLLISION_GRID_AXIS_CELL_COUNT] = {
-#include "assets/mine_mesa_collision_09A4C_table.inc"
-};
-#else
 static s16* _gMineMesaCollisionGridTable[16];
-#endif
 PE_ASSET_BIND_AUX("mine_mesa_collision_09A4C_table", _gMineMesaCollisionGridTable, _gMineMesaCollisionGridCells);
 #undef MINE_MESA_CELL_FACE_LIST_AT_OFFSET
 

@@ -203,43 +203,19 @@ DirectionWarpEntry gDryfieldNightWarehouseWarpEntries[2] = {
 };
 
 /// Room-space collision face normals, with `ONE` representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightWarehouseCollisionGridNormals[10] = {
-#include "assets/dryfield_night_warehouse_collision_01948_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightWarehouseCollisionGridNormals[10];
-#endif
 PE_ASSET_BIND("dryfield_night_warehouse_collision_01948_normals", _gDryfieldNightWarehouseCollisionGridNormals);
 
 /// Warehouse collision vertices in signed room-coordinate game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightWarehouseCollisionGridVerts[74] = {
-#include "assets/dryfield_night_warehouse_collision_01948_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightWarehouseCollisionGridVerts[74];
-#endif
 PE_ASSET_BIND("dryfield_night_warehouse_collision_01948_verts", _gDryfieldNightWarehouseCollisionGridVerts);
 
 /// Collision quads indexing the vertex/normal pools and surface classes 4..6.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightWarehouseCollisionGridFaces[39] = {
-#include "assets/dryfield_night_warehouse_collision_01948_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightWarehouseCollisionGridFaces[39];
-#endif
 PE_ASSET_BIND("dryfield_night_warehouse_collision_01948_faces", _gDryfieldNightWarehouseCollisionGridFaces);
 
 /// Four packed signed face-index lists, each ending at -1; retained zeros separate lists.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightWarehouseCollisionGridCells[104] = {
-#include "assets/dryfield_night_warehouse_collision_01948_cells.inc"
-};
-#else
 static s16 _gDryfieldNightWarehouseCollisionGridCells[104];
-#endif
 PE_ASSET_BIND("dryfield_night_warehouse_collision_01948_cells", _gDryfieldNightWarehouseCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -251,13 +227,7 @@ PE_ASSET_BIND("dryfield_night_warehouse_collision_01948_cells", _gDryfieldNightW
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_WAREHOUSE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightWarehouseCollisionGridCells[(halfwordOffset)])
 /// X-major cell pointers for the warehouse's 2-by-2 collision grid.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightWarehouseCollisionGridTable[4] = {
-#include "assets/dryfield_night_warehouse_collision_01948_table.inc"
-};
-#else
 static s16* _gDryfieldNightWarehouseCollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_warehouse_collision_01948_table", _gDryfieldNightWarehouseCollisionGridTable, _gDryfieldNightWarehouseCollisionGridCells);
 #undef DRYFIELD_NIGHT_WAREHOUSE_CELL_FACE_LIST_AT_OFFSET
 

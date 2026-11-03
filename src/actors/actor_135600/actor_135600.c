@@ -138,40 +138,16 @@ static TmdSource    _gActor135600Model06AC4;
 
 #include "assets/characters/kyle/hand_left.inc"
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gActor135600Model06AC4Skeleton[1] = {
-#include "assets/actor_135600_model_06AC4_skeleton.inc"
-};
-#else
 static TmdBone _gActor135600Model06AC4Skeleton[1];
-#endif
 PE_ASSET_BIND("actor_135600_model_06AC4_skeleton", _gActor135600Model06AC4Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor135600Model06AC4PartVerts[1] = {
-#include "assets/actor_135600_model_06AC4_partVerts.inc"
-};
-#else
 static u32 _gActor135600Model06AC4PartVerts[1];
-#endif
 PE_ASSET_BIND("actor_135600_model_06AC4_partVerts", _gActor135600Model06AC4PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gActor135600Model06AC4Verts[24] = {
-#include "assets/actor_135600_model_06AC4_verts.inc"
-};
-#else
 static SVECTOR _gActor135600Model06AC4Verts[24];
-#endif
 PE_ASSET_BIND("actor_135600_model_06AC4_verts", _gActor135600Model06AC4Verts);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor135600Model06AC4Stream[129] = {
-#include "assets/actor_135600_model_06AC4_stream.inc"
-};
-#else
 static u32 _gActor135600Model06AC4Stream[129];
-#endif
 PE_ASSET_BIND("actor_135600_model_06AC4_stream", _gActor135600Model06AC4Stream);
 
 static TmdSource _gActor135600Model06AC4 = {

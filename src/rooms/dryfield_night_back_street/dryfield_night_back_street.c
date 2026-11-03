@@ -136,43 +136,19 @@ DirectionWarpEntry gDryfieldNightBackStreetWarpEntries[4] = {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightBackStreetCollisionGridNormals[19] = {
-#include "assets/dryfield_night_back_street_collision_03574_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightBackStreetCollisionGridNormals[19];
-#endif
 PE_ASSET_BIND("dryfield_night_back_street_collision_03574_normals", _gDryfieldNightBackStreetCollisionGridNormals);
 
 /// Collision-mesh vertices in signed integer game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightBackStreetCollisionGridVerts[72] = {
-#include "assets/dryfield_night_back_street_collision_03574_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightBackStreetCollisionGridVerts[72];
-#endif
 PE_ASSET_BIND("dryfield_night_back_street_collision_03574_verts", _gDryfieldNightBackStreetCollisionGridVerts);
 
 /// Indexed collision quads selecting room-local surface classes 0..2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightBackStreetCollisionGridFaces[32] = {
-#include "assets/dryfield_night_back_street_collision_03574_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightBackStreetCollisionGridFaces[32];
-#endif
 PE_ASSET_BIND("dryfield_night_back_street_collision_03574_faces", _gDryfieldNightBackStreetCollisionGridFaces);
 
 /// Packed signed face-index lists for the grid cells, each ending with -1.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightBackStreetCollisionGridCells[224] = {
-#include "assets/dryfield_night_back_street_collision_03574_cells.inc"
-};
-#else
 static s16 _gDryfieldNightBackStreetCollisionGridCells[224];
-#endif
 PE_ASSET_BIND("dryfield_night_back_street_collision_03574_cells", _gDryfieldNightBackStreetCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -188,13 +164,7 @@ PE_ASSET_BIND("dryfield_night_back_street_collision_03574_cells", _gDryfieldNigh
 #define DRYFIELD_NIGHT_BACK_STREET_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightBackStreetCollisionGridCells[(halfwordOffset)])
 
 /// X-major pointers into the face-list pool for the 7 by 4 collision grid.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightBackStreetCollisionGridTable[28] = {
-#include "assets/dryfield_night_back_street_collision_03574_table.inc"
-};
-#else
 static s16* _gDryfieldNightBackStreetCollisionGridTable[28];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_back_street_collision_03574_table", _gDryfieldNightBackStreetCollisionGridTable, _gDryfieldNightBackStreetCollisionGridCells);
 #undef DRYFIELD_NIGHT_BACK_STREET_CELL_FACE_LIST_AT_OFFSET
 

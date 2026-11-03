@@ -100,40 +100,16 @@ TaskDesc gNeoArkSubmarineTunnelWaterRefractionTaskDesc[2] = {
     { { { TASK_BODY_NONE, TASK_PRIORITY_CONTROL } }, waterDistortBandTask, { .value = 0 } },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gNeoArkSubmarineTunnelAnimation03EE0Bank1[6] = {
-#include "assets/neo_ark_submarine_tunnel_animation_03EE0_bank1.inc"
-};
-#else
 static AnimationPackedPose _gNeoArkSubmarineTunnelAnimation03EE0Bank1[6];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_animation_03EE0_bank1", _gNeoArkSubmarineTunnelAnimation03EE0Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gNeoArkSubmarineTunnelAnimation03EE0Bank4[64] = {
-#include "assets/neo_ark_submarine_tunnel_animation_03EE0_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gNeoArkSubmarineTunnelAnimation03EE0Bank4[64];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_animation_03EE0_bank4", _gNeoArkSubmarineTunnelAnimation03EE0Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gNeoArkSubmarineTunnelAnimation03EE0Records[141] = {
-#include "assets/neo_ark_submarine_tunnel_animation_03EE0_records.inc"
-};
-#else
 static AnimationRecord _gNeoArkSubmarineTunnelAnimation03EE0Records[141];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_animation_03EE0_records", _gNeoArkSubmarineTunnelAnimation03EE0Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gNeoArkSubmarineTunnelAnimation03EE0Indices[20] = {
-#include "assets/neo_ark_submarine_tunnel_animation_03EE0_indices.inc"
-};
-#else
 static u16 _gNeoArkSubmarineTunnelAnimation03EE0Indices[20];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_animation_03EE0_indices", _gNeoArkSubmarineTunnelAnimation03EE0Indices);
 
 static AnimationSet _gNeoArkSubmarineTunnelAnimation03EE0 = {
@@ -142,40 +118,16 @@ static AnimationSet _gNeoArkSubmarineTunnelAnimation03EE0 = {
     { NULL, _gNeoArkSubmarineTunnelAnimation03EE0Bank1, NULL, NULL, _gNeoArkSubmarineTunnelAnimation03EE0Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gNeoArkSubmarineTunnelAnimation0444CBank1[10] = {
-#include "assets/neo_ark_submarine_tunnel_animation_0444C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gNeoArkSubmarineTunnelAnimation0444CBank1[10];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_animation_0444C_bank1", _gNeoArkSubmarineTunnelAnimation0444CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gNeoArkSubmarineTunnelAnimation0444CBank4[126] = {
-#include "assets/neo_ark_submarine_tunnel_animation_0444C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gNeoArkSubmarineTunnelAnimation0444CBank4[126];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_animation_0444C_bank4", _gNeoArkSubmarineTunnelAnimation0444CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gNeoArkSubmarineTunnelAnimation0444CRecords[171] = {
-#include "assets/neo_ark_submarine_tunnel_animation_0444C_records.inc"
-};
-#else
 static AnimationRecord _gNeoArkSubmarineTunnelAnimation0444CRecords[171];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_animation_0444C_records", _gNeoArkSubmarineTunnelAnimation0444CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gNeoArkSubmarineTunnelAnimation0444CIndices[20] = {
-#include "assets/neo_ark_submarine_tunnel_animation_0444C_indices.inc"
-};
-#else
 static u16 _gNeoArkSubmarineTunnelAnimation0444CIndices[20];
-#endif
 PE_ASSET_BIND("neo_ark_submarine_tunnel_animation_0444C_indices", _gNeoArkSubmarineTunnelAnimation0444CIndices);
 
 static AnimationSet _gNeoArkSubmarineTunnelAnimation0444C = {

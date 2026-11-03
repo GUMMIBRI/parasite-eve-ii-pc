@@ -1197,49 +1197,19 @@ static EvsCommand _gDryfieldDilapidatedHouseCapSequence13Script[] = {
 /// count and is not cleared by independent parent teardown. Do not start twice.
 static Task* _gDryfieldDilapidatedHouseMorphAttachmentTask = NULL;
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gDryfieldDilapidatedHouseModel08794Skeleton[1] = {
-#include "assets/dryfield_dilapidated_house_model_08794_skeleton.inc"
-};
-#else
 static TmdBone _gDryfieldDilapidatedHouseModel08794Skeleton[1];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_model_08794_skeleton", _gDryfieldDilapidatedHouseModel08794Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldDilapidatedHouseModel08794PartVerts[1] = {
-#include "assets/dryfield_dilapidated_house_model_08794_partVerts.inc"
-};
-#else
 static u32 _gDryfieldDilapidatedHouseModel08794PartVerts[1];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_model_08794_partVerts", _gDryfieldDilapidatedHouseModel08794PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldDilapidatedHouseModel08794Verts[40] = {
-#include "assets/dryfield_dilapidated_house_model_08794_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldDilapidatedHouseModel08794Verts[40];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_model_08794_verts", _gDryfieldDilapidatedHouseModel08794Verts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldDilapidatedHouseModel08794Normals[128] = {
-#include "assets/dryfield_dilapidated_house_model_08794_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldDilapidatedHouseModel08794Normals[128];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_model_08794_normals", _gDryfieldDilapidatedHouseModel08794Normals);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldDilapidatedHouseModel08794Stream[171] = {
-#include "assets/dryfield_dilapidated_house_model_08794_stream.inc"
-};
-#else
 static u32 _gDryfieldDilapidatedHouseModel08794Stream[171];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_model_08794_stream", _gDryfieldDilapidatedHouseModel08794Stream);
 
 static TmdSource _gDryfieldDilapidatedHouseModel08794 = {
@@ -1254,49 +1224,19 @@ static TmdSource _gDryfieldDilapidatedHouseModel08794 = {
     _gDryfieldDilapidatedHouseModel08794Stream,
 };
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gDryfieldDilapidatedHouseModel08D0CSkeleton[1] = {
-#include "assets/dryfield_dilapidated_house_model_08D0C_skeleton.inc"
-};
-#else
 static TmdBone _gDryfieldDilapidatedHouseModel08D0CSkeleton[1];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_model_08D0C_skeleton", _gDryfieldDilapidatedHouseModel08D0CSkeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldDilapidatedHouseModel08D0CPartVerts[1] = {
-#include "assets/dryfield_dilapidated_house_model_08D0C_partVerts.inc"
-};
-#else
 static u32 _gDryfieldDilapidatedHouseModel08D0CPartVerts[1];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_model_08D0C_partVerts", _gDryfieldDilapidatedHouseModel08D0CPartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldDilapidatedHouseModel08D0CVerts[40] = {
-#include "assets/dryfield_dilapidated_house_model_08D0C_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldDilapidatedHouseModel08D0CVerts[40];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_model_08D0C_verts", _gDryfieldDilapidatedHouseModel08D0CVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldDilapidatedHouseModel08D0CNormals[40] = {
-#include "assets/dryfield_dilapidated_house_model_08D0C_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldDilapidatedHouseModel08D0CNormals[40];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_model_08D0C_normals", _gDryfieldDilapidatedHouseModel08D0CNormals);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldDilapidatedHouseModel08D0CStream[171] = {
-#include "assets/dryfield_dilapidated_house_model_08D0C_stream.inc"
-};
-#else
 static u32 _gDryfieldDilapidatedHouseModel08D0CStream[171];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_model_08D0C_stream", _gDryfieldDilapidatedHouseModel08D0CStream);
 
 static TmdSource _gDryfieldDilapidatedHouseModel08D0C = {
@@ -1315,13 +1255,7 @@ static TmdSource _gDryfieldDilapidatedHouseModel08D0C = {
 ///
 /// The morph applies these signed game-unit deltas with a Q12 weight. Fourth
 /// halfwords are unused; the model's final eight vertices receive no deltas.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldDilapidatedHouseAttachmentMorphVertexDeltas[32] = {
-#include "assets/dryfield_dilapidated_house_morph_08FDC.inc"
-};
-#else
 static SVECTOR _gDryfieldDilapidatedHouseAttachmentMorphVertexDeltas[32];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_morph_08FDC", _gDryfieldDilapidatedHouseAttachmentMorphVertexDeltas);
 
 /// Shared vertex-only deformation of the player's scripted model attachment.
@@ -1560,43 +1494,19 @@ DirectionWarpEntry gDryfieldDilapidatedHouseWarpEntries[2] = {
 };
 
 /// Room collision face normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldDilapidatedHouseCollisionGridNormals[] = {
-#include "assets/dryfield_dilapidated_house_collision_09D24_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldDilapidatedHouseCollisionGridNormals[12];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_collision_09D24_normals", _gDryfieldDilapidatedHouseCollisionGridNormals);
 
 /// Room collision vertices in signed room-local game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldDilapidatedHouseCollisionGridVerts[] = {
-#include "assets/dryfield_dilapidated_house_collision_09D24_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldDilapidatedHouseCollisionGridVerts[116];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_collision_09D24_verts", _gDryfieldDilapidatedHouseCollisionGridVerts);
 
 /// Indexed room collision faces, using surface classes 0..2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldDilapidatedHouseCollisionGridFaces[] = {
-#include "assets/dryfield_dilapidated_house_collision_09D24_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldDilapidatedHouseCollisionGridFaces[70];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_collision_09D24_faces", _gDryfieldDilapidatedHouseCollisionGridFaces);
 
 /// Complete serialized pool of signed face-index lists, each ending in -1.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldDilapidatedHouseCollisionGridCells[] = {
-#include "assets/dryfield_dilapidated_house_collision_09D24_cells.inc"
-};
-#else
 static s16 _gDryfieldDilapidatedHouseCollisionGridCells[208];
-#endif
 PE_ASSET_BIND("dryfield_dilapidated_house_collision_09D24_cells", _gDryfieldDilapidatedHouseCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -1612,13 +1522,7 @@ PE_ASSET_BIND("dryfield_dilapidated_house_collision_09D24_cells", _gDryfieldDila
 #define DRYFIELD_DILAPIDATED_HOUSE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldDilapidatedHouseCollisionGridCells[(halfwordOffset)])
 
 /// X-major pointers to the six face lists of the room's 3-by-2 collision grid.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldDilapidatedHouseCollisionGridTable[] = {
-#include "assets/dryfield_dilapidated_house_collision_09D24_table.inc"
-};
-#else
 static s16* _gDryfieldDilapidatedHouseCollisionGridTable[6];
-#endif
 PE_ASSET_BIND_AUX("dryfield_dilapidated_house_collision_09D24_table", _gDryfieldDilapidatedHouseCollisionGridTable, _gDryfieldDilapidatedHouseCollisionGridCells);
 #undef DRYFIELD_DILAPIDATED_HOUSE_CELL_FACE_LIST_AT_OFFSET
 

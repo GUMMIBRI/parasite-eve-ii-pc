@@ -158,40 +158,16 @@ static ActorCommand _gDryfieldGeneralStoreHideBeforeSceneActorCommand __attribut
     .command = DRYFIELD_GENERAL_STORE_ACTOR_COMMAND_HIDE_BEFORE_SCENE,
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldGeneralStoreAnimation00ED8Bank1[6] = {
-#include "assets/dryfield_general_store_animation_00ED8_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldGeneralStoreAnimation00ED8Bank1[6];
-#endif
 PE_ASSET_BIND("dryfield_general_store_animation_00ED8_bank1", _gDryfieldGeneralStoreAnimation00ED8Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldGeneralStoreAnimation00ED8Bank4[46] = {
-#include "assets/dryfield_general_store_animation_00ED8_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldGeneralStoreAnimation00ED8Bank4[46];
-#endif
 PE_ASSET_BIND("dryfield_general_store_animation_00ED8_bank4", _gDryfieldGeneralStoreAnimation00ED8Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldGeneralStoreAnimation00ED8Records[109] = {
-#include "assets/dryfield_general_store_animation_00ED8_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldGeneralStoreAnimation00ED8Records[109];
-#endif
 PE_ASSET_BIND("dryfield_general_store_animation_00ED8_records", _gDryfieldGeneralStoreAnimation00ED8Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldGeneralStoreAnimation00ED8Indices[20] = {
-#include "assets/dryfield_general_store_animation_00ED8_indices.inc"
-};
-#else
 static u16 _gDryfieldGeneralStoreAnimation00ED8Indices[20];
-#endif
 PE_ASSET_BIND("dryfield_general_store_animation_00ED8_indices", _gDryfieldGeneralStoreAnimation00ED8Indices);
 
 static AnimationSet _gDryfieldGeneralStoreAnimation00ED8 = {
@@ -359,43 +335,19 @@ DirectionWarpEntry gDryfieldGeneralStoreWarpEntries[3] = {
 };
 
 /// Room-space collision normals, with `ONE` representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldGeneralStoreCollisionGridNormals[13] = {
-#include "assets/dryfield_general_store_collision_01C78_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldGeneralStoreCollisionGridNormals[13];
-#endif
 PE_ASSET_BIND("dryfield_general_store_collision_01C78_normals", _gDryfieldGeneralStoreCollisionGridNormals);
 
 /// Collision vertices in signed room-local game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldGeneralStoreCollisionGridVerts[137] = {
-#include "assets/dryfield_general_store_collision_01C78_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldGeneralStoreCollisionGridVerts[137];
-#endif
 PE_ASSET_BIND("dryfield_general_store_collision_01C78_verts", _gDryfieldGeneralStoreCollisionGridVerts);
 
 /// Indexed collision triangles and quads, using room surface classes 0 and 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldGeneralStoreCollisionGridFaces[83] = {
-#include "assets/dryfield_general_store_collision_01C78_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldGeneralStoreCollisionGridFaces[83];
-#endif
 PE_ASSET_BIND("dryfield_general_store_collision_01C78_faces", _gDryfieldGeneralStoreCollisionGridFaces);
 
 /// Signed face-index lists, each ending with `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldGeneralStoreCollisionGridCells[292] = {
-#include "assets/dryfield_general_store_collision_01C78_cells.inc"
-};
-#else
 static s16 _gDryfieldGeneralStoreCollisionGridCells[292];
-#endif
 PE_ASSET_BIND("dryfield_general_store_collision_01C78_cells", _gDryfieldGeneralStoreCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -411,13 +363,7 @@ PE_ASSET_BIND("dryfield_general_store_collision_01C78_cells", _gDryfieldGeneralS
 #define DRYFIELD_GENERAL_STORE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldGeneralStoreCollisionGridCells[(halfwordOffset)])
 
 /// X-major directory of the collision grid's three-by-three cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldGeneralStoreCollisionGridTable[9] = {
-#include "assets/dryfield_general_store_collision_01C78_table.inc"
-};
-#else
 static s16* _gDryfieldGeneralStoreCollisionGridTable[9];
-#endif
 PE_ASSET_BIND_AUX("dryfield_general_store_collision_01C78_table", _gDryfieldGeneralStoreCollisionGridTable, _gDryfieldGeneralStoreCollisionGridCells);
 #undef DRYFIELD_GENERAL_STORE_CELL_FACE_LIST_AT_OFFSET
 

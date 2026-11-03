@@ -73,43 +73,19 @@ enum {
 };
 
 /// Four outward box-wall normals in room space, scaled by 4096.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB6GrowthRoomCollisionBoxTemplateNormals[SHELTER_B6_GROWTH_ROOM_BOX_FACE_COUNT] = {
-#include "assets/shelter_b6_growth_room_collision_01C74_normals.inc"
-};
-#else
 static SVECTOR _gShelterB6GrowthRoomCollisionBoxTemplateNormals[SHELTER_B6_GROWTH_ROOM_BOX_FACE_COUNT];
-#endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_01C74_normals", _gShelterB6GrowthRoomCollisionBoxTemplateNormals);
 
 /// Eight room-space corners of the box before the optional Y translation.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB6GrowthRoomCollisionBoxTemplateVerts[SHELTER_B6_GROWTH_ROOM_BOX_VERTEX_COUNT] = {
-#include "assets/shelter_b6_growth_room_collision_01C74_verts.inc"
-};
-#else
 static SVECTOR _gShelterB6GrowthRoomCollisionBoxTemplateVerts[SHELTER_B6_GROWTH_ROOM_BOX_VERTEX_COUNT];
-#endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_01C74_verts", _gShelterB6GrowthRoomCollisionBoxTemplateVerts);
 
 /// Four side-wall quads using vertices 0..7, normals 0..3 and surface class 0.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB6GrowthRoomCollisionBoxTemplateFaces[SHELTER_B6_GROWTH_ROOM_BOX_FACE_COUNT] = {
-#include "assets/shelter_b6_growth_room_collision_01C74_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB6GrowthRoomCollisionBoxTemplateFaces[SHELTER_B6_GROWTH_ROOM_BOX_FACE_COUNT];
-#endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_01C74_faces", _gShelterB6GrowthRoomCollisionBoxTemplateFaces);
 
 /// Face list 0..3 followed by WORLD_COLLISION_GRID_CELL_END and an unread zero word.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB6GrowthRoomCollisionBoxTemplateCells[6] = {
-#include "assets/shelter_b6_growth_room_collision_01C74_cells.inc"
-};
-#else
 static s16 _gShelterB6GrowthRoomCollisionBoxTemplateCells[6];
-#endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_01C74_cells", _gShelterB6GrowthRoomCollisionBoxTemplateCells);
 
 /// Supplies a cell face-list address for the generated collision table.
@@ -121,13 +97,7 @@ PE_ASSET_BIND("shelter_b6_growth_room_collision_01C74_cells", _gShelterB6GrowthR
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B6_GROWTH_ROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB6GrowthRoomCollisionBoxTemplateCells[(halfwordOffset)])
 /// The template's sole cell; retained although box resets do not read cell indices.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB6GrowthRoomCollisionBoxTemplateTable[1] = {
-#include "assets/shelter_b6_growth_room_collision_01C74_table.inc"
-};
-#else
 static s16* _gShelterB6GrowthRoomCollisionBoxTemplateTable[1];
-#endif
 PE_ASSET_BIND_AUX("shelter_b6_growth_room_collision_01C74_table", _gShelterB6GrowthRoomCollisionBoxTemplateTable, _gShelterB6GrowthRoomCollisionBoxTemplateCells);
 #undef SHELTER_B6_GROWTH_ROOM_CELL_FACE_LIST_AT_OFFSET
 
@@ -229,43 +199,19 @@ DirectionWarpEntry gShelterB6GrowthRoomWarpEntries[1] = {
 };
 
 /// Room-space Q12 normal pool, including the four reserved box normals.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB6GrowthRoomCollisionGridNormals[14] = {
-#include "assets/shelter_b6_growth_room_collision_02530_normals.inc"
-};
-#else
 static SVECTOR _gShelterB6GrowthRoomCollisionGridNormals[14];
-#endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_02530_normals", _gShelterB6GrowthRoomCollisionGridNormals);
 
 /// Room-space vertex pool, including the eight reserved box vertices.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB6GrowthRoomCollisionGridVerts[80] = {
-#include "assets/shelter_b6_growth_room_collision_02530_verts.inc"
-};
-#else
 static SVECTOR _gShelterB6GrowthRoomCollisionGridVerts[80];
-#endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_02530_verts", _gShelterB6GrowthRoomCollisionGridVerts);
 
 /// Indexed room faces; the leading four receive the movable box at entry.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB6GrowthRoomCollisionGridFaces[54] = {
-#include "assets/shelter_b6_growth_room_collision_02530_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB6GrowthRoomCollisionGridFaces[54];
-#endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_02530_faces", _gShelterB6GrowthRoomCollisionGridFaces);
 
 /// Packed signed face-index lists, each ending at `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB6GrowthRoomCollisionGridCells[208] = {
-#include "assets/shelter_b6_growth_room_collision_02530_cells.inc"
-};
-#else
 static s16 _gShelterB6GrowthRoomCollisionGridCells[208];
-#endif
 PE_ASSET_BIND("shelter_b6_growth_room_collision_02530_cells", _gShelterB6GrowthRoomCollisionGridCells);
 
 /// Supplies a cell face-list address for the generated collision table.
@@ -277,13 +223,7 @@ PE_ASSET_BIND("shelter_b6_growth_room_collision_02530_cells", _gShelterB6GrowthR
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B6_GROWTH_ROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB6GrowthRoomCollisionGridCells[(halfwordOffset)])
 /// Eight X-major cell-list pointers, four Z cells per X column.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB6GrowthRoomCollisionGridTable[8] = {
-#include "assets/shelter_b6_growth_room_collision_02530_table.inc"
-};
-#else
 static s16* _gShelterB6GrowthRoomCollisionGridTable[8];
-#endif
 PE_ASSET_BIND_AUX("shelter_b6_growth_room_collision_02530_table", _gShelterB6GrowthRoomCollisionGridTable, _gShelterB6GrowthRoomCollisionGridCells);
 #undef SHELTER_B6_GROWTH_ROOM_CELL_FACE_LIST_AT_OFFSET
 

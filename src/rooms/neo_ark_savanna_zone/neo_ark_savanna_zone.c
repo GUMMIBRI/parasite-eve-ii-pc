@@ -125,43 +125,19 @@ DirectionWarpEntry gNeoArkSavannaZoneWarpEntries[2] = {
 };
 
 /// Grid-local unit normals, scaled by 4096 and indexed by the grid's faces.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkSavannaZoneCollisionGridNormals[5] = {
-#include "assets/neo_ark_savanna_zone_collision_02610_normals.inc"
-};
-#else
 static SVECTOR _gNeoArkSavannaZoneCollisionGridNormals[5];
-#endif
 PE_ASSET_BIND("neo_ark_savanna_zone_collision_02610_normals", _gNeoArkSavannaZoneCollisionGridNormals);
 
 /// Collision mesh vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkSavannaZoneCollisionGridVerts[12] = {
-#include "assets/neo_ark_savanna_zone_collision_02610_verts.inc"
-};
-#else
 static SVECTOR _gNeoArkSavannaZoneCollisionGridVerts[12];
-#endif
 PE_ASSET_BIND("neo_ark_savanna_zone_collision_02610_verts", _gNeoArkSavannaZoneCollisionGridVerts);
 
 /// Indexed collision faces with room-local surface classes 0..3.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gNeoArkSavannaZoneCollisionGridFaces[11] = {
-#include "assets/neo_ark_savanna_zone_collision_02610_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gNeoArkSavannaZoneCollisionGridFaces[11];
-#endif
 PE_ASSET_BIND("neo_ark_savanna_zone_collision_02610_faces", _gNeoArkSavannaZoneCollisionGridFaces);
 
 /// Four serialized face-index lists, each ending at `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gNeoArkSavannaZoneCollisionGridCells[32] = {
-#include "assets/neo_ark_savanna_zone_collision_02610_cells.inc"
-};
-#else
 static s16 _gNeoArkSavannaZoneCollisionGridCells[32];
-#endif
 PE_ASSET_BIND("neo_ark_savanna_zone_collision_02610_cells", _gNeoArkSavannaZoneCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -174,13 +150,7 @@ PE_ASSET_BIND("neo_ark_savanna_zone_collision_02610_cells", _gNeoArkSavannaZoneC
 /// binding through the table include, then undefine it.
 #define NEO_ARK_SAVANNA_ZONE_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkSavannaZoneCollisionGridCells[(halfwordOffset)])
 /// X-major directory into the grid's four face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gNeoArkSavannaZoneCollisionGridTable[4] = {
-#include "assets/neo_ark_savanna_zone_collision_02610_table.inc"
-};
-#else
 static s16* _gNeoArkSavannaZoneCollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("neo_ark_savanna_zone_collision_02610_table", _gNeoArkSavannaZoneCollisionGridTable, _gNeoArkSavannaZoneCollisionGridCells);
 #undef NEO_ARK_SAVANNA_ZONE_CELL_FACE_LIST_AT_OFFSET
 

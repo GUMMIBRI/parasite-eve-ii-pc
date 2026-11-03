@@ -115,46 +115,22 @@ enum {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineTunnelCollisionGridNormals[29] = {
-#include "assets/mine_tunnel_collision_012AC_normals.inc"
-};
-#else
 static SVECTOR _gMineTunnelCollisionGridNormals[29];
-#endif
 PE_ASSET_BIND("mine_tunnel_collision_012AC_normals", _gMineTunnelCollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineTunnelCollisionGridVerts[80] = {
-#include "assets/mine_tunnel_collision_012AC_verts.inc"
-};
-#else
 static SVECTOR _gMineTunnelCollisionGridVerts[80];
-#endif
 PE_ASSET_BIND("mine_tunnel_collision_012AC_verts", _gMineTunnelCollisionGridVerts);
 
 /// Indexed tunnel collision faces; surface class 1 is the floor, class 0 the rest.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gMineTunnelCollisionGridFaces[37] = {
-#include "assets/mine_tunnel_collision_012AC_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gMineTunnelCollisionGridFaces[37];
-#endif
 PE_ASSET_BIND("mine_tunnel_collision_012AC_faces", _gMineTunnelCollisionGridFaces);
 
 /// Ten concatenated face-index lists, each ending at WORLD_COLLISION_GRID_CELL_END.
 ///
 /// The serialized run retains zero words between some lists; cell pointers
 /// select their starts independently.
-#ifdef PE_EMBED_ASSETS
-static s16 _gMineTunnelCollisionGridCells[158] = {
-#include "assets/mine_tunnel_collision_012AC_cells.inc"
-};
-#else
 static s16 _gMineTunnelCollisionGridCells[158];
-#endif
 PE_ASSET_BIND("mine_tunnel_collision_012AC_cells", _gMineTunnelCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -167,13 +143,7 @@ PE_ASSET_BIND("mine_tunnel_collision_012AC_cells", _gMineTunnelCollisionGridCell
 /// binding through the table include, then undefine it.
 #define MINE_TUNNEL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineTunnelCollisionGridCells[(halfwordOffset)])
 /// X-major starts of the grid's 5 by 2 cell lists, with Z as the inner index.
-#ifdef PE_EMBED_ASSETS
-static s16* _gMineTunnelCollisionGridTable[MINE_TUNNEL_COLLISION_CELL_COUNT_X * MINE_TUNNEL_COLLISION_CELL_COUNT_Z] = {
-#include "assets/mine_tunnel_collision_012AC_table.inc"
-};
-#else
 static s16* _gMineTunnelCollisionGridTable[10];
-#endif
 PE_ASSET_BIND_AUX("mine_tunnel_collision_012AC_table", _gMineTunnelCollisionGridTable, _gMineTunnelCollisionGridCells);
 #undef MINE_TUNNEL_CELL_FACE_LIST_AT_OFFSET
 

@@ -170,46 +170,22 @@ DirectionWarpEntry gDryfieldNightJunkYardWarpEntries[3] = {
 };
 
 /// Unit-scale room-space normals for the junk-yard collision grid (4096 = 1.0).
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightJunkYardCollisionGridNormals[] = {
-#include "assets/dryfield_night_junk_yard_collision_03BF8_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightJunkYardCollisionGridNormals[38];
-#endif
 PE_ASSET_BIND("dryfield_night_junk_yard_collision_03BF8_normals", _gDryfieldNightJunkYardCollisionGridNormals);
 
 /// Collision-grid vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightJunkYardCollisionGridVerts[] = {
-#include "assets/dryfield_night_junk_yard_collision_03BF8_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightJunkYardCollisionGridVerts[113];
-#endif
 PE_ASSET_BIND("dryfield_night_junk_yard_collision_03BF8_verts", _gDryfieldNightJunkYardCollisionGridVerts);
 
 /// Indexed grid faces selecting junk-yard surface classes 0, 1 and 2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightJunkYardCollisionGridFaces[] = {
-#include "assets/dryfield_night_junk_yard_collision_03BF8_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightJunkYardCollisionGridFaces[54];
-#endif
 PE_ASSET_BIND("dryfield_night_junk_yard_collision_03BF8_faces", _gDryfieldNightJunkYardCollisionGridFaces);
 
 /// Serialized face-index lists, each ending at WORLD_COLLISION_GRID_CELL_END.
 ///
 /// Cell pointers select the list starts; retained words between lists are not
 /// additional face entries in the preceding list.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightJunkYardCollisionGridCells[] = {
-#include "assets/dryfield_night_junk_yard_collision_03BF8_cells.inc"
-};
-#else
 static s16 _gDryfieldNightJunkYardCollisionGridCells[230];
-#endif
 PE_ASSET_BIND("dryfield_night_junk_yard_collision_03BF8_cells", _gDryfieldNightJunkYardCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -221,13 +197,7 @@ PE_ASSET_BIND("dryfield_night_junk_yard_collision_03BF8_cells", _gDryfieldNightJ
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_JUNK_YARD_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightJunkYardCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory for the collision grid's seven-by-two XZ cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightJunkYardCollisionGridTable[] = {
-#include "assets/dryfield_night_junk_yard_collision_03BF8_table.inc"
-};
-#else
 static s16* _gDryfieldNightJunkYardCollisionGridTable[14];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_junk_yard_collision_03BF8_table", _gDryfieldNightJunkYardCollisionGridTable, _gDryfieldNightJunkYardCollisionGridCells);
 #undef DRYFIELD_NIGHT_JUNK_YARD_CELL_FACE_LIST_AT_OFFSET
 

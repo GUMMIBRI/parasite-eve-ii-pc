@@ -81,40 +81,16 @@ static PadScriptVibrationSegment _gActor503500SliderVibrationSegments[2] = {
     { .startIntensity = 156, .endIntensity = 106, .durationFrames = 2, .field_3 = 1 },
 };
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gActor503500Model14DA0Skeleton[1] = {
-#include "assets/actor_503500_model_14DA0_skeleton.inc"
-};
-#else
 static TmdBone _gActor503500Model14DA0Skeleton[1];
-#endif
 PE_ASSET_BIND("actor_503500_model_14DA0_skeleton", _gActor503500Model14DA0Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor503500Model14DA0PartVerts[1] = {
-#include "assets/actor_503500_model_14DA0_partVerts.inc"
-};
-#else
 static u32 _gActor503500Model14DA0PartVerts[1];
-#endif
 PE_ASSET_BIND("actor_503500_model_14DA0_partVerts", _gActor503500Model14DA0PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gActor503500Model14DA0Verts[92] = {
-#include "assets/actor_503500_model_14DA0_verts.inc"
-};
-#else
 static SVECTOR _gActor503500Model14DA0Verts[92];
-#endif
 PE_ASSET_BIND("actor_503500_model_14DA0_verts", _gActor503500Model14DA0Verts);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor503500Model14DA0Stream[469] = {
-#include "assets/actor_503500_model_14DA0_stream.inc"
-};
-#else
 static u32 _gActor503500Model14DA0Stream[469];
-#endif
 PE_ASSET_BIND("actor_503500_model_14DA0_stream", _gActor503500Model14DA0Stream);
 
 TmdSource gActor503500Model14DA0 = {
@@ -129,40 +105,16 @@ TmdSource gActor503500Model14DA0 = {
     _gActor503500Model14DA0Stream,
 };
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gActor503500Model15820Skeleton[1] = {
-#include "assets/actor_503500_model_15820_skeleton.inc"
-};
-#else
 static TmdBone _gActor503500Model15820Skeleton[1];
-#endif
 PE_ASSET_BIND("actor_503500_model_15820_skeleton", _gActor503500Model15820Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor503500Model15820PartVerts[1] = {
-#include "assets/actor_503500_model_15820_partVerts.inc"
-};
-#else
 static u32 _gActor503500Model15820PartVerts[1];
-#endif
 PE_ASSET_BIND("actor_503500_model_15820_partVerts", _gActor503500Model15820PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gActor503500Model15820Verts[92] = {
-#include "assets/actor_503500_model_15820_verts.inc"
-};
-#else
 static SVECTOR _gActor503500Model15820Verts[92];
-#endif
 PE_ASSET_BIND("actor_503500_model_15820_verts", _gActor503500Model15820Verts);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gActor503500Model15820Stream[459] = {
-#include "assets/actor_503500_model_15820_stream.inc"
-};
-#else
 static u32 _gActor503500Model15820Stream[459];
-#endif
 PE_ASSET_BIND("actor_503500_model_15820_stream", _gActor503500Model15820Stream);
 
 TmdSource gActor503500Model15820 = {
@@ -184,13 +136,7 @@ enum { ACTOR_503500_SLIDER_PATH_SAMPLES = 360 };
 /// Signed halfwords are absolute coordinates in the model root's parent frame.
 /// Path selector 1 resets the timer to zero; the update consumes samples 0..359
 /// and then stops. Y is left unchanged; the table remains separate from path 2.
-#ifdef PE_EMBED_ASSETS
-static DVECTOR_XZ _gActor503500SliderPathFirst[ACTOR_503500_SLIDER_PATH_SAMPLES] = {
-#include "assets/actor_503500_motion_15F70.inc"
-};
-#else
 static DVECTOR_XZ _gActor503500SliderPathFirst[ACTOR_503500_SLIDER_PATH_SAMPLES];
-#endif
 PE_ASSET_BIND("actor_503500_motion_15F70", _gActor503500SliderPathFirst);
 
 /// Second slab's 360 X/Z positions for the staff-card scene, one per actor update.
@@ -198,13 +144,7 @@ PE_ASSET_BIND("actor_503500_motion_15F70", _gActor503500SliderPathFirst);
 /// Signed halfwords are absolute coordinates in the model root's parent frame.
 /// Path selector 2 resets the timer to zero; the update uses path 1's equal extent
 /// as its bound and leaves Y unchanged. Stored separately from the first path.
-#ifdef PE_EMBED_ASSETS
-static DVECTOR_XZ _gActor503500SliderPathSecond[ACTOR_503500_SLIDER_PATH_SAMPLES] = {
-#include "assets/actor_503500_motion_16510.inc"
-};
-#else
 static DVECTOR_XZ _gActor503500SliderPathSecond[ACTOR_503500_SLIDER_PATH_SAMPLES];
-#endif
 PE_ASSET_BIND("actor_503500_motion_16510", _gActor503500SliderPathSecond);
 
 static void _actor503500SliderInit(Task* task);

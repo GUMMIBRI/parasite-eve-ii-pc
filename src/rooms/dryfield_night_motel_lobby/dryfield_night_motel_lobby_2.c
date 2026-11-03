@@ -230,43 +230,19 @@ enum {
 };
 
 /// Room-space face normals, using 4096 for unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMotelLobbyCollisionGridNormals[] = {
-#include "assets/dryfield_night_motel_lobby_collision_057F4_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMotelLobbyCollisionGridNormals[9];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_lobby_collision_057F4_normals", _gDryfieldNightMotelLobbyCollisionGridNormals);
 
 /// Room-space vertex pool in signed game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMotelLobbyCollisionGridVerts[] = {
-#include "assets/dryfield_night_motel_lobby_collision_057F4_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMotelLobbyCollisionGridVerts[53];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_lobby_collision_057F4_verts", _gDryfieldNightMotelLobbyCollisionGridVerts);
 
 /// Indexed triangles and quads selecting lobby surface classes 0..2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightMotelLobbyCollisionGridFaces[] = {
-#include "assets/dryfield_night_motel_lobby_collision_057F4_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightMotelLobbyCollisionGridFaces[33];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_lobby_collision_057F4_faces", _gDryfieldNightMotelLobbyCollisionGridFaces);
 
 /// Four concatenated signed face-index lists, each ended by -1.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightMotelLobbyCollisionGridCells[] = {
-#include "assets/dryfield_night_motel_lobby_collision_057F4_cells.inc"
-};
-#else
 static s16 _gDryfieldNightMotelLobbyCollisionGridCells[100];
-#endif
 PE_ASSET_BIND("dryfield_night_motel_lobby_collision_057F4_cells", _gDryfieldNightMotelLobbyCollisionGridCells);
 
 // The generated table supplies constant halfword offsets into the cell-list pool.
@@ -279,13 +255,7 @@ PE_ASSET_BIND("dryfield_night_motel_lobby_collision_057F4_cells", _gDryfieldNigh
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_MOTEL_LOBBY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMotelLobbyCollisionGridCells[(halfwordOffset)])
 /// X-major cell pointers, with Z as the inner index.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightMotelLobbyCollisionGridTable[DRYFIELD_NIGHT_MOTEL_LOBBY_COLLISION_GRID_CELLS_X * DRYFIELD_NIGHT_MOTEL_LOBBY_COLLISION_GRID_CELLS_Z] = {
-#include "assets/dryfield_night_motel_lobby_collision_057F4_table.inc"
-};
-#else
 static s16* _gDryfieldNightMotelLobbyCollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_motel_lobby_collision_057F4_table", _gDryfieldNightMotelLobbyCollisionGridTable, _gDryfieldNightMotelLobbyCollisionGridCells);
 #undef DRYFIELD_NIGHT_MOTEL_LOBBY_CELL_FACE_LIST_AT_OFFSET
 

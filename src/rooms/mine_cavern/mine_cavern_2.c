@@ -188,40 +188,16 @@ TaskDesc gMineCavernCaptionProgressTasks[2] = {
     { .header = { .fields = { TASK_DESC_END, 0 } }, .callback = NULL, .data = { .value = 0 } },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation069D8Bank1[6] = {
-#include "assets/mine_cavern_animation_069D8_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation069D8Bank1[6];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_069D8_bank1", _gMineCavernAnimation069D8Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation069D8Bank4[46] = {
-#include "assets/mine_cavern_animation_069D8_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation069D8Bank4[46];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_069D8_bank4", _gMineCavernAnimation069D8Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation069D8Records[109] = {
-#include "assets/mine_cavern_animation_069D8_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation069D8Records[109];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_069D8_records", _gMineCavernAnimation069D8Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation069D8Indices[20] = {
-#include "assets/mine_cavern_animation_069D8_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation069D8Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_069D8_indices", _gMineCavernAnimation069D8Indices);
 
 static AnimationSet _gMineCavernAnimation069D8 = {
@@ -230,40 +206,16 @@ static AnimationSet _gMineCavernAnimation069D8 = {
     { NULL, _gMineCavernAnimation069D8Bank1, NULL, NULL, _gMineCavernAnimation069D8Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation07178Bank1[13] = {
-#include "assets/mine_cavern_animation_07178_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation07178Bank1[13];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07178_bank1", _gMineCavernAnimation07178Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation07178Bank4[179] = {
-#include "assets/mine_cavern_animation_07178_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation07178Bank4[179];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07178_bank4", _gMineCavernAnimation07178Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation07178Records[250] = {
-#include "assets/mine_cavern_animation_07178_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation07178Records[250];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07178_records", _gMineCavernAnimation07178Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation07178Indices[20] = {
-#include "assets/mine_cavern_animation_07178_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation07178Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07178_indices", _gMineCavernAnimation07178Indices);
 
 static AnimationSet _gMineCavernAnimation07178 = {
@@ -272,40 +224,16 @@ static AnimationSet _gMineCavernAnimation07178 = {
     { NULL, _gMineCavernAnimation07178Bank1, NULL, NULL, _gMineCavernAnimation07178Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation07544Bank1[6] = {
-#include "assets/mine_cavern_animation_07544_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation07544Bank1[6];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07544_bank1", _gMineCavernAnimation07544Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation07544Bank4[64] = {
-#include "assets/mine_cavern_animation_07544_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation07544Bank4[64];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07544_bank4", _gMineCavernAnimation07544Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation07544Records[141] = {
-#include "assets/mine_cavern_animation_07544_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation07544Records[141];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07544_records", _gMineCavernAnimation07544Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation07544Indices[20] = {
-#include "assets/mine_cavern_animation_07544_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation07544Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07544_indices", _gMineCavernAnimation07544Indices);
 
 static AnimationSet _gMineCavernAnimation07544 = {
@@ -314,40 +242,16 @@ static AnimationSet _gMineCavernAnimation07544 = {
     { NULL, _gMineCavernAnimation07544Bank1, NULL, NULL, _gMineCavernAnimation07544Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation07784Bank1[4] = {
-#include "assets/mine_cavern_animation_07784_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation07784Bank1[4];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07784_bank1", _gMineCavernAnimation07784Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation07784Bank4[42] = {
-#include "assets/mine_cavern_animation_07784_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation07784Bank4[42];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07784_bank4", _gMineCavernAnimation07784Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation07784Records[70] = {
-#include "assets/mine_cavern_animation_07784_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation07784Records[70];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07784_records", _gMineCavernAnimation07784Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation07784Indices[20] = {
-#include "assets/mine_cavern_animation_07784_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation07784Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07784_indices", _gMineCavernAnimation07784Indices);
 
 static AnimationSet _gMineCavernAnimation07784 = {
@@ -356,40 +260,16 @@ static AnimationSet _gMineCavernAnimation07784 = {
     { NULL, _gMineCavernAnimation07784Bank1, NULL, NULL, _gMineCavernAnimation07784Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation07958Bank1[3] = {
-#include "assets/mine_cavern_animation_07958_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation07958Bank1[3];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07958_bank1", _gMineCavernAnimation07958Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation07958Bank4[31] = {
-#include "assets/mine_cavern_animation_07958_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation07958Bank4[31];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07958_bank4", _gMineCavernAnimation07958Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation07958Records[57] = {
-#include "assets/mine_cavern_animation_07958_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation07958Records[57];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07958_records", _gMineCavernAnimation07958Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation07958Indices[20] = {
-#include "assets/mine_cavern_animation_07958_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation07958Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07958_indices", _gMineCavernAnimation07958Indices);
 
 static AnimationSet _gMineCavernAnimation07958 = {
@@ -398,40 +278,16 @@ static AnimationSet _gMineCavernAnimation07958 = {
     { NULL, _gMineCavernAnimation07958Bank1, NULL, NULL, _gMineCavernAnimation07958Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation07BA4Bank1[3] = {
-#include "assets/mine_cavern_animation_07BA4_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation07BA4Bank1[3];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07BA4_bank1", _gMineCavernAnimation07BA4Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation07BA4Bank4[29] = {
-#include "assets/mine_cavern_animation_07BA4_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation07BA4Bank4[29];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07BA4_bank4", _gMineCavernAnimation07BA4Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation07BA4Records[89] = {
-#include "assets/mine_cavern_animation_07BA4_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation07BA4Records[89];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07BA4_records", _gMineCavernAnimation07BA4Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation07BA4Indices[20] = {
-#include "assets/mine_cavern_animation_07BA4_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation07BA4Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_07BA4_indices", _gMineCavernAnimation07BA4Indices);
 
 static AnimationSet _gMineCavernAnimation07BA4 = {
@@ -440,40 +296,16 @@ static AnimationSet _gMineCavernAnimation07BA4 = {
     { NULL, _gMineCavernAnimation07BA4Bank1, NULL, NULL, _gMineCavernAnimation07BA4Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation08178Bank1[8] = {
-#include "assets/mine_cavern_animation_08178_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation08178Bank1[8];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08178_bank1", _gMineCavernAnimation08178Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation08178Bank4[117] = {
-#include "assets/mine_cavern_animation_08178_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation08178Bank4[117];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08178_bank4", _gMineCavernAnimation08178Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation08178Records[212] = {
-#include "assets/mine_cavern_animation_08178_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation08178Records[212];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08178_records", _gMineCavernAnimation08178Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation08178Indices[20] = {
-#include "assets/mine_cavern_animation_08178_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation08178Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08178_indices", _gMineCavernAnimation08178Indices);
 
 static AnimationSet _gMineCavernAnimation08178 = {
@@ -482,40 +314,16 @@ static AnimationSet _gMineCavernAnimation08178 = {
     { NULL, _gMineCavernAnimation08178Bank1, NULL, NULL, _gMineCavernAnimation08178Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation08420Bank1[4] = {
-#include "assets/mine_cavern_animation_08420_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation08420Bank1[4];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08420_bank1", _gMineCavernAnimation08420Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation08420Bank4[46] = {
-#include "assets/mine_cavern_animation_08420_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation08420Bank4[46];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08420_bank4", _gMineCavernAnimation08420Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation08420Records[92] = {
-#include "assets/mine_cavern_animation_08420_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation08420Records[92];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08420_records", _gMineCavernAnimation08420Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation08420Indices[20] = {
-#include "assets/mine_cavern_animation_08420_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation08420Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08420_indices", _gMineCavernAnimation08420Indices);
 
 static AnimationSet _gMineCavernAnimation08420 = {
@@ -524,40 +332,16 @@ static AnimationSet _gMineCavernAnimation08420 = {
     { NULL, _gMineCavernAnimation08420Bank1, NULL, NULL, _gMineCavernAnimation08420Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation08AC0Bank1[12] = {
-#include "assets/mine_cavern_animation_08AC0_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation08AC0Bank1[12];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08AC0_bank1", _gMineCavernAnimation08AC0Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation08AC0Bank4[164] = {
-#include "assets/mine_cavern_animation_08AC0_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation08AC0Bank4[164];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08AC0_bank4", _gMineCavernAnimation08AC0Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation08AC0Records[204] = {
-#include "assets/mine_cavern_animation_08AC0_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation08AC0Records[204];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08AC0_records", _gMineCavernAnimation08AC0Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation08AC0Indices[20] = {
-#include "assets/mine_cavern_animation_08AC0_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation08AC0Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08AC0_indices", _gMineCavernAnimation08AC0Indices);
 
 static AnimationSet _gMineCavernAnimation08AC0 = {
@@ -566,40 +350,16 @@ static AnimationSet _gMineCavernAnimation08AC0 = {
     { NULL, _gMineCavernAnimation08AC0Bank1, NULL, NULL, _gMineCavernAnimation08AC0Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation08CB4Bank1[2] = {
-#include "assets/mine_cavern_animation_08CB4_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation08CB4Bank1[2];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08CB4_bank1", _gMineCavernAnimation08CB4Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation08CB4Bank4[20] = {
-#include "assets/mine_cavern_animation_08CB4_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation08CB4Bank4[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08CB4_bank4", _gMineCavernAnimation08CB4Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation08CB4Records[79] = {
-#include "assets/mine_cavern_animation_08CB4_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation08CB4Records[79];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08CB4_records", _gMineCavernAnimation08CB4Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation08CB4Indices[20] = {
-#include "assets/mine_cavern_animation_08CB4_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation08CB4Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_08CB4_indices", _gMineCavernAnimation08CB4Indices);
 
 static AnimationSet _gMineCavernAnimation08CB4 = {
@@ -608,40 +368,16 @@ static AnimationSet _gMineCavernAnimation08CB4 = {
     { NULL, _gMineCavernAnimation08CB4Bank1, NULL, NULL, _gMineCavernAnimation08CB4Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation092C4Bank1[11] = {
-#include "assets/mine_cavern_animation_092C4_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation092C4Bank1[11];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_092C4_bank1", _gMineCavernAnimation092C4Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation092C4Bank4[150] = {
-#include "assets/mine_cavern_animation_092C4_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation092C4Bank4[150];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_092C4_bank4", _gMineCavernAnimation092C4Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation092C4Records[185] = {
-#include "assets/mine_cavern_animation_092C4_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation092C4Records[185];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_092C4_records", _gMineCavernAnimation092C4Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation092C4Indices[20] = {
-#include "assets/mine_cavern_animation_092C4_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation092C4Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_092C4_indices", _gMineCavernAnimation092C4Indices);
 
 static AnimationSet _gMineCavernAnimation092C4 = {
@@ -650,40 +386,16 @@ static AnimationSet _gMineCavernAnimation092C4 = {
     { NULL, _gMineCavernAnimation092C4Bank1, NULL, NULL, _gMineCavernAnimation092C4Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation096E4Bank1[8] = {
-#include "assets/mine_cavern_animation_096E4_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation096E4Bank1[8];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_096E4_bank1", _gMineCavernAnimation096E4Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation096E4Bank4[88] = {
-#include "assets/mine_cavern_animation_096E4_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation096E4Bank4[88];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_096E4_bank4", _gMineCavernAnimation096E4Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation096E4Records[132] = {
-#include "assets/mine_cavern_animation_096E4_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation096E4Records[132];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_096E4_records", _gMineCavernAnimation096E4Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation096E4Indices[20] = {
-#include "assets/mine_cavern_animation_096E4_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation096E4Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_096E4_indices", _gMineCavernAnimation096E4Indices);
 
 static AnimationSet _gMineCavernAnimation096E4 = {
@@ -692,40 +404,16 @@ static AnimationSet _gMineCavernAnimation096E4 = {
     { NULL, _gMineCavernAnimation096E4Bank1, NULL, NULL, _gMineCavernAnimation096E4Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation099C8Bank1[5] = {
-#include "assets/mine_cavern_animation_099C8_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation099C8Bank1[5];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_099C8_bank1", _gMineCavernAnimation099C8Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation099C8Bank4[58] = {
-#include "assets/mine_cavern_animation_099C8_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation099C8Bank4[58];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_099C8_bank4", _gMineCavernAnimation099C8Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation099C8Records[92] = {
-#include "assets/mine_cavern_animation_099C8_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation099C8Records[92];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_099C8_records", _gMineCavernAnimation099C8Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation099C8Indices[20] = {
-#include "assets/mine_cavern_animation_099C8_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation099C8Indices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_099C8_indices", _gMineCavernAnimation099C8Indices);
 
 static AnimationSet _gMineCavernAnimation099C8 = {
@@ -734,40 +422,16 @@ static AnimationSet _gMineCavernAnimation099C8 = {
     { NULL, _gMineCavernAnimation099C8Bank1, NULL, NULL, _gMineCavernAnimation099C8Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation09C2CBank1[2] = {
-#include "assets/mine_cavern_animation_09C2C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation09C2CBank1[2];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_09C2C_bank1", _gMineCavernAnimation09C2CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation09C2CBank4[22] = {
-#include "assets/mine_cavern_animation_09C2C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation09C2CBank4[22];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_09C2C_bank4", _gMineCavernAnimation09C2CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation09C2CRecords[105] = {
-#include "assets/mine_cavern_animation_09C2C_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation09C2CRecords[105];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_09C2C_records", _gMineCavernAnimation09C2CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation09C2CIndices[20] = {
-#include "assets/mine_cavern_animation_09C2C_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation09C2CIndices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_09C2C_indices", _gMineCavernAnimation09C2CIndices);
 
 static AnimationSet _gMineCavernAnimation09C2C = {
@@ -776,40 +440,16 @@ static AnimationSet _gMineCavernAnimation09C2C = {
     { NULL, _gMineCavernAnimation09C2CBank1, NULL, NULL, _gMineCavernAnimation09C2CBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation09F1CBank1[4] = {
-#include "assets/mine_cavern_animation_09F1C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation09F1CBank1[4];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_09F1C_bank1", _gMineCavernAnimation09F1CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation09F1CBank4[40] = {
-#include "assets/mine_cavern_animation_09F1C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation09F1CBank4[40];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_09F1C_bank4", _gMineCavernAnimation09F1CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation09F1CRecords[116] = {
-#include "assets/mine_cavern_animation_09F1C_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation09F1CRecords[116];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_09F1C_records", _gMineCavernAnimation09F1CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation09F1CIndices[20] = {
-#include "assets/mine_cavern_animation_09F1C_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation09F1CIndices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_09F1C_indices", _gMineCavernAnimation09F1CIndices);
 
 static AnimationSet _gMineCavernAnimation09F1C = {
@@ -818,40 +458,16 @@ static AnimationSet _gMineCavernAnimation09F1C = {
     { NULL, _gMineCavernAnimation09F1CBank1, NULL, NULL, _gMineCavernAnimation09F1CBank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gMineCavernAnimation0A38CBank1[10] = {
-#include "assets/mine_cavern_animation_0A38C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gMineCavernAnimation0A38CBank1[10];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_0A38C_bank1", _gMineCavernAnimation0A38CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gMineCavernAnimation0A38CBank4[95] = {
-#include "assets/mine_cavern_animation_0A38C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gMineCavernAnimation0A38CBank4[95];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_0A38C_bank4", _gMineCavernAnimation0A38CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gMineCavernAnimation0A38CRecords[139] = {
-#include "assets/mine_cavern_animation_0A38C_records.inc"
-};
-#else
 static AnimationRecord _gMineCavernAnimation0A38CRecords[139];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_0A38C_records", _gMineCavernAnimation0A38CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gMineCavernAnimation0A38CIndices[20] = {
-#include "assets/mine_cavern_animation_0A38C_indices.inc"
-};
-#else
 static u16 _gMineCavernAnimation0A38CIndices[20];
-#endif
 PE_ASSET_BIND("mine_cavern_animation_0A38C_indices", _gMineCavernAnimation0A38CIndices);
 
 static AnimationSet _gMineCavernAnimation0A38C = {
@@ -1660,43 +1276,19 @@ enum {
 };
 
 /// Room-space plane normals for the cavern collision grid, with 4096 per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineCavernCollisionGridNormals[30] = {
-#include "assets/mine_cavern_collision_0C25C_normals.inc"
-};
-#else
 static SVECTOR _gMineCavernCollisionGridNormals[30];
-#endif
 PE_ASSET_BIND("mine_cavern_collision_0C25C_normals", _gMineCavernCollisionGridNormals);
 
 /// Signed room-space vertex pool for the cavern collision grid, in whole game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMineCavernCollisionGridVerts[88] = {
-#include "assets/mine_cavern_collision_0C25C_verts.inc"
-};
-#else
 static SVECTOR _gMineCavernCollisionGridVerts[88];
-#endif
 PE_ASSET_BIND("mine_cavern_collision_0C25C_verts", _gMineCavernCollisionGridVerts);
 
 /// Cavern collision quads indexing the grid's vertex and normal pools.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gMineCavernCollisionGridFaces[38] = {
-#include "assets/mine_cavern_collision_0C25C_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gMineCavernCollisionGridFaces[38];
-#endif
 PE_ASSET_BIND("mine_cavern_collision_0C25C_faces", _gMineCavernCollisionGridFaces);
 
 /// Packed face-index lists for the cavern grid's cells, each ending at -1.
-#ifdef PE_EMBED_ASSETS
-static s16 _gMineCavernCollisionGridCells[188] = {
-#include "assets/mine_cavern_collision_0C25C_cells.inc"
-};
-#else
 static s16 _gMineCavernCollisionGridCells[188];
-#endif
 PE_ASSET_BIND("mine_cavern_collision_0C25C_cells", _gMineCavernCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -1709,13 +1301,7 @@ PE_ASSET_BIND("mine_cavern_collision_0C25C_cells", _gMineCavernCollisionGridCell
 /// binding through the table include, then undefine it.
 #define MINE_CAVERN_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gMineCavernCollisionGridCells[(halfwordOffset)])
 /// X-major pointers to the cavern grid's 6 by 3 terminated face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gMineCavernCollisionGridTable[MINE_CAVERN_COLLISION_GRID_CELL_COUNT_X * MINE_CAVERN_COLLISION_GRID_CELL_COUNT_Z] = {
-#include "assets/mine_cavern_collision_0C25C_table.inc"
-};
-#else
 static s16* _gMineCavernCollisionGridTable[18];
-#endif
 PE_ASSET_BIND_AUX("mine_cavern_collision_0C25C_table", _gMineCavernCollisionGridTable, _gMineCavernCollisionGridCells);
 #undef MINE_CAVERN_CELL_FACE_LIST_AT_OFFSET
 

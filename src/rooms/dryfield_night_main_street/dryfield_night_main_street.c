@@ -524,43 +524,19 @@ DirectionWarpEntry gDryfieldNightMainStreetWarpEntries[7] = {
 };
 
 /// Room-space unit normals for the room-1 collision mesh (4096 per unit).
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMainStreetRoom1CollisionGridNormals[] = {
-#include "assets/dryfield_night_main_street_collision_05E10_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMainStreetRoom1CollisionGridNormals[20];
-#endif
 PE_ASSET_BIND("dryfield_night_main_street_collision_05E10_normals", _gDryfieldNightMainStreetRoom1CollisionGridNormals);
 
 /// Signed room-coordinate vertices for the room-1 collision mesh.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightMainStreetRoom1CollisionGridVerts[] = {
-#include "assets/dryfield_night_main_street_collision_05E10_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightMainStreetRoom1CollisionGridVerts[180];
-#endif
 PE_ASSET_BIND("dryfield_night_main_street_collision_05E10_verts", _gDryfieldNightMainStreetRoom1CollisionGridVerts);
 
 /// Indexed collision faces and room-local surface classes for room 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightMainStreetRoom1CollisionGridFaces[] = {
-#include "assets/dryfield_night_main_street_collision_05E10_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightMainStreetRoom1CollisionGridFaces[85];
-#endif
 PE_ASSET_BIND("dryfield_night_main_street_collision_05E10_faces", _gDryfieldNightMainStreetRoom1CollisionGridFaces);
 
 /// Signed face-index storage for room 1; lists end at `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightMainStreetRoom1CollisionGridCells[] = {
-#include "assets/dryfield_night_main_street_collision_05E10_cells.inc"
-};
-#else
 static s16 _gDryfieldNightMainStreetRoom1CollisionGridCells[554];
-#endif
 PE_ASSET_BIND("dryfield_night_main_street_collision_05E10_cells", _gDryfieldNightMainStreetRoom1CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -572,13 +548,7 @@ PE_ASSET_BIND("dryfield_night_main_street_collision_05E10_cells", _gDryfieldNigh
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_MAIN_STREET_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMainStreetRoom1CollisionGridCells[(halfwordOffset)])
 /// Room-1 cell-list pointers in X-major order, with seven Z cells per X row.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightMainStreetRoom1CollisionGridTable[] = {
-#include "assets/dryfield_night_main_street_collision_05E10_table.inc"
-};
-#else
 static s16* _gDryfieldNightMainStreetRoom1CollisionGridTable[42];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_main_street_collision_05E10_table", _gDryfieldNightMainStreetRoom1CollisionGridTable, _gDryfieldNightMainStreetRoom1CollisionGridCells);
 #undef DRYFIELD_NIGHT_MAIN_STREET_CELL_FACE_LIST_AT_OFFSET
 
@@ -601,41 +571,17 @@ static WorldCollisionGrid _gDryfieldNightMainStreetRoom1CollisionGrid = {
     .faceCount   = ARRAY_SIZE(_gDryfieldNightMainStreetRoom1CollisionGridFaces),
 };
 
-#ifdef PE_EMBED_ASSETS
-SVECTOR gDryfieldNightMainStreetRooms2And3CollisionGridNormals[23] = {
-#include "assets/dryfield_night_main_street_collision_06F80_normals.inc"
-};
-#else
 SVECTOR gDryfieldNightMainStreetRooms2And3CollisionGridNormals[23];
-#endif
 PE_ASSET_BIND("dryfield_night_main_street_collision_06F80_normals", gDryfieldNightMainStreetRooms2And3CollisionGridNormals);
 
-#ifdef PE_EMBED_ASSETS
-SVECTOR gDryfieldNightMainStreetRooms2And3CollisionGridVerts[196] = {
-#include "assets/dryfield_night_main_street_collision_06F80_verts.inc"
-};
-#else
 SVECTOR gDryfieldNightMainStreetRooms2And3CollisionGridVerts[196];
-#endif
 PE_ASSET_BIND("dryfield_night_main_street_collision_06F80_verts", gDryfieldNightMainStreetRooms2And3CollisionGridVerts);
 
-#ifdef PE_EMBED_ASSETS
-WorldCollisionGridFace gDryfieldNightMainStreetRooms2And3CollisionGridFaces[89] = {
-#include "assets/dryfield_night_main_street_collision_06F80_faces.inc"
-};
-#else
 WorldCollisionGridFace gDryfieldNightMainStreetRooms2And3CollisionGridFaces[89];
-#endif
 PE_ASSET_BIND("dryfield_night_main_street_collision_06F80_faces", gDryfieldNightMainStreetRooms2And3CollisionGridFaces);
 
 /// Signed face-index storage; each cell list ends at `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightMainStreetRooms2And3CollisionGridCells[720] = {
-#include "assets/dryfield_night_main_street_collision_06F80_cells.inc"
-};
-#else
 static s16 _gDryfieldNightMainStreetRooms2And3CollisionGridCells[720];
-#endif
 PE_ASSET_BIND("dryfield_night_main_street_collision_06F80_cells", _gDryfieldNightMainStreetRooms2And3CollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -647,13 +593,7 @@ PE_ASSET_BIND("dryfield_night_main_street_collision_06F80_cells", _gDryfieldNigh
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_MAIN_STREET_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightMainStreetRooms2And3CollisionGridCells[(halfwordOffset)])
 /// Room-2/3 cell-list pointers in X-major order, with seven Z cells per X row.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightMainStreetRooms2And3CollisionGridTable[42] = {
-#include "assets/dryfield_night_main_street_collision_06F80_table.inc"
-};
-#else
 static s16* _gDryfieldNightMainStreetRooms2And3CollisionGridTable[42];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_main_street_collision_06F80_table", _gDryfieldNightMainStreetRooms2And3CollisionGridTable, _gDryfieldNightMainStreetRooms2And3CollisionGridCells);
 #undef DRYFIELD_NIGHT_MAIN_STREET_CELL_FACE_LIST_AT_OFFSET
 

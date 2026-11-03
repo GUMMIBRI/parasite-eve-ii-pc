@@ -63,40 +63,16 @@ static WorldCollisionTrigger  _gDryfieldNightParkingLotViewBoundaryTriggers[10];
 static WorldCollisionTrigger  _gDryfieldNightParkingLotActionTriggers[12];
 static WorldCoordRoomLights   _gDryfieldNightParkingLotRoomLights;
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gDryfieldNightParkingLotAnimation0166CBank1[10] = {
-#include "assets/dryfield_night_parking_lot_animation_0166C_bank1.inc"
-};
-#else
 static AnimationPackedPose _gDryfieldNightParkingLotAnimation0166CBank1[10];
-#endif
 PE_ASSET_BIND("dryfield_night_parking_lot_animation_0166C_bank1", _gDryfieldNightParkingLotAnimation0166CBank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gDryfieldNightParkingLotAnimation0166CBank4[95] = {
-#include "assets/dryfield_night_parking_lot_animation_0166C_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gDryfieldNightParkingLotAnimation0166CBank4[95];
-#endif
 PE_ASSET_BIND("dryfield_night_parking_lot_animation_0166C_bank4", _gDryfieldNightParkingLotAnimation0166CBank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gDryfieldNightParkingLotAnimation0166CRecords[139] = {
-#include "assets/dryfield_night_parking_lot_animation_0166C_records.inc"
-};
-#else
 static AnimationRecord _gDryfieldNightParkingLotAnimation0166CRecords[139];
-#endif
 PE_ASSET_BIND("dryfield_night_parking_lot_animation_0166C_records", _gDryfieldNightParkingLotAnimation0166CRecords);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gDryfieldNightParkingLotAnimation0166CIndices[20] = {
-#include "assets/dryfield_night_parking_lot_animation_0166C_indices.inc"
-};
-#else
 static u16 _gDryfieldNightParkingLotAnimation0166CIndices[20];
-#endif
 PE_ASSET_BIND("dryfield_night_parking_lot_animation_0166C_indices", _gDryfieldNightParkingLotAnimation0166CIndices);
 
 static AnimationSet _gDryfieldNightParkingLotAnimation0166C = {
@@ -238,43 +214,19 @@ DirectionWarpEntry gDryfieldNightParkingLotWarpEntries[5] = {
 };
 
 /// Room-axis mesh normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightParkingLotCollisionGridNormals[18] = {
-#include "assets/dryfield_night_parking_lot_collision_02510_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightParkingLotCollisionGridNormals[18];
-#endif
 PE_ASSET_BIND("dryfield_night_parking_lot_collision_02510_normals", _gDryfieldNightParkingLotCollisionGridNormals);
 
 /// Room-space collision vertices in signed game-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightParkingLotCollisionGridVerts[132] = {
-#include "assets/dryfield_night_parking_lot_collision_02510_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightParkingLotCollisionGridVerts[132];
-#endif
 PE_ASSET_BIND("dryfield_night_parking_lot_collision_02510_verts", _gDryfieldNightParkingLotCollisionGridVerts);
 
 /// Collision faces indexing the grid's vertex/normal pools and surface classes 0..7.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightParkingLotCollisionGridFaces[55] = {
-#include "assets/dryfield_night_parking_lot_collision_02510_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightParkingLotCollisionGridFaces[55];
-#endif
 PE_ASSET_BIND("dryfield_night_parking_lot_collision_02510_faces", _gDryfieldNightParkingLotCollisionGridFaces);
 
 /// Packed signed face-index lists, each ending at WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightParkingLotCollisionGridCells[436] = {
-#include "assets/dryfield_night_parking_lot_collision_02510_cells.inc"
-};
-#else
 static s16 _gDryfieldNightParkingLotCollisionGridCells[436];
-#endif
 PE_ASSET_BIND("dryfield_night_parking_lot_collision_02510_cells", _gDryfieldNightParkingLotCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -286,13 +238,7 @@ PE_ASSET_BIND("dryfield_night_parking_lot_collision_02510_cells", _gDryfieldNigh
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_PARKING_LOT_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightParkingLotCollisionGridCells[(halfwordOffset)])
 /// X-major 9-by-5 directory into the grid's packed cell face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightParkingLotCollisionGridTable[45] = {
-#include "assets/dryfield_night_parking_lot_collision_02510_table.inc"
-};
-#else
 static s16* _gDryfieldNightParkingLotCollisionGridTable[45];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_parking_lot_collision_02510_table", _gDryfieldNightParkingLotCollisionGridTable, _gDryfieldNightParkingLotCollisionGridCells);
 #undef DRYFIELD_NIGHT_PARKING_LOT_CELL_FACE_LIST_AT_OFFSET
 

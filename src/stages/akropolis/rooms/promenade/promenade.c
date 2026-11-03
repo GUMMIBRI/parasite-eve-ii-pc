@@ -141,13 +141,7 @@ static TaskDesc _gAkropolisPromenadeMovieTaskDescriptors[5] = {
 };
 
 /// Player-root positions for the warp-4 arrival movie, in whole room units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gAkropolisPromenadeArrivalMoviePlayerPositions[300] = {
-#include "assets/rooms/akropolis/promenade/arrival_player_path.inc"
-};
-#else
 static SVECTOR _gAkropolisPromenadeArrivalMoviePlayerPositions[300];
-#endif
 PE_ASSET_BIND("rooms/akropolis/promenade/arrival_player_path", _gAkropolisPromenadeArrivalMoviePlayerPositions);
 
 /// X/Z unit signs of the ground-glow square's four corners in GPU strip order.

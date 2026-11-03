@@ -160,43 +160,19 @@ static TaskDesc _gDryfieldNightWaterTankBattleAftermathTasks[2] = {
 };
 
 /// Two room-space obstacle normals, with 4096 for unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightWaterTankObstacleCollisionGridNormals[2] = {
-#include "assets/dryfield_night_water_tank_collision_00ACC_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightWaterTankObstacleCollisionGridNormals[2];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_collision_00ACC_normals", _gDryfieldNightWaterTankObstacleCollisionGridNormals);
 
 /// Six room-space vertices copied into the live grid's obstacle prefix.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightWaterTankObstacleCollisionGridVerts[6] = {
-#include "assets/dryfield_night_water_tank_collision_00ACC_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightWaterTankObstacleCollisionGridVerts[6];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_collision_00ACC_verts", _gDryfieldNightWaterTankObstacleCollisionGridVerts);
 
 /// Two surface-class-0 quads indexing the obstacle's six vertices and two normals.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightWaterTankObstacleCollisionGridFaces[2] = {
-#include "assets/dryfield_night_water_tank_collision_00ACC_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightWaterTankObstacleCollisionGridFaces[2];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_collision_00ACC_faces", _gDryfieldNightWaterTankObstacleCollisionGridFaces);
 
 /// One face-index list ending in WORLD_COLLISION_GRID_CELL_END, followed by a stored zero.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightWaterTankObstacleCollisionGridCells[4] = {
-#include "assets/dryfield_night_water_tank_collision_00ACC_cells.inc"
-};
-#else
 static s16 _gDryfieldNightWaterTankObstacleCollisionGridCells[4];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_collision_00ACC_cells", _gDryfieldNightWaterTankObstacleCollisionGridCells);
 
 // The generated table uses element offsets into this template's cell list.
@@ -209,13 +185,7 @@ PE_ASSET_BIND("dryfield_night_water_tank_collision_00ACC_cells", _gDryfieldNight
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_WATER_TANK_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightWaterTankObstacleCollisionGridCells[(halfwordOffset)])
 /// The template's single cell points at the list containing both obstacle faces.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightWaterTankObstacleCollisionGridTable[1] = {
-#include "assets/dryfield_night_water_tank_collision_00ACC_table.inc"
-};
-#else
 static s16* _gDryfieldNightWaterTankObstacleCollisionGridTable[1];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_water_tank_collision_00ACC_table", _gDryfieldNightWaterTankObstacleCollisionGridTable, _gDryfieldNightWaterTankObstacleCollisionGridCells);
 #undef DRYFIELD_NIGHT_WATER_TANK_CELL_FACE_LIST_AT_OFFSET
 
@@ -239,49 +209,19 @@ static WorldCollisionGrid _gDryfieldNightWaterTankObstacleCollisionGrid = {
     .faceCount   = ARRAY_SIZE(_gDryfieldNightWaterTankObstacleCollisionGridFaces),
 };
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gDryfieldNightWaterTankModel00FF8Skeleton[1] = {
-#include "assets/dryfield_night_water_tank_model_00FF8_skeleton.inc"
-};
-#else
 static TmdBone _gDryfieldNightWaterTankModel00FF8Skeleton[1];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_model_00FF8_skeleton", _gDryfieldNightWaterTankModel00FF8Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldNightWaterTankModel00FF8PartVerts[1] = {
-#include "assets/dryfield_night_water_tank_model_00FF8_partVerts.inc"
-};
-#else
 static u32 _gDryfieldNightWaterTankModel00FF8PartVerts[1];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_model_00FF8_partVerts", _gDryfieldNightWaterTankModel00FF8PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightWaterTankModel00FF8Verts[84] = {
-#include "assets/dryfield_night_water_tank_model_00FF8_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightWaterTankModel00FF8Verts[84];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_model_00FF8_verts", _gDryfieldNightWaterTankModel00FF8Verts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightWaterTankModel00FF8Normals[72] = {
-#include "assets/dryfield_night_water_tank_model_00FF8_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightWaterTankModel00FF8Normals[72];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_model_00FF8_normals", _gDryfieldNightWaterTankModel00FF8Normals);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldNightWaterTankModel00FF8Stream[531] = {
-#include "assets/dryfield_night_water_tank_model_00FF8_stream.inc"
-};
-#else
 static u32 _gDryfieldNightWaterTankModel00FF8Stream[531];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_model_00FF8_stream", _gDryfieldNightWaterTankModel00FF8Stream);
 
 static TmdSource _gDryfieldNightWaterTankModel00FF8 = {
@@ -355,45 +295,21 @@ DirectionWarpEntry gDryfieldNightWaterTankWarpEntries[2] = {
 };
 
 /// Room-space collision normals, with ONE (4096) for unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightWaterTankCollisionGridNormals[16] = {
-#include "assets/dryfield_night_water_tank_collision_01EF0_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightWaterTankCollisionGridNormals[16];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_collision_01EF0_normals", _gDryfieldNightWaterTankCollisionGridNormals);
 
 /// Room-space collision vertices; the leading six are reserved for the tank obstacle.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightWaterTankCollisionGridVerts[78] = {
-#include "assets/dryfield_night_water_tank_collision_01EF0_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightWaterTankCollisionGridVerts[78];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_collision_01EF0_verts", _gDryfieldNightWaterTankCollisionGridVerts);
 
 /// Indexed room collision quads; the leading two are rebuilt from the tank template.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightWaterTankCollisionGridFaces[38] = {
-#include "assets/dryfield_night_water_tank_collision_01EF0_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightWaterTankCollisionGridFaces[38];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_collision_01EF0_faces", _gDryfieldNightWaterTankCollisionGridFaces);
 
 /// Signed face-index lists ending in WORLD_COLLISION_GRID_CELL_END for each cell.
 ///
 /// Two stored zero halfwords after the second and fourth terminators are not list entries.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightWaterTankCollisionGridCells[126] = {
-#include "assets/dryfield_night_water_tank_collision_01EF0_cells.inc"
-};
-#else
 static s16 _gDryfieldNightWaterTankCollisionGridCells[126];
-#endif
 PE_ASSET_BIND("dryfield_night_water_tank_collision_01EF0_cells", _gDryfieldNightWaterTankCollisionGridCells);
 
 // The generated table uses element offsets into the room grid's face-index lists.
@@ -406,13 +322,7 @@ PE_ASSET_BIND("dryfield_night_water_tank_collision_01EF0_cells", _gDryfieldNight
 /// selects this binding for the table include; it is undefined afterwards.
 #define DRYFIELD_NIGHT_WATER_TANK_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightWaterTankCollisionGridCells[(halfwordOffset)])
 /// Four cell lists in X-major order, indexed as x * 2 + z.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightWaterTankCollisionGridTable[4] = {
-#include "assets/dryfield_night_water_tank_collision_01EF0_table.inc"
-};
-#else
 static s16* _gDryfieldNightWaterTankCollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_water_tank_collision_01EF0_table", _gDryfieldNightWaterTankCollisionGridTable, _gDryfieldNightWaterTankCollisionGridCells);
 #undef DRYFIELD_NIGHT_WATER_TANK_CELL_FACE_LIST_AT_OFFSET
 

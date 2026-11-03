@@ -133,43 +133,19 @@ enum {
 };
 
 /// Room-space unit normals, with ONE (4096) representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkIslandCollisionGridNormals[13] = {
-#include "assets/neo_ark_island_collision_05108_normals.inc"
-};
-#else
 static SVECTOR _gNeoArkIslandCollisionGridNormals[13];
-#endif
 PE_ASSET_BIND("neo_ark_island_collision_05108_normals", _gNeoArkIslandCollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkIslandCollisionGridVerts[127] = {
-#include "assets/neo_ark_island_collision_05108_verts.inc"
-};
-#else
 static SVECTOR _gNeoArkIslandCollisionGridVerts[127];
-#endif
 PE_ASSET_BIND("neo_ark_island_collision_05108_verts", _gNeoArkIslandCollisionGridVerts);
 
 /// Indexed room triangles/quads carrying the island's surface classes.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gNeoArkIslandCollisionGridFaces[61] = {
-#include "assets/neo_ark_island_collision_05108_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gNeoArkIslandCollisionGridFaces[61];
-#endif
 PE_ASSET_BIND("neo_ark_island_collision_05108_faces", _gNeoArkIslandCollisionGridFaces);
 
 /// Serialized face-index lists, each ending at WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gNeoArkIslandCollisionGridCells[262] = {
-#include "assets/neo_ark_island_collision_05108_cells.inc"
-};
-#else
 static s16 _gNeoArkIslandCollisionGridCells[262];
-#endif
 PE_ASSET_BIND("neo_ark_island_collision_05108_cells", _gNeoArkIslandCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -182,13 +158,7 @@ PE_ASSET_BIND("neo_ark_island_collision_05108_cells", _gNeoArkIslandCollisionGri
 /// binding through the table include, then undefine it.
 #define NEO_ARK_ISLAND_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkIslandCollisionGridCells[(halfwordOffset)])
 /// X-major pointers to the grid's 4-by-5 cell face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gNeoArkIslandCollisionGridTable[NEO_ARK_ISLAND_GRID_CELL_COUNT_X * NEO_ARK_ISLAND_GRID_CELL_COUNT_Z] = {
-#include "assets/neo_ark_island_collision_05108_table.inc"
-};
-#else
 static s16* _gNeoArkIslandCollisionGridTable[20];
-#endif
 PE_ASSET_BIND_AUX("neo_ark_island_collision_05108_table", _gNeoArkIslandCollisionGridTable, _gNeoArkIslandCollisionGridCells);
 #undef NEO_ARK_ISLAND_CELL_FACE_LIST_AT_OFFSET
 

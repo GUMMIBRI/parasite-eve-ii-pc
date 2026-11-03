@@ -240,40 +240,16 @@ static TaskDesc _gScreenWaveTaskDescs[2] = {
 /// the initial 256 to zero; the context must have a positive span while drawing.
 static s32 _gScreenWaveAmplitude = 256;
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gShelterB4ReservoirModel07220Skeleton[1] = {
-#include "assets/shelter_b4_reservoir_model_07220_skeleton.inc"
-};
-#else
 static TmdBone _gShelterB4ReservoirModel07220Skeleton[1];
-#endif
 PE_ASSET_BIND("shelter_b4_reservoir_model_07220_skeleton", _gShelterB4ReservoirModel07220Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gShelterB4ReservoirModel07220PartVerts[1] = {
-#include "assets/shelter_b4_reservoir_model_07220_partVerts.inc"
-};
-#else
 static u32 _gShelterB4ReservoirModel07220PartVerts[1];
-#endif
 PE_ASSET_BIND("shelter_b4_reservoir_model_07220_partVerts", _gShelterB4ReservoirModel07220PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB4ReservoirModel07220Verts[15] = {
-#include "assets/shelter_b4_reservoir_model_07220_verts.inc"
-};
-#else
 static SVECTOR _gShelterB4ReservoirModel07220Verts[15];
-#endif
 PE_ASSET_BIND("shelter_b4_reservoir_model_07220_verts", _gShelterB4ReservoirModel07220Verts);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gShelterB4ReservoirModel07220Stream[46] = {
-#include "assets/shelter_b4_reservoir_model_07220_stream.inc"
-};
-#else
 static u32 _gShelterB4ReservoirModel07220Stream[46];
-#endif
 PE_ASSET_BIND("shelter_b4_reservoir_model_07220_stream", _gShelterB4ReservoirModel07220Stream);
 
 static TmdSource _gShelterB4ReservoirModel07220 = {
@@ -707,40 +683,16 @@ SVECTOR gShelterB4ReservoirDiverSurfaceSpots[5] = {
     { 0, 0, 0, -1 },
 };
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB4ReservoirRoomCollisionGridNormals[22] = {
-#include "assets/shelter_b4_reservoir_collision_084F8_normals.inc"
-};
-#else
 static SVECTOR _gShelterB4ReservoirRoomCollisionGridNormals[22];
-#endif
 PE_ASSET_BIND("shelter_b4_reservoir_collision_084F8_normals", _gShelterB4ReservoirRoomCollisionGridNormals);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB4ReservoirRoomCollisionGridVerts[98] = {
-#include "assets/shelter_b4_reservoir_collision_084F8_verts.inc"
-};
-#else
 static SVECTOR _gShelterB4ReservoirRoomCollisionGridVerts[98];
-#endif
 PE_ASSET_BIND("shelter_b4_reservoir_collision_084F8_verts", _gShelterB4ReservoirRoomCollisionGridVerts);
 
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB4ReservoirRoomCollisionGridFaces[45] = {
-#include "assets/shelter_b4_reservoir_collision_084F8_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB4ReservoirRoomCollisionGridFaces[45];
-#endif
 PE_ASSET_BIND("shelter_b4_reservoir_collision_084F8_faces", _gShelterB4ReservoirRoomCollisionGridFaces);
 
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB4ReservoirRoomCollisionGridCells[310] = {
-#include "assets/shelter_b4_reservoir_collision_084F8_cells.inc"
-};
-#else
 static s16 _gShelterB4ReservoirRoomCollisionGridCells[310];
-#endif
 PE_ASSET_BIND("shelter_b4_reservoir_collision_084F8_cells", _gShelterB4ReservoirRoomCollisionGridCells);
 
 enum {
@@ -757,13 +709,7 @@ enum {
 /// valid while this room is loaded; lists end at `WORLD_COLLISION_GRID_CELL_END`.
 /// The producer selects this binding through `cell_face_list_macro`.
 #define SHELTER_B4_RESERVOIR_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB4ReservoirRoomCollisionGridCells[(halfwordOffset)])
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB4ReservoirRoomCollisionGridTable[SHELTER_B4_RESERVOIR_GRID_X_CELLS * SHELTER_B4_RESERVOIR_GRID_Z_CELLS] = {
-#include "assets/shelter_b4_reservoir_collision_084F8_table.inc"
-};
-#else
 static s16* _gShelterB4ReservoirRoomCollisionGridTable[25];
-#endif
 PE_ASSET_BIND_AUX("shelter_b4_reservoir_collision_084F8_table", _gShelterB4ReservoirRoomCollisionGridTable, _gShelterB4ReservoirRoomCollisionGridCells);
 #undef SHELTER_B4_RESERVOIR_CELL_FACE_LIST_AT_OFFSET
 

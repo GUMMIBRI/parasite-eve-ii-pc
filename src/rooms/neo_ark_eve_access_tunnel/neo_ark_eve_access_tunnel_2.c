@@ -149,46 +149,22 @@ DirectionWarpEntry gNeoArkEveAccessTunnelWarpEntries[NEO_ARK_EVE_ACCESS_TUNNEL_W
 };
 
 /// Room-space unit normals for the tunnel's collision faces, with 4096 per unit.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkEveAccessTunnelCollisionGridNormals[19] = {
-#include "assets/neo_ark_eve_access_tunnel_collision_01A9C_normals.inc"
-};
-#else
 static SVECTOR _gNeoArkEveAccessTunnelCollisionGridNormals[19];
-#endif
 PE_ASSET_BIND("neo_ark_eve_access_tunnel_collision_01A9C_normals", _gNeoArkEveAccessTunnelCollisionGridNormals);
 
 /// Collision vertex pool in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gNeoArkEveAccessTunnelCollisionGridVerts[55] = {
-#include "assets/neo_ark_eve_access_tunnel_collision_01A9C_verts.inc"
-};
-#else
 static SVECTOR _gNeoArkEveAccessTunnelCollisionGridVerts[55];
-#endif
 PE_ASSET_BIND("neo_ark_eve_access_tunnel_collision_01A9C_verts", _gNeoArkEveAccessTunnelCollisionGridVerts);
 
 /// Twenty-seven quads and one triangle, with room surface classes 0, 1 and 2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gNeoArkEveAccessTunnelCollisionGridFaces[28] = {
-#include "assets/neo_ark_eve_access_tunnel_collision_01A9C_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gNeoArkEveAccessTunnelCollisionGridFaces[28];
-#endif
 PE_ASSET_BIND("neo_ark_eve_access_tunnel_collision_01A9C_faces", _gNeoArkEveAccessTunnelCollisionGridFaces);
 
 /// Four terminated face-index lists and one retained halfword outside those lists.
 ///
 /// The cell table selects starts 0, 28, 46 and 72; each list ends at
 /// `WORLD_COLLISION_GRID_CELL_END`. Halfword 71 has no selected use.
-#ifdef PE_EMBED_ASSETS
-static s16 _gNeoArkEveAccessTunnelCollisionGridCells[82] = {
-#include "assets/neo_ark_eve_access_tunnel_collision_01A9C_cells.inc"
-};
-#else
 static s16 _gNeoArkEveAccessTunnelCollisionGridCells[82];
-#endif
 PE_ASSET_BIND("neo_ark_eve_access_tunnel_collision_01A9C_cells", _gNeoArkEveAccessTunnelCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -201,13 +177,7 @@ PE_ASSET_BIND("neo_ark_eve_access_tunnel_collision_01A9C_cells", _gNeoArkEveAcce
 /// binding through the table include, then undefine it.
 #define NEO_ARK_EVE_ACCESS_TUNNEL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gNeoArkEveAccessTunnelCollisionGridCells[(halfwordOffset)])
 /// X-major 2-by-2 cell directory; every entry borrows one terminated face list.
-#ifdef PE_EMBED_ASSETS
-static s16* _gNeoArkEveAccessTunnelCollisionGridTable[NEO_ARK_EVE_ACCESS_TUNNEL_GRID_CELLS_X * NEO_ARK_EVE_ACCESS_TUNNEL_GRID_CELLS_Z] = {
-#include "assets/neo_ark_eve_access_tunnel_collision_01A9C_table.inc"
-};
-#else
 static s16* _gNeoArkEveAccessTunnelCollisionGridTable[4];
-#endif
 PE_ASSET_BIND_AUX("neo_ark_eve_access_tunnel_collision_01A9C_table", _gNeoArkEveAccessTunnelCollisionGridTable, _gNeoArkEveAccessTunnelCollisionGridCells);
 #undef NEO_ARK_EVE_ACCESS_TUNNEL_CELL_FACE_LIST_AT_OFFSET
 

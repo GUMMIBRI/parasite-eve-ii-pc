@@ -140,43 +140,19 @@ DirectionWarpEntry gShelterB6TrainingRoomWarpEntries[2] = {
 };
 
 /// Q12 room-space normals borrowed by the training-room collision grid.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB6TrainingRoomCollisionGridNormals[] = {
-#include "assets/shelter_b6_training_room_collision_07174_normals.inc"
-};
-#else
 static SVECTOR _gShelterB6TrainingRoomCollisionGridNormals[7];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_collision_07174_normals", _gShelterB6TrainingRoomCollisionGridNormals);
 
 /// Room-space collision vertices, including the raised platform, in game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB6TrainingRoomCollisionGridVerts[] = {
-#include "assets/shelter_b6_training_room_collision_07174_verts.inc"
-};
-#else
 static SVECTOR _gShelterB6TrainingRoomCollisionGridVerts[22];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_collision_07174_verts", _gShelterB6TrainingRoomCollisionGridVerts);
 
 /// Wall, floor and platform faces indexing this grid's vertex and normal pools.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB6TrainingRoomCollisionGridFaces[] = {
-#include "assets/shelter_b6_training_room_collision_07174_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB6TrainingRoomCollisionGridFaces[21];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_collision_07174_faces", _gShelterB6TrainingRoomCollisionGridFaces);
 
 /// Six signed face-index lists, each terminated by WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB6TrainingRoomCollisionGridCells[] = {
-#include "assets/shelter_b6_training_room_collision_07174_cells.inc"
-};
-#else
 static s16 _gShelterB6TrainingRoomCollisionGridCells[84];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_collision_07174_cells", _gShelterB6TrainingRoomCollisionGridCells);
 
 /// Address of a cell's terminated face list at a halfword offset in this grid.
@@ -188,13 +164,7 @@ PE_ASSET_BIND("shelter_b6_training_room_collision_07174_cells", _gShelterB6Train
 /// this binding for the next generated table, after which it is undefined.
 #define SHELTER_B6_TRAINING_ROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB6TrainingRoomCollisionGridCells[(halfwordOffset)])
 /// X-major pointers to the grid's two-by-three cell lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB6TrainingRoomCollisionGridTable[] = {
-#include "assets/shelter_b6_training_room_collision_07174_table.inc"
-};
-#else
 static s16* _gShelterB6TrainingRoomCollisionGridTable[6];
-#endif
 PE_ASSET_BIND_AUX("shelter_b6_training_room_collision_07174_table", _gShelterB6TrainingRoomCollisionGridTable, _gShelterB6TrainingRoomCollisionGridCells);
 #undef SHELTER_B6_TRAINING_ROOM_CELL_FACE_LIST_AT_OFFSET
 

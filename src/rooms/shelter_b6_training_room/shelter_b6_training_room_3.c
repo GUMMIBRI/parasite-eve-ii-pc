@@ -151,40 +151,16 @@ ActorCommand gShelterB6TrainingRoomControllerStopCommand = {
     SHELTER_B6_TRAINING_ROOM_COMMAND_CONTROLLER_STOP
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB6TrainingRoomAnimation05844Bank1[6] = {
-#include "assets/shelter_b6_training_room_animation_05844_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB6TrainingRoomAnimation05844Bank1[6];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_05844_bank1", _gShelterB6TrainingRoomAnimation05844Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB6TrainingRoomAnimation05844Bank4[46] = {
-#include "assets/shelter_b6_training_room_animation_05844_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB6TrainingRoomAnimation05844Bank4[46];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_05844_bank4", _gShelterB6TrainingRoomAnimation05844Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB6TrainingRoomAnimation05844Records[109] = {
-#include "assets/shelter_b6_training_room_animation_05844_records.inc"
-};
-#else
 static AnimationRecord _gShelterB6TrainingRoomAnimation05844Records[109];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_05844_records", _gShelterB6TrainingRoomAnimation05844Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB6TrainingRoomAnimation05844Indices[20] = {
-#include "assets/shelter_b6_training_room_animation_05844_indices.inc"
-};
-#else
 static u16 _gShelterB6TrainingRoomAnimation05844Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_05844_indices", _gShelterB6TrainingRoomAnimation05844Indices);
 
 static AnimationSet _gShelterB6TrainingRoomAnimation05844 = {
@@ -193,40 +169,16 @@ static AnimationSet _gShelterB6TrainingRoomAnimation05844 = {
     { NULL, _gShelterB6TrainingRoomAnimation05844Bank1, NULL, NULL, _gShelterB6TrainingRoomAnimation05844Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB6TrainingRoomAnimation05F74Bank1[13] = {
-#include "assets/shelter_b6_training_room_animation_05F74_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB6TrainingRoomAnimation05F74Bank1[13];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_05F74_bank1", _gShelterB6TrainingRoomAnimation05F74Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB6TrainingRoomAnimation05F74Bank4[171] = {
-#include "assets/shelter_b6_training_room_animation_05F74_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB6TrainingRoomAnimation05F74Bank4[171];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_05F74_bank4", _gShelterB6TrainingRoomAnimation05F74Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB6TrainingRoomAnimation05F74Records[230] = {
-#include "assets/shelter_b6_training_room_animation_05F74_records.inc"
-};
-#else
 static AnimationRecord _gShelterB6TrainingRoomAnimation05F74Records[230];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_05F74_records", _gShelterB6TrainingRoomAnimation05F74Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB6TrainingRoomAnimation05F74Indices[20] = {
-#include "assets/shelter_b6_training_room_animation_05F74_indices.inc"
-};
-#else
 static u16 _gShelterB6TrainingRoomAnimation05F74Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_05F74_indices", _gShelterB6TrainingRoomAnimation05F74Indices);
 
 static AnimationSet _gShelterB6TrainingRoomAnimation05F74 = {
@@ -235,40 +187,16 @@ static AnimationSet _gShelterB6TrainingRoomAnimation05F74 = {
     { NULL, _gShelterB6TrainingRoomAnimation05F74Bank1, NULL, NULL, _gShelterB6TrainingRoomAnimation05F74Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB6TrainingRoomAnimation061B8Bank1[3] = {
-#include "assets/shelter_b6_training_room_animation_061B8_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB6TrainingRoomAnimation061B8Bank1[3];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_061B8_bank1", _gShelterB6TrainingRoomAnimation061B8Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB6TrainingRoomAnimation061B8Bank4[28] = {
-#include "assets/shelter_b6_training_room_animation_061B8_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB6TrainingRoomAnimation061B8Bank4[28];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_061B8_bank4", _gShelterB6TrainingRoomAnimation061B8Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB6TrainingRoomAnimation061B8Records[88] = {
-#include "assets/shelter_b6_training_room_animation_061B8_records.inc"
-};
-#else
 static AnimationRecord _gShelterB6TrainingRoomAnimation061B8Records[88];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_061B8_records", _gShelterB6TrainingRoomAnimation061B8Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB6TrainingRoomAnimation061B8Indices[20] = {
-#include "assets/shelter_b6_training_room_animation_061B8_indices.inc"
-};
-#else
 static u16 _gShelterB6TrainingRoomAnimation061B8Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_061B8_indices", _gShelterB6TrainingRoomAnimation061B8Indices);
 
 static AnimationSet _gShelterB6TrainingRoomAnimation061B8 = {
@@ -277,40 +205,16 @@ static AnimationSet _gShelterB6TrainingRoomAnimation061B8 = {
     { NULL, _gShelterB6TrainingRoomAnimation061B8Bank1, NULL, NULL, _gShelterB6TrainingRoomAnimation061B8Bank4, NULL, NULL, NULL },
 };
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedPose _gShelterB6TrainingRoomAnimation063C0Bank1[2] = {
-#include "assets/shelter_b6_training_room_animation_063C0_bank1.inc"
-};
-#else
 static AnimationPackedPose _gShelterB6TrainingRoomAnimation063C0Bank1[2];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_063C0_bank1", _gShelterB6TrainingRoomAnimation063C0Bank1);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationPackedRotation _gShelterB6TrainingRoomAnimation063C0Bank4[29] = {
-#include "assets/shelter_b6_training_room_animation_063C0_bank4.inc"
-};
-#else
 static AnimationPackedRotation _gShelterB6TrainingRoomAnimation063C0Bank4[29];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_063C0_bank4", _gShelterB6TrainingRoomAnimation063C0Bank4);
 
-#ifdef PE_EMBED_ASSETS
-static AnimationRecord _gShelterB6TrainingRoomAnimation063C0Records[75] = {
-#include "assets/shelter_b6_training_room_animation_063C0_records.inc"
-};
-#else
 static AnimationRecord _gShelterB6TrainingRoomAnimation063C0Records[75];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_063C0_records", _gShelterB6TrainingRoomAnimation063C0Records);
 
-#ifdef PE_EMBED_ASSETS
-static u16 _gShelterB6TrainingRoomAnimation063C0Indices[20] = {
-#include "assets/shelter_b6_training_room_animation_063C0_indices.inc"
-};
-#else
 static u16 _gShelterB6TrainingRoomAnimation063C0Indices[20];
-#endif
 PE_ASSET_BIND("shelter_b6_training_room_animation_063C0_indices", _gShelterB6TrainingRoomAnimation063C0Indices);
 
 static AnimationSet _gShelterB6TrainingRoomAnimation063C0 = {

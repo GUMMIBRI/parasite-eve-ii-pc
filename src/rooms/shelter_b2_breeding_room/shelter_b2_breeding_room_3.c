@@ -95,43 +95,19 @@ DirectionWarpEntry gShelterB2BreedingRoomWarpEntries[2] = {
 };
 
 /// Room-space collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB2BreedingRoomCollisionGridNormals[27] = {
-#include "assets/shelter_b2_breeding_room_collision_03B34_normals.inc"
-};
-#else
 static SVECTOR _gShelterB2BreedingRoomCollisionGridNormals[27];
-#endif
 PE_ASSET_BIND("shelter_b2_breeding_room_collision_03B34_normals", _gShelterB2BreedingRoomCollisionGridNormals);
 
 /// Collision vertices in signed room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB2BreedingRoomCollisionGridVerts[129] = {
-#include "assets/shelter_b2_breeding_room_collision_03B34_verts.inc"
-};
-#else
 static SVECTOR _gShelterB2BreedingRoomCollisionGridVerts[129];
-#endif
 PE_ASSET_BIND("shelter_b2_breeding_room_collision_03B34_verts", _gShelterB2BreedingRoomCollisionGridVerts);
 
 /// Indexed collision faces carrying room-local surface classes 0..4.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB2BreedingRoomCollisionGridFaces[75] = {
-#include "assets/shelter_b2_breeding_room_collision_03B34_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB2BreedingRoomCollisionGridFaces[75];
-#endif
 PE_ASSET_BIND("shelter_b2_breeding_room_collision_03B34_faces", _gShelterB2BreedingRoomCollisionGridFaces);
 
 /// Packed cell face-index lists, each ending with `WORLD_COLLISION_GRID_CELL_END`.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB2BreedingRoomCollisionGridCells[326] = {
-#include "assets/shelter_b2_breeding_room_collision_03B34_cells.inc"
-};
-#else
 static s16 _gShelterB2BreedingRoomCollisionGridCells[326];
-#endif
 PE_ASSET_BIND("shelter_b2_breeding_room_collision_03B34_cells", _gShelterB2BreedingRoomCollisionGridCells);
 
 /// Resolves a generated halfword offset to a breeding-room cell's face-index list.
@@ -144,13 +120,7 @@ PE_ASSET_BIND("shelter_b2_breeding_room_collision_03B34_cells", _gShelterB2Breed
 #define SHELTER_B2_BREEDING_ROOM_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB2BreedingRoomCollisionGridCells[(halfwordOffset)])
 
 /// Twelve cell-list pointers in X-major order, with three Z cells per X row.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB2BreedingRoomCollisionGridTable[12] = {
-#include "assets/shelter_b2_breeding_room_collision_03B34_table.inc"
-};
-#else
 static s16* _gShelterB2BreedingRoomCollisionGridTable[12];
-#endif
 PE_ASSET_BIND_AUX("shelter_b2_breeding_room_collision_03B34_table", _gShelterB2BreedingRoomCollisionGridTable, _gShelterB2BreedingRoomCollisionGridCells);
 #undef SHELTER_B2_BREEDING_ROOM_CELL_FACE_LIST_AT_OFFSET
 

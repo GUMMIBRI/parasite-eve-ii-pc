@@ -154,45 +154,21 @@ DirectionWarpEntry gDryfieldNightCellarWarpEntries[1] = {
 };
 
 /// Room-axis collision normals, with 4096 representing unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightCellarCollisionGridNormals[7] = {
-#include "assets/dryfield_night_cellar_collision_008A0_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightCellarCollisionGridNormals[7];
-#endif
 PE_ASSET_BIND("dryfield_night_cellar_collision_008A0_normals", _gDryfieldNightCellarCollisionGridNormals);
 
 /// Collision vertices in signed integer room-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightCellarCollisionGridVerts[39] = {
-#include "assets/dryfield_night_cellar_collision_008A0_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightCellarCollisionGridVerts[39];
-#endif
 PE_ASSET_BIND("dryfield_night_cellar_collision_008A0_verts", _gDryfieldNightCellarCollisionGridVerts);
 
 /// Indexed collision quads using room-local surface classes 0 and 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightCellarCollisionGridFaces[20] = {
-#include "assets/dryfield_night_cellar_collision_008A0_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightCellarCollisionGridFaces[20];
-#endif
 PE_ASSET_BIND("dryfield_night_cellar_collision_008A0_faces", _gDryfieldNightCellarCollisionGridFaces);
 
 /// Six face-index lists, each ending with `WORLD_COLLISION_GRID_CELL_END`.
 ///
 /// Storage between lists is retained from the asset and is outside traversal.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightCellarCollisionGridCells[62] = {
-#include "assets/dryfield_night_cellar_collision_008A0_cells.inc"
-};
-#else
 static s16 _gDryfieldNightCellarCollisionGridCells[62];
-#endif
 PE_ASSET_BIND("dryfield_night_cellar_collision_008A0_cells", _gDryfieldNightCellarCollisionGridCells);
 
 enum {
@@ -214,13 +190,7 @@ enum {
 #define DRYFIELD_NIGHT_CELLAR_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightCellarCollisionGridCells[(halfwordOffset)])
 
 /// X-major cell directory for the cellar's 3 by 2 collision grid.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightCellarCollisionGridTable[DRYFIELD_NIGHT_CELLAR_COLLISION_GRID_CELLS_X * DRYFIELD_NIGHT_CELLAR_COLLISION_GRID_CELLS_Z] = {
-#include "assets/dryfield_night_cellar_collision_008A0_table.inc"
-};
-#else
 static s16* _gDryfieldNightCellarCollisionGridTable[6];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_cellar_collision_008A0_table", _gDryfieldNightCellarCollisionGridTable, _gDryfieldNightCellarCollisionGridCells);
 #undef DRYFIELD_NIGHT_CELLAR_CELL_FACE_LIST_AT_OFFSET
 

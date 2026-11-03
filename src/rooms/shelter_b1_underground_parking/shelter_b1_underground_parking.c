@@ -702,48 +702,24 @@ DirectionWarpEntry gShelterB1UndergroundParkingWarpEntries[SHELTER_B1_UNDERGROUN
 };
 
 /// Room-space unit normals for the room-1 collision grid (4096 per unit).
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1UndergroundParkingRoom1CollisionGridNormals[6] = {
-#include "assets/shelter_b1_underground_parking_collision_0A890_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1UndergroundParkingRoom1CollisionGridNormals[6];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0A890_normals", _gShelterB1UndergroundParkingRoom1CollisionGridNormals);
 
 /// Room-space vertices for the room-1 collision grid, in signed world units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1UndergroundParkingRoom1CollisionGridVerts[60] = {
-#include "assets/shelter_b1_underground_parking_collision_0A890_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1UndergroundParkingRoom1CollisionGridVerts[60];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0A890_verts", _gShelterB1UndergroundParkingRoom1CollisionGridVerts);
 
 /// Indexed quads for the room-1 collision grid.
 ///
 /// Indices select this grid's vertex and normal pools; surface classes are 0 or 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1UndergroundParkingRoom1CollisionGridFaces[22] = {
-#include "assets/shelter_b1_underground_parking_collision_0A890_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1UndergroundParkingRoom1CollisionGridFaces[22];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0A890_faces", _gShelterB1UndergroundParkingRoom1CollisionGridFaces);
 
 /// Packed signed face-index lists for the room-1 collision grid's cells.
 ///
 /// Each table pointer selects a list ending in WORLD_COLLISION_GRID_CELL_END;
 /// indices before the terminator are in 0..21. The pool contains 150 halfwords.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1UndergroundParkingRoom1CollisionGridCells[150] = {
-#include "assets/shelter_b1_underground_parking_collision_0A890_cells.inc"
-};
-#else
 static s16 _gShelterB1UndergroundParkingRoom1CollisionGridCells[150];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0A890_cells", _gShelterB1UndergroundParkingRoom1CollisionGridCells);
 
 /// Resolves a generated halfword offset to a room-1 cell's face-index list.
@@ -758,13 +734,7 @@ PE_ASSET_BIND("shelter_b1_underground_parking_collision_0A890_cells", _gShelterB
 /// X-major 5-by-4 cell directory for the room-1 collision grid.
 ///
 /// Indexed by cellX * 4 + cellZ; each entry borrows a terminated list from Cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1UndergroundParkingRoom1CollisionGridTable[20] = {
-#include "assets/shelter_b1_underground_parking_collision_0A890_table.inc"
-};
-#else
 static s16* _gShelterB1UndergroundParkingRoom1CollisionGridTable[20];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_underground_parking_collision_0A890_table", _gShelterB1UndergroundParkingRoom1CollisionGridTable, _gShelterB1UndergroundParkingRoom1CollisionGridCells);
 #undef SHELTER_B1_UNDERGROUND_PARKING_CELL_FACE_LIST_AT_OFFSET
 
@@ -777,48 +747,24 @@ PE_ASSET_BIND_AUX("shelter_b1_underground_parking_collision_0A890_table", _gShel
 static WorldCollisionGrid _gShelterB1UndergroundParkingRoom1CollisionGrid = { NULL, _gShelterB1UndergroundParkingRoom1CollisionGridNormals, _gShelterB1UndergroundParkingRoom1CollisionGridVerts, _gShelterB1UndergroundParkingRoom1CollisionGridFaces, _gShelterB1UndergroundParkingRoom1CollisionGridTable, 5390, 8000, 5, 4, 4000, ARRAY_SIZE(_gShelterB1UndergroundParkingRoom1CollisionGridFaces) };
 
 /// Room-space unit normals for the rooms-2/4/5 collision grid (4096 per unit).
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1UndergroundParkingRooms2And4And5CollisionGridNormals[8] = {
-#include "assets/shelter_b1_underground_parking_collision_0AF14_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1UndergroundParkingRooms2And4And5CollisionGridNormals[8];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0AF14_normals", _gShelterB1UndergroundParkingRooms2And4And5CollisionGridNormals);
 
 /// Room-space vertices for the rooms-2/4/5 collision grid, in signed game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1UndergroundParkingRooms2And4And5CollisionGridVerts[84] = {
-#include "assets/shelter_b1_underground_parking_collision_0AF14_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1UndergroundParkingRooms2And4And5CollisionGridVerts[84];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0AF14_verts", _gShelterB1UndergroundParkingRooms2And4And5CollisionGridVerts);
 
 /// Indexed quads for the rooms-2/4/5 collision grid.
 ///
 /// Indices select this grid's vertex and normal pools; surface classes are 0 or 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1UndergroundParkingRooms2And4And5CollisionGridFaces[33] = {
-#include "assets/shelter_b1_underground_parking_collision_0AF14_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1UndergroundParkingRooms2And4And5CollisionGridFaces[33];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0AF14_faces", _gShelterB1UndergroundParkingRooms2And4And5CollisionGridFaces);
 
 /// Packed signed face-index lists for the rooms-2/4/5 collision grid's cells.
 ///
 /// Each table pointer selects a list ending in WORLD_COLLISION_GRID_CELL_END;
 /// indices before the terminator are in 0..32. The pool contains 210 halfwords.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1UndergroundParkingRooms2And4And5CollisionGridCells[210] = {
-#include "assets/shelter_b1_underground_parking_collision_0AF14_cells.inc"
-};
-#else
 static s16 _gShelterB1UndergroundParkingRooms2And4And5CollisionGridCells[210];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0AF14_cells", _gShelterB1UndergroundParkingRooms2And4And5CollisionGridCells);
 
 /// Resolves a generated halfword offset to a rooms-2/4/5 cell's face-index list.
@@ -834,13 +780,7 @@ PE_ASSET_BIND("shelter_b1_underground_parking_collision_0AF14_cells", _gShelterB
 /// X-major 5-by-4 cell directory for the rooms-2/4/5 collision grid.
 ///
 /// Indexed by cellX * 4 + cellZ; each entry borrows a terminated list from Cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1UndergroundParkingRooms2And4And5CollisionGridTable[20] = {
-#include "assets/shelter_b1_underground_parking_collision_0AF14_table.inc"
-};
-#else
 static s16* _gShelterB1UndergroundParkingRooms2And4And5CollisionGridTable[20];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_underground_parking_collision_0AF14_table", _gShelterB1UndergroundParkingRooms2And4And5CollisionGridTable, _gShelterB1UndergroundParkingRooms2And4And5CollisionGridCells);
 #undef SHELTER_B1_UNDERGROUND_PARKING_CELL_FACE_LIST_AT_OFFSET
 
@@ -853,48 +793,24 @@ PE_ASSET_BIND_AUX("shelter_b1_underground_parking_collision_0AF14_table", _gShel
 static WorldCollisionGrid _gShelterB1UndergroundParkingRooms2And4And5CollisionGrid = { NULL, _gShelterB1UndergroundParkingRooms2And4And5CollisionGridNormals, _gShelterB1UndergroundParkingRooms2And4And5CollisionGridVerts, _gShelterB1UndergroundParkingRooms2And4And5CollisionGridFaces, _gShelterB1UndergroundParkingRooms2And4And5CollisionGridTable, 5390, 8000, 5, 4, 4000, ARRAY_SIZE(_gShelterB1UndergroundParkingRooms2And4And5CollisionGridFaces) };
 
 /// Room-space unit normals for the room-3 collision grid (4096 per unit).
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1UndergroundParkingRoom3CollisionGridNormals[8] = {
-#include "assets/shelter_b1_underground_parking_collision_0B604_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1UndergroundParkingRoom3CollisionGridNormals[8];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0B604_normals", _gShelterB1UndergroundParkingRoom3CollisionGridNormals);
 
 /// Room-space vertices for the room-3 collision grid, in signed game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1UndergroundParkingRoom3CollisionGridVerts[90] = {
-#include "assets/shelter_b1_underground_parking_collision_0B604_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1UndergroundParkingRoom3CollisionGridVerts[90];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0B604_verts", _gShelterB1UndergroundParkingRoom3CollisionGridVerts);
 
 /// Indexed quads for the room-3 collision grid.
 ///
 /// Indices select this grid's vertex and normal pools; surface classes are 0 or 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1UndergroundParkingRoom3CollisionGridFaces[36] = {
-#include "assets/shelter_b1_underground_parking_collision_0B604_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1UndergroundParkingRoom3CollisionGridFaces[36];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0B604_faces", _gShelterB1UndergroundParkingRoom3CollisionGridFaces);
 
 /// Packed signed face-index lists for the room-3 collision grid's cells.
 ///
 /// Each table pointer selects a list ending in WORLD_COLLISION_GRID_CELL_END;
 /// indices before the terminator are in 0..35. The pool contains 222 halfwords.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1UndergroundParkingRoom3CollisionGridCells[222] = {
-#include "assets/shelter_b1_underground_parking_collision_0B604_cells.inc"
-};
-#else
 static s16 _gShelterB1UndergroundParkingRoom3CollisionGridCells[222];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0B604_cells", _gShelterB1UndergroundParkingRoom3CollisionGridCells);
 
 /// Resolves a generated halfword offset to a room-3 cell's face-index list.
@@ -909,13 +825,7 @@ PE_ASSET_BIND("shelter_b1_underground_parking_collision_0B604_cells", _gShelterB
 /// X-major 5-by-4 cell directory for the room-3 collision grid.
 ///
 /// Indexed by cellX * 4 + cellZ; each entry borrows a terminated list from Cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1UndergroundParkingRoom3CollisionGridTable[20] = {
-#include "assets/shelter_b1_underground_parking_collision_0B604_table.inc"
-};
-#else
 static s16* _gShelterB1UndergroundParkingRoom3CollisionGridTable[20];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_underground_parking_collision_0B604_table", _gShelterB1UndergroundParkingRoom3CollisionGridTable, _gShelterB1UndergroundParkingRoom3CollisionGridCells);
 #undef SHELTER_B1_UNDERGROUND_PARKING_CELL_FACE_LIST_AT_OFFSET
 
@@ -928,48 +838,24 @@ PE_ASSET_BIND_AUX("shelter_b1_underground_parking_collision_0B604_table", _gShel
 static WorldCollisionGrid _gShelterB1UndergroundParkingRoom3CollisionGrid = { NULL, _gShelterB1UndergroundParkingRoom3CollisionGridNormals, _gShelterB1UndergroundParkingRoom3CollisionGridVerts, _gShelterB1UndergroundParkingRoom3CollisionGridFaces, _gShelterB1UndergroundParkingRoom3CollisionGridTable, 5390, 8000, 5, 4, 4000, ARRAY_SIZE(_gShelterB1UndergroundParkingRoom3CollisionGridFaces) };
 
 /// Room-space unit normals for the rooms-6/7 collision grid (4096 per unit).
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1UndergroundParkingRooms6And7CollisionGridNormals[6] = {
-#include "assets/shelter_b1_underground_parking_collision_0BB6C_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1UndergroundParkingRooms6And7CollisionGridNormals[6];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0BB6C_normals", _gShelterB1UndergroundParkingRooms6And7CollisionGridNormals);
 
 /// Room-space vertices for the rooms-6/7 collision grid, in signed game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1UndergroundParkingRooms6And7CollisionGridVerts[68] = {
-#include "assets/shelter_b1_underground_parking_collision_0BB6C_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1UndergroundParkingRooms6And7CollisionGridVerts[68];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0BB6C_verts", _gShelterB1UndergroundParkingRooms6And7CollisionGridVerts);
 
 /// Indexed quads for the rooms-6/7 collision grid.
 ///
 /// Indices select this grid's vertex and normal pools; surface classes are 0 or 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1UndergroundParkingRooms6And7CollisionGridFaces[27] = {
-#include "assets/shelter_b1_underground_parking_collision_0BB6C_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1UndergroundParkingRooms6And7CollisionGridFaces[27];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0BB6C_faces", _gShelterB1UndergroundParkingRooms6And7CollisionGridFaces);
 
 /// Packed signed face-index lists for the rooms-6/7 collision grid's cells.
 ///
 /// Each table pointer selects a list ending in WORLD_COLLISION_GRID_CELL_END;
 /// indices before the terminator are in 0..26. The pool contains 176 halfwords.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1UndergroundParkingRooms6And7CollisionGridCells[176] = {
-#include "assets/shelter_b1_underground_parking_collision_0BB6C_cells.inc"
-};
-#else
 static s16 _gShelterB1UndergroundParkingRooms6And7CollisionGridCells[176];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0BB6C_cells", _gShelterB1UndergroundParkingRooms6And7CollisionGridCells);
 
 /// Resolves a generated halfword offset to a rooms-6/7 cell's face-index list.
@@ -984,13 +870,7 @@ PE_ASSET_BIND("shelter_b1_underground_parking_collision_0BB6C_cells", _gShelterB
 /// X-major 5-by-4 cell directory for the rooms-6/7 collision grid.
 ///
 /// Indexed by cellX * 4 + cellZ; each entry borrows a terminated list from Cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1UndergroundParkingRooms6And7CollisionGridTable[20] = {
-#include "assets/shelter_b1_underground_parking_collision_0BB6C_table.inc"
-};
-#else
 static s16* _gShelterB1UndergroundParkingRooms6And7CollisionGridTable[20];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_underground_parking_collision_0BB6C_table", _gShelterB1UndergroundParkingRooms6And7CollisionGridTable, _gShelterB1UndergroundParkingRooms6And7CollisionGridCells);
 #undef SHELTER_B1_UNDERGROUND_PARKING_CELL_FACE_LIST_AT_OFFSET
 
@@ -1003,48 +883,24 @@ PE_ASSET_BIND_AUX("shelter_b1_underground_parking_collision_0BB6C_table", _gShel
 static WorldCollisionGrid _gShelterB1UndergroundParkingRooms6And7CollisionGrid = { NULL, _gShelterB1UndergroundParkingRooms6And7CollisionGridNormals, _gShelterB1UndergroundParkingRooms6And7CollisionGridVerts, _gShelterB1UndergroundParkingRooms6And7CollisionGridFaces, _gShelterB1UndergroundParkingRooms6And7CollisionGridTable, 5390, 8000, 5, 4, 4000, ARRAY_SIZE(_gShelterB1UndergroundParkingRooms6And7CollisionGridFaces) };
 
 /// Room-space unit normals for the room-8 collision grid (4096 per unit).
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1UndergroundParkingRoom8CollisionGridNormals[8] = {
-#include "assets/shelter_b1_underground_parking_collision_0C194_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1UndergroundParkingRoom8CollisionGridNormals[8];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0C194_normals", _gShelterB1UndergroundParkingRoom8CollisionGridNormals);
 
 /// Room-space vertices for the room-8 collision grid, in signed game units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1UndergroundParkingRoom8CollisionGridVerts[83] = {
-#include "assets/shelter_b1_underground_parking_collision_0C194_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1UndergroundParkingRoom8CollisionGridVerts[83];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0C194_verts", _gShelterB1UndergroundParkingRoom8CollisionGridVerts);
 
 /// Indexed quads for the room-8 collision grid.
 ///
 /// Indices select this grid's vertex and normal pools; surface classes are 0 or 1.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1UndergroundParkingRoom8CollisionGridFaces[30] = {
-#include "assets/shelter_b1_underground_parking_collision_0C194_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1UndergroundParkingRoom8CollisionGridFaces[30];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0C194_faces", _gShelterB1UndergroundParkingRoom8CollisionGridFaces);
 
 /// Packed signed face-index lists for the room-8 collision grid's cells.
 ///
 /// Each table pointer selects a list ending in WORLD_COLLISION_GRID_CELL_END;
 /// indices before the terminator are in 0..29. The pool contains 186 halfwords.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1UndergroundParkingRoom8CollisionGridCells[186] = {
-#include "assets/shelter_b1_underground_parking_collision_0C194_cells.inc"
-};
-#else
 static s16 _gShelterB1UndergroundParkingRoom8CollisionGridCells[186];
-#endif
 PE_ASSET_BIND("shelter_b1_underground_parking_collision_0C194_cells", _gShelterB1UndergroundParkingRoom8CollisionGridCells);
 
 /// Resolves a generated halfword offset to a room-8 cell's face-index list.
@@ -1059,13 +915,7 @@ PE_ASSET_BIND("shelter_b1_underground_parking_collision_0C194_cells", _gShelterB
 /// X-major 5-by-4 cell directory for the room-8 collision grid.
 ///
 /// Indexed by cellX * 4 + cellZ; each entry borrows a terminated list from Cells.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1UndergroundParkingRoom8CollisionGridTable[20] = {
-#include "assets/shelter_b1_underground_parking_collision_0C194_table.inc"
-};
-#else
 static s16* _gShelterB1UndergroundParkingRoom8CollisionGridTable[20];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_underground_parking_collision_0C194_table", _gShelterB1UndergroundParkingRoom8CollisionGridTable, _gShelterB1UndergroundParkingRoom8CollisionGridCells);
 #undef SHELTER_B1_UNDERGROUND_PARKING_CELL_FACE_LIST_AT_OFFSET
 

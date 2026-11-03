@@ -464,8 +464,6 @@ int peHostSwapDisc(int number) {
     if(peDiscNumber(d)!=number) {peDiscClose(d);return 0;}
     Psyz_CdShellOpen(1);
     if(Psyz_CdSetDiskPath(discPaths[number-1])) {Psyz_CdShellOpen(0);peDiscClose(d);return 0;}
-#ifndef PE_EMBED_ASSETS
     peAssetsLoad(d);
-#endif
     peDiscClose(d);return 1;
 }

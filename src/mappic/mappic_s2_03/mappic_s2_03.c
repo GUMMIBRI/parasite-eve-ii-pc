@@ -6,43 +6,19 @@
 #include "common.h"
 
 /// Identity transform and self-parented root for the Water hole shape.
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gMappicS203WaterHoleShapeSkeleton[] = {
-#include "assets/mappic_s2_02_model_00CF8_000A8_skeleton.inc"
-};
-#else
 static TmdBone _gMappicS203WaterHoleShapeSkeleton[1];
-#endif
 PE_ASSET_BIND("mappic_s2_02_model_00CF8_000A8_skeleton", _gMappicS203WaterHoleShapeSkeleton);
 
 /// Vertex count of the Water hole shape's sole part (eight vertices).
-#ifdef PE_EMBED_ASSETS
-static u32 _gMappicS203WaterHoleShapePartVerts[] = {
-#include "assets/mappic_s2_02_model_00CF8_000A8_partVerts.inc"
-};
-#else
 static u32 _gMappicS203WaterHoleShapePartVerts[1];
-#endif
 PE_ASSET_BIND("mappic_s2_02_model_00CF8_000A8_partVerts", _gMappicS203WaterHoleShapePartVerts);
 
 /// Water hole's map outline in integer model X/Z coordinates, with Y zero.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMappicS203WaterHoleShapeVerts[] = {
-#include "assets/mappic_s2_02_model_00CF8_000A8_verts.inc"
-};
-#else
 static SVECTOR _gMappicS203WaterHoleShapeVerts[8];
-#endif
 PE_ASSET_BIND("mappic_s2_02_model_00CF8_000A8_verts", _gMappicS203WaterHoleShapeVerts);
 
 /// Three unlit quads' packed vertex byte offsets and colours, then two group ends and the stream end.
-#ifdef PE_EMBED_ASSETS
-static u32 _gMappicS203WaterHoleShapeStream[] = {
-#include "assets/mappic_s2_02_model_00CF8_000A8_stream.inc"
-};
-#else
 static u32 _gMappicS203WaterHoleShapeStream[15];
-#endif
 PE_ASSET_BIND("mappic_s2_02_model_00CF8_000A8_stream", _gMappicS203WaterHoleShapeStream);
 
 TmdSource gMappicS203WaterHoleShape = {
@@ -56,43 +32,19 @@ TmdSource gMappicS203WaterHoleShape = {
 };
 
 /// Initial identity pose of the Cellar shape's single self-parented root.
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gMappicS203CellarShapeSkeleton[] = {
-#include "assets/mappic_s4_00_model_0005C_00154_skeleton.inc"
-};
-#else
 static TmdBone _gMappicS203CellarShapeSkeleton[1];
-#endif
 PE_ASSET_BIND("mappic_s4_00_model_0005C_00154_skeleton", _gMappicS203CellarShapeSkeleton);
 
 /// Six vertices in the Cellar shape's sole part.
-#ifdef PE_EMBED_ASSETS
-static u32 _gMappicS203CellarShapePartVerts[] = {
-#include "assets/mappic_s4_00_model_0005C_00154_partVerts.inc"
-};
-#else
 static u32 _gMappicS203CellarShapePartVerts[1];
-#endif
 PE_ASSET_BIND("mappic_s4_00_model_0005C_00154_partVerts", _gMappicS203CellarShapePartVerts);
 
 /// Cellar area corners in integer model X/Z coordinates, with Y zero.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMappicS203CellarShapeVerts[] = {
-#include "assets/mappic_s4_00_model_0005C_00154_verts.inc"
-};
-#else
 static SVECTOR _gMappicS203CellarShapeVerts[6];
-#endif
 PE_ASSET_BIND("mappic_s4_00_model_0005C_00154_verts", _gMappicS203CellarShapeVerts);
 
 /// Two unlit quads' packed vertex byte offsets and colours, then two group ends and the stream end.
-#ifdef PE_EMBED_ASSETS
-static u32 _gMappicS203CellarShapeStream[] = {
-#include "assets/mappic_s4_00_model_0005C_00154_stream.inc"
-};
-#else
 static u32 _gMappicS203CellarShapeStream[12];
-#endif
 PE_ASSET_BIND("mappic_s4_00_model_0005C_00154_stream", _gMappicS203CellarShapeStream);
 
 TmdSource gMappicS203CellarShape = {
@@ -106,43 +58,19 @@ TmdSource gMappicS203CellarShape = {
 };
 
 /// Identity transform and self-parented root for the Underpass shape.
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gMappicS203UnderpassShapeSkeleton[] = {
-#include "assets/mappic_s2_03_model_001F0_skeleton.inc"
-};
-#else
 static TmdBone _gMappicS203UnderpassShapeSkeleton[1];
-#endif
 PE_ASSET_BIND("mappic_s2_03_model_001F0_skeleton", _gMappicS203UnderpassShapeSkeleton);
 
 /// Vertex count of the Underpass shape's sole part (ten vertices).
-#ifdef PE_EMBED_ASSETS
-static u32 _gMappicS203UnderpassShapePartVerts[] = {
-#include "assets/mappic_s2_03_model_001F0_partVerts.inc"
-};
-#else
 static u32 _gMappicS203UnderpassShapePartVerts[1];
-#endif
 PE_ASSET_BIND("mappic_s2_03_model_001F0_partVerts", _gMappicS203UnderpassShapePartVerts);
 
 /// Underpass's map footprint in integer model X/Z coordinates, with Y zero.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gMappicS203UnderpassShapeVerts[] = {
-#include "assets/mappic_s2_03_model_001F0_verts.inc"
-};
-#else
 static SVECTOR _gMappicS203UnderpassShapeVerts[10];
-#endif
 PE_ASSET_BIND("mappic_s2_03_model_001F0_verts", _gMappicS203UnderpassShapeVerts);
 
 /// Two unlit triangles and three unlit quads, with packed vertex byte offsets and white colour, then two group ends and the stream end.
-#ifdef PE_EMBED_ASSETS
-static u32 _gMappicS203UnderpassShapeStream[] = {
-#include "assets/mappic_s2_03_model_001F0_stream.inc"
-};
-#else
 static u32 _gMappicS203UnderpassShapeStream[24];
-#endif
 PE_ASSET_BIND("mappic_s2_03_model_001F0_stream", _gMappicS203UnderpassShapeStream);
 
 TmdSource gMappicS203UnderpassShape = {

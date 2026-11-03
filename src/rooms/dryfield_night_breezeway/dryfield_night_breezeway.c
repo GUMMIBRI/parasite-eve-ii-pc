@@ -163,43 +163,19 @@ DirectionWarpEntry gDryfieldNightBreezewayWarpEntries[2] = {
 };
 
 /// Collision-grid normal pool, with 4096 units for unit length.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightBreezewayCollisionGridNormals[16] = {
-#include "assets/dryfield_night_breezeway_collision_01604_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldNightBreezewayCollisionGridNormals[16];
-#endif
 PE_ASSET_BIND("dryfield_night_breezeway_collision_01604_normals", _gDryfieldNightBreezewayCollisionGridNormals);
 
 /// Collision-grid vertex pool in room-local integer game coordinates.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldNightBreezewayCollisionGridVerts[48] = {
-#include "assets/dryfield_night_breezeway_collision_01604_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldNightBreezewayCollisionGridVerts[48];
-#endif
 PE_ASSET_BIND("dryfield_night_breezeway_collision_01604_verts", _gDryfieldNightBreezewayCollisionGridVerts);
 
 /// Collision-grid quads indexing the vertex and normal pools; surface classes 0..2.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gDryfieldNightBreezewayCollisionGridFaces[25] = {
-#include "assets/dryfield_night_breezeway_collision_01604_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gDryfieldNightBreezewayCollisionGridFaces[25];
-#endif
 PE_ASSET_BIND("dryfield_night_breezeway_collision_01604_faces", _gDryfieldNightBreezewayCollisionGridFaces);
 
 /// Eight terminated face-index lists in their serialized 130-halfword storage.
-#ifdef PE_EMBED_ASSETS
-static s16 _gDryfieldNightBreezewayCollisionGridCells[130] = {
-#include "assets/dryfield_night_breezeway_collision_01604_cells.inc"
-};
-#else
 static s16 _gDryfieldNightBreezewayCollisionGridCells[130];
-#endif
 PE_ASSET_BIND("dryfield_night_breezeway_collision_01604_cells", _gDryfieldNightBreezewayCollisionGridCells);
 
 /// Selects a collision cell's face-index list for the generated directory.
@@ -215,13 +191,7 @@ PE_ASSET_BIND("dryfield_night_breezeway_collision_01604_cells", _gDryfieldNightB
 #define DRYFIELD_NIGHT_BREEZEWAY_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gDryfieldNightBreezewayCollisionGridCells[(halfwordOffset)])
 
 /// X-major 4-by-2 cell directory borrowing the face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gDryfieldNightBreezewayCollisionGridTable[8] = {
-#include "assets/dryfield_night_breezeway_collision_01604_table.inc"
-};
-#else
 static s16* _gDryfieldNightBreezewayCollisionGridTable[8];
-#endif
 PE_ASSET_BIND_AUX("dryfield_night_breezeway_collision_01604_table", _gDryfieldNightBreezewayCollisionGridTable, _gDryfieldNightBreezewayCollisionGridCells);
 #undef DRYFIELD_NIGHT_BREEZEWAY_CELL_FACE_LIST_AT_OFFSET
 

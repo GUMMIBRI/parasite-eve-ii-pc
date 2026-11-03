@@ -90,43 +90,19 @@ enum {
 };
 
 /// Q12 room-axis normals indexed by the tunnel collision faces.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1ControlRoomAccessTunnelCollisionGridNormals[6] = {
-#include "assets/shelter_b1_control_room_access_tunnel_collision_04AB0_normals.inc"
-};
-#else
 static SVECTOR _gShelterB1ControlRoomAccessTunnelCollisionGridNormals[6];
-#endif
 PE_ASSET_BIND("shelter_b1_control_room_access_tunnel_collision_04AB0_normals", _gShelterB1ControlRoomAccessTunnelCollisionGridNormals);
 
 /// Room-space collision vertices, in signed world-coordinate units.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gShelterB1ControlRoomAccessTunnelCollisionGridVerts[12] = {
-#include "assets/shelter_b1_control_room_access_tunnel_collision_04AB0_verts.inc"
-};
-#else
 static SVECTOR _gShelterB1ControlRoomAccessTunnelCollisionGridVerts[12];
-#endif
 PE_ASSET_BIND("shelter_b1_control_room_access_tunnel_collision_04AB0_verts", _gShelterB1ControlRoomAccessTunnelCollisionGridVerts);
 
 /// Enclosure and floor quads indexing the tunnel's normal and vertex pools.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gShelterB1ControlRoomAccessTunnelCollisionGridFaces[6] = {
-#include "assets/shelter_b1_control_room_access_tunnel_collision_04AB0_faces.inc"
-};
-#else
 static WorldCollisionGridFace _gShelterB1ControlRoomAccessTunnelCollisionGridFaces[6];
-#endif
 PE_ASSET_BIND("shelter_b1_control_room_access_tunnel_collision_04AB0_faces", _gShelterB1ControlRoomAccessTunnelCollisionGridFaces);
 
 /// Two signed face-index lists, each terminated by WORLD_COLLISION_GRID_CELL_END.
-#ifdef PE_EMBED_ASSETS
-static s16 _gShelterB1ControlRoomAccessTunnelCollisionGridCells[12] = {
-#include "assets/shelter_b1_control_room_access_tunnel_collision_04AB0_cells.inc"
-};
-#else
 static s16 _gShelterB1ControlRoomAccessTunnelCollisionGridCells[12];
-#endif
 PE_ASSET_BIND("shelter_b1_control_room_access_tunnel_collision_04AB0_cells", _gShelterB1ControlRoomAccessTunnelCollisionGridCells);
 
 /// Supplies this grid's cell face-list addresses to its generated table.
@@ -139,13 +115,7 @@ PE_ASSET_BIND("shelter_b1_control_room_access_tunnel_collision_04AB0_cells", _gS
 /// The binding is undefined immediately after that include.
 #define SHELTER_B1_CONTROL_ROOM_ACCESS_TUNNEL_CELL_FACE_LIST_AT_OFFSET(halfwordOffset) (&_gShelterB1ControlRoomAccessTunnelCollisionGridCells[(halfwordOffset)])
 /// X-major cell directory borrowing the two face-index lists.
-#ifdef PE_EMBED_ASSETS
-static s16* _gShelterB1ControlRoomAccessTunnelCollisionGridTable[SHELTER_B1_CONTROL_ROOM_ACCESS_TUNNEL_GRID_CELLS_X * SHELTER_B1_CONTROL_ROOM_ACCESS_TUNNEL_GRID_CELLS_Z] = {
-#include "assets/shelter_b1_control_room_access_tunnel_collision_04AB0_table.inc"
-};
-#else
 static s16* _gShelterB1ControlRoomAccessTunnelCollisionGridTable[2];
-#endif
 PE_ASSET_BIND_AUX("shelter_b1_control_room_access_tunnel_collision_04AB0_table", _gShelterB1ControlRoomAccessTunnelCollisionGridTable, _gShelterB1ControlRoomAccessTunnelCollisionGridCells);
 #undef SHELTER_B1_CONTROL_ROOM_ACCESS_TUNNEL_CELL_FACE_LIST_AT_OFFSET
 

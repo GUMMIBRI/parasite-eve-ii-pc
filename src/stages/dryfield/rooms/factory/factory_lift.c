@@ -187,49 +187,19 @@ static const FactoryHatchStateFuncTable _gFactoryHatchStates = {
 #define FACTORY_LIFT_TURNED_TEMPLATE_TABLE_INC   "assets/dryfield_night_factory_collision_097FC_table.inc"
 #endif
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gDryfieldFactoryModel06604Skeleton[1] = {
-#include "assets/dryfield_factory_model_06604_skeleton.inc"
-};
-#else
 static TmdBone _gDryfieldFactoryModel06604Skeleton[1];
-#endif
 PE_ASSET_BIND("dryfield_factory_model_06604_skeleton", _gDryfieldFactoryModel06604Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldFactoryModel06604PartVerts[1] = {
-#include "assets/dryfield_factory_model_06604_partVerts.inc"
-};
-#else
 static u32 _gDryfieldFactoryModel06604PartVerts[1];
-#endif
 PE_ASSET_BIND("dryfield_factory_model_06604_partVerts", _gDryfieldFactoryModel06604PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldFactoryModel06604Verts[306] = {
-#include "assets/dryfield_factory_model_06604_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldFactoryModel06604Verts[306];
-#endif
 PE_ASSET_BIND("dryfield_factory_model_06604_verts", _gDryfieldFactoryModel06604Verts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldFactoryModel06604Normals[353] = {
-#include "assets/dryfield_factory_model_06604_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldFactoryModel06604Normals[353];
-#endif
 PE_ASSET_BIND("dryfield_factory_model_06604_normals", _gDryfieldFactoryModel06604Normals);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldFactoryModel06604Stream[2811] = {
-#include "assets/dryfield_factory_model_06604_stream.inc"
-};
-#else
 static u32 _gDryfieldFactoryModel06604Stream[2811];
-#endif
 PE_ASSET_BIND("dryfield_factory_model_06604_stream", _gDryfieldFactoryModel06604Stream);
 
 static TmdSource _gDryfieldFactoryModel06604 = {
@@ -244,49 +214,19 @@ static TmdSource _gDryfieldFactoryModel06604 = {
     _gDryfieldFactoryModel06604Stream,
 };
 
-#ifdef PE_EMBED_ASSETS
-static TmdBone _gDryfieldFactoryModel093E4Skeleton[1] = {
-#include "assets/dryfield_factory_model_093E4_skeleton.inc"
-};
-#else
 static TmdBone _gDryfieldFactoryModel093E4Skeleton[1];
-#endif
 PE_ASSET_BIND("dryfield_factory_model_093E4_skeleton", _gDryfieldFactoryModel093E4Skeleton);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldFactoryModel093E4PartVerts[1] = {
-#include "assets/dryfield_factory_model_093E4_partVerts.inc"
-};
-#else
 static u32 _gDryfieldFactoryModel093E4PartVerts[1];
-#endif
 PE_ASSET_BIND("dryfield_factory_model_093E4_partVerts", _gDryfieldFactoryModel093E4PartVerts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldFactoryModel093E4Verts[25] = {
-#include "assets/dryfield_factory_model_093E4_verts.inc"
-};
-#else
 static SVECTOR _gDryfieldFactoryModel093E4Verts[25];
-#endif
 PE_ASSET_BIND("dryfield_factory_model_093E4_verts", _gDryfieldFactoryModel093E4Verts);
 
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gDryfieldFactoryModel093E4Normals[28] = {
-#include "assets/dryfield_factory_model_093E4_normals.inc"
-};
-#else
 static SVECTOR _gDryfieldFactoryModel093E4Normals[28];
-#endif
 PE_ASSET_BIND("dryfield_factory_model_093E4_normals", _gDryfieldFactoryModel093E4Normals);
 
-#ifdef PE_EMBED_ASSETS
-static u32 _gDryfieldFactoryModel093E4Stream[139] = {
-#include "assets/dryfield_factory_model_093E4_stream.inc"
-};
-#else
 static u32 _gDryfieldFactoryModel093E4Stream[139];
-#endif
 PE_ASSET_BIND("dryfield_factory_model_093E4_stream", _gDryfieldFactoryModel093E4Stream);
 
 static TmdSource _gDryfieldFactoryModel093E4 = {

@@ -350,13 +350,7 @@ static s16 _gActor136100CompanionAnimationSuccessors[6] = {
 ///
 /// Four axis normals in the Rooms2And3 grid frame, with 4096 per unit length.
 /// Overwrites only the live grid's first four normals; the other entries remain.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gActor136100BeforeBurnerCollisionNormals[4] = {
-#include "assets/actor_136100_collision_0D404.inc"
-};
-#else
 static SVECTOR _gActor136100BeforeBurnerCollisionNormals[4];
-#endif
 PE_ASSET_BIND("actor_136100_collision_0D404", _gActor136100BeforeBurnerCollisionNormals);
 
 /// Replacement vertices for the before-Burner street-scene collision enclosure.
@@ -364,13 +358,7 @@ PE_ASSET_BIND("actor_136100_collision_0D404", _gActor136100BeforeBurnerCollision
 /// Sixteen Rooms2And3 grid-frame vertices in game units, spanning
 /// X -3000..-1800, Y -300..0, Z 7000..8400. Only the first sixteen live vertices
 /// are replaced; the remainder of the room pool remains intact.
-#ifdef PE_EMBED_ASSETS
-static SVECTOR _gActor136100BeforeBurnerCollisionVerts[16] = {
-#include "assets/actor_136100_collision_0D424.inc"
-};
-#else
 static SVECTOR _gActor136100BeforeBurnerCollisionVerts[16];
-#endif
 PE_ASSET_BIND("actor_136100_collision_0D424", _gActor136100BeforeBurnerCollisionVerts);
 
 /// Four replacement quads enclosing the before-Burner street-scene space.
@@ -378,13 +366,7 @@ PE_ASSET_BIND("actor_136100_collision_0D424", _gActor136100BeforeBurnerCollision
 /// References replacement vertices 0..15 and normals 0..3 with room surface
 /// class 0. Only the first four live Rooms2And3 faces are replaced; the grid's
 /// existing face-index lists and remaining faces stay intact.
-#ifdef PE_EMBED_ASSETS
-static WorldCollisionGridFace _gActor136100BeforeBurnerCollisionFaces[4] = {
-#include "assets/actor_136100_collision_0D4A4.inc"
-};
-#else
 static WorldCollisionGridFace _gActor136100BeforeBurnerCollisionFaces[4];
-#endif
 PE_ASSET_BIND("actor_136100_collision_0D4A4", _gActor136100BeforeBurnerCollisionFaces);
 
 /// Placement and visibility messages for the scene body, head and rifle models.
