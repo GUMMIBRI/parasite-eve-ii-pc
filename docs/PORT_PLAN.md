@@ -3511,5 +3511,9 @@ scripted input opens: Dryfield (2, "Now Loading" card then the scene), Dryfield 
 cave) and the Shelter / Neo Ark (5, a corridor with a vehicle). The disc swap works: stages 4 and 5 first showed the
 game's "Change to DISC 2" card because PsyZ kept read/play bits in the drive status across the lid cycle, so the
 game's wait for a plain "standby" status never ended (fixed in the fork: `Psyz_CdShellOpen(0)` resets the status).
-No crash and no aborting stub in these runs. Not yet checked: walking, room changes, saving, and what happens when the
-stage changes during play (package state is not reset).
+No crash and no aborting stub in these runs.
+
+Walking: in Dryfield, holding Up (`PE2_PAD_HOLD=0010 PE2_PAD_FROM=1200`) after the loading card gives, at tick 4000, Aya
+standing by a yellow car with the camera above her, and at tick 6500 a different camera on the street with the sky
+behind her: the player moves and the view changes with the position, as in the original. Not yet checked: crossing
+into a new room or stage during play, saving, and the package state reset on a stage change.
