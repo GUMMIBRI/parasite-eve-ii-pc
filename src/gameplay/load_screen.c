@@ -208,9 +208,10 @@ void areaStartRoomRuntime(s32 skipViewGate)
     s8                 characterId;
 
 #ifdef __psyz
-    // MIST_R21 has no per-area tables in the program (they hold 20 areas), so
-    // there is nothing to build; leave the empty scene running.
+    // MIST_R21 is the game's empty debug room: the program has no view, camera,
+    // warp or placement tables for it (they hold 20 areas). Run just its room task.
     if (gGameSession->location.stage == 1 && gGameSession->location.area > 20) {
+        taskSpawn(OBJECT_TASK_ROOM_TASK_BANK, OBJECT_TASK_ROOM_TASK_TYPE, 0, 0);
         return;
     }
 #endif
