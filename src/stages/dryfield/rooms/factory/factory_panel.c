@@ -312,6 +312,11 @@ void FACTORY_ROOM_INSTANCE_SET_VIEW9_SPRITE_VISIBLE(s32 visible)
     location = &session->location;
     // The separate power sprite belongs to the daytime background in both instances.
     if (location->stage == GAME_STAGE_DRYFIELD) {
+#ifdef __psyz
+        if (gSpriteAreaTables[location->stage - 1] == NULL || session->spriteVariant < 1 || gSpriteAreaTables[location->stage - 1][session->spriteVariant - 1].areaViews == NULL || gSpriteAreaTables[location->stage - 1][session->spriteVariant - 1].areaViews[location->area - 1] == NULL) {
+            return; // the area's sprite views are not loaded yet
+        }
+#endif
         view9Batches = gSpriteAreaTables[location->stage - 1][session->spriteVariant - 1].areaViews[location->area - 1][FACTORY_POWER_SPRITE_VIEW - 1].batches;
         if (!(visible & FACTORY_ROOM_VISIBILITY_BYTE_MASK)) {
             view9Batches[FACTORY_POWER_SPRITE_BATCH].hidden = true;

@@ -1498,7 +1498,17 @@ static void _akropolisBridgeSetArrivalSpritesHidden(s32 arrivalSceneSeen)
     SpriteView*      views;
     SpriteBatch*     batches;
 
+#ifdef __psyz
+    if (gSpriteAreaTables[location->stage - 1] == NULL || session->spriteVariant < 1 || gSpriteAreaTables[location->stage - 1][session->spriteVariant - 1].areaViews == NULL) {
+        return;
+    }
+#endif
     views = gSpriteAreaTables[location->stage - 1][session->spriteVariant - 1].areaViews[location->area - 1];
+#ifdef __psyz
+    if (views == NULL) {
+        return; // the area's sprite views are not loaded yet
+    }
+#endif
 
     batches = views[1].batches;
     if ((arrivalSceneSeen & 0xFF) == 0) {
