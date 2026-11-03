@@ -1,6 +1,6 @@
 #!/bin/sh
 # Rebuild cmake/overlay_renames.cmake by linking the all-overlays build and reading what clashes.
-# Needs: cmake -S . -B build-all -DPE_ALL_OVERLAYS=ON -DPE_ALL_VARIANTS=ON (see docs/RELEASING.md).
+# Needs: cmake -S . -B build-all -DPE_ALL_OVERLAYS=ON -DPE_ALL_VARIANTS=ON.
 set -e
 cd "$(dirname "$0")/../.."
 T=${TMPDIR:-/tmp}
