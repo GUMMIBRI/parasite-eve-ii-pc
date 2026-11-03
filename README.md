@@ -11,7 +11,7 @@ PlayStation runtime library (Psy-Q) on top of SDL3. It follows the architecture 
 
 ## Status
 
-**Pre-alpha. There is no release yet and nothing to download.** The game boots from your disc images and plays the
+**Pre-alpha.** The [0.1-alpha release](https://github.com/khasinski/parasite-eve-ii-pc/releases/tag/0.1) has a signed and notarized macOS (Apple silicon) download. The game boots from your disc images and plays the
 opening movie, the title screen and New Game. Recorded New Game input reaches the Acropolis helicopter landing pad,
 including No. 9 combat and transformer damage. Boss completion and the later story are unverified.
 

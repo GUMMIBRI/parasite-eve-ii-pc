@@ -16,7 +16,7 @@ identity=${4:-}
 editor=${5:-}
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
-name="parasite-eve-ii-${version}-macos-arm64"
+name="Parasite-Eve-II-${version}-macos-arm64"
 stage="$out/$name"
 app="$stage/Parasite Eve II.app"
 

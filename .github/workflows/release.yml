@@ -74,7 +74,7 @@ jobs:
         run: |
           version=${GITHUB_REF_NAME:-dev}
           version=${version#v}
-          name=parasite-eve-ii-${version}-linux-x86_64
+          name=Parasite-Eve-II-${version}-linux-x86_64
           mkdir -p "dist/$name"
           cp build/parasite-eve-ii-pc "dist/$name/"
           cp README.md LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md "dist/$name/"
