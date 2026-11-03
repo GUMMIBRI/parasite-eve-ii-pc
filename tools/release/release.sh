@@ -1,10 +1,11 @@
 #!/bin/bash
 # Local release: build, sign with the Developer ID certificate, notarize, checksum, and create a DRAFT GitHub release.
 #
-#   PE_NOTARY_PROFILE=<profile> tools/release/release.sh <version>      (for example 0.1)
+#   tools/release/release.sh <version>      (for example 0.1)
 #
 # The signing identity is PE_SIGN_IDENTITY, or the single "Developer ID Application" certificate in the keychain (the one
-# the first game's releases use). Nothing is tagged or published: the release stays a draft until you publish it.
+# the first game's releases use) and PE_NOTARY_PROFILE defaults to "parasite-eve", the first game's notarytool profile.
+# Nothing is tagged or published: the release stays a draft until you publish it.
 set -euo pipefail
 
 version=${1:?version, for example 0.1}

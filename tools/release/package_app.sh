@@ -44,5 +44,5 @@ else
 fi
 codesign --verify --strict --verbose=2 "$app"
 
-(cd "$out" && ditto -c -k --keepParent "$name" "$name.zip")
+(cd "$out" && ditto -c -k --sequesterRsrc --keepParent "$name" "$name.zip")
 echo "$out/$name.zip"
