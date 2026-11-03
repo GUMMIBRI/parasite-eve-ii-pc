@@ -21,6 +21,15 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
         "$<$<COMPILE_LANGUAGE:C>:-fdata-sections>")
 endif()
 
+# Comparison build (A/B against the disc loader): the full generated includes written by tools/port/refresh_layout.sh
+# (build/include, game data compiled in) instead of the committed layout-only ones.
+option(PE_EMBED_ASSETS "Comparison build: keep the build-time asset includes instead of loading from the disc" OFF)
+if(PE_EMBED_ASSETS)
+    set(PE_GENERATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build/include)
+else()
+    set(PE_GENERATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/generated)
+endif()
+
 # The game builds from the committed layout sources (include/generated, src/port/asm_data.c, asset_parts_table.c,
 # globals.c): types, sizes and registrations, no game data. The data itself is read from the user's disc images at run
 # time. tools/port/refresh_layout.sh rewrites them (that is the only step that needs the disc extraction toolchain).
@@ -84,7 +93,7 @@ target_compile_definitions(tmd_layout_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(tmd_layout_test PRIVATE psyz)
 
 add_executable(tmd_layout_assets_test EXCLUDE_FROM_ALL tests/tmd_layout_assets_test.c src/port/tmd_layout.c)
-target_include_directories(tmd_layout_assets_test PRIVATE include include/decomp include/generated)
+target_include_directories(tmd_layout_assets_test PRIVATE include include/decomp ${PE_GENERATED_DIR})
 target_compile_definitions(tmd_layout_assets_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(tmd_layout_assets_test PRIVATE psyz)
 
@@ -124,7 +133,7 @@ target_compile_definitions(sprite_packet_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(sprite_packet_test PRIVATE psyz)
 
 add_executable(text_palette_test EXCLUDE_FROM_ALL tests/text_palette_test.c src/main/text_palette.c)
-target_include_directories(text_palette_test PRIVATE include include/decomp include/generated)
+target_include_directories(text_palette_test PRIVATE include include/decomp ${PE_GENERATED_DIR})
 target_compile_definitions(text_palette_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(text_palette_test PRIVATE psyz)
 
@@ -149,7 +158,7 @@ endif()
 target_compile_definitions(spu_key_status_test PRIVATE __psyz)
 target_link_libraries(spu_key_status_test PRIVATE psyz)
 
-target_include_directories(scene_broadcast_test PRIVATE include include/decomp include/generated src/main)
+target_include_directories(scene_broadcast_test PRIVATE include include/decomp ${PE_GENERATED_DIR} src/main)
 target_compile_definitions(scene_broadcast_test PRIVATE __psyz SKIP_ASM)
 target_compile_options(scene_broadcast_test PRIVATE -w -Wno-incompatible-function-pointer-types)
 target_link_libraries(scene_broadcast_test PRIVATE psyz)
@@ -160,7 +169,7 @@ else()
 endif()
 
 add_executable(observatory_scene_lifecycle_test EXCLUDE_FROM_ALL tests/observatory_scene_lifecycle_test.c)
-target_include_directories(observatory_scene_lifecycle_test PRIVATE include include/decomp include/generated)
+target_include_directories(observatory_scene_lifecycle_test PRIVATE include include/decomp ${PE_GENERATED_DIR})
 target_compile_definitions(observatory_scene_lifecycle_test PRIVATE __psyz SKIP_ASM)
 target_compile_options(observatory_scene_lifecycle_test PRIVATE -Wno-incompatible-function-pointer-types)
 target_link_libraries(observatory_scene_lifecycle_test PRIVATE psyz)
@@ -188,7 +197,7 @@ target_compile_definitions(player_target_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(player_target_test PRIVATE psyz)
 
 add_executable(action_trigger_test EXCLUDE_FROM_ALL tests/action_trigger_test.c src/gameplay/collision_grid.c src/gameplay/object_lists.c)
-target_include_directories(action_trigger_test PRIVATE include include/decomp include/generated)
+target_include_directories(action_trigger_test PRIVATE include include/decomp ${PE_GENERATED_DIR})
 target_compile_definitions(action_trigger_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(action_trigger_test PRIVATE psyz)
 if(APPLE)
@@ -249,7 +258,7 @@ else()
 endif()
 
 add_executable(fountain_trigger_test EXCLUDE_FROM_ALL tests/fountain_trigger_test.c src/gameplay/object_lists.c)
-target_include_directories(fountain_trigger_test PRIVATE include include/decomp include/generated)
+target_include_directories(fountain_trigger_test PRIVATE include include/decomp ${PE_GENERATED_DIR})
 target_compile_definitions(fountain_trigger_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(fountain_trigger_test PRIVATE psyz)
 if(APPLE)
@@ -269,7 +278,7 @@ else()
 endif()
 
 add_executable(rupert_eyes_test EXCLUDE_FROM_ALL tests/rupert_eyes_test.c)
-target_include_directories(rupert_eyes_test PRIVATE include include/decomp include/generated)
+target_include_directories(rupert_eyes_test PRIVATE include include/decomp ${PE_GENERATED_DIR})
 target_compile_definitions(rupert_eyes_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(rupert_eyes_test PRIVATE psyz)
 if(APPLE)

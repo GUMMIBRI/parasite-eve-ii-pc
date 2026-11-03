@@ -1,6 +1,6 @@
 #!/bin/sh
 # Rewrite the committed layout sources from the user's disc. Contributors only: building and playing need none of this.
-# Needs the extraction toolchain (venv, splat, ninja, dumpsxiso) and both discs in rom/image (see docs/decomp/README.md).
+# Needs the extraction tools (venv with splat and ninja, dumpsxiso) and both discs in rom/image (see docs/decomp/README.md).
 #   include/generated/        <- build/include (tools/peassets), embed branches removed, pruned to what the build reads
 #   src/port/asset_parts_table.c, src/port/asm_data.c, src/port/globals.c, src/port/unresolved_stubs.c
 set -e

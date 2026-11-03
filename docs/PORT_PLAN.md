@@ -31,12 +31,12 @@ Throughout: native tests per module and headless frame captures.
 and the build no longer depends on the decomp toolchain. Everything the compiler reads from the disc extraction is now
 committed as layout only (`include/generated`, 633 files, 4 MB; `src/port/asm_data.c`, `asset_parts_table.c`): types,
 sizes, decoders and registrations, with no game data. Cloning, building and playing need CMake and a C compiler plus
-the user's discs; `ninja_config.py`, `splat`, `dumpsxiso` and the `configs/`/`linkers/` trees are used only by
+the user's discs. The matching compile/assemble/link/objdiff/checksum graph, its patches and helper scripts are deleted; `ninja_config.py` (now only splat splitting and the asset-include generation) and `configs/` (splat inputs) remain for
 `tools/port/refresh_layout.sh`, which contributors run when a generator changes. Phases 1 and 2 are well advanced,
 because the work was allowed to cut into them:
 
 - Disc data: 27,419 arrays (clips, models, room structs, item catalog, and 10,622 globals converted from the
-  disassembly) load from the user's discs at run time and match the build-time data bit for bit.
+  disassembly) load from the user's discs at run time. Checked with `PE2_DUMP_ASSETS` against a `-DPE_EMBED_ASSETS=ON` build (which reads the full generated includes from `build/include`) with both discs mounted: 16,891 of 16,891 bindings agree, except two Underpass arrays whose hash differs while a byte comparison (`PE2_DUMP_KEY`) shows them identical (a packed-short artifact of the dump).
 - The default build (Akropolis and a few packages) links and plays; the all-overlays build with all variants links
   (669 clashing names get private names, `cmake/overlay_renames.cmake`) and shows Dryfield, Dryfield by night, the
   mine and the Shelter/Neo Ark rendering, with the player walking (see below).

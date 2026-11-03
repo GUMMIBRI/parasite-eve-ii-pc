@@ -598,372 +598,22 @@ match PLATFORM:
 
 IMAGE_DIR = ROM_DIR / "image"
 MKPSXISO_DIR = OS_DIR / "mkpsxiso"
-OBJDIFF_DIR = TOOLS_DIR / "objdiff"
-
 # Tooling Paths
-# Prefer the interpreter this script is running under, which in practice is the
-# project venv: the helper scripts it shells out to need the venv's packages
-# (objdiff_generate.py imports pyelftools, and the objdiff step imports ninja),
-# and a bare "python3" is whatever happens to be first on PATH.
 PYTHON = sys.executable or ("python" if PLATFORM == Platform.Windows else "python3")
-MASPSX = f"{PYTHON} {TOOLS_DIR / 'maspsx' / 'maspsx.py'}"
-# maspsx is patched in place (below), so a changed patch has to reassemble.
-MASPSX_SOURCES = [
-    str(TOOLS_DIR / "maspsx" / "maspsx.py"),
-    str(TOOLS_DIR / "maspsx" / "maspsx" / "__init__.py"),
-]
-
-
-def _ensure_maspsx_patch() -> None:
-    """Re-apply tools/patches/maspsx-lo-load-nop.patch if the submodule is pristine.
-
-    maspsx classifies `lw $r,%lo(sym)($b)` as needing $at expansion and so
-    suppresses the load-delay nop before it. Real ASPSX 2.77 (psyq4.3)
-    assembles that form as a single instruction - verified by assembling it and
-    reading the emitted words - exactly like the `sw` form upstream already
-    special-cases. Without the fix the assembler drops a nop the real one emits.
-
-    The change lives in a submodule, so it does not survive `git submodule
-    update` or a fresh clone; keep it as a tracked patch and re-apply here, the
-    same way permute.sh does for decomp-permuter.
-    """
-    import subprocess
-
-    # TOOLS_DIR is relative, and `git -C <sub> apply` resolves its argument
-    # relative to the submodule, so the patch path has to be absolute.
-    sub = TOOLS_DIR / "maspsx"
-    patch = (TOOLS_DIR / "patches" / "maspsx-lo-load-nop.patch").resolve()
-    marker = sub / "maspsx" / "__init__.py"
-    if not patch.is_file() or not marker.is_file():
-        return
-    try:
-        if "^l[a-z]+" in marker.read_text():
-            return  # already applied
-    except OSError:
-        return
-    r = subprocess.run(
-        ["git", "-C", str(sub), "apply", str(patch)],
-        capture_output=True,
-        text=True,
-    )
-    if r.returncode == 0:
-        print(f"Applied {patch.name} to tools/maspsx")
-    else:
-        print(
-            f"Warning: could not apply {patch.name}; maspsx will drop the "
-            f"load-delay nop before %lo() loads",
-            file=sys.stderr,
-        )
-
-
-def _ensure_maspsx_bss_layout_patch() -> None:
-    """Align .comm symbols the way PSYLINK did.
-
-    PSYLINK places an object's .comm symbols after the object's own .bss and
-    aligns each to 2, 4 or 8 by size. Upstream maspsx (670417c) aligns them
-    like .lcomm ones, up to 16; the patch gives them PSYLINK's rule. ASPSX places .lcomm
-    symbols before .comm ones, which the sources reproduce by declaring every
-    static BSS variable before the non-static ones. tools/patches/README.md has
-    the measurements.
-    """
-    import subprocess
-
-    sub = TOOLS_DIR / "maspsx"
-    patch = (TOOLS_DIR / "patches" / "maspsx-bss-layout.patch").resolve()
-    marker = sub / "maspsx" / "__init__.py"
-    if not patch.is_file() or not marker.is_file():
-        return
-    if "PSYLINK aligns .comm to 2, 4 or 8 by size" in marker.read_text():
-        return
-    subprocess.run(["git", "-C", str(sub), "apply", str(patch)], check=True)
-    print(f"Applied {patch.name} to tools/maspsx")
-
-
-def _ensure_maspsx_bss_local_patch() -> None:
-    """Keep static (.lcomm) BSS symbols local when maspsx emits their storage."""
-    import subprocess
-
-    sub = TOOLS_DIR / "maspsx"
-    patch = (TOOLS_DIR / "patches" / "maspsx-bss-local.patch").resolve()
-    marker = sub / "maspsx" / "__init__.py"
-    if not patch.is_file() or not marker.is_file():
-        return
-    if "Preserve .lcomm's local binding" in marker.read_text():
-        return
-    subprocess.run(["git", "-C", str(sub), "apply", str(patch)], check=True)
-    print(f"Applied {patch.name} to tools/maspsx")
-
-
-_ensure_maspsx_patch()
-_ensure_maspsx_bss_layout_patch()
-_ensure_maspsx_bss_local_patch()
-match PLATFORM:
-    case Platform.Windows:
-        BINUTILS_DIR = OS_DIR / "binutils"
-        CROSS_TARGET = "mips-linux-gnu"
-        AS = BINUTILS_DIR / f"{CROSS_TARGET}-as.exe"
-        LD = BINUTILS_DIR / f"{CROSS_TARGET}-ld.exe"
-        OBJCOPY = BINUTILS_DIR / f"{CROSS_TARGET}-objcopy.exe"
-        CPP = OS_DIR / "mcpp" / "mcpp.exe"
-        CC = OS_DIR / "gcc-psx" / "cc1psx.exe"
-        DUMPSXISO = MKPSXISO_DIR / "dumpsxiso.exe"
-
-    case Platform.Linux:
-        CROSS_TARGET = "mips-linux-gnu"
-        AS = f"{CROSS_TARGET}-as"
-        LD = f"{CROSS_TARGET}-ld"
-        OBJCOPY = f"{CROSS_TARGET}-objcopy"
-        CPP = f"{CROSS_TARGET}-cpp"
-        CC = OS_DIR / "gcc-2.8.1-psx" / "cc1"
-        DUMPSXISO = MKPSXISO_DIR / "dumpsxiso"
-
-    case Platform.MacOS:
-        CROSS_TARGET = "mipsel-linux-gnu"
-        AS = f"{CROSS_TARGET}-as"
-        LD = f"{CROSS_TARGET}-ld"
-        OBJCOPY = f"{CROSS_TARGET}-objcopy"
-        CPP = "mcpp"
-        CC = OS_DIR / "gcc-2.8.1-psx" / "cc1"
-        DUMPSXISO = MKPSXISO_DIR / "dumpsxiso"
-
+DUMPSXISO = MKPSXISO_DIR / ("dumpsxiso.exe" if PLATFORM == Platform.Windows else "dumpsxiso")
 if not Path(str(DUMPSXISO)).exists() and shutil.which("dumpsxiso"):
     DUMPSXISO = shutil.which("dumpsxiso")        # a mkpsxiso release on PATH when none is vendored in tools/
-
-OBJDIFF_GENSCRIPT = OBJDIFF_DIR / "objdiff_generate.py"
-OBJDIFF_TARGET_ASM = OBJDIFF_DIR / "target_asm.py"
-
-# Compilation flags (General)
 INCLUDE_FLAGS = f"-Iinclude -I {BUILD_DIR} -I {BUILD_DIR}/include -Iinclude/psyq -Iinclude/decomp"
-OPT_FLAGS = "-O2"
-ENDIAN = "-EL"
-DL_EXE_FLAGS = "-G0"
-DL_OVL_FLAGS = "-G0"
-
-# Compilation flags (Tool specific)
-match PLATFORM:
-    case Platform.Windows:
-        COMPILE_COMMANDS_FLAGS = (
-            f"{INCLUDE_FLAGS} -D_LANGUAGE_C -DUSE_INCLUDE_ASM -Wall"
-        )
-        CPP_FLAGS = (
-            f"{INCLUDE_FLAGS} -D_LANGUAGE_C -DUSE_INCLUDE_ASM -P -MMD -MP -N -Wall -I-"
-        )
-        MASPSX_FLAGS = f"--gnu-as-path {AS} --run-assembler"
-
-    case Platform.Linux:
-        COMPILE_COMMANDS_FLAGS = f"{INCLUDE_FLAGS} -D_LANGUAGE_C -DUSE_INCLUDE_ASM -undef -Wall -lang-c -nostdinc"
-        CPP_FLAGS = f"{INCLUDE_FLAGS} -D_LANGUAGE_C -DUSE_INCLUDE_ASM -P -MMD -MP -undef -Wall -lang-c -nostdinc"
-        MASPSX_FLAGS = "--run-assembler"
-
-    case Platform.MacOS:
-        COMPILE_COMMANDS_FLAGS = f"{INCLUDE_FLAGS} -D_LANGUAGE_C -DUSE_INCLUDE_ASM -undef -Wall -lang-c -nostdinc"
-        CPP_FLAGS = (
-            f"{INCLUDE_FLAGS} -D_LANGUAGE_C -DUSE_INCLUDE_ASM -P -MMD -MP -N -Wall -I-"
-        )
-        MASPSX_FLAGS = "--run-assembler"
-
-CC_FLAGS = f"{OPT_FLAGS} -mips1 -mcpu=3000 -w -funsigned-char -fpeephole -ffunction-cse -fpcc-struct-return -fcommon -fverbose-asm -msoft-float -mgas -fgnu-linker -quiet -gcoff"
-AS_FLAGS = (
-    f"{ENDIAN} {INCLUDE_FLAGS} {OPT_FLAGS} -march=r3000 -mtune=r3000 -no-pad-sections"
-)
 
 
 
-def compile_commands_entry(
-    target_path: str,
-    source_path: str,
-    game_version_idx: int,
-):
-    if sys.platform == "win32":
-        source_path = re.sub(r"\\", r"/", source_path)
-        target_path = re.sub(r"\\", r"/", target_path)
-
-    return {
-        "directory": os.getcwd(),
-        "file": source_path,
-        "command": f"clang {COMPILE_COMMANDS_FLAGS} -DVER_{GAME_VERSIONS[game_version_idx].version_name} {package_define_flags(target_path)} -m32 -o {target_path}.i {source_path}",
-    }
 
 
-@functools.lru_cache(maxsize=1)
-def package_defines() -> dict[str, dict]:
-    """Each package's declared build parameters, keyed by its source directory.
-
-    A package built from a shared source with a parameter - the MP5A5 and its
-    upgrades are one source, differing in a weapon index and item id - declares
-    the value in the manifest (`defines` on its slot). Every object under the
-    package's own directory is compiled with it: its per-package variant units.
-    """
-    manifest = tomllib.loads(Path("configs/USA/overlays.toml").read_text(encoding="utf-8"))
-    out: dict[str, dict] = {}
-    for family, spec in manifest.items():
-        for name, entry in spec.get("overlays", {}).items():
-            for slot in entry.get("slots") or []:
-                defines = dict(slot.get("defines") or {})
-                if slot.get("aliases"):
-                    defines["PACKAGE_ALIASES"] = "".join(
-                        f"DEFINE_ALIAS({orig},{alias});" for orig, alias in slot["aliases"].items())
-                if defines:
-                    out[f"src/{family}/{slot['package']}/"] = defines
-    return out
 
 
-def package_define_flags(target_path: str) -> str:
-    """`-D` flags for an object under a package that declares defines."""
-    rel = re.sub(r"\\", "/", target_path)
-    rel = re.sub(r"^build/[^/]+/", "", rel)
-    for prefix, defines in package_defines().items():
-        if rel.startswith(prefix):
-            return " ".join(quote(f"-D{k}={v}") for k, v in sorted(defines.items()))
-    return ""
 
 
-def ninja_setup_list_add_source(
-    target_path: str,
-    source_path: str,
-    ninja_file,
-    objdiff_file,
-    game_version_idx: int,
-):
-    skip_asm = ""
 
-    if objdiff_file is not None:
-        skip_asm = "-DSKIP_ASM"
-
-        if PLATFORM == Platform.Windows:
-            source_target_path = re.sub(
-                r"^src",
-                rf"asm\\{GAME_VERSIONS[game_version_idx].version_name}",
-                source_path,
-            )
-        else:
-            source_target_path = re.sub(
-                r"^src",
-                rf"asm/{GAME_VERSIONS[game_version_idx].version_name}",
-                source_path,
-            )
-        source_target_path = re.sub(r".c$", r".s", source_target_path)
-        # A variant unit compiles another package's shared source, so the
-        # source path names the wrong package's assembly. The unit's own
-        # assembly sits at its object path; prefer that when it exists.
-        version_name = GAME_VERSIONS[game_version_idx].version_name
-        unit_target_path = (
-            re.sub(
-                rf"^build[\\/]{version_name}[\\/]src",
-                lambda _: f"asm{os.sep}{version_name}",
-                target_path,
-            )
-            + ".s"
-        )
-        # The base package's assembly then supplies the function names the
-        # shared source compiles to (target_asm.py renames by position).
-        base_asm = None
-        if (
-            source_path.startswith("src")
-            and os.path.exists(unit_target_path)
-            and unit_target_path != source_target_path
-        ):
-            if os.path.exists(source_target_path):
-                base_asm = source_target_path
-            source_target_path = unit_target_path
-        if PLATFORM == Platform.Windows:
-            expected_path = re.sub(
-                rf"^build\\{GAME_VERSIONS[game_version_idx].version_name}\\src",
-                rf"expected\\{GAME_VERSIONS[game_version_idx].version_name}",
-                target_path,
-            )
-        else:
-            expected_path = re.sub(
-                rf"^build/{GAME_VERSIONS[game_version_idx].version_name}/src",
-                rf"expected/{GAME_VERSIONS[game_version_idx].version_name}",
-                target_path,
-            )
-
-        if os.path.exists(source_target_path):
-            if re.search("^asm.(USA|JAP).main.*", source_path):
-                objdiff_file.build(
-                    outputs=f"{expected_path}.o",
-                    rule="objdiff-as",
-                    inputs=source_target_path,
-                    implicit=[str(OBJDIFF_TARGET_ASM)],
-                    variables={"DLFLAG": DL_EXE_FLAGS},
-                )
-            else:
-                objdiff_file.build(
-                    outputs=f"{expected_path}.s.o",
-                    rule="objdiff-as",
-                    inputs=source_target_path,
-                    implicit=[str(OBJDIFF_TARGET_ASM)] + ([base_asm] if base_asm else []),
-                    variables={"DLFLAG": DL_OVL_FLAGS, "BASEASM": base_asm or ""},
-                )
-        else:
-            return
-
-    if PLATFORM == Platform.Windows:
-        source_path = re.sub(r"\\", r"/", source_path)
-        target_path = re.sub(r"\\", r"/", target_path)
-
-    ninja_file.build(
-        outputs=f"{target_path}.i",
-        rule="cpp",
-        inputs=source_path,
-        order_only=ASSET_INC_OUTPUTS,
-        variables={
-            "VERSION": f"-DVER_{GAME_VERSIONS[game_version_idx].version_name}",
-            "SKIPASMFLAG": skip_asm,
-            "PACKAGE_DEFINES": package_define_flags(target_path),
-        },
-    )
-
-    if re.search("^src.main.*", source_path):
-        ninja_file.build(
-            outputs=f"{target_path}.c.s",
-            rule="cc",
-            inputs=f"{target_path}.i",
-            implicit=[str(CC)],
-            variables={"DLFLAG": DL_EXE_FLAGS},
-        )
-    else:
-        ninja_file.build(
-            outputs=f"{target_path}.c.s",
-            rule="cc",
-            inputs=f"{target_path}.i",
-            implicit=[str(CC)],
-            variables={"DLFLAG": DL_OVL_FLAGS},
-        )
-
-    maspxVersion = "2.77"
-    # ASPSX expands signed/unsigned div/rem into trap sequences. Safe for all
-    # TUs: no-op when there is no div/rem, and required for matching where
-    # there is. (Previously limited to tmd/sndbank/textdraw/ui/sndevt/cdaudio/cdstream.)
-    expand_div = "--expand-div"
-    if re.search("^src.main.*", source_path):
-        ninja_file.build(
-            outputs=f"{target_path}.c.o",
-            rule="maspsx",
-            inputs=f"{target_path}.c.s",
-            implicit=MASPSX_SOURCES,
-            variables={
-                "EXPANDIVFLAG": expand_div,
-                "DLFLAG": DL_EXE_FLAGS,
-                "MASPSXVER": maspxVersion,
-            },
-        )
-    else:
-        ninja_file.build(
-            outputs=f"{target_path}.c.o",
-            rule="maspsx",
-            inputs=f"{target_path}.c.s",
-            implicit=MASPSX_SOURCES,
-            variables={
-                "EXPANDIVFLAG": expand_div,
-                "DLFLAG": DL_OVL_FLAGS,
-                "MASPSXVER": maspxVersion,
-            },
-        )
-
-    if objdiff_file is not None:
-        return f"{expected_path}.s.o"
 
 
 def align_main_bss() -> None:
@@ -1139,51 +789,14 @@ def fix_overlay_include_asm_paths(sources: list[str]) -> None:
             path.write_text(new, encoding="utf-8")
 
 
-def write_scoped_checksum(version_dir: str, names: list[str], exe_name: str) -> str:
-    """Subset of checksum.sha covering only the scoped targets.
-
-    `main` builds to the disc's executable name, not to `main`, so the basename
-    is translated the same way the link step does before matching.
-    """
-    full = Path(f"{CONFIG_DIR}/{version_dir}/checksum.sha")
-    wanted = {exe_name if n == "main" else n for n in names}
-    lines = []
-    for line in full.read_text(encoding="utf-8").splitlines():
-        parts = line.split()
-        if len(parts) == 2 and Path(parts[1]).name in wanted:
-            lines.append(line)
-    if not lines:
-        print("ERROR: scoped build matched no checksum.sha entries")
-        sys.exit(1)
-    dest = Path(f"{BUILD_DIR}/{version_dir}/out/checksum.scoped.sha")
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return str(dest)
 
 
 def ninja_build(
     split_entries: list[YamlInfo],
     game_version_idx: int,
-    objdiff_mode: bool,
-    skip_checksum: bool,
     scoped_names: list[str] | None = None,
 ):
-    if objdiff_mode:
-        ninja_file = ninja_syntax.Writer(
-            open("matching.ninja", "w", encoding="utf-8"), width=9999
-        )
-        ninja_diff_file = ninja_syntax.Writer(
-            open("objdiff.ninja", "w", encoding="utf-8"), width=9999
-        )
-        ninja_diff_file.include("rules.ninja")
-        ninja_nonmatching_file = ninja_syntax.Writer(
-            open("build.ninja", "w", encoding="utf-8"), width=9999
-        )
-        ninja_nonmatching_file.include("rules.ninja")
-    else:
-        ninja_file = ninja_syntax.Writer(
-            open("build.ninja", "w", encoding="utf-8"), width=9999
-        )
+    ninja_file = ninja_syntax.Writer(open("build.ninja", "w", encoding="utf-8"), width=9999)
 
     ninja_file.include("rules.ninja")
 
@@ -1192,7 +805,7 @@ def ninja_build(
     )
     # ninja's log (command hashes) and deps index live in builddir, so they
     # move with build/. At the repository root they stayed put while the naming
-    # verifier swapped build/ between the matching and objdiff modes, and every
+    # verifier swapped build/ between two modes, and every
     # switch saw the other mode's commands and rebuilt the whole project.
     ninja_rules_file.variable("builddir", "build")
     os.makedirs("build", exist_ok=True)
@@ -1203,69 +816,6 @@ def ninja_build(
     # cpp's depfile covers headers; the assembler's covers what it `.include`s
     # and `.incbin`s - the .s files INCLUDE_ASM pulls into a C object, and the
     # asset blobs - which cpp never sees.
-    ninja_rules_file.rule(
-        "as",
-        description="as $in",
-        command=f"{AS} {AS_FLAGS} $DLFLAG --MD $out.d -o $out $in",
-        depfile="$out.d",
-        deps="gcc",
-    )
-    # objdiff's target objects only: the assembly is first brought in line with
-    # what GCC emits, so identical bytes pair up (see target_asm.py).
-    ninja_rules_file.rule(
-        "objdiff-as",
-        description="objdiff-as $in",
-        command=shell(f"{PYTHON} {OBJDIFF_TARGET_ASM} $in $BASEASM > $out.s && {AS} {AS_FLAGS} $DLFLAG --MD $out.d -o $out $out.s"),
-        depfile="$out.d",
-        deps="gcc",
-    )
-    ninja_rules_file.rule(
-        "cc",
-        description="cc $in",
-        command=f"{CC} {CC_FLAGS} $DLFLAG -o $out $in",
-    )
-    ninja_rules_file.rule(
-        "cpp",
-        description="cpp $in",
-        command=f"{CPP} -P -MMD -MP -MT $out -MF $out.d {CPP_FLAGS} $VERSION $SKIPASMFLAG $PACKAGE_DEFINES -o $out $in",
-        depfile="$out.d",
-    )
-    ninja_rules_file.rule(
-        "maspsx",
-        description="maspsx $in",
-        command=f"{MASPSX} {MASPSX_FLAGS} --aspsx-version=$MASPSXVER $EXPANDIVFLAG {AS_FLAGS} $DLFLAG --MD $out.d -o $out $in",
-        depfile="$out.d",
-        deps="gcc",
-    )
-    ninja_rules_file.rule(
-        "ld",
-        description="link $out",
-        command=f"{LD} {ENDIAN} {OPT_FLAGS} -nostdlib --no-check-sections -r -b binary -o $out $in",
-    )
-    ninja_rules_file.rule(
-        "elf",
-        description="elf $out",
-        command=f"{LD} {ENDIAN} {OPT_FLAGS} -nostdlib --no-check-sections -Map $out.map -T $in -T $undef_sym_path -T $undef_fun_path -o $out $extra_objects",
-    )
-    ninja_rules_file.rule(
-        "objcopy",
-        description="objcopy $out",
-        command=f"{OBJCOPY} -O binary $pad_to $in $out",
-    )
-
-    if PLATFORM == Platform.Windows:
-        ninja_rules_file.rule(
-            "sha256sum",
-            description="checksum",
-            command=f"cmd.exe /c {TOOLS_DIR / 'buildsteps' / 'sha256sum.bat'} $in",
-        )
-    else:
-        ninja_rules_file.rule(
-            "sha256sum",
-            description="checksum",
-            command="sha256sum --ignore-missing --check $in",
-        )
-
     ninja_rules_file.rule(
         "asset-inc",
         description="asset-inc $out",
@@ -1317,26 +867,10 @@ def ninja_build(
         command=f"{PYTHON} {GEN_ANIMATION_INC} $in $load $source {BUILD_DIR / 'include' / 'assets'}",
     )
     version = GAME_VERSIONS[game_version_idx].version_name
-    from tools.buildsteps.gen_overlay_configs import serialized_bss_tail, slot_packages
-
-    # Images whose file is longer than what the linker lays out, by the length
-    # the file has to reach. The executable is one: a PS-X EXE is padded to a
-    # whole number of 2048-byte sectors, and the padding is not a section.
-    padded_sizes = {"main": (ASSETS_DIR / version / "main.exe").stat().st_size}
-    overlay_manifest = tomllib.loads((CONFIG_DIR / version / "overlays.toml").read_text())
-    for spec in overlay_manifest.values():
-        for package, slot, entry in slot_packages(spec):
-            objects = slot.get("objects") or entry["objects"]
-            if any("bss_size" in obj for obj in objects):
-                raw = (ASSETS_DIR / version / "pe2pkg" / f"{package}.pe2pkg").read_bytes()
-                serialized_bss_tail(package, objects, raw)
-                padded_sizes[package] = len(raw)
     ASSET_INC_OUTPUTS.clear()
     # Matching and nonmatching C builds are separate Ninja graphs. Both must
     # be able to generate their resource includes from an empty build tree.
     asset_writers = [ninja_file]
-    if objdiff_mode:
-        asset_writers.append(ninja_nonmatching_file)
     for raw, inc, width in asset_includes(version):
         for writer in asset_writers:
             writer.build(
@@ -1462,231 +996,6 @@ def ninja_build(
         for writer in asset_writers:
             writer.build("generated-asset-includes", "phony", inputs=ASSET_INC_OUTPUTS)
         ASSET_INC_OUTPUTS[:] = ["generated-asset-includes"]
-
-    ninja_rules_file.rule(
-        "objdiff-config",
-        description="objdiff-config",
-        command=f"{PYTHON} {OBJDIFF_GENSCRIPT} --ninja $in $version",
-    )
-
-    cc_entries = []
-    elf_build_requirements = []
-    checksum_build_requirements = []
-    objdiff_config_requirements = []
-    # Objects shared between overlays appear in several linker scripts, so the
-    # same output is reached once per overlay that links it. ninja rejects two
-    # rules for one output, and the second rule would be identical anyway, so
-    # emit the rule the first time and afterwards only record the dependency.
-    emitted_objects: set[str] = set()
-
-    # Build all the objects
-    for split_config in split_entries:
-        # Per unit: an overlay's ELF links its own objects. Accumulating across
-        # units made every later overlay relink whenever any earlier one's
-        # object changed - invisible while every run rebuilt from scratch.
-        elf_build_requirements = []
-        # A `.`-prefixed subsegment is linker placement only - it says where a
-        # unit's .rodata/.data lands, and the unit's `c` subsegment is what
-        # gets compiled. A unit can be placement *only*, though: a C object
-        # that has to link after the trailing data (the zeroed work arrays at
-        # the end of a weapon package) owns no code, so it has a `.data`
-        # subsegment and no `c` one. Compile those too, or the link fails on a
-        # missing object the linker script still names.
-        compiled_objects = {
-            str(entry.object_path)
-            for split_entry in split_config.split_entries
-            for entry in split_entry
-            if entry.object_path is not None and entry.segment.type in C_SEGMENT_TYPES
-        }
-        for split_entry in split_config.split_entries:
-            for entry in split_entry:
-                seg = entry.segment
-
-                if entry.object_path is None:
-                    continue
-
-                seg_type = seg.type
-                if seg_type[0] == ".":
-                    if (
-                        str(entry.object_path) in compiled_objects
-                        or not entry.src_paths
-                        or not str(entry.src_paths[0]).endswith(".c")
-                    ):
-                        continue
-                    seg_type = "c"
-                elif seg_type in C_SEGMENT_TYPES:
-                    # A library unit compiles like any other; only its source
-                    # directory differs, and splat has already resolved that.
-                    seg_type = "c"
-
-                source_path = str(entry.src_paths[0])
-                target_path = str(entry.object_path)
-
-                if target_path in emitted_objects:
-                    elf_build_requirements.append(target_path)
-                    continue
-                emitted_objects.add(target_path)
-
-                match seg_type:
-                    case (
-                        "asm"
-                        | "hasm"  # handwritten permanent asm (same assemble rule as asm)
-                        | "data"
-                        | "sdata"
-                        | "bss"
-                        | "sbss"
-                        | "rodata"
-                        | "header"
-                        # *bin segments emit a small .s that .incbin's the
-                        # bytes back from assets/; same assemble rule.
-                        | "databin"
-                        | "rodatabin"
-                        | "textbin"
-                    ):
-                        if re.search("^asm.(USA|JAP).main.*", source_path):
-                            ninja_file.build(
-                                outputs=target_path,
-                                rule="as",
-                                inputs=source_path,
-                                variables={"DLFLAG": DL_EXE_FLAGS},
-                            )
-                        else:
-                            ninja_file.build(
-                                outputs=target_path,
-                                rule="as",
-                                inputs=source_path,
-                                variables={"DLFLAG": DL_OVL_FLAGS},
-                            )
-                    case "c":
-                        cc_entries.append(
-                            compile_commands_entry(
-                                target_path.removesuffix(".c.o"),
-                                source_path,
-                                game_version_idx,
-                            )
-                        )
-
-                        ninja_setup_list_add_source(
-                            target_path.removesuffix(".c.o"),
-                            source_path,
-                            ninja_file,
-                            None,
-                            game_version_idx,
-                        )
-
-                        if objdiff_mode:
-                            if PLATFORM == Platform.Windows:
-                                expected_path = re.sub(
-                                    rf"^build\\{GAME_VERSIONS[game_version_idx].version_name}\\src",
-                                    rf"expected\\{GAME_VERSIONS[game_version_idx].version_name}\\asm",
-                                    f"{target_path}.s.o",
-                                )
-                            else:
-                                expected_path = re.sub(
-                                    rf"^build/{GAME_VERSIONS[game_version_idx].version_name}/src",
-                                    rf"expected/{GAME_VERSIONS[game_version_idx].version_name}/asm",
-                                    f"{target_path}.s.o",
-                                )
-
-                            temp_var = [
-                                ninja_setup_list_add_source(
-                                    target_path.removesuffix(".c.o"),
-                                    source_path,
-                                    ninja_nonmatching_file,
-                                    ninja_diff_file,
-                                    game_version_idx,
-                                )
-                            ]
-                            if temp_var != [None]:
-                                objdiff_config_requirements += temp_var
-                    case "bin":
-                        ninja_file.build(
-                            outputs=target_path, rule="ld", inputs=source_path
-                        )
-                    case "lib":
-                        print(f"ERROR: Unsupported build segment type {seg.type}")
-                        sys.exit(1)
-
-                if not seg.is_lib:
-                    elf_build_requirements += [str(s) for s in [entry.object_path]]
-
-        if split_config.split_basename == "main":
-            output = f"{BUILD_DIR}/{GAME_VERSIONS[game_version_idx].metadata.version_dir}/out/{GAME_VERSIONS[game_version_idx].metadata.exe_disk1}"
-        else:
-            output = f"{BUILD_DIR}/{GAME_VERSIONS[game_version_idx].metadata.version_dir}/out/{split_config.split_basename}"
-
-        # An image that is only its package id names no object, and ld will not
-        # link without an input file: give it an empty one.
-        extra_objects = [] if elf_build_requirements else [EMPTY_OBJECT]
-        if extra_objects and EMPTY_OBJECT not in emitted_objects:
-            emitted_objects.add(EMPTY_OBJECT)
-            ninja_file.build(outputs=EMPTY_OBJECT, rule="as", inputs=str(EMPTY_ASM), variables={"DLFLAG": DL_OVL_FLAGS})
-        ninja_file.build(
-            outputs=f"{output}.elf",
-            rule="elf",
-            inputs=split_config.split_linker,
-            variables={
-                "undef_sym_path": split_config.split_undef_sym,
-                "undef_fun_path": split_config.split_undef_fun,
-                "extra_objects": " ".join(extra_objects),
-            },
-            implicit=elf_build_requirements + extra_objects
-            + [split_config.split_undef_sym, split_config.split_undef_fun],
-        )
-        ninja_file.build(
-            outputs=output,
-            rule="objcopy",
-            inputs=f"{output}.elf",
-            implicit=f"{output}.elf",
-            variables=(
-                {"pad_to": f"--pad-to=0x{padded_sizes[split_config.split_basename]:X}"}
-                if split_config.split_basename in padded_sizes else {}
-            ),
-        )
-        checksum_build_requirements.append(str(output))
-
-    if objdiff_mode:
-        ninja_diff_file.build(
-            outputs=str(
-                EXPECTED_DIR
-                / GAME_VERSIONS[game_version_idx].version_name
-                / "objdiff.ok"
-            ),
-            rule="objdiff-config",
-            inputs=str(OBJDIFF_DIR / "config-retail.yaml"),
-            variables={"version": GAME_VERSIONS[game_version_idx].metadata.version_dir},
-            implicit=objdiff_config_requirements,
-        )
-
-    if not skip_checksum:
-        version_dir = GAME_VERSIONS[game_version_idx].metadata.version_dir
-        if PLATFORM == Platform.Windows:
-            checksum_target = f"{CONFIG_DIR}/{version_dir}"
-        else:
-            checksum_target = f"{CONFIG_DIR}/{version_dir}/checksum.sha"
-
-        if scoped_names is not None:
-            # A scoped build produces only some of the outputs, and the
-            # sha256sum rule passes --ignore-missing - so checking the full
-            # list would quietly verify whichever targets happened to survive
-            # from an earlier run. Write a checksum file holding exactly the
-            # scoped targets instead, so the check covers what was just built
-            # and nothing else.
-            checksum_target = write_scoped_checksum(
-                version_dir,
-                scoped_names,
-                GAME_VERSIONS[game_version_idx].metadata.exe_disk1,
-            )
-
-        ninja_file.build(
-            outputs=f"{BUILD_DIR}/{GAME_VERSIONS[game_version_idx].metadata.version_dir}/out/checksum.ok",
-            rule="sha256sum",
-            inputs=checksum_target,
-            implicit=checksum_build_requirements,
-        )
-
-    with open("compile_commands.json", "w") as cc_file:
-        json.dump(cc_entries, cc_file, indent=2)
 
 
 # A split is skipped when nothing it reads has changed. What it reads is known up
@@ -2066,18 +1375,6 @@ def main():
         ),
     )
     parser.add_argument(
-        "-sc",
-        "--skip_checksum",
-        help="Skip checksum",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-obj",
-        "--objdiff_config",
-        help="Builds setup for Objdiff",
-        action="store_true",
-    )
-    parser.add_argument(
         "-j",
         "--jobs",
         help="parallel split workers (default: $PE2_JOBS, else CPU count; 1 forces sequential)",
@@ -2094,8 +1391,7 @@ def main():
 
     jobs_option = int(args.jobs or 0)
     clean_compilation_files = (args.clean) or False
-    skip_checksum_option = (args.skip_checksum) or False
-    objdiff_config_option = (args.objdiff_config) or False
+    objdiff_config_option = False
     game_version_option = 0  # USA by default
     yamls_paths = []
     splits_yaml_info = []
@@ -2297,17 +1593,8 @@ def main():
     ninja_build(
         splits_yaml_info,
         game_version_option,
-        objdiff_config_option,
-        skip_checksum_option,
         scoped_names,
     )
-
-    if objdiff_config_option:
-        # The target objects and objdiff.json: a failure here is the step's, not the report's that finds no
-        # configuration later.
-        status = subprocess.call([PYTHON, "-m", "ninja", "-f", "objdiff.ninja"])
-        if status:
-            sys.exit(status)
 
 
 if __name__ == "__main__":
