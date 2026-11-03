@@ -2354,19 +2354,15 @@ static void _shelterR48WaterRefractionTask(Task* task)
 static inline s32 _shelterR48HasRoomEventTriggerHit(void)
 {
     const WorldCollisionTrigger* trigger;
-    s32                          triggerHit;
 
-    trigger    = gWorldCollisionActionTriggerListHead;
-    triggerHit = 1;
+    trigger = gWorldCollisionActionTriggerListHead;
     while (trigger != NULL) {
         if (trigger->control == WORLD_COLLISION_TRIGGER_ACTION_ROOM && trigger->parameter0 == WORLD_COLLISION_TRIGGER_ROOM_EVENT_ID && trigger->hit != 0) {
-            goto triggerChecked;
+            return 1;
         }
         trigger = trigger->next;
     }
-    triggerHit = 0;
-triggerChecked:
-    return triggerHit;
+    return 0;
 }
 
 /// Starts the room's card-use scene with Bowman's Card or Yoshida's Card.

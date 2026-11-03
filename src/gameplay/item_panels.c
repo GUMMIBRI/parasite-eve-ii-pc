@@ -1154,6 +1154,7 @@ void itemMenuInvokeElementBoostPanel(UiObject* object, Task* task)
     s32         elementIndex;
     s32         abilitySelection;
     s32         abilityIndex;
+    s32         maxedOut;
 
     elementIndex = task->spawnArg1.value - ITEM_MENU_ELEMENT_BOOST_ITEM_FIRST;
     if (task->state == ITEM_MENU_ELEMENT_BOOST_STATE_INIT) {
@@ -1161,18 +1162,20 @@ void itemMenuInvokeElementBoostPanel(UiObject* object, Task* task)
         save                = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
         saveBytesForElement = (u8*)save + elementIndex * ITEM_MENU_INVOKE_ABILITIES_PER_ELEMENT;
         abilitySelection    = saveBytesForElement[OFFSET_OF(McSaveData, state.attachLevels)] > saveBytesForElement[OFFSET_OF(McSaveData, state.attachLevels) + 1];
+        maxedOut            = 0;
         if (save->state.attachLevels[abilitySelection + elementIndex * ITEM_MENU_INVOKE_ABILITIES_PER_ELEMENT] >= ITEM_MENU_INVOKE_MAX_LEVEL) {
             abilitySelection = 2;
             if (save->state.attachLevels[elementIndex * ITEM_MENU_INVOKE_ABILITIES_PER_ELEMENT + 2] >= ITEM_MENU_INVOKE_MAX_LEVEL) {
                 abilitySelection = (elementIndex * ITEM_MENU_INVOKE_ABILITIES_PER_ELEMENT + 2) * ATTACHMENT_LEVEL_COUNT + ITEM_MENU_PARASITE_ENERGY_ITEM_FIRST + ITEM_MENU_INVOKE_MAX_LEVEL - 1;
-                goto storeInvocation;
+                maxedOut         = 1;
             }
         }
-        // Reuse the selection value for the ordinary P.E. item id after choosing its group slot.
-        levelSave        = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
-        abilityIndex     = abilitySelection + elementIndex * ITEM_MENU_INVOKE_ABILITIES_PER_ELEMENT;
-        abilitySelection = levelSave->state.attachLevels[abilityIndex] + abilityIndex * ATTACHMENT_LEVEL_COUNT + ITEM_MENU_PARASITE_ENERGY_ITEM_FIRST;
-    storeInvocation:
+        if (!maxedOut) {
+            // Reuse the selection value for the ordinary P.E. item id after choosing its group slot.
+            levelSave        = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];
+            abilityIndex     = abilitySelection + elementIndex * ITEM_MENU_INVOKE_ABILITIES_PER_ELEMENT;
+            abilitySelection = levelSave->state.attachLevels[abilityIndex] + abilityIndex * ATTACHMENT_LEVEL_COUNT + ITEM_MENU_PARASITE_ENERGY_ITEM_FIRST;
+        }
         task->extraState.value = abilitySelection;
     }
     itemMenuInvokeParasiteEnergyItem(object, task, task->extraState.value);

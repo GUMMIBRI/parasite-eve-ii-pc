@@ -244,11 +244,12 @@ static s16 _gameOverStep(Task* task)
             showLogo = 0;
             break;
         case GAME_OVER_PHASE_REVEAL:
-            SetDispMask(1);
-            goto reveal;
         case GAME_OVER_PHASE_REVEAL_START:
-            work->phase += 1;
-        reveal:
+            if (work->phase == GAME_OVER_PHASE_REVEAL) {
+                SetDispMask(1);
+            } else {
+                work->phase += 1;
+            }
             work->darkness -= GAME_OVER_REVEAL_STEP;
             if (work->darkness <= 0) {
                 work->darkness   = 0;

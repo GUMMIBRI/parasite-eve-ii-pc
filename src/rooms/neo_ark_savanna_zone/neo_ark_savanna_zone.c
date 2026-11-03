@@ -623,27 +623,22 @@ static s32 _neoArkSavannaZoneResolveRoomEvent(Task* unusedTask, s32 unusedMessag
 
     *reply = *request;
     mapNeoArkResolveRoomVariant(request, reply);
-    if (request->areaId != GAME_AREA_NEO_ARK_SOUTH_PROMENADE) {
-        goto resolveShrineEvent;
-    }
-    soundId         = NEO_ARK_SAVANNA_ZONE_SOUTH_PROMENADE_SOUND;
-    capCommandIndex = NEO_ARK_SAVANNA_ZONE_SOUTH_PROMENADE_COMMAND;
-    event.stageSnd  = soundId;
-    eventFlagId     = NEO_ARK_SAVANNA_ZONE_SOUTH_PROMENADE_EVENT_FLAG;
-startDepartureEvent:
-    event.capCmd = capCommandIndex;
-    event.flagId = eventFlagId;
-    event.fade   = NEO_ARK_SAVANNA_ZONE_DEPARTURE_NO_FADE;
-    return _neoArkSavannaZoneStartEvent(reply, &event);
-resolveShrineEvent:
-    if (request->areaId == GAME_AREA_NEO_ARK_SHRINE) {
+    if (request->areaId == GAME_AREA_NEO_ARK_SOUTH_PROMENADE) {
+        soundId         = NEO_ARK_SAVANNA_ZONE_SOUTH_PROMENADE_SOUND;
+        capCommandIndex = NEO_ARK_SAVANNA_ZONE_SOUTH_PROMENADE_COMMAND;
+        eventFlagId     = NEO_ARK_SAVANNA_ZONE_SOUTH_PROMENADE_EVENT_FLAG;
+    } else if (request->areaId == GAME_AREA_NEO_ARK_SHRINE) {
         soundId         = NEO_ARK_SAVANNA_ZONE_SHRINE_SOUND;
         capCommandIndex = NEO_ARK_SAVANNA_ZONE_SHRINE_COMMAND;
-        event.stageSnd  = soundId;
         eventFlagId     = NEO_ARK_SAVANNA_ZONE_SHRINE_EVENT_FLAG;
-        goto startDepartureEvent;
+    } else {
+        return NEO_ARK_SAVANNA_ZONE_EXIT_ALLOWED;
     }
-    return NEO_ARK_SAVANNA_ZONE_EXIT_ALLOWED;
+    event.stageSnd = soundId;
+    event.capCmd   = capCommandIndex;
+    event.flagId   = eventFlagId;
+    event.fade     = NEO_ARK_SAVANNA_ZONE_DEPARTURE_NO_FADE;
+    return _neoArkSavannaZoneStartEvent(reply, &event);
 }
 
 /// Refuses every collected key-item use with zero, leaving the item unused.
