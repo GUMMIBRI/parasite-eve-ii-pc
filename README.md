@@ -52,13 +52,15 @@ cmake --build build --target host_tests --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-**The game** needs your discs and data extracted from them once (this fills the git-ignored `assets/`, `asm/` and
+**The game** needs your discs and data extracted from them once (this fills the git-ignored `assets/`, `asm/`, `build/` and
 `rom/`). Put the images in `rom/image/` as `SLUS-01042.bin/.cue` (disc 1) and `SLUS-01055.bin/.cue` (disc 2); the
 details and system packages are in [docs/decomp/README.md](docs/decomp/README.md).
 
 ```sh
 python3 -m venv venv && venv/bin/pip install -r requirements.txt
 venv/bin/python ninja_config.py --iso_extract       # extract from your discs
+venv/bin/python ninja_config.py                  # configure (splits the executable, writes build.ninja)
+venv/bin/ninja generated-asset-includes             # sources generated from the extracted assets (a few minutes)
 sh tools/port/regen_assets.sh                       # layout table for the runtime loader (no game data in it)
 cmake -S . -B build-port -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 sh tools/port/regen_stubs.sh                        # globals and data tables converted from your disc
