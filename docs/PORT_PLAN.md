@@ -36,7 +36,7 @@ the user's discs. The matching compile/assemble/link/objdiff/checksum graph, its
 because the work was allowed to cut into them:
 
 - Disc data: 27,419 arrays (clips, models, room structs, item catalog, and 10,622 globals converted from the
-  disassembly) load from the user's discs at run time. Checked with `PE2_DUMP_ASSETS` against a `-DPE_EMBED_ASSETS=ON` build (which reads the full generated includes from `build/include`) with both discs mounted: 16,891 of 16,891 bindings agree, except two Underpass arrays whose hash differs while a byte comparison (`PE2_DUMP_KEY`) shows them identical (a packed-short artifact of the dump).
+  disassembly) load from the user's discs at run time. Checked with `PE2_DUMP_ASSETS` against a `-DPE_EMBED_ASSETS=ON` build (which reads the full generated includes from `build/include`) with both discs mounted: 16,891 of 16,891 bindings agree, except two Underpass arrays whose hash differs while a byte comparison (`PE2_DUMP_KEY`) shows them identical (a packed-short artifact of the dump). Behaviour check on the same input route (`make_gallery_input.py --enter-cafeteria --frames 20000 --aim-cycle 180`, `PE2_DUMP_VRAM`): at pad tick 6000 the VRAM of two disc-loaded and two embedded runs is byte-identical; at tick 11000 runs of the *same* build already differ by about 10,000 bytes (frame timing), and disc vs embedded differ by about 5,900, i.e. within that noise.
 - The default build (Akropolis and a few packages) links and plays; the all-overlays build with all variants links
   (669 clashing names get private names, `cmake/overlay_renames.cmake`) and shows Dryfield, Dryfield by night, the
   mine and the Shelter/Neo Ark rendering, with the player walking (see below).
