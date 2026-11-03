@@ -7,7 +7,7 @@ memcard, title, and room overlays are all spawned the same way.
 
 Field-level layouts: [`include/main/task_types.h`](../include/main/task_types.h).
 Overlay RAM slots that many callbacks live in: [`OVERLAYS.md`](OVERLAYS.md).
-Naming: [`NAMING.md`](../NAMING.md) (`task` functions / `TaskDesc`).
+Naming: `task` functions and `TaskDesc`.
 
 | Area | Code / data |
 |------|-------------|

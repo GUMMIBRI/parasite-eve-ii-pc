@@ -338,8 +338,7 @@ typedef struct {
 STATIC_ASSERT_SIZEOF(_Actor444000TransformStorage, 32);
 
 /// Global game-mode byte; sits inside a small flag block, so it is declared as
-/// an array -- the load has to keep aliasing the scratch stores beside it (see
-/// DECOMPILATION_LEARNINGS.md, "Declare a fixed-address global as an array").
+/// an array -- the load has to keep aliasing the scratch stores beside it.
 
 MATRIX* ScaleMatrix(MATRIX* m, VECTOR* v);
 

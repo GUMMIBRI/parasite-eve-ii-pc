@@ -1,5 +1,5 @@
 ---
-# Identifier naming, as specified in NAMING.md.
+# Identifier naming.
 #
 #   fsLoadFile        function            camelBack, module or package prefix
 #   gFsFileTable      global data         camelBack with a leading g

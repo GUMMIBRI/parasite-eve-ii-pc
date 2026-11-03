@@ -3,7 +3,6 @@
 # every time - even though both sides' content should simply be kept. The union
 # driver concatenates instead of conflicting, which is the correct resolution
 # here and turns a manual reconcile into a no-op.
-DECOMPILATION_LEARNINGS.md  merge=union
 tools/match/difficult_functions   merge=union
 
 # Line endings. Every text file is checked out with LF on every platform,

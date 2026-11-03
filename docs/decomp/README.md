@@ -180,7 +180,7 @@ Tools that help, each documented in its own file:
 | `tools/peassets/` | The asset extractor and its format decoders |
 | `tools/match/`, `tools/vacuum/`, `tools/bulk/` | The scratch environment and automation the functions were matched with |
 
-Conventions for names are in [NAMING.md](NAMING.md). The project prefers real structs over pointer arithmetic, and keeps declarations in the smallest scope that shares them; [CLAUDE.md](CLAUDE.md) spells these out, and is also the instruction file for the AI agents much of the matching was done with.
+The project prefers real structs over pointer arithmetic, and keeps declarations in the smallest scope that shares them; [CLAUDE.md](CLAUDE.md) spells these out, and is also the instruction file for the AI agents much of the matching was done with.
 
 ## Repository layout
 
@@ -205,8 +205,6 @@ ninja_config.py        # Configure / extract / generate the ninja build
 
 Documentation:
 
-- [NAMING.md](NAMING.md) — symbol and module naming conventions
-- [DECOMPILATION_LEARNINGS.md](DECOMPILATION_LEARNINGS.md) — what was learnt about GCC 2.8.1, the Psy-Q tools and this game's code
 - [CODEGEN_MODEL.md](CODEGEN_MODEL.md), [COMPILER_ANALYSIS.md](COMPILER_ANALYSIS.md) — how the compiler arrives at its output
 - [CLAUDE.md](CLAUDE.md) — project conventions and agent workflow
 - [doc/ASSET_FORMATS.md](doc/ASSET_FORMATS.md) — the disc's containers, images, LZSS

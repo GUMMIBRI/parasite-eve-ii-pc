@@ -7,7 +7,7 @@
 // ordinary (non-overlay) symbols. Main-exe imports live in
 // sym.gameplay.imports.txt (absolute:True).
 //
-// Named APIs use the Gp_ prefix (see NAMING.md). Remaining functions are
+// Named APIs use the Gp_ prefix. Remaining functions are
 // VRAM placeholders (func_800xxxxx) until a role is proven. Grouped to
 // match configs/USA/gameplay.yaml text TUs.
 

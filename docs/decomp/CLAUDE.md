@@ -73,8 +73,7 @@ files and re-split so splat places the `INCLUDE_RODATA` lines itself. A cut
 that has to move the *function* too — the usual case for a compiler-generated
 jump table, which needs to start its object's `.rodata` or GCC's `.align 3`
 pads it — pairs the `rodata` key with `units`, a list of extra `.text` cut
-offsets (`rooms/mist_parking`). See `DECOMPILATION_LEARNINGS.md`,
-"Compiler-generated jump tables".
+offsets (`rooms/mist_parking`)..
 
 **Deleting those `src/` files discards every matched C body in them, and the
 build will not tell you.** splat regenerates the file as pure `INCLUDE_ASM`, and
@@ -378,10 +377,6 @@ overlay.
   `--max-difficulty` it is the intersection, as in `vacuum.sh`.
 - `python3 tools/vacuum/vacuum_orch.py claim|relinquish|finish|merge-acquire|merge-release|status|serve` coordinate multiple vacuums: function leases plus a merge lock on the original tree. State: `$(git rev-parse --git-common-dir)/vacuum-orch.json`.
 - `./permute.sh --run --timeout 360 -j4 <func> <asm> <c>` when a match is stuck ≥95% on registers/scheduling. Stops on score 0.
-- `python3 tools/match/learn.py <terms>` search `DECOMPILATION_LEARNINGS.md` by
-  section instead of by line; a raw grep returns context-free lines because the
-  searchable term is rarely in a title. `CODEGEN_MODEL.md` at the repo root is
-  the short general model those entries are instances of — read it first.
 - `python3 tools/bulk/overlay_dup_index.py stats|shared|find|solved|siblings|promote|similar`
   find code that repeats across overlays. Of the 8049 indexed functions, 36% are
   copies of another overlay's body (33% of instructions); only 10% are
@@ -417,10 +412,9 @@ overlay.
 - `python3 tools/check/check_pointer_arithmetic.py <file or directory>` detect pointer arithmetic with casts that should be replaced with struct field access. Use `--strict` to fail on violations.
 - `tools/refactor/find_references.py` / `rename_item.py` resolve and rename C
   symbols through libclang and the compilation database, never by text
-  substitution. A spec names the file the symbol is **declared** in. `NAMING.md`
-  § Tooling states what they reach and what stays a hand edit — handwritten
-  assembly, inline asm, macro-reached references and a symbol map's prose are
-  all outside them.
+  substitution. A spec names the file the symbol is **declared** in. Handwritten
+  assembly, inline asm, macro-reached references and a symbol map's prose stay
+  hand edits and are outside them.
 - `venv/bin/python3 tools/refactor/ref_index.py build|refresh|stats|refs <usr>`
   the persistent reference index (`local/ref_index.sqlite`, ~58 MB) that
   `find_references.py` and `rename_item.py` query instead of parsing every
@@ -502,8 +496,8 @@ When you see pointer arithmetic patterns like `*(type*)((u8*)ptr + offset)`:
      executable) uses public module headers under `include/`. Include the
      canonical declaration instead of copying caller-local prototypes. Count
      callback/inline uses and cross-image aliases when deciding ownership.
-     - **Main executable** (`src/main/`, `include/main/`): see `NAMING.md` for
-       the module → header map (e.g. sound in `include/main/sound.h`, UI in
+     - **Main executable** (`src/main/`, `include/main/`): the module → header map
+       (e.g. sound in `include/main/sound.h`, UI in
        `ui.h`, FS/CdCmd in `fs.h`). Include the specific module header; do not
        add a kitchen-sink aggregator.
      - **Overlays:** public headers belong to their owning overlay under
@@ -588,9 +582,6 @@ Vacuum owns cleanup when it launched the session; leave its scratch in place.
 
 1. **Clean up the scratch environment.** Delete the `nonmatchings/<function name>` directory (and the empty `nonmatchings/` parent if nothing else remains). Do not leave base_*.c attempts, object dumps, or symlinks in the tree after a successful match or after giving up.
 
-2. **Record notable findings** in the project-root `DECOMPILATION_LEARNINGS.md` (this file is symlinked into each scratch env). Add an entry only when something is generalizable — a new GCC 2.8.1 codegen quirk, a matching trick that was not already documented, a scratch-env gotcha, a struct/layout insight, etc. Skip trivial one-shot rewrites that will not help the next function. Keep the same style as existing entries: short problem → symptom → fix, with a minimal code example when useful.
-
-3. If you updated `DECOMPILATION_LEARNINGS.md`, include it in the same commit as the match (or a follow-up commit if the match was already committed).
 
 **IMPORTANT - Verification Requirements:**
 
