@@ -1,0 +1,5 @@
+/* Generated from assets/USA/pe2pkg/dryfield_factory.pe2pkg; grid header at 0x9844. */
+    { -4096, 0, 0, 0 },
+    { 0, 0, -4096, 0 },
+    { 4096, 0, 0, 0 },
+    { 0, 0, 4096, 0 },

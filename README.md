@@ -17,8 +17,7 @@ including No. 9 combat and transformer damage. Boss completion and the later sto
 
 Known limits:
 
-- Only the Akropolis stage and a few packages are linked. Dryfield, the Neo Ark and the later stages need the overlay
-  module registry (phase 2 in [docs/PORT_PLAN.md](docs/PORT_PLAN.md)); attract demos are disabled until then.
+- All five stages are linked and load (Akropolis, Dryfield, Dryfield by night, the mine, the Shelter / Neo Ark; the last two need disc 2), but only the Akropolis has been played through. Attract demos are disabled.
 - Audio, movies and saves are incomplete.
 - Tested on macOS (arm64) only. Linux is built and its host tests run in CI; Windows is untested.
 - The host menu has Graphics (detail, aspect, dithering, geometry correction, fullscreen, antialiasing, model filtering, smooth lighting), Controls, Audio and Discs pages; widescreen, frame interpolation, HD packs and mods are not there yet (the first game's port has them).
@@ -64,7 +63,7 @@ and copy the result back (see [docs/PORT_PLAN.md](docs/PORT_PLAN.md)).
 | `PE2_MENU_PAGE=<0-3>` | open the host menu on this page (with `--host-menu`) |
 | `PE2_DUMP_MENU=<file.ppm>` | write the painted host menu (`--host-menu`) as a PPM, for review without a screen capture |
 | `PE2_WARP=<tick>:stage,area,view,roomState,warp,variant[;<tick>:...]` | change stage during play at that pad tick (the session-start path a stage change takes); up to 8, separated by `;` |
-| `PE2_START_LOCATION=stage,area,view,roomState,warp,variant` | new game starts there (stages 1-5; needs the overlays for it) |
+| `PE2_START_LOCATION=stage,area,view,roomState,warp,variant` | new game starts there (stages 1-5; stages 4 and 5 need `--disc2`) |
 | `PE2_FAST=1` | no frame limiter during movies |
 | `PE2_AUTOPRESS=<tick>` | scripted Start/Cross from that tick |
 | `PE2_PAD_REPLAY=<file>` / `PE2_PAD_RECORD=<file>` | replay or record input (see `tools/port/make_gallery_input.py`) |
