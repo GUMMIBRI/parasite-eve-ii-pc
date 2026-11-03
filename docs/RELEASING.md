@@ -30,6 +30,10 @@ Binary releases need the embedded data above gone. The packaging model of the fi
 ## Known link status (measured 2026-11-03)
 
 - Default build (`build-port`, Akropolis and a few packages): links and runs.
-- `-DPE_ALL_OVERLAYS=ON` (every overlay package): compiles, fails to link with 442 unique undefined symbols (overlay
-  functions and data that need the module registry, phase 2 in `docs/PORT_PLAN.md`). The option is experimental by
-  design. Dryfield, the Shelter, the Neo Ark and the Mine are unreachable until this is closed.
+- `-DPE_ALL_OVERLAYS=ON` (every overlay package): compiles and fails to link with 26 unique undefined symbols (was 448
+  before the 31 Akropolis, actor and room sources that build were added, 2026-11-03). What is left: the per-package
+  build variants (`pe_var_*`, with their `PE_HOST_ALIAS_*` exports) that only the default build links because their
+  names repeat across overlays (enemy task tables such as `gActor101100Tasks`), the weapon templates (`WEAPON_INDEX`
+  and `GRENADE_PISTOL_VARIANT` per package), the Dryfield `DRYFIELD_TIME` rooms, `RotMatrixZXY`/`ScaleMatrixL` (not in
+  PsyZ) and a few shared tasks. All of it is the naming scheme of the module registry (phase 2 in `docs/PORT_PLAN.md`).
+  Dryfield, the Shelter, the Neo Ark and the Mine are unreachable until this is closed.
