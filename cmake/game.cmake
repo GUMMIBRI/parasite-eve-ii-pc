@@ -320,3 +320,11 @@ if(NOT PE_ALL_OVERLAYS)
 endif()
 get_property(_pe_vars GLOBAL PROPERTY PE_VARIANT_TARGETS)
 add_custom_target(overlay_variants DEPENDS ${_pe_vars})
+
+# Experiment: with PE_ALL_OVERLAYS also link every per-package variant, to find the name clashes the registry has to resolve.
+option(PE_ALL_VARIANTS "With PE_ALL_OVERLAYS, link every per-package variant too (experimental)" OFF)
+if(PE_ALL_OVERLAYS AND PE_ALL_VARIANTS)
+    foreach(_v ${_pe_vars})
+        target_sources(parasite-eve-ii-pc PRIVATE $<TARGET_OBJECTS:${_v}>)
+    endforeach()
+endif()

@@ -93,14 +93,20 @@ extern u8 gHostScratchpad[0x400];
 /// global symbol at the same address, adding no bytes. The compiler has no
 /// alias attribute for this target, so the assembler makes it, and it has to be
 /// in the object that defines `orig`.
+#define DEFINE_ALIAS_CAT2(a, b) a##b
+#define DEFINE_ALIAS_CAT(a, b) DEFINE_ALIAS_CAT2(a, b)
+/* Taking the address keeps a static original from being dropped as unused: only the assembler alias refers to it. */
+#define DEFINE_ALIAS_KEEP(alias) DEFINE_ALIAS_CAT(_aliasKeep_, alias)
 #if defined(__psyz) && defined(__APPLE__)
 // Mach-O C symbols carry the underscore prefix in assembler declarations.
 #define DEFINE_ALIAS(orig, alias) \
     extern __typeof__(orig) alias; \
+    static const void* const __attribute__((used)) DEFINE_ALIAS_KEEP(alias) = (const void*)&(orig); \
     __asm__(".globl _" #alias "\n_" #alias " = _" #orig)
 #else
 #define DEFINE_ALIAS(orig, alias)                                                                  \
     extern __typeof__(orig) alias;                                                                 \
+    static const void* const __attribute__((used)) DEFINE_ALIAS_KEEP(alias) = (const void*)&(orig); \
     __asm__(".globl " #alias "\n" #alias " = " #orig)
 #endif
 

@@ -644,6 +644,9 @@ void neoArkShrineSlidePuzzleTile(Task* task)
 
 #include "../../shared/room/action_prompt_outline_rect.inc.c"
 
+/// Set when a puzzle reset should restore the first prop layout; read and cleared by the shrine tasks.
+s16 gNeoArkShrinePuzzleLayoutRestorePending;
+
 /// Moves one tile halfway towards its target and snaps small residuals.
 ///
 /// Requires a tile number in 0..15 and initialized screen origins in pixels.

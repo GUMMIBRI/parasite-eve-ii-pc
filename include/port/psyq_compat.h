@@ -72,6 +72,10 @@ VECTOR* ApplyMatrixLV(MATRIX* m, VECTOR* v0, VECTOR* v1);
 VECTOR* ApplyTransposeMatrixLV(MATRIX* m, VECTOR* v0, VECTOR* v1);
 SVECTOR* ApplyMatrixSV(MATRIX* m, SVECTOR* v0, SVECTOR* v1);
 /* libgte MIMe: out[i] += (delta[i] * weight) >> 12 for XYZ (weight in Q12), saturated to 16 bits; w is untouched. */
+/* libgte rotation in the order Rz * Rx * Ry (PsyZ has YXZ and ZYX but not this one). */
+MATRIX* RotMatrixZXY(SVECTOR* r, MATRIX* m);
+/* libgte scale from the left: row i of the rotation is multiplied by v[i] (world-axis scale); translation is kept. */
+MATRIX* ScaleMatrixL(MATRIX* m, VECTOR* v);
 void gteMIMefunc(SVECTOR* out, const SVECTOR* delta, int count, int weight);
 
 /* GTE LCOL colour blend: out = (c0 * w0 + c1 * w1) >> 12 per channel (r, g, b). */

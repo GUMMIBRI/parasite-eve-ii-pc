@@ -128,6 +128,31 @@ SVECTOR* ApplyMatrixSV(MATRIX* m, SVECTOR* v0, SVECTOR* v1)
     return v1;
 }
 
+MATRIX* RotMatrixZXY(SVECTOR* r, MATRIX* m)
+{
+    int sx = rsin(r->vx), cx = rcos(r->vx), sy = rsin(r->vy), cy = rcos(r->vy), sz = rsin(r->vz), cz = rcos(r->vz);
+    int szsx = (sz * sx) >> 12, czsx = (cz * sx) >> 12;
+
+    m->m[0][0] = ((cz * cy) >> 12) - ((szsx * sy) >> 12);
+    m->m[0][1] = -((sz * cx) >> 12);
+    m->m[0][2] = ((cz * sy) >> 12) + ((szsx * cy) >> 12);
+    m->m[1][0] = ((sz * cy) >> 12) + ((czsx * sy) >> 12);
+    m->m[1][1] = (cz * cx) >> 12;
+    m->m[1][2] = ((sz * sy) >> 12) - ((czsx * cy) >> 12);
+    m->m[2][0] = -((cx * sy) >> 12);
+    m->m[2][1] = sx;
+    m->m[2][2] = (cx * cy) >> 12;
+    return m;
+}
+
+MATRIX* ScaleMatrixL(MATRIX* m, VECTOR* v)
+{
+    int scales[3] = { v->vx, v->vy, v->vz };
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++) m->m[i][j] = (short)(((long long)m->m[i][j] * scales[i]) >> 12);
+    return m;
+}
+
 void gteMIMefunc(SVECTOR* out, const SVECTOR* delta, int count, int weight)
 {
     for (int i = 0; i < count; i++) {
