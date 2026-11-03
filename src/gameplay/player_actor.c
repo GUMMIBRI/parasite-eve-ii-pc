@@ -6471,39 +6471,29 @@ Task* playerActorRestoreEquipment(void)
                 weaponModel = actor->equipmentTasks[1]->extra.tmd;
                 weaponId    = playerStatus->weapon;
                 weaponCoord = weaponModel->coords;
-                if (weaponId != PLAYER_ACTOR_WEAPON_HYPERVELOCITY) {
-                    goto selectAttachmentEffect;
+                effectId    = 0;
+                if (weaponId == PLAYER_ACTOR_WEAPON_HYPERVELOCITY) {
+                    effectId       = PLAYER_ACTOR_HYPERVELOCITY_PERSISTENT_EFFECT;
+                    effectArgument = 0;
+                } else if (weaponId == PLAYER_ACTOR_WEAPON_HAMMER) {
+                    effectId       = PLAYER_ACTOR_HAMMER_PERSISTENT_EFFECT;
+                    effectArgument = playerStatus->weapon;
+                } else if (weaponId == PLAYER_ACTOR_WEAPON_PYKE) {
+                    effectId       = PLAYER_ACTOR_PYKE_PERSISTENT_EFFECT;
+                    effectArgument = playerStatus->weapon;
                 }
-                effectId       = PLAYER_ACTOR_HYPERVELOCITY_PERSISTENT_EFFECT;
-                effectArgument = 0;
-                goto spawnPersistentEffect;
-
-            attachPersistentEffect:
-                actor->weaponEffectTask = weaponEffect->task;
-                taskReparent(playerTask, weaponEffect->task);
-                playerActorResetWeaponAttack(playerTask, gPlayerStatus.weapon, 0);
-                goto restorePlayback;
-
-            selectAttachmentEffect:
-                if (weaponId == PLAYER_ACTOR_WEAPON_HAMMER) {
-                    effectId = PLAYER_ACTOR_HAMMER_PERSISTENT_EFFECT;
-                } else {
-                    if (weaponId != PLAYER_ACTOR_WEAPON_PYKE) {
-                        goto restorePlayback;
+                if (effectId != 0) {
+                    weaponEffect = effectSpawn(effectId, weaponCoord, effectArgument, 0);
+                    if (weaponEffect != NULL) {
+                        actor->weaponEffectTask = weaponEffect->task;
+                        taskReparent(playerTask, weaponEffect->task);
+                        playerActorResetWeaponAttack(playerTask, gPlayerStatus.weapon, 0);
                     }
-                    effectId = PLAYER_ACTOR_PYKE_PERSISTENT_EFFECT;
-                }
-                effectArgument = playerStatus->weapon;
-            spawnPersistentEffect:
-                weaponEffect = effectSpawn(effectId, weaponCoord, effectArgument, 0);
-                if (weaponEffect != NULL) {
-                    goto attachPersistentEffect;
                 }
             }
         }
     }
 
-restorePlayback:
     // Restore the native animation bank even if model or effect allocation failed.
     actor->reloadEffectSuppressed     = 0;
     playbackActor                     = playerTask->work;

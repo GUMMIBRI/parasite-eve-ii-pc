@@ -605,20 +605,15 @@ static s32 _actor120300TickBodyAnimation(Task* task)
     allSettled = 1;
     for (; slotIndex < ARRAY_SIZE(work->rig.slots); slotIndex++) {
         if (!(work->rig.slots[slotIndex].status.fields.flags & ANIMATION_SLOT_SETTLED)) {
-            goto unsettled;
+            allSettled = 0;
+            break;
         }
     }
-checkSettled:
     if (allSettled) {
         if (_gActor120300BodyFollowOnAnimations[work->bodyAnimation] >= 0) {
             nextAnimationId            = _gActor120300BodyFollowOnAnimations[work->bodyAnimation];
             restartWork                = task->work;
             restartWork->bodyAnimation = nextAnimationId;
-            goto restartSlots;
-        unsettled:
-            allSettled = 0;
-            goto checkSettled;
-        restartSlots:
             for (slotIndex = 1; slotIndex < ARRAY_SIZE(restartWork->rig.slots); slotIndex++) {
                 animationSeekSlotWithBlend(&restartWork->rig.anim, slotIndex, nextAnimationId, 0, ACTOR_120300_ANIMATION_BLEND_FRAMES);
             }

@@ -771,25 +771,19 @@ static s32 _actor121300TickAnimations(Task* task)
     for (slotIndex = 1; slotIndex < ARRAY_SIZE(work->rig.slots); slotIndex++) {
         animationTickSlot(&work->rig.anim, slotIndex);
     }
-    // Keep the unsettled path beside the reseed loop to retain the original block order.
     slotIndex  = 1;
     allSettled = 1;
     for (; slotIndex < ARRAY_SIZE(work->rig.slots); slotIndex++) {
         if (!(work->rig.slots[slotIndex].status.fields.flags & ANIMATION_SLOT_SETTLED)) {
-            goto unsettled;
+            allSettled = 0;
+            break;
         }
     }
-checkSettled:
     if (allSettled) {
         if (_gActor121300AnimationFollowupSets[work->animSet] >= 0) {
             nextAnimSet        = _gActor121300AnimationFollowupSets[work->animSet];
             blendWork          = task->work;
             blendWork->animSet = nextAnimSet;
-            goto blendSlots;
-        unsettled:
-            allSettled = 0;
-            goto checkSettled;
-        blendSlots:
             for (slotIndex = 1; slotIndex < ARRAY_SIZE(blendWork->rig.slots); slotIndex++) {
                 animationSeekSlotWithBlend(&blendWork->rig.anim, slotIndex, nextAnimSet, 0, ACTOR_121300_ANIMATION_BLEND_FRAMES);
             }

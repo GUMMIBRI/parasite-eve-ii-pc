@@ -581,37 +581,26 @@ static s32 _actor223600PollSoundCue(_Actor223600Work* work)
         ACTOR_223600_SOUND_CUE_CONTROL_JUMP  = 0x400C0005,
     };
     u16 cueIndex;
-    s32 promotedCueIndex;
+    s32 triggers;
 
     switch (work->driver.requestedSet) {
         case ACTOR_223600_ANIM_REQUEST_WALK:
-            cueIndex         = work->rig.slots[ANIM_DRIVER_FIRST_SLOT].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
-            promotedCueIndex = cueIndex;
-            if (promotedCueIndex != ACTOR_223600_WALK_CUE_SECOND) {
-                goto checkOtherWalkCue;
-            }
-        latchCue:
-            if (work->lastSoundCueIndex == promotedCueIndex) {
-                goto heldCue;
-            }
-            work->lastSoundCueIndex = cueIndex;
-            return ACTOR_223600_SOUND_CUE_POSE;
-        checkOtherWalkCue:
-            if (promotedCueIndex == ACTOR_223600_WALK_CUE_FIRST) {
-                goto latchCue;
-            }
-        clearCueLatch:
-            work->lastSoundCueIndex = 0;
-            break;
         case ACTOR_223600_SOUND_ANIM_CUE_PAIR:
-            cueIndex         = work->rig.slots[ANIM_DRIVER_FIRST_SLOT].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
-            promotedCueIndex = cueIndex;
-            if (promotedCueIndex != ACTOR_223600_PAIR_CUE_FIRST && promotedCueIndex != ACTOR_223600_PAIR_CUE_SECOND) {
-                goto clearCueLatch;
+            cueIndex = work->rig.slots[ANIM_DRIVER_FIRST_SLOT].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
+            if (work->driver.requestedSet == ACTOR_223600_ANIM_REQUEST_WALK) {
+                triggers = cueIndex == ACTOR_223600_WALK_CUE_FIRST || cueIndex == ACTOR_223600_WALK_CUE_SECOND;
+            } else {
+                triggers = cueIndex == ACTOR_223600_PAIR_CUE_FIRST || cueIndex == ACTOR_223600_PAIR_CUE_SECOND;
             }
-            goto latchCue;
-        heldCue:
-            work->lastSoundCueIndex = cueIndex;
+            if (!triggers) {
+                work->lastSoundCueIndex = 0;
+                break;
+            }
+            // A held trigger cue sounds once.
+            if (work->lastSoundCueIndex != cueIndex) {
+                work->lastSoundCueIndex = cueIndex;
+                return ACTOR_223600_SOUND_CUE_POSE;
+            }
             break;
         case ACTOR_223600_SOUND_ANIM_CONTROL_JUMP:
             if (work->rig.slots[ANIM_DRIVER_FIRST_SLOT].status.fields.flags & ANIMATION_SLOT_FOLLOWED_JUMP) {

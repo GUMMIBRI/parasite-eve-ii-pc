@@ -867,21 +867,16 @@ static s32 _actor136100TickBodyAnimation(Task* task)
     }
     for (settled = slotIndex = 1; slotIndex < ARRAY_SIZE(work->rig.slots); slotIndex++) {
         if (!(work->rig.slots[slotIndex].status.fields.flags & ANIMATION_SLOT_SETTLED)) {
-            goto unsettled;
+            settled = 0;
+            break;
         }
     }
-checkSettled:
     if (settled) {
         nextSetIndex = _gActor136100BodyAnimationSuccessors[(u16)work->bodyAnimation];
         if (_gActor136100BodyAnimationSuccessors[(u16)work->bodyAnimation] >= 0) {
             setIndex                   = nextSetIndex;
             restartWork                = task->work;
             restartWork->bodyAnimation = setIndex;
-            goto restartSlots;
-        unsettled:
-            settled = 0;
-            goto checkSettled;
-        restartSlots:
             for (slotIndex = 1; slotIndex < ARRAY_SIZE(restartWork->rig.slots); slotIndex++) {
                 animationSeekSlotWithBlend(&restartWork->rig.anim, slotIndex, setIndex, 0, ACTOR_136100_ANIMATION_BLEND_FRAMES);
             }
