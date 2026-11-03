@@ -3487,3 +3487,16 @@ Continued the recorded physical-input branch from Forked Road checkpoint 156234 
 Checkpoint 165152: panelKeys=3 (both released), Red Key 259 absent, power task gone, actor mode/state=0, eventState=0, pendingMode=0. HP81/115, MP27/31, M93R equipped, 29 Hydra and 52 PB retained. Independent finite replay with video/virtual clocks passed ten expectations and its complete collected checkpoint dictionary equals the live dictionary. Evidence: build-port/reference/fresh-red-unlock/ (165152-sample input, live and finite checkpoints, debugger log). This proves native replay repeatability for this checkpoint, not console-wide parity.
 
 Continued live to 165575: Hallway area7/state1/variant4/warp2, position [2271,-871,950], yaw2048; HP81/MP27 unchanged, normal control. Next: traverse toward the powered route, Fire Escape save and No9. No9 victory and post-boss MIST runtime remain unverified.
+
+## Overlay registry: findings (2026-11-03)
+
+- **Link.** `-DPE_ALL_OVERLAYS=ON -DPE_ALL_VARIANTS=ON` links: private per-object names for the 669 clashing globals
+  (`cmake/overlay_renames.cmake`, `tools/port/gen_overlay_renames.py`, `tools/port/regen_overlay_renames.sh`).
+- **What `main` calls by address.** 22 `func_8070xxxx` and a few `D_8072xxxx` names (task bank 3 in
+  `src/main/stage_music.c`, `gTaskBank3Descs`; `func_80701400` in `textdraw.c`) are weak aborting stubs in
+  `src/port/unresolved_stubs.c`. No file under `asm/USA` defines code at those addresses, so no split package owns them
+  yet: the next step is to find the package that loads at `0x80700000` from the disc (`gPeAssetPackages` and the
+  package headers) and add it to `configs/` so splat produces its asm and C.
+- **Run-time wiring still to build.** Load a stage's packages by name from the disc, call a package's reset hook, and
+  route `main`'s address-named calls to the loaded package. None of this exists; the executable runs the Akropolis
+  stage only.
