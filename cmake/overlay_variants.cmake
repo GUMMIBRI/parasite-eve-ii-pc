@@ -88,6 +88,7 @@ pe_overlay_variant("lesser_stranger" "lesser_stranger/lesser_stranger" "src/enem
 pe_overlay_variant("m4a1" "m4a1/m4a1" "src/weapons/m4a1/m4a1.c" "WEAPON_INDEX=16" "")
 pe_overlay_variant("m4a1_p1" "m4a1_p1/m4a1" "src/weapons/m4a1/m4a1.c" "WEAPON_INDEX=20" "cmake/aliases/m4a1_p1__m4a1.h")
 pe_overlay_variant("m4a1_p2" "m4a1_p2/m4a1" "src/weapons/m4a1/m4a1.c" "WEAPON_INDEX=21" "cmake/aliases/m4a1_p2__m4a1.h")
+pe_overlay_variant("m4a1_pyke" "m4a1_pyke/m4a1_pyke" "src/weapons/m4a1_pyke/m4a1_pyke.c" "" "")
 pe_overlay_variant("mist_parking" "mist_parking/mist_parking" "src/stages/akropolis/rooms/mist_parking/mist_parking.c" "" "")
 pe_overlay_variant("mist_parking" "mist_parking/mist_parking_conversation" "src/stages/akropolis/rooms/mist_parking/mist_parking_conversation.c" "" "")
 pe_overlay_variant("mist_parking" "mist_parking/mist_parking_scenes" "src/stages/akropolis/rooms/mist_parking/mist_parking_scenes.c" "" "")

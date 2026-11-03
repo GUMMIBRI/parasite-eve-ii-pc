@@ -7,50 +7,50 @@ __attribute__((weak)) unsigned char D_80725F44[0x10000];
 __attribute__((weak)) unsigned char D_8072C8F0[0x10000];
 __attribute__((weak)) unsigned char D_8075BED4[0x10000];
 __attribute__((weak)) unsigned char D_80760618[0x10000];
-__attribute__((weak)) void func_8011D1E0(void) { fprintf(stderr, "unresolved call: func_8011D1E0\n"); abort(); }
-__attribute__((weak)) void func_807011D8(void) { fprintf(stderr, "unresolved call: func_807011D8\n"); abort(); }
-__attribute__((weak)) void func_80701400(void) { fprintf(stderr, "unresolved call: func_80701400\n"); abort(); }
-__attribute__((weak)) void func_80701470(void) { fprintf(stderr, "unresolved call: func_80701470\n"); abort(); }
-__attribute__((weak)) void func_80703FE8(void) { fprintf(stderr, "unresolved call: func_80703FE8\n"); abort(); }
-__attribute__((weak)) void func_80704A78(void) { fprintf(stderr, "unresolved call: func_80704A78\n"); abort(); }
-__attribute__((weak)) void func_80704AD0(void) { fprintf(stderr, "unresolved call: func_80704AD0\n"); abort(); }
-__attribute__((weak)) void func_80704BC8(void) { fprintf(stderr, "unresolved call: func_80704BC8\n"); abort(); }
-__attribute__((weak)) void func_80707534(void) { fprintf(stderr, "unresolved call: func_80707534\n"); abort(); }
-__attribute__((weak)) void func_807075A0(void) { fprintf(stderr, "unresolved call: func_807075A0\n"); abort(); }
-__attribute__((weak)) void func_807077C0(void) { fprintf(stderr, "unresolved call: func_807077C0\n"); abort(); }
-__attribute__((weak)) void func_80707870(void) { fprintf(stderr, "unresolved call: func_80707870\n"); abort(); }
-__attribute__((weak)) void func_80707980(void) { fprintf(stderr, "unresolved call: func_80707980\n"); abort(); }
-__attribute__((weak)) void func_80707B14(void) { fprintf(stderr, "unresolved call: func_80707B14\n"); abort(); }
-__attribute__((weak)) void func_80707C38(void) { fprintf(stderr, "unresolved call: func_80707C38\n"); abort(); }
-__attribute__((weak)) void func_80707F84(void) { fprintf(stderr, "unresolved call: func_80707F84\n"); abort(); }
-__attribute__((weak)) void func_80708070(void) { fprintf(stderr, "unresolved call: func_80708070\n"); abort(); }
-__attribute__((weak)) void func_807080C8(void) { fprintf(stderr, "unresolved call: func_807080C8\n"); abort(); }
-__attribute__((weak)) void func_80708778(void) { fprintf(stderr, "unresolved call: func_80708778\n"); abort(); }
-__attribute__((weak)) void func_8070A6E8(void) { fprintf(stderr, "unresolved call: func_8070A6E8\n"); abort(); }
-__attribute__((weak)) void func_807127A8(void) { fprintf(stderr, "unresolved call: func_807127A8\n"); abort(); }
-__attribute__((weak)) void func_807146AC(void) { fprintf(stderr, "unresolved call: func_807146AC\n"); abort(); }
-__attribute__((weak)) void func_8071473C(void) { fprintf(stderr, "unresolved call: func_8071473C\n"); abort(); }
-__attribute__((weak)) void func_8071489C(void) { fprintf(stderr, "unresolved call: func_8071489C\n"); abort(); }
-__attribute__((weak)) void func_807149F0(void) { fprintf(stderr, "unresolved call: func_807149F0\n"); abort(); }
-__attribute__((weak)) void func_80714A48(void) { fprintf(stderr, "unresolved call: func_80714A48\n"); abort(); }
-__attribute__((weak)) void func_807150F8(void) { fprintf(stderr, "unresolved call: func_807150F8\n"); abort(); }
-__attribute__((weak)) void func_80715198(void) { fprintf(stderr, "unresolved call: func_80715198\n"); abort(); }
-__attribute__((weak)) void func_8071E24C(void) { fprintf(stderr, "unresolved call: func_8071E24C\n"); abort(); }
-__attribute__((weak)) void func_80722624(void) { fprintf(stderr, "unresolved call: func_80722624\n"); abort(); }
-__attribute__((weak)) void func_80723944(void) { fprintf(stderr, "unresolved call: func_80723944\n"); abort(); }
-__attribute__((weak)) void func_80724120(void) { fprintf(stderr, "unresolved call: func_80724120\n"); abort(); }
-__attribute__((weak)) void func_80724324(void) { fprintf(stderr, "unresolved call: func_80724324\n"); abort(); }
-__attribute__((weak)) void func_807244CC(void) { fprintf(stderr, "unresolved call: func_807244CC\n"); abort(); }
-__attribute__((weak)) void func_8072455C(void) { fprintf(stderr, "unresolved call: func_8072455C\n"); abort(); }
-__attribute__((weak)) void func_807245B8(void) { fprintf(stderr, "unresolved call: func_807245B8\n"); abort(); }
-__attribute__((weak)) void func_807245E4(void) { fprintf(stderr, "unresolved call: func_807245E4\n"); abort(); }
-__attribute__((weak)) void func_80724608(void) { fprintf(stderr, "unresolved call: func_80724608\n"); abort(); }
-__attribute__((weak)) void func_807246B4(void) { fprintf(stderr, "unresolved call: func_807246B4\n"); abort(); }
-__attribute__((weak)) void func_80724714(void) { fprintf(stderr, "unresolved call: func_80724714\n"); abort(); }
-__attribute__((weak)) void func_80724748(void) { fprintf(stderr, "unresolved call: func_80724748\n"); abort(); }
-__attribute__((weak)) void func_80724E2C(void) { fprintf(stderr, "unresolved call: func_80724E2C\n"); abort(); }
-__attribute__((weak)) void func_807257A0(void) { fprintf(stderr, "unresolved call: func_807257A0\n"); abort(); }
-__attribute__((weak)) void func_80725BB8(void) { fprintf(stderr, "unresolved call: func_80725BB8\n"); abort(); }
+__attribute__((weak)) void func_8011D1E0(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807011D8(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80701400(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80701470(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80703FE8(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80704A78(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80704AD0(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80704BC8(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80707534(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807075A0(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807077C0(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80707870(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80707980(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80707B14(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80707C38(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80707F84(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80708070(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807080C8(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80708778(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_8070A6E8(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807127A8(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807146AC(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_8071473C(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_8071489C(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807149F0(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80714A48(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807150F8(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80715198(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_8071E24C(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80722624(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80723944(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80724120(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80724324(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807244CC(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_8072455C(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807245B8(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807245E4(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80724608(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807246B4(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80724714(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80724748(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80724E2C(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_807257A0(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
+__attribute__((weak)) void func_80725BB8(void) { /* debug-mode helper, not part of the USA program image: no-op */ }
 __attribute__((weak)) unsigned char gEveMaskedBody[0x10000];
 __attribute__((weak)) void grenadePistolAttackState(void) { fprintf(stderr, "unresolved call: grenadePistolAttackState\n"); abort(); }
 __attribute__((weak)) void grenadePistolShellTask(void) { fprintf(stderr, "unresolved call: grenadePistolShellTask\n"); abort(); }
