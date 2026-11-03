@@ -3494,9 +3494,11 @@ Continued live to 165575: Hallway area7/state1/variant4/warp2, position [2271,-8
   (`cmake/overlay_renames.cmake`, `tools/port/gen_overlay_renames.py`, `tools/port/regen_overlay_renames.sh`).
 - **What `main` calls by address.** 22 `func_8070xxxx` and a few `D_8072xxxx` names (task bank 3 in
   `src/main/stage_music.c`, `gTaskBank3Descs`; `func_80701400` in `textdraw.c`) are weak aborting stubs in
-  `src/port/unresolved_stubs.c`. No file under `asm/USA` defines code at those addresses, so no split package owns them
-  yet: the next step is to find the package that loads at `0x80700000` from the disc (`gPeAssetPackages` and the
-  package headers) and add it to `configs/` so splat produces its asm and C.
+  `src/port/unresolved_stubs.c`. They are not an overlay to find: the PlayStation has 2 MB of RAM
+  (`0x80000000`-`0x801FFFFF`), no package loads above `0x8017D5C0`, and no file under `asm/USA` defines code there.
+  The addresses are in a retail-absent region (the 8 MB development-kit RAM), so those task slots can only hold code
+  the shipped game never runs. Aborting if one is ever reached is the right behaviour; the stubs stay and are not part
+  of the registry work. (This corrects the earlier assumption that they were a missing package.)
 - **Run-time wiring still to build.** Load a stage's packages by name from the disc, call a package's reset hook, and
-  route `main`'s address-named calls to the loaded package. None of this exists; the executable runs the Akropolis
+  None of this exists; the executable runs the Akropolis
   stage only.
