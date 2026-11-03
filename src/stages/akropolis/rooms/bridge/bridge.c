@@ -2709,6 +2709,7 @@ static s32 _akropolisBridgeEnemyApplyCommand(Task* task, s32 messageId, const Ac
     TmdObject*  model = task->extra.tmd;
     s32         placementIndex;
     u16         commandId;
+    s32         admitted;
 
     if (command->context.key == COMMAND_CONTEXT_MOVIE && command->command == COMMAND_SHOW_MOVIE_ENEMIES) {
         placementIndex = enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT;
@@ -2725,42 +2726,32 @@ static s32 _akropolisBridgeEnemyApplyCommand(Task* task, s32 messageId, const Ac
         commandId = command->command;
         if (commandId == COMMAND_KEYPAD_ACCEPTED) {
             placementIndex = enemy->placeKey >> ENEMY_PLACE_INDEX_SHIFT;
+            admitted       = 0;
             switch (placementIndex) {
                 case 0:
-                    if (gSceneCombatState.battleRefs != 0) {
-                        break;
-                    }
-                    work->state = ENEMY_STATE_INACTIVE;
-                    goto hide;
+                    admitted = gSceneCombatState.battleRefs != 0;
+                    break;
                 case 1:
-                    if (gSceneCombatState.battleRefs >= 2) {
-                        break;
-                    }
-                    work->state = ENEMY_STATE_INACTIVE;
-                    goto hide;
+                    admitted = gSceneCombatState.battleRefs >= 2;
+                    break;
                 case 2:
-                    if (gSceneCombatState.battleRefs < 3) {
-                        goto reset;
-                    }
+                    admitted = gSceneCombatState.battleRefs >= 3;
                     break;
                 default:
-                    work->state = ENEMY_STATE_INACTIVE;
-                    goto hide;
+                    admitted = 0;
+                    break;
             }
-            {
+            if (admitted) {
                 u16 hp    = _gAkropolisBridgeEnemyParams.hpMax;
                 enemy->hp = hp;
                 work->hp  = hp;
+                work->state = ENEMY_STATE_FOLLOW_MOVIE;
+            } else {
+                work->state            = ENEMY_STATE_INACTIVE;
+                task->extra.tmd->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
             }
-            work->state = ENEMY_STATE_FOLLOW_MOVIE;
-            goto done;
-        reset:
-            work->state = ENEMY_STATE_INACTIVE;
-        hide:
-            task->extra.tmd->flags = TMD_OBJECT_SKIP_ACTIVE_DRAW;
         }
     }
-done:
     return 1;
 }
 

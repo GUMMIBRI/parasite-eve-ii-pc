@@ -1281,21 +1281,20 @@ static s32 _shelterB3GarbageIncineratorAdvanceBlazeAnimation(Task* task)
     s16                                    nextAnimationId;
 
     if (work->playerTask == NULL) {
-    idleReturn:
         return 1;
     }
     if (taskMessageDispatch(work->playerTask, ANIMATION_MESSAGE_IS_PLAYING, 0, 0) != 0) {
         return 0;
     }
     if (work->animationId < ANIMATION_BANK_BASE_SET_COUNT) {
-        goto idleReturn;
+        return 1;
     }
     if (_gShelterB3GarbageIncineratorBlazeAnimationSuccessors[work->animationId - ANIMATION_BANK_BASE_SET_COUNT] < 0) {
-        goto idleReturn;
+        return 1;
     }
     nextAnimationId = _gShelterB3GarbageIncineratorBlazeAnimationSuccessors[work->animationId - ANIMATION_BANK_BASE_SET_COUNT] + ANIMATION_BANK_BASE_SET_COUNT;
     _shelterB3GarbageIncineratorPlayBlazeAnimation(task, nextAnimationId, SHELTER_B3_GARBAGE_INCINERATOR_BLAZE_CHAIN_BLEND_FRAMES);
-    goto idleReturn;
+    return 1;
 }
 
 #include "../../shared/effects/incinerator_blaze_body_fire.inc.c"

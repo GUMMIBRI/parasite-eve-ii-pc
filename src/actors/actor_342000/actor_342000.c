@@ -530,21 +530,15 @@ static s32 _actor342000TickGluttonAnimation(Task* task, u16 slotCount)
     allSettled = 1;
     for (; slotIndex < slotCount; slotIndex++) {
         if (!(work->rig.slots[slotIndex].status.fields.flags & ANIMATION_SLOT_SETTLED)) {
-            goto unsettled;
+            allSettled = 0;
+            break;
         }
     }
-checkSettlement:
     if (allSettled) {
         if (_gActor342000GluttonFollowUpClips[work->followUpIndex] >= 0) {
             animationId    = _gActor342000GluttonFollowUpClips[work->followUpIndex];
             followUpWork   = task->work;
             firstBlendSlot = slotCount == ACTOR_342000_GLUTTON_BODY_SLOT_COUNT;
-            // Keep the unsettled exit between selection and blending.
-            goto blendFollowUp;
-        unsettled:
-            allSettled = 0;
-            goto checkSettlement;
-        blendFollowUp:
             for (slotIndex = firstBlendSlot; slotIndex < slotCount; slotIndex++) {
                 animationSeekSlotWithBlend(&followUpWork->rig.anim, slotIndex, animationId, 0, ACTOR_342000_GLUTTON_FOLLOW_UP_BLEND_FRAMES);
             }

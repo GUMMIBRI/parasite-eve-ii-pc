@@ -1020,19 +1020,10 @@ static inline Enemy* _akropolisPlazaFindPlacedEnemy(u8 entryId)
     currentPlacement      = areaGetVariant(&locationKey)->placements;
     placementIndex        = 0;
     // A missing resource entry uses the terminator position in the enemy key.
-    if (currentPlacement->entryId != AREA_PLACEMENT_END) {
-        for (;;) {
-            if (currentPlacement->entryId == entryId) {
-                goto found;
-            }
-            currentPlacement++;
-            placementIndex++;
-            if (currentPlacement->entryId == AREA_PLACEMENT_END) {
-                goto found;
-            }
-        }
+    while (currentPlacement->entryId != AREA_PLACEMENT_END && currentPlacement->entryId != entryId) {
+        currentPlacement++;
+        placementIndex++;
     }
-found:
     return sceneFindEnemyByPlaceKey((placementIndex << ENEMY_PLACE_INDEX_SHIFT) | (currentLocation->stage << ENEMY_PLACE_STAGE_SHIFT) | currentLocation->area);
 }
 
