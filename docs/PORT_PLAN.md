@@ -3502,3 +3502,12 @@ Continued live to 165575: Hallway area7/state1/variant4/warp2, position [2271,-8
 - **Run-time wiring still to build.** Load a stage's packages by name from the disc, call a package's reset hook, and
   None of this exists; the executable runs the Akropolis
   stage only.
+
+### All-overlays executable, observed (2026-11-03)
+
+With `PE2_START_LOCATION` and `PE2_DUMP_VRAM` (frames written from the port itself, no screen capture), the all-overlays
+build, started on disc 1: Dryfield (stage 2) shows its "Now Loading" card and then the scene with the HUD and the
+weapon menu; Dryfield by night (stage 3) renders its HUD and a dark scene; stages 4 and 5 (the mine, the Shelter, the
+Neo Ark) stop at the game's own "Change to DISC 2" prompt even with `--disc2` given, so the disc swap does not run
+headless and those stages are not observed. Nothing crashes or reaches an aborting stub in these runs. Not yet
+checked: walking, room changes, saving, and any behaviour after stage changes (package state is not reset).

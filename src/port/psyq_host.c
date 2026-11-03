@@ -367,6 +367,22 @@ void Psyz_PadsOverride(int port, char* frame, int len)
         fprintf(stderr, "[trace] tick=%d movieStep=%d demo=%d\n", tick, gCdCmdQueue.movieStep, gDisplayState.demoScene);
     }
     int currentTick = tick++;
+    if (port == 0) {   /* development: PE2_DUMP_VRAM=<tick>:<file> writes the raw 1024x512 VRAM once (tools/port/export_vram.py) */
+        static int dumpTick = -2;
+        static char dumpPath[512];
+        if (dumpTick == -2) {
+            const char* spec = getenv("PE2_DUMP_VRAM");
+            dumpTick = spec && sscanf(spec, "%d:%511s", &dumpTick, dumpPath) == 2 ? dumpTick : -1;
+        }
+        if (dumpTick >= 0 && currentTick == dumpTick) {
+            static u_short vram[1024 * 512];
+            RECT all = { 0, 0, 1024, 512 };
+            StoreImage(&all, (u_long*)(void*)vram);
+            DrawSync(0);
+            FILE* f = fopen(dumpPath, "wb");
+            if (f) { fwrite(vram, sizeof vram, 1, f); fclose(f); }
+        }
+    }
     if (port != 0 || len < 4) return;
     peMemoryCardAdvanceIo();
     if (currentTick >= holdStart && holdEnd > currentTick) {
