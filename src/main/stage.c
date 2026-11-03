@@ -451,6 +451,11 @@ static inline void _stageResolvePlayerContacts(void)
     s32        rootResponseEnabled;
 
     playerTask          = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
+#ifdef __psyz
+    if (playerTask == NULL || playerTask->work == NULL || playerTask->extra.tmd == NULL) {
+        return; // the player actor was not spawned in this area
+    }
+#endif
     player              = playerTask->work;
     rootResponseEnabled = player->collisionEnableMask & (1 << GAME_ACTOR_BODY_ROOT);
     rootCoord           = playerTask->extra.tmd->coords;

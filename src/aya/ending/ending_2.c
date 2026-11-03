@@ -459,15 +459,6 @@ static void _endingCreditsTask(Task* task)
     u16                    endHoldTicksLeft;
     const EndingStfParams* creditsParams;
 
-#ifdef __psyz
-    // The credits file is relocated with 32-bit file-relative pointer words,
-    // which do not survive 64-bit host pointers; end the credits instead of
-    // crashing until that table is ported.
-    if (task->state == ENDING_CREDITS_INITIALIZE) {
-        taskKill(task);
-        return;
-    }
-#endif
     switch (task->state) {
         case ENDING_CREDITS_INITIALIZE:
             // Keep both picture pages black until the first decode and fade-in.
@@ -1022,6 +1013,37 @@ static s32 _endingRelocateCreditsFile(EndingStfFile* file, s32 unusedResourceSlo
         return 0;
     }
 
+#ifdef __psyz
+    {
+        // The file stores 32-bit offsets, which cannot hold host pointers; read the
+        // disc layout directly and build host-pointer rows once per file.
+        static EndingStfFile* sRelocatedFile;
+        static EndingStfLine* sHostLines;
+        static s32            sHostLineCount;
+        const u8*             base = (const u8*)file;
+        const s32*            words = (const s32*)base;
+        const u8*             table;
+        s32                   i;
+
+        if (sRelocatedFile != file) {
+            table          = base + words[4];
+            sHostLineCount = *(const s32*)table;
+            sHostLines     = memCalloc(sizeof(EndingStfLine) * (sHostLineCount > 0 ? sHostLineCount : 1), false);
+            for (i = 0; i < sHostLineCount; i++) {
+                const s32* diskLine = (const s32*)(table + 4) + i * 2;
+                sHostLines[i].cmds.pointer = (EndingStfCommand*)(base + diskLine[0]);
+                sHostLines[i].y            = diskLine[1];
+            }
+            sRelocatedFile = file;
+        }
+        _gEndingCreditsGlyphs    = (EndingStfGlyph*)(base + words[3]);
+        _gEndingCreditsParams    = (EndingStfParams*)(base + words[2]);
+        _gEndingCreditsLines     = sHostLines;
+        _gEndingCreditsLineCount = sHostLineCount;
+        _gEndingCreditsSprites   = (EndingStfSprite*)(base + words[5]);
+        return 1;
+    }
+#endif
     // Convert serialized byte offsets to PS1 address words exactly once.
     if (file->glyphs.offset > 0) {
         file->glyphs.offset     += (s32)file;
