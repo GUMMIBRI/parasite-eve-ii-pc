@@ -25,9 +25,28 @@ first game). Matching the PS1 binaries is not a goal.
 
 Throughout: native tests per module and headless frame captures.
 
-## Status
+## Status (updated 2026-11-03)
 
-Phase 0 is closed with the toolchain removal gated: `ninja_config.py`, `configs/`, `linkers/` go with the runtime loader (phase 2). Phase 1 is under way: `src/port/psyq_host.c` supplies host versions of the libcd/heap calls and an approximate `MatrixNormal`. Linking `game_main` into the executable currently reports 343 undefined symbols, nearly all overlay tasks and handlers (`src/` outside `main`), the `hasm` routines (`fsDecompress*`, `tmd*`), and a few PsyZ gaps (`DecDCTvlc*`, `BreakDraw`, `ContinueDraw`, `freep`).
+**Phase 0** (foundation) is done as the plan defines it: CMake and PsyZ, `src/main` as `game_main`, matching hacks and
+GTE MIPS asm removed. The one part the plan gates on a later phase is removing the decomp toolchain
+(`ninja_config.py`, `configs/`, `linkers/`): it still generates the asset includes and the split sources, and goes
+when the runtime loader covers everything it generates. Phases 1 and 2 are well advanced, because the work was allowed
+to cut into them:
+
+- Disc data: 27,419 arrays (clips, models, room structs, item catalog, and 10,622 globals converted from the
+  disassembly) load from the user's discs at run time and match the build-time data bit for bit.
+- The default build (Akropolis and a few packages) links and plays; the all-overlays build with all variants links
+  (669 clashing names get private names, `cmake/overlay_renames.cmake`) and shows Dryfield, Dryfield by night, the
+  mine and the Shelter/Neo Ark rendering, with the player walking (see below).
+- Host menu and disc validation follow parasite-eve-pc (page order, rows, style).
+
+Open, and owned by later phases rather than Phase 0:
+
+- **Phase 2:** the module registry's run-time part (load a stage's packages by name, reset package state on a stage
+  change); crossing rooms/stages during play is unobserved.
+- **Phase 5:** saves beyond the host card, the first game's extra options (antialiasing, model filtering, frame
+  interpolation, lighting, HD packs) and its Mods page.
+- The decomp toolchain removal above.
 
 ## TMD stream renderer (hasm) — scoping notes
 
