@@ -383,17 +383,28 @@ void Psyz_PadsOverride(int port, char* frame, int len)
             if (f) { fwrite(vram, sizeof vram, 1, f); fclose(f); }
         }
     }
-    if (port == 0) {   /* development: PE2_WARP=<tick>:stage,area,view,roomState,warp,variant changes stage mid-game */
-        static int warpTick = -2;
-        static unsigned warpKey[6];
-        if (warpTick == -2) {
+    if (port == 0) {   /* development: PE2_WARP=<tick>:stage,area,view,roomState,warp,variant[;<tick>:...] changes stage mid-game */
+        enum { MAX_WARPS = 8 };
+        static struct { int tick; unsigned key[6]; } warps[MAX_WARPS];
+        static int warpCount = -1;
+        if (warpCount < 0) {
+            warpCount = 0;
             const char* spec = getenv("PE2_WARP");
-            warpTick = spec && sscanf(spec, "%d:%u,%u,%u,%u,%u,%u", &warpTick, &warpKey[0], &warpKey[1], &warpKey[2],
-                                      &warpKey[3], &warpKey[4], &warpKey[5]) == 7 ? warpTick : -1;
+            while (spec && *spec && warpCount < MAX_WARPS) {
+                int used = 0;
+                unsigned* k = warps[warpCount].key;
+                if (sscanf(spec, "%d:%u,%u,%u,%u,%u,%u%n", &warps[warpCount].tick, &k[0], &k[1], &k[2], &k[3], &k[4], &k[5],
+                           &used) != 7) break;
+                warpCount++;
+                spec += used;
+                if (*spec == ';') spec++;
+            }
         }
-        if (warpTick >= 0 && currentTick == warpTick) {
+        for (int i = 0; i < warpCount; i++) {
+            if (currentTick != warps[i].tick) continue;
             extern void peDebugWarp(const GameLocationKey*);
-            GameLocationKey key = { (u8)warpKey[2], (u8)warpKey[3], (u8)warpKey[1], (u8)warpKey[0], (u8)warpKey[4], (u8)warpKey[5], { 0, 0 } };
+            const unsigned* k = warps[i].key;
+            GameLocationKey key = { (u8)k[2], (u8)k[3], (u8)k[1], (u8)k[0], (u8)k[4], (u8)k[5], { 0, 0 } };
             peDebugWarp(&key);
         }
     }
