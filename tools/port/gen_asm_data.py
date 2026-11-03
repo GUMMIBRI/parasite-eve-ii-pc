@@ -430,33 +430,32 @@ for _m in re.finditer(r'\{ "([^"]+)", (-?\d+), -?\d+, -?\d+ \}', pathlib.Path('s
 _pkg_bytes = {}
 
 
-def package_of(path):
-    """(package name, file in assets/) holding the bytes of an asm data file, else None."""
+def packages_of(path):
+    """Candidate (package name, file in assets/) for the bytes of an asm file, most likely first. Data files sit in
+    `<family>/data/<package>/`; data that the disassembler left inside a code file sits in `<family>/<package>/`."""
     p = pathlib.Path(path).parts
     if len(p) < 4:
-        return None
+        return []
     if p[2] == 'main':
-        return 'main.exe', pathlib.Path('assets/USA/main.exe')
+        return [('main.exe', pathlib.Path('assets/USA/main.exe'))]
     if p[2] == 'gameplay':
-        return 'gameplay', pathlib.Path('assets/USA/pe2pkg/gameplay.pe2pkg')
-    if len(p) > 5 and p[3] == 'data':
-        return p[4], pathlib.Path('assets/USA') / 'pe2pkg' / f'{p[4]}.pe2pkg'
-    return None
+        return [('gameplay', pathlib.Path('assets/USA/pe2pkg/gameplay.pe2pkg'))]
+    names = [p[4]] if len(p) > 5 and p[3] == 'data' else [p[3]] if p[3] != 'data' else []
+    return [(n, pathlib.Path('assets/USA') / 'pe2pkg' / f'{n}.pe2pkg') for n in names]
 
 
 def on_disc(blob):
     """The package and offset where this blob's bytes sit on the disc, verified against the extracted package."""
     if blob.off is None or not blob.data:
         return None
-    pk = package_of(blob.path)
-    if not pk or pk[0] not in PACKAGES or not pk[1].exists():
-        return None
-    data = _pkg_bytes.setdefault(pk[1], pk[1].read_bytes())
     reloc = {r + i for r in blob.reloc for i in range(4)}
-    for i, v in enumerate(blob.data):
-        if i not in reloc and (blob.off + i >= len(data) or data[blob.off + i] != v):
-            return None
-    return pk[0], blob.off
+    for name, file in packages_of(blob.path):
+        if name not in PACKAGES or not file.exists():
+            continue
+        data = _pkg_bytes.setdefault(file, file.read_bytes())
+        if all(i in reloc or (blob.off + i < len(data) and data[blob.off + i] == v) for i, v in enumerate(blob.data)):
+            return name, blob.off
+    return None
 
 
 bound_parts = []    # (key, package index, offset, size)
