@@ -71,10 +71,14 @@ def load_db(root: str, version: str = DEFAULT_VERSION) -> dict[str, list[str]]:
     would silently keep whichever entry was read last and resolve symbols
     against the wrong flags, so the version's own define selects them.
     """
-    path = os.path.join(root, "compile_commands.json")
-    if not os.path.exists(path):
+    # CMake writes it (cmake -S . -B build-port -DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+    for name in ("compile_commands.json", os.path.join("build-port", "compile_commands.json")):
+        path = os.path.join(root, name)
+        if os.path.exists(path):
+            break
+    else:
         sys.exit(
-            "compile_commands.json is missing; run ninja_config.py in this tree first"
+            "compile_commands.json is missing; configure with -DCMAKE_EXPORT_COMPILE_COMMANDS=ON (build-port)"
         )
     marker = f"-DVER_{version}"
     entries = json.load(open(path))
