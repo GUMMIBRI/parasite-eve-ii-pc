@@ -29,15 +29,26 @@ static const PeAssetBinding* bindings(size_t* count)
 }
 #endif
 
-static const PeAssetPart* findPart(const char* key)
+/* Globals converted from the disassembly (src/port/asm_data.c) have their own sorted table; builds without that file
+ * (the host tests) see an empty one. */
+__attribute__((weak)) const PeAssetPart gPeAsmParts[1] = {{0}};
+__attribute__((weak)) const int         gPeAsmPartCount = 0;
+
+static const PeAssetPart* searchParts(const PeAssetPart* t, int count, const char* key)
 {
-    int lo = 0, hi = gPeAssetPartCount - 1;
+    int lo = 0, hi = count - 1;
     while (lo <= hi) {
-        int mid = (lo + hi) / 2, c = strcmp(key, gPeAssetParts[mid].key);
-        if (c == 0) return &gPeAssetParts[mid];
+        int mid = (lo + hi) / 2, c = strcmp(key, t[mid].key);
+        if (c == 0) return &t[mid];
         if (c < 0) hi = mid - 1; else lo = mid + 1;
     }
     return NULL;
+}
+
+static const PeAssetPart* findPart(const char* key)
+{
+    const PeAssetPart* p = searchParts(gPeAssetParts, gPeAssetPartCount, key);
+    return p ? p : searchParts(gPeAsmParts, gPeAsmPartCount, key);
 }
 
 int peAssetsLoad(struct PeDisc* disc)

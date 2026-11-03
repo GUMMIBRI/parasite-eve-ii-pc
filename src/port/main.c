@@ -65,6 +65,10 @@ int main(int argc, char** argv) {
             return 2;
         }
         fprintf(stderr, "[assets] %d arrays loaded from the disc\n", peAssetsLoad(assets));
+        if (getenv("PE2_DISC2_ASSETS")) { /* development: load disc 2's arrays now, to compare the dump */
+            struct PeDisc* second = peDiscOpen(getenv("PE2_DISC2_ASSETS"));
+            if (second) { fprintf(stderr, "[assets] %d arrays loaded from disc 2\n", peAssetsLoad(second)); peDiscClose(second); }
+        }
 #endif
         if (getenv("PE2_DUMP_ASSETS")) peAssetsDump(getenv("PE2_DUMP_ASSETS"));
         peDiscClose(assets);

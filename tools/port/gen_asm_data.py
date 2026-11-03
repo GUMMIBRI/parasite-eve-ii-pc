@@ -141,7 +141,7 @@ def resolve(q, pending=None, depth=0):
         return ['ptr', q[:-1].strip()]
     if q in SCALARS:
         s, k = SCALARS[q]
-        return ['int', s, k]
+        return ['int', s, k, 'long'] if q in ('long', 'unsigned long') else ['int', s, k]
     m = re.match(r'^(struct|union) (\w+)$', q)
     if m:
         node = tags.get((m.group(1), m.group(2)))
@@ -176,6 +176,8 @@ class Blob:
     def __init__(self):
         self.data = bytearray()
         self.reloc = {}
+        self.off = None    # file offset in its package, from the disassembler's comment
+        self.path = None   # asm source it came from
 
 
 blobs = {}
@@ -189,6 +191,7 @@ def parse_asm(path):
         m = re.match(r'dlabel (\w+)', line)
         if m:
             cur = Blob()
+            cur.path = path
             name = m.group(1)
             pending = (name, cur)
             continue
@@ -203,6 +206,9 @@ def parse_asm(path):
             continue
         if cur is None:
             continue
+        mc = re.match(r'/\*\s*([0-9A-Fa-f]+)\s+([0-9A-Fa-f]{8})\s', line)
+        if mc and cur.off is None:
+            cur.off = int(mc.group(1), 16)
         ma = re.match(r'\.(?:align|p2align)\s+(\d+)', line)
         if ma:
             a = 1 << int(ma.group(1))
@@ -316,6 +322,174 @@ def emit(ctx, t, off):
     raise Unsupported(k)
 
 
+
+# ---------------------------------------------------------------- disc binding
+# Every converted global is also described as a plan: which PS1 bytes go to which host offsets (widening `long`s,
+# skipping padding) and which words are pointers. The plan is layout and topology only; the numbers are read from the
+# user's disc when the game starts (include/port/asm_apply.h, src/port/asset_loader.c).
+HOST_INT = {('int', 4, 's'): 4}
+
+
+def hsize(t):
+    """-> (size, align) of the host layout: 8-byte pointers and `long`s."""
+    k = t[0]
+    if k == 'int':
+        return (8, 8) if len(t) > 3 else (t[1], min(t[1], 8))
+    if k == 'ptr':
+        return 8, 8
+    if k == 'arr':
+        sz, al = hsize(t[1])
+        return sz * t[2], al
+    if k == 'rec':
+        if t[1] == 'union':
+            sz = max((hsize(f[1])[0] for f in t[2]), default=0)
+            al = max((hsize(f[1])[1] for f in t[2]), default=1)
+            return (sz + al - 1) // al * al, al
+        off, al = 0, 1
+        for f in t[2]:
+            fs, fa = hsize(f[1])
+            off = (off + fa - 1) // fa * fa + fs
+            al = max(al, fa)
+        return (off + al - 1) // al * al, al
+    raise Unsupported(k)
+
+
+def hoffsets(t):
+    off, out = 0, []
+    for f in t[2]:
+        fs, fa = hsize(f[1])
+        if t[1] == 'struct':
+            off = (off + fa - 1) // fa * fa
+        out.append(off if t[1] == 'struct' else 0)
+        if t[1] == 'struct':
+            off += fs
+    return out
+
+
+class Plan:
+    def __init__(self, blob):
+        self.b = blob
+        self.runs = []    # [host, ps1, count, psz, hsz, signed]
+        self.ptrs = []    # [host, ps1, symbol expression or None]
+
+    def run(self, host, ps1, psz, hsz, sgn):
+        r = self.runs[-1] if self.runs else None
+        if r and r[3] == psz and r[4] == hsz and r[5] == sgn and r[0] + r[2] * hsz == host and r[1] + r[2] * psz == ps1:
+            r[2] += 1
+        else:
+            self.runs.append([host, ps1, 1, psz, hsz, sgn])
+
+
+def plan(pl, t, ps1, host):
+    k = t[0]
+    b = pl.b
+    if k == 'int':
+        s = t[1]
+        if ps1 in b.reloc:
+            raise Unsupported('address stored in integer')
+        if ps1 + s > len(b.data):
+            if ps1 >= len(b.data):
+                return                      # past the blob: zero on the PS1 too
+            raise Unsupported('field straddles the end of its data')
+        hs = 8 if len(t) > 3 else s
+        pl.run(host, ps1, s, hs, 1 if t[2] == 's' and hs != s else 0)
+        return
+    if k == 'ptr':
+        if ps1 + 4 > len(b.data):
+            return
+        if ps1 in b.reloc:
+            sym, add = b.reloc[ps1]
+            pl.ptrs.append([host, ps1, f'(void*)&{sym}' if not add else f'(void*)((u8*)&{sym} + {add})'])
+        elif rd(Ctx(b), ps1, 4):
+            pl.ptrs.append([host, ps1, None])
+        return
+    if k == 'arr':
+        es, _ = layout(t[1])
+        hs, _ = hsize(t[1])
+        for i in range(t[2]):
+            if i * es >= len(b.data) - ps1:
+                break
+            plan(pl, t[1], ps1 + i * es, host + i * hs)
+        return
+    if k == 'rec':
+        po, ho = field_offsets(t), hoffsets(t)
+        if t[1] == 'union':
+            best = max(range(len(t[2])), key=lambda i: layout(t[2][i][1])[0])
+            plan(pl, t[2][best][1], ps1, host)
+            return
+        for f, a, c in zip(t[2], po, ho):
+            plan(pl, f[1], ps1 + a, host + c)
+        return
+    raise Unsupported(k)
+
+
+PACKAGES = {}
+for _m in re.finditer(r'\{ "([^"]+)", (-?\d+), -?\d+, -?\d+ \}', pathlib.Path('src/port/asset_parts_table.c').read_text()
+                      if pathlib.Path('src/port/asset_parts_table.c').exists() else ''):
+    PACKAGES.setdefault(_m.group(1), len(PACKAGES))
+_pkg_bytes = {}
+
+
+def package_of(path):
+    """(package name, file in assets/) holding the bytes of an asm data file, else None."""
+    p = pathlib.Path(path).parts
+    if len(p) < 4:
+        return None
+    if p[2] == 'main':
+        return 'main.exe', pathlib.Path('assets/USA/main.exe')
+    if p[2] == 'gameplay':
+        return 'gameplay', pathlib.Path('assets/USA/pe2pkg/gameplay.pe2pkg')
+    if len(p) > 5 and p[3] == 'data':
+        return p[4], pathlib.Path('assets/USA') / 'pe2pkg' / f'{p[4]}.pe2pkg'
+    return None
+
+
+def on_disc(blob):
+    """The package and offset where this blob's bytes sit on the disc, verified against the extracted package."""
+    if blob.off is None or not blob.data:
+        return None
+    pk = package_of(blob.path)
+    if not pk or pk[0] not in PACKAGES or not pk[1].exists():
+        return None
+    data = _pkg_bytes.setdefault(pk[1], pk[1].read_bytes())
+    reloc = {r + i for r in blob.reloc for i in range(4)}
+    for i, v in enumerate(blob.data):
+        if i not in reloc and (blob.off + i >= len(data) or data[blob.off + i] != v):
+            return None
+    return pk[0], blob.off
+
+
+bound_parts = []    # (key, package index, offset, size)
+
+
+def define(name, decl, t, blob, init):
+    """The C text of one global: its embedded initializer for the A/B build, and, when its bytes are on the disc, the
+    zero-filled definition with the plan that fills it at run time."""
+    disc = on_disc(blob)
+    pl = None
+    if disc:
+        try:
+            pl = Plan(blob)
+            plan(pl, t, 0, 0)
+            hs, _ = hsize(t)
+        except (Unsupported, IndexError, ValueError, KeyError):
+            pl = None
+    if pl is None:
+        return f'{decl} = {init};\n'
+    size = layout(t)[0]
+    key = f'asm/{name}'
+    bound_parts.append((key, PACKAGES[disc[0]], disc[1], size))
+    runs = ''.join(f'{{{r[0]},{r[1]},{r[2]},{r[3]},{r[4]},{r[5]}}},' for r in pl.runs)
+    ptrs = ''.join(f'{{{q[0]},{q[1]},{q[2] or "0"}}},' for q in pl.ptrs)
+    out = [f'#ifdef PE_EMBED_ASSETS\n{decl} = {init};\n#else\n{decl};\n#endif\n']
+    out.append(f'_Static_assert(sizeof({name}) == {hs}, "{name}: host size");\n')
+    out.append(f'static const PeAsmRun r_{name}[] = {{{runs or "{0}"}}};\n')
+    out.append(f'static const PeAsmPtr q_{name}[] = {{{ptrs or "{0}"}}};\n')
+    out.append(f'static void d_{name}(void* dst, const unsigned char* src, size_t n)'
+               f' {{ (void)n; peAsmApply(dst, src, r_{name}, {len(pl.runs)}, q_{name}, {len(pl.ptrs)}); }}\n')
+    out.append(f'PE_ASSET_BIND_DECODE("{key}", {name}, d_{name});\n')
+    return ''.join(out)
+
 # ---------------------------------------------------------------- driver
 src = pathlib.Path('src/port/globals.c').read_text().splitlines(keepends=True)
 header = [l for l in src if l.startswith('#include') or l.startswith('/*')]
@@ -351,7 +525,7 @@ for line in src:
     # The game patches this data in place (as it does in RAM on the PS1), so keep it out of read-only pages
     # even when the header declares it const.
     attr = ' __attribute__((section("__DATA,__pe2data")))' if 'const' in m.group(1) else ''
-    out.append(f'{m.group(1)}{name}{m.group(3)}{attr} = {init};\n')
+    out.append(define(name, f'{m.group(1)}{name}{m.group(3)}{attr}', t, b, init))
     done += 1
 fwd, done_derived = [], set()
 while True:
@@ -373,12 +547,17 @@ while True:
             ext.add(sym)
             continue
         attr = ' __attribute__((section("__DATA,__pe2data")))' if 'const' in derived[sym] else ''
-        out.append(f'{derived[sym]} {sym}[{n}]{attr} = {init};\n')
+        out.append(define(sym, f'{derived[sym]} {sym}[{n}]{attr}', ['arr', et, n], blobs[sym], init))
         fwd.append(f'extern {derived[sym]} {sym}[];\n')
 fwd += [f'extern char {x}[];\n' for x in sorted((ext - declared) - {x for x in derived if x not in skipped})]
 hdr = ['/* Generated by tools/port/gen_asm_data.py from the asm data files: initialized data, host layout. */\n',
-       '#include <stdint.h>\n', '#include "port/psyq_compat.h"\n'] + [l for l in header if l.startswith('#include')]
-pathlib.Path('src/port/asm_data.c').write_text(''.join(hdr) + ''.join(fwd) + ''.join(out))
+       '#include <stdint.h>\n', '#include "port/psyq_compat.h"\n', '#include "port/asset_bind.h"\n',
+       '#include "port/asset_parts.h"\n', '#include "port/asm_apply.h"\n'] + [l for l in header if l.startswith('#include')]
+parts = sorted(bound_parts)
+table = ('\nconst PeAssetPart gPeAsmParts[] = {\n' + ''.join(
+    f'    {{ "{k}", {pk}, {o}u, {z}u, PE_ASSET_OP_DECODE, {z}u, 0 }},\n' for k, pk, o, z in parts) +
+    '    { 0 }\n};\nconst int gPeAsmPartCount = %d;\n' % len(parts))
+pathlib.Path('src/port/asm_data.c').write_text(''.join(hdr) + ''.join(fwd) + ''.join(out) + table)
 pathlib.Path('src/port/globals.c').write_text(''.join(keep))
 print(f'{done} initialized from asm, {len(skipped)} skipped', file=sys.stderr)
 if os.environ.get('GEN_WHY'):

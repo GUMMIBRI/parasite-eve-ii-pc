@@ -173,23 +173,26 @@ One more table (`actor_341700_motion_142DC`) is bound but its actor is not linke
 it. So the data left in the build is the item catalog, plus whatever the globals and `asm_data.c` hold (the next
 blocker for a binary release).
 
-### Plan: `src/port/asm_data.c` (8.9 MB, 1,088 globals)
+### `src/port/asm_data.c` from the disc (2026-11-03)
 
-`tools/port/gen_asm_data.py` turns initialized data from the disassembly (`asm/USA/**/data/*.s`) into host initializers.
-To load it from the disc instead:
+`tools/port/gen_asm_data.py` still converts initialized data from the disassembly (`asm/USA/**/data/*.s`), but each
+global it can place on the disc is now defined zero-filled and bound (`PE_ASSET_BIND_DECODE("asm/<name>", ...)`).
+For each one the generator writes a *plan*, which holds layout and pointer topology and no game numbers:
 
-1. **Where the bytes are.** Each data file is a unit of a split config (`configs/USA/main.yaml`, `gameplay.yaml`,
-   `generated/<package>.yaml`), whose `.data` or `.rodata` subsegment starts at a known offset in the exe or package
-   (`room._units` already reads these). A global's offset is its unit's start plus its position in the `.s` file.
-   Check each against the package bytes, ignoring relocated words (they are zero in the `.s`).
-2. **How to read them.** The generator already walks the C type with the PS1 layout. Emit statements instead of an
-   initializer: `dst.field = <read at offset>` for numbers (loops for uniform array elements, nothing for zero
-   spans) and `dst.field = &symbol;` for relocated words (the topology stays code). Bind each global with
-   `PE_ASSET_BIND_DECODE`, as the room structs are.
-3. **Comparison.** `#ifdef PE_EMBED_ASSETS` keeps the current initializer; the dump compares both builds.
+- `PeAsmRun`: copy `count` values from the disc record to the host struct (widening 32-bit `long`s, skipping the
+  host's padding). Adjacent runs are merged.
+- `PeAsmPtr`: a pointer field, set to `&symbol` for relocated words or read from the record (RAM address or raw
+  value) otherwise.
 
-Globals the generator already skips (address stored in an integer, conflicting pointees) stay as they are and are
-listed by `GEN_WHY=. tools/port/gen_asm_data.py`. This is the last large piece before a binary release.
+`include/port/asm_apply.h` applies a plan; a sorted `gPeAsmParts` table in `asm_data.c` gives each global's package and
+offset (the loader searches it after `gPeAssetParts`). A global is bound only when its `/* offset vram */` comment in
+the `.s` and the extracted package agree byte for byte (ignoring relocated words); the rest keeps its initializer in
+every build. `-DPE_EMBED_ASSETS=ON` keeps all initializers for the A/B comparison.
+
+Result: 9,940 globals are bound; embedded and disc dumps agree on all 15,960 bindings except one hash
+(`_gNeoArkShrineViewBoundaryTriggers`), whose bytes are identical in both builds. The dump's address heuristic
+mistakes packed shorts for pointers there. `PE2_DISC2_ASSETS=<cue>` loads disc 2 right after disc 1 so one dump
+covers both.
 
 ### Item catalog (2026-11-03)
 
@@ -197,5 +200,4 @@ listed by `GEN_WHY=. tools/port/gen_asm_data.py`. This is the last large piece b
 through a generated row decoder (price, classification and flags are read; the text pointer is code).
 `tools/peassets/shape/item.py` writes both forms. 6,020 arrays are bound and the dumps are identical (one flaky
 difference seen once in a pointer-bearing room table, not reproduced in three further runs; the dump's address
-heuristic is the suspect). The data left in the build is now `src/port/asm_data.c` alone, plus the 241 bank files that
-hold no disc bytes.
+heuristic is the suspect). Only the 241 bank files, which hold no disc bytes, remain compiled in (and `asm_data.c` as above).

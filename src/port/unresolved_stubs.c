@@ -1654,23 +1654,6 @@ __attribute__((weak)) void _gShelterB6NurseryCompanionDistressClip(void) { fprin
 __attribute__((weak)) void _gStingerBodyStream(void) { fprintf(stderr, "unresolved call: _gStingerBodyStream\n"); abort(); }
 __attribute__((weak)) void _generatorLifeSupportTask(void) { fprintf(stderr, "unresolved call: _generatorLifeSupportTask\n"); abort(); }
 __attribute__((weak)) void _generatorTask(void) { fprintf(stderr, "unresolved call: _generatorTask\n"); abort(); }
-__attribute__((weak)) void _helicopterDepartureHelicopterRotorTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureHelicopterRotorTask\n"); abort(); }
-__attribute__((weak)) void _helicopterDepartureHelicopterSearchlightTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureHelicopterSearchlightTask\n"); abort(); }
-__attribute__((weak)) void _helicopterDepartureHelicopterTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureHelicopterTask\n"); abort(); }
-__attribute__((weak)) void _helicopterDepartureNo9ChestPieceTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureNo9ChestPieceTask\n"); abort(); }
-__attribute__((weak)) void _helicopterDepartureNo9GolemTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureNo9GolemTask\n"); abort(); }
-__attribute__((weak)) void _helicopterDepartureNo9PropTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureNo9PropTask\n"); abort(); }
-__attribute__((weak)) void _helicopterDepartureNo9SwordTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureNo9SwordTask\n"); abort(); }
-__attribute__((weak)) void _helicopterDepartureRupertBodyTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureRupertBodyTask\n"); abort(); }
-__attribute__((weak)) void _helicopterDepartureRupertRadioTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureRupertRadioTask\n"); abort(); }
-__attribute__((weak)) void _helicopterDepartureRupertRevolverTask(void) { fprintf(stderr, "unresolved call: _helicopterDepartureRupertRevolverTask\n"); abort(); }
-__attribute__((weak)) void _helicopterLandingPadNo9BlastSourceTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9BlastSourceTask\n"); abort(); }
-__attribute__((weak)) void _helicopterLandingPadNo9BodyTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9BodyTask\n"); abort(); }
-__attribute__((weak)) void _helicopterLandingPadNo9ChestModelTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9ChestModelTask\n"); abort(); }
-__attribute__((weak)) void _helicopterLandingPadNo9GrenadeTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9GrenadeTask\n"); abort(); }
-__attribute__((weak)) void _helicopterLandingPadNo9PropTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9PropTask\n"); abort(); }
-__attribute__((weak)) void _helicopterLandingPadNo9TransformerTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9TransformerTask\n"); abort(); }
-__attribute__((weak)) void _helicopterLandingPadNo9WeaponTask(void) { fprintf(stderr, "unresolved call: _helicopterLandingPadNo9WeaponTask\n"); abort(); }
 __attribute__((weak)) void _madChaserHiddenTask(void) { fprintf(stderr, "unresolved call: _madChaserHiddenTask\n"); abort(); }
 __attribute__((weak)) void _madChaserTask(void) { fprintf(stderr, "unresolved call: _madChaserTask\n"); abort(); }
 __attribute__((weak)) void _mistRupertTask(void) { fprintf(stderr, "unresolved call: _mistRupertTask\n"); abort(); }
@@ -1718,16 +1701,6 @@ __attribute__((weak)) void actor800100PykeFlameTask(void) { fprintf(stderr, "unr
 __attribute__((weak)) void actor800100Task(void) { fprintf(stderr, "unresolved call: actor800100Task\n"); abort(); }
 __attribute__((weak)) void actor800200Task(void) { fprintf(stderr, "unresolved call: actor800200Task\n"); abort(); }
 __attribute__((weak)) void actor800300Task(void) { fprintf(stderr, "unresolved call: actor800300Task\n"); abort(); }
-__attribute__((weak)) void akropolisHelicopterLandingPadDamagedLightSparksTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadDamagedLightSparksTask\n"); abort(); }
-__attribute__((weak)) void akropolisHelicopterLandingPadEmberTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadEmberTask\n"); abort(); }
-__attribute__((weak)) void akropolisHelicopterLandingPadExitTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadExitTask\n"); abort(); }
-__attribute__((weak)) void akropolisHelicopterLandingPadFlareEmitterTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadFlareEmitterTask\n"); abort(); }
-__attribute__((weak)) void akropolisHelicopterLandingPadLensFlareTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadLensFlareTask\n"); abort(); }
-__attribute__((weak)) void akropolisHelicopterLandingPadLiftTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadLiftTask\n"); abort(); }
-__attribute__((weak)) void akropolisHelicopterLandingPadPerimeterLightsTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadPerimeterLightsTask\n"); abort(); }
-__attribute__((weak)) void akropolisHelicopterLandingPadPickupModelTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadPickupModelTask\n"); abort(); }
-__attribute__((weak)) void akropolisHelicopterLandingPadRoomTask(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadRoomTask\n"); abort(); }
-__attribute__((weak)) void akropolisHelicopterLandingPadStartExit(void) { fprintf(stderr, "unresolved call: akropolisHelicopterLandingPadStartExit\n"); abort(); }
 __attribute__((weak)) void antibodyCastTask(void) { fprintf(stderr, "unresolved call: antibodyCastTask\n"); abort(); }
 __attribute__((weak)) void antibodyMoteTask(void) { fprintf(stderr, "unresolved call: antibodyMoteTask\n"); abort(); }
 __attribute__((weak)) void apobiosisCastTask(void) { fprintf(stderr, "unresolved call: apobiosisCastTask\n"); abort(); }
@@ -1979,9 +1952,6 @@ __attribute__((weak)) void func_mp5a5_p1_8011DDA4(void) { fprintf(stderr, "unres
 __attribute__((weak)) void func_mp5a5_p2_8011DDA4(void) { fprintf(stderr, "unresolved call: func_mp5a5_p2_8011DDA4\n"); abort(); }
 __attribute__((weak)) void func_p08_snail_8011D1D8(void) { fprintf(stderr, "unresolved call: func_p08_snail_8011D1D8\n"); abort(); }
 __attribute__((weak)) void func_sp12_8011D1DC(void) { fprintf(stderr, "unresolved call: func_sp12_8011D1DC\n"); abort(); }
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadActionTriggers[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadRoomLights[0x10000];
-__attribute__((weak)) unsigned char gAkropolisHelicopterLandingPadSightOccluders[0x10000];
 __attribute__((weak)) unsigned char gDryfieldFactoryActionTriggers[0x10000];
 __attribute__((weak)) unsigned char gDryfieldFactoryRoomLights[0x10000];
 __attribute__((weak)) unsigned char gDryfieldFactoryViewAmbientMinima[0x10000];
@@ -2018,10 +1988,6 @@ __attribute__((weak)) unsigned char gDryfieldNightFactoryView8SpriteSources[0x10
 __attribute__((weak)) unsigned char gDryfieldNightFactoryView9SpriteBatches[0x10000];
 __attribute__((weak)) unsigned char gDryfieldNightFactoryView9SpriteSources[0x10000];
 __attribute__((weak)) unsigned char gDryfieldNightFactoryViewBoundaryTriggers[0x10000];
-__attribute__((weak)) unsigned char gGolemNo9AkropolisChestPiece[0x10000];
-__attribute__((weak)) unsigned char gGolemNo9AkropolisProp[0x10000];
-__attribute__((weak)) unsigned char gGolemNo9AkropolisSword[0x10000];
-__attribute__((weak)) unsigned char gHelicopterLandingPadNo9TransformerCableModel[0x10000];
 __attribute__((weak)) unsigned char gKyleBody[0x10000];
 __attribute__((weak)) unsigned char gKyleHandLeft[0x10000];
 __attribute__((weak)) unsigned char gKyleHandLeft2[0x10000];
@@ -2031,15 +1997,6 @@ __attribute__((weak)) void grenadePistolShellTask(void) { fprintf(stderr, "unres
 __attribute__((weak)) void gunbladeAttackState(void) { fprintf(stderr, "unresolved call: gunbladeAttackState\n"); abort(); }
 __attribute__((weak)) void gunbladeChargeFlashTask(void) { fprintf(stderr, "unresolved call: gunbladeChargeFlashTask\n"); abort(); }
 __attribute__((weak)) void gunbladeTrailTask(void) { fprintf(stderr, "unresolved call: gunbladeTrailTask\n"); abort(); }
-__attribute__((weak)) void helicopterLandingPadNo9DebrisStreakTask(void) { fprintf(stderr, "unresolved call: helicopterLandingPadNo9DebrisStreakTask\n"); abort(); }
-__attribute__((weak)) void helicopterLandingPadNo9ExplosionFireballTask(void) { fprintf(stderr, "unresolved call: helicopterLandingPadNo9ExplosionFireballTask\n"); abort(); }
-__attribute__((weak)) void helicopterLandingPadNo9FlameJetTask(void) { fprintf(stderr, "unresolved call: helicopterLandingPadNo9FlameJetTask\n"); abort(); }
-__attribute__((weak)) void helicopterLandingPadNo9FlameSpriteTask(void) { fprintf(stderr, "unresolved call: helicopterLandingPadNo9FlameSpriteTask\n"); abort(); }
-__attribute__((weak)) void helicopterLandingPadNo9FlameTongueTask(void) { fprintf(stderr, "unresolved call: helicopterLandingPadNo9FlameTongueTask\n"); abort(); }
-__attribute__((weak)) void helicopterLandingPadNo9GolemFlameTask(void) { fprintf(stderr, "unresolved call: helicopterLandingPadNo9GolemFlameTask\n"); abort(); }
-__attribute__((weak)) void helicopterLandingPadNo9GunfireParticleTask(void) { fprintf(stderr, "unresolved call: helicopterLandingPadNo9GunfireParticleTask\n"); abort(); }
-__attribute__((weak)) void helicopterLandingPadNo9ImpactBurstTask(void) { fprintf(stderr, "unresolved call: helicopterLandingPadNo9ImpactBurstTask\n"); abort(); }
-__attribute__((weak)) void helicopterLandingPadNo9MuzzleFlashTask(void) { fprintf(stderr, "unresolved call: helicopterLandingPadNo9MuzzleFlashTask\n"); abort(); }
 __attribute__((weak)) void hypervelocityAttackState(void) { fprintf(stderr, "unresolved call: hypervelocityAttackState\n"); abort(); }
 __attribute__((weak)) void hypervelocityChargeEffectTask(void) { fprintf(stderr, "unresolved call: hypervelocityChargeEffectTask\n"); abort(); }
 __attribute__((weak)) void hypervelocityDischargeConeTask(void) { fprintf(stderr, "unresolved call: hypervelocityDischargeConeTask\n"); abort(); }
@@ -2102,7 +2059,6 @@ __attribute__((weak)) void mineTunnelDrawViewFlaresTask(void) { fprintf(stderr, 
 __attribute__((weak)) void mineTunnelEntranceDrawFlaresTask(void) { fprintf(stderr, "unresolved call: mineTunnelEntranceDrawFlaresTask\n"); abort(); }
 __attribute__((weak)) void mineTunnelEntranceRoomTask(void) { fprintf(stderr, "unresolved call: mineTunnelEntranceRoomTask\n"); abort(); }
 __attribute__((weak)) void mineTunnelRoomTask(void) { fprintf(stderr, "unresolved call: mineTunnelRoomTask\n"); abort(); }
-__attribute__((weak)) void mistR18BriefingTask(void) { fprintf(stderr, "unresolved call: mistR18BriefingTask\n"); abort(); }
 __attribute__((weak)) void mistR21RoomTask(void) { fprintf(stderr, "unresolved call: mistR21RoomTask\n"); abort(); }
 __attribute__((weak)) void mm1AttackState(void) { fprintf(stderr, "unresolved call: mm1AttackState\n"); abort(); }
 __attribute__((weak)) void mm1ShellTask(void) { fprintf(stderr, "unresolved call: mm1ShellTask\n"); abort(); }
