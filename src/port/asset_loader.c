@@ -20,6 +20,14 @@ static const PeAssetBinding* bindings(size_t* count)
     *count = p ? size / sizeof(PeAssetBinding) : 0;
     return (const PeAssetBinding*)p;
 }
+#elif defined(_WIN32)
+__attribute__((section(".peassets$a"), used)) static const PeAssetBinding sBindingsBegin = {0};
+__attribute__((section(".peassets$z"), used)) static const PeAssetBinding sBindingsEnd = {0};
+static const PeAssetBinding* bindings(size_t* count)
+{
+    *count = (size_t)(&sBindingsEnd - (&sBindingsBegin + 1));
+    return &sBindingsBegin + 1;
+}
 #else
 extern const PeAssetBinding __start_peassets[], __stop_peassets[];
 static const PeAssetBinding* bindings(size_t* count)

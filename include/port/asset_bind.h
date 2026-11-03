@@ -24,6 +24,10 @@ typedef struct PeAssetBinding {
 #endif
 #ifdef __APPLE__
 #define PE_ASSET_SECTION __attribute__((section("__DATA,__peassets")))
+#elif defined(_WIN32)
+/* COFF has no __start_/__stop_ symbols: sections named .peassets$x are merged in name order, and asset_loader.c
+ * brackets the records with .peassets$a and .peassets$z markers. */
+#define PE_ASSET_SECTION __attribute__((section(".peassets$m")))
 #else
 #define PE_ASSET_SECTION __attribute__((section("peassets")))
 #endif
