@@ -160,6 +160,12 @@ int peAssetsDump(const char* path)
             for (size_t k = 0; k < b[i].size; k++) h = (h ^ d[k]) * 1099511628211ull;
         }
         fprintf(f, "%s %016llx\n", b[i].key, (unsigned long long)h);
+        if (getenv("PE2_DUMP_KEY") && strstr(b[i].key, getenv("PE2_DUMP_KEY"))) {   /* development: raw bytes of one array */
+            char name[512];
+            snprintf(name, sizeof name, "%s.%s.bin", path, strrchr(b[i].key, '/') ? strrchr(b[i].key, '/') + 1 : b[i].key);
+            FILE* g = fopen(name, "wb");
+            if (g) { fwrite(b[i].dst, 1, b[i].size, g); fclose(g); }
+        }
     }
     fclose(f);
     return 1;

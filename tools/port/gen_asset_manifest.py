@@ -99,7 +99,9 @@ for f in sorted(inc_dir.glob('*.inc')):
             unmapped.add(pkg)
 # Packages named only by assets embedded without an include header (parts.json, optional second argument).
 if len(sys.argv) > 2:
-    for extra in sorted({q['package'] for q in json.load(open(sys.argv[2])) if q['package'] != 'main.exe'} - set(pkgs)):
+    schema = load('asset_schema')
+    every = {k for k, r in data.ASSETS.items() if r.get('type') in schema.PACKAGE_TYPES}   # the disassembly's data globals name any of them
+    for extra in sorted(({q['package'] for q in json.load(open(sys.argv[2])) if q['package'] != 'main.exe'} | every) - set(pkgs)):
         rec, loc = data.ASSETS.get(extra), where.get(extra)
         if rec is not None and loc is not None:
             wp = loc[0]

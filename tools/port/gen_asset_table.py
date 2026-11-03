@@ -6,7 +6,8 @@ import json, sys
 
 parts = json.load(open(sys.argv[1]))
 man = json.load(open(sys.argv[2]))
-pkgs = sorted({p['package'] for p in parts})
+# every package of the manifest, not only those with a converted array: the disassembly's data globals name others
+pkgs = sorted({p['package'] for p in parts} | set(man['packages']) | {'main.exe'})
 index = {n: i for i, n in enumerate(pkgs)}
 ops = {'copy': 0, 'rotation': 0, 'grid_table': 1, 'decode': 2}
 cells = {(p['package'], p['source']): p['offset'] for p in parts if p['kind'] == 'collision' and p['part'] == 'cells'}

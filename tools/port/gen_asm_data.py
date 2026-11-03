@@ -390,7 +390,9 @@ def plan(pl, t, ps1, host):
         if ps1 + s > len(b.data):
             if ps1 >= len(b.data):
                 return                      # past the blob: zero on the PS1 too
-            raise Unsupported('field straddles the end of its data')
+            for i in range(len(b.data) - ps1):   # the part inside the blob; the rest is zero, as in the initializer
+                pl.run(host + i, ps1 + i, 1, 1, 0)
+            return
         hs = 8 if len(t) > 3 else s
         pl.run(host, ps1, s, hs, 1 if t[2] == 's' and hs != s else 0)
         return
@@ -441,6 +443,10 @@ def packages_of(path):
     if p[2] == 'gameplay':
         return [('gameplay', pathlib.Path('assets/USA/pe2pkg/gameplay.pe2pkg'))]
     names = [p[4]] if len(p) > 5 and p[3] == 'data' else [p[3]] if p[3] != 'data' else []
+    if len(names) == 1 and p[2] == 'actors':
+        # an actor source builds several packages (actor_00100 is actor_400100's code): try them by their number
+        stem, _, number = names[0].rpartition('_')
+        names += sorted(n for n in PACKAGES if n.startswith(stem + '_') and n.endswith(number) and n != names[0])
     return [(n, pathlib.Path('assets/USA') / 'pe2pkg' / f'{n}.pe2pkg') for n in names]
 
 
@@ -459,6 +465,7 @@ def on_disc(blob):
 
 
 bound_parts = []    # (key, package index, offset, size)
+unbound = []        # (name, reason, asm file) of globals that keep their initializer
 
 
 def define(name, decl, t, blob, init):
@@ -466,14 +473,16 @@ def define(name, decl, t, blob, init):
     zero-filled definition with the plan that fills it at run time."""
     disc = on_disc(blob)
     pl = None
+    why = 'not on the disc at the recorded offset' if not disc else ''
     if disc:
         try:
             pl = Plan(blob)
             plan(pl, t, 0, 0)
             hs, _ = hsize(t)
-        except (Unsupported, IndexError, ValueError, KeyError):
-            pl = None
+        except (Unsupported, IndexError, ValueError, KeyError) as e:
+            pl, why = None, f'plan: {e}'
     if pl is None:
+        unbound.append((name, why, blob.path))
         return f'{decl} = {init};\n'
     size = layout(t)[0]
     key = f'asm/{name}'
@@ -558,7 +567,9 @@ table = ('\nconst PeAssetPart gPeAsmParts[] = {\n' + ''.join(
     '    { 0 }\n};\nconst int gPeAsmPartCount = %d;\n' % len(parts))
 pathlib.Path('src/port/asm_data.c').write_text(''.join(hdr) + ''.join(fwd) + ''.join(out) + table)
 pathlib.Path('src/port/globals.c').write_text(''.join(keep))
-print(f'{done} initialized from asm, {len(skipped)} skipped', file=sys.stderr)
+print(f'{done} initialized from asm, {len(skipped)} skipped, {len(unbound)} keep their initializer', file=sys.stderr)
+if os.environ.get('GEN_UNBOUND'):
+    open(os.environ['GEN_UNBOUND'], 'w').write(''.join(f'{n}\t{w}\t{p}\n' for n, w, p in unbound))
 if os.environ.get('GEN_WHY'):
     for k, v in skipped.items():
         if os.environ['GEN_WHY'] in k: print(k, v, file=sys.stderr)
