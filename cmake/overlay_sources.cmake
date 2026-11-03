@@ -422,6 +422,29 @@ set(PE_OVERLAY_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/weapons/tonfa_baton/tonfa_baton.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/weapons/unused_85/unused_85.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/weapons/unused_86/unused_86.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/actors/helicopter_departure/helicopter_departure.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/actors/shooting_gallery_pierce/shooting_gallery_pierce_gallery.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/bridge/bridge.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/cafeteria/cafeteria.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/east_elevator_hall/east_elevator_hall.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/fire_escape/fire_escape.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/forked_road/forked_road_effects.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/fountain/fountain_water.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/hallway/hallway.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/helicopter_landing_pad/helicopter_landing_pad_effects.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/mist_parking/mist_parking_glows.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/mist_r18/mist_r18.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/mist_shooting_gallery/mist_shooting_gallery_courses.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/mist_shooting_gallery/mist_shooting_gallery.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/observatory/observatory_effects.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/patio/patio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/plaza/plaza.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/promenade/promenade.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/roof_garden/roof_garden.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/sanctuary/sanctuary.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/security_room/security_room.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/square/square.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/west_elevator_hall/west_elevator_hall.c
 )
 
 # Not yet buildable: shared-source templates that need per-package parameters.
@@ -434,29 +457,6 @@ set(PE_OVERLAY_SOURCES_PENDING
     src/rooms/dryfield_dilapidated_house/dryfield_dilapidated_house.c
     src/rooms/shelter_b1_sterilization_room/shelter_b1_sterilization_room.c
     src/rooms/shelter_b3_dumping_hole/shelter_b3_dumping_hole_2.c
-    src/stages/akropolis/actors/helicopter_departure/helicopter_departure.c
-    src/stages/akropolis/actors/shooting_gallery_pierce/shooting_gallery_pierce_gallery.c
-    src/stages/akropolis/rooms/bridge/bridge.c
-    src/stages/akropolis/rooms/cafeteria/cafeteria.c
-    src/stages/akropolis/rooms/east_elevator_hall/east_elevator_hall.c
-    src/stages/akropolis/rooms/fire_escape/fire_escape.c
-    src/stages/akropolis/rooms/forked_road/forked_road_effects.c
-    src/stages/akropolis/rooms/fountain/fountain_water.c
-    src/stages/akropolis/rooms/hallway/hallway.c
-    src/stages/akropolis/rooms/helicopter_landing_pad/helicopter_landing_pad_effects.c
-    src/stages/akropolis/rooms/mist_parking/mist_parking_glows.c
-    src/stages/akropolis/rooms/mist_r18/mist_r18.c
-    src/stages/akropolis/rooms/mist_shooting_gallery/mist_shooting_gallery_courses.c
-    src/stages/akropolis/rooms/mist_shooting_gallery/mist_shooting_gallery.c
-    src/stages/akropolis/rooms/observatory/observatory_effects.c
-    src/stages/akropolis/rooms/patio/patio.c
-    src/stages/akropolis/rooms/plaza/plaza.c
-    src/stages/akropolis/rooms/promenade/promenade.c
-    src/stages/akropolis/rooms/roof_garden/roof_garden.c
-    src/stages/akropolis/rooms/sanctuary/sanctuary.c
-    src/stages/akropolis/rooms/security_room/security_room.c
-    src/stages/akropolis/rooms/square/square.c
-    src/stages/akropolis/rooms/west_elevator_hall/west_elevator_hall.c
     src/stages/dryfield/rooms/factory/factory_lift.c
     src/stages/dryfield/rooms/factory/factory_panel.c
     src/stages/dryfield/rooms/factory/factory.c
