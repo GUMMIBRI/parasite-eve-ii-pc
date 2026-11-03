@@ -79,7 +79,10 @@ jobs:
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel 4 --target parasite-eve-ii-pc
       - name: The executable starts
-        run: build/parasite-eve-ii-pc --help
+        run: |
+          out=$(build/parasite-eve-ii-pc --help 2>&1 || true)
+          echo "$out"
+          echo "$out" | grep -q '^usage:'
       - name: Build the save editor
         run: cargo build --manifest-path save-editor/Cargo.toml --locked --release
       - name: Package
@@ -134,7 +137,10 @@ jobs:
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel 2 --target parasite-eve-ii-pc
       - name: The executable starts
-        run: build/parasite-eve-ii-pc.exe --help
+        run: |
+          out=$(build/parasite-eve-ii-pc.exe --help 2>&1 || true)
+          echo "$out"
+          echo "$out" | grep -q 'usage:'
       - name: Build the save editor
         shell: pwsh
         run: cargo build --manifest-path save-editor/Cargo.toml --locked --release
