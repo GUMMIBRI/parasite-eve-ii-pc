@@ -44,7 +44,7 @@ because the work was allowed to cut into them:
 
 Open, and owned by later phases rather than Phase 0:
 
-- **Latent nondeterminism:** at pad tick 6000 of the cafeteria route the disc build, the embedded build and the in-tree `build-port` are byte-identical run to run (VRAM compared, each run alone), but a binary built in a fresh clone differs from them by 64 bytes (a 4-word block near rows 105-109) and from its own second run. Only the binary differs, not the data, so this looks like a read of uninitialised memory in game code; not yet traced.
+- **Cold-start timing:** at pad tick 6000 of the cafeteria route every run of the disc, embedded and fresh-clone builds is byte-identical, except the very first run of the fresh-clone binary (cold disc cache), which differed in a 64-byte block near rows 105-109; its second run matches exactly. Not a data or binary difference (malloc scribbling changes nothing); likely a timing-dependent frame. Not traced further.
 
 - **Phase 2:** the module registry's run-time part (load a stage's packages by name, reset package state on a stage
   change); crossing rooms/stages during play is unobserved.
