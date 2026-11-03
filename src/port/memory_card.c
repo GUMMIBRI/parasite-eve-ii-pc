@@ -15,7 +15,11 @@
 #include <direct.h>
 #include <fcntl.h>
 #include <io.h>
-#include <windows.h>
+#include <process.h>
+/* windows.h clashes with the PS1 types in libmcrd.h, so the one call is declared by hand. */
+__declspec(dllimport) int __stdcall MoveFileExA(const char* from, const char* to, unsigned long flags);
+#define PE_MOVEFILE_REPLACE_EXISTING 0x1
+#define PE_MOVEFILE_WRITE_THROUGH 0x8
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
@@ -46,22 +50,23 @@ static int fnmatch(const char* pattern, const char* name, int flags)
     return fnmatch(pattern + 1, name + 1, 0);
 }
 /* A unique sibling file for the atomic save write. */
-static int mkstemp(char* path)
+static int pe_mkstemp(char* path)
 {
     size_t length = strlen(path);
     static unsigned counter;
     for (int attempt = 0; attempt < 100; attempt++) {
-        snprintf(path + length - 6, 7, "%06x", ((unsigned)GetCurrentProcessId() * 2654435761u + (counter++) * 40503u) & 0xffffff);
+        snprintf(path + length - 6, 7, "%06x", ((unsigned)_getpid() * 2654435761u + (counter++) * 40503u) & 0xffffff);
         int fd = _open(path, _O_RDWR | _O_CREAT | _O_EXCL | _O_BINARY, _S_IREAD | _S_IWRITE);
         if (fd >= 0 || errno != EEXIST) return fd;
     }
     return -1;
 }
+#define mkstemp(path) pe_mkstemp(path)
 #define write(fd, data, bytes) _write(fd, data, (unsigned)(bytes))
 #define close(fd) _close(fd)
 #define unlink(path) _unlink(path)
 /* rename() fails on Windows when the target exists; this replaces it. */
-static int pe_rename(const char* from, const char* to) { return MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) ? 0 : -1; }
+static int pe_rename(const char* from, const char* to) { return MoveFileExA(from, to, PE_MOVEFILE_REPLACE_EXISTING | PE_MOVEFILE_WRITE_THROUGH) ? 0 : -1; }
 #define rename(from, to) pe_rename(from, to)
 #else
 #include <fnmatch.h>
