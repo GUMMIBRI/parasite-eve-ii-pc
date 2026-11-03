@@ -60,6 +60,7 @@ and copy the result back (see [docs/PORT_PLAN.md](docs/PORT_PLAN.md)).
 | --- | --- |
 | `PE2_SKIPINTRO=1` | skip the opening movie |
 | `PE2_DUMP_VRAM=<tick>:<file>` | write the raw VRAM once at that pad tick; `tools/port/export_vram.py` turns it into a PNG (no screen capture needed) |
+| `PE2_MENU_PAGE=<0-3>` | open the host menu on this page (with `--host-menu`) |
 | `PE2_DUMP_MENU=<file.ppm>` | write the painted host menu (`--host-menu`) as a PPM, for review without a screen capture |
 | `PE2_WARP=<tick>:stage,area,view,roomState,warp,variant[;<tick>:...]` | change stage during play at that pad tick (the session-start path a stage change takes); up to 8, separated by `;` |
 | `PE2_START_LOCATION=stage,area,view,roomState,warp,variant` | new game starts there (stages 1-5; needs the overlays for it) |

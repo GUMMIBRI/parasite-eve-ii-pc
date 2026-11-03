@@ -34,7 +34,9 @@ enum { OVERLAY_HEADER_H=128, OVERLAY_ROW_H=46, OVERLAY_ACTION_GAP=14,
 typedef struct { uint8_t* pixels; int w,h; } OverlaySurface;
 typedef struct { float scale; int x,y,w,h; } OverlayLayout;
 typedef struct { float r,g,b,a; } Color;
-typedef struct { int open,page,row,dirty,quit,capture; } HostOverlayState;
+typedef struct { int open,page,row,scroll,dirty,quit,capture; } HostOverlayState;
+/* The panel always shows this many rows, so its height, tab bar and footer stay put when the page changes. */
+enum { VISIBLE_ROWS=8 };
 static const Color kPanel={0.075f,0.082f,0.102f,0.96f}, kText={0.93f,0.95f,0.98f,1},
     kMuted={0.60f,0.65f,0.73f,1}, kAccent={0.27f,0.62f,1,1};
 #include "ui/paint.h"
@@ -52,6 +54,19 @@ static SDL_Window* uiWindow;
 static int rowCount(void) {
     return s_overlayState.page==0?8:s_overlayState.page==2?1:s_overlayState.page==1?16:2;
 }
+
+static int maxScroll(void) { int n=rowCount()-VISIBLE_ROWS; return n>0?n:0; }
+
+/* Scroll by the least amount that keeps the selected row in view (keyboard and pad); the mouse wheel sets it directly. */
+static void ensureRowVisible(void) {
+    if(s_overlayState.scroll>maxScroll())s_overlayState.scroll=maxScroll();
+    if(s_overlayState.scroll<0)s_overlayState.scroll=0;
+    if(s_overlayState.row<s_overlayState.scroll)s_overlayState.scroll=s_overlayState.row;
+    else if(s_overlayState.row>=s_overlayState.scroll+VISIBLE_ROWS)
+        s_overlayState.scroll=s_overlayState.row-VISIBLE_ROWS+1;
+}
+
+static void setPage(int page) { s_overlayState.page=page;s_overlayState.row=0;s_overlayState.scroll=0; }
 
 static void saveOptions(void) {
     char temp[4120];
@@ -210,15 +225,23 @@ static void paintPanel(OverlaySurface* surface,OverlayLayout* layout) {
     DrawText(surface,648*s,42*s,14*s,"0.1 alpha / development",kMuted,ALIGN_RIGHT);
     for(int i=0;i<4;i++)DrawText(surface,(32+i*161)*s,87*s,17*s,pages[i],
         s_overlayState.page==i?kAccent:kMuted,ALIGN_LEFT);
-    int first=s_overlayState.row>=8?s_overlayState.row-7:0;
-    int rows=rowCount()<8?rowCount():8;
-    for(int i=0;i<rows;i++) {
+    ensureRowVisible();
+    int first=s_overlayState.scroll;
+    int rows=VISIBLE_ROWS;
+    int shown=rowCount()<VISIBLE_ROWS?rowCount():VISIBLE_ROWS;
+    for(int i=0;i<shown;i++) {
         int row=first+i; char label[128],value[256];rowText(row,label,value);
         float y=(128+i*46)*s;
         if(row==s_overlayState.row)FillRoundRect(surface,20*s,y-27*s,640*s,40*s,7*s,
             (Color){0.27f,0.62f,1,0.16f});
         DrawText(surface,32*s,y,17*s,label,kText,ALIGN_LEFT);
         DrawText(surface,648*s,y,16*s,value,row==s_overlayState.row?kAccent:kMuted,ALIGN_RIGHT);
+    }
+    if(maxScroll()>0) {   /* scrollbar of a page with more rows than fit */
+        float trackTop=(101+4)*s,trackH=(VISIBLE_ROWS*46-8)*s,thumbH=trackH*VISIBLE_ROWS/rowCount();
+        float thumbTop=trackTop+(trackH-thumbH)*s_overlayState.scroll/maxScroll();
+        FillRoundRect(surface,668*s,trackTop,4*s,trackH,2*s,(Color){0.93f,0.95f,0.98f,0.10f});
+        FillRoundRect(surface,668*s,thumbTop,4*s,thumbH,2*s,(Color){0.27f,0.62f,1,0.65f});
     }
     float y=(128+rows*46+16)*s;
     DrawText(surface,32*s,y,14*s,statusText,kMuted,ALIGN_LEFT);
@@ -229,8 +252,7 @@ static void paintPanel(OverlaySurface* surface,OverlayLayout* layout) {
 
 static int refreshPanel(SDL_Window* window) {
     int w,h; SDL_GetWindowSizeInPixels(window,&w,&h);if(w<=0||h<=0||!OverlayFontReady())return 0;
-    int rows=rowCount()<8?rowCount():8;
-    OverlayLayout layout;OverlayFitLayout(680,OverlayDesignHeight(rows),w,h,&layout);
+    OverlayLayout layout;OverlayFitLayout(680,OverlayDesignHeight(VISIBLE_ROWS),w,h,&layout);
     s_overlayWindowW=w;s_overlayWindowH=h;s_overlayLayout=layout;
     if(!OverlaySurfaceResize(&s_overlaySurface,layout.w,layout.h))return 0;
     paintPanel(&s_overlaySurface,&layout);
@@ -281,14 +303,19 @@ static void processEvent(const SDL_Event* e) {
         float x=(e->button.x*s_overlayWindowW/w-s_overlayLayout.x)/s_overlayLayout.scale;
         float y=(e->button.y*s_overlayWindowH/h-s_overlayLayout.y)/s_overlayLayout.scale;
         if(y>=60 && y<=100 && x>=20 && x<664) {
-            s_overlayState.page=(int)((x-20)/161);s_overlayState.row=0;
+            setPage((int)((x-20)/161));
         } else if(y>=101 && x>=20 && x<=660) {
-            int first=s_overlayState.row>=8?s_overlayState.row-7:0;
+            int first=s_overlayState.scroll;
             int row=first+(int)((y-101)/46);
-            if(row<rowCount() && row<first+8) {
+            if(row<rowCount() && row<first+VISIBLE_ROWS) {
                 s_overlayState.row=row;changeRow(x<500?-1:1,1);
             }
         }
+        s_overlayState.dirty=1;return;
+    }
+    if(e->type==SDL_EVENT_MOUSE_WHEEL) {
+        int n=s_overlayState.scroll-(int)(e->wheel.y>0?1:e->wheel.y<0?-1:0);
+        s_overlayState.scroll=n<0?0:n>maxScroll()?maxScroll():n;
         s_overlayState.dirty=1;return;
     }
     if(e->type==SDL_EVENT_KEY_DOWN) {
@@ -309,14 +336,15 @@ static void processEvent(const SDL_Event* e) {
         case SDL_GAMEPAD_BUTTON_EAST:case SDL_GAMEPAD_BUTTON_START:key=SDL_SCANCODE_ESCAPE;break;
         case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:key=SDL_SCANCODE_TAB;break;
         case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
-            s_overlayState.page=(s_overlayState.page+3)%4;s_overlayState.row=0;break;
+            setPage((s_overlayState.page+3)%4);break;
         default:break;
         }
     }
     if(key==SDL_SCANCODE_ESCAPE)s_overlayState.open=0;
-    if(key==SDL_SCANCODE_TAB) {s_overlayState.page=(s_overlayState.page+1)%4;s_overlayState.row=0;}
+    if(key==SDL_SCANCODE_TAB)setPage((s_overlayState.page+1)%4);
     if(key==SDL_SCANCODE_UP)s_overlayState.row=(s_overlayState.row+rowCount()-1)%rowCount();
     if(key==SDL_SCANCODE_DOWN)s_overlayState.row=(s_overlayState.row+1)%rowCount();
+    ensureRowVisible();
     if(key==SDL_SCANCODE_LEFT)changeRow(-1,0);
     if(key==SDL_SCANCODE_RIGHT)changeRow(1,0);
     if(key==SDL_SCANCODE_RETURN)changeRow(1,1);
@@ -327,6 +355,7 @@ static void settings(void) {
     int wasPaused=Psyz_AudioIsPaused();
     Psyz_PauseHostClock_SDL3(true);Psyz_AudioPause();
     s_overlayState.open=1;s_overlayState.quit=0;
+    if(getenv("PE2_MENU_PAGE")) setPage(atoi(getenv("PE2_MENU_PAGE"))&3);   /* development: open on this page */
     SDL_Window* fallback=NULL;SDL_Renderer* renderer=NULL;SDL_Texture* texture=NULL;
     if(!s_overlayGpuDevice) {
         fallback=SDL_CreateWindow("Parasite Eve II - Settings",900,720,SDL_WINDOW_HIGH_PIXEL_DENSITY|SDL_WINDOW_RESIZABLE);

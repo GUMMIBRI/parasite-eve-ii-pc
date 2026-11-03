@@ -16,7 +16,7 @@ target_link_libraries(game_main PUBLIC psyz)
 # on the host a package is compiled in and its names resolve at link time. Packages share global names
 # (docs/PORT_PLAN.md), so only the packages listed here are linked; add one when the game first needs it.
 set(PE_PACKAGES
-    src/title/title.c;src/mapui/map_dryfield/map_dryfield.c;src/mapui/map_dryfield_full/map_dryfield_full.c;src/mapui/map_neo_ark/map_neo_ark.c;src/mapui/map_shelter/map_shelter.c
+    src/title/title.c;src/mapui/map_dryfield/map_dryfield.c;src/mapui/map_dryfield_full/map_dryfield_full.c;src/mapui/map_neo_ark/map_neo_ark.c;src/mapui/map_shelter/map_shelter.c;src/options/options/options.c
     CACHE STRING "Overlay sources linked into the executable")
 if(PE_EMBED_ASSETS)
     add_compile_definitions(PE_EMBED_ASSETS=1)
