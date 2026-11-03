@@ -447,14 +447,7 @@ def _table_c(output: str, value: dict[str, Any], decls: dict, ctx) -> list[str]:
     return lines
 
 
-def c_source(shape: str, value: dict[str, Any], decls: dict, ctx, name: str) -> str | None:
-    """The catalog's whole C: every item's catalog text, in address order, then both descriptor tables.
-
-    The texts stay separate arrays - string literals would merge the identical ones (the four batteries' are four
-    objects) and be placed after the tables in reverse order - named by gameplay's symbol map. src/gameplay/item_catalog.c
-    includes it, an object of its own."""
-    if shape != "item_catalog":
-        return None
+def _catalog_texts(ctx, name: str, decls: dict) -> dict[int, bytes]:
     import shape as shapes
     texts = {ctx.address(ctx.assets[name]["outputs"]["empty"]): EMPTY_CATALOG}
     for key in ctx.shaped():
@@ -462,19 +455,72 @@ def c_source(shape: str, value: dict[str, Any], decls: dict, ctx, name: str) -> 
         if catalog is not None and ctx.assets[key]["shape"] != "item_catalog":
             rec = ctx.assets[key]
             texts[ctx.address(catalog)] = shapes.encode_value(rec["shape"], ctx.instance(key), decls, ctx, key)["catalog"]
-    lines = []
+    return texts
+
+
+TABLE_OUTPUTS = (("items", "gItemDescriptors", "ITEM_DESCRIPTOR_COUNT"),
+                 ("key_items", "gItemKeyDescriptors", "ITEM_KEY_DESCRIPTOR_COUNT"))
+
+
+def bound_parts(value: dict[str, Any], decls: dict, ctx, name: str) -> list[dict[str, Any]]:
+    """What c_source loads from the disc: each text (flat bytes), the junk byte, and both tables (decoded rows).
+    {key, vram, size, op, disc_elem}; the gameplay package holds them all."""
+    out = []
+    for address, data in sorted(_catalog_texts(ctx, name, decls).items()):
+        out.append({"key": f"inventory/text/{ctx.symbol_at(address)}", "vram": address, "size": len(data), "op": "copy"})
+    if value["junk"]:
+        out.append({"key": "inventory/junk", "vram": ctx.address(ctx.assets[name]["outputs"]["junk"]), "size": 1, "op": "copy"})
+    for output, table, _count in TABLE_OUTPUTS:
+        rows = _table_rows(output, value, decls, ctx)
+        out.append({"key": f"inventory/{table}", "vram": ctx.address(ctx.assets[name]["outputs"][output]),
+                    "size": len(rows) * ROW_FORMAT.size, "op": "decode", "disc_elem": ROW_FORMAT.size})
+    return out
+
+
+def _table_decoder(output: str, table: str, value: dict[str, Any], decls: dict, ctx) -> list[str]:
+    """The table's rows read from the disc: price, classification and flags; the text pointer is code."""
+    rows = _table_rows(output, value, decls, ctx)
+    fix = [f"    dst[{i}].textFields = {ctx.symbol_at(ROW_FORMAT.unpack(row)[3])};" for i, row in enumerate(rows)]
+    return ["#include <string.h>", f"static void peDecode_{table}(void* base, const unsigned char* src, size_t n)", "{",
+            "    ItemDesc* dst = base;", "    for (size_t k = 0; k < n; k++) {", "        uint16_t price;",
+            f"        memcpy(&price, src + k * {ROW_FORMAT.size}, 2);", "        dst[k].price = price;",
+            f"        dst[k].classification = src[k * {ROW_FORMAT.size} + 2];",
+            f"        dst[k].flags = src[k * {ROW_FORMAT.size} + 3];", "    }", *fix, "}"]
+
+
+def c_source(shape: str, value: dict[str, Any], decls: dict, ctx, name: str) -> str | None:
+    """The catalog's whole C: every item's catalog text, in address order, then both descriptor tables.
+
+    The texts stay separate arrays - string literals would merge the identical ones (the four batteries' are four
+    objects) and be placed after the tables in reverse order - named by gameplay's symbol map. src/gameplay/item_catalog.c
+    includes it, an object of its own. The embedded build (PE_EMBED_ASSETS) keeps the values in the source; otherwise
+    the texts and the tables' numbers are read from the user's disc when the game starts (port/asset_bind.h)."""
+    if shape != "item_catalog":
+        return None
+    texts = _catalog_texts(ctx, name, decls)
+    lines = ['#include "port/asset_bind.h"', "#include <stdint.h>"]
     for address in sorted(texts):
         data = texts[address]
-        lines.append(f"static const u8 {ctx.symbol_at(address)}[] =")
-        lines += [f"    {literal}" for literal in shapes.c_string(data)]
+        symbol = ctx.symbol_at(address)
+        lines += ["#ifdef PE_EMBED_ASSETS", f"static const u8 {symbol}[{len(data)}] ="]
+        lines += [f"    {literal}" for literal in shapes_c_string(data)]
         lines[-1] += ";"
+        lines += ["#else", f"static u8 {symbol}[{len(data)}];", "#endif", f'PE_ASSET_BIND("inventory/text/{symbol}", {symbol});']
     if value["junk"]:                           # the object's own last bytes, past its last text
-        # Bytes, not an array: GCC word-aligns any array, and these follow the text unaligned.
         address = ctx.address(ctx.assets[name]["outputs"]["junk"])
         if len(value["junk"]) != 1:
             raise Undecodable("the catalog's junk is one byte")
-        lines.append(f"static const u8 {ctx.symbol_at(address)} = 0x{value['junk'][0]:02X};")
-    for output, table, count in (("items", "gItemDescriptors", "ITEM_DESCRIPTOR_COUNT"),
-                                 ("key_items", "gItemKeyDescriptors", "ITEM_KEY_DESCRIPTOR_COUNT")):
-        lines += ["", f"ItemDesc {table}[{count}] = {{", *_table_c(output, value, decls, ctx), "};"]
+        symbol = ctx.symbol_at(address)
+        lines += ["#ifdef PE_EMBED_ASSETS", f"static const u8 {symbol} = 0x{value['junk'][0]:02X};", "#else",
+                  f"static u8 {symbol};", "#endif", f'PE_ASSET_BIND("inventory/junk", {symbol});']
+    for output, table, count in TABLE_OUTPUTS:
+        lines += ["", *_table_decoder(output, table, value, decls, ctx), "#ifdef PE_EMBED_ASSETS",
+                  f"ItemDesc {table}[{count}] = {{", *_table_c(output, value, decls, ctx), "};", "#else",
+                  f"ItemDesc {table}[{count}];", "#endif",
+                  f'PE_ASSET_BIND_DECODE("inventory/{table}", {table}, peDecode_{table});']
     return "\n".join(lines) + "\n"
+
+
+def shapes_c_string(data: bytes) -> list[str]:
+    import shape as shapes
+    return shapes.c_string(data)

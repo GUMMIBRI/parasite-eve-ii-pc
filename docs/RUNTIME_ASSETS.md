@@ -190,3 +190,12 @@ To load it from the disc instead:
 
 Globals the generator already skips (address stored in an integer, conflicting pointees) stay as they are and are
 listed by `GEN_WHY=. tools/port/gen_asm_data.py`. This is the last large piece before a binary release.
+
+### Item catalog (2026-11-03)
+
+`inventory/catalog` loads from the disc: each catalog text and the junk byte as flat bytes, and both descriptor tables
+through a generated row decoder (price, classification and flags are read; the text pointer is code).
+`tools/peassets/shape/item.py` writes both forms. 6,020 arrays are bound and the dumps are identical (one flaky
+difference seen once in a pointer-bearing room table, not reproduced in three further runs; the dump's address
+heuristic is the suspect). The data left in the build is now `src/port/asm_data.c` alone, plus the 241 bank files that
+hold no disc bytes.

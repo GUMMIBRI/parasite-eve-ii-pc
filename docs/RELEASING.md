@@ -8,7 +8,6 @@ would redistribute game data. What is embedded today:
 | Embedded in the executable | Size | Needed for a binary release |
 | --- | --- | --- |
 | `src/port/asm_data.c` (initialized globals converted from the original program) | generated | a runtime decoder or removal |
-| `inventory/catalog` (item names and descriptions) | 44 KB | a text decoder |
 | Animation bank slot tables, 241 includes | layout only | none: they hold no disc bytes |
 
 So 0.1.0-alpha is the repository at a tag, built by each user from their own discs (README, "Build").

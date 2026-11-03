@@ -142,6 +142,26 @@ for _name in _room.declared(_data.ASSETS):
         if _mode == 'decode':
             _part['disc_elem'] = _room.size(_k)
         parts.append(_part)
+# The item catalog (shape/item.py): texts and the junk byte as flat bytes, both descriptor tables decoded, all in the
+# gameplay package at their address.
+import shape as _shape
+from shape import item as _item
+_ctx = _shape.Context(_data.ASSETS, _data.EMBEDDED_ASSETS, Path('assets/USA'))
+_decls = _shape.declarations()
+_value = _shape.filled('item_catalog', _shape.read('inventory/catalog', _data.ASSETS, Path('assets/USA')), _decls)
+_gp = (Path('assets/USA/pe2pkg') / 'gameplay.pe2pkg').read_bytes()
+_gload = _room.package_decl.load_address('gameplay', _data.ASSETS)
+_texts = _item._catalog_texts(_ctx, 'inventory/catalog', _decls)
+for _p in _item.bound_parts(_value, _decls, _ctx, 'inventory/catalog'):
+    _off = _p['vram'] - _gload
+    if _p['vram'] in _texts and _gp[_off:_off + _p['size']] != _texts[_p['vram']]:
+        raise SystemExit(f"{_p['key']} differs from the gameplay package")
+    _part = {'file': _p['key'] + '.inc', 'kind': 'clip', 'package': 'gameplay', 'load': 0, 'source': _off, 'part': 'data',
+             'offset': _off, 'size': _p['size'], 'type': 'u8', 'elem': 1, 'op': _p['op']}
+    if _p['op'] == 'decode':
+        _part['disc_elem'] = _p['disc_elem']
+        _part['elem'] = _p['disc_elem']
+    parts.append(_part)
 # Font glyph tables (gen_font_inc.py output): the exe holds the same bytes the include spells out.
 import re as _re
 _exe = Path('assets/USA/main.exe').read_bytes()
@@ -152,7 +172,7 @@ for _id in ('ui/font/small_glyphs', 'ui/font/medium_glyphs', 'ui/font/large_glyp
         raise SystemExit(f'{_id}: not found exactly once in main.exe')
     parts.append({'file': _id + '.inc', 'kind': 'asset', 'package': 'main.exe', 'load': 0, 'source': _at, 'part': 'data',
                   'offset': _at, 'size': len(_blob), 'type': 'u8', 'elem': 1, 'op': 'copy'})
-ELEM = {'TmdBone': 36, 'SVECTOR': 8, 'u32': 4, 'u16': 2, 's16': 2, 'GridFace': 12, 'AnimationRecord': 4,
+ELEM = {'u8': 1, 'TmdBone': 36, 'SVECTOR': 8, 'u32': 4, 'u16': 2, 's16': 2, 'GridFace': 12, 'AnimationRecord': 4,
         'AnimationPackedPose': 12, 'AnimationPackedRotation': 4, 'GridPointer': 4}
 for p_ in parts:
     if 'elem' not in p_:
