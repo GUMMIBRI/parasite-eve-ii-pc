@@ -207,6 +207,13 @@ void areaStartRoomRuntime(s32 skipViewGate)
     s32                warpId;
     s8                 characterId;
 
+#ifdef __psyz
+    // MIST_R21 has no per-area tables in the program (they hold 20 areas), so
+    // there is nothing to build; leave the empty scene running.
+    if (gGameSession->location.stage == 1 && gGameSession->location.area > 20) {
+        return;
+    }
+#endif
     session                    = gGameSession;
     session->deathVariant      = AREA_ROOM_DEATH_PRESENTATION_INACTIVE;
     gDisplayState.otDepthShift = DISPLAY_DEPTH_SHIFT_1X;
@@ -236,7 +243,7 @@ void areaStartRoomRuntime(s32 skipViewGate)
     warpId    = location->warp;
 #ifdef __psyz
     // Rooms the game never warps into (e.g. MIST_R21) have no entry rows.
-    if (gDirectionAreaWarpEntriesByStage[stage - 1][location->area - 1] == NULL) {
+    if ((stage == 1 && location->area > 20) || gDirectionAreaWarpEntriesByStage[stage - 1][location->area - 1] == NULL) {
         memset(&warpEntry, 0, sizeof(warpEntry));
     } else
 #endif
@@ -289,6 +296,11 @@ void areaStartRoomRuntime(s32 skipViewGate)
     // Read arrival effects after the room's setup has run.
     stage     = location->stage;
     warpId    = location->warp;
+#ifdef __psyz
+    if (stage == 1 && location->area > 20) {
+        memset(&warpEntry, 0, sizeof(warpEntry)); // MIST_R21 has no warp rows
+    } else
+#endif
     warpEntry = gDirectionAreaWarpEntriesByStage[stage - 1][location->area - 1][warpId - 1];
     if (gGameSession->areaSetupDone != false) {
         if (warpEntry.arrivalSound != DIRECTION_WARP_SOUND_NONE) {

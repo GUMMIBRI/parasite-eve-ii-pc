@@ -339,7 +339,7 @@ void areaSpawnRoomObjects(const GameLocationKey* location)
     u16              spawnKind;
 
     areaObjects = gAreaObjectStages[location->stage].rooms;
-    if (areaObjects == NULL) {
+    if (areaObjects == NULL || (location->stage == 1 && location->area > 20)) {
         return;
     }
     place = areaObjects[location->area].places.list;

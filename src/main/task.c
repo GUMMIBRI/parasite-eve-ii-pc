@@ -719,6 +719,12 @@ void taskExecDefaultList(TaskNode* unusedListHead)
     if (currentTask != NULL) {
         display = &gDisplayState;
     dispatchTask:
+#ifdef __psyz
+        if (currentTask->callback == NULL) {
+            fprintf(stderr, "task %p has no callback; retiring it\n", (void*)currentTask);
+            currentTask->callback = taskKill;
+        }
+#endif
         currentTask->callback(currentTask);
         // A callback can replace the world; stop before reading its cursor again.
         if (display->stopTaskWalk == TASK_WALK_STOP_REQUESTED) {

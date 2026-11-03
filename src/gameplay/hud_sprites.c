@@ -1622,6 +1622,11 @@ void viewApplyCurrentCamera(void)
     u8               cameraIndex;
 
     location    = &gGameSession->location;
+#ifdef __psyz
+    if (location->stage == 1 && location->area > 20) {
+        return;
+    }
+#endif
     cameraTable = gViewCameraTables[location->stage - 1];
     cameras     = cameraTable->cameras[location->area - 1];
 #ifdef __psyz

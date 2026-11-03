@@ -3598,7 +3598,7 @@ void areaSpawnPlacements(const GameLocationKey* location)
 
     areaRecords = gAreaRecordsByStage[location->stage];
     worldTargetResetAreaTracking();
-    if (areaRecords == NULL) {
+    if (areaRecords == NULL || (location->stage == 1 && location->area > 20)) {
         return;
     }
     variants  = areaRecords[location->area].variants;

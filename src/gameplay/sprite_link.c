@@ -554,6 +554,11 @@ s32 viewGetMappedIndex(void)
 
     session      = gGameSession;
     location     = &session->location;
+#ifdef __psyz
+    if (location->stage == 1 && location->area > 20) {
+        return 0; // MIST_R21 has no per-area view tables
+    }
+#endif
     areaViewMaps = gViewIndexTables[location->stage - 1]->viewMaps;
     roomViewMaps = areaViewMaps[location->area - 1];
     viewMap      = roomViewMaps[location->roomState - 1];
