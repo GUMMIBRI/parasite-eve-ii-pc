@@ -116,16 +116,17 @@ void objectTaskInitializeRoomState(Task* task)
     areaKey         = locationKeyBase;
     descriptor      = stageRoomTable;
     roomTaskHeader  = OBJECT_TASK_ROOM_DESCRIPTOR_HEADER;
-searchDescriptor:
-    if (descriptor->header.word == roomTaskHeader &&
-        (descriptor->data.value == roomKey || descriptor->data.value == areaKey)) {
-        taskSpawnFromTable(stageRoomTable, descriptorIndex, 0, 0);
-        task->state++;
-        return;
-    }
-    if ((descriptor++)->header.fields.flags != TASK_DESC_END) {
+    for (;;) {
+        if (descriptor->header.word == roomTaskHeader &&
+            (descriptor->data.value == roomKey || descriptor->data.value == areaKey)) {
+            taskSpawnFromTable(stageRoomTable, descriptorIndex, 0, 0);
+            task->state++;
+            return;
+        }
+        if ((descriptor++)->header.fields.flags == TASK_DESC_END) {
+            break;
+        }
         descriptorIndex++;
-        goto searchDescriptor;
     }
     // Keep the selector itself as the fallback room receiver when no descriptor matches.
     task->msgTable = _gObjectTaskDefaultRoomMessages;

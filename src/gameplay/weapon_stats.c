@@ -771,21 +771,21 @@ void itemMenuWeaponSelectionTask(Task* task)
     if (((object->panel.control.word >> ITEM_MENU_SUSPENDED_CONTROL_SHIFT) == USER_INTERFACE_PANEL_ACTIVE) || (object->panel.control.word == USER_INTERFACE_PANEL_ACTIVE) || (weaponItemId != player->weapon + (EQUIPMENT_WEAPON_ITEM_FIRST - 1))) {
         previewFlags = ITEM_MENU_PREVIEW_TEXTURE_RELOCATED | ITEM_MENU_PREVIEW_SCALE_EQUIPMENT;
         if (weaponItemId == INVENTORY_ITEM_NONE) {
-            previewFlags = ITEM_MENU_PREVIEW_TEXTURE_RELOCATED | ITEM_MENU_PREVIEW_SCALE_EQUIPMENT | ITEM_MENU_PREVIEW_HIDDEN;
-            goto drawPreview;
-        }
-        if (((object->panel.control.word >> ITEM_MENU_SUSPENDED_CONTROL_SHIFT) == USER_INTERFACE_PANEL_ACTIVE) || (object->panel.control.word == USER_INTERFACE_PANEL_ACTIVE)) {
-            _itemMenuRequestSelectionPreview(weaponItemId, CD_COMMAND_DISPLAY_LOAD_RELOCATED_PREVIEW);
+            previewFlags |= ITEM_MENU_PREVIEW_HIDDEN;
+        } else {
+            if (((object->panel.control.word >> ITEM_MENU_SUSPENDED_CONTROL_SHIFT) == USER_INTERFACE_PANEL_ACTIVE) || (object->panel.control.word == USER_INTERFACE_PANEL_ACTIVE)) {
+                _itemMenuRequestSelectionPreview(weaponItemId, CD_COMMAND_DISPLAY_LOAD_RELOCATED_PREVIEW);
+            }
+            ITEM_MENU_HIDE_PREVIEW_WHILE_CD_BUSY(previewFlags);
         }
     } else {
         previewFlags = ITEM_MENU_PREVIEW_SCALE_EQUIPMENT;
         if (weaponItemId == INVENTORY_ITEM_NONE) {
-            previewFlags = ITEM_MENU_PREVIEW_SCALE_EQUIPMENT | ITEM_MENU_PREVIEW_HIDDEN;
-            goto drawPreview;
+            previewFlags |= ITEM_MENU_PREVIEW_HIDDEN;
+        } else {
+            ITEM_MENU_HIDE_PREVIEW_WHILE_CD_BUSY(previewFlags);
         }
     }
-    ITEM_MENU_HIDE_PREVIEW_WHILE_CD_BUSY(previewFlags);
-drawPreview:
     itemMenuDrawPreview(object, object->panel.contentLeft.signedValue + 2, object->panel.contentTop.signedValue + 2, previewFlags);
     itemMenuDrawEquipmentStats(object, weaponItemId, ITEM_MENU_EQUIPMENT_STATS_COMPARE, 0);
     // Draw before advancing the shared list, then adapt its result for this panel.

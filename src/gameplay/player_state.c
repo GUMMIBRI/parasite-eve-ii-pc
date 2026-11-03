@@ -1617,15 +1617,14 @@ Task* companionSpawnActor(const ActorSpawnTransform* spawnTransform, u16 compani
     if (task == NULL) {
         return NULL;
     }
-    actor = memCalloc(sizeof(*actor), 0);
-    if (actor == NULL) {
-    workAllocationFailed:
+    actor     = memCalloc(sizeof(*actor), 0);
+    companion = NULL;
+    if (actor != NULL) {
+        companion = memCalloc(sizeof(*companion), 0);
+    }
+    if (actor == NULL || companion == NULL) {
         taskKill(task);
         return NULL;
-    }
-    companion = memCalloc(sizeof(*companion), 0);
-    if (companion == NULL) {
-        goto workAllocationFailed;
     }
     // Publish the companion only after both separate work allocations succeed.
     gameSetTaskSlot(task, GAME_TASK_SLOT_COMPANION);
