@@ -604,15 +604,10 @@ def _cell_macro(package: str, header: int) -> str:
 
 
 def decodable(r: dict) -> bool:
-    """Whether an array of a kind with pointer fields can be decoded from the disc: its pointers are all NULL."""
+    """Whether an array of a kind with pointer fields can be decoded from the disc: the numbers are read, the pointers
+    become code (fixups) after them."""
     from . import decoders
-    if not decoders.has_pointer(r["kind"]):
-        return False
-    try:
-        decoders.decoder(r["kind"])
-    except SystemExit:
-        return False
-    return all(decoders.ptrs_null(r["kind"], v) for v in r["values"])
+    return decoders.has_pointer(r["kind"]) and decoders.pointer_free_of_words(r["kind"])
 
 
 def flat(kind: str) -> bool:
@@ -721,11 +716,16 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
         if s not in rodata and decodable(r):               # pointer fields (NULL): read field by field
             from . import decoders
             kind = r["kind"]
+            ctype = LAYOUTS[kind][0]
+            fix = decoders.fixups(kind, r["values"], pointer, c_value)
+            wrapper = (f"static void peDecodeArr_{s.lstrip('_')}(void* base, const unsigned char* src, size_t n)\n{{\n"
+                       f"    {ctype}* dst = base;\n    for (size_t k = 0; k < n; k++) peDecode_{kind}(&dst[k], src + k * {size(kind)});\n"
+                       + "\n".join(fix) + "\n}")
             return ([f"#ifndef PE_DECODE_{kind}", f"#define PE_DECODE_{kind}", "#include <stdint.h>", "#include <stdlib.h>",
-                     "#include <string.h>", decoders.decoder(kind), "#endif",
+                     "#include <string.h>", decoders.decoder(kind, skip_ptr=True), "#endif",
                      "#ifdef PE_EMBED_ASSETS", f"{declarator(s)} = {{"] + rows + ["};", "#else", f"{declarator(s)};", "#endif",
-                     '#include "port/asset_bind.h"',
-                     f'PE_ASSET_BIND_DECODE("room/{package}/{s}", {s}, peDecode_{kind});'])
+                     wrapper, '#include "port/asset_bind.h"',
+                     f'PE_ASSET_BIND_DECODE("room/{package}/{s}", {s}, peDecodeArr_{s.lstrip("_")});'])
         return [f"{declarator(s)} = {{"] + rows + ["};"]
 
     others = sorted(a for a in im.names if im.in_room(a) and im.names[a] not in objects

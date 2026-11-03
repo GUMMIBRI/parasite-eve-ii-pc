@@ -8,7 +8,7 @@ typedef struct {
 } PeAssetPackage;
 
 /* DECODE: `size` bytes of disc records of `load` bytes each; the binding's `aux` is the function that turns one record
- * into the host struct (tools/port/gen_layout_decoders.py). */
+ * into the host struct and sets its pointers (tools/peassets/room/decoders.py). */
 enum { PE_ASSET_OP_COPY = 0, PE_ASSET_OP_GRID_TABLE = 1, PE_ASSET_OP_DECODE = 2 };
 
 typedef struct {

@@ -31,9 +31,9 @@ typedef struct PeAssetBinding {
     static const PeAssetBinding PE_ASSET_CAT(_peAssetBinding_, __COUNTER__) PE_ASSET_SECTION PE_ASSET_REGISTRY_ATTR __attribute__((used)) = { \
         key, (void*)&(array), sizeof(array), (auxArray) }
 #define PE_ASSET_BIND(key, array) PE_ASSET_BIND_AUX(key, array, NULL)
-/* An array of structs the host lays out differently from the disc (pointers are wider): `decode(dst, src)` fills one
- * element from one disc record. */
-typedef void (*PeAssetDecode)(void* dst, const unsigned char* src);
+/* An array of structs the host lays out differently from the disc (pointers are wider): `decode(dst, src, count)`
+ * fills `count` elements from consecutive disc records and sets their pointers. */
+typedef void (*PeAssetDecode)(void* dst, const unsigned char* src, size_t count);
 #define PE_ASSET_BIND_DECODE(key, array, decode) PE_ASSET_BIND_AUX(key, array, (const void*)(PeAssetDecode)(decode))
 
 struct PeDisc;
