@@ -175,7 +175,7 @@ static int chooseDiscs(SDL_Window* window,int expected) {
 static void rowText(int row,char label[128],char value[256]) {
     value[0]=0;
     if(s_overlayState.page==0) {
-        const char* labels[]={"Internal resolution","Aspect ratio","Dithering","Geometry correction","Fullscreen"};
+        const char* labels[]={"Picture detail","Aspect ratio","Dithering","Geometry correction","Fullscreen"};
         strcpy(label,labels[row]);
         if(row==0)snprintf(value,256,"%ux",Psyz_VideoGetInternalResolution());
         if(row==1)strcpy(value,Psyz_VideoGetAspectMode()?"Square pixels":"Classic 4:3");
@@ -183,7 +183,7 @@ static void rowText(int row,char label[128],char value[256]) {
         if(row==3)strcpy(value,Psyz_VideoGetGeometryCorrection()?"On":"Off");
         if(row==4)strcpy(value,(s_overlayGpuWindow && SDL_GetWindowFlags(s_overlayGpuWindow)&SDL_WINDOW_FULLSCREEN)?"On":"Off");
     } else if(s_overlayState.page==2) {
-        strcpy(label,"Output volume");snprintf(value,256,"%u%%",Psyz_AudioGetOutputVolume());
+        strcpy(label,"Master volume");snprintf(value,256,"%u%%",Psyz_AudioGetOutputVolume());
     } else if(s_overlayState.page==1) {
         strcpy(label,buttons[row]);
         snprintf(value,256,"%s",s_overlayState.capture && row==s_overlayState.row?"Press a key...":
