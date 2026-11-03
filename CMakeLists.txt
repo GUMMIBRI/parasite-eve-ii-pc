@@ -5,6 +5,18 @@ if(CMAKE_HOST_APPLE AND NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET
 endif()
 project(parasite-eve-ii-pc VERSION 0.0.1 LANGUAGES C)
 
+# Overlay packages and their variants define the same uninitialised globals in several objects. Apple's toolchain merges
+# those tentative definitions into one; GCC and Clang elsewhere need -fcommon to do the same, or the link fails with
+# multiple definitions.
+if(NOT APPLE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:-fcommon>)
+    # The decompiled sources pass PS1-style pointers where the host headers declare other types (docs/PORT_PLAN.md).
+    # Clang on macOS only warns; GCC 14+ and Clang 21+ make these errors by default.
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-error=incompatible-pointer-types>
+                        $<$<COMPILE_LANGUAGE:C>:-Wno-error=int-conversion>
+                        $<$<COMPILE_LANGUAGE:C>:-Wno-error=implicit-function-declaration>)
+endif()
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
