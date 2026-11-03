@@ -6,13 +6,67 @@
 #include <SDL3/SDL.h>
 #include <dirent.h>
 #include <errno.h>
-#include <fnmatch.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#include <fcntl.h>
+#include <io.h>
+#include <windows.h>
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+#define mkdir(path, mode) _mkdir(path)
+#define lstat(path, st) stat(path, st)
+#define fsync(fd) _commit(fd)
+#ifndef S_ISREG
+#define S_ISREG(mode) (((mode) & _S_IFMT) == _S_IFREG)
+#endif
+#ifndef S_ISDIR
+#define S_ISDIR(mode) (((mode) & _S_IFMT) == _S_IFDIR)
+#endif
+#ifndef ssize_t
+typedef long long ssize_t;
+#endif
+/* Windows has no fnmatch: the save directory pattern only uses '*' and '?'. */
+static int fnmatch(const char* pattern, const char* name, int flags)
+{
+    (void)flags;
+    if (!*pattern) return *name != 0;
+    if (*pattern == '*') {
+        for (;; name++) {
+            if (fnmatch(pattern + 1, name, 0) == 0) return 0;
+            if (!*name) return 1;
+        }
+    }
+    if (!*name || (*pattern != '?' && *pattern != *name)) return 1;
+    return fnmatch(pattern + 1, name + 1, 0);
+}
+/* A unique sibling file for the atomic save write. */
+static int mkstemp(char* path)
+{
+    size_t length = strlen(path);
+    static unsigned counter;
+    for (int attempt = 0; attempt < 100; attempt++) {
+        snprintf(path + length - 6, 7, "%06x", ((unsigned)GetCurrentProcessId() * 2654435761u + (counter++) * 40503u) & 0xffffff);
+        int fd = _open(path, _O_RDWR | _O_CREAT | _O_EXCL | _O_BINARY, _S_IREAD | _S_IWRITE);
+        if (fd >= 0 || errno != EEXIST) return fd;
+    }
+    return -1;
+}
+#define write(fd, data, bytes) _write(fd, data, (unsigned)(bytes))
+#define close(fd) _close(fd)
+#define unlink(path) _unlink(path)
+/* rename() fails on Windows when the target exists; this replaces it. */
+static int pe_rename(const char* from, const char* to) { return MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) ? 0 : -1; }
+#define rename(from, to) pe_rename(from, to)
+#else
+#include <fnmatch.h>
 #include <unistd.h>
+#endif
 
 enum { CARD_BLOCK_BYTES = 8192, CARD_BLOCKS = 15, CARD_SECTOR_BYTES = 128 };
 typedef struct { char name[21]; size_t bytes; int blocks; } CardFile;

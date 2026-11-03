@@ -3,9 +3,11 @@
 #include "port/host_ui.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <signal.h>
 #include <execinfo.h>
 #include <unistd.h>
+#endif
 #include <psyz.h>
 #include <psyz/cd.h>
 #include <psyz/video.h>
@@ -16,6 +18,7 @@
 /* Crash report: where it faulted and the call chain (also the link register, since a call through a
  * NULL function pointer leaves no frame of its own). */
 extern void* gHostCurrentTaskCallback;
+#ifndef _WIN32
 static void crashHandler(int sig, siginfo_t* info, void* ctx)
 {
     void* frames[32];
@@ -39,13 +42,16 @@ static void crashHandler(int sig, siginfo_t* info, void* ctx)
     backtrace_symbols_fd(frames, count, 2);
     _exit(128 + sig);
 }
+#endif
 
 /* Port entry. Disc mounting goes here once the runtime loader exists; then the
  * original start-up path runs on the host stack (no SetSp). */
 int main(int argc, char** argv) {
+#ifndef _WIN32
     struct sigaction sa = { .sa_sigaction = crashHandler, .sa_flags = SA_SIGINFO };
     sigaction(SIGSEGV, &sa, NULL);
     sigaction(SIGBUS, &sa, NULL);
+#endif
     /* Disc image: first argument, or PE2_DISC. Game data is read from it at run time. */
     const char* disc = NULL;
     int startup = peHostStartup(argc, argv, &disc);
