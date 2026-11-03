@@ -30,8 +30,10 @@ def walk(kind, path: str, off: int, out: list[str], skip_ptr: bool = False) -> N
     tag = kind[0]
     if tag == "bytes":
         out.append(f"    memcpy(dst->{path}, src + {off}, {kind[1]});")
-    elif tag == "named":
+    elif tag in ("named", "bits"):                         # a number in the field's own format
         walk(kind[1], path, off, out, skip_ptr)
+    elif tag == "word":                                    # an integer, or a pointer set by the array's fixups
+        out.append(f"    {{ uint32_t v; memcpy(&v, src + {off}, 4); dst->{path}.{kind[1]} = v; }}")
     elif tag == "arr" and numbers(kind):                  # contiguous numbers (a vector type or a plain array)
         n = L.size(kind)
         out.append(f"    _Static_assert(sizeof(dst->{path}) == {n}, \"{path}\");")
@@ -86,7 +88,11 @@ def has_pointer(kind) -> bool:
         return True
     if kind[0] == "arr":
         return has_pointer(kind[1])
-    return kind[0] == "union" and has_pointer(kind[2])
+    return kind[0] == "word" or (kind[0] == "union" and has_pointer(kind[2]))
+
+
+def n_fill(k) -> bool:
+    return hasattr(L, "_filled")
 
 
 def fixups(kind, values, pointer, c_value) -> list[str]:
@@ -98,8 +104,12 @@ def fixups(kind, values, pointer, c_value) -> list[str]:
         if isinstance(k, str):
             if k in SCALAR:
                 return
+            v = L._filled(v, k) if n_fill(k) else v
             for n, kk in L.LAYOUTS[k][1]:
                 walk_value(kk, v[n] if n else v, f"{path}.{n}" if n else path)
+        elif k[0] == "word":
+            if isinstance(v, str):
+                out.append(f"    {path}.{k[2]} = {pointer(v)};")
         elif k[0] == "ptr":
             if v != 0:
                 out.append(f"    {path} = {c_value(v, k, pointer)};")

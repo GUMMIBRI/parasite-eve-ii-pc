@@ -607,7 +607,7 @@ def decodable(r: dict) -> bool:
     """Whether an array of a kind with pointer fields can be decoded from the disc: the numbers are read, the pointers
     become code (fixups) after them."""
     from . import decoders
-    return decoders.has_pointer(r["kind"]) and decoders.pointer_free_of_words(r["kind"])
+    return not flat(r["kind"]) and decoders.pointer_free_of_words(r["kind"])
 
 
 def flat(kind: str) -> bool:
@@ -631,12 +631,13 @@ def bound_arrays(name: str, assets: dict, embedded: dict, assets_root: Path) -> 
     out = []
     for module in room["modules"].values():
         for sym, r in module.items():
-            if "value" in r or _is_rows(r) or r["kind"] in GEOMETRY or not r.get("values"):
+            vals = [r["value"]] if "value" in r else r.get("values")
+            if _is_rows(r) or r["kind"] in GEOMETRY or not vals:
                 continue
             if flat(r["kind"]):
-                out.append((sym, im.addresses[sym] - load, len(r["values"]) * size(r["kind"]), r["kind"], "copy"))
+                out.append((sym, im.addresses[sym] - load, len(vals) * size(r["kind"]), r["kind"], "copy"))
             elif decodable(r):
-                out.append((sym, im.addresses[sym] - load, len(r["values"]) * size(r["kind"]), r["kind"], "decode"))
+                out.append((sym, im.addresses[sym] - load, len(vals) * size(r["kind"]), r["kind"], "decode"))
     return out
 
 
@@ -692,6 +693,22 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
         uses["types"].add(LAYOUTS[r["kind"]][0])
         return f"{storage}{LAYOUTS[r['kind']][0]} {s}{dims}"
 
+    def decoded(s: str, r: dict, values: list, embedded_def: list[str]) -> list[str]:
+        """An array (or a single struct) of a kind the host lays out differently from the disc: the embedded build keeps
+        its initializer; otherwise it is zero-filled and bound to a generated decoder that reads the numbers from the
+        disc and sets the pointers."""
+        from . import decoders
+        kind = r["kind"]
+        fix = decoders.fixups(kind, values, pointer, c_value)
+        wrapper = (f"static void peDecodeArr_{s.lstrip('_')}(void* base, const unsigned char* src, size_t n)\n{{\n"
+                   f"    {LAYOUTS[kind][0]}* dst = base;\n    for (size_t k = 0; k < n; k++) peDecode_{kind}(&dst[k], src + k * {size(kind)});\n"
+                   + "\n".join(fix) + "\n}")
+        return ([f"#ifndef PE_DECODE_{kind}", f"#define PE_DECODE_{kind}", "#include <stdint.h>", "#include <stdlib.h>",
+                 "#include <string.h>", decoders.decoder(kind, skip_ptr=True), "#endif",
+                 "#ifdef PE_EMBED_ASSETS"] + embedded_def + ["#else", f"{declarator(s)};", "#endif",
+                wrapper, '#include "port/asset_bind.h"',
+                f'PE_ASSET_BIND_DECODE("room/{package}/{s}", {s}, peDecodeArr_{s.lstrip("_")});'])
+
     def definition(s: str) -> list[str]:
         r = objects[s][1]
         if r["kind"] in GEOMETRY:
@@ -705,7 +722,15 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
             return [f"#define {macro}(halfwordOffset) (&{cells}[(halfwordOffset)])", f"{declarator(s)} = {{", inc, "};",
                     f"#undef {macro}"]
         if "value" in r:
-            return [f"{declarator(s)} = {c_value(r['value'], r['kind'], pointer)};"]
+            init = f"{declarator(s)} = {c_value(r['value'], r['kind'], pointer)};"
+            if s in rodata or r["kind"] in GEOMETRY:
+                return [init]
+            if flat(r["kind"]):
+                return ["#ifdef PE_EMBED_ASSETS", init, "#else", f"{declarator(s)};", "#endif",
+                        '#include "port/asset_bind.h"', f'PE_ASSET_BIND("room/{package}/{s}", {s});']
+            if decodable(r):
+                return decoded(s, r, [r["value"]], [init])
+            return [init]
         if _is_rows(r):
             rows = ["{ " + ", ".join(c_value(v, r["kind"], pointer) for v in row) + " }" for row in r["values"]]
             return [f"{declarator(s)} = {{"] + [f"    {e}," for e in rows] + ["};"]
@@ -713,19 +738,8 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
         if flat(r["kind"]) and s not in rodata:           # the disc's bytes: loaded at start, not compiled in
             return ["#ifdef PE_EMBED_ASSETS", f"{declarator(s)} = {{"] + rows + ["};", "#else", f"{declarator(s)};", "#endif",
                     '#include "port/asset_bind.h"', f'PE_ASSET_BIND("room/{package}/{s}", {s});']
-        if s not in rodata and decodable(r):               # pointer fields (NULL): read field by field
-            from . import decoders
-            kind = r["kind"]
-            ctype = LAYOUTS[kind][0]
-            fix = decoders.fixups(kind, r["values"], pointer, c_value)
-            wrapper = (f"static void peDecodeArr_{s.lstrip('_')}(void* base, const unsigned char* src, size_t n)\n{{\n"
-                       f"    {ctype}* dst = base;\n    for (size_t k = 0; k < n; k++) peDecode_{kind}(&dst[k], src + k * {size(kind)});\n"
-                       + "\n".join(fix) + "\n}")
-            return ([f"#ifndef PE_DECODE_{kind}", f"#define PE_DECODE_{kind}", "#include <stdint.h>", "#include <stdlib.h>",
-                     "#include <string.h>", decoders.decoder(kind, skip_ptr=True), "#endif",
-                     "#ifdef PE_EMBED_ASSETS", f"{declarator(s)} = {{"] + rows + ["};", "#else", f"{declarator(s)};", "#endif",
-                     wrapper, '#include "port/asset_bind.h"',
-                     f'PE_ASSET_BIND_DECODE("room/{package}/{s}", {s}, peDecodeArr_{s.lstrip("_")});'])
+        if s not in rodata and decodable(r):               # numbers from the disc, pointers as fixups
+            return decoded(s, r, r["values"], [f"{declarator(s)} = {{"] + rows + ["};"])
         return [f"{declarator(s)} = {{"] + rows + ["};"]
 
     others = sorted(a for a in im.names if im.in_room(a) and im.names[a] not in objects
