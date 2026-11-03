@@ -352,6 +352,9 @@ void peDebugWarp(const GameLocationKey* location)
     gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location = *location;
     gDisplayState.stopTaskWalk = true;
     _gameFlowResetSessionResources();
+    if (gDisplayState.spriteVariant == 0) {
+        gDisplayState.spriteVariant = 1; // the resource reset clears it; USA selects 1
+    }
     taskSpawn(GAME_FLOW_RESIDENT_TASK_BANK, GAME_FLOW_START_SESSION_TASK_SLOT, 0, 0);
 }
 #endif
