@@ -34,7 +34,8 @@ time (a handful of files with data, tracked in [docs/RUNTIME_ASSETS.md](docs/RUN
 
 ## Build
 
-Requires Git, CMake 3.21 or newer, a C11 compiler, and (to build the game) Python 3.
+Requires Git, CMake 3.21 or newer, a C11 compiler, and (to build the game) Python 3 and `dumpsxiso` from a
+[mkpsxiso release](https://github.com/Lameguy64/mkpsxiso/releases) on your `PATH`.
 
 ```sh
 git clone https://github.com/khasinski/parasite-eve-ii-pc

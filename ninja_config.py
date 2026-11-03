@@ -726,6 +726,9 @@ match PLATFORM:
         CC = OS_DIR / "gcc-2.8.1-psx" / "cc1"
         DUMPSXISO = MKPSXISO_DIR / "dumpsxiso"
 
+if not Path(str(DUMPSXISO)).exists() and shutil.which("dumpsxiso"):
+    DUMPSXISO = shutil.which("dumpsxiso")        # a mkpsxiso release on PATH when none is vendored in tools/
+
 OBJDIFF_GENSCRIPT = OBJDIFF_DIR / "objdiff_generate.py"
 OBJDIFF_TARGET_ASM = OBJDIFF_DIR / "target_asm.py"
 
@@ -1954,6 +1957,14 @@ def extract_files(
             "  (minimal-inflate: raw + required pe2pkg overlays only; "
             "skip CD streams)"
         )
+
+    if not Path(str(DUMPSXISO)).exists():
+        raise SystemExit(f"dumpsxiso not found ({DUMPSXISO}). Install a mkpsxiso release "
+                         "(https://github.com/Lameguy64/mkpsxiso/releases) and put dumpsxiso on PATH, "
+                         f"or copy it to {MKPSXISO_DIR}.")
+    for image in (GAME_VERSIONS[version].metadata.name_disk1, GAME_VERSIONS[version].metadata.name_disk2):
+        if not (IMAGE_DIR / f"{image}.bin").exists():
+            raise SystemExit(f"disc image not found: {IMAGE_DIR / (image + '.bin')} (see README, \"What you need\")")
 
     target_assets = ASSETS_DIR / GAME_VERSIONS[version].metadata.version_dir
     target_rom = ROM_DIR / GAME_VERSIONS[version].metadata.version_dir
