@@ -3547,3 +3547,14 @@ at tick 3000 show, at tick 14000, the same frame (the Triangle menu over the sam
 differ (a 28 x 83 px patch, animation timing); the logs show no crash and the same stream of unsupported GPU command FF
 warnings as the direct run, so no stale state from Dryfield was visible. VRAM outside the display differs, as expected.
 Not yet checked: doors between rooms outside Akropolis, and saving.
+
+### Missing-player transition crash: verified fixed (2026-11-03)
+
+The `_stageResolvePlayerContacts` null-player guard (commit `2bd8ed6d`) was verified against the recorded failing
+endpoint: `build-port/input/video-clock-forked-road.pad` (162,274 samples, the input that crashed
+`_stageResolvePlayerContacts` at stage.c:454 while `_sceneBattleResultTask` held a forced reload with no player).
+Replayed on the current build with `--clock video --raster-clock virtual`, it exits 0 with a live player
+(HP110, East Elevator Hall, objective2/storyDialogue3). The route's content diverges from the old recording's
+Forked Road endpoint (later audio/clock fixes changed earlier timing), so this verifies the crash fix, not that
+the historical input still reaches its original state. The engine never dereferences a missing player task; the
+guard skips only contact resolution when the slot is absent.
