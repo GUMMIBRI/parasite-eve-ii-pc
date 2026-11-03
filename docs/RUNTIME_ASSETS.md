@@ -172,3 +172,21 @@ remain**, and only one carries disc data:
 One more table (`actor_341700_motion_142DC`) is bound but its actor is not linked yet; `verify_asset_parts.py` covers
 it. So the data left in the build is the item catalog, plus whatever the globals and `asm_data.c` hold (the next
 blocker for a binary release).
+
+### Plan: `src/port/asm_data.c` (8.9 MB, 1,088 globals)
+
+`tools/port/gen_asm_data.py` turns initialized data from the disassembly (`asm/USA/**/data/*.s`) into host initializers.
+To load it from the disc instead:
+
+1. **Where the bytes are.** Each data file is a unit of a split config (`configs/USA/main.yaml`, `gameplay.yaml`,
+   `generated/<package>.yaml`), whose `.data` or `.rodata` subsegment starts at a known offset in the exe or package
+   (`room._units` already reads these). A global's offset is its unit's start plus its position in the `.s` file.
+   Check each against the package bytes, ignoring relocated words (they are zero in the `.s`).
+2. **How to read them.** The generator already walks the C type with the PS1 layout. Emit statements instead of an
+   initializer: `dst.field = <read at offset>` for numbers (loops for uniform array elements, nothing for zero
+   spans) and `dst.field = &symbol;` for relocated words (the topology stays code). Bind each global with
+   `PE_ASSET_BIND_DECODE`, as the room structs are.
+3. **Comparison.** `#ifdef PE_EMBED_ASSETS` keeps the current initializer; the dump compares both builds.
+
+Globals the generator already skips (address stored in an integer, conflicting pointees) stay as they are and are
+listed by `GEN_WHY=. tools/port/gen_asm_data.py`. This is the last large piece before a binary release.
