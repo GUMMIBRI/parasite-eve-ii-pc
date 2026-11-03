@@ -31,7 +31,7 @@ Throughout: native tests per module and headless frame captures.
 and the build no longer depends on the decomp toolchain. Everything the compiler reads from the disc extraction is now
 committed as layout only (`include/generated`, 633 files, 4 MB; `src/port/asm_data.c`, `asset_parts_table.c`): types,
 sizes, decoders and registrations, with no game data. Cloning, building and playing need CMake and a C compiler plus
-the user's discs. The matching compile/assemble/link/objdiff/checksum graph, its patches and helper scripts are deleted; `ninja_config.py`, the splat yamls and `refresh_layout.sh` are removed from the tree too (what remains of `configs/` is the overlay/symbol description the asset tools read). The last state that could regenerate the layout from a disc is the git tag `pe2-layout-tooling`. Phases 1 and 2 are well advanced,
+the user's discs. The matching compile/assemble/link/objdiff/checksum graph, its patches and helper scripts are deleted; `ninja_config.py`, `refresh_layout.sh` and the regeneration scripts are removed from the tree too. What remains of `configs/` and `tools/buildsteps/gen_overlay_*.py` is read by the asset tools (`main/gameplay/title.yaml` for the load addresses of memory slots, `overlays.toml`, `sym/`, and the `gen_overlay_configs` helper functions); `tools/check/suite.py` fails the same steps as at the tag (missing text assets, `clang`, node), and no others. The last state that could regenerate the layout from a disc is the git tag `pe2-layout-tooling`. Phases 1 and 2 are well advanced,
 because the work was allowed to cut into them:
 
 - Disc data: 27,419 arrays (clips, models, room structs, item catalog, and 10,622 globals converted from the
