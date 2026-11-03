@@ -227,6 +227,17 @@ static int refreshPanel(SDL_Window* window) {
     s_overlayWindowW=w;s_overlayWindowH=h;s_overlayLayout=layout;
     if(!OverlaySurfaceResize(&s_overlaySurface,layout.w,layout.h))return 0;
     paintPanel(&s_overlaySurface,&layout);
+    if(getenv("PE2_DUMP_MENU")) {   /* development: the painted panel as a PPM (RGB over black), for a capture-free review */
+        FILE* f=fopen(getenv("PE2_DUMP_MENU"),"wb");
+        if(f) {
+            fprintf(f,"P6\n%d %d\n255\n",s_overlaySurface.w,s_overlaySurface.h);
+            for(size_t i=0;i<(size_t)s_overlaySurface.w*s_overlaySurface.h;i++) {
+                const unsigned char* px=&s_overlaySurface.pixels[i*4];
+                for(int c=0;c<3;c++)fputc(px[c]*px[3]/255,f);
+            }
+            fclose(f);
+        }
+    }
     return 1;
 }
 
