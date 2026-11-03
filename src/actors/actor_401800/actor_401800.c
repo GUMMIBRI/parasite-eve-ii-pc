@@ -1335,6 +1335,9 @@ static void _actor401800BurstDeath(Task* task)
 /// the result. The signed callback signature retains that fall-through.
 static s32 _actor401800IgnoreMessage2015(Task* task, s32 messageId, s32 unusedPayload, s32 unusedExtra)
 {
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Odd Stranger task states 0 initialize, 1 tick behaviour and 2 destroy.

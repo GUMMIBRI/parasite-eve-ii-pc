@@ -1706,7 +1706,13 @@ static s32 _actor121300SetTextureSequence(Task* task, s32 unusedMessageId, s32 t
 {
     enum { ACTOR_121300_TEXTURE_UPLOAD_TASK_INDEX = 10 };
 
+#ifdef __psyz
+    // The original returns the child's address as a 32-bit word; a host pointer
+    // would be truncated, and callers only test for a spawn.
+    return taskSpawnFromTable(gActor121300SceneTasks, ACTOR_121300_TEXTURE_UPLOAD_TASK_INDEX, textureSequence, task) != NULL;
+#else
     return (s32)taskSpawnFromTable(gActor121300SceneTasks, ACTOR_121300_TEXTURE_UPLOAD_TASK_INDEX, textureSequence, task);
+#endif
 }
 
 /// Selects the double's scene step and resets its progress for the next update.

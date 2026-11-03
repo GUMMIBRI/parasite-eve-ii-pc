@@ -3496,6 +3496,9 @@ static void _actor01900Tick(Enemy* enemy, Task* task)
 /// Senders must ignore the result; the message's sender-side purpose is unproven.
 static s32 _actor01900IgnoreMessage2015(Task* task, s32 messageId, s32 unusedPayload, s32 unused)
 {
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Grinning Stranger behavior callbacks indexed by `ACTOR_01900_STATE_*`.

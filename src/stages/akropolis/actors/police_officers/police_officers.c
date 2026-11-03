@@ -760,6 +760,9 @@ static s32 _policeOfficersSetBody(Task* task, s32 messageId, s32 officerSelector
     }
     controllerWork->bodyAnimationId = animation->animationId;
     displaySpawnTaskFromTable(&_gPoliceOfficersBodySwapTaskDescriptor, 0, officerSelector, task);
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// `POLICE_OFFICERS_MESSAGE_SET_CULLED_BODY`: swaps in the officer's culled body, posed, or freezes his model.
@@ -778,6 +781,9 @@ static s32 _policeOfficersSetCulledBody(Task* task, s32 messageId, s32 mode, s32
         }
         displaySpawnTaskFromTable(&_gPoliceOfficersCulledBodySwapTaskDescriptor, 0, mode, task);
     }
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// `ACTOR_MESSAGE_PLAY_ANIMATION`: plays a clip on the player (`POLICE_OFFICERS_ANIMATION_PLAYER`, from the player's
@@ -831,6 +837,9 @@ static s32 _policeOfficersPlayAnimation(Task* task, s32 messageId, const Animati
         modelWork->followUpTable = animation->source.index;
         modelWork->animationId   = animation->animationId;
     }
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// `ACTOR_MESSAGE_PLACE`: places the officer's model, at a position and a yaw.
@@ -846,6 +855,9 @@ static s32 _policeOfficersPlace(Task* task, s32 messageId, const ActorTransform*
     rootCoord->coord.t[2] = placement->pos.vz;
     gfxRotMatrixY(&rootCoord->coord, placement->rot.vy, 0);
     rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// `POLICE_OFFICERS_MESSAGE_STOP_CONTROLLER`: releases the officer's model and stops his controller, which then waits
@@ -860,6 +872,9 @@ static s32 _policeOfficersStopController(Task* task, s32 messageId, s32 unusedFi
         controllerWork->modelTask = NULL;
     }
     task->state = CONTROLLER_STOPPED;
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Lights an officer's model at the origin of his part-1 frame.

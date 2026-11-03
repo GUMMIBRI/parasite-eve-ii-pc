@@ -47,6 +47,7 @@ cmake --build build --parallel
 Put the second disc next to the first (or pick it when the game asks for it). You can also set `PE2_DISC` instead of
 passing the path. Host tests: `cmake --build build --target host_tests && ctest --test-dir build`. Nothing from your
 disc is ever committed: `tools/ci/check_no_game_data.sh` enforces that.
+`tools/ci/check_host_casts.sh [build-dir]` re-runs the game sources with the pointer/int cast warnings the build otherwise hides (`-w`); it must report none.
 
 **Contributors:** the layout sources are committed and the extraction tooling (splat split, `ninja_config.py`, disc
 extraction) is no longer in the tree. If a generator change needs them regenerated, check out the tag

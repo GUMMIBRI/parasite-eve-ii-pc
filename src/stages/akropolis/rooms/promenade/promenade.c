@@ -289,6 +289,9 @@ static s32 _akropolisPromenadeHandleRoomCommand(Task* unusedTask, s32 unusedMess
 /// Room actions do nothing here, and the reply is left unset.
 static s32 _akropolisPromenadeIgnoreRoomAction(Task* unusedTask, s32 unusedMessageId, s32 unusedRequest, s32 unusedSecondArg)
 {
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Plays the instrument case opening for room sound cue 10, and closing for cue 103.

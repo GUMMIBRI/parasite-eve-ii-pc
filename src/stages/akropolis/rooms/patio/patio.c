@@ -334,6 +334,9 @@ static s32 _akropolisPatioHandleRoomAction(Task* unusedTask, s32 unusedMessageId
         evsStartScriptWithSkip(_gAkropolisPatioAmbushScript, EVENT_SCRIPT_HUD_HIDE_RESTORE, _gAkropolisPatioAmbushSkipScript);
     }
     // No result is set; the sender of a room action ignores it.
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Room commands 1, the gyro, and 2, the civilian in the cafeteria, start their CAP events; 2 only before the cafeteria

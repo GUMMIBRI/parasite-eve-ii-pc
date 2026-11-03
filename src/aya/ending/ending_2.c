@@ -1043,7 +1043,7 @@ static s32 _endingRelocateCreditsFile(EndingStfFile* file, s32 unusedResourceSlo
         _gEndingCreditsSprites   = (EndingStfSprite*)(base + words[5]);
         return 1;
     }
-#endif
+#else
     // Convert serialized byte offsets to PS1 address words exactly once.
     if (file->glyphs.offset > 0) {
         file->glyphs.offset     += (s32)file;
@@ -1064,6 +1064,7 @@ static s32 _endingRelocateCreditsFile(EndingStfFile* file, s32 unusedResourceSlo
     _gEndingCreditsLines   = file->lineTable.pointer->lines;
     _gEndingCreditsSprites = file->sprites.pointer;
     return 1;
+#endif
 }
 
 /// Starts one credits picture decode and publishes its page for cross-fading.

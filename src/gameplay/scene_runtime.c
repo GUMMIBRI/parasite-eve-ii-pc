@@ -3471,6 +3471,11 @@ void animationPlaySlotWithBlend(AnimationContext* context, s32 slotIndex, Animat
     }
     // Resolve the new track using the replacement table only after capturing the old pose.
     set               = slot->sets[setIndex];
+#ifdef __psyz
+    if (set == NULL) {
+        return; // no animation for this pose: keep the captured one (PE1 guards the same case)
+    }
+#endif
     records           = set->records;
     trackRecordOffset = (u16)(set->trackStartIndices[slot->trackIndex] + trackRecordOffset);
     _animationSelectPlayRecord(slot, records, trackRecordOffset);

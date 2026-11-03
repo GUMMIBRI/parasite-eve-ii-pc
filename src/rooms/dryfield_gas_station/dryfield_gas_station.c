@@ -165,7 +165,12 @@ static s32 _dryfieldGasStationHandleRoomCommand(Task* unusedTask, s32 unusedMess
         gDryfieldGasStationRoomCutscene.endSound        = SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_GAS_STATION, 0x07);
         gDryfieldGasStationRoomCutscene.sceneSound      = SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_GAS_STATION, 0x08);
         gDryfieldGasStationRoomCutscene.afterSceneSound = SOUND_AREA(GAME_STAGE_DRYFIELD, GAME_AREA_DRYFIELD_GAS_STATION, 0x10);
+#ifdef __psyz
+        // A host pointer would be truncated to the reply word; callers only test for a spawn.
+        return taskSpawnFromTable(_gRoomCutsceneTaskDescs, ROOM_CUTSCENE_TASK_SCENE, DRYFIELD_GAS_STATION_CUTSCENE_FOLLOW_UP_COMMAND, &gDryfieldGasStationRoomCutscene) != NULL;
+#else
         return (s32)taskSpawnFromTable(_gRoomCutsceneTaskDescs, ROOM_CUTSCENE_TASK_SCENE, DRYFIELD_GAS_STATION_CUTSCENE_FOLLOW_UP_COMMAND, &gDryfieldGasStationRoomCutscene);
+#endif
     }
     return 1;
 }

@@ -6006,6 +6006,9 @@ static void _actor401300Tick(Enemy* enemy, Task* actor)
 static s32 _actor401300IgnoreMessage2015(Task* task, s32 msgId, s32 unusedFirstArg, s32 unusedArg)
 {
     // The binary leaves the result word unspecified; callers must discard it.
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Enemy task phases indexed by `Task::state` (0 spawn, 1 update, 2 destroy).

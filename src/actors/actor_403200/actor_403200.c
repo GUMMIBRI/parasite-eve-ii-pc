@@ -6377,6 +6377,9 @@ static void _actor403200DeathHandoffState(Task* task)
 /// binary supplies no defined return value; senders must discard the result.
 static s32 _actor403200IgnoreMessage2015(Task* task, s32 unusedMessageId, s32 unusedFirstArg, s32 unusedSecondArg)
 {
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 #include "../../shared/actor/actor_messages_is_present.inc.c"

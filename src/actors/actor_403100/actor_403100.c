@@ -6870,6 +6870,9 @@ static s32 _actor403100ApplyCommand(Task* task, s32 unusedMessageId, const Actor
             break;
     }
     _gActor403100Work->subState = 0;
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 /// Latches the player's request to end the current hold.
 ///
@@ -6879,6 +6882,9 @@ static s32 _actor403100ApplyCommand(Task* task, s32 unusedMessageId, const Actor
 static s32 _actor403100RequestPlayerRelease(Task* unusedTask, s32 unusedMessageId, s32 unusedFirstArg, s32 unusedSecondArg)
 {
     _gActor403100Work->releaseRequested = 1;
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Sets the Burner model's active drawing and automatic-buffer mode.
@@ -6917,6 +6923,9 @@ static s32 _actor403100SetModelDrawMode(Task* task, s32 unusedMessageId, s32 dra
             model->flags = modelFlags;
             return 0;
     }
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 /// Saves the arm pose and stroke timer before sampling the held-player pose ahead.
 ///

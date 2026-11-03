@@ -6436,6 +6436,9 @@ static s32 _actor400500ApplyRoomCommand(Task* task, s32 messageId, const ActorCo
             work->roomCommand = roomCommand;
             break;
     }
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Enters a living `ACTOR_400500_STATE_*` state at its first sub-state.

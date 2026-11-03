@@ -2615,6 +2615,9 @@ static const DesertChaserTaskStates _gDesertChaserTaskStates = { {
 /// signature is retained without manufacturing a return value.
 static s32 _actor00100IgnoreMessage2015(Task* task, s32 messageId, s32 unusedPayload, s32 unusedExtra)
 {
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Returns whether the regular chaser's wall probe has a room-grid contact.

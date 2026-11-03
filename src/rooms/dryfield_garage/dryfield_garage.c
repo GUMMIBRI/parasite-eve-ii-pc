@@ -953,6 +953,9 @@ static s32 _dryfieldGarageHandleRoomAction(Task* unusedTask, s32 unusedMessageId
         capSpawnEventIfIdle(DRYFIELD_GARAGE_CAP_ACTION_2, CAP_EVENT_NO_FLAGS);
     }
     // The binary leaves the result unspecified; this message's sender ignores it.
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Spawns Gary Douglas's scene for a refused junk-yard departure, then ends.

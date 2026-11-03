@@ -1490,6 +1490,9 @@ static void _actor401000RefallFront(Task* task)
 /// the result. The signed callback signature is retained without inventing a reply.
 static s32 _actor401000IgnoreMessage2015(Task* task, s32 messageId, s32 unusedPayload, s32 unusedExtra)
 {
+#ifdef __psyz
+    return 0; /* the original leaves the reply register unspecified */
+#endif
 }
 
 /// Enemy task handlers: state 0 spawns, state 1 ticks, state 2 destroys.
