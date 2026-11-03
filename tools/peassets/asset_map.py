@@ -775,7 +775,6 @@ def build_data(db: sqlite3.Connection, out: Path, pixels: str) -> dict:
                 "AND attribute IN ('image.tpage', 'clut.value') AND package != '' AND scope != '' AND kind != 'faces'"):
             scopes[package, file, scope][attribute].append((symbol, value))
         # At file scope, a page and a palette belong together when they are named alike.
-        import re
         alike = re.compile(r"_(CLUT|PALETTE|TPAGE|TEXTURE_PAGE|TEX_PAGE)(_ID|_VALUE)?$")
         named = defaultdict(lambda: {"image.tpage": [], "clut.value": []})
         for package, file, symbol, attribute, value in sqlite3.connect(journal).execute(

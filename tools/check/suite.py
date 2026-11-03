@@ -11,10 +11,9 @@ What it checks, after an extraction:
     growth       asset_data.py holds no more records than its baseline: new assets go into the groups
     texture, model, animation, shape, font, room
                  every declared asset of the kind encodes back to what it was decoded from - one task an asset
-    build        ./tools/build-and-verify.sh: the build matches (with half the workers, PE2_JOBS)
-    order        after the build, every room and stage unit's data is in address order (room check-order)
+    order        every room and stage unit's data is in address order (room check-order)
     residency, decls
-                 after the build: asset_residency.py build, check_decls.py over the actor, kyle and room sources
+                 asset_residency.py build, check_decls.py over the actor, kyle and room sources
     map, smoke   asset_map.py, then its smoke test
 
 A step's tasks start as soon as what it needs is done, the long ones first. Exit status 1 if anything failed.
@@ -133,13 +132,14 @@ def stability() -> list[str]:
 def tasks(jobs: int, skip: set[str]) -> list[tuple[str, str, tuple, tuple[str, ...]]]:
     """(step, label, call, needs): `call` is (function, args)."""
     out = []
-    build_env = {"PE2_JOBS": str(max(1, jobs // 2))}
-    if "build" not in skip:
-        out.append(("build", "build", (run_command, ([str(ROOT / "tools" / "build-and-verify.sh")], build_env)), ()))
-        out.append(("order", "order", (check_order, ()), ("build",)))
-        out.append(("residency", "residency", (run_command, ([PY, str(PEASSETS / "asset_residency.py"), "build"],)), ("build",)))
+    # (The matching-build step, tools/build-and-verify.sh, went with the matching toolchain.)
+    if "order" not in skip:
+        out.append(("order", "order", (check_order, ()), ()))
+    if "residency" not in skip:
+        out.append(("residency", "residency", (run_command, ([PY, str(PEASSETS / "asset_residency.py"), "build"],)), ()))
+    if "decls" not in skip:
         out.append(("decls", "decls", (run_command, ([PY, str(ROOT / "tools" / "refactor" / "check_decls.py"),
-                                                     "src/actors", "src/kyle", "src/rooms", "src/stages"],)), ("build",)))
+                                                     "src/actors", "src/kyle", "src/rooms", "src/stages"],)), ()))
     if "repack" not in skip:
         out.append(("repack", "repack", (repack, ()), ()))
     if "growth" not in skip:
@@ -147,7 +147,7 @@ def tasks(jobs: int, skip: set[str]) -> list[tuple[str, str, tuple, tuple[str, .
     if "map" not in skip:
         # The map reads the load graph the residency step rebuilds; after an asset rename the old one names assets
         # that are gone.
-        out.append(("map", "map", (run_command, ([PY, str(PEASSETS / "asset_map.py")],)), () if "build" in skip else ("residency",)))
+        out.append(("map", "map", (run_command, ([PY, str(PEASSETS / "asset_map.py")],)), ("residency",)))
         out.append(("smoke", "smoke", (run_command, (["node", str(PEASSETS / "asset_map_smoke.js"), "local/asset_map.html",
                                                       "a.rooms/akropolis/patio/package"],)), ("map",)))
     for kind in ("texture", "animation", "room", "model", "shape", "font"):
