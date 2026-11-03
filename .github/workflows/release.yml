@@ -1,0 +1,60 @@
+name: release
+
+# A tag v* builds the macOS (Apple silicon) archive and attaches it to a GitHub release; "Run workflow" builds the same
+# archive as a downloadable workflow artifact without publishing anything. The executable holds no game data: it reads
+# the user's own disc images when it starts.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Fetch PsyZ and SDL
+        run: |
+          git submodule update --init third_party/psyz
+          git -C third_party/psyz submodule update --init external/SDL
+      - name: No game data in the repository
+        run: tools/ci/check_no_game_data.sh
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel 4 --target parasite-eve-ii-pc
+      - name: Package
+        run: |
+          name=parasite-eve-ii-${GITHUB_REF_NAME:-dev}-macos-arm64
+          mkdir -p "dist/$name"
+          cp build/parasite-eve-ii-pc "dist/$name/"
+          cp README.md LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md "dist/$name/"
+          cat > "dist/$name/START-HERE.txt" <<'TXT'
+          Parasite Eve II, native port (unofficial, alpha). This archive contains no game data.
+          You need your own North American CUE/BIN images of both discs.
+
+            ./parasite-eve-ii-pc "path/to/Parasite Eve II (Disc 1).cue"
+
+          Put disc 2 next to disc 1 or choose it on the Discs page of the menu (Esc). macOS may ask you to allow the
+          unsigned program: System Settings > Privacy & Security > Open Anyway, or: xattr -d com.apple.quarantine parasite-eve-ii-pc
+          TXT
+          (cd dist && zip -qr "$name.zip" "$name")
+          echo "ARCHIVE=dist/$name.zip" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: ${{ env.ARCHIVE }}
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --prerelease --notes "See CHANGELOG.md. Unofficial alpha: bring your own discs."
+          gh release upload "$GITHUB_REF_NAME" "$ARCHIVE" --clobber

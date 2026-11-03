@@ -1,22 +1,18 @@
 # Releasing
 
-## 0.1.0-alpha: a source release
+## 0.1.0-alpha: source and a macOS archive
 
-A binary cannot be published yet. The executable still contains data converted from the discs, so redistributing it
-would redistribute game data. What is embedded today:
-
-| Embedded in the executable | Size | Needed for a binary release |
-| --- | --- | --- |
-| `src/port/asm_data.c` (initialized globals converted from the original program) | generated | a runtime decoder or removal |
-| Animation bank slot tables, 241 includes | layout only | none: they hold no disc bytes |
-
-So 0.1.0-alpha is the repository at a tag, built by each user from their own discs (README, "Build").
+The executable no longer embeds game data: the disc-derived arrays are loaded at run time and the committed layout
+sources hold no disc bytes (a sample of 911 windows of disc data found 7 in the binary, all small constants of the
+compiled decompiled code). So a binary can be published. `.github/workflows/release.yml` builds the macOS (Apple
+silicon) archive on a `v*` tag and attaches it to a GitHub release; "Run workflow" builds the same archive as a workflow
+artifact without publishing. Linux and Windows archives wait until those platforms are run, not only built.
 
 ## Checklist
 
 1. CI is green on `main` (`native-c`: repository check, host tests on macOS and Linux, tool syntax).
 2. `tools/ci/check_no_game_data.sh` passes and `git ls-files` holds no disc-derived file.
-3. A clean clone builds the host tests, and the game builds from a fresh extraction (README).
+3. A clean clone builds the host tests and the game (README: CMake and a C compiler; no extraction).
 4. CHANGELOG has a dated `0.1.0-alpha` section with known limits.
 5. README status matches the changelog.
 6. The repository is made public only on the owner's instruction. Tag `v0.1.0-alpha` after that, and write the release
