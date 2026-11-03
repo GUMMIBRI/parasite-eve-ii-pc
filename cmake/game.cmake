@@ -23,6 +23,11 @@ set(PE_PACKAGES
 # multiple definitions.
 if(NOT APPLE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options($<$<COMPILE_LANGUAGE:C>:-fcommon>)
+    # The decompiled sources pass PS1-style pointers where the host headers declare other types (docs/PORT_PLAN.md).
+    # Clang on macOS only warns; GCC 14+ and Clang 21+ make these errors by default.
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-error=incompatible-pointer-types>
+                        $<$<COMPILE_LANGUAGE:C>:-Wno-error=int-conversion>
+                        $<$<COMPILE_LANGUAGE:C>:-Wno-error=implicit-function-declaration>)
 endif()
 option(PE_ALL_VARIANTS "With PE_ALL_OVERLAYS, link every per-package variant too" ON)
 option(PE_ALL_OVERLAYS "Compile and link every overlay package, so every stage loads" ON)
