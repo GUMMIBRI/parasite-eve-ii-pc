@@ -21,7 +21,7 @@ Known limits:
   module registry (phase 2 in [docs/PORT_PLAN.md](docs/PORT_PLAN.md)); attract demos are disabled until then.
 - Audio, movies and saves are incomplete.
 - Tested on macOS (arm64) only. Linux is built and its host tests run in CI; Windows is untested.
-- There is no settings screen, remapping, widescreen, HD or mod support yet (the first game's port has all of these).
+- The host menu has Graphics (detail, aspect, dithering, geometry correction, fullscreen, antialiasing, model filtering, smooth lighting), Controls, Audio and Discs pages; widescreen, frame interpolation, HD packs and mods are not there yet (the first game's port has them).
 
 ## What you need
 

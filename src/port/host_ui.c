@@ -50,7 +50,7 @@ static PsyzOverlayEventFilter_SDL3 previousFilter;
 static SDL_Window* uiWindow;
 
 static int rowCount(void) {
-    return s_overlayState.page==0?5:s_overlayState.page==2?1:s_overlayState.page==1?16:2;
+    return s_overlayState.page==0?8:s_overlayState.page==2?1:s_overlayState.page==1?16:2;
 }
 
 static void saveOptions(void) {
@@ -58,9 +58,10 @@ static void saveOptions(void) {
     snprintf(temp,sizeof temp,"%s.tmp",configPath);
     FILE* f=fopen(temp,"w");
     if(!f) { snprintf(statusText,sizeof statusText,"Could not save preferences."); return; }
-    fprintf(f,"disc1=%s\ndisc2=%s\nscale=%u\naspect=%d\ndither=%d\ngeometry=%d\nvolume=%u\n",
+    fprintf(f,"disc1=%s\ndisc2=%s\nscale=%u\naspect=%d\ndither=%d\ngeometry=%d\naa=%d\nfilter=%d\nlight=%d\nvolume=%u\n",
         discPaths[0],discPaths[1],Psyz_VideoGetInternalResolution(),Psyz_VideoGetAspectMode(),
-        Psyz_VideoGetDitheringMode(),Psyz_VideoGetGeometryCorrection(),Psyz_AudioGetOutputVolume());
+        Psyz_VideoGetDitheringMode(),Psyz_VideoGetGeometryCorrection(),Psyz_VideoGetAntialiasing(),
+        Psyz_VideoGetModelFiltering(),Psyz_VideoGetDynamicLighting(),Psyz_AudioGetOutputVolume());
     for(unsigned i=0;i<16;i++) fprintf(f,"key%u=%d\n",i,Psyz_GetKeyboardBinding_SDL3(i));
     int failed=ferror(f); if(fclose(f)) failed=1;
     if(failed || rename(temp,configPath)) snprintf(statusText,sizeof statusText,"Could not save preferences.");
@@ -86,6 +87,9 @@ static void loadOptions(void) {
         else if(!strcmp(line,"aspect") && n>=0 && n<=1) Psyz_VideoSetAspectMode(n);
         else if(!strcmp(line,"dither") && n>=0 && n<=1) Psyz_VideoSetDitheringMode(n);
         else if(!strcmp(line,"geometry") && n>=0 && n<=1) Psyz_VideoSetGeometryCorrection(n);
+        else if(!strcmp(line,"aa") && n>=0 && n<=1) Psyz_VideoSetAntialiasing(n);
+        else if(!strcmp(line,"filter") && n>=0 && n<=1) Psyz_VideoSetModelFiltering(n);
+        else if(!strcmp(line,"light") && n>=0 && n<=1) Psyz_VideoSetDynamicLighting(n);
         else if(!strcmp(line,"volume") && n>=0 && n<=100) Psyz_AudioSetOutputVolume(n);
         else if(!strncmp(line,"key",3)) {
             char* last; long index=strtol(line+3,&last,10);
@@ -175,13 +179,16 @@ static int chooseDiscs(SDL_Window* window,int expected) {
 static void rowText(int row,char label[128],char value[256]) {
     value[0]=0;
     if(s_overlayState.page==0) {
-        const char* labels[]={"Picture detail","Aspect ratio","Dithering","Geometry correction","Fullscreen"};
+        const char* labels[]={"Picture detail","Aspect ratio","Dithering","Geometry correction","Fullscreen","Antialiasing","Model filtering","Smooth lighting"};
         strcpy(label,labels[row]);
         if(row==0)snprintf(value,256,"%ux",Psyz_VideoGetInternalResolution());
         if(row==1)strcpy(value,Psyz_VideoGetAspectMode()?"Square pixels":"Classic 4:3");
         if(row==2)strcpy(value,Psyz_VideoGetDitheringMode()?"Off":"Original");
         if(row==3)strcpy(value,Psyz_VideoGetGeometryCorrection()?"On":"Off");
         if(row==4)strcpy(value,(s_overlayGpuWindow && SDL_GetWindowFlags(s_overlayGpuWindow)&SDL_WINDOW_FULLSCREEN)?"On":"Off");
+        if(row==5)strcpy(value,Psyz_VideoGetAntialiasing()?"On":"Off");
+        if(row==6)strcpy(value,Psyz_VideoGetModelFiltering()?"On":"Off");
+        if(row==7)strcpy(value,Psyz_VideoGetDynamicLighting()?"On":"Off");
     } else if(s_overlayState.page==2) {
         strcpy(label,"Master volume");snprintf(value,256,"%u%%",Psyz_AudioGetOutputVolume());
     } else if(s_overlayState.page==1) {
@@ -251,6 +258,9 @@ static void changeRow(int direction,int activate) {
         if(r==3)Psyz_VideoSetGeometryCorrection(!Psyz_VideoGetGeometryCorrection());
         if(r==4 && s_overlayGpuWindow)SDL_SetWindowFullscreen(s_overlayGpuWindow,
             !(SDL_GetWindowFlags(s_overlayGpuWindow)&SDL_WINDOW_FULLSCREEN));
+        if(r==5)Psyz_VideoSetAntialiasing(!Psyz_VideoGetAntialiasing());
+        if(r==6)Psyz_VideoSetModelFiltering(!Psyz_VideoGetModelFiltering());
+        if(r==7)Psyz_VideoSetDynamicLighting(!Psyz_VideoGetDynamicLighting());
     } else if(s_overlayState.page==2) {
         int n=(int)Psyz_AudioGetOutputVolume()+direction*5;
         Psyz_AudioSetOutputVolume(n<0?0:n>100?100:n);
