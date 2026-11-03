@@ -7,7 +7,8 @@ CLI over one shared save model.
 ## Save format
 
 The format is taken directly from the decompilation (`src/main/mc.c`,
-`include/main/mc_types.h`). One card file is one 8 KB block (`BASLUS-01042<A..O>`):
+`include/main/mc_types.h`). One card file is one 8 KB block named `BASLUS-01042` + a slot letter (`A..O`, the
+directory index) + seven random characters the game picks when it creates the file (20 characters in all):
 
 | Section | Offset | Copy size | Extent | Contents |
 | --- | --- | --- | --- | --- |
@@ -50,11 +51,11 @@ raw image so everything else is preserved verbatim.
 ## Usage
 
 ```sh
-cargo run -- list bu00
-cargo run -- verify bu00 --slot 2
-cargo run -- edit bu00 --slot 2 --set exp=99999 --set mark-items-seen=384
-cargo run -- export bu00 --slot 2 -o slot2.json
-cargo run -- import bu00 --slot 2 -i slot2.json
+cargo run -- list ~/Library/Application\ Support/parasite-eve-ii-port/parasite-eve-ii/card0
+cargo run -- verify card0 --slot 2
+cargo run -- edit card0 --slot 2 --set exp=99999 --set mark-items-seen=384
+cargo run -- export card0 --slot 2 -o slot2.json
+cargo run -- import card0 --slot 2 -i slot2.json
 cargo run            # GUI
 ```
 
@@ -63,3 +64,15 @@ cargo run            # GUI
 `cargo test` covers layout chaining, checksum round-trips, edit + verify,
 corruption detection and transfer round-trips. Save files are never
 rewritten in place without a fresh checksum refresh.
+
+## Containers and file names
+
+The port stores each card as a directory of unmodified save files (`card0/`, `card1/` under the per-user data
+directory, or under `PE2_MEMORY_CARD_DIR`). The editor edits a file in place under its own name, never renames or adds
+a second file, and only creates a name (`BASLUS-01042<letter>0000000`) for a slot that has none. Raw card images are
+read through the card's own directory (frames 1..15, in-use marker 0x51) and a slot is overwritten only where that
+directory already lists a PE2 save for it.
+
+Not verified against a retail save: the layout was derived from the decompilation and the offsets of every typed field
+were compared with `offsetof(McSaveState, ...)` from `include/main/mc_types.h`; the checksum order follows `mc.c`. Try
+it on a copy of a real save and load the result in the game before trusting it.

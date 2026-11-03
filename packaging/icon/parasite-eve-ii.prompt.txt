@@ -1,0 +1,3 @@
+Tool: built-in image_gen (transparent background).
+Reference: parasite-eve-pc/packaging/icon/parasite-eve.png.
+Prompt: Matching sequel companion to the PE1 application icon: circular brushed silver rim, black interior, realistic emerald eye with luminous mitochondria, glossy crimson organic filigree and jewel-like crest, polished gold serif title reading exactly PARASITE EVE II. Preserve the established composition, emerald/crimson/gold/silver palette and quality. Transparent outside the circle; no subtitle, version badge, extra text, watermark or desktop mockup.

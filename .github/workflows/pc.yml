@@ -59,6 +59,13 @@ jobs:
       - name: Run the host tests
         run: ctest --test-dir build --output-on-failure --no-tests=error
 
+  save-editor:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Test the save editor
+        run: cargo test --manifest-path save-editor/Cargo.toml --locked
+
   tools:
     runs-on: ubuntu-24.04
     steps:
