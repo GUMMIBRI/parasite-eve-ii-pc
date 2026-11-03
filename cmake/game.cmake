@@ -243,8 +243,8 @@ set_property(SOURCE src/stages/akropolis/actors/helicopter_landing_pad_no_9/heli
     gGolemNo9BodyAkropolis=gHelipadNo9GolemNo9BodyAkropolis
     actorMsgPlaceRotMatrix=gHelipadNo9ActorMsgPlaceRotMatrix)
 
-# src/port/asm_data.c holds game tables converted from the user's disc by tools/port/regen_stubs.sh; it is never
-# committed, so a fresh checkout starts with an empty one.
+# src/port/asm_data.c holds game tables converted from the user's disc by the tooling at the tag pe2-layout-tooling; it is
+# committed; the fallback below only covers a checkout without it.
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/port/asm_data.c)
     file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/port/asm_data.c "")
 endif()
