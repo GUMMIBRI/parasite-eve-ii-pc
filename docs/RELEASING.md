@@ -8,8 +8,8 @@ would redistribute game data. What is embedded today:
 | Embedded in the executable | Size | Needed for a binary release |
 | --- | --- | --- |
 | `src/port/asm_data.c` (initialized globals converted from the original program) | generated | a runtime decoder or removal |
-| Room structures with pointers (events, geometry, lights, surfaces, triggers, placements), ~230 includes | ~2.5 MB | per-type decoders (docs/RUNTIME_ASSETS.md) |
-| Animation bank slot tables, ~210 includes | layout only | none: they hold no disc bytes |
+| Room events (38), geometry (22) and a few small tables, ~75 includes | small | decoders for these layouts (docs/RUNTIME_ASSETS.md) |
+| Animation bank slot tables, ~240 includes | layout only | none: they hold no disc bytes |
 | Inventory catalog, one motion table | ~48 KB | decoders |
 
 So 0.1.0-alpha is the repository at a tag, built by each user from their own discs (README, "Build").

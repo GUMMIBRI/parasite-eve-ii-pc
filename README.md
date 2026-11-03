@@ -29,7 +29,7 @@ Your own **North American CUE/BIN images of both discs**. Game data is not inclu
 your discs at run time.
 
 Today the build also needs data extracted from your disc, because some generated sources are still produced at build
-time (about 450 files, tracked in [docs/RUNTIME_ASSETS.md](docs/RUNTIME_ASSETS.md)). Everything already converted
+time (about 75 files with data, tracked in [docs/RUNTIME_ASSETS.md](docs/RUNTIME_ASSETS.md)). Everything already converted
 (4,176 arrays: package parts, clips, models, fonts) is loaded from the disc when the game starts.
 
 ## Build

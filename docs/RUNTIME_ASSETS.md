@@ -147,3 +147,15 @@ load from the disc: 4,644 bound arrays, embedded and disc-loaded dumps identical
 - inventory catalog and one motion table.
 
 These need per-type decoders (disc record with 32-bit addresses to host structure with pointers).
+
+### After the pointer decoders (2026-11-03)
+
+Room structs with pointers load from the disc too: the numbers are read by generated per-layout decoders
+(`tools/peassets/room/decoders.py`, `PE_ASSET_OP_DECODE`) and the pointers are set by generated fixups, so the
+topology stays code and the data comes from the disc. 4,924 arrays are bound; the embedded and disc-loaded builds give
+identical dumps (the dump hashes a pointer as its target array and offset, so two executables compare).
+
+**347 includes remain.** 239 are animation banks (`AnimationSet*` slot tables, no disc bytes) and 18 are declaration
+files (types and macros). About 75 carry data: room events (38), geometry (22), markers, spawns, header, jukebox,
+waves, one object, surface and action-trigger table, the inventory catalog, one encounter, one enemy and one motion
+table.
