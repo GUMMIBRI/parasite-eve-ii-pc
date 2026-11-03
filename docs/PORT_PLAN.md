@@ -3534,5 +3534,10 @@ No crash and no aborting stub in these runs.
 
 Walking: in Dryfield, holding Up (`PE2_PAD_HOLD=0010 PE2_PAD_FROM=1200`) after the loading card gives, at tick 4000, Aya
 standing by a yellow car with the camera above her, and at tick 6500 a different camera on the street with the sky
-behind her: the player moves and the view changes with the position, as in the original. Not yet checked: crossing
-into a new room or stage during play, saving, and the package state reset on a stage change.
+behind her: the player moves and the view changes with the position, as in the original. 
+Stage changes during play (`PE2_WARP`, which re-runs the session-start path with a new live location): from a new game
+in Akropolis, warping at tick 3000 to Dryfield, to Dryfield by night, and (with disc 2) to the mine each loads the new
+stage and renders it with the player (Dryfield with the HUD and Triangle menu, the night gas station with a car, the
+mine area with a truck), without a crash or an aborting stub. So with every overlay linked, a stage change works
+without a run-time registry; what it does not show is stale state left by the previous stage. Not yet checked: doors
+between rooms outside Akropolis, saving, and a return to an earlier stage.

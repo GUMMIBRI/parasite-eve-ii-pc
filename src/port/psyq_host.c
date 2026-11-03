@@ -383,6 +383,20 @@ void Psyz_PadsOverride(int port, char* frame, int len)
             if (f) { fwrite(vram, sizeof vram, 1, f); fclose(f); }
         }
     }
+    if (port == 0) {   /* development: PE2_WARP=<tick>:stage,area,view,roomState,warp,variant changes stage mid-game */
+        static int warpTick = -2;
+        static unsigned warpKey[6];
+        if (warpTick == -2) {
+            const char* spec = getenv("PE2_WARP");
+            warpTick = spec && sscanf(spec, "%d:%u,%u,%u,%u,%u,%u", &warpTick, &warpKey[0], &warpKey[1], &warpKey[2],
+                                      &warpKey[3], &warpKey[4], &warpKey[5]) == 7 ? warpTick : -1;
+        }
+        if (warpTick >= 0 && currentTick == warpTick) {
+            extern void peDebugWarp(const GameLocationKey*);
+            GameLocationKey key = { (u8)warpKey[2], (u8)warpKey[3], (u8)warpKey[1], (u8)warpKey[0], (u8)warpKey[4], (u8)warpKey[5], { 0, 0 } };
+            peDebugWarp(&key);
+        }
+    }
     if (port != 0 || len < 4) return;
     peMemoryCardAdvanceIo();
     if (currentTick >= holdStart && holdEnd > currentTick) {

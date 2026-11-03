@@ -343,6 +343,19 @@ static void _gameFlowResetForSessionStart(void)
     taskSpawn(GAME_FLOW_RESIDENT_TASK_BANK, GAME_FLOW_START_SESSION_TASK_SLOT, 0, 0);
 }
 
+#ifdef __psyz
+/// Development (PE2_WARP, src/port/psyq_host.c): starts the session-start task again at `location`, as a stage
+/// change does: task and model lists and heaps are reset, the live save location is replaced, and the loader runs
+/// for the new stage. Called from the pad poll, so the task walk is stopped first.
+void peDebugWarp(const GameLocationKey* location)
+{
+    gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location = *location;
+    gDisplayState.stopTaskWalk = true;
+    _gameFlowResetSessionResources();
+    taskSpawn(GAME_FLOW_RESIDENT_TASK_BANK, GAME_FLOW_START_SESSION_TASK_SLOT, 0, 0);
+}
+#endif
+
 /// Resets live session/save progress for the load-dialog path, preserving vibration.
 ///
 /// The flow task must be in state 0. Arms the pause block until the loading fade
