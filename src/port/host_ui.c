@@ -42,7 +42,7 @@ static const Color kPanel={0.075f,0.082f,0.102f,0.96f}, kText={0.93f,0.95f,0.98f
 
 static char discPaths[2][4096], configPath[4096], statusText[256];
 static int requiredDisc, selectedDisc;
-static const char* const pages[]={"Graphics","Audio","Controls","Discs"};
+static const char* const pages[]={"Graphics","Controls","Audio","Discs"};
 static const char* const buttons[]={"Select","L3","R3","Start","Up","Right","Down","Left",
     "L2","R2","L1","R1","Triangle","Circle","Cross","Square"};
 static const char* configDir;
@@ -50,7 +50,7 @@ static PsyzOverlayEventFilter_SDL3 previousFilter;
 static SDL_Window* uiWindow;
 
 static int rowCount(void) {
-    return s_overlayState.page==0?5:s_overlayState.page==1?1:s_overlayState.page==2?16:2;
+    return s_overlayState.page==0?5:s_overlayState.page==2?1:s_overlayState.page==1?16:2;
 }
 
 static void saveOptions(void) {
@@ -182,9 +182,9 @@ static void rowText(int row,char label[128],char value[256]) {
         if(row==2)strcpy(value,Psyz_VideoGetDitheringMode()?"Off":"Original");
         if(row==3)strcpy(value,Psyz_VideoGetGeometryCorrection()?"On":"Off");
         if(row==4)strcpy(value,(s_overlayGpuWindow && SDL_GetWindowFlags(s_overlayGpuWindow)&SDL_WINDOW_FULLSCREEN)?"On":"Off");
-    } else if(s_overlayState.page==1) {
-        strcpy(label,"Output volume");snprintf(value,256,"%u%%",Psyz_AudioGetOutputVolume());
     } else if(s_overlayState.page==2) {
+        strcpy(label,"Output volume");snprintf(value,256,"%u%%",Psyz_AudioGetOutputVolume());
+    } else if(s_overlayState.page==1) {
         strcpy(label,buttons[row]);
         snprintf(value,256,"%s",s_overlayState.capture && row==s_overlayState.row?"Press a key...":
             SDL_GetScancodeName(Psyz_GetKeyboardBinding_SDL3(row)));
@@ -240,10 +240,10 @@ static void changeRow(int direction,int activate) {
         if(r==3)Psyz_VideoSetGeometryCorrection(!Psyz_VideoGetGeometryCorrection());
         if(r==4 && s_overlayGpuWindow)SDL_SetWindowFullscreen(s_overlayGpuWindow,
             !(SDL_GetWindowFlags(s_overlayGpuWindow)&SDL_WINDOW_FULLSCREEN));
-    } else if(s_overlayState.page==1) {
+    } else if(s_overlayState.page==2) {
         int n=(int)Psyz_AudioGetOutputVolume()+direction*5;
         Psyz_AudioSetOutputVolume(n<0?0:n>100?100:n);
-    } else if(s_overlayState.page==2 && activate)s_overlayState.capture=1;
+    } else if(s_overlayState.page==1 && activate)s_overlayState.capture=1;
     else if(s_overlayState.page==3 && activate) {
         if(chooseDiscs(s_overlayGpuWindow,r+1) && requiredDisc==r+1) {
             selectedDisc=requiredDisc;s_overlayState.open=0;
