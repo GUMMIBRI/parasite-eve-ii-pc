@@ -1,3 +1,8 @@
+> **Tooling note:** the generators named below (`gen_asm_data.py`, `gen_asset_table.py`, `gen_asset_manifest.py`,
+> `freeze_includes.py`, `regen_stubs.sh`, `ninja_config.py`) were removed from the tree once their output was committed
+> as layout sources (`include/generated`, `src/port/asm_data.c`, `src/port/asset_parts_table.c`). They are kept at the git
+> tag `pe2-layout-tooling`; check it out in a separate worktree to regenerate.
+
 # Runtime asset loading (Phase 0 gate)
 
 ## Today
