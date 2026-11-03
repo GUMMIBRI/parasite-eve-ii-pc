@@ -40,6 +40,7 @@
 #include "main/tmd_types.h"
 
 #include "overlay.h"
+#include "../../shared/actor/anim_cue_latch.inc.h"
 #include "../../shared/actor/actor_messages.h"
 #include "../../shared/actor/anim_driver.h"
 
@@ -592,13 +593,8 @@ static s32 _actor223600PollSoundCue(_Actor223600Work* work)
             } else {
                 triggers = cueIndex == ACTOR_223600_PAIR_CUE_FIRST || cueIndex == ACTOR_223600_PAIR_CUE_SECOND;
             }
-            if (!triggers) {
-                work->lastSoundCueIndex = 0;
-                break;
-            }
             // A held trigger cue sounds once.
-            if (work->lastSoundCueIndex != cueIndex) {
-                work->lastSoundCueIndex = cueIndex;
+            if (animCueLatchPoll(&work->lastSoundCueIndex, cueIndex, triggers, 0)) {
                 return ACTOR_223600_SOUND_CUE_POSE;
             }
             break;

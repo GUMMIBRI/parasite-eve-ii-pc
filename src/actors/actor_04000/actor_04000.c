@@ -48,6 +48,7 @@
 #include "main/wipsys_types.h"
 
 #include "overlay.h"
+#include "../../shared/actor/anim_cue_latch.inc.h"
 #include "../../shared/actor/actor_messages.h"
 #include "../../shared/actor/anim_driver.h"
 #include "../../shared/actor/actor_contacts.h"
@@ -992,38 +993,22 @@ static s32 _actor04000PollAnimationSound(_Actor04000Work* work)
         ACTOR_04000_SOUND_IDLE_LOOP = 0x400C0005,
     };
     u16 cueIndex;
-    s32 cueValue;
+    s32 triggers;
 
     // Retain the halfword cue separately across the shared trigger and latch paths.
     switch (work->driver.requestedSet) {
         case ACTOR_04000_ANIMATION_WALK:
-            cueIndex = work->rig.slots[ANIM_DRIVER_FIRST_SLOT].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
-            cueValue = cueIndex;
-            if (cueValue != ACTOR_04000_WALK_CUE_A) {
-                goto otherWalkCue;
-            }
-        emitMovementSound:
-            if (work->lastSoundCueIndex == cueValue) {
-                goto retainMovementCue;
-            }
-            work->lastSoundCueIndex = cueIndex;
-            return ACTOR_04000_SOUND_MOVEMENT;
-        otherWalkCue:
-            if (cueValue == ACTOR_04000_WALK_CUE_B) {
-                goto emitMovementSound;
-            }
-        clearMovementCue:
-            work->lastSoundCueIndex = 0;
-            break;
         case ACTOR_04000_ANIMATION_RUN:
             cueIndex = work->rig.slots[ANIM_DRIVER_FIRST_SLOT].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
-            cueValue = cueIndex;
-            if (cueValue != ACTOR_04000_RUN_CUE_A && cueValue != ACTOR_04000_RUN_CUE_B) {
-                goto clearMovementCue;
+            if (work->driver.requestedSet == ACTOR_04000_ANIMATION_WALK) {
+                triggers = cueIndex == ACTOR_04000_WALK_CUE_A || cueIndex == ACTOR_04000_WALK_CUE_B;
+            } else {
+                triggers = cueIndex == ACTOR_04000_RUN_CUE_A || cueIndex == ACTOR_04000_RUN_CUE_B;
             }
-            goto emitMovementSound;
-        retainMovementCue:
-            work->lastSoundCueIndex = cueIndex;
+            // A held trigger cue sounds once.
+            if (animCueLatchPoll(&work->lastSoundCueIndex, cueIndex, triggers, 0)) {
+                return ACTOR_04000_SOUND_MOVEMENT;
+            }
             break;
         case ACTOR_04000_ANIMATION_IDLE:
             if (work->rig.slots[ANIM_DRIVER_FIRST_SLOT].status.fields.flags & ANIMATION_SLOT_FOLLOWED_JUMP) {

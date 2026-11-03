@@ -43,6 +43,7 @@
 #include "main/tmd_types.h"
 
 #include "overlay.h"
+#include "../../shared/actor/anim_cue_latch.inc.h"
 #include "../../shared/actor/actor_messages.h"
 #include "../../shared/actor/anim_driver.h"
 
@@ -406,38 +407,22 @@ static s32 _actor123200SelectCueSound(_Actor123200Work* work)
         ACTOR_123200_SOUND_JUMP_CUE   = SOUND_CHARACTER(0xC, 5),
     };
     u16 cueIndex;
-    s32 cueValue;
+    s32 triggers;
 
     // Both cue pairs share the same latch update and halfword promotion.
     switch (work->driver.requestedSet) {
         case ACTOR_123200_ANIM_WALK:
-            cueIndex = work->rig.slots[ANIM_DRIVER_FIRST_SLOT].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
-            cueValue = cueIndex;
-            if (cueValue != ACTOR_123200_WALK_CUE_SECOND) {
-                goto testOtherWalkCue;
-            }
-        checkNewCue:
-            if (work->lastSoundCueIndex == cueValue) {
-                goto holdCue;
-            }
-            work->lastSoundCueIndex = cueIndex;
-            return ACTOR_123200_SOUND_POSE_CUE;
-        testOtherWalkCue:
-            if (cueValue == ACTOR_123200_WALK_CUE_FIRST) {
-                goto checkNewCue;
-            }
-        clearCueLatch:
-            work->lastSoundCueIndex = ACTOR_123200_SOUND_CUE_NONE;
-            break;
         case ACTOR_123200_ANIM_SET_3:
             cueIndex = work->rig.slots[ANIM_DRIVER_FIRST_SLOT].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
-            cueValue = cueIndex;
-            if (cueValue != ACTOR_123200_SET_3_CUE_FIRST && cueValue != ACTOR_123200_SET_3_CUE_SECOND) {
-                goto clearCueLatch;
+            if (work->driver.requestedSet == ACTOR_123200_ANIM_WALK) {
+                triggers = cueIndex == ACTOR_123200_WALK_CUE_FIRST || cueIndex == ACTOR_123200_WALK_CUE_SECOND;
+            } else {
+                triggers = cueIndex == ACTOR_123200_SET_3_CUE_FIRST || cueIndex == ACTOR_123200_SET_3_CUE_SECOND;
             }
-            goto checkNewCue;
-        holdCue:
-            work->lastSoundCueIndex = cueIndex;
+            // A held trigger cue sounds once.
+            if (animCueLatchPoll(&work->lastSoundCueIndex, cueIndex, triggers, ACTOR_123200_SOUND_CUE_NONE)) {
+                return ACTOR_123200_SOUND_POSE_CUE;
+            }
             break;
         case ACTOR_123200_ANIM_SET_5:
             if (work->rig.slots[ANIM_DRIVER_FIRST_SLOT].status.fields.flags & ANIMATION_SLOT_FOLLOWED_JUMP) {

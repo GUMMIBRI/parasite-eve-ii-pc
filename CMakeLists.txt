@@ -321,6 +321,8 @@ target_include_directories(weapon_mp5a5_test PRIVATE include include/decomp ${PE
 target_compile_definitions(weapon_mp5a5_test PRIVATE __psyz SKIP_ASM WEAPON_FN=mp5a5AttackState WEAPON_HEADER="weapons/mp5a5.h" WEAPON_NAME="mp5a5" WEAPON_TRACE=WEAPON_TRACE_mp5a5 WEAPON_INDEX=30)
 target_link_libraries(weapon_mp5a5_test PRIVATE psyz)
 
+add_executable(anim_cue_latch_test EXCLUDE_FROM_ALL tests/anim_cue_latch_test.c)
+
 enable_testing()
 set(PE_DATA_TESTS cap_room_command_test rupert_eyes_test tmd_layout_assets_test text_palette_test
     observatory_scene_lifecycle_test action_trigger_test fountain_trigger_test)

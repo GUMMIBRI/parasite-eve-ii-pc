@@ -49,6 +49,7 @@
 #include "main/wipsys_types.h"
 
 #include "overlay.h"
+#include "../../shared/actor/anim_cue_latch.inc.h"
 #include "../../shared/actor/actor_messages.h"
 #include "../../shared/actor/anim_driver.h"
 /// This file's `_actorContactApplyAvoidancePushback` returns `s16`.
@@ -443,37 +444,21 @@ static s32 _actor01200PollAnimationSound(_Actor01200Work* work)
         ACTOR_01200_RUN_CUE_SECOND  = 18,
     };
     u16 cueIndex;
-    s32 cueValue;
+    s32 triggers;
 
     switch (work->driver.requestedSet) {
         case ACTOR_01200_ANIM_WALK:
-            cueIndex = work->rig.slots[ANIM_DRIVER_FIRST_SLOT].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
-            cueValue = cueIndex;
-            if (cueValue != ACTOR_01200_WALK_CUE_FIRST) {
-                goto otherWalkCue;
-            }
-        checkCue:
-            if (work->lastSoundCueIndex == cueValue) {
-                goto sameCue;
-            }
-            work->lastSoundCueIndex = cueIndex;
-            return ACTOR_01200_SOUND_STEP;
-        otherWalkCue:
-            if (cueValue == ACTOR_01200_WALK_CUE_SECOND) {
-                goto checkCue;
-            }
-        clearCue:
-            work->lastSoundCueIndex = 0;
-            break;
         case ACTOR_01200_ANIM_RUN:
             cueIndex = work->rig.slots[ANIM_DRIVER_FIRST_SLOT].currentPose.indices.recordIndex & ANIMATION_POSE_CUE_INDEX_MASK;
-            cueValue = cueIndex;
-            if (cueValue != ACTOR_01200_RUN_CUE_FIRST && cueValue != ACTOR_01200_RUN_CUE_SECOND) {
-                goto clearCue;
+            if (work->driver.requestedSet == ACTOR_01200_ANIM_WALK) {
+                triggers = cueIndex == ACTOR_01200_WALK_CUE_FIRST || cueIndex == ACTOR_01200_WALK_CUE_SECOND;
+            } else {
+                triggers = cueIndex == ACTOR_01200_RUN_CUE_FIRST || cueIndex == ACTOR_01200_RUN_CUE_SECOND;
             }
-            goto checkCue;
-        sameCue:
-            work->lastSoundCueIndex = cueIndex;
+            // A held trigger cue sounds once.
+            if (animCueLatchPoll(&work->lastSoundCueIndex, cueIndex, triggers, 0)) {
+                return ACTOR_01200_SOUND_STEP;
+            }
             break;
         case ACTOR_01200_ANIM_SETTLE:
             if (work->rig.slots[ANIM_DRIVER_FIRST_SLOT].status.fields.flags & ANIMATION_SLOT_REACHED_BOUNDARY) {
