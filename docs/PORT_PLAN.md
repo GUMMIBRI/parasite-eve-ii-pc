@@ -3541,5 +3541,9 @@ Stage changes during play (`PE2_WARP`, which re-runs the session-start path with
 in Akropolis, warping at tick 3000 to Dryfield, to Dryfield by night, and (with disc 2) to the mine each loads the new
 stage and renders it with the player (Dryfield with the HUD and Triangle menu, the night gas station with a car, the
 mine area with a truck), without a crash or an aborting stub. So with every overlay linked, a stage change works
-without a run-time registry; what it does not show is stale state left by the previous stage. Not yet checked: doors
-between rooms outside Akropolis, saving, and a return to an earlier stage.
+without a run-time registry; what it does not show is stale state left by the previous stage. Return trip: warping Akropolis, then
+Dryfield at tick 3000, then Akropolis at tick 5000 (`PE2_WARP="3000:2,1,1,1,1,1;5000:1,1,1,1,1,1"`, same new-game input) and a direct warp to Akropolis
+at tick 3000 show, at tick 14000, the same frame (the Triangle menu over the same scene): 60 of 76,800 visible pixels
+differ (a 28 x 83 px patch, animation timing); the logs show no crash and the same stream of unsupported GPU command FF
+warnings as the direct run, so no stale state from Dryfield was visible. VRAM outside the display differs, as expected.
+Not yet checked: doors between rooms outside Akropolis, and saving.
