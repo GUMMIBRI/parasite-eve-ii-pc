@@ -96,7 +96,7 @@ Still embedded: 39 sites the converter does not match and 553 includes that no d
    `docs/SIZE_AUDIT.md`.
 4. **Verification.** A test mounts the real disc and compares every loaded array with the build-time include for
    the same symbol (byte for byte) before the includes are deleted.
-5. **Remove the toolchain.** Delete `ninja_config.py`, `configs/`, `linkers/` and the `build/include/assets` rule
+5. **Remove the toolchain.** *Done:* `ninja_config.py`, the splat inputs of `configs/` and the generated `linkers/` are gone (`configs/USA/*.toml` and `sym/` stay: the asset tools read them; the tooling is kept at the tag `pe2-layout-tooling`). Originally: delete `ninja_config.py`, `configs/`, `linkers/` and the `build/include/assets` rule
    once nothing includes a generated file. `gen_asm_data.py` follows the same path: its output moves to the manifest.
 
 ## Why this is not done yet

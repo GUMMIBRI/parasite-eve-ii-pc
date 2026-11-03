@@ -64,4 +64,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Python tool syntax
-        run: python3 -m compileall -q tools ninja_config.py
+        run: python3 -m compileall -q tools

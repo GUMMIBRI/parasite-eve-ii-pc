@@ -21,7 +21,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
         "$<$<COMPILE_LANGUAGE:C>:-fdata-sections>")
 endif()
 
-# Comparison build (A/B against the disc loader): the full generated includes written by tools/port/refresh_layout.sh
+# Comparison build (A/B against the disc loader): the full generated includes written by the tooling at the git tag pe2-layout-tooling
 # (build/include, game data compiled in) instead of the committed layout-only ones.
 option(PE_EMBED_ASSETS "Comparison build: keep the build-time asset includes instead of loading from the disc" OFF)
 if(PE_EMBED_ASSETS)
@@ -32,7 +32,7 @@ endif()
 
 # The game builds from the committed layout sources (include/generated, src/port/asm_data.c, asset_parts_table.c,
 # globals.c): types, sizes and registrations, no game data. The data itself is read from the user's disc images at run
-# time. tools/port/refresh_layout.sh rewrites them (that is the only step that needs the disc extraction toolchain).
+# time. regenerating them needs the extraction tooling, which was removed from the tree and lives at the tag pe2-layout-tooling.
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/port/asset_parts_table.c)
     set(_pe_game_default ON)
 else()

@@ -49,10 +49,10 @@ Put the second disc next to the first (or pick it when the game asks for it). Yo
 passing the path. Host tests: `cmake --build build --target host_tests && ctest --test-dir build`. Nothing from your
 disc is ever committed: `tools/ci/check_no_game_data.sh` enforces that.
 
-**Contributors** who change the generators or the decompiled sources' data layout refresh the committed layout with
-`sh tools/port/refresh_layout.sh`, which needs Python 3, `dumpsxiso` from a
-[mkpsxiso release](https://github.com/Lameguy64/mkpsxiso/releases) and your images in `rom/image/` as
-`SLUS-01042.bin/.cue` and `SLUS-01055.bin/.cue` (details in [docs/decomp/README.md](docs/decomp/README.md)).
+**Contributors:** the layout sources are committed and the extraction tooling (splat split, `ninja_config.py`, disc
+extraction) is no longer in the tree. If a generator change needs them regenerated, check out the tag
+`pe2-layout-tooling` in a separate worktree, run its `tools/port/refresh_layout.sh` there with your images in `rom/image/`,
+and copy the result back (see [docs/PORT_PLAN.md](docs/PORT_PLAN.md)).
 
 ### Development switches
 

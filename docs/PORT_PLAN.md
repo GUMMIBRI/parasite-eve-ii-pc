@@ -16,7 +16,7 @@ first game). Matching the PS1 binaries is not a goal.
 
 ## Phases
 
-0. **Foundation.** CMake and PsyZ submodule; compile `src/main` on the host; drop the matching toolchain once nothing depends on it. *Done:* CMake/PsyZ, `src/main` builds as `game_main`, matching hacks and GTE MIPS asm removed. *Toolchain:* the build reads committed layout sources and the disc at run time (`tools/port/refresh_layout.sh` is the contributor-only refresh); `src/main/hasm/*.s` stays as the reference for the C rewrite (phase 1); `DEFINE_ALIAS` goes with the overlay registry (phase 2). Sources outside `src/main` are not yet compiled.
+0. **Foundation.** CMake and PsyZ submodule; compile `src/main` on the host; drop the matching toolchain once nothing depends on it. *Done:* CMake/PsyZ, `src/main` builds as `game_main`, matching hacks and GTE MIPS asm removed. *Toolchain:* the build reads committed layout sources and the disc at run time (regeneration lives at the git tag `pe2-layout-tooling`); `src/main/hasm/*.s` stays as the reference for the C rewrite (phase 1); `DEFINE_ALIAS` goes with the overlay registry (phase 2). Sources outside `src/main` are not yet compiled.
 1. **Boot to title.** Memory, task system, disc image mount (both discs), `fs`/`cdcmd` on PsyZ, LZSS and TMD in C, pad, fonts, `title` overlay.
 2. **Overlays.** Module registry, naming, runtime data loader; first room with Aya and collision.
 3. **Gameplay.** Actors, combat, items, menus, by family; verify against emulator traces (`tools/gametrace`).
@@ -31,8 +31,7 @@ Throughout: native tests per module and headless frame captures.
 and the build no longer depends on the decomp toolchain. Everything the compiler reads from the disc extraction is now
 committed as layout only (`include/generated`, 633 files, 4 MB; `src/port/asm_data.c`, `asset_parts_table.c`): types,
 sizes, decoders and registrations, with no game data. Cloning, building and playing need CMake and a C compiler plus
-the user's discs. The matching compile/assemble/link/objdiff/checksum graph, its patches and helper scripts are deleted; `ninja_config.py` (now only splat splitting and the asset-include generation) and `configs/` (splat inputs) remain for
-`tools/port/refresh_layout.sh`, which contributors run when a generator changes. Phases 1 and 2 are well advanced,
+the user's discs. The matching compile/assemble/link/objdiff/checksum graph, its patches and helper scripts are deleted; `ninja_config.py`, the splat yamls and `refresh_layout.sh` are removed from the tree too (what remains of `configs/` is the overlay/symbol description the asset tools read). The last state that could regenerate the layout from a disc is the git tag `pe2-layout-tooling`. Phases 1 and 2 are well advanced,
 because the work was allowed to cut into them:
 
 - Disc data: 27,419 arrays (clips, models, room structs, item catalog, and 10,622 globals converted from the
