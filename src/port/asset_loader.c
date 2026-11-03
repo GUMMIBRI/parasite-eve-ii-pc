@@ -53,6 +53,14 @@ int peAssetsLoad(struct PeDisc* disc)
         const PeAssetPart* part = findPart(b[i].key);
         if (!part) { fprintf(stderr, "[assets] no layout for %s\n", b[i].key); wrong++; continue; }
         size_t want = part->op == PE_ASSET_OP_GRID_TABLE ? (size_t)part->size / 4 * sizeof(void*) : part->size;
+        if (part->op == PE_ASSET_OP_DECODE) want = b[i].size;          /* checked below against the record count */
+        if (part->op == PE_ASSET_OP_DECODE && (!part->load || part->size % part->load || !b[i].aux ||
+                                                b[i].size % (part->size / part->load))) {
+            fprintf(stderr, "[assets] %s: %u bytes of %u-byte records do not fit a %zu-byte array\n", b[i].key,
+                    (unsigned)part->size, (unsigned)part->load, b[i].size);
+            wrong++;
+            continue;
+        }
         if (want != b[i].size) {
             fprintf(stderr, "[assets] %s: array is %zu bytes, layout says %zu\n", b[i].key, b[i].size, want);
             wrong++;
@@ -73,6 +81,10 @@ int peAssetsLoad(struct PeDisc* disc)
         const uint8_t* src = pkgData[pi] + part->offset;
         if (part->op == PE_ASSET_OP_COPY) {
             memcpy(b[i].dst, src, part->size);
+        } else if (part->op == PE_ASSET_OP_DECODE) {
+            size_t count = part->size / part->load, hostElem = b[i].size / count;
+            for (size_t k = 0; k < count; k++)
+                ((PeAssetDecode)b[i].aux)((uint8_t*)b[i].dst + k * hostElem, src + k * part->load);
         } else {
             const uint32_t* words = (const uint32_t*)(const void*)src; /* PS1 addresses; little endian host */
             const int16_t*  cells = (const int16_t*)b[i].aux;

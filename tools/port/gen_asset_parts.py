@@ -133,14 +133,15 @@ for _name in _room.declared(_data.ASSETS):
     _limit = len(_pkg.read_bytes())
     _rd = _room.read(_name, _data.ASSETS, Path('assets/USA'))
     _kinds = {s_: r_['kind'] for m_ in _rd['modules'].values() for s_, r_ in m_.items()}
-    for _sym, _off, _size in _room.bound_arrays(_name, _data.ASSETS, _data.EMBEDDED_ASSETS, Path('assets/USA')):
-        if not 0 <= _off and _off + _size <= _limit:
+    for _sym, _off, _size, _k, _mode in _room.bound_arrays(_name, _data.ASSETS, _data.EMBEDDED_ASSETS, Path('assets/USA')):
+        if not (0 <= _off and _off + _size <= _limit):
             raise SystemExit(f'{_name}: {_sym} outside its package')
-        _k = _kinds[_sym]
-        _ELEM[_room.LAYOUTS[_k][0]] = _room.size(_k)
-        parts.append({'file': f'room/{_pn}/{_sym}.inc', 'kind': 'clip', 'package': _pn, 'load': 0, 'source': _off,
-                      'part': 'data', 'offset': _off, 'size': _size, 'type': _room.LAYOUTS[_k][0],
-                      'elem': _room.size(_k), 'op': 'copy'})
+        _part = {'file': f'room/{_pn}/{_sym}.inc', 'kind': 'clip', 'package': _pn, 'load': 0, 'source': _off,
+                 'part': 'data', 'offset': _off, 'size': _size, 'type': _room.LAYOUTS[_k][0],
+                 'elem': _room.size(_k), 'op': _mode}
+        if _mode == 'decode':
+            _part['disc_elem'] = _room.size(_k)
+        parts.append(_part)
 # Font glyph tables (gen_font_inc.py output): the exe holds the same bytes the include spells out.
 import re as _re
 _exe = Path('assets/USA/main.exe').read_bytes()

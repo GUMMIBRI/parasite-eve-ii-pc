@@ -603,6 +603,18 @@ def _cell_macro(package: str, header: int) -> str:
     raise SystemExit(f"{package}: no collision grid declared with its header at 0x{header:X}")
 
 
+def decodable(r: dict) -> bool:
+    """Whether an array of a kind with pointer fields can be decoded from the disc: its pointers are all NULL."""
+    from . import decoders
+    if not decoders.has_pointer(r["kind"]):
+        return False
+    try:
+        decoders.decoder(r["kind"])
+    except SystemExit:
+        return False
+    return all(decoders.ptrs_null(r["kind"], v) for v in r["values"])
+
+
 def flat(kind: str) -> bool:
     """Whether a layout holds only numbers: no pointer, text or union, so the disc's bytes are the host's bytes."""
     def plain(k) -> bool:
@@ -616,17 +628,20 @@ def flat(kind: str) -> bool:
     return all(plain(f[1]) for f in LAYOUTS[kind][1])
 
 
-def bound_arrays(name: str, assets: dict, embedded: dict, assets_root: Path) -> list[tuple[str, int, int]]:
-    """(symbol, byte offset in the package, byte size) of each array c_files binds to the disc."""
+def bound_arrays(name: str, assets: dict, embedded: dict, assets_root: Path) -> list[tuple[str, int, int, str, str]]:
+    """(symbol, byte offset in the package, byte size, kind, "copy" or "decode") of each array c_files binds to the disc."""
     room = read(name, assets, assets_root)
     im, _area = images(name, assets, embedded, assets_root)
     load = package_decl.load_address(name, assets)
     out = []
     for module in room["modules"].values():
         for sym, r in module.items():
-            if "value" in r or _is_rows(r) or r["kind"] in GEOMETRY or not r.get("values") or not flat(r["kind"]):
+            if "value" in r or _is_rows(r) or r["kind"] in GEOMETRY or not r.get("values"):
                 continue
-            out.append((sym, im.addresses[sym] - load, len(r["values"]) * size(r["kind"])))
+            if flat(r["kind"]):
+                out.append((sym, im.addresses[sym] - load, len(r["values"]) * size(r["kind"]), r["kind"], "copy"))
+            elif decodable(r):
+                out.append((sym, im.addresses[sym] - load, len(r["values"]) * size(r["kind"]), r["kind"], "decode"))
     return out
 
 
@@ -703,6 +718,14 @@ def c_files(name: str, assets: dict, embedded: dict, assets_root: Path) -> dict[
         if flat(r["kind"]) and s not in rodata:           # the disc's bytes: loaded at start, not compiled in
             return ["#ifdef PE_EMBED_ASSETS", f"{declarator(s)} = {{"] + rows + ["};", "#else", f"{declarator(s)};", "#endif",
                     '#include "port/asset_bind.h"', f'PE_ASSET_BIND("room/{package}/{s}", {s});']
+        if s not in rodata and decodable(r):               # pointer fields (NULL): read field by field
+            from . import decoders
+            kind = r["kind"]
+            return ([f"#ifndef PE_DECODE_{kind}", f"#define PE_DECODE_{kind}", "#include <stdint.h>", "#include <stdlib.h>",
+                     "#include <string.h>", decoders.decoder(kind), "#endif",
+                     "#ifdef PE_EMBED_ASSETS", f"{declarator(s)} = {{"] + rows + ["};", "#else", f"{declarator(s)};", "#endif",
+                     '#include "port/asset_bind.h"',
+                     f'PE_ASSET_BIND_DECODE("room/{package}/{s}", {s}, peDecode_{kind});'])
         return [f"{declarator(s)} = {{"] + rows + ["};"]
 
     others = sorted(a for a in im.names if im.in_room(a) and im.names[a] not in objects

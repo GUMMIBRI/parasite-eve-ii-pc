@@ -7,7 +7,9 @@ typedef struct {
     int         stage, folder, file;
 } PeAssetPackage;
 
-enum { PE_ASSET_OP_COPY = 0, PE_ASSET_OP_GRID_TABLE = 1 };
+/* DECODE: `size` bytes of disc records of `load` bytes each; the binding's `aux` is the function that turns one record
+ * into the host struct (tools/port/gen_layout_decoders.py). */
+enum { PE_ASSET_OP_COPY = 0, PE_ASSET_OP_GRID_TABLE = 1, PE_ASSET_OP_DECODE = 2 };
 
 typedef struct {
     const char* key; /* include file name without ".inc"; the table is sorted by key */
