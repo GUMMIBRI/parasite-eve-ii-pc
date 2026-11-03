@@ -975,7 +975,7 @@ static s32 _shelterB1SterilizationRoomHandleCommandMessage(Task* task, s32 messa
             gameFlagSetNibble(GAME_FLAG_STERILIZATION_ROOM_FIRST_SCENE, SCENE_FIRST_STARTED);
             capSpawnEventIfIdle(CAP_FIRST_CUTSCENE, CAP_EVENT_PAUSE_ACTORS);
             // This branch leaves the result register unspecified; callers discard it.
-            return;
+            return 0;
         }
         // Reuse the overlay-owned cutscene record for subsequent requests.
         gShelterB1SterilizationRoomRepeatCutscene.view            = CUTSCENE_VIEW;

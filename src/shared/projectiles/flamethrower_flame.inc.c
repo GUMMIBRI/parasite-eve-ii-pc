@@ -442,9 +442,9 @@ static void _flamethrowerFlameDrawSplash(const VECTOR3* worldPosition, s32 halfS
         gte_ldv0(&scratch->vertices[cornerIndex]);
         gte_rtv0();
         gte_stsv(&scratch->vertices[cornerIndex]);
-        (u16) scratch->vertices[cornerIndex].vx = (u16)scratch->vertices[cornerIndex].vx + (u16)worldPosition->vx;
-        (u16) scratch->vertices[cornerIndex].vy = (u16)scratch->vertices[cornerIndex].vy + (u16)worldPosition->vy;
-        (u16) scratch->vertices[cornerIndex].vz = (u16)scratch->vertices[cornerIndex].vz + (u16)worldPosition->vz;
+        scratch->vertices[cornerIndex].vx = (u16)scratch->vertices[cornerIndex].vx + (u16)worldPosition->vx;
+        scratch->vertices[cornerIndex].vy = (u16)scratch->vertices[cornerIndex].vy + (u16)worldPosition->vy;
+        scratch->vertices[cornerIndex].vz = (u16)scratch->vertices[cornerIndex].vz + (u16)worldPosition->vz;
         cornerIndex++;
     } while (cornerIndex < ARRAY_SIZE(gEffectUnitQuadCorners));
 

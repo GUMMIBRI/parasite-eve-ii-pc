@@ -572,7 +572,7 @@ static WorldCollisionGrid    _gShelterB3DumpingHoleCollisionGrid;
 static WorldCollisionTrigger _gShelterB3DumpingHoleRoom2ViewBoundaries[8];
 static WorldCollisionTrigger _gShelterB3DumpingHoleRoom2ActionTriggers[8];
 
-s32         _shelterB3DumpingHoleEncounterStopMessage(Task* task, s32 messageId, ActorCommand* request, s32 unused);
+static s32  _shelterB3DumpingHoleEncounterStopMessage(Task* task, s32 messageId, ActorCommand* request, s32 unused);
 static void _shelterB3DumpingHoleEncounterTask(Task* task);
 static void _shelterB3DumpingHoleEncounterMadChaserTask(Task* task);
 static void _shelterB3DumpingHoleEncounterSlouchTask(Task* task);

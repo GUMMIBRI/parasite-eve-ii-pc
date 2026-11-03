@@ -6908,20 +6908,20 @@ static s32 _actor403100SetModelDrawMode(Task* task, s32 unusedMessageId, s32 dra
     switch (drawMode) {
         case ACTOR_403100_MODEL_HIDE_AUTO_BUFFER:
             model->flags = (model->flags | TMD_OBJECT_SKIP_ACTIVE_DRAW) & (u16)~TMD_OBJECT_SKIP_AUTO_BUFFER;
-            return;
+            return 0;
         case ACTOR_403100_MODEL_SHOW_AUTO_BUFFER:
             model->flags = model->flags & (u16) ~(TMD_OBJECT_SKIP_ACTIVE_DRAW | TMD_OBJECT_SKIP_AUTO_BUFFER);
-            return;
+            return 0;
         case ACTOR_403100_MODEL_HIDE_RELEASE_BUFFER:
             model->flags                          = model->flags | TMD_OBJECT_SKIP_ACTIVE_DRAW;
             _gActor403100Work->bufferReleaseDelay = drawMode;
             modelFlags                            = model->flags | TMD_OBJECT_SKIP_AUTO_BUFFER;
             model->flags                          = modelFlags;
-            return;
+            return 0;
         case ACTOR_403100_MODEL_SHOW_NO_AUTO_BUFFER:
             modelFlags   = (model->flags & (u16)~TMD_OBJECT_SKIP_ACTIVE_DRAW) | TMD_OBJECT_SKIP_AUTO_BUFFER;
             model->flags = modelFlags;
-            return;
+            return 0;
     }
 }
 /// Saves the arm pose and stroke timer before sampling the held-player pose ahead.

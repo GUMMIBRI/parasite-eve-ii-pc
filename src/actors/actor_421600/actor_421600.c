@@ -3378,7 +3378,7 @@ static void _actor421600FrameState(Enemy* enemy, Task* task)
                 }
                 break;
         }
-        if (taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER), ANIMATION_MESSAGE_IS_PLAYING, NULL, 0) == 0) {
+        if (taskMessageDispatch(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER), ANIMATION_MESSAGE_IS_PLAYING, 0, 0) == 0) {
             settledCatchStage = work->playerAnim.animationId;
             switch (settledCatchStage) {
                 case ACTOR421600_CATCH_START:

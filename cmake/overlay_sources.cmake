@@ -445,18 +445,18 @@ set(PE_OVERLAY_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/security_room/security_room.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/square/square.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/stages/akropolis/rooms/west_elevator_hall/west_elevator_hall.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/actors/actor_142900/actor_142900.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/actors/actor_323300/actor_323300.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/actors/actor_403100/actor_403100.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/actors/actor_421600/actor_421600.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/actors/actor_800100/actor_800100.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/rooms/dryfield_dilapidated_house/dryfield_dilapidated_house.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/rooms/shelter_b1_sterilization_room/shelter_b1_sterilization_room.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/rooms/shelter_b3_dumping_hole/shelter_b3_dumping_hole_2.c
 )
 
 # Not yet buildable: shared-source templates that need per-package parameters.
 set(PE_OVERLAY_SOURCES_PENDING
-    src/actors/actor_142900/actor_142900.c
-    src/actors/actor_323300/actor_323300.c
-    src/actors/actor_403100/actor_403100.c
-    src/actors/actor_421600/actor_421600.c
-    src/actors/actor_800100/actor_800100.c
-    src/rooms/dryfield_dilapidated_house/dryfield_dilapidated_house.c
-    src/rooms/shelter_b1_sterilization_room/shelter_b1_sterilization_room.c
-    src/rooms/shelter_b3_dumping_hole/shelter_b3_dumping_hole_2.c
     src/stages/dryfield/rooms/factory/factory_lift.c
     src/stages/dryfield/rooms/factory/factory_panel.c
     src/stages/dryfield/rooms/factory/factory.c

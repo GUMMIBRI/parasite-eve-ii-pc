@@ -128,6 +128,17 @@ SVECTOR* ApplyMatrixSV(MATRIX* m, SVECTOR* v0, SVECTOR* v1)
     return v1;
 }
 
+void gteMIMefunc(SVECTOR* out, const SVECTOR* delta, int count, int weight)
+{
+    for (int i = 0; i < count; i++) {
+        long long v[3] = { out[i].vx + (((long long)delta[i].vx * weight) >> 12),
+                           out[i].vy + (((long long)delta[i].vy * weight) >> 12),
+                           out[i].vz + (((long long)delta[i].vz * weight) >> 12) };
+        for (int k = 0; k < 3; k++) v[k] = v[k] > 32767 ? 32767 : v[k] < -32768 ? -32768 : v[k];
+        out[i].vx = (short)v[0]; out[i].vy = (short)v[1]; out[i].vz = (short)v[2];
+    }
+}
+
 /* ---- PSY-Q calls PsyZ declares but does not implement ----------------------
  * Controller extras and SPU reverb retain compatibility shims here.
  * Memory-card storage lives in memory_card.c. */
