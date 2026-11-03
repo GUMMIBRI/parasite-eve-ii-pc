@@ -172,8 +172,7 @@ STATIC_ASSERT_SIZEOF(TaskMessageArg, 4);
 ///
 ///     s32 handler(Task* task, s32 messageId, <first payload>, <second payload>)
 ///
-/// - and `tools/refactor/check_message_handlers.py` checks that shape, since
-/// the compiler cannot. A few handlers return `void` because they only match
+/// - the compiler cannot check that shape. A few handlers return `void` because they only match
 /// that way; dispatch then forwards whatever the result register holds, so no
 /// sender may read a result from the messages they serve.
 typedef s32 (*TaskMessageHandler)();

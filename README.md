@@ -90,8 +90,7 @@ This port would not exist without the work of others:
 - **[GabeRealB/parasite-eve-2-decomp](https://github.com/GabeRealB/parasite-eve-2-decomp)** — the matching
   decompilation of *Parasite Eve II* that all game code in this repository comes from, together with its documentation
   of the game's formats and systems and its asset tooling (`tools/peassets`). This repository started as a copy of
-  that project and keeps its history; the decompilation is released under CC0. Its original README and project notes
-  are kept in [docs/decomp/](docs/decomp/).
+  that project and keeps its history; the decompilation is released under CC0.
 - **[PsyZ](https://github.com/Xeeynamo/psyz)** by Xeeynamo, and our
   [fork](https://github.com/khasinski/parasite-eve-psyz), which provide the PSY-Q compatible runtime. PsyZ builds on
   the [sotn-decomp](https://github.com/Xeeynamo/sotn-decomp) PSY-Q work and

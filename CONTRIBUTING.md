@@ -43,8 +43,8 @@ order for the linker) can be removed when the code is repaired.
 | --- | --- |
 | `src/`, `include/` | game code from the decompilation, compiled for the host |
 | `src/port/`, `include/port/` | the port layer: host Psy-Q glue, disc reader, runtime asset loader |
-| `tools/port/` | port tooling (asset layout, stubs, replay helpers); `tools/peassets` is the decompilation's asset tooling |
+| `tools/port/` | port tooling (asset layout, stubs, replay helpers); `tools/peassets` is the asset tooling |
 | `tests/` | host tests |
-| `docs/` | port plan, runtime assets, size audit; `docs/decomp/` is the decompilation's own documentation |
+| `docs/` | port plan, runtime assets, size audit |
 
 Questions and discussion go in GitHub issues.

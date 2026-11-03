@@ -6,8 +6,7 @@ by others. These notices do not relicense the original game, which is not part o
 ## parasite-eve-2-decomp
 
 [GabeRealB/parasite-eve-2-decomp](https://github.com/GabeRealB/parasite-eve-2-decomp), the matching decompilation this
-repository started from (source in `src/`, `include/`, `configs/`, asset tooling in `tools/peassets`). CC0 1.0. Its
-documentation is kept in `docs/decomp/`.
+repository started from (source in `src/`, `include/`, `configs/`, asset tooling in `tools/peassets`). CC0 1.0.
 
 ## PsyZ and SDL
 

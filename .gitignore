@@ -48,8 +48,6 @@ tools/peassets/logs/
 .bulk_m2c/
 .promote-logs/
 
-# Claude Code session state (agent worktrees, local settings)
-.claude/
 
 # Worktree setup log written by the demotion scripts.
 .setup.log
