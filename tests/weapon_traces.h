@@ -1,0 +1,4 @@
+/* Pinned traces for tests/weapon_fire_test.c, recorded from the original goto-based attack states. */
+#define WEAPON_TRACE_m249 "play9/1;[1:2];[1:2];[2:2];flags00;[3:1];consume1;sound;effect;play10/2;[4:0];impact;[5:0];[5:0];[5:0];[5:0];flags00;[3:1];consume1;sound;effect;play10/2;[4:0];impact;flags00;[3:1];consume1;sound;effect;play10/2;[4:0];impact;[5:0];[5:0];[5:0];[5:0];[5:0];"
+#define WEAPON_TRACE_as12 "play9/1;[1:2];[1:2];[2:2];flags00;consume1;sound;effect;reset10;[4:2];impact;[5:2];[5:2];[5:2];[5:2];[5:2];flags00;consume1;sound;effect;reset10;[4:2];impact;[5:2];[5:2];[5:2];[5:2];[5:2];[5:2];[5:2];[5:2];"
+#define WEAPON_TRACE_mp5a5 "play9/1;[1:1];[1:1];[2:1];flags01;sound;effect;consume1;play10/2;[4:3];impact;[6:3];[6:3];[6:3];[6:3];[6:3];[3:2];[3:1];flags01;sound;effect;consume1;play10/2;[4:3];impact;[3:2];[3:1];flags01;sound;effect;consume1;play10/2;[4:3];impact;[6:3];[6:3];[6:3];"

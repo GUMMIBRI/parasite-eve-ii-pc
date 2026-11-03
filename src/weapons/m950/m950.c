@@ -21,16 +21,39 @@
 
 #include "assets/engine/animation/player_schema.h"
 
+enum {
+    M950_PHASE_PREPARE    = 0,
+    M950_PHASE_WAIT_READY = 1,
+    M950_PHASE_ARM_SHOT   = 2,
+    M950_PHASE_SHOT_DELAY = 3,
+    M950_PHASE_IMPACT     = 4,
+    M950_PHASE_RECOVER    = 5,
+};
+
+/// Starts a shot: rearming counts the dispatch toward the four-tick delay.
+static void _m950ArmShot(GameActor* actor)
+{
+    actor->statePhase                  = M950_PHASE_SHOT_DELAY;
+    actor->attackControl.cooldownTicks = 0;
+    actor->rumblePosted                = 0;
+    actor->stateTimer                  = M950_SHOT_DELAY_FRAMES;
+}
+
+/// Counts the shot delay down and fires when it reaches zero.
+static void _m950TickShotDelay(Task* playerTask, GameActor* actor, GfxCoord* weaponCoord)
+{
+    if (--actor->stateTimer == 0) {
+        actor->statePhase++;
+        actor->collisionBodies[GAME_ACTOR_BODY_WEAPON].flags |= (WORLD_COLLISION_BODY_GRID_ENABLED | WORLD_COLLISION_BODY_PAIR_ENABLED);
+        equipmentConsumeWeaponLoad(WEAPON_ITEM_ID(WEAPON_INDEX_M950), EQUIPMENT_WEAPON_LOAD_CONSUME_PRIMARY);
+        worldCoordPlaySound(playerTask->extra.tmd->coords, M950_SOUND(WEAPON_SOUND_SLOT_SHOT), 1);
+        effectSpawn(EFFECT_HANDGUN_MUZZLE_FLASH, weaponCoord, 3, NULL);
+        playerActorPlayChildSlotsWithBlend(playerTask, PLAYER_ANIMATION_FIRE, 0, 2);
+    }
+}
+
 void m950AttackState(Task* playerTask)
 {
-    enum {
-        M950_PHASE_PREPARE    = 0,
-        M950_PHASE_WAIT_READY = 1,
-        M950_PHASE_ARM_SHOT   = 2,
-        M950_PHASE_SHOT_DELAY = 3,
-        M950_PHASE_IMPACT     = 4,
-        M950_PHASE_RECOVER    = 5,
-    };
     GameActor* actor;
     GfxCoord*  weaponCoord;
     GfxCoord*  impactCoord;
@@ -62,22 +85,10 @@ void m950AttackState(Task* playerTask)
             }
             break;
         case M950_PHASE_ARM_SHOT:
-        fire:
-            // Rearming falls through so this dispatch counts toward the four-tick delay.
-            actor->statePhase                  = M950_PHASE_SHOT_DELAY;
-            actor->attackControl.cooldownTicks = 0;
-            actor->rumblePosted                = 0;
-            actor->stateTimer                  = M950_SHOT_DELAY_FRAMES;
+            _m950ArmShot(actor);
             /* fallthrough */
         case M950_PHASE_SHOT_DELAY:
-            if (--actor->stateTimer == 0) {
-                actor->statePhase++;
-                actor->collisionBodies[GAME_ACTOR_BODY_WEAPON].flags |= (WORLD_COLLISION_BODY_GRID_ENABLED | WORLD_COLLISION_BODY_PAIR_ENABLED);
-                equipmentConsumeWeaponLoad(WEAPON_ITEM_ID(WEAPON_INDEX_M950), EQUIPMENT_WEAPON_LOAD_CONSUME_PRIMARY);
-                worldCoordPlaySound(playerTask->extra.tmd->coords, M950_SOUND(WEAPON_SOUND_SLOT_SHOT), 1);
-                effectSpawn(EFFECT_HANDGUN_MUZZLE_FLASH, weaponCoord, 3, NULL);
-                playerActorPlayChildSlotsWithBlend(playerTask, PLAYER_ANIMATION_FIRE, 0, 2);
-            }
+            _m950TickShotDelay(playerTask, actor, weaponCoord);
             break;
         case M950_PHASE_IMPACT:
             actor->attackCancelTicks = M950_CANCEL_FRAMES;
@@ -86,7 +97,9 @@ void m950AttackState(Task* playerTask)
             /* fallthrough */
         case M950_PHASE_RECOVER:
             if (playerActorReadAttackButton(playerTask) != 0 && playerActorQueryWeaponLoads(PLAYER_ACTOR_WEAPON_LOAD_PRIMARY) > 0) {
-                goto fire;
+                _m950ArmShot(actor);
+                _m950TickShotDelay(playerTask, actor, weaponCoord);
+                break;
             }
             if (actor->attackCancelTicks != 0) {
                 actor->attackCancelTicks--;

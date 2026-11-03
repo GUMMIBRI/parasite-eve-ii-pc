@@ -301,6 +301,26 @@ target_include_directories(asset_disc_cache_test PRIVATE include)
 add_executable(disc_identity_test EXCLUDE_FROM_ALL tests/disc_identity_test.c src/port/disc_assets.c)
 target_include_directories(disc_identity_test PRIVATE include)
 
+add_executable(weapon_m950_test EXCLUDE_FROM_ALL tests/weapon_m950_test.c src/weapons/m950/m950.c)
+target_include_directories(weapon_m950_test PRIVATE include include/decomp ${PE_GENERATED_DIR})
+target_compile_definitions(weapon_m950_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(weapon_m950_test PRIVATE psyz)
+
+add_executable(weapon_m249_test EXCLUDE_FROM_ALL tests/weapon_fire_test.c src/weapons/m249/m249.c)
+target_include_directories(weapon_m249_test PRIVATE include include/decomp ${PE_GENERATED_DIR})
+target_compile_definitions(weapon_m249_test PRIVATE __psyz SKIP_ASM WEAPON_FN=m249AttackState WEAPON_HEADER="weapons/m249.h" WEAPON_NAME="m249" WEAPON_TRACE=WEAPON_TRACE_m249)
+target_link_libraries(weapon_m249_test PRIVATE psyz)
+
+add_executable(weapon_as12_test EXCLUDE_FROM_ALL tests/weapon_fire_test.c src/weapons/as12/as12.c)
+target_include_directories(weapon_as12_test PRIVATE include include/decomp ${PE_GENERATED_DIR})
+target_compile_definitions(weapon_as12_test PRIVATE __psyz SKIP_ASM WEAPON_FN=as12AttackState WEAPON_HEADER="weapons/as12.h" WEAPON_NAME="as12" WEAPON_TRACE=WEAPON_TRACE_as12)
+target_link_libraries(weapon_as12_test PRIVATE psyz)
+
+add_executable(weapon_mp5a5_test EXCLUDE_FROM_ALL tests/weapon_fire_test.c tests/weapon_mp5a5_stubs.c src/weapons/mp5a5/mp5a5.c)
+target_include_directories(weapon_mp5a5_test PRIVATE include include/decomp ${PE_GENERATED_DIR})
+target_compile_definitions(weapon_mp5a5_test PRIVATE __psyz SKIP_ASM WEAPON_FN=mp5a5AttackState WEAPON_HEADER="weapons/mp5a5.h" WEAPON_NAME="mp5a5" WEAPON_TRACE=WEAPON_TRACE_mp5a5 WEAPON_INDEX=30)
+target_link_libraries(weapon_mp5a5_test PRIVATE psyz)
+
 enable_testing()
 set(PE_DATA_TESTS cap_room_command_test rupert_eyes_test tmd_layout_assets_test text_palette_test
     observatory_scene_lifecycle_test action_trigger_test fountain_trigger_test)
