@@ -51,7 +51,8 @@ int main(int argc, char** argv) {
     int startup = peHostStartup(argc, argv, &disc);
     if (startup <= 0) return startup < 0 ? 2 : 0;
     if (Psyz_CdSetDiskPath(disc) != 0) {
-        fprintf(stderr, "cannot open disc image: %s\n", disc);
+        fprintf(stderr, "Cannot open the disc image \"%s\". Check that the file exists and that it is a CUE sheet or BIN image\n"
+                        "of the North American Parasite Eve II (disc 1). Run with --host-menu to choose a different image.\n", disc);
         return 2;
     }
     Psyz_SetTitle("Parasite Eve II");
@@ -61,7 +62,8 @@ int main(int argc, char** argv) {
         struct PeDisc* assets = peDiscOpen(disc);
 #ifndef PE_EMBED_ASSETS
         if (!assets) {
-            fprintf(stderr, "cannot read game data from %s\n", disc);
+            fprintf(stderr, "Cannot read the game files from \"%s\". It is not a North American Parasite Eve II disc image,\n"
+                            "or the image is damaged (other regions and re-encoded images are not supported).\n", disc);
             return 2;
         }
         fprintf(stderr, "[assets] %d arrays loaded from the disc\n", peAssetsLoad(assets));
