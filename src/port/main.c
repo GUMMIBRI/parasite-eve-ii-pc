@@ -60,7 +60,6 @@ int main(int argc, char** argv) {
     {
         extern int peAssetsDump(const char*);
         struct PeDisc* assets = peDiscOpen(disc);
-#ifndef PE_EMBED_ASSETS
         if (!assets) {
             fprintf(stderr, "Cannot read the game files from \"%s\". It is not a North American Parasite Eve II disc image,\n"
                             "or the image is damaged (other regions and re-encoded images are not supported).\n", disc);
@@ -71,9 +70,12 @@ int main(int argc, char** argv) {
             struct PeDisc* second = peDiscOpen(getenv("PE2_DISC2_ASSETS"));
             if (second) { fprintf(stderr, "[assets] %d arrays loaded from disc 2\n", peAssetsLoad(second)); peDiscClose(second); }
         }
-#endif
         if (getenv("PE2_DUMP_ASSETS")) peAssetsDump(getenv("PE2_DUMP_ASSETS"));
         peDiscClose(assets);
+    }
+    if (getenv("PE2_DEBUG_PORT")) { /* development: PsyZ HTTP debug server on 127.0.0.1 (/screenshot, /vram, /input) */
+        extern int Psyz_DebugServer(int);
+        fprintf(stderr, "[debug] server on port %d\n", Psyz_DebugServer(atoi(getenv("PE2_DEBUG_PORT"))));
     }
     ResetGraph(0);
     gameMainRun();
