@@ -128,7 +128,13 @@ static int acceptPath(const char* path,int expected) {
     char cue[4096]; if(!preparePath(path,cue))return 0;
     PeDisc* d=peDiscOpen(cue); int number=peDiscNumber(d); peDiscClose(d);
     if(!number || (expected && number!=expected)) {
-        snprintf(statusText,sizeof statusText,"Select the supported USA Disc %d image.",expected?expected:1);
+        FILE* probe=fopen(path,"rb");
+        if(!probe)snprintf(statusText,sizeof statusText,"Cannot open %s. Check the path and permissions.",path);
+        else {
+            fclose(probe);
+            if(number)snprintf(statusText,sizeof statusText,"This is USA Disc %d, but Disc %d is needed here.",number,expected);
+            else snprintf(statusText,sizeof statusText,"Not a supported USA Parasite Eve II image (keep the CUE next to its BIN, and use the North American release).");
+        }
         return 0;
     }
     const char* ext=strrchr(path,'.');
