@@ -18,6 +18,9 @@
 #include "port/host_ui.h"
 #include "port/disc_assets.h"
 #include "port/asset_bind.h"
+#ifdef PE2_PS5_HOST
+#include "port/ps5_paths.h"
+#endif
 #define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "ui/stb_truetype.h"
@@ -69,6 +72,7 @@ static void ensureRowVisible(void) {
 static void setPage(int page) { s_overlayState.page=page;s_overlayState.row=0;s_overlayState.scroll=0; }
 
 static void saveOptions(void) {
+    if(!*configPath)return;
     char temp[4120];
     snprintf(temp,sizeof temp,"%s.tmp",configPath);
     FILE* f=fopen(temp,"w");
@@ -84,10 +88,29 @@ static void saveOptions(void) {
 
 static void loadOptions(void) {
     configDir=getenv("PE2_CONFIG_DIR");
+#ifdef PE2_PS5_HOST
+    if(!configDir || !*configDir) configDir=pePs5ConfigDirectory();
+    if(!configDir) { configPath[0]=0;return; }
+#else
     if(!configDir) configDir=SDL_GetPrefPath("parasite-eve","parasite-eve-ii");
     if(!configDir) configDir=".";
+#endif
+#ifdef PE2_PS5_HOST
+    if(!SDL_CreateDirectory(configDir)) {
+        fprintf(stderr,"[ps5] Cannot create PE2 preferences directory: %s\n",SDL_GetError());
+        configPath[0]=0;return;
+    }
+#else
     SDL_CreateDirectory(configDir);
+#endif
+#ifdef PE2_PS5_HOST
+    int configLength=snprintf(configPath,sizeof configPath,"%s/settings.ini",configDir);
+    if(configLength<0 || configLength>=(int)sizeof configPath) {
+        fprintf(stderr,"Preferences directory path is too long.\n");configPath[0]=0;return;
+    }
+#else
     snprintf(configPath,sizeof configPath,"%s/settings.ini",configDir);
+#endif
     FILE* f=fopen(configPath,"r"); if(!f)return;
     char line[8192];
     while(fgets(line,sizeof line,f)) {
@@ -405,6 +428,9 @@ static bool settingsEvent(const SDL_Event* e) {
 
 int peHostStartup(int argc,char** argv,const char** disc) {
     loadOptions();
+#ifdef PE2_PS5_HOST
+    if(!*configPath)return -1;
+#endif
     int menuOnly=0,validateOnly=0;
     const char* explicitDisc=getenv("PE2_DISC");
     const char* explicitDisc2=getenv("PE2_DISC2");
@@ -418,6 +444,21 @@ int peHostStartup(int argc,char** argv,const char** disc) {
     }
     if(explicitDisc && acceptPath(explicitDisc,1)!=1) {fprintf(stderr,"%s\n",statusText);return -1;}
     if(explicitDisc2 && acceptPath(explicitDisc2,2)!=2) {fprintf(stderr,"%s\n",statusText);return -1;}
+#ifdef PE2_PS5_HOST
+    /* Explicit arguments and persisted paths win; missing paths use console
+     * discovery and still pass through the normal retail-identity validator. */
+    for(int i=0;i<2;i++) if(!*discPaths[i]) {
+        const char* found=pePs5FindDisc(i+1,discPaths[1-i]);
+        if(found && acceptPath(found,i+1)!=i+1) {
+            fprintf(stderr,"%s\n",statusText);return -1;
+        }
+    }
+    if(!*discPaths[0]) {
+        fprintf(stderr,"[ps5] Put USA CUE/BIN pairs in /data/parasite-eve-ii or "
+                       "/mnt/usb0/parasite-eve-ii, or configure PE2_DISC.\n");
+        return -1;
+    }
+#endif
     if(validateOnly) {
         for(int i=0;i<2;i++) {
             PeDisc* d=peDiscOpen(discPaths[i]);int number=peDiscNumber(d);peDiscClose(d);

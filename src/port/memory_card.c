@@ -2,6 +2,9 @@
  * unmodified save-file bytes (15 x 8192-byte blocks), not a raw PS1 card image.
  * Override the per-user default with PE2_MEMORY_CARD_DIR for isolated replays. */
 #include "port/memory_card.h"
+#ifdef PE2_PS5_HOST
+#include "port/ps5_paths.h"
+#endif
 #include <libmcrd.h>
 #include <SDL3/SDL.h>
 #include <dirent.h>
@@ -216,7 +219,11 @@ void MemCardInit(long unused)
     cardRoot[0] = 0;
     const char* override = getenv("PE2_MEMORY_CARD_DIR");
     char* allocated = NULL;
+#ifdef PE2_PS5_HOST
+    const char* root = override && *override ? override : pePs5CardDirectory();
+#else
     const char* root = override ? override : (allocated = SDL_GetPrefPath("parasite-eve-ii-port", "parasite-eve-ii"));
+#endif
     if (root && *root && strlen(root) < sizeof(cardRoot) && (mkdir(root, 0700) == 0 || errno == EEXIST)) strcpy(cardRoot, root);
     SDL_free(allocated);
 }
