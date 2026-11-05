@@ -21,12 +21,15 @@ static const PeAssetBinding* bindings(size_t* count)
     return (const PeAssetBinding*)p;
 }
 #elif defined(_WIN32)
-__attribute__((section(".peassets$a"), used)) static const PeAssetBinding sBindingsBegin = {0};
-__attribute__((section(".peassets$z"), used)) static const PeAssetBinding sBindingsEnd = {0};
+/* Definitions live in a separate translation unit. Keeping local zero-valued
+ * markers here lets Clang fold accesses past the first marker to null pointers
+ * instead of reading the records that the COFF linker places between them. */
+extern const PeAssetBinding peAssetsBegin[], peAssetsEnd[];
 static const PeAssetBinding* bindings(size_t* count)
 {
-    *count = (size_t)(&sBindingsEnd - (&sBindingsBegin + 1));
-    return &sBindingsBegin + 1;
+    uintptr_t first = (uintptr_t)(peAssetsBegin + 1);
+    *count = ((uintptr_t)peAssetsEnd - first) / sizeof(PeAssetBinding);
+    return (const PeAssetBinding*)first;
 }
 #else
 extern const PeAssetBinding __start_peassets[], __stop_peassets[];

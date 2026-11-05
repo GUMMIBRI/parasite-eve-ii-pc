@@ -3,6 +3,7 @@
 ## 0.2
 
 - Fix room callback bindings and scripted movement that could block story progression in Dryfield and the Shelter.
+- Fix a Windows Clang optimization that could read null records from the COFF asset registry.
 - Preserve loaded model fixups and runtime state when mounting or swapping discs.
 - Fix streaming movie ring-buffer wraparound and backpressure in PsyZ.
 - Correct host GTE arithmetic, 15-bit SDK random draws, model lighting and screen effects; enlarge the native primitive arena for long caption pages.

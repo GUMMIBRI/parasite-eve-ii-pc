@@ -328,7 +328,7 @@ target_link_libraries(memory_card_test PRIVATE psyz)
 
 # Host tests: `cmake --build build --target host_tests && ctest --test-dir build`. They need no game data, except
 # the ones in PE_DATA_TESTS, which read extracted assets given on the command line and are left to local runs.
-add_executable(asset_disc_cache_test EXCLUDE_FROM_ALL tests/asset_disc_cache_test.c src/port/asset_loader.c)
+add_executable(asset_disc_cache_test EXCLUDE_FROM_ALL tests/asset_disc_cache_test.c src/port/asset_loader.c src/port/asset_registry.c)
 target_include_directories(asset_disc_cache_test PRIVATE include)
 add_executable(disc_identity_test EXCLUDE_FROM_ALL tests/disc_identity_test.c src/port/disc_assets.c)
 target_include_directories(disc_identity_test PRIVATE include)
