@@ -289,12 +289,9 @@ static ActorSpriteUv _gMaggotCaterpillarPuffCells[8] = {
     { 96, 0, 32, 0 },
 };
 
-/// Billboard half-size in coordinate units for puff ages 0..13.
-///
-/// Projection multiplies by 0x300 and divides by projected Z / 4. The retained
-/// age-14 draw reads the adjacent body descriptor's flags halfword (1), beyond
-/// this array's fourteen entries; the intended storage relationship is unproven.
-static s16 _gMaggotCaterpillarPuffRadius[14] = {
+/// Billboard half-size for ages 0..14. The final value preserves the PS1
+/// age-14 read of the adjacent body flags without indexing beyond the array.
+static s16 _gMaggotCaterpillarPuffRadius[15] = {
     8,
     12,
     16,
@@ -309,6 +306,7 @@ static s16 _gMaggotCaterpillarPuffRadius[14] = {
     36,
     40,
     0,
+    1,
 };
 
 TaskDesc gActor05500MaggotCaterpillarTasks[2] = {

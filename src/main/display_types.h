@@ -2,7 +2,13 @@
 #define MAIN_PRIVATE_DISPLAY_TYPES_H
 
 /// Total bytes in the resident primitive arena shared by both frame halves.
+/// Native DMA links and lengths enlarge host packets; retain the console's
+/// packet capacity so long CAP pages cannot overwrite the adjacent task OTs.
+#if defined(__psyz) && __SIZEOF_POINTER__ > 4
+enum { DISPLAY_STATIC_PRIMITIVE_ARENA_BYTES = 0xC000 };
+#else
 enum { DISPLAY_STATIC_PRIMITIVE_ARENA_BYTES = 0x6000 };
+#endif
 
 /// Tags in each resident frame buffer, including the reserved foreground range.
 ///

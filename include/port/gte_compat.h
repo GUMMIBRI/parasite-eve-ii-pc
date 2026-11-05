@@ -19,6 +19,8 @@
 #ifdef __psyz
 
 #include <stdint.h>
+#include <stddef.h>
+#include <libgpu.h>
 #include <string.h>
 #include <libgte.h>
 #include <psyz/gte.h>
@@ -248,12 +250,13 @@ static inline void PortGte_RotTransLV(const void* in, void* out) {
         Psyz_GteStoreSxyTo(13, port_p_ + (o1));                                \
         Psyz_GteStoreSxyTo(14, port_p_ + (o2));                                \
     } while (0)
-#define gte_stsxy3_f3(r0) PORTGTE_STSXY3_AT(r0, 8, 12, 16)
-#define gte_stsxy3_ft3(r0) PORTGTE_STSXY3_AT(r0, 8, 16, 24)
-#define gte_stsxy3_f4(r0) PORTGTE_STSXY3_AT(r0, 8, 12, 16)
-#define gte_stsxy3_g4(r0) PORTGTE_STSXY3_AT(r0, 8, 16, 24)
-#define gte_stsxy3_ft4(r0) PORTGTE_STSXY3_AT(r0, 8, 16, 24)
-#define gte_stsxy3_gt4(r0) PORTGTE_STSXY3_AT(r0, 8, 20, 32)
+/* Packet headers grow on the host; disk offsets would overwrite tag/length. */
+#define gte_stsxy3_f3(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_F3, x0), offsetof(POLY_F3, x1), offsetof(POLY_F3, x2))
+#define gte_stsxy3_ft3(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_FT3, x0), offsetof(POLY_FT3, x1), offsetof(POLY_FT3, x2))
+#define gte_stsxy3_f4(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_F4, x0), offsetof(POLY_F4, x1), offsetof(POLY_F4, x2))
+#define gte_stsxy3_g4(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_G4, x0), offsetof(POLY_G4, x1), offsetof(POLY_G4, x2))
+#define gte_stsxy3_ft4(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_FT4, x0), offsetof(POLY_FT4, x1), offsetof(POLY_FT4, x2))
+#define gte_stsxy3_gt4(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_GT4, x0), offsetof(POLY_GT4, x1), offsetof(POLY_GT4, x2))
 
 /* ------------------------------------------------------------------------ */
 /* Commands                                                                 */

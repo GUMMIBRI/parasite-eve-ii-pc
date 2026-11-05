@@ -1,9 +1,11 @@
+#include "main/random.h"
+
 /* Part of the water tank library; see water_tank.h. */
 
 /// Advances the water tank's randomly driven, damped yaw motion.
 ///
 /// Requires the room's persistent yaw words and SDK random state. One draw
-/// selects a target change on the zero bucket of rand()*100/32768. A second
+/// selects a target change on the zero bucket of randomSdkDraw15()*100/32768. A second
 /// bucket below 80 selects random acceleration in 0..5119 rather than zero,
 /// and only the random choice takes a third draw. Acceleration approaches its
 /// target by 256 even if it overshoots.
@@ -15,9 +17,9 @@ static inline void _waterTankAdvanceSway(void)
     enum { WATER_TANK_YAW_STEP               = 256,
            WATER_TANK_NONZERO_TARGET_PERCENT = 80 };
 
-    if (((s32)(rand() * 100) >> 15) <= 0) {
-        if (((s32)(rand() * 100) >> 15) < WATER_TANK_NONZERO_TARGET_PERCENT) {
-            gWaterTankYawTargetAcceleration = (rand() * 20) >> 7;
+    if (((s32)(randomSdkDraw15() * 100) >> 15) <= 0) {
+        if (((s32)(randomSdkDraw15() * 100) >> 15) < WATER_TANK_NONZERO_TARGET_PERCENT) {
+            gWaterTankYawTargetAcceleration = (randomSdkDraw15() * 20) >> 7;
         } else {
             gWaterTankYawTargetAcceleration = 0;
         }

@@ -40,6 +40,9 @@
 
 #include "gameplay/companion_load.h"
 #include "gameplay/game_debug.h"
+#ifdef __psyz
+#include "gameplay/scene_combat.h"
+#endif
 
 #include "title/title.h"
 
@@ -541,6 +544,11 @@ void playClockResetMinuteTicks(void)
 static void _gameFlowHandOffSessionLoad(Task* sessionStartTask)
 {
     if (cdCmdIsIdle() != 0) {
+#ifdef __psyz
+        // The PS1 reloads gameplay's BSS with its overlay. Native globals survive
+        // Game Over, so discard the old battle before reload can award an escape.
+        _memClearByteSpan(&gSceneCombatState, sizeof(gSceneCombatState));
+#endif
         taskSpawn(GAME_FLOW_RELOAD_TASK_BANK, GAME_FLOW_RELOAD_TASK_SLOT, GAME_FLOW_RELOAD_BLANK_DISPLAY, 0);
         taskKill(sessionStartTask);
     }

@@ -66,9 +66,21 @@ int peAssetsLoad(struct PeDisc* disc)
     size_t   pkgSize[4096] = {0};
     size_t          n;
     const PeAssetBinding* b = bindings(&n);
+    static unsigned char* loaded;
+    if (!loaded && n) {
+        loaded = calloc(n, sizeof(*loaded));
+        if (!loaded) {
+            fprintf(stderr, "[assets] cannot allocate binding load state\n");
+            return -1;
+        }
+    }
     int filled = 0, missing = 0, wrong = 0;
 
     for (size_t i = 0; i < n; i++) {
+        /* Bindings live for the process lifetime. Models resolve their streams
+         * in place and room tasks also mutate these arrays. Mounting another
+         * disc must fill missing bindings without resetting that live state. */
+        if (loaded[i]) continue;
         const PeAssetPart* part = findPart(b[i].key);
         if (!part) { fprintf(stderr, "[assets] no layout for %s\n", b[i].key); wrong++; continue; }
         size_t want = part->op == PE_ASSET_OP_GRID_TABLE ? (size_t)part->size / 4 * sizeof(void*) : part->size;
@@ -114,6 +126,7 @@ int peAssetsLoad(struct PeDisc* disc)
                 out[k] = w ? cells + (w - part->load - part->cellsOffset) / 2 : NULL;
             }
         }
+        loaded[i] = 1;
         filled++;
     }
     if (wrong) fprintf(stderr, "[assets] %d bindings could not be filled\n", wrong);

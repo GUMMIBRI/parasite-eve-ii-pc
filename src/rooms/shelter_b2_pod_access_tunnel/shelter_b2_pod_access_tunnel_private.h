@@ -15,6 +15,8 @@
 /// event state, callback and CAP/sound resources loaded until reload.
 extern TaskDesc gShelterB2PodAccessTunnelStagedEventTaskDesc;
 
+void shelterB2PodAccessTunnelStagedEventTask(Task* task);
+
 /// Dispatches the room's transition, key-item, action, command and sound messages.
 ///
 /// Five handlers followed by `TASK_MESSAGE_TABLE_END`; unsupported IDs return

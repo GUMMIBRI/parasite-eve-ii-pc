@@ -2,6 +2,15 @@
 #define MAIN_RANDOM_H
 
 #include "types.h"
+#include <stdlib.h>
+
+/// One SDK random draw in the PS1 range, independent of the host's RAND_MAX.
+/// Retains the existing rand()/srand() sequence and consumes exactly one draw.
+/// Normalize before multiplication: overlay tables scale this 15-bit value.
+static inline s32 randomSdkDraw15(void)
+{
+    return rand() & 0x7FFF;
+}
 
 /// Coefficients of the shared 32-bit linear congruential random sequence.
 enum {

@@ -936,6 +936,12 @@ static void       _shelterB2NorthMaintenanceWalkwayIdleRoomTask(Task* unusedTask
 
 #include "../../shared/room/room_event_staged_task.inc.c"
 
+// The descriptor is in a separate translation unit; bind this room's state.
+void shelterB2NorthMaintenanceWalkwayStagedEventTask(Task* task)
+{
+    roomEventStagedTask(task);
+}
+
 #include "../../shared/room/room_event.inc.c"
 
 /// Starts `event` for the outgoing message `dst` unless its flag says it has

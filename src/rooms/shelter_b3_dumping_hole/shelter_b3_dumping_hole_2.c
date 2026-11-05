@@ -4353,6 +4353,7 @@ static void _shelterB3DumpingHoleCollapseEventTask(Task* task)
             task->work = memCalloc(sizeof(*work), false);
             if (task->work == NULL) {
                 taskKill(task);
+                return;
             } else {
                 task->extra.tmd->coords->parent = &gGfxViewCoord;
                 work                            = task->work;
@@ -4385,6 +4386,8 @@ static void _shelterB3DumpingHoleCollapseEventTask(Task* task)
             if (gGameSession->eventState == 0) {
                 gameFlagSetNibble(GAME_FLAG_11D, 1);
                 taskKill(task);
+                // The model's lighting matrices belonged to the released work.
+                return;
             } else {
                 _shelterB3DumpingHoleCollapseEventHandleCommand(task);
             }

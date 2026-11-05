@@ -41,7 +41,8 @@ typedef void (*PeAssetDecode)(void* dst, const unsigned char* src, size_t count)
 #define PE_ASSET_BIND_DECODE(key, array, decode) PE_ASSET_BIND_AUX(key, array, (const void*)(PeAssetDecode)(decode))
 
 struct PeDisc;
-/* Fills every binding whose package is on the mounted disc. Returns the number filled; bindings of packages on the
- * other disc stay zero until that disc is mounted and this is called again. */
+/* Fills previously unloaded bindings whose packages are on the mounted disc.
+ * Returns the number newly filled. Missing bindings are retried on later
+ * mounts; loaded arrays retain runtime fixups and mutations across disc swaps. */
 int peAssetsLoad(struct PeDisc* disc);
 #endif

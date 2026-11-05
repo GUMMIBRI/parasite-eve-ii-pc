@@ -968,8 +968,8 @@ static inline void _actor335800PlaceSceneShadow(GfxCoord* coord, const ActorTran
 /// parent-coordinate units behind the scene pose, moving +Z at 100 units per
 /// tick. After passing the pose it loses 6 units of speed each tick, stops
 /// below -60 and lingers for four ticks. A ready view ends either active phase.
-/// `killCountdown` holds signed speed, then elapsed linger ticks. The final
-/// ground projection remains after teardown, as in the binary.
+/// `killCountdown` holds signed speed, then elapsed linger ticks. Teardown
+/// releases the coordinate body, so only live ticks project and draw it.
 static void _actor335800SceneGroundShadowTask(Task* task)
 {
     enum {
@@ -1003,20 +1003,23 @@ static void _actor335800SceneGroundShadowTask(Task* task)
             coord->coord.t[2] += task->killCountdown;
             if (gGameSession->viewReady != 0) {
                 taskKill(task);
+                return;
             }
             break;
         case ACTOR_335800_SHADOW_LINGERING:
             if (++task->killCountdown < ACTOR_335800_SHADOW_LINGER_TICKS) {
                 if (gGameSession->viewReady != 0) {
                     taskKill(task);
+                    return;
                 }
             } else {
                 taskKill(task);
+                return;
             }
             break;
         default:
             taskKill(task);
-            break;
+            return;
     }
     // Sample the coordinate refresh list's composed position, including the final tick.
     if (worldCollisionProjectGroundPoint(GRAPHICS_MATRIX_TRANSLATION(&task->extra.coordBody->coord->workm), &groundPoint) != 0) {

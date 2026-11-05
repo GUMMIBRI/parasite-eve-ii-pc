@@ -1124,7 +1124,7 @@ u32* tmdDrawStreamPrimGt3EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags
 
     packetPair       = (POLY_GT3*)workspace->primWrite;
     referenceColor   = gModelLightingNeutralColor;
-    payloadWordCount = sizeof(*packetPair) / sizeof(u32) - 1;
+    payloadWordCount = 9;
     if (workspace->elemCount-- > 0) {
         do {
             elementHalfwords = (const u16*)elements;
@@ -1249,7 +1249,7 @@ u32* tmdDrawStreamPrimGt3OffsetLayer(TmdStreamWorkspace* workspace, s32 objectFl
     baseMaterial.r  = baseIntensity;
     if (workspace->elemCount-- > 0) {
         gteResultDestination = &workspace->gteResult;
-        payloadWordCount     = sizeof(*packetPair) / sizeof(u32) - 1;
+        payloadWordCount     = 9;
         baseCommand          = TMD_GT3_OPAQUE_COMMAND;
         displayState         = &gDisplayState;
         addressMask          = GPU_DMA_LINK_ADDRESS_MASK;
@@ -1366,7 +1366,7 @@ u32* tmdDrawStreamPrimGt4OffsetLayer(TmdStreamWorkspace* workspace, s32 objectFl
                         gte_ldrgb(&baseMaterial);
                         gte_nccs();
                         gte_strgb(&packetPair[1].r3);
-                        payloadWordCount = sizeof(*packetPair) / sizeof(u32) - 1;
+                        payloadWordCount = 12;
                         baseCommand      = TMD_GT4_OPAQUE_COMMAND;
                         displayState     = &gDisplayState;
                         addressMask      = GPU_DMA_LINK_ADDRESS_MASK;
@@ -1535,7 +1535,7 @@ u32* tmdDrawStreamPrimGt4EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags
                     packetPair[0].tpage = TMD_ENV_SECOND_TEXTURE_PAGE;
                 }
 
-                payloadWordCount = sizeof(*packetPair) / sizeof(u32) - 1;
+                payloadWordCount = 12;
                 setlen(&packetPair[0], payloadWordCount);
                 setcode(&packetPair[0], TMD_GT4_SEMI_TRANS_COMMAND);
                 setlen(&packetPair[1], payloadWordCount);
@@ -1584,7 +1584,7 @@ u32* tmdDrawStreamPrimGt3ElemColor(TmdStreamWorkspace* workspace, s32 objectFlag
                     gte_ldv3(normalBytes + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
                     gte_ncct();
                     gte_strgb3_gt3(triangle);
-                    setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
+                    setlen(triangle, 9);
                     setcode(triangle, TMD_GT3_OPAQUE_COMMAND);
                     if (workspace->obj->flags & TMD_OBJECT_SEMI_TRANS) {
                         setcode(triangle, TMD_GT3_SEMI_TRANS_COMMAND);
@@ -1641,7 +1641,7 @@ u32* tmdDrawStreamPrimGt4ElemColor(TmdStreamWorkspace* workspace, s32 objectFlag
                         gte_stsxy2(&quad->x3);
                         gte_avsz4();
                         _modelLightingLightGt4CornerNormals(quad, workspace, geometryRefs);
-                        setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
+                        setlen(quad, 12);
                         setcode(quad, TMD_GT4_OPAQUE_COMMAND);
                         if (workspace->obj->flags & TMD_OBJECT_SEMI_TRANS) {
                             setcode(quad, TMD_GT4_SEMI_TRANS_COMMAND);
@@ -1828,7 +1828,7 @@ u32* tmdDrawStreamPrimF4(TmdStreamWorkspace* workspace, s32 objectFlags, u32* el
                     if (workspace->gteResult > 0 || _modelLightingQuadSecondTriangleFacesViewer(workspace, gteResultDestination)) {
                         gte_stsxy2(&quad->x3);
                         gte_avsz4();
-                        setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
+                        setlen(quad, 5);
                         setcode(quad, TMD_F4_OPAQUE_COMMAND);
                         gte_stotz(gteResultDestination);
                         addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
@@ -1875,7 +1875,7 @@ u32* tmdDrawStreamPrimF3(TmdStreamWorkspace* workspace, s32 objectFlags, u32* el
                     gte_stflg(gteFlagDestination);
                     if ((workspace->gteFlag & projectionErrorMask) == 0) {
                         gte_avsz3();
-                        setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
+                        setlen(triangle, 4);
                         setcode(triangle, TMD_F3_OPAQUE_COMMAND);
                         gte_stotz(gteResultDestination);
                         addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], triangle);
@@ -2000,7 +2000,7 @@ u32* tmdDrawStreamPrimG3CornerColors(TmdStreamWorkspace* workspace, s32 objectFl
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX, (const u8*)workspace->normals + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r0);
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r1);
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r2);
-                    setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
+                    setlen(triangle, 6);
                     setcode(triangle, TMD_G3_OPAQUE_COMMAND);
                     gte_stotz(gteResultDestination);
                     addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], triangle);
@@ -2044,7 +2044,7 @@ u32* tmdDrawStreamPrimG3CornerColorsSemiTrans(TmdStreamWorkspace* workspace, s32
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX, (const u8*)workspace->normals + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r0);
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r1);
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r2);
-                    setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
+                    setlen(triangle, 6);
                     setcode(triangle, TMD_G3_SEMI_TRANS_COMMAND);
                     gte_stotz(gteResultDestination);
                     addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], triangle);
@@ -2098,7 +2098,7 @@ u32* tmdDrawStreamPrimG4CornerColors(TmdStreamWorkspace* workspace, s32 objectFl
                         MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r1);
                         MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[6] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r2);
                         MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 3, (const u8*)workspace->normals + (elementHalfwords[7] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r3);
-                        setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
+                        setlen(quad, 8);
                         setcode(quad, TMD_G4_OPAQUE_COMMAND);
                         gte_stotz(gteResultDestination);
                         addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
@@ -2154,7 +2154,7 @@ u32* tmdDrawStreamPrimG4CornerColorsSemiTrans(TmdStreamWorkspace* workspace, s32
                             MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r1);
                             MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[6] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r2);
                             MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 3, (const u8*)workspace->normals + (elementHalfwords[7] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r3);
-                            setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
+                            setlen(quad, 8);
                             setcode(quad, TMD_G4_SEMI_TRANS_COMMAND);
                             gte_stotz(gteResultDestination);
                             addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
@@ -2475,7 +2475,8 @@ u32* tmdBuildStreamGt4Unlit(TmdStreamWorkspace* workspace, s32 objectFlags, u32*
             GPU_PRIMITIVE_COLOR_WORD(quad, 1) = elements[TMD_GT4_UNLIT_COLOR_WORD_INDEX + 1];
             GPU_PRIMITIVE_COLOR_WORD(quad, 2) = elements[TMD_GT4_UNLIT_COLOR_WORD_INDEX + 2];
             corner3ColorWord                  = elements[TMD_GT4_UNLIT_COLOR_WORD_INDEX + 3];
-            setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
+            // GP0 words exclude the host pointer-width tag and length fields.
+            setlen(quad, 12);
             setcode(quad, TMD_GT4_UNLIT_SEMI_TRANS_COMMAND);
             GPU_PRIMITIVE_COLOR_WORD(quad, 3) = corner3ColorWord;
             _modelLightingInitGt4TextureWords(quad, elements, TMD_GT4_UNLIT_UV0_CLUT_WORD_INDEX, workspace);

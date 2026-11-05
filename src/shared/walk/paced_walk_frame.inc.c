@@ -30,7 +30,7 @@ static inline void _actorRenderLightPacedWalkerRoot(const TmdObject* model, GfxC
 /// Lights and updates a paced walker, draws its shadow and emits scripted smoke.
 ///
 /// Requires the spawned model/work/rig and live carrier bindings. Chooses one
-/// of eleven effect parts with rand() on every call, including hidden frames.
+/// of eleven effect parts with randomSdkDraw15() on every call, including hidden frames.
 /// Samples the composed root's full-chain XYZ with Y minus 800, preserving
 /// that composition frame, before movement/animation. Shadow follows update.
 /// A shown, buffered smoking model emits on odd killCountdown values and then
@@ -52,7 +52,7 @@ static void _pacedWalkFrame(Enemy* unusedEnemy, Task* task)
 
     model     = task->extra.tmd;
     rootCoord = model->coords;
-    smokePart = &task->extra.tmd->coords[_gPacedWalkSmokePartIndices[(rand() * PACED_WALK_EFFECT_PART_COUNT) >> 15]];
+    smokePart = &task->extra.tmd->coords[_gPacedWalkSmokePartIndices[(randomSdkDraw15() * PACED_WALK_EFFECT_PART_COUNT) >> 15]];
     work      = task->work;
     // Sample lighting before the update; the shadow uses its resulting root cache.
     _actorRenderLightPacedWalkerRoot(model, rootCoord);

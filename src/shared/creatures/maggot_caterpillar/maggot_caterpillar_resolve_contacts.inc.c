@@ -1363,9 +1363,8 @@ static void _maggotCaterpillarPuffTick(Enemy* enemy, Task* task)
 ///
 /// The task must own a live coordinate body and have a live TMD parent. Its
 /// coordinate must already be composed. The frame is the puff age, 0..14; the
-/// cell changes every two ticks. The radius table covers ages 0..13; age 14
-/// retains a read of the adjacent body recipe flags (1). Its intended storage
-/// relationship is unproven.
+/// cell changes every two ticks. The radius table covers all ages 0..14,
+/// including the final one-unit radius recovered from the PS1 layout.
 /// Depth is projected Z / 4; values below 20 emit no primitive. One scratch
 /// quad is reserved and released on every path.
 static void _maggotCaterpillarDrawPuff(Task* actor, s32 frame)

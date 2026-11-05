@@ -3,7 +3,7 @@ if(CMAKE_HOST_APPLE AND NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET
    AND (NOT DEFINED CMAKE_SYSTEM_NAME OR CMAKE_SYSTEM_NAME STREQUAL "Darwin"))
     set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0" CACHE STRING "Minimum supported macOS version")
 endif()
-project(parasite-eve-ii-pc VERSION 0.0.1 LANGUAGES C)
+project(parasite-eve-ii-pc VERSION 0.2.0 LANGUAGES C)
 
 # Overlay packages and their variants define the same uninitialised globals in several objects. Apple's toolchain merges
 # those tentative definitions into one; GCC and Clang elsewhere need -fcommon to do the same, or the link fails with
@@ -51,7 +51,22 @@ else()
 endif()
 
 
-# Host test for the GTE compatibility macros: cmake --build build-port --target gte_compat_test
+# Host checks for scripted arrival coordinates and GTE compatibility macros.
+add_executable(actor_walk_gap_test EXCLUDE_FROM_ALL tests/actor_walk_gap_test.c)
+add_executable(sdk_random_test EXCLUDE_FROM_ALL tests/sdk_random_test.c)
+target_include_directories(sdk_random_test PRIVATE include include/decomp)
+target_compile_options(sdk_random_test PRIVATE -UNDEBUG)
+target_compile_definitions(sdk_random_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(sdk_random_test PRIVATE psyz)
+target_include_directories(actor_walk_gap_test PRIVATE include include/decomp)
+target_compile_definitions(actor_walk_gap_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(actor_walk_gap_test PRIVATE psyz)
+
+add_executable(screen_negative_test EXCLUDE_FROM_ALL tests/screen_negative_test.c)
+target_include_directories(screen_negative_test PRIVATE include include/decomp)
+target_compile_definitions(screen_negative_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(screen_negative_test PRIVATE psyz)
+
 add_executable(gte_compat_test EXCLUDE_FROM_ALL tests/gte_compat_test.c)
 target_include_directories(gte_compat_test PRIVATE include include/decomp)
 target_compile_definitions(gte_compat_test PRIVATE __psyz SKIP_ASM)
@@ -126,6 +141,11 @@ if(APPLE)
 else()
     target_link_options(task_teardown_test PRIVATE -Wl,--gc-sections)
 endif()
+
+add_executable(cd_ring_test EXCLUDE_FROM_ALL tests/cd_ring_test.c)
+target_include_directories(cd_ring_test PRIVATE include include/decomp)
+target_compile_definitions(cd_ring_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(cd_ring_test PRIVATE psyz)
 
 add_executable(cd_pump_test EXCLUDE_FROM_ALL tests/cd_pump_test.c)
 target_include_directories(cd_pump_test PRIVATE include include/decomp)

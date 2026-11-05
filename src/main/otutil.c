@@ -36,7 +36,8 @@ u8* _gDisplayTaskPrimitiveArenaBase;
 
 /// Signed total-byte capacity of the bound display-task primitive arena.
 ///
-/// Configured as 0x6000 or 0x10000 bytes, divided into two equal frame halves.
+/// Configured from the resident arena size or 0x10000-byte heap reservation,
+/// divided into two equal frame halves.
 /// The frame path preserves signed division when deriving its byte stride.
 s32 _gDisplayTaskPrimitiveArenaBytes;
 
@@ -78,7 +79,7 @@ static TaskDesc _gDisplayMenuTaskDesc = {
 
 /// Selects the resident small ordering tables and primitive arena for task presentation.
 ///
-/// Each frame slot has 64 tags and 0x3000 bytes of primitive storage. The
+/// Each frame slot has 64 tags and half the resident primitive arena. The
 /// frame path initializes the selected descriptor's offset, point and tail
 /// tag, clears its tags and selects its primitive half before drawing.
 /// Storage remains borrowed until GPU drawing completes; packets must fit

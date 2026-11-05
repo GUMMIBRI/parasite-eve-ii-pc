@@ -21,6 +21,8 @@
 /// CAP/sound records. Their storage and this overlay must survive through reload.
 extern TaskDesc gNeoArkForestZoneStagedEventTaskDesc;
 
+void neoArkForestZoneStagedEventTask(Task* task);
+
 /// Room receiver's transition, key-item, action, command and actor-event callbacks.
 ///
 /// The final TASK_MESSAGE_TABLE_END record rejects unsupported IDs with zero.

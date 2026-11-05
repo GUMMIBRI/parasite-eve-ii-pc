@@ -291,12 +291,9 @@ static ActorSpriteUv _gMaggotCaterpillarPuffCells[8] = {
     { 96, 0, 32, 0 },
 };
 
-/// Billboard half-size in coordinate units for puff ages 0..13.
-///
-/// Projection multiplies by 0x300 and divides by projected Z / 4. The retained
-/// age-14 draw reads the adjacent body descriptor's flags halfword (1), beyond
-/// this array's fourteen entries; the intended storage relationship is unproven.
-static s16 _gMaggotCaterpillarPuffRadius[14] = {
+/// Billboard half-size for ages 0..14. The final value preserves the PS1
+/// age-14 read of the adjacent body flags without indexing beyond the array.
+static s16 _gMaggotCaterpillarPuffRadius[15] = {
     8,
     12,
     16,
@@ -311,6 +308,7 @@ static s16 _gMaggotCaterpillarPuffRadius[14] = {
     36,
     40,
     0,
+    1,
 };
 
 TaskDesc gActor02600MaggotCaterpillarBodyTask = {
@@ -319,16 +317,12 @@ TaskDesc gActor02600MaggotCaterpillarBodyTask = {
     .data     = { .model = &_gCrawlerBody },
 };
 
-/// Coordinate-body spawn recipe for a puff child, at execution priority 96.
-///
-/// The puff borrows its live parent model for launch and atlas lookup. Its
-/// callback allocates projectile work and dispatches setup, flight and teardown;
-/// descriptor data is ignored for coordinate bodies. Keep it immediately after
-/// the body recipe: the retained spawn table reaches it at index 1.
-static TaskDesc _gMaggotCaterpillarPuffTaskDesc = {
-    .header   = { .fields = { TASK_BODY_COORD, TASK_PRIORITY_ACTOR } },
-    .callback = _maggotCaterpillarPuffTask,
-    .data     = { .value = 0 },
+/// Contiguous body/puff recipes retained by the shared actor work.
+/// The exported body recipe above remains the room-placement entry point.
+/// Child spawns index this array; separate globals have no adjacency guarantee.
+static TaskDesc _gMaggotCaterpillarTaskTable[2] = {
+    { { { TASK_BODY_TMD, TASK_PRIORITY_ACTOR } }, _maggotCaterpillarTask, { .model = &_gCrawlerBody } },
+    { { { TASK_BODY_COORD, TASK_PRIORITY_ACTOR } }, _maggotCaterpillarPuffTask, { .value = 0 } },
 };
 
 /// Borrowed model clips indexed by `MAGGOT_CATERPILLAR_ANIM_*`.
@@ -342,9 +336,8 @@ static TaskDesc _gMaggotCaterpillarPuffTaskDesc = {
 /// Selects this carrier's body/puff descriptor run for the shared spawn fragment.
 ///
 /// Yields a `TaskDesc*` borrowed while the body lives; keep the package loaded
-/// while body or puff tasks live. The retained scalar body declaration does
-/// not cover index 1, which reaches the separately declared adjacent puff.
-#define MAGGOT_CATERPILLAR_TASK_TABLE (&gActor02600MaggotCaterpillarBodyTask)
+/// while body or puff tasks live. Index 1 is the puff child recipe.
+#define MAGGOT_CATERPILLAR_TASK_TABLE (_gMaggotCaterpillarTaskTable)
 #include "../../shared/creatures/maggot_caterpillar/maggot_caterpillar.inc.c"
 
 DEFINE_ALIAS(gActor02600MaggotCaterpillarBodyTask, gActor202600MaggotCaterpillarBodyTask);

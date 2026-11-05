@@ -157,6 +157,13 @@ static void _shelterB2PodAccessTunnelIdleRoomTask(Task* unusedTask);
 
 #include "../../shared/room/room_event_staged_task.inc.c"
 
+// The descriptor lives in a separate translation unit. Keep its entry point
+// unique so the host links it to this room's latched destination and event.
+void shelterB2PodAccessTunnelStagedEventTask(Task* task)
+{
+    roomEventStagedTask(task);
+}
+
 /// Latches an eligible departure event and starts its staged task on execution.
 ///
 /// Returns 2 for an eligible event, including a query, or 1 for direct departure

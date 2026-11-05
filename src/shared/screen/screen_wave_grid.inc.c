@@ -1,3 +1,5 @@
+#include "main/random.h"
+
 /* Part of the screen wave library; see screen_wave.h. */
 
 /// Scratch-stack block the grid task holds for the length of one tick: the
@@ -95,13 +97,13 @@ static void _screenWaveGridTask(Task* task)
             // Seed the ramp and build the UVs and tint once for both buffers.
             for (index = 0; index < SCREEN_WAVE_QUAD_COLUMNS + 1; index++) {
                 SCREEN_WAVE_COLUMN_OSCILLATORS[index].phase  = 0;
-                SCREEN_WAVE_COLUMN_OSCILLATORS[index].offset = (u32)rand() >> 3;
-                SCREEN_WAVE_COLUMN_OSCILLATORS[index].speed  = ((rand() * 100) >> 15) + 20;
+                SCREEN_WAVE_COLUMN_OSCILLATORS[index].offset = (u32)randomSdkDraw15() >> 3;
+                SCREEN_WAVE_COLUMN_OSCILLATORS[index].speed  = ((randomSdkDraw15() * 100) >> 15) + 20;
             }
             for (index = 0; index < SCREEN_WAVE_ROW_WAVES; index++) {
                 SCREEN_WAVE_ROW_OSCILLATORS[index].phase  = 0;
-                SCREEN_WAVE_ROW_OSCILLATORS[index].offset = (u32)rand() >> 3;
-                SCREEN_WAVE_ROW_OSCILLATORS[index].speed  = ((rand() * 100) >> 15) + 20;
+                SCREEN_WAVE_ROW_OSCILLATORS[index].offset = (u32)randomSdkDraw15() >> 3;
+                SCREEN_WAVE_ROW_OSCILLATORS[index].speed  = ((randomSdkDraw15() * 100) >> 15) + 20;
             }
             _gScreenWaveAmplitude             = 0;
             SCREEN_WAVE_ACTIVE_CONTEXT        = task->spawnArg2.pointer;

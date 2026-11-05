@@ -5985,8 +5985,9 @@ static void _actor00400GroundStainFade(Task* task)
 
 /// Releases the diver's surface-spot claim before its delayed despawn.
 ///
-/// Requires a live borrowed surface-spot list and a valid `surfaceSpotIndex`
-/// (entry zero is the unclaimed default). Clears any nonzero claim halfword,
+/// When the spawn supplies a surface-spot list, requires a valid
+/// `surfaceSpotIndex` (entry zero is the unclaimed default). Divers without
+/// a list have no claim to release. Clears any nonzero claim halfword,
 /// resets the delay counter and advances the despawn state to its timed wait.
 /// The room owns the list; this callback does not free it.
 static void _actor00400ReleaseSurfaceSpot(Task* task)
@@ -5995,7 +5996,8 @@ static void _actor00400ReleaseSurfaceSpot(Task* task)
     _Actor00400Work* work;
 
     work = task->work;
-    if (work->surfaceSpots[work->surfaceSpotIndex].pad != ACTOR_00400_SURFACE_SPOT_FREE) {
+    if (work->surfaceSpots != NULL &&
+        work->surfaceSpots[work->surfaceSpotIndex].pad != ACTOR_00400_SURFACE_SPOT_FREE) {
         work->surfaceSpots[work->surfaceSpotIndex].pad = ACTOR_00400_SURFACE_SPOT_FREE;
     }
     work->stateFrames = 0;

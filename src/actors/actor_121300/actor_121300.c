@@ -969,6 +969,8 @@ static void _actor121300LampDebrisTask(Task* task)
             rootCoord->composeStamp = GRAPHICS_COORD_DIRTY;
             if (rootCoord->coord.t[1] >= ACTOR_121300_DEBRIS_DESPAWN_Y) {
                 taskKill(task);
+                // Teardown frees the work containing the model's lighting matrices.
+                return;
             }
             break;
     }

@@ -110,6 +110,12 @@ s16 gRoamerReserveHp[5] = {
 
 #include "../../shared/room/room_event_staged_task.inc.c"
 
+// The descriptor is compiled separately; expose an unambiguous room entry point.
+void neoArkForestZoneStagedEventTask(Task* task)
+{
+    roomEventStagedTask(task);
+}
+
 s32 neoArkForestZoneRejectKeyItemMessage(Task* task, s32 messageId, s32 itemId, s32 secondArg)
 {
     return ROOM_KEY_ITEM_USE_REFUSED;

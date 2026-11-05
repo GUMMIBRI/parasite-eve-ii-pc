@@ -22,7 +22,8 @@ static inline void _screenNegativeCaptureTask(Task* task)
     };
     ScreenNegativeCaptureArgs* args;
     s32                        stripIndex;
-    u_long(*strip)[FILE_SYSTEM_IMAGE_STRIP_WORDS];
+    // Image words stay 32-bit even when the SDK's u_long is LP64.
+    u32(*strip)[FILE_SYSTEM_IMAGE_STRIP_WORDS];
 
     args = task->spawnArg2.pointer;
     if (gEvsPlaybackPaused == 0) {
@@ -36,13 +37,13 @@ static inline void _screenNegativeCaptureTask(Task* task)
                     _gScreenNegativeStripRect.y = DISPLAY_BUFFER_STRIDE_ROWS;
                 }
                 if (gDisplayState.debugMode < 0) {
-                    StoreImage(&_gScreenNegativeFrameRect, gFsImageWorkspacePtr->strips[0]);
+                    StoreImage(&_gScreenNegativeFrameRect, (u_long*)gFsImageWorkspacePtr->strips[0]);
                 } else {
                     // Traverse complete strip arrays within the resident frame.
                     strip = gFsImageWorkspacePtr->strips;
                     for (stripIndex = 0; stripIndex < FILE_SYSTEM_IMAGE_STRIP_COUNT; stripIndex++) {
                         _gScreenNegativeStripRect.x = stripIndex * FILE_SYSTEM_IMAGE_STRIP_WIDTH;
-                        StoreImage(&_gScreenNegativeStripRect, *strip);
+                        StoreImage(&_gScreenNegativeStripRect, (u_long*)*strip);
                         strip++;
                     }
                 }

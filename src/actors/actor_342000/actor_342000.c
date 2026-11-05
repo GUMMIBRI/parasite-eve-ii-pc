@@ -1031,10 +1031,8 @@ static inline void _actor342000CopyGluttonStagingPlacement(_Actor342000EventWork
 /// Setup falls through to its first movement tick; repeat modes keep their mode,
 /// while one-shot modes clear it. Placements use parent-coordinate units, scales
 /// use twelve fractional bits, and the sink changes clips after sixty ticks.
-/// The Glutton work pointer is loaded unconditionally before mode dispatch.
-/// During timed closing the Glutton may already be NULL: modes 6..9 never use
-/// that value, but the retained target read still occurs at low RAM address 0x1C.
-/// Do not move that load into only the Glutton modes.
+/// Only the three Glutton staging modes borrow its work. During timed door
+/// closing the display model has already been removed and its handle is NULL.
 static void _actor342000UpdateSceneStaging(Task* eventTask)
 {
     enum {
@@ -1054,10 +1052,10 @@ static void _actor342000UpdateSceneStaging(Task* eventTask)
     _Actor342000GluttonModelWork* gluttonWork;
     const ActorTransform*         initialGluttonPlacement;
 
-    work        = eventTask->work;
-    gluttonWork = work->glutton->work;
+    work = eventTask->work;
     switch (work->stagingMode) {
         case ACTOR_342000_STAGING_GLUTTON_SINKS:
+            gluttonWork = work->glutton->work;
             switch (work->stagingStep) {
                 case ACTOR_342000_STAGING_SETUP:
                     taskMessageDispatch(work->glutton, ACTOR_MESSAGE_SET_MODEL_DRAW, ACTOR_MESSAGE_DRAW_SHOW, 0);
@@ -1089,6 +1087,7 @@ static void _actor342000UpdateSceneStaging(Task* eventTask)
             }
             return;
         case ACTOR_342000_STAGING_GLUTTON_ALONE:
+            gluttonWork = work->glutton->work;
             switch (work->stagingStep) {
                 case ACTOR_342000_STAGING_SETUP:
                     taskMessageDispatch(work->doors[0], ACTOR_MESSAGE_SET_MODEL_DRAW, ACTOR_MESSAGE_DRAW_HIDE, 0);
@@ -1104,6 +1103,7 @@ static void _actor342000UpdateSceneStaging(Task* eventTask)
             }
             return;
         case ACTOR_342000_STAGING_DOORS_SHAKE:
+            gluttonWork = work->glutton->work;
             switch (work->stagingStep) {
                 case ACTOR_342000_STAGING_SETUP:
                     taskMessageDispatch(work->doors[0], ACTOR_MESSAGE_SET_MODEL_DRAW, ACTOR_MESSAGE_DRAW_SHOW, 0);

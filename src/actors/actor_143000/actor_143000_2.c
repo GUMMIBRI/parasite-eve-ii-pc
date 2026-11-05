@@ -21,6 +21,7 @@ static s32 _gActor143000TerminalCorrectAnswers;
 #include <stdlib.h>
 
 #include "common.h"
+#include "main/random.h"
 
 #include "gameplay/animation.h"
 #include "gameplay/area_transitions.h"
@@ -458,7 +459,7 @@ static void _actor143000TerminalSessionTask(Task* task)
             return;
         case ACTOR_143000_TERMINAL_STATE_SELECT_QUESTION:
             while (1) {
-                _gActor143000TerminalQuestionIndex = (rand() * ACTOR_143000_TERMINAL_QUESTION_COUNT) >> ACTOR_143000_TERMINAL_RAND_BITS;
+                _gActor143000TerminalQuestionIndex = (randomSdkDraw15() * ACTOR_143000_TERMINAL_QUESTION_COUNT) >> ACTOR_143000_TERMINAL_RAND_BITS;
                 selectedQuestion                   = &_gActor143000TerminalVisitedQuestions[_gActor143000TerminalQuestionIndex];
                 if (*selectedQuestion == ACTOR_143000_QUESTION_UNSEEN) {
                     *selectedQuestion = ACTOR_143000_QUESTION_ASKED;

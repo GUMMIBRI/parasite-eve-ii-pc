@@ -32,6 +32,9 @@ def checkpoint_value(snapshot, path):
 def collect(target):
     import lldb
 
+    if target.GetProcess().GetState() != lldb.eStateStopped:
+        raise RuntimeError("checkpoint requires a stopped process")
+
     def child(value, name):
         result = value.GetChildMemberWithName(name)
         if not result.IsValid():
@@ -82,6 +85,9 @@ def collect(target):
                                 if number(child(actor, "mode")) == 2 and number(child(actor, "state")) == 3 else None),
                   "turnRateIndex": number(child(actor, "turnRateIndex")),
                   "aimControl": number(child(actor, "aimControl")),
+                  "aimYaw": number(child(actor, "aimYaw")),
+                  "aimTrackingState": number(child(actor, "aimTrackingState")),
+                  "weaponForwardView": [number(child(child(child(actor, "weaponCollisionCoord"), "workm"), "m").GetChildAtIndex(i).GetChildAtIndex(2)) for i in range(3)],
                   "movementInputDisabled": number(child(actor, "movementInputDisabled")),
                   "padHeld": number(child(actor, "padHeld")),
                   "movementSign": number(child(actor, "movementSign")),
@@ -147,7 +153,7 @@ def collect(target):
     attachment = target.FindFirstGlobalVariable("gAttachmentState")
     snapshot["parasiteEnergy"] = {
         "levels": [number(child(save, "attachLevels").GetChildAtIndex(i)) for i in range(12)],
-        **{name: number(child(attachment, name)) for name in ("mode", "wheelIndex", "activeIndex", "flags", "queuedIndex", "menuOpen", "soundStep", "duration")},
+        **{name: number(child(attachment, name)) for name in ("mode", "wheelIndex", "activeIndex", "flags", "queuedIndex", "menuOpen", "soundStep", "duration", "metabolismTicks", "antibodyTicks", "energyShotTicks", "bodyWard", "mindWard")},
         "elementSelection": [number(child(target.FindFirstGlobalVariable("gItemMenuPeElementLists").GetChildAtIndex(i), "selectedItemIndex")) for i in range(4)],
     }
     display = target.FindFirstGlobalVariable("gDisplayState")
@@ -515,7 +521,7 @@ def collect(target):
             if (name.startswith(("_akropolisForkedRoad", "_akropolisObservatory", "_akropolisPromenade")) and ("MoviePathTask" in name or "SkipFade" in name or name == "_akropolisObservatoryScriptedBattleTask")) or (snapshot["location"]["area"] == 15 and name in ("_roomCutsceneTask", "_roomCutsceneSoundTask")):
                 snapshot["roomMovie"]["tasks"].append({"callback": name, "state": number(child(value, "state"))})
             task = child(child(value, "node"), "next")
-    if snapshot["location"]["stage"] == 1 and snapshot["location"]["area"] in (3, 4, 7, 8, 9, 10, 11, 13, 14, 15, 16):
+    if (snapshot["location"]["stage"] == 1 and snapshot["location"]["area"] in (3, 4, 7, 8, 9, 10, 11, 13, 14, 15, 16, 19)) or snapshot["location"]["stage"] in (2, 3, 4, 5):
         snapshot["roomEnemies"] = []
         task = child(target.FindFirstGlobalVariable("gTaskDefaultList"), "next")
         visited = set()
@@ -527,15 +533,75 @@ def collect(target):
             value = task.Dereference()
             callback = child(value, "callback").GetValueAsUnsigned()
             name = target.ResolveLoadAddress(callback).GetSymbol().GetName() or ""
-            if name in ("_ratTask", "_mothTask", "_actor401000StrangerTask", "_actor401800Task", "_actor01100Task", "_actor03700Task", "_akropolisBridgeEnemyTask", "_maggotCaterpillarTask", "_lesserStrangerTask", "_helicopterLandingPadNo9BodyTask", "_helicopterLandingPadNo9TransformerTask") or (snapshot["location"]["area"] in (3, 4, 7, 9, 10) and name == "_actor01900Task"):
+            if name in ("_madChaserTask", "_madChaserHiddenTask", "_actor403200HostTask", "_actor444000GluttonTask", "_actor00300EnemyTask", "_actor00400BodyTask", "_actor02100Task", "_ratTask", "_mothTask", "_actor401000StrangerTask", "_actor401800Task", "_actor01100Task", "_actor03700Task", "_akropolisBridgeEnemyTask", "_maggotCaterpillarTask", "_lesserStrangerTask", "_helicopterLandingPadNo9BodyTask", "_helicopterLandingPadNo9TransformerTask", "_helicopterLandingPadNo9BlastSourceTask", "_parkingPierceTask", "_desertChaserTask", "_actor02500Task", "_actor02400BodyTask", "_actor400500Task", "_actor01500Task", "_actor04000Task", "_actor01600Task", "_actor400600Task", "_actor07000SlouchTask", "_actor07000SlouchHiddenTask", "_actor207200CreepingStrangerTask", "_skullStalkerTask", "_generatorTask", "_generatorLifeSupportTask", "_actor401300Task", "_actor356100Task", "_actor03800Task", "_actor205200PartTask", "_actor205200BodyTask", "_actor105100Task", "_actor521100BodyTask", "_actor403100Task", "_actor403000Task", "mineCavernTargetTask") or (snapshot["location"]["area"] in (3, 4, 7, 9, 10) and name == "_actor01900Task"):
                 enemy_address = child(child(value, "spawnArg2"), "pointer").GetValueAsUnsigned()
                 if enemy_address:
                     enemy = target.CreateValueFromAddress("enemy", lldb.SBAddress(enemy_address, target), target.FindFirstType("Enemy"))
                     record = {"callback": name, "hp": number(child(enemy, "hp")), "taskState": number(child(value, "state"))}
-                    if name in ("_ratTask", "_actor401800Task", "_actor401000StrangerTask", "_actor01900Task"):
+                    record["dormant"] = record["hp"] == -999
+                    record["targetFlags"] = number(child(child(child(child(enemy, "node"), "state"), "parts"), "flags"))
+                    record["targeted"] = number(child(child(child(child(enemy, "node"), "state"), "parts"), "targeted"))
+                    if name in ("_madChaserTask", "_madChaserHiddenTask", "_actor00300EnemyTask", "_actor00400BodyTask", "_actor02100Task", "_ratTask", "_actor401800Task", "_actor401000StrangerTask", "_actor01900Task", "_desertChaserTask", "_actor03700Task", "_actor02500Task", "_actor02400BodyTask", "_actor400500Task", "_actor01500Task", "_actor04000Task", "_actor01600Task", "_actor400600Task", "_actor07000SlouchTask", "_actor07000SlouchHiddenTask", "_actor207200CreepingStrangerTask", "_skullStalkerTask", "_generatorTask", "_generatorLifeSupportTask", "_actor401300Task", "_actor356100Task", "_actor03800Task", "_actor205200PartTask", "_actor205200BodyTask", "_actor105100Task", "_actor521100BodyTask", "_actor403100Task", "_actor403000Task", "mineCavernTargetTask"):
                         model = child(child(value, "extra"), "tmd").Dereference()
                         coord = child(child(model, "coords").Dereference(), "coord")
                         record["rootPosition"] = [number(child(coord, "t").GetChildAtIndex(i)) for i in range(3)]
+                    if name in ("_actor403200HostTask", "_actor444000GluttonTask"):
+                        record["reactionFlags"] = number(child(enemy, "reactionFlags"))
+                        model = child(child(value, "extra"), "tmd").Dereference()
+                        coords = child(model, "coords")
+                        record["rootPosition"] = [number(child(child(coords.Dereference(), "coord"), "t").GetChildAtIndex(i)) for i in range(3)]
+                        # Mirror the game's local-to-world walk in Python, without target calls.
+                        coord_type = target.FindFirstType("GfxCoord")
+                        coord_address = coords.GetValueAsUnsigned() + 4 * coord_type.GetByteSize()
+                        point = [0, 0, 0]
+                        view_address = target.FindFirstGlobalVariable("gGfxViewCoord").GetLoadAddress()
+                        chain_seen = set()
+                        while coord_address and coord_address != view_address:
+                            if coord_address in chain_seen:
+                                raise RuntimeError("cycle in Glutton mouth coordinate chain")
+                            chain_seen.add(coord_address)
+                            node = target.CreateValueFromAddress("mouthCoord", lldb.SBAddress(coord_address, target), coord_type)
+                            matrix = child(node, "coord")
+                            rotation = child(matrix, "m")
+                            translation = child(matrix, "t")
+                            point = [((sum(number(rotation.GetChildAtIndex(i).GetChildAtIndex(j)) * point[j] for j in range(3)) >> 12) + number(translation.GetChildAtIndex(i)) + 32768) % 65536 - 32768 for i in range(3)]
+                            coord_address = child(node, "parent").GetValueAsUnsigned()
+                        if coord_address == view_address:
+                            record["mouthPosition"] = point
+                            player_position = snapshot["actor"]["position"]
+                            record["mouthDistanceXZ"] = int(((player_position[0] - point[0]) ** 2 + (player_position[2] - point[2]) ** 2) ** 0.5)
+                        work_address = child(value, "work").GetValueAsUnsigned()
+                        if work_address:
+                            work = target.CreateValueFromAddress("glutton", lldb.SBAddress(work_address, target), target.FindFirstType("GluttonWork"))
+                            for field in ("state", "stateTicks", "phase", "attackDelay", "animId", "wallDistance", "pendingHeals", "hostExposed"):
+                                record[field] = number(child(work, field))
+                            slot = child(child(work, "hostRig"), "slots").GetChildAtIndex(1)
+                            record["mouthCue"] = number(child(child(child(slot, "currentPose"), "indices"), "recordIndex")) & 0x3FF
+                    if name == "_actor403000Task":
+                        work_address = child(value, "work").GetValueAsUnsigned()
+                        work = target.CreateValueFromAddress("blizzardChaser", lldb.SBAddress(work_address, target), target.FindFirstType("Actor403000Work"))
+                        for field in ("state", "prevState", "stateFrame", "dropDelay", "playerCaught", "seenTargetsDestroyed"):
+                            record[field] = number(child(work, field))
+                        record["attackTarget"] = [number(child(child(work, "attackTarget"), axis)) for axis in ("vx", "vy", "vz")]
+                    if name == "_desertChaserTask":
+                        work_address = child(value, "work").GetValueAsUnsigned()
+                        # All Desert Chaser variants put their state first; later work layouts differ.
+                        work = target.CreateValueFromAddress("desertChaser", lldb.SBAddress(work_address, target), target.FindFirstType("DesertChaserWork"))
+                        record["state"] = number(child(work, "state"))
+                    if name == "_parkingPierceTask":
+                        model = child(child(value, "extra"), "tmd").Dereference()
+                        coord = child(child(model, "coords").Dereference(), "coord")
+                        record["rootPosition"] = [number(child(coord, "t").GetChildAtIndex(i)) for i in range(3)]
+                        work_types = target.FindTypes("_Work")
+                        work_type = next(work_types.GetTypeAtIndex(i) for i in range(work_types.GetSize())
+                                         if any(work_types.GetTypeAtIndex(i).GetFieldAtIndex(j).GetName() == "billboardTask"
+                                                for j in range(work_types.GetTypeAtIndex(i).GetNumberOfFields())))
+                        work_address = child(value, "work").GetValueAsUnsigned()
+                        work = target.CreateValueFromAddress("parkingPierce", lldb.SBAddress(work_address, target), work_type)
+                        walk = child(work, "walk")
+                        record.update({field: number(child(walk, field)) for field in ("motion", "motionStep")})
+                        record["walkTarget"] = [number(child(child(walk, "target"), axis)) for axis in ("vx", "vy", "vz")]
+                        record["walkVelocity"] = [number(child(child(walk, "velocity"), axis)) for axis in ("vx", "vy", "vz")]
                     if name == "_helicopterLandingPadNo9TransformerTask":
                         work_address = child(value, "work").GetValueAsUnsigned()
                         if work_address:
@@ -552,6 +618,13 @@ def collect(target):
                         record["contactWorldPosition"] = [round(sum(number(view_rotation.GetChildAtIndex(j).GetChildAtIndex(i)) * delta[j] for j in range(3)) / 4096) for i in range(3)]
                         root = child(child(child(value, "extra"), "tmd").Dereference(), "coords").Dereference()
                         record["rootPosition"] = [number(child(child(root, "coord"), "t").GetChildAtIndex(i)) for i in range(3)]
+                    if name == "_helicopterLandingPadNo9BlastSourceTask":
+                        work_address = child(value, "work").GetValueAsUnsigned()
+                        work = target.CreateValueFromAddress("blastSource", lldb.SBAddress(work_address, target), target.FindFirstType("_BlastSourceWork"))
+                        record.update({field: number(child(work, field)) for field in ("state", "flareFrames", "flareTaskState")})
+                        record["targeted"] = number(child(child(child(child(enemy, "node"), "state"), "parts"), "targeted"))
+                        coord = child(child(child(value, "extra"), "coordBody").Dereference(), "coord").Dereference()
+                        record["rootPosition"] = [number(child(child(coord, "coord"), "t").GetChildAtIndex(i)) for i in range(3)]
                     if name == "_helicopterLandingPadNo9BodyTask":
                         model = child(child(value, "extra"), "tmd").Dereference()
                         coord = child(child(model, "coords").Dereference(), "coord")
@@ -559,7 +632,10 @@ def collect(target):
                         work_address = child(value, "work").GetValueAsUnsigned()
                         if work_address:
                             work = target.CreateValueFromAddress("helipadNo9", lldb.SBAddress(work_address, target), target.FindFirstType("HelicopterLandingPadNo9Work"))
-                            record.update({field: number(child(work, field)) for field in ("state", "subState", "animationFrame", "stateCounter")})
+                            record.update({field: number(child(work, field)) for field in
+                                           ("state", "subState", "animationFrame", "stateCounter",
+                                            "lapDistance", "lapSide", "lapSpeed", "playerDistance",
+                                            "slashedTransformer", "lethalAttackPhase")})
                     if name == "_actor01100Task":
                         model = child(child(value, "extra"), "tmd").Dereference()
                         coord = child(child(model, "coords").Dereference(), "coord")
@@ -574,6 +650,19 @@ def collect(target):
                         work_address = child(value, "work").GetValueAsUnsigned()
                         work = target.CreateValueFromAddress("bat", lldb.SBAddress(work_address, target), target.FindFirstType("_Actor03700Work"))
                         record.update({field: number(child(work, field)) for field in ("action", "actionStep", "holdingPlayer", "waveDirector")})
+                    if name == "_actor400500Task":
+                        work_address = child(value, "work").GetValueAsUnsigned()
+                        work = target.CreateValueFromAddress("grayStalker", lldb.SBAddress(work_address, target), target.FindFirstType("_Actor400500GrayStalkerWork"))
+                        record.update({field: number(child(work, field)) for field in
+                                       ("state", "subState", "cloakLevel", "playerCaught", "posture", "commandActive")})
+                    if name == "_actor105100Task":
+                        work_address = child(value, "work").GetValueAsUnsigned()
+                        work = target.CreateValueFromAddress("stinger", lldb.SBAddress(work_address, target), target.FindFirstType("_Actor105100Work"))
+                        record.update({field: number(child(work, field)) for field in
+                                       ("action", "actionStep", "timer", "summonCount", "charging", "staggerDamage", "staggerTimer")})
+                        shield = child(child(work, "shield"), "fields")
+                        record["shieldActive"] = number(child(shield, "active"))
+                        record["shieldCooldown"] = number(child(shield, "cooldown"))
                     if name == "_maggotCaterpillarTask":
                         model = child(child(value, "extra"), "tmd").Dereference()
                         coord = child(child(model, "coords").Dereference(), "coord")

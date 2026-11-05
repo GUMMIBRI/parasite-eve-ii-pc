@@ -8,7 +8,7 @@
 /// Requires two distinct word-aligned words in pixel order. Each output channel
 /// is 31 - floor((3R + 4G + B) / 8); bit 15 is cleared. Loads both input words
 /// before writing either output and retains neither pointer.
-static inline void _screenNegativeConvertWordPair(u_long* firstWord, u_long* secondWord)
+static inline void _screenNegativeConvertWordPair(u32* firstWord, u32* secondWord)
 {
     enum {
         SCREEN_NEGATIVE_PAIR_CHANNEL_MASK = 0x001F001F,
@@ -67,12 +67,12 @@ static inline void _screenNegativeConvertWordPair(u_long* firstWord, u_long* sec
 /// strip layout. The caller controls capture, upload and workspace reuse.
 static void SCREEN_NEGATIVE_FILTER(void)
 {
-    u_long(*frameWords)[FILE_SYSTEM_IMAGE_STRIP_COUNT * FILE_SYSTEM_IMAGE_STRIP_WORDS];
+    u32(*frameWords)[FILE_SYSTEM_IMAGE_STRIP_COUNT * FILE_SYSTEM_IMAGE_STRIP_WORDS];
     s32     wordPairsProcessed;
-    u_long* firstWord;
+    u32* firstWord;
 
     // Borrow the complete word array so traversal can cross strip boundaries.
-    frameWords         = (u_long(*)[FILE_SYSTEM_IMAGE_STRIP_COUNT * FILE_SYSTEM_IMAGE_STRIP_WORDS]) gFsImageWorkspacePtr;
+    frameWords         = (u32(*)[FILE_SYSTEM_IMAGE_STRIP_COUNT * FILE_SYSTEM_IMAGE_STRIP_WORDS]) gFsImageWorkspacePtr;
     firstWord          = *frameWords;
     wordPairsProcessed = 0;
     do {

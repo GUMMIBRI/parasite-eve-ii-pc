@@ -38,7 +38,17 @@ jobs:
       - name: Build
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --parallel 4 --target parasite-eve-ii-pc
+          cmake --build build --parallel 4 --target parasite-eve-ii-pc host_tests
+      - name: Host regression tests
+        env:
+          PSYZ_HEADLESS: '1'
+          SDL_AUDIODRIVER: dummy
+        run: ctest --test-dir build --output-on-failure --no-tests=error
+      - name: The executable starts
+        run: |
+          out=$(build/parasite-eve-ii-pc --help 2>&1 || true)
+          echo "$out"
+          echo "$out" | grep -q '^usage:'
       - name: Package (ad-hoc signed)
         run: |
           version=${{ inputs.version }}
@@ -83,7 +93,12 @@ jobs:
       - name: Build
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --parallel 4 --target parasite-eve-ii-pc
+          cmake --build build --parallel 4 --target parasite-eve-ii-pc host_tests
+      - name: Host regression tests
+        env:
+          PSYZ_HEADLESS: '1'
+          SDL_AUDIODRIVER: dummy
+        run: ctest --test-dir build --output-on-failure --no-tests=error
       - name: The executable starts
         run: |
           out=$(build/parasite-eve-ii-pc --help 2>&1 || true)
@@ -142,7 +157,13 @@ jobs:
       - name: Build
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --parallel 2 --target parasite-eve-ii-pc
+          cmake --build build --parallel 2 --target parasite-eve-ii-pc actor_walk_gap_test sdk_random_test screen_negative_test gte_compat_test asset_disc_cache_test
+      # Filesystem host tests currently require POSIX APIs; run the portable regressions on Windows.
+      - name: Portable host regression tests
+        env:
+          PSYZ_HEADLESS: '1'
+          SDL_AUDIODRIVER: dummy
+        run: ctest --test-dir build --output-on-failure --no-tests=error -R '^(actor_walk_gap|sdk_random|screen_negative|gte_compat|asset_disc_cache)_test$'
       - name: The executable starts
         run: |
           out=$(build/parasite-eve-ii-pc.exe --help 2>&1 || true)

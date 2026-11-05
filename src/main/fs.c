@@ -279,9 +279,10 @@ static u16 _gFsStageFolderCount;
 ///
 /// The folder's start is already included; loading adds the selected stage's
 /// absolute disc base. Publishing another directory overwrites only listed IDs,
-/// so requests must use an ID from the current directory. The declared storage
-/// covers 51 entries; the complete serialized index domain remains unproven.
-static s32 _gFsFolderFileSectors[0x33];
+/// so requests must use an ID from the current directory. Folder-local IDs use
+/// the two decimal digits of FsFileLoadKey.fileIndex. Retail night Garage
+/// includes ID 99; reserving only 51 entries overwrote the mounted folder list.
+static s32 _gFsFolderFileSectors[100];
 
 /* Define BSS before API headers to preserve first-declaration order. */
 

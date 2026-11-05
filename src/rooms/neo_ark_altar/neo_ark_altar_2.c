@@ -149,8 +149,7 @@ static _NeoArkAltarTile _gNeoArkAltarWallFootprints[5] = {
 
 /// Twelve required pad IDs for the altar's first solution, without a terminator.
 ///
-/// First-solution feedback also reads the following second-solution storage
-/// at indices 12..15 while a longer second-solution prefix remains active.
+/// Feedback stops reading this table once its prefix has mismatched.
 static s16 _gNeoArkAltarFirstTileSolution[12] = {
     3,
     4,
@@ -168,8 +167,7 @@ static s16 _gNeoArkAltarFirstTileSolution[12] = {
 
 /// Sixteen required pad IDs for the altar's second solution, without a terminator.
 ///
-/// The first four IDs also supply the first solution's feedback reads for
-/// longer second-solution prefixes; their contiguous order must be retained.
+/// Longer prefixes are evaluated independently of the first solution.
 static s16 _gNeoArkAltarSecondTileSolution[16] = {
     1,
     1,
@@ -671,9 +669,9 @@ static s16 _gNeoArkAltarSwitchAnimationStep = NEO_ARK_ALTAR_SWITCH_SET_ENDPOINT;
 ///
 /// Entries below `_gNeoArkAltarEnteredTileCount` are live; both solution checks
 /// borrow this overlay's storage. Appends use 16 slots. Reset also clears the
-/// following image-tail halfword, whose ownership is unproven; that extra store
-/// does not establish another history slot.
-static s16 _gNeoArkAltarEnteredTiles[16];
+/// spare halfword retained for the original 17-halfword reset extent. The spare
+/// is storage for reset only, not another recorded history slot.
+static s16 _gNeoArkAltarEnteredTiles[17];
 
 static void _neoArkAltarInitializeTileSequence(Task* task);
 
@@ -1002,9 +1000,7 @@ static void _neoArkAltarTrackTileSequence(Task* task)
 /// Uses the current area's first sprite variant, updating batch 1 in views 4
 /// and 7 and batches 1..6 in view 5. A clear persistent switch flag selects
 /// switch-animation endpoint 6; a set flag selects endpoint 0. Resets the
-/// entered-tile count and preserves the binary's descending 17-halfword clear.
-/// The last store reaches beyond the declared history array into the image's
-/// final halfword; that storage's role is unproven.
+/// entered-tile count and clears all 17 allocated history halfwords.
 static void _neoArkAltarResetTileSequence(void)
 {
     enum {
@@ -1045,7 +1041,7 @@ static void _neoArkAltarResetTileSequence(void)
         _gNeoArkAltarSwitchAnimationStep = NEO_ARK_ALTAR_SWITCH_SET_ENDPOINT;
     }
     _gNeoArkAltarEnteredTileCount = 0;
-    // This is the observed transfer extent, not the declared history array bound.
+    // Include the spare reset halfword, without writing beyond owned storage.
     for (historyIndex = NEO_ARK_ALTAR_HISTORY_CLEAR_LAST_INDEX; historyIndex >= 0; historyIndex--) {
         _gNeoArkAltarEnteredTiles[historyIndex] = 0;
     }
@@ -1055,15 +1051,15 @@ static void _neoArkAltarResetTileSequence(void)
 ///
 /// `solution` is stable readable storage through the current last-entry index;
 /// `prefixMismatch` is a stable 0/1 flag. Each argument is evaluated at most
-/// once, only for a newly entered tile; an entry mismatch skips the flag test.
-/// The expected entry is read before the flag even for an already-invalid
-/// prefix. The twelve-entry first solution's longer feedback reads depend on
-/// adjacent storage; its C object does not establish that complete extent.
+/// once, only for a newly entered tile. A mismatched prefix always plays the
+/// wrong-tile feedback.
+/// A mismatched prefix skips the solution read, so a longer second-solution
+/// prefix cannot index beyond the twelve-entry first solution.
 /// Expands to one braced block and preserves separate sound tests for tile IDs.
 #define NEO_ARK_ALTAR_PLAY_ENTERED_TILE_FEEDBACK(solution, prefixMismatch)                                                                                \
     {                                                                                                                                                     \
         if (work->enteredTile != 0) {                                                                                                                     \
-            if ((solution)[_gNeoArkAltarEnteredTileCount - 1] != _gNeoArkAltarEnteredTiles[_gNeoArkAltarEnteredTileCount - 1] || (prefixMismatch) == 1) { \
+            if ((prefixMismatch) == 1 || (solution)[_gNeoArkAltarEnteredTileCount - 1] != _gNeoArkAltarEnteredTiles[_gNeoArkAltarEnteredTileCount - 1]) { \
                 if (work->enteredTile == 1) {                                                                                                             \
                     sndEvtRequestScriptStart(SOUND_NEO_ARK_ALTAR_TILE_1_WRONG, 0, 0);                                                                     \
                 }                                                                                                                                         \

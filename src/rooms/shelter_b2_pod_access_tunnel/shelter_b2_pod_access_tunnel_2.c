@@ -72,7 +72,7 @@ static WorldCoordRoomLights   _gShelterB2PodAccessTunnelLightCollection;
 
 TaskDesc gShelterB2PodAccessTunnelStagedEventTaskDesc = {
     .header   = { .fields = { TASK_BODY_NONE, TASK_PRIORITY_SCENE } },
-    .callback = roomEventStagedTask,
+    .callback = shelterB2PodAccessTunnelStagedEventTask,
     .data     = { .value = 0 },
 };
 

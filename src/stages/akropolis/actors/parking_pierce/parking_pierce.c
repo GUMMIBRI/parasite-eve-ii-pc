@@ -517,9 +517,9 @@ static void _parkingPierceCheckWalkArrival(Task* task)
     work      = task->work;
     rootCoord = task->extra.tmd->coords;
     // The full-word sign selects a low-halfword gap; signed narrowing is intentional.
-    deltaX      = _actorMotionWalkAxisGap(&work->walk.target.vx, &rootCoord->coord.t[0]);
+    deltaX      = _actorMotionWalkAxisGap(work->walk.target.vx, rootCoord->coord.t[0]);
     distance.vx = deltaX;
-    deltaZ      = _actorMotionWalkAxisGap(&work->walk.target.vz, &rootCoord->coord.t[2]);
+    deltaZ      = _actorMotionWalkAxisGap(work->walk.target.vz, rootCoord->coord.t[2]);
     distance.vz = deltaZ;
     if (distance.vx >= work->walk.lastDistance.vx && distance.vz >= work->walk.lastDistance.vz) {
         arrivalRequest.source.index         = BODY_ANIMATION_BANK;

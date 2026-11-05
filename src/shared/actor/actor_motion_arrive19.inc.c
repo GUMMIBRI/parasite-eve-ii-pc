@@ -25,9 +25,9 @@ static void _actorMotionArrive19(Task* task)
     work      = task->work;
     rootCoord = task->extra.tmd->coords;
     // Full-word direction selects a low-halfword gap; narrowing is intentional.
-    deltaX      = _actorMotionWalkAxisGap(&work->walk.target.vx, &rootCoord->coord.t[0]);
+    deltaX      = _actorMotionWalkAxisGap(work->walk.target.vx, rootCoord->coord.t[0]);
     distance.vx = deltaX;
-    deltaZ      = _actorMotionWalkAxisGap(&work->walk.target.vz, &rootCoord->coord.t[2]);
+    deltaZ      = _actorMotionWalkAxisGap(work->walk.target.vz, rootCoord->coord.t[2]);
     distance.vz = deltaZ;
     if (distance.vx >= work->walk.lastDistance.vx && distance.vz >= work->walk.lastDistance.vz) {
         arrivalRequest.source.index         = ACTOR_MOTION_WALK_ANIMATION_BANK;

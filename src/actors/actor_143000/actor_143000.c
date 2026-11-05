@@ -1,3 +1,5 @@
+#include "main/random.h"
+
 #include "actor_143000_private.h"
 
 #include <psyz.h>
@@ -984,7 +986,7 @@ static void _actor143000AutoTypeKeypadCode(Task* task)
         remainingFrames     = (u16)task->killCountdown - 1;
         task->killCountdown = remainingFrames;
         if ((s16)remainingFrames <= 0) {
-            task->killCountdown = (rand() * ACTOR_143000_KEYPAD_AUTO_TYPE_RANDOM_FRAMES >> ACTOR_143000_RANDOM_FRACTION_BITS) + ACTOR_143000_KEYPAD_AUTO_TYPE_MIN_FRAMES;
+            task->killCountdown = (randomSdkDraw15() * ACTOR_143000_KEYPAD_AUTO_TYPE_RANDOM_FRAMES >> ACTOR_143000_RANDOM_FRACTION_BITS) + ACTOR_143000_KEYPAD_AUTO_TYPE_MIN_FRAMES;
             work->codeLength++;
             sndEvtRequestScriptStart(SOUND_SHELTER_B2_LAB_KEYPAD_KEY, 0, 0);
             // Copy the whole code; the drawer reveals only codeLength characters.

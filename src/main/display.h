@@ -118,8 +118,8 @@ void displaySetClearColor(s32 red, s32 green, s32 blue);
 
 /// Binds small task-owned ordering tables and the static primitive arena.
 ///
-/// Configures both `gGpuTaskOrderingTables` slots for 64 tags and a 0x6000-byte
-/// primitive arena split into two 0x3000-byte halves. Previous GPU users must
+/// Configures both `gGpuTaskOrderingTables` slots for 64 tags and the resident
+/// primitive arena split into two equal halves. Previous GPU users must
 /// have finished. Does not clear tags, select the current OT or primitive cursor,
 /// initialize a task list, or change display ownership; the frame path clears
 /// and selects a half before drawing. Allocates and releases no storage.
@@ -189,8 +189,8 @@ void displayUseHeapTaskPrimitiveBuffer(void);
 
 /// Selects the resident static primitive arena for task-owned drawing.
 ///
-/// Subsequent task frames select one half of the 0x6000-byte arena (0x3000
-/// bytes). Previous GPU users must have finished and packets must fit within
+/// Subsequent task frames select one half of the resident arena.
+/// Previous GPU users must have finished and packets must fit within
 /// the selected half. Changes only the arena binding and byte capacity; the
 /// current cursor is reset by the next frame. Allocates and releases no storage.
 void displayUseStaticTaskPrimitiveBuffer(void);

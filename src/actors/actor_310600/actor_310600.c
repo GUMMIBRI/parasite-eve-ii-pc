@@ -487,9 +487,9 @@ static void _actor310600CheckWalkArrival(Task* task)
     work      = task->work;
     rootCoord = task->extra.tmd->coords;
     // Compare full words for direction, then retain only a signed halfword gap.
-    deltaX      = _actorMotionWalkAxisGap(&work->walkTarget.vx, &rootCoord->coord.t[0]);
+    deltaX      = _actorMotionWalkAxisGap(work->walkTarget.vx, rootCoord->coord.t[0]);
     distance.vx = deltaX;
-    deltaZ      = _actorMotionWalkAxisGap(&work->walkTarget.vz, &rootCoord->coord.t[2]);
+    deltaZ      = _actorMotionWalkAxisGap(work->walkTarget.vz, rootCoord->coord.t[2]);
     distance.vz = deltaZ;
     if (distance.vx >= work->walkLastDistance.vx && distance.vz >= work->walkLastDistance.vz) {
         if (work->animId == ACTOR_310600_RETAINED_WALK_CLIP) {

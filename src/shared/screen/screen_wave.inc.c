@@ -1,3 +1,5 @@
+#include "main/random.h"
+
 /* Part of the screen wave library; see screen_wave.h. */
 
 /// Redraws the captured frame as a fresh 10-by-30 mesh of textured quads each tick.
@@ -57,13 +59,13 @@ static void _screenWaveTask(Task* task)
             // Seed the ramp and independent waves; the first tick emits no quads.
             for (waveIndex = 0; waveIndex < SCREEN_WAVE_QUAD_COLUMNS + 1; waveIndex++) {
                 SCREEN_WAVE_COLUMN_OSCILLATORS[waveIndex].phase  = 0;
-                SCREEN_WAVE_COLUMN_OSCILLATORS[waveIndex].offset = (u32)rand() >> 3;
-                SCREEN_WAVE_COLUMN_OSCILLATORS[waveIndex].speed  = (rand() * 100 + 20) >> 15;
+                SCREEN_WAVE_COLUMN_OSCILLATORS[waveIndex].offset = (u32)randomSdkDraw15() >> 3;
+                SCREEN_WAVE_COLUMN_OSCILLATORS[waveIndex].speed  = (randomSdkDraw15() * 100 + 20) >> 15;
             }
             for (waveIndex = 0; waveIndex < SCREEN_WAVE_ROW_WAVES; waveIndex++) {
                 SCREEN_WAVE_ROW_OSCILLATORS[waveIndex].phase  = 0;
-                SCREEN_WAVE_ROW_OSCILLATORS[waveIndex].offset = (u32)rand() >> 3;
-                SCREEN_WAVE_ROW_OSCILLATORS[waveIndex].speed  = (rand() * 100 + 20) >> 15;
+                SCREEN_WAVE_ROW_OSCILLATORS[waveIndex].offset = (u32)randomSdkDraw15() >> 3;
+                SCREEN_WAVE_ROW_OSCILLATORS[waveIndex].speed  = (randomSdkDraw15() * 100 + 20) >> 15;
             }
             _gScreenWaveAmplitude             = 0;
             SCREEN_WAVE_ACTIVE_CONTEXT        = task->spawnArg2.pointer;

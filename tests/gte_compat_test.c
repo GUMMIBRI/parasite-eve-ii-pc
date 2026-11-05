@@ -251,25 +251,25 @@ static void test_sxy_stores(void) {
     gte_ldsxy3(0x00020001u, 0x00040003u, 0x00060005u);
     unsigned char buf[48];
     unsigned int w;
-    memset(buf, 0, sizeof(buf));
-    gte_stsxy3_gt4(buf);
-    memcpy(&w, buf + 8, 4);  CHECK_EQ(w, 0x00020001u);
-    memcpy(&w, buf + 20, 4); CHECK_EQ(w, 0x00040003u);
-    memcpy(&w, buf + 32, 4); CHECK_EQ(w, 0x00060005u);
-    memset(buf, 0, sizeof(buf));
-    gte_stsxy3_f3(buf);
-    memcpy(&w, buf + 8, 4);  CHECK_EQ(w, 0x00020001u);
-    memcpy(&w, buf + 12, 4); CHECK_EQ(w, 0x00040003u);
-    memcpy(&w, buf + 16, 4); CHECK_EQ(w, 0x00060005u);
-    memset(buf, 0, sizeof(buf));
-    gte_stsxy3_ft4(buf);
-    memcpy(&w, buf + 16, 4); CHECK_EQ(w, 0x00040003u);
-    memcpy(&w, buf + 24, 4); CHECK_EQ(w, 0x00060005u);
-    memset(buf, 0, sizeof(buf));
-    gte_stsxy3_g4(buf);
-    memcpy(&w, buf + 24, 4); CHECK_EQ(w, 0x00060005u);
-    gte_stsxy3_ft3(buf);
-    gte_stsxy3_f4(buf);
+    /* Each host packet has a pointer-width tag/length header. Projection must
+     * preserve every byte outside the three XY pairs, including GPU length. */
+#define CHECK_PACKET_XY(type, store) do {                                      \
+        type actual, expected;                                               \
+        memset(&actual, 0xA5, sizeof(actual));                                \
+        expected = actual;                                                   \
+        expected.x0 = 1; expected.y0 = 2;                                    \
+        expected.x1 = 3; expected.y1 = 4;                                    \
+        expected.x2 = 5; expected.y2 = 6;                                    \
+        store(&actual);                                                      \
+        CHECK(memcmp(&actual, &expected, sizeof(actual)) == 0);                \
+    } while (0)
+    CHECK_PACKET_XY(POLY_F3, gte_stsxy3_f3);
+    CHECK_PACKET_XY(POLY_FT3, gte_stsxy3_ft3);
+    CHECK_PACKET_XY(POLY_F4, gte_stsxy3_f4);
+    CHECK_PACKET_XY(POLY_G4, gte_stsxy3_g4);
+    CHECK_PACKET_XY(POLY_FT4, gte_stsxy3_ft4);
+    CHECK_PACKET_XY(POLY_GT4, gte_stsxy3_gt4);
+#undef CHECK_PACKET_XY
 
     /* ldSXYP pushes: SXY0<-SXY1<-SXY2<-new */
     gte_ldSXYP(0x00080007u);

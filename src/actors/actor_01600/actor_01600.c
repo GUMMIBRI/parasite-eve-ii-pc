@@ -578,7 +578,7 @@ static void _actor01600StepAnimation(Task* actor);
 static void _actor01600DrawGroundShadow(Task* actor);
 static void _actor01600StepTargetAnchor(Task* actor);
 static s32  _actor01600StepActivation(Task* actor);
-static void _actor01600StepStagedMotion(Task* actor);
+static s32  _actor01600StepStagedMotion(Task* actor);
 static void _actor01600SpawnBurstParts(Task* actor);
 static void _actor01600StepRootMotion(Task* actor);
 static void _actor01600RefreshBodyColor(Enemy* enemy, Task* actor);
@@ -1049,6 +1049,7 @@ static void _actor01600Tick(Enemy* enemy, Task* task)
             _actor01600PlayTickSoundAtRoot(soundKey, rootCoord);
             _actor01600ReleaseGrab(task);
             _actor01600Remove(task, 0);
+            return;
         }
         if ((GAME_LOCATION_WORD(gGameSession->location) & GAME_LOCATION_STAGE_AREA_MASK) == GAME_LOCATION_KEY(4, 1, 0, 0)) {
             if (rootCoord->coord.t[1] > 0) {
@@ -1061,6 +1062,7 @@ static void _actor01600Tick(Enemy* enemy, Task* task)
                 _actor01600PlayTickSoundAtRoot(soundKey, rootCoord);
                 _actor01600ReleaseGrab(task);
                 _actor01600Remove(task, 0);
+                return;
             }
         }
         _actor01600StepBehavior(task);
@@ -3689,7 +3691,9 @@ static s32 _actor01600StepActivation(Task* actor)
                 goto skipLiveUpdate;
             }
             _actor01600StepAnimation(actor);
-            _actor01600StepStagedMotion(actor);
+            if (_actor01600StepStagedMotion(actor)) {
+                return 1;
+            }
             if (work->colorRefresh != 0) {
                 _actor01600SampleColorAtCoord(enemy, actor->extra.tmd->coords + 1);
                 work->colorRefresh = 0;
@@ -3898,7 +3902,8 @@ static s32 _actor01600HandleCommand(Task* actor, s32 messageId, const ActorComma
 /// body when playback is disabled. Variants 2 and 4 run delayed turns at their
 /// own yaw rates. Positions use world units, angles use 4096 units per turn,
 /// and delay/rotation accumulators retain signed-halfword interpretation.
-static void _actor01600StepStagedMotion(Task* actor)
+/// Returns 1 after removal; the caller must not access the actor or its work.
+static s32 _actor01600StepStagedMotion(Task* actor)
 {
     SVECTOR          limbRotation;
     GfxCoord*        motionCoord;
@@ -4000,6 +4005,7 @@ static void _actor01600StepStagedMotion(Task* actor)
                 }
                 if (work->animFrame >= 0x12) {
                     _actor01600Remove(actor, 0);
+                    return 1;
                 }
                 work->animFrame += 1;
                 break;
@@ -4062,6 +4068,7 @@ static void _actor01600StepStagedMotion(Task* actor)
             }
         }
     }
+    return 0;
 }
 
 /// Spawns textured detached body parts and the burst effect at the scavenger's body.

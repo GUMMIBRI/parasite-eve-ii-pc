@@ -18,6 +18,8 @@
 /// CAP/sound playback and reload; retain them and the loaded room throughout.
 extern TaskDesc gShelterB2NorthMaintenanceWalkwayStagedEventTaskDesc;
 
+void shelterB2NorthMaintenanceWalkwayStagedEventTask(Task* task);
+
 /// Bodyless transition-task recipe shared by this overlay's gate and event task.
 ///
 /// Runs at priority `TASK_PRIORITY_SCENE` with zero spawn payloads and unused metadata. The gate

@@ -348,4 +348,23 @@ function(pe_rename_object tgt src defs)
 endfunction()
 if(PE_ALL_OVERLAYS AND PE_ALL_VARIANTS AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/overlay_renames.cmake)
     include(cmake/overlay_renames.cmake)
+    # The generated renames cover definitions, but these rooms split their
+    # transition descriptor/message tables from the callbacks and latched data.
+    # Apply the same names to sibling references; otherwise a room can dispatch
+    # the factory's public roomEventTask and reload an empty destination.
+    foreach(_tower IN ITEMS dryfield_water_tower dryfield_night_water_tower dryfield_breezeway
+            dryfield_night_dilapidated_house dryfield_night_motel_balcony dryfield_night_parking_lot
+            shelter_b2_north_maintenance_walkway)
+        set(_tower_prefix "PE_rooms_${_tower}_${_tower}")
+        pe_rename_object(game_overlays src/rooms/${_tower}/${_tower}.c
+            "gRoomEventTaskDesc=${_tower_prefix}_2_gRoomEventTaskDesc")
+        pe_rename_object(game_overlays src/rooms/${_tower}/${_tower}_2.c
+            "roomEventTask=${_tower_prefix}_roomEventTask")
+    endforeach()
+    pe_rename_object(game_overlays src/rooms/dryfield_breezeway/dryfield_breezeway_2.c
+        "gRoomEventTaskDesc=PE_rooms_dryfield_breezeway_dryfield_breezeway_2_gRoomEventTaskDesc")
+    pe_rename_object(game_overlays src/rooms/dryfield_water_tower/dryfield_water_tower.c
+        "gRoomEventReq=PE_rooms_dryfield_water_tower_dryfield_water_tower_gRoomEventReq")
+    pe_rename_object(game_overlays src/rooms/dryfield_water_tower/dryfield_water_tower_2.c
+        "roomVariantWaterTowerMsg=PE_rooms_dryfield_water_tower_dryfield_water_tower_roomVariantWaterTowerMsg;waterTowerSoundMsg=PE_rooms_dryfield_water_tower_dryfield_water_tower_waterTowerSoundMsg")
 endif()

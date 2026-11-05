@@ -2344,9 +2344,8 @@ static void _actor105100UpdateStatusReactions(Task* task)
 
     Enemy*            enemy;
     _Actor105100Work* work;
-    s32               remainingHp;
     s32               appliedDamage;
-    s32               pulseHighHalf;
+    s32               pulse;
     u8                reactionFlags;
 
     enemy         = task->spawnArg2.pointer;
@@ -2361,15 +2360,13 @@ static void _actor105100UpdateStatusReactions(Task* task)
         work->buildupPending = 1;
     }
     if (enemy->reactionFlags & ENEMY_REACTION_DAMAGE_OVER_TIME_BITS) {
-        // Sign-extend the pulse's low halfword while dividing it by four.
-        pulseHighHalf = damageTickEnemyDamageOverTime(enemy) << 16;
-        if (pulseHighHalf != 0) {
-            appliedDamage = pulseHighHalf >> (16 + ACTOR_105100_STATUS_DAMAGE_SHIFT);
+        // Preserve the signed halfword pulse without shifting into the sign bit.
+        pulse = (s16)damageTickEnemyDamageOverTime(enemy);
+        if (pulse != 0) {
+            appliedDamage = pulse >> ACTOR_105100_STATUS_DAMAGE_SHIFT;
             worldTargetAddReadoutAmount(&enemy->node, appliedDamage, 0);
-            remainingHp      = (u16)enemy->hp - appliedDamage;
-            enemy->hp        = remainingHp;
-            remainingHp    <<= 16;
-            work->action     = remainingHp <= 0 ? ACTOR_105100_ACTION_DEFEATED : ACTOR_105100_ACTION_STAGGER;
+            enemy->hp        = (u16)enemy->hp - appliedDamage;
+            work->action     = enemy->hp <= 0 ? ACTOR_105100_ACTION_DEFEATED : ACTOR_105100_ACTION_STAGGER;
             work->actionStep = 0;
         }
         if (damageIsEnemyDamageOverTimeExpired(enemy) != 0) {

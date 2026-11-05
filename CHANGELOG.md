@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2
+
+- Fix room callback bindings and scripted movement that could block story progression in Dryfield and the Shelter.
+- Preserve loaded model fixups and runtime state when mounting or swapping discs.
+- Fix streaming movie ring-buffer wraparound and backpressure in PsyZ.
+- Correct host GTE arithmetic, 15-bit SDK random draws, model lighting and screen effects; enlarge the native primitive arena for long caption pages.
+- Expand host regression coverage to 41 tests; release builds run the full suite on macOS and both Linux architectures, plus portable regressions on Windows.
+- Native gameplay and memory-card save/reload have been exercised through Dryfield and into the Shelter Laboratory on macOS. Later story progression and full gameplay on Linux/Windows remain unverified.
+
 ## 0.1
 
 - First public preview of the native PC port of *Parasite Eve II* (USA). It reads your own North American CUE/BIN images of both discs when it starts; no game data is included.

@@ -1,3 +1,5 @@
+#include "main/random.h"
+
 #include "actors/actor_450200.h"
 #include "actors/actor_450200.h"
 
@@ -1011,7 +1013,7 @@ static void _actor450200CompanionPuffTask(Task* task)
 
     // The twelfth table byte is excluded; every tick advances rand before dispatch.
     companion = gameGetTaskSlot(GAME_TASK_SLOT_COMPANION);
-    anchor    = &companion->extra.tmd->coords[_gActor450200CompanionPuffParts[(rand() * ACTOR_450200_PUFF_ANCHOR_COUNT) >> 15]];
+    anchor    = &companion->extra.tmd->coords[_gActor450200CompanionPuffParts[(randomSdkDraw15() * ACTOR_450200_PUFF_ANCHOR_COUNT) >> 15]];
     switch (task->state) {
         case ACTOR_450200_PUFF_INIT:
             task->killCountdown = ACTOR_450200_PUFF_STEADY_SEED;

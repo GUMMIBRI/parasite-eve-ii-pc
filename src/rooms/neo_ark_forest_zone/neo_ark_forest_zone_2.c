@@ -129,7 +129,7 @@ static AnimationSet _gNeoArkForestZoneAnimation047D4 = {
 
 TaskDesc gNeoArkForestZoneStagedEventTaskDesc = {
     .header   = { .fields = { TASK_BODY_NONE, TASK_PRIORITY_SCENE } },
-    .callback = roomEventStagedTask,
+    .callback = neoArkForestZoneStagedEventTask,
     .data     = { .value = 0 },
 };
 
