@@ -1507,14 +1507,15 @@ static void _menuMapDrawAreas(const Task* mapTask)
                         visitedWord = 1;
                         areaMask    = bitSeed << ((u8)areaIndex - MENU_MAP_VISITED_SECOND_WORD_FIRST_AREA);
                     } else {
-                        areaMask = bitSeed << ((u8)areaIndex - 1);
+                        // Area 0 shifts by -1, which the PS1 shifter takes modulo 32.
+                        areaMask = bitSeed << (((u8)areaIndex - 1) & 31);
                     }
                     // Paired bits retain the first area's word, even across the 32/33 boundary.
                     if (shapes[(u8)areaIndex].pairedArea != MENU_MAP_AREA_SHAPE_PAIRED_AREA_NONE) {
                         if (shapes[(u8)areaIndex].pairedArea >= (u32)MENU_MAP_VISITED_SECOND_WORD_FIRST_AREA) {
                             areaMask |= bitSeed << (shapes[(u8)areaIndex].pairedArea - MENU_MAP_VISITED_SECOND_WORD_FIRST_AREA);
                         } else {
-                            areaMask |= bitSeed << (shapes[(u8)areaIndex].pairedArea - 1);
+                            areaMask |= bitSeed << ((shapes[(u8)areaIndex].pairedArea - 1) & 31);
                         }
                     }
                     shapeIndex = areaIndex;
@@ -1890,7 +1891,8 @@ static s8 _menuMapPageIsAvailable(u32 page, u8 flagId)
                             visitedWord = 1;
                             areaMask    = bitSeed << ((u8)areaIndex - MENU_MAP_VISITED_SECOND_WORD_FIRST_AREA);
                         } else {
-                            areaMask = bitSeed << ((u8)areaIndex - 1);
+                            // Area 0 shifts by -1, which the PS1 shifter takes modulo 32.
+                            areaMask = bitSeed << (((u8)areaIndex - 1) & 31);
                         }
                         if (areaMask & visited[visitedWord]) {
                             if (areas->page == (u8)page) {

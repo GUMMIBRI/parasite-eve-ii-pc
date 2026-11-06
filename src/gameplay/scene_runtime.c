@@ -3961,7 +3961,8 @@ void areaRestoreModelBufferPolicy(void)
                     }
                 }
                 resource   = resources;
-                resourceId = resource->entryId;
+                // An area without a variant's resource list has no policy to apply.
+                resourceId = resource != NULL ? resource->entryId : AREA_PLACEMENT_END;
                 if (resourceId != AREA_PLACEMENT_END) {
                     resourceEndId = AREA_PLACEMENT_END;
                     do {
