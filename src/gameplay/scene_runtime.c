@@ -2550,13 +2550,13 @@ static void _animationBlendPackedRotation(const _AnimationBlendRequest* request,
         _animationSetBlendWeights(request, slot, scratch);
         // Expand the 11/10/11-bit angles to the same units as encoding 1.
         sourcePose                  = request->currentPose.packedRotation;
-        scratch->currentRotation.vx = sourcePose->rx << ANIMATION_PACKED_ANGLE_SHIFT;
-        scratch->currentRotation.vy = sourcePose->ry << ANIMATION_PACKED_ANGLE_SHIFT;
-        scratch->currentRotation.vz = sourcePose->rz << ANIMATION_PACKED_ANGLE_SHIFT;
+        scratch->currentRotation.vx = (s16)((u32)sourcePose->rx << ANIMATION_PACKED_ANGLE_SHIFT);
+        scratch->currentRotation.vy = (s16)((u32)sourcePose->ry << ANIMATION_PACKED_ANGLE_SHIFT);
+        scratch->currentRotation.vz = (s16)((u32)sourcePose->rz << ANIMATION_PACKED_ANGLE_SHIFT);
         sourcePose                  = request->nextPose.packedRotation;
-        scratch->nextRotation.vx    = sourcePose->rx << ANIMATION_PACKED_ANGLE_SHIFT;
-        scratch->nextRotation.vy    = sourcePose->ry << ANIMATION_PACKED_ANGLE_SHIFT;
-        scratch->nextRotation.vz    = sourcePose->rz << ANIMATION_PACKED_ANGLE_SHIFT;
+        scratch->nextRotation.vx    = (s16)((u32)sourcePose->rx << ANIMATION_PACKED_ANGLE_SHIFT);
+        scratch->nextRotation.vy    = (s16)((u32)sourcePose->ry << ANIMATION_PACKED_ANGLE_SHIFT);
+        scratch->nextRotation.vz    = (s16)((u32)sourcePose->rz << ANIMATION_PACKED_ANGLE_SHIFT);
         _animationBlendRotation(request, coord, slot, scratch);
         destinationPose = request->encodedDestination.packedRotation;
         // Arithmetic shifts discard the low three bits; the fields retain their widths.

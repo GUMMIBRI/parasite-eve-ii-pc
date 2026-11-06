@@ -401,10 +401,10 @@ static inline void _areaSeedObjectStates(const AreaObjectRoom* rooms, u32* objec
     do {
         if (place != NULL) {
             for (; place->flagIndex != AREA_OBJECT_PLACE_END; place++) {
-                stateMask   = AREA_OBJECT_PLACE_STATE_MASK << ((place->flagIndex & AREA_OBJECT_STATE_INDEX_MASK) * AREA_OBJECT_STATE_BITS);
+                stateMask   = (u32)AREA_OBJECT_PLACE_STATE_MASK << ((place->flagIndex & AREA_OBJECT_STATE_INDEX_MASK) * AREA_OBJECT_STATE_BITS);
                 stateWord   = &objectStates[place->flagIndex >> AREA_OBJECT_STATE_WORD_SHIFT];
                 *stateWord &= ~stateMask;
-                stateMask   = (place->state & AREA_OBJECT_PLACE_STATE_MASK) << ((place->flagIndex & AREA_OBJECT_STATE_INDEX_MASK) * AREA_OBJECT_STATE_BITS);
+                stateMask   = (u32)(place->state & AREA_OBJECT_PLACE_STATE_MASK) << ((place->flagIndex & AREA_OBJECT_STATE_INDEX_MASK) * AREA_OBJECT_STATE_BITS);
                 *stateWord |= stateMask;
             }
         }
