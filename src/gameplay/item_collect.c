@@ -704,8 +704,11 @@ static void _itemInitializeIdentification(void)
     itemId = 0;
     do {
         fieldsRemaining = ITEM_IDENTIFIED_TEXT_FIELD_COUNT;
-        if (itemId < ITEM_IDENTIFICATION_KEY_ITEM_FIRST) {
+        if (itemId < ITEM_DESCRIPTOR_COUNT) {
             descriptor = &gItemDescriptors[itemId];
+        } else if (itemId < ITEM_IDENTIFICATION_KEY_ITEM_FIRST) {
+            // Past the descriptor table the PS1 reads the key table that follows it (0x8010D838 + 0x600).
+            descriptor = &gItemKeyDescriptors[itemId - ITEM_DESCRIPTOR_COUNT];
         } else {
             descriptor = &gItemKeyDescriptors[itemId - ITEM_IDENTIFICATION_KEY_ITEM_FIRST];
         }

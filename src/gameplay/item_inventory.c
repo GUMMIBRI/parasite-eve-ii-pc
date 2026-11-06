@@ -102,8 +102,12 @@ static inline void _itemInitializeNewGameIdentification(void)
     identificationIndex = 0;
     do {
         fieldsRemaining = ITEM_IDENTIFIED_TEXT_FIELD_COUNT;
-        if (identificationIndex < ITEM_IDENTIFICATION_KEY_ITEM_FIRST) {
+        if (identificationIndex < ITEM_DESCRIPTOR_COUNT) {
             descriptor = &gItemDescriptors[identificationIndex];
+        } else if (identificationIndex < ITEM_IDENTIFICATION_KEY_ITEM_FIRST) {
+            // Ids past the descriptor table read the key table that follows it on the PS1
+            // (0x8010D838 + 0x600 = 0x8010DE38); say so instead of indexing past the array.
+            descriptor = &gItemKeyDescriptors[identificationIndex - ITEM_DESCRIPTOR_COUNT];
         } else {
             descriptor = &gItemKeyDescriptors[identificationIndex - ITEM_IDENTIFICATION_KEY_ITEM_FIRST];
         }
