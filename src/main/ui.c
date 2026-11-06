@@ -1750,8 +1750,8 @@ static inline void _uiListMoveCursor(const UiPanel* panel, s32 contentX, s32 con
     screenOriginY = panel->contentOriginY.signedValue;
     targetX       = contentX + screenOriginX;
     targetY       = contentY + screenOriginY;
-    targetX     <<= USER_INTERFACE_CURSOR_FRACTION_BITS;
-    targetY     <<= USER_INTERFACE_CURSOR_FRACTION_BITS;
+    targetX     = (s32)((u32)targetX << USER_INTERFACE_CURSOR_FRACTION_BITS);
+    targetY     = (s32)((u32)targetY << USER_INTERFACE_CURSOR_FRACTION_BITS);
     _uiEaseCursorPosition(targetX, targetY);
     targetX = _gUiCursorScreenXFixed >> USER_INTERFACE_CURSOR_FRACTION_BITS;
     targetY = _gUiCursorScreenYFixed >> USER_INTERFACE_CURSOR_FRACTION_BITS;
@@ -2693,8 +2693,8 @@ void uiEaseAndDrawCursor(const UiPanel* panel, s32 contentX, s32 contentY)
     screenOriginY = panel->contentOriginY.signedValue;
     targetX       = contentX + screenOriginX;
     targetY       = contentY + screenOriginY;
-    targetX     <<= USER_INTERFACE_CURSOR_FRACTION_BITS;
-    targetY     <<= USER_INTERFACE_CURSOR_FRACTION_BITS;
+    targetX     = (s32)((u32)targetX << USER_INTERFACE_CURSOR_FRACTION_BITS);
+    targetY     = (s32)((u32)targetY << USER_INTERFACE_CURSOR_FRACTION_BITS);
     _uiEaseCursorPosition(targetX, targetY);
     targetX = _gUiCursorScreenXFixed >> USER_INTERFACE_CURSOR_FRACTION_BITS;
     targetY = _gUiCursorScreenYFixed >> USER_INTERFACE_CURSOR_FRACTION_BITS;

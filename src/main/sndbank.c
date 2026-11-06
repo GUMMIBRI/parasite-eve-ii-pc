@@ -156,7 +156,7 @@ static _SndHeapBlockHeader* _gSndHeapFirstBlock;
 /// Blocks and payloads start on four-byte boundaries. This is raw storage,
 /// partitioned by the allocator rather than an array of equal-sized headers.
 /// Reset invalidates all allocations; callers must serialize heap operations.
-static u8 _gSndHeapArena[SOUND_HEAP_BUFFER_BYTES];
+static u8 _gSndHeapArena[SOUND_HEAP_BUFFER_BYTES] __attribute__((aligned(8)));   // block headers hold host pointers
 
 /// Sentinel preceding the first registration in the ascending-id audio poll list.
 ///
@@ -977,7 +977,7 @@ void* sndHeapAlloc(size_t payloadBytes)
     // First fit over the address-ordered chain. Split a free block when the
     // remainder can hold another header; otherwise reserve the whole block and
     // leave its length unchanged. The returned pointer is the payload.
-    enum { SOUND_HEAP_BLOCK_ALIGNMENT = 4 };
+    enum { SOUND_HEAP_BLOCK_ALIGNMENT = 8 };   // 4 on the PS1; headers hold 8-byte pointers on a 64-bit host
     size_t               maxFreeBlockBytes;
     size_t               newBlockSize;
     size_t               blockBytes;

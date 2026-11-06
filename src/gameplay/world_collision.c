@@ -1085,7 +1085,7 @@ s32 worldCollisionIntersectGridFace(s32 faceIndex, const VECTOR endpoints[2], SV
     }
     distanceAlongReverseDirection = -(((((scratch->faceNormal.vx * endpoints[0].vx + scratch->faceNormal.vy * endpoints[0].vy + scratch->faceNormal.vz * endpoints[0].vz) >> WORLD_COLLISION_GRID_FACE_FRACTION_BITS) -
                                         facePlaneOffset)
-                                       << WORLD_COLLISION_GRID_FACE_FRACTION_BITS)) /
+                                       * (1 << WORLD_COLLISION_GRID_FACE_FRACTION_BITS))) /
                                     directionNormalDot;
     if (distanceAlongReverseDirection >= 0) {
         SCRATCH_STACK_RELEASE_BLOCK(_WorldCollisionGridRayScratch);

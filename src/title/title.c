@@ -445,7 +445,7 @@ static void _titleUpdateScreenTask(Task* task)
         gGpuPrimCursor = tile + 1;
         setlen(tile, (sizeof(*tile) - sizeof(tile->tag)) / sizeof(u_long));
         setcode(tile, TITLE_SCREEN_TILE_SEMITRANSPARENT);
-        fadeBrightness = ~(work->idleFrames << TITLE_SCREEN_FADE_BRIGHTNESS_SHIFT);
+        fadeBrightness = ~(s32)((u32)work->idleFrames << TITLE_SCREEN_FADE_BRIGHTNESS_SHIFT);
         tile->x0       = -DISPLAY_SCREEN_WIDTH / 2;
         tile->y0       = -DISPLAY_SCREEN_HEIGHT / 2;
         tile->w        = DISPLAY_SCREEN_WIDTH;
