@@ -20,7 +20,7 @@ performed.
 ## Build prerequisites
 
 Initialize the existing pinned dependencies using the normal project setup.
-The PsyZ submodule remains at `512780a18a2d205e06f8193b95519470132a3435`;
+The PsyZ submodule remains at `ff5457d8bfcf636c6e12941a71ee66c065a3e01f`;
 do not update it to PsyZ main to use this contribution. A small compatibility
 patch in `platform/ps5/patches` is applied to an exported build-local copy.
 The checked-out submodule is never patched by the recipe.

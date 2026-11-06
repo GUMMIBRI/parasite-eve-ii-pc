@@ -8,7 +8,7 @@ This does not relicense linked runtime/dependency components or original
 game content. Preserve root THIRD_PARTY_NOTICES.md and every input notice.
 
 - The compatibility patch is relative to PsyZ
-  `512780a18a2d205e06f8193b95519470132a3435`. It contains only imported-SDL
+  `ff5457d8bfcf636c6e12941a71ee66c065a3e01f`. It contains only imported-SDL
   target acceptance, the native allocator-header branch and selected
   PS5-only GPU initialization/cleanup/device-property/display handoff changes.
   PsyZ platform code retains MPL2.0 and its other existing source notices.
