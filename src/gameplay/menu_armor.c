@@ -466,7 +466,7 @@ void itemMenuEnqueuePreviewLoad(s32 itemId, s32 loadProfile)
     };
 
     s32               savedRequestState[ITEM_MENU_PREVIEW_PROFILE_COUNT];
-    CdCmdEntry        savedRequests[ITEM_MENU_PREVIEW_PROFILE_COUNT];
+    CdCmdEntry        savedRequests[ITEM_MENU_PREVIEW_PROFILE_COUNT] = { { 0 } };
     const CdCmdQueue* queue;
     const CdCmdEntry* entry;
     s32               fileIdHundreds;

@@ -3533,7 +3533,7 @@ static void _actor400600UpdateGroupEntrance(Task* task)
 static void _actor400600DrawFloorShadows(Task* task, s16 height, u8 shade)
 {
     MATRIX    worldTransform;
-    SVECTOR   worldPoints[ACTOR_400600_FLOOR_SHADOW_POINT_COUNT];
+    SVECTOR   worldPoints[ACTOR_400600_FLOOR_SHADOW_POINT_COUNT] = { { 0 } };
     GfxCoord* partCoord;
     GfxCoord* rootCoord;
     s32       pointIndex;

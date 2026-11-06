@@ -303,7 +303,9 @@ static void pePadControlRead(uint64_t index, char* frame, size_t length)
         Psyz_PauseHostClock_SDL3(true);
         fprintf(stderr, "[pad] control waiting at frame %llu\n", (unsigned long long)index);
         fflush(stderr);
-        while (!fgets(line, sizeof line, commands)) {
+        for (;;) {
+            errno = 0;
+            if (fgets(line, sizeof line, commands)) break;
             if (ferror(commands) && errno == EINTR) {
                 clearerr(commands);
                 continue;

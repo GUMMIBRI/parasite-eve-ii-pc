@@ -72,7 +72,7 @@ int peTmdPreparePacketLayout(TmdSource* source)
                     /* All polygon command words after the PS1 tag have the
                      * same relative layout; trailing host padding is skipped. */
                     for (unsigned off = 4; off < disk; off += 4)
-                        map[(oldPre + off) / 4] = (u32)(newPre + offsetof(POLY_F3, r0) + off - 4);
+                        if (map) map[(oldPre + off) / 4] = (u32)(newPre + offsetof(POLY_F3, r0) + off - 4);
                     oldPre += disk;
                     newPre += host;
                 }

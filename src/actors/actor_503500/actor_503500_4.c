@@ -4454,7 +4454,7 @@ static void _actor503500LungingChainUpdatePose(Task* task)
     SVECTOR                       controlPoints[4];
     SVECTOR                       offset;
     SVECTOR                       tipWorldPosition;
-    VECTOR                        samples[ACTOR_503500_LUNGING_CHAIN_PART_COUNT];
+    VECTOR                        samples[ACTOR_503500_LUNGING_CHAIN_PART_COUNT] = { { 0 } };
     MATRIX                        worldRotation;
     GfxCoord*                     rootCoord;
     _Actor503500LungingChainWork* work;
