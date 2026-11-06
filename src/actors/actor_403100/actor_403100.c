@@ -3556,8 +3556,10 @@ static void _actor403100StepFight(Task* task)
                     _gActor403100Work->lowHealth = 0U;
                 }
             }
-            playerRootCoord                 = playerTask->extra.tmd->coords;
-            _gActor403100Work->playerRegion = _actor403100FindZoneId((s16)playerRootCoord->coord.t[0], (s16)playerRootCoord->coord.t[2], _gActor403100PlayerRegions);
+            if (playerTask != NULL) {   // the missing-player case above already set region 0
+                playerRootCoord                 = playerTask->extra.tmd->coords;
+                _gActor403100Work->playerRegion = _actor403100FindZoneId((s16)playerRootCoord->coord.t[0], (s16)playerRootCoord->coord.t[2], _gActor403100PlayerRegions);
+            }
             // Advance the held-player reaction before the selected combat behavior.
             _actor403100StepPlayerReaction();
             stateHandlers.funcs[(s16)_gActor403100Work->state](task);

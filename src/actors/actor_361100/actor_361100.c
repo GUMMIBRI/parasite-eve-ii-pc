@@ -1154,7 +1154,6 @@ static void _actor361100DrawStreamRefraction(Task* task)
     s32                     secondSpanWidth;
     s32                     sineSample;
     s32                     cosineSample;
-    u16                     unusedFrameSlot; // Its shifted read emits no load; retained for the matched spill layout
 
     freeBytes            = ACTOR_361100_REFRACTION_STREAM_BYTES - gFsActorBufferWrittenBytes[2];
     freeBytes           &= -8;
@@ -1401,7 +1400,7 @@ static void _actor361100DrawStreamRefraction(Task* task)
                     spanIndex += 1;
                 } while (spanIndex < spanCount);
             }
-            sinePhase += ACTOR_361100_REFRACTION_SINE_ROW_STEP + (unusedFrameSlot >> 16);
+            sinePhase += ACTOR_361100_REFRACTION_SINE_ROW_STEP;
             if (rowDepth >= ACTOR_361100_REFRACTION_DEPTH_PHASE_START + 1) {
                 cosinePhase += ACTOR_361100_REFRACTION_COSINE_ROW_STEP + (rowDepth - ACTOR_361100_REFRACTION_DEPTH_PHASE_START) / 4;
             } else {

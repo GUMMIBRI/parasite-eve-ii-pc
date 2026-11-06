@@ -725,7 +725,7 @@ static s32 _actor503500CheckPartLossProgress(Task* task)
         ((((pinkEmitter = slotEnemies[ACTOR_503500_SLOT_PINK_FLASH_EMITTER], pinkEmitter == NULL)) && (slotEnemies[ACTOR_503500_SLOT_YELLOW_FLASH_EMITTER] == NULL)) ||
          (slotEnemies[ACTOR_503500_SLOT_CHAIN_BASE_0] == NULL) || (slotEnemies[ACTOR_503500_SLOT_CHAIN_BASE_1] == NULL) || (slotEnemies[ACTOR_503500_SLOT_ARM_0] == NULL) ||
          (slotEnemies[ACTOR_503500_SLOT_ARM_1] == NULL) || ((slotEnemies[ACTOR_503500_SLOT_SMALL_ORB_EMITTER] == NULL) && (pinkEmitter == NULL)) ||
-         ((slotEnemies[ACTOR_503500_PROGRESS_LARGE_ORB_0_SLOT]->hp == 0) && (slotEnemies[ACTOR_503500_PROGRESS_LARGE_ORB_1_SLOT]->hp == 0)))) {
+         (((slotEnemies[ACTOR_503500_PROGRESS_LARGE_ORB_0_SLOT] == NULL) || (slotEnemies[ACTOR_503500_PROGRESS_LARGE_ORB_0_SLOT]->hp == 0)) && ((slotEnemies[ACTOR_503500_PROGRESS_LARGE_ORB_1_SLOT] == NULL) || (slotEnemies[ACTOR_503500_PROGRESS_LARGE_ORB_1_SLOT]->hp == 0))))) {
         if ((((GameActor*)(gameGetTaskSlot(GAME_TASK_SLOT_PLAYER))->work)->mode != GAME_ACTOR_MODE_SCRIPTED) &&
             (gPlayerStatus.hp > 0) && (gAttachmentState.mode != ATTACHMENT_MODE_WHEEL)) {
             if (gDisplayState.pendingMode == DISPLAY_MODE_NONE) {

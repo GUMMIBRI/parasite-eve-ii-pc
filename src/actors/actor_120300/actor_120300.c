@@ -972,7 +972,10 @@ static void _actor120300RunPlayerRequest(Task* task)
             _actor120300BlendPlayerAnimation(task, 0x10);
             break;
         case ACTOR_120300_PLAYER_REQUEST_AIM_AT_ACTOR:
-            playerTask  = work->playerTask;
+            playerTask = work->playerTask;
+            if (playerTask == NULL) {
+                return;   // no player to aim at yet; the request stays pending
+            }
             actorCoord  = task->extra.tmd->coords;
             playerCoord = playerTask->extra.tmd->coords;
             player      = playerTask->work;
@@ -1004,6 +1007,9 @@ static void _actor120300RunPlayerRequest(Task* task)
         case ACTOR_120300_PLAYER_REQUEST_CENTER_AIM: {
             GameActor* centeringPlayer;
 
+            if (work->playerTask == NULL) {
+                return;   // no player to centre yet; the request stays pending
+            }
             centeringPlayer = work->playerTask->work;
             if (ABS(work->playerAimYaw) < PLAYER_AIM_STEP + 1) {
                 work->playerAimYaw  = 0;

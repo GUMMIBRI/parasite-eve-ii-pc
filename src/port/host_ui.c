@@ -256,8 +256,9 @@ static int refreshPanel(SDL_Window* window) {
     s_overlayWindowW=w;s_overlayWindowH=h;s_overlayLayout=layout;
     if(!OverlaySurfaceResize(&s_overlaySurface,layout.w,layout.h))return 0;
     paintPanel(&s_overlaySurface,&layout);
-    if(getenv("PE2_DUMP_MENU")) {   /* development: the painted panel as a PPM (RGB over black), for a capture-free review */
-        FILE* f=fopen(getenv("PE2_DUMP_MENU"),"wb");
+    const char* dumpMenuPath=getenv("PE2_DUMP_MENU");
+    if(dumpMenuPath) {   /* development: the painted panel as a PPM (RGB over black), for a capture-free review */
+        FILE* f=fopen(dumpMenuPath,"wb");
         if(f) {
             fprintf(f,"P6\n%d %d\n255\n",s_overlaySurface.w,s_overlaySurface.h);
             for(size_t i=0;i<(size_t)s_overlaySurface.w*s_overlaySurface.h;i++) {

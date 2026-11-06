@@ -2607,6 +2607,9 @@ static void _actor01600StepTurn(Task* actor)
     rootCoord   = actor->extra.tmd->coords;
     playerTasks = gPlayerActorTasks;
     targetSlot  = &playerTasks[_actor01600SelectNearestPlayer(actor) & 0xFF];
+    if (*targetSlot == NULL) {
+        return;   // no player task in that slot, nothing to turn towards
+    }
     scratch     = SCRATCH_STACK_RESERVE_BLOCK(ActorFaceScratch);
     turnMode    = work->turnMode;
     targetCoord = (*targetSlot)->extra.tmd->coords;

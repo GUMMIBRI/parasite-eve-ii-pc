@@ -11,7 +11,7 @@
 /// by that API and is left uninitialized.
 static inline s32 _cdCmdEnqueueEntry(const CdCmdEntry* entry)
 {
-    u8 fileKeyBytes[4];
+    u8 fileKeyBytes[4]                          = { 0 };   // byte 1 is ignored by the API
     u8 commandArgs[sizeof(entry->args.bytes)];
 
     // Snapshot both byte blocks before an enqueue can reuse the source ring slot.

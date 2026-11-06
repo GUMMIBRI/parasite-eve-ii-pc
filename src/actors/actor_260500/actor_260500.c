@@ -978,7 +978,7 @@ static s32 _footstepWalkSetWalkTarget(Task* task, s32 messageId, const VECTOR* t
 {
     GfxCoord*              rootCoord;
     FootstepWalkQuietWork* work;
-    s32                    stepDistance = 1;   // a mode outside the switch travels one unit per update
+    s32                    stepDistance;
     s32                    deltaX;
     s32                    deltaZ;
     s32                    planarDistance;
@@ -1009,7 +1009,8 @@ static s32 _footstepWalkSetWalkTarget(Task* task, s32 messageId, const VECTOR* t
             stepDistance = FOOTSTEP_WALK_SLOW_FORWARD_DISTANCE;
             break;
     }
-    work->st.travel = planarDistance / stepDistance;
+    // An unsupported mode leaves the step at zero; the PS1 divided anyway, a host would trap.
+    work->st.travel = stepDistance != 0 ? planarDistance / stepDistance : 0;
     return 0;
 }
 

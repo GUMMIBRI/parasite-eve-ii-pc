@@ -472,7 +472,7 @@ static inline void _policeOfficersFinishModelSwap(Task* displayTask, const _Offi
 static inline void _policeOfficersSwapModel(Task* task, s32 culled)
 {
     _OfficerWork* controllerWork;
-    u8            placementId;
+    u8            placementId = POLICE_OFFICERS_PLACEMENT_ROOKIE;   // the swap cases below set it; this covers an unknown state
 
     controllerWork = (_OfficerWork*)((Task*)task->spawnArg2.pointer)->work;
     switch (task->state) {
