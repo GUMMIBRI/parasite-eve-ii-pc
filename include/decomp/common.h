@@ -46,7 +46,7 @@ extern u8 gHostScratchpad[0x400];
 /// bounds. Bit-fields and paths through stored pointers are not supported.
 /// Constant subscripts give a layout constant usable in `STATIC_ASSERT`; each
 /// nonconstant subscript is evaluated once. The member's storage is not read.
-#define OFFSET_OF(type, member) ((size_t)&(((type*)0)->member))
+#define OFFSET_OF(type, member) __builtin_offsetof(type, member)
 
 /// Recovers a containing aggregate's `type*` from its embedded `member` address.
 ///
