@@ -595,6 +595,9 @@ static void _lesserStrangerTask(Task* actorTask)
             if (work != NULL && work->prevActorControl != SCENE_COMBAT_ACTORS_RUNNING) {
                 model->flags = work->savedModelFlags;
             }
+            if (work == NULL && actorTask->state != PHASE_INIT) {
+                return;   // only PHASE_INIT runs without work; a failed allocation leaves the state there
+            }
             switch (actorTask->state) {
                 case PHASE_INIT:
                     // Install the opening barrier patch into the loaded fire-escape grid.
