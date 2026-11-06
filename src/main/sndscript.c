@@ -1492,7 +1492,7 @@ static void _sndScriptStepDucking(void)
 static s32 _sndScriptTickSlots(s32* unused)
 {
     SpuVoiceRef   ref;
-    SpuVolume     panVolumes;
+    SpuVolume     panVolumes = { 0, 0 };   // left unwritten when the voice has no hardware slot
     SpuVoiceAttr* attr;
     _SndScript*   script;
     _SndVoice*    voice;
@@ -1870,7 +1870,7 @@ static s32 _sndScriptExecCommand(_SndScript* script)
         SOUND_SCRIPT_CLOCK_FRACTION_BITS = 16
     };
     SpuVoiceRef     voiceRef;
-    SpuVolume       panVolumes;
+    SpuVolume       panVolumes = { 0, 0 };   // left unwritten when the voice has no hardware slot
     _SndScriptCmd*  command;
     _SndScriptNote* note;
     _SndVoice*      voice;

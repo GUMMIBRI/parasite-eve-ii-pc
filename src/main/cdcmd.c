@@ -1233,7 +1233,7 @@ void cdCmdSceneViewChangeNoOp(void)
 void cdCmdEnqueueScenePlayback(void)
 {
     CdCmdQueue* queue;
-    u8          commandArgs[sizeof(queue->entries[0].args.bytes)];
+    u8          commandArgs[sizeof(queue->entries[0].args.bytes)] = { 0 };   // the opcode ignores the bytes it does not write
 
     queue = &gCdCmdQueue;
     if (queue->sceneSlotIndex > CD_COMMAND_NO_SCENE_SLOT) {
@@ -1254,7 +1254,7 @@ void cdCmdEnqueueScenePlayback(void)
 static void _cdCmdStageScenePlayback(void)
 {
     CdCmdQueue* queue;
-    u8          commandArgs[sizeof(queue->entries[0].args.bytes)];
+    u8          commandArgs[sizeof(queue->entries[0].args.bytes)] = { 0 };   // the opcode ignores the bytes it does not write
 
     queue = &gCdCmdQueue;
     if (queue->sceneSlotIndex > CD_COMMAND_NO_SCENE_SLOT) {
@@ -1267,7 +1267,7 @@ static void _cdCmdStageScenePlayback(void)
 void cdCmdEnqueueSceneAudioStart(void)
 {
     CdCmdQueue* queue;
-    u8          commandArgs[sizeof(queue->entries[0].args.bytes)];
+    u8          commandArgs[sizeof(queue->entries[0].args.bytes)] = { 0 };   // the opcode ignores the bytes it does not write
 
     queue = &gCdCmdQueue;
     if (queue->sceneSlotIndex > CD_COMMAND_NO_SCENE_SLOT) {
@@ -1281,7 +1281,7 @@ void cdCmdEnqueueSceneAudioStart(void)
 void cdCmdStageSceneAudioStart(void)
 {
     CdCmdQueue* queue;
-    u8          commandArgs[sizeof(queue->entries[0].args.bytes)];
+    u8          commandArgs[sizeof(queue->entries[0].args.bytes)] = { 0 };   // the opcode ignores the bytes it does not write
 
     queue = &gCdCmdQueue;
     if (queue->sceneSlotIndex > CD_COMMAND_NO_SCENE_SLOT) {

@@ -603,7 +603,7 @@ static void _akropolisPlazaUpdateTraversalCollisionWalls(Task* traversalTask)
 static void _akropolisPlazaApplyMovieCamera(s32 selector)
 {
     CdCmdQueue* queue = &gCdCmdQueue;
-    ViewCamera* cameraSamples;
+    ViewCamera* cameraSamples = NULL;
     ViewCamera* camera;
     s16         cameraIndex;
 
@@ -637,6 +637,9 @@ static void _akropolisPlazaApplyMovieCamera(s32 selector)
         case CAMERA_ENTERING_TOWER:
             cameraSamples = _gAkropolisPlazaEnteringTowerCameraSamples;
             break;
+    }
+    if (cameraSamples == NULL) {
+        return;   // a selector outside the table has no samples to read
     }
     if (queue->movieReady == 0) {
         s32 sceneIndex = queue->sceneFrame - 1;
@@ -696,7 +699,7 @@ static void _akropolisPlazaTraversalTask(Task* task)
         AT_END        = 6,
     };
     u8              streamArgs[4];
-    s32             sectorOffset;
+    s32             sectorOffset = 0;   // no branch below writes it when the stream is not walking
     u32             packedSeekOffset;
     u32             packedOpeningOffset;
     s32             lowByteMask = 0xFF;

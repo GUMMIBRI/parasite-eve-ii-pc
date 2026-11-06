@@ -1010,6 +1010,7 @@ static void _actor361100StreamWaterTask(Task* task)
             ripple = memCalloc(sizeof(Actor403600Ripple), false);
             if (ripple == NULL) {
                 taskCallExit(task);
+                return;
             }
             task->work       = ripple;
             ripple->shallow  = 1;

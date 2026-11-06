@@ -4684,7 +4684,7 @@ static void _actor560800PlaceCastForCut(s32 cutId)
 {
     enum { ACTOR_560800_PLACEMENT_HIDDEN_X = 0 };
     _Actor560800CutsceneWork* work;
-    const ActorTransform*     placement;
+    const ActorTransform*     placement = NULL;   // set by the first cast member that is present
 
     work = _gActor560800CutsceneTask->work;
     if (work->keepEffects == 0) {
@@ -4726,7 +4726,7 @@ static void _actor560800PlaceCastForCut(s32 cutId)
             _actor560800HideCastMember(ACTOR_560800_CAST_EVE);
         }
     }
-    if (work->chainGroup != NULL) {
+    if (work->chainGroup != NULL && placement != NULL) {
         // The chains reuse the last live body's placement, normally Eve's.
         if (placement->pos.vx != ACTOR_560800_PLACEMENT_HIDDEN_X) {
             _actor560800ShowCastMember(ACTOR_560800_CAST_CHAINS);
@@ -6688,7 +6688,7 @@ static void _actor560800PlaceChainGroup(Task* task, s32 messageId, const ActorTr
     };
     _Actor560800ChainGroupWork* work;
     u16                         pulseGrowing;
-    const ActorTransform*       poses;
+    const ActorTransform*       poses = NULL;
     _Actor560800PropWork*       chainWork;
     GfxCoord*                   root;
     s32                         chainIndex;
@@ -6764,6 +6764,9 @@ static void _actor560800PlaceChainGroup(Task* task, s32 messageId, const ActorTr
             _gActor560800ChainSwayPhase = ACTOR_560800_CHAIN_PHASE_START;
             gActor560800ChainGlowTick   = ACTOR_560800_CHAIN_PHASE_START;
             return;
+    }
+    if (poses == NULL) {
+        return;   // an unknown placement mode has no arrangement to apply
     }
     // Ordinary arrangements use the group root and optionally straighten bends.
     chainIndex = 0;
@@ -6918,7 +6921,7 @@ static void _actor560800ChainGroupTask(Task* task)
     GfxCoord*                   burstCoord;
     GfxCoord*                   targetCoords;
     Task*                       chainTask;
-    SVECTOR                     targetPosition;
+    SVECTOR                     targetPosition = { 0, 0, 0, 0 };   // stays zero for a target that is neither Eve nor No. 9
     u16                         spawnIndex;
     u16                         extendIndex;
     u16                         burstIndex;

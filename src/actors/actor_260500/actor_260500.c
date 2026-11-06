@@ -978,7 +978,7 @@ static s32 _footstepWalkSetWalkTarget(Task* task, s32 messageId, const VECTOR* t
 {
     GfxCoord*              rootCoord;
     FootstepWalkQuietWork* work;
-    s32                    stepDistance;
+    s32                    stepDistance = 1;   // a mode outside the switch travels one unit per update
     s32                    deltaX;
     s32                    deltaZ;
     s32                    planarDistance;

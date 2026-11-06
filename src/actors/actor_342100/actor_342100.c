@@ -499,7 +499,7 @@ static void _actor342100SpawnBlazeFireEmitters(void)
     enum { ACTOR_342100_BLAZE_FIRE_EMITTER_DESCRIPTOR = 4,
            ACTOR_342100_BLAZE_FIRE_DELAY_MASK         = 31 };
     GfxCoord*      coord;
-    const SVECTOR* placement;
+    const SVECTOR* placement = NULL;
     Task*          emitter;
     u32            delayRoll;
 
@@ -520,7 +520,8 @@ static void _actor342100SpawnBlazeFireEmitters(void)
             placement = _gActor342100BlazeFirePlacementsView36;
             break;
     }
-    while (placement->vx != 0) {
+    // A view outside the table has no fire emitters to place.
+    while (placement != NULL && placement->vx != 0) {
         delayRoll       = RANDOM_LCG_NEXT(gRandomLcgState);
         gRandomLcgState = delayRoll;
         emitter         = taskSpawnFromTable(gActor342100EncounterBlazeTaskDescriptors, ACTOR_342100_BLAZE_FIRE_EMITTER_DESCRIPTOR, (delayRoll >> 16) & ACTOR_342100_BLAZE_FIRE_DELAY_MASK, 0);
