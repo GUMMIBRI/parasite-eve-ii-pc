@@ -3,6 +3,6 @@
 
 #include "gameplay/animation.h"
 
-static AnimationSet* _gAkropolisWestElevatorHallArrivalAnimationSets[1] = {
+static AnimationSet* _gAkropolisWestElevatorHallArrivalAnimationSets[32] = {
     [0] = &_gAkropolisWestElevatorHallPlayerStepOutClip,
 };

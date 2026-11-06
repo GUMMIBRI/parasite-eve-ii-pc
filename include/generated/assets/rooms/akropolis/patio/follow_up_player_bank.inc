@@ -3,7 +3,7 @@
 
 #include "gameplay/animation.h"
 
-static AnimationSet* _gAkropolisPatioFollowUpPlayerAnimationSets[6] = {
+static AnimationSet* _gAkropolisPatioFollowUpPlayerAnimationSets[32] = {
     [0] = &_gShelterB1SterilizationRoomPlayerTalkStartClip,
     [1] = &_gShelterB1SterilizationRoomPlayerTalkEndClip,
     [2] = &_gShelterB1SterilizationRoomPlayerTalkClip,

@@ -3,7 +3,7 @@
 
 #include "gameplay/animation.h"
 
-static AnimationSet* _gShootingGalleryPierceGalleryPlayerAnimationSets[11] = {
+static AnimationSet* _gShootingGalleryPierceGalleryPlayerAnimationSets[32] = {
     [0] = &gMistShootingGalleryPlayerGalleryAcceptClip,
     [1] = &gMistShootingGalleryPlayerGalleryIdleClip,
     [2] = &gMistShootingGalleryPlayerGalleryIntro6Clip,

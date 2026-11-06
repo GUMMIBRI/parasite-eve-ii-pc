@@ -3,6 +3,6 @@
 
 #include "gameplay/animation.h"
 
-static AnimationSet* _gMistParkingCommand1PlayerAnimationSets[1] = {
+static AnimationSet* _gMistParkingCommand1PlayerAnimationSets[32] = {
     [0] = &_gMistParkingCommand1PlayerAnim00Clip,
 };

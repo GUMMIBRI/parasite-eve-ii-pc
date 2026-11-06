@@ -3,7 +3,7 @@
 
 #include "gameplay/animation.h"
 
-static AnimationSet* _gAkropolisRoofGardenArrivalPlayerAnimationSets[3] = {
+static AnimationSet* _gAkropolisRoofGardenArrivalPlayerAnimationSets[32] = {
     [0] = &_gAkropolisRoofGardenArrivalPlayerAnim00Clip,
     [1] = &_gAkropolisRoofGardenArrivalPlayerAnim01Clip,
     [2] = &_gAkropolisRoofGardenArrivalPlayerAnim02Clip,

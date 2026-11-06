@@ -3,7 +3,7 @@
 
 #include "gameplay/animation.h"
 
-static AnimationSet* _gMistR18PlayerBriefingAnimationSets[11] = {
+static AnimationSet* _gMistR18PlayerBriefingAnimationSets[32] = {
     [1] = &_gMistR18PlayerBriefingAnim01Clip,
     [2] = &_gMistR18PlayerBriefingAnim02Clip,
     [3] = &_gMistR18PlayerBriefingAnim03Clip,

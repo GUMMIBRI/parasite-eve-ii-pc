@@ -3,6 +3,6 @@
 
 #include "gameplay/animation.h"
 
-static AnimationSet* _gAkropolisCafeteriaOpeningPlayerAnimationSets[1] = {
+static AnimationSet* _gAkropolisCafeteriaOpeningPlayerAnimationSets[32] = {
     [0] = &gAkropolisCafeteriaPlayerOpeningClip,
 };

@@ -3,7 +3,7 @@
 
 #include "gameplay/animation.h"
 
-static AnimationSet* _gAkropolisPatioAmbushPlayerAnimationSets[5] = {
+static AnimationSet* _gAkropolisPatioAmbushPlayerAnimationSets[32] = {
     [1] = &gAyaStandClip,
     [2] = &gShelterR47PlayerLookAtMapClip,
     [3] = &_gAkropolisPatioAmbushPlayerClip,

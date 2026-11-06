@@ -153,6 +153,29 @@ def clip_symbol(bank: str, clip: str) -> str:
     return symbol
 
 
+# Tables a scene's AnimationBankCopyRequest points at. The request names up to ANIMATION_BANK_EXTENSION_CAPACITY clips
+# even when the table behind it is shorter (the PS1 copied whatever followed); these are padded with NULL so a 64-bit
+# host does not read past the array. Other tables keep the size of their placement.
+COPY_REQUEST_SOURCES = frozenset({
+    "_gAkropolisCafeteriaFollowUpPlayerAnimationSets",
+    "_gAkropolisCafeteriaOpeningPlayerAnimationSets",
+    "_gAkropolisForkedRoadAmbushPlayerAnimationSets",
+    "_gAkropolisHelicopterLandingPadDeparturePlayerAnimationSets",
+    "_gAkropolisPatioAmbushPlayerAnimationSets",
+    "_gAkropolisPatioFollowUpPlayerAnimationSets",
+    "_gAkropolisRoofGardenArrivalPlayerAnimationSets",
+    "_gAkropolisRoofGardenEntrancePlayerAnimationSets",
+    "_gAkropolisSanctuaryPlayerSceneAnimationSets",
+    "_gAkropolisWestElevatorHallArrivalAnimationSets",
+    "_gMistParkingCommand1PlayerAnimationSets",
+    "_gMistParkingPlayerConversationAnimationSets",
+    "_gMistParkingShopPlayerAnimationSets",
+    "_gMistR18PlayerBriefingAnimationSets",
+    "_gShootingGalleryPierceConversationPlayerAnimationSets",
+    "_gShootingGalleryPierceGalleryPlayerAnimationSets",
+})
+
+
 def bank_source(name: str) -> str:
     """A bank as a clip table, `AnimationSet* symbol[N]`: N its placement's words, each slot's clip, NULL past them."""
     assets = asset_data.ASSETS
@@ -161,6 +184,8 @@ def bank_source(name: str) -> str:
     entries = [f"    [{i}] = &{clip_symbol(name, clip)}," for i, clip in enumerate(slots) if clip]
     head = HEADER.format(what=f"the bank {name}, slots of {declared.bank_schema(name, assets)}")
     count = declared.bank_words(name, asset_data.EMBEDDED_ASSETS)
+    if bank["symbol"] in COPY_REQUEST_SOURCES:
+        count = max(count, 32)
     storage = "static " if bank["symbol"].startswith("_") else ""      # the project's TU-local names
     return f"{head}\n{storage}AnimationSet* {bank['symbol']}[{count}] = {{\n" + "\n".join(entries) + "\n};\n"
 

@@ -3,7 +3,7 @@
 
 #include "gameplay/animation.h"
 
-static AnimationSet* _gAkropolisHelicopterLandingPadDeparturePlayerAnimationSets[3] = {
+static AnimationSet* _gAkropolisHelicopterLandingPadDeparturePlayerAnimationSets[32] = {
     [1] = &gAkropolisHelicopterLandingPadPlayerHelipadReportEscapeClip,
     [2] = &gAkropolisHelicopterLandingPadPlayerHelipadDetonatorTalkClip,
 };
