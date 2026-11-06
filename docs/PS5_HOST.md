@@ -107,7 +107,10 @@ The reviewed application CRT calls `pe_application_stage` before environment
 initialization and constructors. Its first invocation establishes the native
 platform's documented IEEE floating-point state through `ps5_fp_ieee`;
 wrapped child threads inherit that MXCSR. Early output uses the public
-kernel write function and does not use libc, TLS or filesystem logging.
+kernel open/write/fsync/close functions without libc/errno/TLS. It appends
+to `/mnt/usb0/parasite-eve-ii-startup.log` only after no-follow directory
+checks for the existing `/mnt` and `/mnt/usb0`; failure leaves inherited
+output only. It creates no mount or alternate log root.
 The native runtime must provide that FP function and its thread/heap wrappers.
 
 GPU failure is returned to main before original game/audio playback; partial
@@ -115,17 +118,33 @@ renderer resources are released, and a failed attempt is not silently retried
 per draw. A normal display submission performs the bounded native shell
 splash handoff. No fake frame or game-event completion is introduced.
 
-Settings default to `/data/parasite-eve-ii/settings.ini`; PE2 card-file
-directories use `/data/parasite-eve-ii/memory-cards/card0` and `card1`.
-Explicit `PE2_CONFIG_DIR` and `PE2_MEMORY_CARD_DIR` overrides retain priority.
-Missing preferences storage fails without using another title's launch folder.
+Settings default to `/mnt/usb0/parasite-eve-ii/settings.ini`; card files use
+`/mnt/usb0/parasite-eve-ii/memory-cards/card0` and `card1`.
+`PE2_CONFIG_DIR` and `PE2_MEMORY_CARD_DIR` retain priority only within the
+checked existing `/mnt/usb0`..`/mnt/usb7` mounts. `/data`, `/mnt/homebrew`,
+relative paths and traversal are rejected for writes in this USB-only policy.
+Each component is opened with the actual SDK no-follow/directory flags;
+no libc `stat` layout or `realpath` ABI is assumed. Missing descendants may
+be created only below an already opened existing mount; missing mounts,
+symlinks, IO/close failures and unsupported paths fail closed with a reason.
+There is no silent migration, cwd fallback or copying of disc/save bytes.
+Settings/temp-CUE publication, card-temp rename and native menu dumps are
+checked at their actual write boundaries. Desktop defaults are unchanged.
 
-Disc arguments, environment and persisted choices retain priority. Missing
-choices are discovered beside the other configured disc, then under
-`/data/parasite-eve-ii` and `/mnt/usb0/parasite-eve-ii`. Recognized CUE names
-are `SLUS-01042.cue`/`SLUS-01055.cue` or the original USA Disc1/Disc2 names.
-Keep each CUE beside its referenced BIN. Discovery is read-only; normal USA
-disc-identity validation still runs. Game data stays on the player's discs.
+Disc arguments, environment and persisted choices retain priority. Without
+those, a readable nonempty same-folder pair in a uniquely identity-matched
+application's `parasite-eve-ii/discs` wins; matching compares the candidate
+eboot with active `/app0/eboot.bin` using bounded raw reads. The current
+package namespace is a candidate location, never proof of executable identity.
+Application IO/ambiguity stops default selection; missing/incomplete app data
+permits exactly one complete external pair under USB/homebrew read roots.
+Read roots do not grant write permission. A configured disc searches only
+its own original directory for a missing companion; partial roots are never
+joined. Default pair paths are captured before BIN-to-CUE normalization.
+USA CUE aliases and canonical `disc1.bin`/`disc2.bin` remain subject to the
+normal retail identity/actual image loader. Generated CUEs go into checked
+preferences storage, never the app or image folder. A nonempty CUE alone
+is not proof its referenced BIN is present or valid.
 
 The directory bridge crosses from the game SDK's DIR/dirent layout to the
 exact native provider SDK through opaque handles and copied name/type/inode

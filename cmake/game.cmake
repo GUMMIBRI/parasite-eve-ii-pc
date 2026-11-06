@@ -253,7 +253,7 @@ target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)
 target_sources(parasite-eve-ii-pc PRIVATE src/port/spu_voice_attributes.c)
 target_sources(parasite-eve-ii-pc PRIVATE src/port/host_ui.c)
 if(PE2_PS5_HOST)
-    target_sources(parasite-eve-ii-pc PRIVATE src/port/ps5_paths.c)
+    target_sources(parasite-eve-ii-pc PRIVATE src/port/ps5_paths.c src/port/ps5_app_discovery.c)
     target_sources(parasite-eve-ii-pc PRIVATE "${PE2_PS5_SUPPORT_DIR}/app_crt.o"
         "${PE2_PS5_SUPPORT_DIR}/application-stage.c"
         "${PE2_PS5_SUPPORT_DIR}/application-static-dlfcn.c"

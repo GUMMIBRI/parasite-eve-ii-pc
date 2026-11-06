@@ -1,6 +1,9 @@
 # Native platform source provenance
 
-The new PE2 path/build/stage wrappers are CC0-1.0 under the project license.
+The PE2 path/build/stage wrappers are CC0-1.0 under the project license.
+The separately marked ps5_app_discovery.c/header retain MIT, adapting the
+selected PE1 Build18 pe-portable-root.c identity-matching policy. No PE1
+game structures, app IDs, discs or save serialization are imported.
 This does not relicense linked runtime/dependency components or original
 game content. Preserve root THIRD_PARTY_NOTICES.md and every input notice.
 
