@@ -850,7 +850,19 @@ u16 spuCalcPitch(s32 key, s32 pitchOffset, s32 rootKey, s32 fineTune)
         }
     } while (0);
     // The compiled lookup scales the semitone index in bytes before loading a u16.
-    fineIndexAndPitch = ((u32) * (const u16*)((const u8*)semitonePitches + semitoneByteOffset) * (u32)gSpuFinePitchTable[fineIndexAndPitch]) >> SPU_PITCH_PRODUCT_SHIFT;
+    // Notes more than 23 semitones above the root index past the semitone table. On the PS1 the fine table follows it
+    // directly (0x80068BB8 + 0xC0 = 0x80068C78), so those reads land in the fine table; reproduce that here instead of
+    // reading whatever the host linker placed next. Beyond the fine table there is no data: use 0.
+    {
+        u32 semitoneEntry = semitoneByteOffset >> 1;
+        u32 semitonePitch = 0;
+        if (semitoneEntry < ARRAY_SIZE(gSpuSemitonePitchTable)) {
+            semitonePitch = semitonePitches[semitoneEntry];
+        } else if (semitoneEntry - ARRAY_SIZE(gSpuSemitonePitchTable) < ARRAY_SIZE(gSpuFinePitchTable)) {
+            semitonePitch = gSpuFinePitchTable[semitoneEntry - ARRAY_SIZE(gSpuSemitonePitchTable)];
+        }
+        fineIndexAndPitch = (semitonePitch * (u32)gSpuFinePitchTable[fineIndexAndPitch]) >> SPU_PITCH_PRODUCT_SHIFT;
+    }
     if ((fineIndexAndPitch & 0xFFFF) >= SPU_PITCH_REGISTER_MAX + 1) {
         fineIndexAndPitch = SPU_PITCH_REGISTER_MAX;
     }
