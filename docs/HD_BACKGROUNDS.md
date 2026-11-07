@@ -458,6 +458,12 @@ bytes, and unused third/fourth textured polygon UV high halves. Other words stay
 exact. Equality supports input comparability; it does not prove equal initial
 VRAM, PGXP hints or all game state. Regression fixtures reject meaningful XY,
 CLUT, texture-page, UV, modulated-colour and command-count differences.
+A fresh guarded corridor run (`foreground-input-guard-corridor/assessment.json`)
+found matching command inputs and native output for original/classic base,
+classic foreground, and wide buffer 0. Wide buffer 272 differed in both inputs
+(674 versus 675 commands, first difference 430) and native output. The checker
+correctly stopped as unverified before malformed-pack controls. This is fresh
+evidence that a single passing repeat does not settle model-state determinism.
 Neither a partial run nor these synthetic fixtures establish all-game,
 traversal, artwork or all-platform completion.
 

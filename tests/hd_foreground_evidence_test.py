@@ -28,6 +28,11 @@ class ForegroundEvidenceTest(unittest.TestCase):
         changed=modulated.copy();changed[0]^=1
         self.assertFalse(compare_gpu_commands(trace(modulated),trace(changed))['equal'])
         self.assertEqual(compare_gpu_commands(trace(original),trace(original)*2)['first_difference'],1)
+        gouraud=[0x3a000000,0x00100020,0x00112233,0x00300040,0x07123456,0x00500060,0x00223344,0x00700080]
+        padding=gouraud.copy();padding[4]=0x03123456
+        self.assertTrue(compare_gpu_commands(trace(gouraud),trace(padding))['equal'])
+        padding[4]^=1
+        self.assertFalse(compare_gpu_commands(trace(gouraud),trace(padding))['equal'])
         for malformed in [b'',b'x',struct.pack('<I',0),struct.pack('<II',2,0)]:
             with self.assertRaises(ValueError):normalized_gpu_commands(malformed)
 
