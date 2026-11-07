@@ -301,6 +301,10 @@ void cdCmdCancelScene(void);
 /// Previous playback storage must have been retired before reserving again;
 /// auxiliary allocations last until that heap is released or reinitialized.
 void* cdCmdReservePlaybackBuffers(void);
+/* Scene selection can follow the last image/model heap rebuild. Ensure an
+ * entirely absent reservation exists before starting asynchronous scene I/O;
+ * existing reservations are retained. Returns zero if required storage lacks. */
+int cdCmdEnsurePlaybackBuffers(void);
 
 /// Resets the movie frame to 1 and prepares actor buffer 0 for loaded view movies.
 ///

@@ -1217,6 +1217,33 @@ other outcomes remain unverified and separately classified in its assessment.
 No all-room completion, final water artwork, natural-story traversal, or
 cross-platform approval follows from these macOS software probes.
 
+#### Reserve missing scene storage before starting CD I/O
+
+The remaining pod-bottom view-11 crash writes a CD sector at address 0x7c4.
+Read-only LLDB inspection finds a NULL decode buffer despite a selected 32768-byte
+reservation. A breakpoint trace shows the last heap/image reservation at frame
+877 and scene selection afterward at 881, with no subsequent reservation before
+playback. This path cannot rely on another model/image load to prepare its buffers.
+
+Scene-audio startup now checks storage before asynchronous I/O. A completely
+absent scene reservation is prepared using the same allocation/actor-buffer
+selection code as normal heap restoration. Existing reservations are retained;
+partial or failed allocations report a scene error instead of starting unsafe
+transfers. The lazy path does not allocate/reset movie workspaces. Failed VLC
+allocation no longer calls the table builder with NULL. The existing timing
+buffer test now checks late timing/decode reservation, distinct allocations,
+idempotency, preserved timing data, no movie lookup, partial storage and allocation
+failure. All 51 C tests pass on macOS.
+
+All 15 pod-bottom probes now reach normal replay EOF without the prior crashes,
+but remain unverified because no settled target is captured. The gallery's nine
+foreground checks pass on the final binary
+(`foreground-view11-scene-reservation-checked`). In the complete 48-case old-crash
+subset, five still pass parity, 37 reach EOF without a target and six still crash
+(`historical-crash-retry-scene-reservation`). The preceding build had 20 crashes.
+Earlier reports and debugger traces remain local and unchanged; these results
+do not prove natural gameplay traversal or other-platform correctness.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,

@@ -94,15 +94,11 @@ static const s32* _gCdCmdMovieWorkspaceBytesByStage[10] = {
     NULL,
 };
 
-void* cdCmdReservePlaybackBuffers(void)
+static void _cdCmdReserveSceneBuffers(void)
 {
-    enum { CD_COMMAND_TITLE_MOVIE_WORKSPACE_BYTES = 0x4B000 };
     CdCmdQueue* queue;
     u16         vlcBufferKind;
     u8          timingBufferKind;
-    const s32*  areaWorkspaceBytes;
-    s32         workspaceBytes;
-
     queue = &gCdCmdQueue;
     if (queue->sceneBuffersNeeded != 0) {
         // Reserve scene storage first so later movie/model allocations cannot consume it.
@@ -125,7 +121,7 @@ void* cdCmdReservePlaybackBuffers(void)
                     queue->vlcTable        = (u16*)gFsActorBuffer2Base;
                     break;
             }
-            if (queue->vlcTableBuilt == 0) {
+            if (queue->vlcTableBuilt == 0 && queue->vlcTable != NULL) {
                 DecDCTvlcBuild(queue->vlcTable);
                 queue->vlcTableBuilt = 1;
             }
@@ -176,6 +172,14 @@ void* cdCmdReservePlaybackBuffers(void)
         }
     }
 
+}
+
+void* cdCmdReservePlaybackBuffers(void)
+{
+    enum { CD_COMMAND_TITLE_MOVIE_WORKSPACE_BYTES = 0x4B000 };
+    const s32* areaWorkspaceBytes;
+    s32 workspaceBytes;
+    _cdCmdReserveSceneBuffers();
     _gCdCmdMovieWorkspace = NULL;
     if (gGameSession->location.stage == GAME_STAGE_NONE) {
         _gCdCmdMovieWorkspace = memMalloc(CD_COMMAND_TITLE_MOVIE_WORKSPACE_BYTES, true);
@@ -191,6 +195,19 @@ void* cdCmdReservePlaybackBuffers(void)
         }
     }
     return _gCdCmdMovieWorkspace;
+}
+
+int cdCmdEnsurePlaybackBuffers(void)
+{
+    CdCmdQueue* queue=&gCdCmdQueue;
+    if (!queue->sceneBuffersNeeded) return 1;
+    if (queue->sceneStream == NULL) return 0;
+    if (queue->decodeBuffer == NULL && queue->timingBuffer == NULL && queue->vlcTable == NULL) {
+        _cdCmdReserveSceneBuffers();
+    }
+    return (queue->decodeBufferBytes == 0 || queue->decodeBuffer != NULL) &&
+        (queue->sceneStream->control.scene.timingBufferKind == STREAM_TIMING_BUFFER_NONE || queue->timingBuffer != NULL) &&
+        (queue->sceneVlcTableMode != STREAM_SCENE_VLC_RESERVED_TABLE || queue->vlcTable != NULL);
 }
 
 /// Resets request-handler progress and retires the head of a nonempty ring.

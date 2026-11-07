@@ -920,6 +920,12 @@ void cdCmdHandleSceneAudio(void)
         case CD_COMMAND_START_SCENE_AUDIO:
             switch (queue->step) {
                 case CD_COMMAND_SCENE_AUDIO_BEGIN:
+                    /* A CAP may select its scene after the final image load,
+                     * without another model-buffer rebuild to reserve storage. */
+                    if (!cdCmdEnsurePlaybackBuffers()) {
+                        streamSetSceneError(1, 0);
+                        return;
+                    }
                     cdCmdSetBusy();
                     queue->sceneAudioMode = CD_COMMAND_SCENE_STARTING_AUDIO;
                     syncResult            = cdSyncPollCommand(0, 0);
