@@ -1,5 +1,9 @@
 # HD and widescreen backgrounds: implementation in progress
 
+**Disabled in normal builds.** Until the artwork is ready, the options, command-line flags and
+`PE2_HD_BACKGROUNDS` exist only in builds configured with `-DPE2_HD_BACKGROUNDS=ON`; the tools under
+`tools/hd/` need such a build. Other builds always draw the native 4:3 backgrounds and keep saved choices.
+
 The target is optional authored HD backgrounds with horizontally extended artwork,
 using the existing PsyZ sprite-atlas presenter. The original 320x240 camera,
 models, native image pixels, timing and foreground masks remain authoritative.

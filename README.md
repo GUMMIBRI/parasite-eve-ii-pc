@@ -54,10 +54,10 @@ preferences folder, rewritten on each start: `~/Library/Application Support/para
 `~/.local/share/parasite-eve/parasite-eve-ii/` on Linux. Attach that file to a bug report. `PE2_LOG=<file>` writes the
 log to a file of your choice.
 
-An optional local HD background pack can be selected in Graphics > Background pack
-or with `--hd-backgrounds /path/to/pack`; `--no-hd-backgrounds` disables it.
-Use Picture detail 2x or above. No reviewed artwork pack is bundled yet; see
-[HD backgrounds](docs/HD_BACKGROUNDS.md) for the format and current limits.
+HD backgrounds and widescreen are unfinished and are off in normal builds: the game always draws the original
+backgrounds in 4:3. To work on them, configure with `-DPE2_HD_BACKGROUNDS=ON`, which adds the Widescreen choice and the
+HD background rows to Graphics and the `--widescreen 0|1`, `--hd-backgrounds /path/to/pack` and `--no-hd-backgrounds`
+options; see [HD backgrounds](docs/HD_BACKGROUNDS.md) for the format and current limits.
 `tools/ci/check_host_casts.sh [build-dir]` re-runs the game sources with the pointer/int cast warnings the build otherwise hides (`-w`); it must report none.
 
 **Contributors:** the layout sources are committed and the extraction tooling (splat split, `ninja_config.py`, disc
@@ -71,7 +71,7 @@ and copy the result back (see [docs/PORT_PLAN.md](docs/PORT_PLAN.md)).
 | --- | --- |
 | `PE2_SKIPINTRO=1` | skip the opening movie |
 | `PE2_LOG=<file>` | write standard output and error to this file (rewritten on each start) |
-| `PE2_HD_BACKGROUNDS=<directory>` | experimental local PE2BG1 atlas pack; use Picture detail 2x+ and `--widescreen 0|1`; missing/invalid art retains 4:3 |
+| `PE2_HD_BACKGROUNDS=<directory>` | experimental local PE2BG1 atlas pack (builds with `-DPE2_HD_BACKGROUNDS=ON` only); use Picture detail 2x+ and `--widescreen 0|1`; missing/invalid art retains 4:3 |
 | `PE2_DUMP_BACKGROUNDS=<directory>` | export native RGB555 backdrops and observed logical locations for local artwork work; never commit these exports |
 | `PE2_DUMP_FRAME=<tick>:<file.ppm>` | capture the actual presenter, including HD/widescreen framing; `PSYZ_HEADLESS=gpu` uses a hidden GPU window |
 | `PE2_DUMP_VRAM=<tick>:<file>` | write the raw VRAM once at that pad tick; `tools/port/export_vram.py` turns it into a PNG (no screen capture needed) |

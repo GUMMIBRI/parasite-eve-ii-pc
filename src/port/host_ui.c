@@ -59,6 +59,14 @@ static char logPath[4096];
 static int logToFile, stderrIsTerminal;
 static char hdPackPath[4096];
 static int hdEnabled=1;
+/* HD backgrounds and the widescreen they make possible are unfinished: a normal build hides them and always draws
+ * the native backgrounds. Configure with -DPE2_HD_BACKGROUNDS=ON to work on them. Saved choices are kept. */
+#ifdef PE2_HD_BACKGROUNDS_ENABLED
+enum { HD_FEATURES=1 };
+#else
+enum { HD_FEATURES=0 };
+#endif
+static int savedWidescreen; /* the saved choice, written back unchanged while HD_FEATURES is off */
 static int requiredDisc, selectedDisc;
 static const char* const pages[]={"Graphics","Controls","Audio","Discs"};
 static const char* const buttons[]={"L2","R2","L1","R1","Triangle","Circle","Cross","Square",
@@ -68,7 +76,7 @@ static PsyzOverlayEventFilter_SDL3 previousFilter;
 static SDL_Window* uiWindow;
 
 static int rowCount(void) {
-    return s_overlayState.page==0?10:s_overlayState.page==2?1:s_overlayState.page==1?16:2;
+    return s_overlayState.page==0?(HD_FEATURES?10:8):s_overlayState.page==2?1:s_overlayState.page==1?16:2;
 }
 
 static int maxScroll(void) { int n=rowCount()-VISIBLE_ROWS; return n>0?n:0; }
@@ -85,6 +93,7 @@ static void ensureRowVisible(void) {
 static void setPage(int page) { s_overlayState.page=page;s_overlayState.row=0;s_overlayState.scroll=0; }
 
 static void applyWidescreen(int enabled) {
+    enabled=enabled && HD_FEATURES;
     if(enabled)Psyz_VideoSetAspectMode(PSYZ_ASPECT_DISPLAY);
     peBackgroundSetWidescreen(enabled);
 }
@@ -95,7 +104,8 @@ static void saveOptions(void) {
     FILE* f=fopen(temp,"w");
     if(!f) { snprintf(statusText,sizeof statusText,"Could not save preferences."); return; }
     fprintf(f,"disc1=%s\ndisc2=%s\nscale=%u\naspect=%d\nwidescreen=%d\ndither=%d\ngeometry=%d\naa=%d\nfilter=%d\nlight=%d\nvolume=%u\n",
-        discPaths[0],discPaths[1],Psyz_VideoGetInternalResolution(),Psyz_VideoGetAspectMode(),peBackgroundGetWidescreen(),
+        discPaths[0],discPaths[1],Psyz_VideoGetInternalResolution(),Psyz_VideoGetAspectMode(),
+        HD_FEATURES?peBackgroundGetWidescreen():savedWidescreen,
         Psyz_VideoGetDitheringMode(),Psyz_VideoGetGeometryCorrection(),Psyz_VideoGetAntialiasing(),
         Psyz_VideoGetModelFiltering(),Psyz_VideoGetDynamicLighting(),Psyz_AudioGetOutputVolume());
     fprintf(f,"hd_backgrounds=%d\nhd_background_path=%s\n",hdEnabled,hdPackPath);
@@ -142,6 +152,7 @@ static void loadOptions(void) {
         }
     }
     fclose(f);
+    savedWidescreen=widescreen;
     applyWidescreen(widescreen);
 }
 
@@ -412,7 +423,8 @@ static void changeRow(int direction,int activate) {
             if(n>=1&&n<=8)Psyz_VideoSetInternalResolution(n); }
         if(r==1) {
             int choice=peBackgroundGetWidescreen()?2:Psyz_VideoGetAspectMode()?1:0;
-            choice=(choice+(direction<0?2:1))%3;
+            int choices=HD_FEATURES?3:2;
+            choice=(choice+(direction<0?choices-1:1))%choices;
             applyWidescreen(choice==2);
             Psyz_VideoSetAspectMode(choice==1?PSYZ_ASPECT_SQUARE:PSYZ_ASPECT_DISPLAY);
         }
@@ -424,7 +436,7 @@ static void changeRow(int direction,int activate) {
         if(r==6)Psyz_VideoSetModelFiltering(!Psyz_VideoGetModelFiltering());
         if(r==7)Psyz_VideoSetDynamicLighting(!Psyz_VideoGetDynamicLighting());
         if(r==8) {
-            hdEnabled=!hdEnabled;peBackgroundConfigurePack(hdPackPath,hdEnabled);
+            hdEnabled=!hdEnabled;peBackgroundConfigurePack(hdPackPath,hdEnabled && HD_FEATURES);
             if(hdEnabled && !*hdPackPath)snprintf(statusText,sizeof statusText,"Select a background pack folder below.");
         }
         if(r==9 && activate)chooseBackgroundPack(s_overlayGpuWindow);
@@ -560,6 +572,12 @@ int peHostStartup(int argc,char** argv,const char** disc) {
         else if(!strcmp(argv[i],"--validate-discs"))validateOnly=1;
         else if(!strcmp(argv[i],"--disc") && i+1<argc)explicitDisc=argv[++i];
         else if(!strcmp(argv[i],"--disc2") && i+1<argc)explicitDisc2=argv[++i];
+        else if(!HD_FEATURES && (!strcmp(argv[i],"--widescreen") || !strcmp(argv[i],"--hd-backgrounds") ||
+                                 !strcmp(argv[i],"--no-hd-backgrounds"))) {
+            fprintf(stderr,"%s: HD backgrounds and widescreen are not finished and are disabled in this build "
+                           "(configure with -DPE2_HD_BACKGROUNDS=ON).\n",argv[i]);
+            return -1;
+        }
         else if(!strcmp(argv[i],"--widescreen")) {
             if(widescreenSeen || i+1>=argc || (strcmp(argv[i+1],"0") && strcmp(argv[i+1],"1"))) {
                 fprintf(stderr,"Missing, invalid or duplicate --widescreen (use 0 or 1).\n");return -1;
@@ -579,7 +597,15 @@ int peHostStartup(int argc,char** argv,const char** disc) {
             hdSeen=1;hdEnabled=0;
         }
         else if(argv[i][0]!='-' && !explicitDisc)explicitDisc=argv[i];
-        else { fprintf(stderr,"usage: %s [disc.cue|disc.bin] [--disc2 image] [--host-menu] [--widescreen 0|1] [--hd-backgrounds folder|--no-hd-backgrounds]\n",argv[0]);return -1; }
+        else {
+            fprintf(stderr,HD_FEATURES?"usage: %s [disc.cue|disc.bin] [--disc2 image] [--host-menu] [--widescreen 0|1] [--hd-backgrounds folder|--no-hd-backgrounds]\n"
+                                      :"usage: %s [disc.cue|disc.bin] [--disc2 image] [--host-menu]\n",argv[0]);
+            return -1;
+        }
+    }
+    if(hdEnvironment && !HD_FEATURES) {
+        fprintf(stderr,"PE2_HD_BACKGROUNDS is ignored: HD backgrounds are disabled in this build.\n");
+        hdEnvironment=NULL;
     }
     if(hdEnvironment && !hdSeen) {
         if(strlen(hdEnvironment)>=sizeof hdPackPath || strpbrk(hdEnvironment,"\r\n")) {
@@ -597,7 +623,7 @@ int peHostStartup(int argc,char** argv,const char** disc) {
         }
         strcpy(hdPackPath,absolute);
     }
-    peBackgroundConfigurePack(hdPackPath,hdEnabled);
+    peBackgroundConfigurePack(hdPackPath,hdEnabled && HD_FEATURES);
     if(explicitDisc && acceptPath(explicitDisc,1)!=1) {peHostReportError("Disc 1: %s",statusText);return -1;}
     if(explicitDisc2 && acceptPath(explicitDisc2,2)!=2) {peHostReportError("Disc 2: %s",statusText);return -1;}
     if(validateOnly) {

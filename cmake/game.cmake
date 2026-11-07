@@ -253,6 +253,10 @@ target_include_directories(parasite-eve-ii-pc PRIVATE include include/decomp src
 target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz SKIP_ASM)
 target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)
 target_sources(parasite-eve-ii-pc PRIVATE src/port/spu_voice_attributes.c)
+option(PE2_HD_BACKGROUNDS "Show the unfinished HD background and widescreen options" OFF)
+if(PE2_HD_BACKGROUNDS)
+    target_compile_definitions(parasite-eve-ii-pc PRIVATE PE2_HD_BACKGROUNDS_ENABLED=1)
+endif()
 target_sources(parasite-eve-ii-pc PRIVATE src/port/host_ui.c src/port/backgrounds.c src/port/background_coverage.c src/port/background_pack.c src/port/gpu_state.c src/port/background_foreground.c src/port/foreground_ot.c src/port/foreground_pack.c src/port/foreground_stage.c)
 
 # Variant units: a package compiled from another package's shared source with its own -D parameters.
