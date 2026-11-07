@@ -1163,6 +1163,26 @@ provenance. It has the wrong canvas aspect beyond permitted rounding and is
 rejected by `prepare_canvas`, before registration or packing. No stretch/crop
 exception was introduced and no artwork is approved or published.
 
+#### Dryfield scene return selects the destination room state
+
+The Aya-double scene's actor-121300 reload changes saved stage/area/warp to
+Dryfield Night's dilapidated house but previously retained the source room state.
+R08 has two lighting states; the destination has only one view-map/count row.
+Returning from state 2 therefore indexes past that table and crashes in
+`viewGetMappedIndex`. The scene reload now explicitly selects destination room
+state 1, alongside its existing stage, area and warp assignments. No generic
+NULL-map fallback or camera substitution is introduced.
+
+Owned-disc input replays with read-only EOF checks pass from all six R08 views
+in source state 2, plus a state-1 control. Each reaches stage 3, area 9, room
+state 1, warp 3 without the reproduced crash. Evidence is retained in
+`dryfield-r08-return-regression` and the separate view-1 checkpoint log.
+All 50 C tests pass on macOS after this change. The six-case forced-view survey
+now ends normally without settled *source* targets, rather than crashing
+(`dryfield-r08-return-fixed-survey`). These six targets remain unverified;
+successful later-room replay does not make their original static parity pass.
+Other platforms and natural-story traversal remain separate validation work.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,

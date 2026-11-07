@@ -1547,6 +1547,7 @@ static void _actor121300EveSceneTask(Task* task)
         ACTOR_121300_SCENE_RELOAD       = 3,
         ACTOR_121300_SCENE_END_TASK     = 9,
         ACTOR_121300_SCENE_RETURN_WARP  = 3,
+        ACTOR_121300_SCENE_RETURN_ROOM  = 1,
         ACTOR_121300_SCENE_LIGHT_COUNT  = 3,
     };
     TmdObject* model;
@@ -1598,6 +1599,9 @@ static void _actor121300EveSceneTask(Task* task)
             SetDispMask(1);
             gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.stage = GAME_STAGE_DRYFIELD_NIGHT;
             gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.area  = GAME_AREA_DRYFIELD_NIGHT_DILAPIDATED_HOUSE;
+            /* The destination has one room-state row. Do not carry R08's
+             * alternate lighting state into its camera/resource tables. */
+            gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.roomState = ACTOR_121300_SCENE_RETURN_ROOM;
             gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.warp  = ACTOR_121300_SCENE_RETURN_WARP;
             gDisplayState.spriteVariant                             = 1;
             taskSpawn(GAME_FLOW_RELOAD_TASK_BANK, GAME_FLOW_RELOAD_TASK_SLOT, GAME_FLOW_RELOAD_CAPTURE_FRAME, 0);
