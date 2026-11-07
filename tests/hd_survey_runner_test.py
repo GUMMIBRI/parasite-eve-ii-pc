@@ -30,7 +30,8 @@ mutation = os.environ.get('SURVEY_FIXTURE_MUTATE')
 if mutation:
     paths = dict(binary=binary, runner=Path(__file__),
                  catalog=Path(os.environ['SURVEY_FIXTURE_CATALOG']),
-                 replay=Path(os.environ['PE2_PAD_REPLAY']))
+                 replay=Path(os.environ['PE2_PAD_REPLAY']),
+                 replay_source=Path(os.environ.get('SURVEY_FIXTURE_REPLAY', 'unused')))
     with paths[mutation].open('ab') as stream:
         stream.write(b'\n# changed\n' if mutation == 'runner' else b'\n')
 '''
@@ -38,7 +39,7 @@ if mutation:
 
 @unittest.skipUnless(os.name == 'posix', 'Executable fixture launcher uses a POSIX shebang')
 class SurveyRunnerTest(unittest.TestCase):
-    def run_survey(self, root, mutation=None):
+    def run_survey(self, root, mutation=None, supplied_replay=False):
         binary = root/'binary with spaces'
         binary.write_bytes(b'fixture, deliberately not executable')
         runner = root/'launcher with spaces'
@@ -55,11 +56,16 @@ class SurveyRunnerTest(unittest.TestCase):
         env.pop('SURVEY_FIXTURE_MUTATE', None)
         if mutation:
             env['SURVEY_FIXTURE_MUTATE'] = mutation
+        extra=[]
+        if supplied_replay:
+            source=root/'custom route.pad';source.write_bytes(b'PE2PAD 1\n0 0041ffff\n')
+            env['SURVEY_FIXTURE_REPLAY']=str(source)
+            extra=['--replay',str(source)]
         result = subprocess.run([
             sys.executable, str(SURVEY), '--binary', str(binary),
             '--runner', str(runner), '--catalog', str(catalog),
             '--disc', str(disc), '--disc2', str(disc), '--gpu-state',
-            '--jobs', '1', '--output', str(output)],
+            '--jobs', '1', '--output', str(output), *extra],
             env=env, capture_output=True, text=True, timeout=30)
         return result, output, dict(binary=binary, runner=runner, catalog=catalog)
 
@@ -84,6 +90,23 @@ class SurveyRunnerTest(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(kind.capitalize()+' changed during survey', result.stderr)
                 self.assertFalse((output/'report.json').exists())
+
+    def test_supplied_controller_trace_is_copied_and_attributed(self):
+        with tempfile.TemporaryDirectory() as name:
+            root=Path(name)
+            result, output, _=self.run_survey(root,supplied_replay=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            report=json.loads((output/'report.json').read_text())
+            self.assertEqual((output/'startup.pad').read_bytes(),(root/'custom route.pad').read_bytes())
+            self.assertEqual(report['replay_source_sha256'],report['replay_sha256'])
+            self.assertEqual(report['scope']['replay'],'provided')
+
+    def test_changed_supplied_trace_cannot_publish_complete_report(self):
+        with tempfile.TemporaryDirectory() as name:
+            result, output, _=self.run_survey(Path(name),'replay_source',supplied_replay=True)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('Replay source changed during survey',result.stderr)
+            self.assertFalse((output/'report.json').exists())
 
 
 if __name__ == '__main__':

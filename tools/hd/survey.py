@@ -50,6 +50,7 @@ def main():
     parser.add_argument('--catalog',type=Path,default=Path('build-hd-study/view-catalog.json'))
     parser.add_argument('--binary',type=Path,default=Path('build-port/parasite-eve-ii-pc'))
     parser.add_argument('--runner',type=Path,help='Optional executable launcher receiving the binary path and arguments')
+    parser.add_argument('--replay',type=Path,help='Use an explicit controller trace instead of the generic startup inputs; still starts each selected source location')
     parser.add_argument('--disc',type=Path,required=True)
     parser.add_argument('--disc2',type=Path,required=True)
     parser.add_argument('--output',type=Path,default=Path('build-hd-study/survey'))
@@ -69,12 +70,17 @@ def main():
     if not selected:raise SystemExit('No eligible views selected')
     root=args.output.resolve();root.mkdir(parents=True,exist_ok=True)
     (root/'report.json').unlink(missing_ok=True)
-    replay=root/'startup.pad';startup_replay(replay)
+    replay=root/'startup.pad'
+    if args.replay:replay.write_bytes(args.replay.read_bytes())
+    else:startup_replay(replay)
     input_paths=dict(binary=args.binary,catalog=args.catalog,replay=replay)
+    if args.replay:input_paths['replay_source']=args.replay
     if args.runner:input_paths['runner']=args.runner
     input_hashes={name:hashlib.sha256(path.read_bytes()).hexdigest() for name,path in input_paths.items()}
     if input_hashes['catalog']!=hashlib.sha256(catalog_bytes).hexdigest():
         raise SystemExit('Catalog changed while selecting survey cases')
+    if args.replay and input_hashes['replay_source']!=input_hashes['replay']:
+        raise SystemExit('Replay source changed while copying survey inputs')
     binary_hash=input_hashes['binary']
     def run_case(target):
         case='-'.join(map(str,target['location']))
@@ -123,11 +129,13 @@ def main():
             print(f'{len(passed)} matched parity, {len(errors)} unverified / {len(selected)}',flush=True)
     for name,path in input_paths.items():
         if hashlib.sha256(path.read_bytes()).hexdigest()!=input_hashes[name]:
-            raise SystemExit(f'{name.capitalize()} changed during survey; results cannot be attributed to fixed inputs')
+            raise SystemExit(f'{name.replace("_"," ").capitalize()} changed during survey; results cannot be attributed to fixed inputs')
     report=dict(format='pe2-static-view-parity-survey-v1',binary_sha256=binary_hash,
                 catalog_sha256=input_hashes['catalog'],replay_sha256=input_hashes['replay'],runner_sha256=input_hashes.get('runner'),
+                replay_source_sha256=input_hashes.get('replay_source'),
                 scope=dict(eligible_total=len(eligible),selected=len(selected),requested_room=args.room,limit=args.limit,gpu_state=args.gpu_state,backend=args.backend,
-                           note='Forced static cameras; excludes unresolved source entries; not physical traversal or all-game correctness.'),
+                           replay='provided' if args.replay else 'generic startup',
+                           note='Forced source locations with controller inputs; excludes unresolved source entries; not physical traversal or all-game correctness.'),
                 selected_complete=True,parity_verified=len(passed),unverified=len(errors),
                 cases=passed,errors=errors,source_diagnostics=catalog.get('source_diagnostics',[]))
     (root/'report.json').write_text(json.dumps(report,indent=2)+'\n')

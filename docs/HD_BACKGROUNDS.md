@@ -17,9 +17,9 @@ scope describe those builds rather than superseding this summary.
 | --- | --- | --- |
 | Options and loader | Persistent aspect/pack controls, native fallback, foreground presentation and immutable local installation are implemented. | Production pack and distribution/download/update workflow. |
 | Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Finish excluded-row/source diagnostics and runtime checks of special screens; MIST R21 is an empty debug room without static views. |
-| Broad runtime survey | Complete current-binary software survey: 2708 exact matches, 606 without settled captures; no pixel differences or crashes. All 5416 ordered GPU audits validate. | Resolve the 606 no-target cases and complete natural traversal, transient/scripted/special screens and supported GPU backends. This is forced static coverage, not an all-game pass. |
+| Broad runtime survey | Complete current-binary software survey: 2708 exact matches, 606 without settled captures; no pixel differences or crashes. All 5416 ordered GPU audits validate. | A supplemental menu route verifies gallery view 14; resolve the other 605 no-target locations and complete natural traversal, transient/scripted/special screens and supported GPU backends. This is forced static coverage, not an all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
-| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 58 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
+| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 60 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
 All source captures, generated artwork and native-reference pack payloads remain
 local. Passing renderer controls do not approve artwork or grant distribution
@@ -818,6 +818,12 @@ camera. This is a forced static-camera test, not proof of physical traversal.
 It accepts only 30 consecutive visible field frames with the expected native
 key and exact six-component location, rejects black/loading captures, and
 compares the complete native VRAM and rendered frame with widescreen off/on.
+Use `--replay /local/route.pad` to supply deliberate controller inputs instead
+of generic startup confirmation pulses. The tool preserves a local trace copy
+and hashes both the copy and the supplied source; changing either prevents a
+complete report. Each selected location still uses its authored forced start,
+so a supplied trace does not imply an end-to-end story route.
+
 The executable hash must remain unchanged throughout a survey. The initial
 20-camera run passed. The full 3314-candidate run completed on executable
 SHA-256 `2367b99d2b42d3c64b68c9589310c4301f7e993633f70c4c4efcdbee05e80d5f`:
@@ -1781,6 +1787,33 @@ current static off/on parity. The excluded 32 source rows, all no-target cases,
 natural gameplay transitions, production artwork and physical GPU/platform
 coverage remain outstanding; this report does not prove them.
 
+#### Gallery fixed-training view reached through its menus
+
+The generic full-survey replay cannot capture gallery view 14
+(`[1,20,14,1,3,1]`, native key `843ae3abe481d815`). A read-only EOF checkpoint
+instead finds view 15, a live player and pending display mode 129. The room's
+jukebox requires a selected track followed by menu/cancel to close; generic
+Cross pulses choose tracks but do not close it. A controller trace adds Circle
+at pad ticks 2600–2607, then resumes confirmations through the remaining menus.
+A second EOF checkpoint reaches view 14 with HP 100 and no pending display mode.
+No position, camera, story or task values are injected.
+
+The same trace passes two settled off/on probes: software
+(`gallery-view14-controller-survey/report.json`) and headless Metal
+(`gallery-view14-controller-metal/report.json`). Each captures the expected
+source/location after 30 field frames, complete ordered GPU audits, and identical
+full native VRAM plus RGB within that backend. These no-art probes use native
+1x 320x240 presentation; no higher-scale HD, cross-backend pixel equivalence or
+final artwork approval is claimed. The software training frame was visually
+inspected. `gallery-view14-diagnosis/assessment.json` binds both reports to the
+same executable and controller trace.
+
+`survey.py --replay` now supports such reproducible menu routes. Two integration
+tests verify exact trace copying/attribution and reject a source trace changed
+during collection; all 60 Python HD tests pass. The original full report retains
+its 606 generic no-target entries. This supplemental route accounts for one of
+them, leaving 605 without settled evidence rather than rewriting that report.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
@@ -1825,8 +1858,9 @@ This historical snapshot predates the current verification summary above.
    other unused/special assets from views needing authored routes or playback.
 3. Complete remaining runtime coverage across both discs: natural movement,
    view and room transitions, menus/dialogue, title, captured-room screens,
-   special panorama/scroll renderers and RGB24 movies. The 606 no-target cases
-   remain unverified. Context-gated transient checkpoints supplement rather than
+   special panorama/scroll renderers and RGB24 movies. Of the full survey's 606
+   generic no-target locations, gallery view 14 now has a supplemental verified
+   menu route; the other 605 remain unverified. Context-gated transient checkpoints supplement rather than
    satisfy the settled survey's field-ready/30-frame gate.
 4. Finish the consumable production-pack/distribution workflow and outstanding
    download/update decision. Local activation, manifest verification and
