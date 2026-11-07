@@ -13,7 +13,10 @@ root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
 
 # Release exactly what is on origin/main.
-git diff --quiet && git diff --cached --quiet || { echo "working tree has uncommitted changes" >&2; exit 1; }
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "working tree has uncommitted changes" >&2
+    exit 1
+fi
 git fetch -q origin main
 [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || { echo "HEAD is not origin/main" >&2; exit 1; }
 
@@ -46,7 +49,7 @@ ${changes}
 
 Extract the download and choose your own **North American CUE/BIN disc images** of both discs on the **Discs** page of the menu (**Esc**); keep each CUE beside its BIN. Game data is not included. **Esc** opens the settings and the controls page.
 
-The save editor is included in the download (\`Parasite Eve II Save Editor.app\`). It has not been tried on a retail save: work on a copy. This remains a pre-alpha: only the Akropolis has been played through.
+The save editor is included in the download (\`Parasite Eve II Save Editor.app\`). It has not been tried on a retail save: work on a copy. This remains a pre-alpha: native gameplay and save/reload have been exercised into the Shelter Laboratory on macOS. Later story progression and full gameplay on Linux/Windows remain unverified.
 
 [Full changelog](https://github.com/${repo}/blob/${tag}/CHANGELOG.md)
 NOTES

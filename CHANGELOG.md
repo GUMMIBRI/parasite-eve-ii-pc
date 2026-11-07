@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3
+
+- Report start-up and disc errors instead of exiting silently: a window explains what is wrong with the chosen image (missing BIN, wrong game or region, ISO instead of CUE/BIN, damaged image) and the log is written to `parasite-eve-ii.log` in the preferences folder when the game is not started from a terminal (`PE2_LOG=<file>` chooses another file). CUE sheets with a byte-order mark, lower-case keywords, unquoted names or Windows paths are accepted, and a raw BIN chosen by a Windows path keeps that path.
+- Fix scene reloads after the Aya double, growth-room companion reactions, missing scene buffers before asynchronous playback, scene timing before audio pacing, streamed water packets and motel balcony light shafts.
+- Fix host integer widths for projected shadows, water and lighting effects, held objects, Bezier model coordinates and collision rebuilds. Fix room-light endpoint arrays that relied on separate objects being adjacent in memory.
+- Fix texture fields and PGXP packet ownership in screen-coordinate writes, Controls labels that did not match their key bindings, empty numeric preferences and incomplete memory-card listings (contributed by GUMMIBRI).
+- Remove the UBSan and static-analyzer findings on the default scene (signed shifts, out-of-table reads the PS1 layout tolerated, null area resources).
+- HD backgrounds and widescreen are still in development and are off in release builds; the game draws the original backgrounds in 4:3. They can be built with `-DPE2_HD_BACKGROUNDS=ON`.
+- Expand host regression coverage to 53 tests and the portable Windows subset to 16, which now also builds and runs on Windows in CI. Native Windows/D3D12 and physical-PC GPU behavior remain unverified.
+
 ## 0.2
 
 - Fix room callback bindings and scripted movement that could block story progression in Dryfield and the Shelter.

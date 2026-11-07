@@ -43,10 +43,14 @@ terminal:
   "Parasite Eve II.app/Contents/MacOS/Parasite Eve II" "path/to/Parasite Eve II (Disc 1).cue"
 
 Put disc 2 next to disc 1 or choose it on the same page when the game asks.
+TXT
+if [ -n "$editor" ]; then
+    cat >> "$stage/START-HERE.txt" <<TXT
 
 "Parasite Eve II Save Editor.app" edits the game's save files (the card0 folder in its data directory). It is
 untested against retail saves: work on a copy.
 TXT
+fi
 
 apps=("$app")
 [ -n "$editor" ] && apps+=("$editor_app")

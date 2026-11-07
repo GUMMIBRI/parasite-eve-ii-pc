@@ -11,7 +11,7 @@ PlayStation runtime library (Psy-Q) on top of SDL3. It follows the architecture 
 
 ## Status
 
-**Pre-alpha.** The [0.2-alpha release](https://github.com/khasinski/parasite-eve-ii-pc/releases/tag/0.2) has downloads for macOS (Apple silicon, signed and notarized), Linux (x86-64 and ARM64) and Windows (experimental), plus a save editor. The game boots from your disc images and plays the
+**Pre-alpha.** The [0.3-alpha release](https://github.com/khasinski/parasite-eve-ii-pc/releases/tag/0.3) has downloads for macOS (Apple silicon, signed and notarized), Linux (x86-64 and ARM64) and Windows (experimental), plus a save editor. The game boots from your disc images and plays the
 opening movie, the title screen and New Game. Recorded New Game input reaches the Acropolis helicopter landing pad,
 including No. 9 combat and transformer damage. Native gameplay and save/reload have since been exercised through Dryfield and into the Shelter Laboratory on macOS; later story progression remains unverified.
 
@@ -20,7 +20,7 @@ Known limits:
 - All five stages are linked and load (Akropolis, Dryfield, Dryfield by night, the mine, the Shelter / Neo Ark; the last two need disc 2), with native progression exercised into the Shelter Laboratory on macOS. Attract demos are disabled.
 - Audio, movies and saves are incomplete.
 - Played on macOS (arm64) only. The Linux ARM64 build was started with both discs on Ubuntu 24.04 and renders; Linux x86-64 and Windows are built in CI but not run on a real PC yet.
-- The host menu has Graphics (detail, aspect, dithering, geometry correction, fullscreen, antialiasing, model filtering, smooth lighting), Controls, Audio and Discs pages; widescreen / HD backgrounds have an experimental local loader, but no reviewed artwork pack is bundled (see [HD backgrounds](docs/HD_BACKGROUNDS.md)). Frame interpolation and mods are not there yet.
+- The host menu has Graphics (detail, aspect, dithering, geometry correction, fullscreen, antialiasing, model filtering, smooth lighting), Controls, Audio and Discs pages; widescreen and HD backgrounds are in development and off in release builds (see [HD backgrounds](docs/HD_BACKGROUNDS.md)). Frame interpolation and mods are not there yet.
 
 ## What you need
 
