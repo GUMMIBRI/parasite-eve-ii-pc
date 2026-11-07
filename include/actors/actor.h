@@ -95,9 +95,9 @@ typedef struct {
     SVECTOR firstPos;         // First part's position, with the plane's coordinate in place of its own; `pad` is never written
     SVECTOR secondPos;        // Second part's position, with the plane's coordinate in place of its own; `pad` is never written
     SVECTOR corners[4];       // The quad's corners; `pad` is never written
-    long    screenCorners[4]; // Projected corners: screen X in bits 0..15, Y in bits 16..31, copied whole into the primitive
-    long    depthCue;         // Depth-cueing interpolation value of the projection; never read
-    long    flag;             // GTE FLAG word of the projection; a set bit 31 drops the quad
+    s32     screenCorners[4]; // Projected corners: screen X in bits 0..15, Y in bits 16..31, copied whole into the primitive
+    s32     depthCue;         // Depth-cueing interpolation value of the projection; never read
+    s32     flag;             // GTE FLAG word of the projection; a set bit 31 drops the quad
     s32     depth;            // Last corner's screen Z / 4, which picks the ordering-table entry
 } ActorLimbShadowScratch;
 STATIC_ASSERT_SIZEOF(ActorLimbShadowScratch, 0x8C);

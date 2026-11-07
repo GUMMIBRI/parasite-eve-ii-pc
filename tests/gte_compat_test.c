@@ -10,6 +10,7 @@
 #include "decomp/types.h"
 #include "decomp/gte.h"
 #include "main/gfx.h"
+#include "actors/actor.h"
 
 static int g_fail;
 #define CHECK(cond)                                                            \
@@ -473,7 +474,38 @@ static void test_vector3_abi(void) {
     for (int i=0; i<4; ++i) CHECK_EQ(placed.guard[i], 0x55555555);
 }
 
+/* Exercise the actual shadow workspace: the SDK writes int outputs, including
+ * a signed FLAG. A host-sized long can retain stale high bits on LP64. */
+static void test_shadow_projection_outputs(void) {
+    short id[3][3] = {{4096, 0, 0}, {0, 4096, 0}, {0, 0, 4096}};
+    SVECTOR corners[4] = {{-32, -32, 0, 0}, {32, -32, 0, 0},
+                          {-32, 32, 0, 0}, {32, 32, 0, 0}};
+    ActorLimbShadowScratch scratch;
+    CHECK_EQ(sizeof scratch.screenCorners[0], sizeof(int));
+    CHECK_EQ(sizeof scratch.flag, sizeof(int));
+    CHECK_EQ(sizeof scratch.depthCue, sizeof(int));
+    gte_SetGeomOffset(160, 120);
+    gte_SetGeomScreen(256);
+    for (int behind = 0; behind < 2; ++behind) {
+        MATRIX m = make_matrix(id, 0, 0, behind ? -1024 : 1024);
+        gte_SetRotMatrix(&m);
+        gte_SetTransMatrix(&m);
+        memset(&scratch, 0x55, sizeof scratch);
+        RotTransPers4(&corners[0], &corners[1], &corners[2], &corners[3],
+                      &scratch.screenCorners[0], &scratch.screenCorners[1],
+                      &scratch.screenCorners[2], &scratch.screenCorners[3],
+                      &scratch.depthCue, &scratch.flag);
+        CHECK_EQ(scratch.flag < 0, behind);
+        CHECK_EQ(scratch.depth, 0x55555555);
+        if (!behind) {
+            CHECK_EQ(scratch.screenCorners[0], (112 << 16) | 152);
+            CHECK_EQ(scratch.screenCorners[3], (128 << 16) | 168);
+        }
+    }
+}
+
 int main(void) {
+    test_shadow_projection_outputs();
     test_vector3_abi();
     test_ldsv_stsv();
     test_ldlvl_ldcv_stcv();

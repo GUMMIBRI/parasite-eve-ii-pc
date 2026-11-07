@@ -147,9 +147,9 @@ STATIC_ASSERT_SIZEOF(_Actor00400ShotWork, 0x64);
 /// The drawer reserves one block and releases it once the quad is queued;
 /// nothing in it outlives the call.
 typedef struct {
-    long screenCorners[4]; // projected corners: screen X in bits 0..15, Y in bits 16..31, copied whole into the primitive
-    long depthCue;         // depth-cueing interpolation value of the projection; never read
-    long flags;            // GTE FLAG word of the projection; a set bit 31 drops the quad
+    s32  screenCorners[4]; // projected corners: screen X in bits 0..15, Y in bits 16..31, copied whole into the primitive
+    s32  depthCue;         // depth-cueing interpolation value of the projection; never read
+    s32  flags;            // GTE FLAG word of the projection; a set bit 31 drops the quad
     s32  depth;            // last corner's screen Z / 4, which picks the ordering-table entry
 } _Actor00400GroundStainScratch;
 STATIC_ASSERT_SIZEOF(_Actor00400GroundStainScratch, 0x1C);

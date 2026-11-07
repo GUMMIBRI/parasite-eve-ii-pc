@@ -313,9 +313,9 @@ typedef struct {
     SVECTOR firstPos;         // first part's X and Z, with `vy` the shadow's height
     SVECTOR secondPos;        // second part's X and Z, with `vy` the shadow's height
     SVECTOR corners[4];       // the quad's corners
-    long    screenCorners[4]; // projected corners: screen X in bits 0..15, Y in bits 16..31, copied whole into the primitive
-    long    depthCue;         // depth-cueing interpolation value of the projection; never read
-    long    flag;             // GTE FLAG word of the projection; a set bit 31 drops the quad
+    s32     screenCorners[4]; // projected corners: screen X in bits 0..15, Y in bits 16..31, copied whole into the primitive
+    s32     depthCue;         // depth-cueing interpolation value of the projection; never read
+    s32     flag;             // GTE FLAG word of the projection; a set bit 31 drops the quad
     s32     depth;            // last corner's screen Z / 4, which picks the ordering-table entry
     s16     halfSpanX;        // half the X offset from the second part to the first
     s16     halfSpanZ;        // half the Z offset from the second part to the first

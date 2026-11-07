@@ -17,7 +17,7 @@ scope describe those builds rather than superseding this summary.
 | --- | --- | --- |
 | Options and loader | Persistent aspect/pack controls, native fallback, foreground presentation and immutable local installation are implemented. | Production pack and distribution/download/update workflow. |
 | Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Finish excluded-row/source diagnostics and runtime checks of special screens; MIST R21 is an empty debug room without static views. |
-| Broad runtime survey | Complete software survey before the two-room glow endpoint fix: 2708 exact matches, 606 without settled captures; no pixel differences or crashes. All 5416 ordered GPU audits validate. The endpoint fix additionally passes all 38 two-room variants on macOS software and Metal. | Repeat the broad survey after the endpoint fix. A supplemental menu route verifies gallery view 14; resolve the other 605 no-target locations and complete natural traversal, transient/scripted/special screens and supported GPU backends. This is forced static coverage, not an all-game pass. |
+| Broad runtime survey | Complete software survey before the two-room glow endpoint fix: 2708 exact matches, 606 without settled captures; no pixel differences or crashes. All 5416 ordered GPU audits validate. The endpoint fix additionally passes all 38 two-room variants on macOS software and Metal. A subsequent GTE shadow-output fix passes all 40 previously differing locations on macOS software and Metal. | Repeat the broad survey after both endpoint and shadow-output corrections. A supplemental menu route verifies gallery view 14; resolve the other 605 no-target locations and complete natural traversal, transient/scripted/special screens and supported GPU backends. This is forced static coverage, not an all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
 | Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests on both hosts, 69 Python HD tests on macOS, and 16 Windows PE tests plus software gameplay under Wine pass. Linux x86-64 under amd64 emulation passes 53 host tests and 38 two-room software/Vulkan controls. | Native Windows/D3D12, native Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
@@ -2187,6 +2187,58 @@ source mount prevented disc access; its failed reports are retained and excluded
 from these successes. Vulkan pilot and corrected full runs use separate outputs.
 This is emulated two-room rendering coverage, not a physical Linux PC or GPU,
 a full traversal, pack-artwork approval, or a finished broad current-build survey.
+
+### Fixed-width GTE outputs in shadow workspaces
+
+The next comparison isolated a signed-output ABI error. PsyZ's `RotTransPers4`
+writes `int` screen words, depth-cue output and FLAG. Four shadow/stain scratch
+structures and two local limb-shadow drawers supplied host `long` storage.
+On macOS/Linux LP64, a four-byte FLAG write leaves the upper four bytes stale;
+bit 31 no longer reliably makes the host value negative. Failed projections can
+therefore be queued as shadow packets. Windows LLP64 already uses four-byte
+`long`, explaining the platform difference without a different simulation.
+
+Those outputs now use signed `s32` in `ActorLimbShadowScratch`, the Zebra Stalker
+floor-shadow block, the Mad Chaser block, the actor-00400 ground-stain block,
+and the actor-400500/403100 local shadow drawers. PsyZ is unchanged. The regression
+in `gte_compat_test` calls the real SDK projection into the actual shared shadow
+workspace, prefilled with nonzero bytes, for a quad in front of and behind the
+camera. It checks complete screen words, signed rejection and the untouched
+adjacent depth field. The old LP64 layout fails six checks; the correction passes.
+The updated test also passes as a Windows PE executable under Wine. All 53 macOS
+host tests pass with the corrected shared layout and this regression.
+
+The final macOS binary is SHA-256
+`82d42eba8ded6e1fe97cdd47b36a5210ae57f1c69d5a366d0177b93af4e849f1`.
+All 40 locations from the original cross-platform difference snapshot pass
+software and Metal off/on controls: exact within-backend RGB/full VRAM,
+normalized GP0, complete model/player state and clocks/RNGs. All 80 corrected
+software captures also match the existing corresponding Windows RGB, full VRAM
+and normalized commands, including the previously mask-bit-only differences.
+For the two previously corrected glow rooms, that comparison uses the attributed
+glow-fixed Windows fixture; other locations use the preserved original Windows
+survey. It is not a replacement for a new Windows run. Metal matches all software
+state/commands, but only 78/80 RGB and 38/80 full-VRAM captures match software;
+no cross-renderer pixel identity is claimed.
+
+The new Windows binary is SHA-256
+`48eff70cc1589f0c9ac147259febf1b4772d74a160c5d3faf79ee1b142300380`.
+Its initial Wine/Rosetta run passes 37/40 pairs; three processes exit 133 with
+`invalid gdt selector index 5`. A separate three-case serial retry passes all
+three. The union of these attributed successful pairs covers all 40 locations;
+all 80 software runs exactly match patched macOS RGB/full VRAM, normalized GP0,
+complete model/player state and clocks/RNGs. Initial errors remain in the
+original report, and their emulation root cause is not established. These are
+headless Windows PE software controls, not native Windows/D3D12 validation.
+
+Private evidence is `build-hd-study/shadow-gte-abi-v1/`: failing/passing test logs,
+scoped catalog, immutable staged binaries, `macos-v2-to-prior-windows.json` and
+`assessment-v2.json`. Earlier partial v1 captures are retained separately: their
+remaining underpass discrepancy led to the actor-400500 local-output correction.
+The running broad `full-survey-current-v5` uses its immutable pre-shadow-fix
+binary; it cannot establish current-code whole-game coverage. Other GTE output
+call sites using host `long` still require audit; these scoped shadow/stain
+corrections do not establish complete supported-platform behavior.
 
 ## Remaining required work
 

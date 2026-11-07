@@ -1579,12 +1579,12 @@ static void _actor403100DrawArmShadow(Task* task, s16 startPartIndex, s16 endPar
     SVECTOR   corner1;
     SVECTOR   corner2;
     SVECTOR   corner3;
-    long      screen0;
-    long      screen1;
-    long      screen2;
-    long      screen3;
-    long      perspectiveScale;
-    long      projectionFlags;
+    s32       screen0;
+    s32       screen1;
+    s32       screen2;
+    s32       screen3;
+    s32       perspectiveScale;
+    s32       projectionFlags;
     s16       lastCornerZ;
     s16       segmentYaw;
     GfxCoord* endCoord;

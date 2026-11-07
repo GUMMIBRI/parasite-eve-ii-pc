@@ -951,12 +951,12 @@ static void _actor400500DrawLimbShadow(Task* task, s16 firstJoint, s16 secondJoi
     SVECTOR   corner1;
     SVECTOR   corner2;
     SVECTOR   corner3;
-    long      screen0;
-    long      screen1;
-    long      screen2;
-    long      screen3;
-    long      depthCue;
-    long      projectionFlags;
+    s32       screen0;
+    s32       screen1;
+    s32       screen2;
+    s32       screen3;
+    s32       depthCue;
+    s32       projectionFlags;
     s16       segmentYaw;
     GfxCoord* secondCoord;
     GfxCoord* firstCoord;
