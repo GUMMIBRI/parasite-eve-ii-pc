@@ -113,6 +113,16 @@ re-presenting that background misaligns it with the game geometry. The initial
 GPU comparison reproduced this; it must not be reintroduced by the loader.
 Actual framebuffer rows are 0 and 272, not 0 and 256.
 
+Transient completed-buffer checkpoints use `PE2_CAPTURE_FRAME_COUNT=N` with
+`PE2_CAPTURE_OUTPUT=/ignored/local/directory`. Add
+`PE2_CAPTURE_TARGET=stage,area,view,room:key` to require the exact room/view and
+native background key as well as the frame count. Invalid target syntax disables
+the checkpoint. Frame counters can restart after returning to title; a frame
+number alone does not identify a gameplay moment. A nonmatching target leaves
+no checkpoint report. This optional guard does not change the separate settled
+survey's field-ready and 30-frame requirements. Checkpoints retain their own
+`pe2-frame-checkpoint-v1` format.
+
 `PE2_DUMP_FRAME=<pad-tick>:<file.ppm>` captures the actual GPU presenter,
 including widescreen framing, without using desktop screenshots. It complements
 `PE2_DUMP_VRAM`, which captures native VRAM.
@@ -1406,6 +1416,25 @@ No story flags, player position or camera state were injected. Local evidence:
 `incinerator-start-timeline`, `incinerator-neutral-arrivals`,
 `incinerator-reachability-assessment.json` and the rejected
 `incinerator-intro-checkpoints` experiment.
+
+#### Context-gated transient checkpoints
+
+`PE2_CAPTURE_TARGET` now optionally constrains a transient checkpoint by the
+same stage/area/view/room and native key grammar as a settled survey. A malformed
+constraint disables the checkpoint. The shared parser/matcher is tested against
+wrong locations, wrong keys, title context, invalid syntax and range boundaries.
+The capture diagnostic now prints the actual captured context/key in both modes.
+
+Owned-disc controls pass on macOS and Linux ARM64: the matching gallery target
+captures view 11; the wrong source key and invalid target capture nothing. The
+incinerator frame-900 probe no longer exits on the unrelated title image when
+constrained to its room. A macOS unguarded control still reproduces that title
+capture, confirming why a frame number alone is insufficient. Local evidence:
+`capture-target-runtime` and `linux-capture-target-runtime`. These are guard
+controls and add no incinerator coverage. Five existing settled balcony probes
+still pass (`capture-target-settled-regression`). All 53 C tests pass on both
+hosts and all 41 Python HD tests pass on macOS. No player/story/camera state is
+changed by this diagnostic filter.
 
 ## Verification checkpoint
 

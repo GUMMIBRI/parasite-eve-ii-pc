@@ -1,4 +1,5 @@
 #include "port/backgrounds.h"
+#include "background_capture_target.h"
 #include "port/background_pack.h"
 #include "port/gpu_state.h"
 #include "port/foreground_stage.h"
@@ -384,9 +385,9 @@ void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsign
                           const PeBackgroundSimulationState* simulation)
 {
     static int initialized,enabled,matchingFrames,settleFrames=30;
-    static unsigned stage,area,view,room;
+    static PeBackgroundCaptureTarget surveyTarget,checkpointTarget;
+    static int checkpointTargetPresent;
     static unsigned checkpointFrame;
-    static uint64_t expected;
     static char root[4096];
     if(!initialized) {
         const char* target=getenv("PE2_SURVEY_TARGET");
@@ -394,12 +395,10 @@ void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsign
         const char* settle=getenv("PE2_SURVEY_SETTLE_FRAMES");
         const char* checkpoint=getenv("PE2_CAPTURE_FRAME_COUNT");
         const char* checkpointOutput=getenv("PE2_CAPTURE_OUTPUT");
+        const char* captureTarget=getenv("PE2_CAPTURE_TARGET");
         if(settle) {char* end;long value=strtol(settle,&end,10);if(*settle && !*end && value>=30 && value<=36000)settleFrames=(int)value;}
-        int used=0;
         if(target && output && strlen(output)<sizeof root &&
-           sscanf(target,"%u,%u,%u,%u:%16" SCNx64 "%n",&stage,&area,&view,&room,&expected,&used)==5 &&
-           !target[used] && stage>=1 && stage<=5 && area>=1 && area<=255 &&
-           view>=1 && view<=50 && room>=1 && room<=255 && expected) {
+           peBackgroundParseCaptureTarget(target,&surveyTarget)) {
             strcpy(root,output);enabled=1;
         }
         /* A transient checkpoint is deliberately a different evidence format.
@@ -407,7 +406,12 @@ void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsign
         if(!target && checkpoint && checkpointOutput && *checkpointOutput && strlen(checkpointOutput)<sizeof root) {
             char* end;unsigned long long value=strtoull(checkpoint,&end,10);
             if(*checkpoint && strlen(checkpoint)<=10 && strspn(checkpoint,"0123456789")==strlen(checkpoint) && !*end && value>0 && value<=UINT32_MAX) {
-                checkpointFrame=(unsigned)value;strcpy(root,checkpointOutput);enabled=2;
+                if(captureTarget && !peBackgroundParseCaptureTarget(captureTarget,&checkpointTarget)) {
+                    fprintf(stderr,"[capture] invalid PE2_CAPTURE_TARGET; checkpoint disabled\n");
+                } else {
+                    checkpointTargetPresent=captureTarget!=NULL;
+                    checkpointFrame=(unsigned)value;strcpy(root,checkpointOutput);enabled=2;
+                }
             }
         }
         initialized=1;
@@ -416,12 +420,12 @@ void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsign
     PeBackgroundFrameInfo info={0};
     if(enabled==2) {
         if(!simulation || simulation->frame_count!=checkpointFrame ||
-           !peBackgroundGetFrameInfo(buffer_y,&info))return;
+           !peBackgroundGetFrameInfo(buffer_y,&info) ||
+           (checkpointTargetPresent && !peBackgroundCaptureMatchesTarget(&checkpointTarget,&info)))return;
         matchingFrames=0;
     } else {
-        if(!field_frame || !simulation || !peBackgroundGetFrameInfo(buffer_y,&info) || info.key!=expected ||
-           info.location[0]!=(int)stage || info.location[1]!=(int)area ||
-           info.location[2]!=(int)view || info.location[3]!=(int)room) {matchingFrames=0;return;}
+        if(!field_frame || !simulation || !peBackgroundGetFrameInfo(buffer_y,&info) ||
+           !peBackgroundCaptureMatchesTarget(&surveyTarget,&info)) {matchingFrames=0;return;}
         if(++matchingFrames<settleFrames)return;
     }
     DrawSync(0);
@@ -469,6 +473,6 @@ void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsign
     fputs("]}\n",file);
     failed=ferror(file);if(fclose(file))failed=1;
     if(failed) {remove(path);exit(2);}
-    fprintf(stderr,"[survey] captured %u/%u/%u room %u key %016" PRIx64 "\n",stage,area,view,room,expected);
+    fprintf(stderr,"[survey] captured %d/%d/%d room %d key %016" PRIx64 "\n",info.location[0],info.location[1],info.location[2],info.location[3],info.key);
     exit(0);
 }
