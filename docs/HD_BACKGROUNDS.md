@@ -1017,6 +1017,25 @@ crossfade frames and installed-art behavior remain required work; no fallback
 or renderer change was made on speculation. The old survey's crash record is
 retained and remains separate from this successful endpoint observation.
 
+#### Located MIST captured-backdrop event
+
+Read-only LLDB breakpoints on the same input replay locate
+`_mistR18CaptureBackdropState` at `frameCount=1290`, `animFrame=786`, in view 2.
+The original OT submitted at count 1290 contains no copy yet. The next observed
+submission is count 1292: its native packets contain GP0(80h) copies from
+(192,272), size 128x240, to (640,256), and from (0,272), size 192x240, to (832,0).
+Together they capture the entire lower 320x240 framebuffer. The queued copies
+match the source-level captured-backdrop layout. An exact count-1291 breakpoint
+was never reached; its EOF/unavailable-argument attempt is retained as invalid
+evidence rather than mistaken for a successful export.
+
+`mist-crossfade-event-assessment.json` retains callback/OT observations and
+binary, replay, script and packet-export hashes. The debugger only reads globals
+and packet memory, without target function calls or game-state injection.
+This identifies a reproducible concrete transition event for further work; it
+does not prove rendered crossfade pixels, both-buffer parity, or correct HD
+coverage. No renderer behavior or settled-capture validation gate was changed.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
