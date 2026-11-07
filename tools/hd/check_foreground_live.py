@@ -59,6 +59,9 @@ def main():
     for name,wide,settle in [('classic',0,30),('wide30',1,30),('wide31',1,31)]:
         base=run(name+'-base',args.base_pack,wide,settle)
         combined=run(name+'-combined',args.combined_pack,wide,settle)
+        clock_fields=['draw_frame','game_tick','vsync_count']
+        assert all(isinstance(pair[0].get(k),int) for pair in [base,combined] for k in clock_fields),(name,'missing simulation clock evidence')
+        assert [base[0][k] for k in clock_fields]==[combined[0][k] for k in clock_fields],(name,'different simulation moments')
         assert base[1]==combined[1],(name,'foreground changed native VRAM')
         assert base[0]['buffer_y']==combined[0]['buffer_y'],(name,'different physical buffers')
         changed=base[2]!=combined[2]

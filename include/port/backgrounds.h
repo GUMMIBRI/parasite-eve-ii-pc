@@ -6,7 +6,7 @@ typedef struct { uint64_t key; int location[6]; } PeBackgroundFrameInfo;
 /* Metadata for a diagnostic capture of one physical display buffer. */
 void peBackgroundBeginFrame(int buffer_y);
 int peBackgroundGetFrameInfo(int buffer_y,PeBackgroundFrameInfo* info);
-void peBackgroundEndFrame(int buffer_y,int field_frame);
+void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsigned vsync_count);
 /* Submit original OTs, or registered foreground material when a pack matches.
  * Optional PE2_DUMP_GPU_STATE=1 records ordered native state before replacement. */
 void peBackgroundSubmitOt(const void* head);

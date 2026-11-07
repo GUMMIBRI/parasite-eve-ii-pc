@@ -57,7 +57,7 @@ static GpuSpriteAudit* gpuAuditSprites;
 static PeGpuState gpuAuditState;
 static int gpuAuditEnabled=-1,gpuAuditStarted,gpuAuditComplete,gpuAuditY;
 static unsigned gpuAuditCount;
-static unsigned foregroundDrawn;
+static unsigned foregroundDrawn,drawFrameIndex;
 static void observeGpuSprite(const void* packet,unsigned offset,const uint32_t* words,unsigned count,const PeGpuState* state,void* context)
 {
     (void)packet;(void)offset;(void)count;(void)context;
@@ -134,6 +134,7 @@ static int frameSlot(int y)
 }
 void peBackgroundBeginFrame(int y)
 {
+    drawFrameIndex++;
     int slot=frameSlot(y);memset(&frameInfo[slot].info,0,sizeof frameInfo[slot].info);
     if(gpuAuditEnabled<0) {
         const char* enabled=getenv("PE2_DUMP_GPU_STATE");gpuAuditEnabled=enabled && !strcmp(enabled,"1");
@@ -356,7 +357,7 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
 }
 
 /* Opt-in static-camera survey. Ordinary gameplay never enters this path. */
-void peBackgroundEndFrame(int buffer_y,int field_frame)
+void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsigned vsync_count)
 {
     static int initialized,enabled,matchingFrames,settleFrames=30;
     static unsigned stage,area,view,room;
@@ -408,8 +409,8 @@ void peBackgroundEndFrame(int buffer_y,int field_frame)
     free(rgb);free(vram);if(failed)exit(2);
     if(gpuAuditEnabled==1 && !writeGpuAudit(root,buffer_y,&info))exit(2);
     snprintf(path,sizeof path,"%s/report.json",root);file=fopen(path,"w");if(!file)exit(2);
-    fprintf(file,"{\"format\":\"pe2-static-view-survey-v3\",\"matched_frames\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"width\":%d,\"height\":%d,\"buffer_y\":%d,\"foreground_replacements\":%u}\n",
-            matchingFrames,info.key,info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5],w,h,buffer_y,foregroundDrawn);
+    fprintf(file,"{\"format\":\"pe2-static-view-survey-v3\",\"matched_frames\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"width\":%d,\"height\":%d,\"buffer_y\":%d,\"foreground_replacements\":%u,\"draw_frame\":%u,\"game_tick\":%u,\"vsync_count\":%u}\n",
+            matchingFrames,info.key,info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5],w,h,buffer_y,foregroundDrawn,drawFrameIndex,game_tick,vsync_count);
     failed=ferror(file);if(fclose(file))failed=1;
     if(failed) {remove(path);exit(2);}
     fprintf(stderr,"[survey] captured %u/%u/%u room %u key %016" PRIx64 "\n",stage,area,view,room,expected);

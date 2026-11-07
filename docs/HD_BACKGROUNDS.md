@@ -320,6 +320,36 @@ retain their original primitive. Base/model registration, player occlusion,
 reflections, moving layers and other GPU backends require further validation.
 The source image remains an unapproved candidate.
 
+A wider synthetic fixture check is available:
+
+```sh
+venv/bin/python tools/hd/check_foreground_rooms.py \
+  --disc /path/to/disc1.cue --disc2 /path/to/disc2.cue \
+  --survey build-hd-study/state-clips/report.json
+```
+
+It derives bounded foreground atlases from the survey's verified native texture
+snapshots, supplies synthetic solid-colour base/foreground materials, and runs
+the same full-VRAM, visible-change, malformed-pack and both-buffer checks for
+each source-bearing camera. `--location` selects repeatable six-component
+locations; `--limit` bounds a run. All fixtures remain local disc-derived data.
+Errors are recorded individually and make the final check fail.
+
+The initial five-stage selection passes four cameras: helicopter landing pad
+`1,16,7,1,1,1` (29 sources), motel room `2,12,5,1,1,1` (83), night balcony
+`3,29,2,1,1,1` (185), and sleeping quarters `4,14,6,1,1,1` (112).
+**Airlock `5,5,5,1,2,1` remains a reproducible native-VRAM failure in 16:9.**
+Classic mode passes, and identical base-only wide controls pass, but enabling
+36 foreground replacements changes native VRAM in both framebuffers and the
+scratch area. Repeated captures have the same draw index (620), game tick (789)
+and VSync count (971); a different reported simulation moment does not explain
+this failure. Its rendering/feedback cause is still under investigation. Do not
+interpret the passing gallery test as general native-VRAM preservation.
+Evidence is in `build-hd-study/foreground-five-stages` and
+`build-hd-study/foreground-airlock-game-clock`. New diagnostic captures include
+`draw_frame`, `game_tick` and `vsync_count`; the live checker requires equal
+clock evidence for base/foreground comparisons.
+
 New settled captures use `pe2-static-view-survey-v3`. PE2 normally displays the
 opposite buffer while drawing; immediately before this diagnostic exits, it
 presents the completed draw buffer explicitly. Its reported `buffer_y`, native
