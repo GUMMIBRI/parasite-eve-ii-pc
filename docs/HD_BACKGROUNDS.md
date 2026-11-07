@@ -485,6 +485,40 @@ reports no sanitizer error through its captured cases, but still stops at
 wide buffer 272 because original streams differ (674/675 commands). The
 collision fix is verified separately; it is not claimed to resolve input
 nondeterminism. No all-game sanitizer claim is made.
+
+`tools/hd/check_repeatability.py` reproduces these comparisons without requiring
+an HD pack. It uses new output directories, isolated profiles/cards, fixed pad
+replay, virtual raster timing and completed-buffer captures. Optional base and
+combined packs are interleaved with explicit `--no-hd-backgrounds` controls.
+The report separates exact repetition within each variant (including RGB) from
+native/input equality across variants (HD RGB intentionally differs). It records
+all attempts and exits successfully when collection completes, even if
+`repeatable_within_variants` is false; callers must inspect the report rather
+than treating collection exit status as a passing renderer test.
+
+```sh
+venv/bin/python tools/hd/check_repeatability.py \
+  --disc /local/disc1.cue --disc2 /local/disc2.cue \
+  --location 4,15,7,1,1,1 --key 777972122756a6f0 --runs 6 \
+  --output build-hd-study/new-native-repeat-controls
+```
+
+Six original-only development captures matched exactly. A separate nine-run
+interleaved diagnostic found a 674/675-command difference in both one original
+(no configured pack) and one combined capture, with unchanged observed clocks
+and shared LCG state. A subsequent nine-run collection using the checked-in
+tool (`native-corridor-repeatability-tool`) matched all native/input comparisons
+and all repetitions within variants. This is intermittent evidence, not a
+resolution or proof that a pack causes the input difference. Original failed
+artifacts are retained alongside passing collections.
+The longer explicit `--no-hd-backgrounds` collection
+(`native-corridor-repeatability-no-hd/report.json`) completed 16 launches.
+Runs 2 and 5 have 674 original commands versus 675 in the first capture,
+first difference 430, and different native VRAM. Both have zero foreground
+replacements and equal recorded simulation state and clocks. This directly
+reproduces the same input-divergence symptom without any HD material/staging.
+It establishes a native-path repeatability issue, not its root cause, and does
+not independently prove every HD path correct.
 Neither a partial run nor these synthetic fixtures establish all-game,
 traversal, artwork or all-platform completion.
 
