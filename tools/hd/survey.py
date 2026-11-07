@@ -49,6 +49,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--catalog',type=Path,default=Path('build-hd-study/view-catalog.json'))
     parser.add_argument('--binary',type=Path,default=Path('build-port/parasite-eve-ii-pc'))
+    parser.add_argument('--runner',type=Path,help='Optional executable launcher receiving the binary path and arguments')
     parser.add_argument('--disc',type=Path,required=True)
     parser.add_argument('--disc2',type=Path,required=True)
     parser.add_argument('--output',type=Path,default=Path('build-hd-study/survey'))
@@ -60,7 +61,8 @@ def main():
     parser.add_argument('--backend',choices=['software','gpu'],default='software')
     args=parser.parse_args()
     if args.limit<0 or args.jobs<1:parser.error('Invalid limit/jobs')
-    catalog=json.loads(args.catalog.read_text())
+    catalog_bytes=args.catalog.read_bytes()
+    catalog=json.loads(catalog_bytes)
     eligible=[r for r in catalog['records'] if r['eligible_for_start_test']]
     selected=[r for r in eligible if not args.room or r['room']==args.room]
     if args.limit:selected=selected[:args.limit]
@@ -68,7 +70,12 @@ def main():
     root=args.output.resolve();root.mkdir(parents=True,exist_ok=True)
     (root/'report.json').unlink(missing_ok=True)
     replay=root/'startup.pad';startup_replay(replay)
-    binary_hash=hashlib.sha256(args.binary.read_bytes()).hexdigest()
+    input_paths=dict(binary=args.binary,catalog=args.catalog,replay=replay)
+    if args.runner:input_paths['runner']=args.runner
+    input_hashes={name:hashlib.sha256(path.read_bytes()).hexdigest() for name,path in input_paths.items()}
+    if input_hashes['catalog']!=hashlib.sha256(catalog_bytes).hexdigest():
+        raise SystemExit('Catalog changed while selecting survey cases')
+    binary_hash=input_hashes['binary']
     def run_case(target):
         case='-'.join(map(str,target['location']))
         directory=root/case;directory.mkdir(exist_ok=True)
@@ -84,6 +91,7 @@ def main():
                     PE2_SURVEY_TARGET=','.join(map(str,target['location'][:4]))+':'+target['keys'][0],PE2_SURVEY_OUTPUT=str(capture))
                 if args.gpu_state:env['PE2_DUMP_GPU_STATE']='1'
                 command=[str(args.binary.resolve()),'--disc',str(args.disc.resolve()),'--disc2',str(args.disc2.resolve()),'--widescreen',str(wide)]
+                if args.runner:command.insert(0,str(args.runner.resolve()))
                 with (capture/'run.log').open('w') as log:
                     process=subprocess.run(command,env=env,stdout=log,stderr=subprocess.STDOUT,timeout=args.timeout)
                 logPath=capture/'run.log';logData=logPath.read_bytes()
@@ -113,8 +121,11 @@ def main():
             try:passed.append(future.result())
             except Exception as error:errors.append(dict(location=target['location'],room=target['room'],error=str(error)))
             print(f'{len(passed)} matched parity, {len(errors)} unverified / {len(selected)}',flush=True)
-    if hashlib.sha256(args.binary.read_bytes()).hexdigest()!=binary_hash:raise SystemExit('Binary changed during survey; results cannot be attributed to one build')
+    for name,path in input_paths.items():
+        if hashlib.sha256(path.read_bytes()).hexdigest()!=input_hashes[name]:
+            raise SystemExit(f'{name.capitalize()} changed during survey; results cannot be attributed to fixed inputs')
     report=dict(format='pe2-static-view-parity-survey-v1',binary_sha256=binary_hash,
+                catalog_sha256=input_hashes['catalog'],replay_sha256=input_hashes['replay'],runner_sha256=input_hashes.get('runner'),
                 scope=dict(eligible_total=len(eligible),selected=len(selected),requested_room=args.room,limit=args.limit,gpu_state=args.gpu_state,backend=args.backend,
                            note='Forced static cameras; excludes unresolved source entries; not physical traversal or all-game correctness.'),
                 selected_complete=True,parity_verified=len(passed),unverified=len(errors),

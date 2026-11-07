@@ -120,6 +120,16 @@ including widescreen framing, without using desktop screenshots. It complements
 renderers from an existing replay, and optionally compares a pre-change baseline. Use `PSYZ_HEADLESS=gpu` for hidden
 Metal/Vulkan/D3D output, or `PSYZ_HEADLESS=1` for the software renderer.
 
+`tools/hd/survey.py --runner /path/to/launcher --binary /shared/game` can run
+static-view comparisons in a container or on another compatible host. The
+launcher receives the absolute game-binary path followed by the normal game
+arguments; it must forward the PE2/PSYZ/SDL environment and make input/output
+paths available in that runtime. The host still validates captured files.
+The report hashes the actual binary, launcher, selected catalog and replay.
+If any of those files changes during the survey, no complete report is saved.
+Omit `--runner` for direct execution. These probes establish individual settled
+static-view comparisons, not natural traversal or artwork approval.
+
 ## Pack and presenter
 
 `PE2_DUMP_BACKGROUNDS=/ignored/local/directory` records exact 153600-byte
@@ -1350,6 +1360,27 @@ and the nine Vulkan/lavapipe foreground controls
 (`linux-historical-crash-coordinate-width`,
 `linux-coordinate-width-foreground-view11`). This does not establish physical
 GPU performance, Windows runtime behavior, or natural story traversal.
+
+#### Launcher-backed survey attribution and Linux balcony verification
+
+The static-view survey now accepts `--runner` with the same binary-first
+argument convention as the foreground checker. Reports retain separate SHA256
+identities for the actual binary and launcher, plus the selected catalog and
+replay. Any change to these four files prevents a complete report. The
+end-to-end fixture checks argument forwarding with paths containing spaces,
+fixed-input identities, and rejection of each input mutation. The executable
+fixture uses a POSIX shebang and is skipped on non-POSIX hosts. All 41 Python
+HD tests pass on macOS; the existing settled-capture validation remains intact.
+
+The rebuilt Linux ARM64 balcony fix passes all 52 C tests. Using the new
+launcher path, all 117 eligible balcony room/view variants have exact off/on
+VRAM and rendered-image equality in both software and Vulkan/lavapipe runs,
+with complete GPU-state captures (`linux-balcony-explicit-pairs-all-views`,
+`linux-balcony-explicit-pairs-vulkan-all-views`). Both reports identify the same
+Linux binary. The five original failures also pass a direct macOS software
+run through the updated survey (`macos-survey-input-hashes`). These results
+cover this room's forced static starts; natural traversal, physical GPU
+performance and other rooms/backends retain their separate validation scope.
 
 ## Verification checkpoint
 
