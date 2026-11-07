@@ -1478,6 +1478,36 @@ created. The source-guided v2 technical fixture and its runtime evidence remain
 unchanged. The local assessment retains all three outputs, prompts, dimensions,
 rejection reasons and hashes. No final view-13 artwork is approved.
 
+#### Installed four-view gallery transition fixture
+
+A private `gallery-four-view-study--1` installation combines view 10 v8,
+view 11 v3, view 12 v2 and view 13 source-guided v2. All 16 renderer payloads
+pass the installer manifest/structure/hash checks; only renderer files are
+assembled. The artwork remains unapproved, especially the documented geometry
+and sharpness issues in views 11–13. This is not a production artwork release.
+
+The installed combined pack passes all nine Metal controls at each reached
+endpoint 11, 12 and 13, using the four-view base pack for the paired comparisons
+(27 controls total; `gallery-four-view-study-route-{11,12,13}`). These checks
+cover active foreground material on both buffers, native VRAM within compared
+modes, normalized original-command/simulation checks and malformed-pack fallback.
+
+A return route holds Down+Circle from tick 4200 to 6500, then releases. Read-only
+EOF inspection places the player at [-6995,128,4611] in uncovered view 8.
+A context-gated completed-buffer checkpoint at frameCount 8000 compares four
+configurations: original, widescreen with no pack, installed pack in classic,
+and installed pack in widescreen. All four have identical full native VRAM,
+rendered RGB and captured simulation counters; the output is 1280x960, with no
+foreground replacements. The player is visibly present. Model/player hashes
+are incomplete at this checkpoint, so it does not prove full actor-state parity.
+
+The installed-pack log confirms loading backgrounds 10, 11, 12, 13 and returning
+through 11 and 10 before the uncovered view. Evidence is local under
+`gallery-four-view-return-fallback`, `gallery-four-view-return-search` and
+`gallery-four-view-study-assessment.json`. This verifies sampled transitions
+and one missing-art return on Metal, not all-game traversal, other GPU backends
+or final artistic/occlusion approval. No artwork or native payload is committed.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
