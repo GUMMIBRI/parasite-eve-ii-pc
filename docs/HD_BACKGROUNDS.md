@@ -16,10 +16,10 @@ scope describe those builds rather than superseding this summary.
 | Area | Current evidence | Work still required |
 | --- | --- | --- |
 | Options and loader | Persistent aspect/pack controls, native fallback, foreground presentation and immutable local installation are implemented. | Production pack and distribution/download/update workflow. |
-| Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Resolve/classify excluded rows and remaining diagnostics, including the room with no view rows. |
+| Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Finish excluded-row/source diagnostics and runtime checks of special screens; MIST R21 is an empty debug room without static views. |
 | Broad runtime survey | One complete earlier-build software survey: 2703 exact matches, 606 without settled captures, five balcony differences subsequently fixed in room-specific tests; no crashes. | Current-build full coverage and natural traversal, including transient/scripted/special screens. Do not combine different binary reports into one all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
-| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 57 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
+| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 58 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
 All source captures, generated artwork and native-reference pack payloads remain
 local. Passing renderer controls do not approve artwork or grant distribution
@@ -1679,6 +1679,33 @@ artwork, layout metadata or a public bundle. Automatic reference acquisition
 from owner discs/live gameplay and the full production distribution workflow
 remain required. Caches and hydrated packs stay private.
 
+#### Source classification independent of static background availability
+
+The logical catalog now adds known room renderers directly, even when the
+native inventory has no matching image or predates that room classification.
+The regenerated catalog retains all 3346 rows, 3314 start candidates and 19
+source diagnostics; no eligibility or runtime-verification result changes.
+It adds missing special labels to eight Akropolis plaza rows, ten MIST R18
+rows, 72 sterilization-room rows and pod-access-tunnel view 11
+(`special-source-classification-assessment.json`). All 58 Python HD tests pass
+on macOS, including absent-background classification without granting coverage.
+
+Akropolis plaza has no static view files for its eight logical views. Its room
+sequence in `src/stages/akropolis/rooms/plaza/plaza.c` prepares movie playback,
+seeks forward/reverse traversal streams and applies animated camera samples.
+These rows require streamed-scene validation rather than invented static
+background replacements. This source classification does not prove correct
+movie presentation or natural traversal.
+
+MIST R21 has no static view rows because the Akropolis view-map, count, camera
+and sprite directories each contain only 20 area entries
+(`include/generated/assets/rooms/akropolis/tables.inc`), while its area is 21.
+Its room task only installs messages, idles and implements an L3+Cross debug
+reload to the plaza; the port's room loader explicitly skips scene-resource
+setup. Thus it is not a missing static artwork target. Its four raw exporter
+diagnostics remain visible as source facts; no passing runtime capture is
+inferred. Other camera/source-boundary diagnostics remain unresolved.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
@@ -1718,8 +1745,9 @@ This historical snapshot predates the current verification summary above.
    documented geometry/sharpness issues; it is not the finished production pack.
    Preserve camera registration, masks, effects, dynamic layers and lettering.
 2. Finish logical-view/source classification, including the 32 excluded rows,
-   remaining source diagnostics and MIST R21's missing view rows. Distinguish
-   unused/special assets from views that need authored routes or scene playback.
+   remaining source diagnostics. MIST R21 is classified as an empty debug room
+   with no static views; plaza uses streamed scenes. Finish distinguishing
+   other unused/special assets from views needing authored routes or playback.
 3. Complete current-build runtime coverage across both discs: natural movement,
    view and room transitions, menus/dialogue, title, captured-room screens,
    special panorama/scroll renderers and RGB24 movies. The 606 no-target cases

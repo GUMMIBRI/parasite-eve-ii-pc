@@ -1,7 +1,9 @@
 """Logical/native catalog joins using only synthetic source metadata."""
 import importlib.util
 from pathlib import Path
+import sys
 import unittest
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools/hd'))
 spec=importlib.util.spec_from_file_location('hd_view_catalog',Path(__file__).resolve().parents[1]/'tools/hd/view_catalog.py')
 module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
 
@@ -25,5 +27,16 @@ class CatalogTest(unittest.TestCase):
         result=module.catalog([scene],{'records':[]})
         self.assertEqual(result['summary']['rooms_without_view_rows'],['room'])
         self.assertEqual(result['summary']['unresolved_diagnostics'],1)
+
+    def test_special_renderer_is_reported_without_native_background(self):
+        for room in ['akropolis_plaza', 'shelter_b1_pod_access_tunnel']:
+            with self.subTest(room=room):
+                scene=self.scene();scene['room']=room
+                scene['views'][0]['views'][0]['fileExists']=False
+                result=module.catalog([scene],{'records':[]});row=result['records'][0]
+                self.assertEqual(row['special_renderers'],[module.SPECIAL[room]])
+                self.assertIn('no native background',row['review'])
+                self.assertFalse(row['eligible_for_start_test'])
+                self.assertFalse(row['runtime_verified'])
 
 if __name__=='__main__':unittest.main()

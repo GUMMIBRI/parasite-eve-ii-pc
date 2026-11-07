@@ -8,6 +8,7 @@ import argparse
 from collections import Counter,defaultdict
 import json
 from pathlib import Path
+from inventory import SPECIAL
 
 
 def catalog(scenes,native):
@@ -42,7 +43,8 @@ def catalog(scenes,native):
                 row=dict(room=scene['room'],stage=scene['stage'],area=scene['area'],room_state=group['roomIndex'],
                          view=view['view'],mapped_file=view['file'],keys=keys,variant=variant,warp=warp,
                          warp_matches_view=bool(matching),runtime_verified=False,review=reasons,
-                         special_renderers=sorted({r['review'] for r in candidates if r['review']!='unverified static candidate'}),
+                         special_renderers=sorted({r['review'] for r in candidates if r['review']!='unverified static candidate'} |
+                                                  ({SPECIAL[scene['room']]} if scene['room'] in SPECIAL else set())),
                          eligible_for_start_test=not reasons)
                 row['location']=[row[k] for k in ['stage','area','view','room_state','warp','variant']]
                 records.append(row)

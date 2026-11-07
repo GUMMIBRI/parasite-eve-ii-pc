@@ -18,6 +18,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 # These authored renderers need live checks before accepting static replacements.
 SPECIAL = {
+    'akropolis_plaza': 'streamed movie backdrop with animated cameras',
     'akropolis_square': 'scrolling panorama',
     'shelter_r47': 'scrolling backdrop',
     'shelter_b1_pod_access_tunnel': 'scripted scrolling image',
