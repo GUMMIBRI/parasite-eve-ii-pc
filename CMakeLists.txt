@@ -423,6 +423,17 @@ target_include_directories(foreground_stage_test PRIVATE include)
 target_compile_definitions(foreground_stage_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(foreground_stage_test PRIVATE psyz)
 
+add_executable(scene_timing_buffer_test EXCLUDE_FROM_ALL tests/scene_timing_buffer_test.c src/main/cdcmd.c)
+target_include_directories(scene_timing_buffer_test PRIVATE include include/decomp src/main)
+target_compile_definitions(scene_timing_buffer_test PRIVATE __psyz SKIP_ASM)
+target_compile_options(scene_timing_buffer_test PRIVATE -ffunction-sections -fdata-sections)
+target_link_libraries(scene_timing_buffer_test PRIVATE psyz)
+if(APPLE)
+    target_link_options(scene_timing_buffer_test PRIVATE -Wl,-dead_strip)
+else()
+    target_link_options(scene_timing_buffer_test PRIVATE -Wl,--gc-sections)
+endif()
+
 enable_testing()
 set(PE_DATA_TESTS cap_room_command_test rupert_eyes_test tmd_layout_assets_test text_palette_test
     observatory_scene_lifecycle_test action_trigger_test fountain_trigger_test)

@@ -1111,6 +1111,36 @@ prior route or an appropriate unmodified save is needed to exercise this second
 carrier; setting the flag through the debugger would not validate that route.
 Its crossfade remains runtime-unverified despite sharing the tested guard code.
 
+#### Linux scene-pacing initialization fix
+
+Read-only GDB inspection reproduces the Linux timeout at frameCount 948, view 2,
+inside `_gameMainPaceToSceneTiming`. The accumulated timing is zero and the first
+deadline is 2377060496: the newly allocated timing reservation contains host heap
+pointer remnants, while the image decoder has not supplied its timing payload.
+Audio startup enables pacing before that payload arrives, so waiting on this
+uninitialized word prevents progress. Logs remain in `linux-mist-runtime-debug`.
+
+`cdCmdReservePlaybackBuffers` now initializes the first timing word to the
+existing zero/end sentinel when a valid reservation is established. This covers
+allocated and borrowed actor storage, including offsets beyond a shared VLC
+prefix. The decoder still replaces that word with the real payload normally;
+the fix changes neither host allocator policy nor PsyZ. The new
+`scene_timing_buffer_test` calls the actual reservation function with poisoned
+memory for all four storage kinds, checks the untouched following word/VLC
+prefix, and verifies replacement with a synthetic timing payload. All 50 C tests
+pass on macOS and Linux ARM64.
+
+The same eight-run Vulkan/lavapipe collection now completes, rather than timing
+out (`linux-mist-pattern-crossfade-timing-init`). Capture/blend checkpoints 1292,
+1304 and 1310 produce native 1280x960 RGB exactly equal to no-pack controls;
+1340 resumes 1707x960 HD material. Original commands and observed simulation
+state agree within each pair. The matching macOS collection also passes, and
+all four macOS no-pack checkpoints retain exact pre-fix native VRAM, command
+inputs and observed simulation state. Earlier timeout evidence is retained.
+This resolves the reproduced initialization stall and verifies one crossfade
+route on two backends; it does not establish all scene timing, physical Linux
+GPUs, Windows, or the sterilization-room story route.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,

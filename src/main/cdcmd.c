@@ -164,6 +164,13 @@ void* cdCmdReservePlaybackBuffers(void)
         }
 
         queue->timingCursor = queue->timingBuffer;
+        /* Audio can enable pacing before the first image's timing payload is
+         * decoded. Host allocations (including reused actor storage) contain
+         * arbitrary old words: start on the existing zero/end sentinel until
+         * the decoder supplies the first real timing table. */
+        if (queue->timingBuffer != NULL && queue->sceneStream->data.scene.timingBufferBytes >= sizeof(u32)) {
+            queue->timingBuffer[0] = CD_COMMAND_TIMING_END;
+        }
         if (queue->decodeBufferBytes != 0) {
             queue->decodeBuffer = memMalloc(queue->decodeBufferBytes, true);
         }
