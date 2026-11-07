@@ -7,7 +7,17 @@ typedef struct { uint64_t key; int location[6]; } PeBackgroundFrameInfo;
 void peBackgroundBeginFrame(int buffer_y);
 int peBackgroundGetFrameInfo(int buffer_y,PeBackgroundFrameInfo* info);
 typedef struct {
-    uint32_t anim_frame,frame_count,loop_count,loop_ticks,random_lcg;
+    uint32_t parts,flags;
+    int32_t root_translation[3];
+    uint64_t local_hash,composed_hash;
+} PeBackgroundModelState;
+typedef struct {
+    const PeBackgroundModelState* models;
+    uint32_t model_count;
+    int models_complete;
+    uint32_t anim_frame,frame_count,loop_count,loop_ticks,random_lcg,random_bios;
+    uint32_t player_parts;
+    uint64_t player_pose_hash,player_composed_hash,view_hash;
     int player_root_valid;
     int32_t player_root[12]; /* row-major rotation, then XYZ translation */
 } PeBackgroundSimulationState;

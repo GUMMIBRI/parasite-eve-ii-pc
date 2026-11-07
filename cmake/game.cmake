@@ -11,6 +11,7 @@ target_include_directories(game_main PUBLIC include include/decomp
 target_compile_definitions(game_main PUBLIC __psyz SKIP_ASM)
 target_compile_options(game_main PRIVATE -w -Wno-incompatible-function-pointer-types -g -fno-omit-frame-pointer -include port/gpu_len.h)
 target_link_libraries(game_main PUBLIC psyz)
+target_compile_options(game_main PRIVATE "SHELL:-include port/random.h")
 
 # Overlay packages linked into the executable. The PS1 game swaps overlay code in and out of one address range;
 # on the host a package is compiled in and its names resolve at link time. Packages share global names
@@ -199,6 +200,7 @@ target_include_directories(game_overlays PUBLIC include include/decomp
 target_compile_definitions(game_overlays PUBLIC __psyz SKIP_ASM)
 target_compile_options(game_overlays PRIVATE -w -Wno-incompatible-function-pointer-types -g -fno-omit-frame-pointer -include port/gpu_len.h)
 target_link_libraries(game_overlays PUBLIC psyz)
+target_compile_options(game_overlays PRIVATE "SHELL:-include port/random.h")
 
 set_property(SOURCE src/stages/akropolis/rooms/helicopter_landing_pad/helicopter_landing_pad.c
     APPEND PROPERTY COMPILE_DEFINITIONS actorMsgPlaceEuler=gHelipadLiftPlaceEuler)
@@ -270,6 +272,7 @@ function(pe_overlay_variant pkg unit src defs hdr)
         target_compile_definitions(${tgt} PRIVATE __psyz SKIP_ASM ${defs})
         target_compile_options(${tgt} PRIVATE -w -Wno-incompatible-function-pointer-types -Wno-return-mismatch)
         target_link_libraries(${tgt} PRIVATE psyz)
+        target_compile_options(${tgt} PRIVATE "SHELL:-include port/random.h")
         if(hdr)
             target_compile_options(${tgt} PRIVATE -include ${CMAKE_CURRENT_SOURCE_DIR}/${hdr})
         endif()

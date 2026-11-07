@@ -91,9 +91,9 @@ def compare_gpu_commands(first,second):
 
 
 def simulation_state(report):
-    """Require the capture's additional integer clocks and shared gameplay RNG."""
+    """Require the capture's additional integer clocks and both gameplay RNGs."""
     state=report.get('simulation_state')
-    fields=['anim_frame','frame_count','loop_count','loop_ticks','random_lcg']
+    fields=['anim_frame','frame_count','loop_count','loop_ticks','random_lcg','random_bios']
     if not isinstance(state,dict) or any(type(state.get(k)) is not int or not 0<=state[k]<=0xffffffff for k in fields):
         raise ValueError('Missing or invalid simulation-state evidence')
     return {key:state[key] for key in fields}

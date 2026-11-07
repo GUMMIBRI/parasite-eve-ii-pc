@@ -37,7 +37,7 @@ class ForegroundEvidenceTest(unittest.TestCase):
             with self.assertRaises(ValueError):normalized_gpu_commands(malformed)
 
     def test_simulation_state_requires_complete_integer_evidence(self):
-        state=dict(anim_frame=600,frame_count=800,loop_count=900,loop_ticks=1200,random_lcg=0xffffffff)
+        state=dict(anim_frame=600,frame_count=800,loop_count=900,loop_ticks=1200,random_lcg=0xffffffff,random_bios=1)
         self.assertEqual(simulation_state(dict(simulation_state=state)),state)
         for invalid in [None,{},dict(state,random_lcg=-1),dict(state,loop_count=True),dict(state,anim_frame=2**32)]:
             with self.assertRaises(ValueError):simulation_state(dict(simulation_state=invalid))

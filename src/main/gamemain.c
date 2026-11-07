@@ -2,6 +2,7 @@
 #ifdef __psyz
 #include "port/backgrounds.h"
 #include "main/wipsys.h"
+#include "gameplay/area_entry.h"
 #include <stdlib.h>
 #endif
 
@@ -256,6 +257,18 @@ void displayPresentTaskFrame(s32 bufferIndex)
     }
 }
 
+#ifdef __psyz
+/* Hash only defined matrix values, excluding padding and host pointers. */
+static uint64_t _displayHashDiagnosticMatrix(uint64_t hash,const MATRIX* matrix)
+{
+    for(unsigned i=0;i<12;i++) {
+        uint32_t value=i<9?(uint32_t)(int32_t)matrix->m[i/3][i%3]:(uint32_t)matrix->t[i-9];
+        for(unsigned byte=0;byte<4;byte++) {hash^=(value>>(8*byte))&255;hash*=UINT64_C(1099511628211);}
+    }
+    return hash;
+}
+#endif
+
 /// Presents one game-loop framebuffer and its resident ordering table.
 ///
 /// `bufferIndex` is 0 or 1 and must also be the current `drawBuffer` for movie
@@ -285,7 +298,7 @@ static inline void _displayPresentFrame(s32 bufferIndex)
     }
 #ifdef __psyz
     PeBackgroundSimulationState simulation={.anim_frame=gDisplayState.animFrame,.frame_count=gDisplayState.frameCount,
-        .loop_count=gDisplayState.loopCount,.loop_ticks=gDisplayState.loopTicks,.random_lcg=gRandomLcgState};
+        .loop_count=gDisplayState.loopCount,.loop_ticks=gDisplayState.loopTicks,.random_lcg=gRandomLcgState,.random_bios=Psyz_RandState()};
     int fieldReady=gDisplayState.skipDraw==0 && !gCdCmdQueue.blockGamePause &&
         gFsCdOperationStatus==FILE_SYSTEM_CD_OPERATION_COMPLETE && gpuExtIsDisplayEnabled() &&
         gDisplayState.pendingMode==DISPLAY_MODE_NONE;
@@ -295,6 +308,37 @@ static inline void _displayPresentFrame(s32 bufferIndex)
         simulation.player_root_valid=1;
         for(unsigned i=0;i<9;i++)simulation.player_root[i]=playerRoot->m[i/3][i%3];
         for(unsigned i=0;i<3;i++)simulation.player_root[9+i]=playerRoot->t[i];
+        const Task* player=gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER];
+        if(player && player->bodyKind==TASK_BODY_TMD && player->extra.tmd) {
+            const TmdObject* model=player->extra.tmd;
+            if(model->coords && model->partCount>0 && model->partCount<=1024) {
+                simulation.player_parts=model->partCount;
+                simulation.player_pose_hash=simulation.player_composed_hash=UINT64_C(14695981039346656037);
+                for(int i=0;i<model->partCount;i++) {
+                    simulation.player_pose_hash=_displayHashDiagnosticMatrix(simulation.player_pose_hash,&model->coords[i].coord);
+                    simulation.player_composed_hash=_displayHashDiagnosticMatrix(simulation.player_composed_hash,&model->coords[i].workm);
+                }
+                simulation.view_hash=_displayHashDiagnosticMatrix(UINT64_C(14695981039346656037),&gGfxViewCoord.coord);
+            }
+        }
+    }
+    if(fieldReady && getenv("PE2_SURVEY_TARGET")) {
+        static PeBackgroundModelState modelStates[64];
+        const TmdListNode* node=gTmdList.next;
+        simulation.models=modelStates;simulation.models_complete=1;
+        for(;node && simulation.model_count<64;node=node->next) {
+            const TmdObject* model=PARENT_OF(node,TmdObject,link);
+            PeBackgroundModelState* state=&modelStates[simulation.model_count++];
+            *state=(PeBackgroundModelState){.parts=model->partCount,.flags=model->flags};
+            if(!model->coords || model->partCount<=0 || model->partCount>1024) {simulation.models_complete=0;continue;}
+            for(unsigned i=0;i<3;i++)state->root_translation[i]=model->coords[0].coord.t[i];
+            state->local_hash=state->composed_hash=UINT64_C(14695981039346656037);
+            for(int i=0;i<model->partCount;i++) {
+                state->local_hash=_displayHashDiagnosticMatrix(state->local_hash,&model->coords[i].coord);
+                state->composed_hash=_displayHashDiagnosticMatrix(state->composed_hash,&model->coords[i].workm);
+            }
+        }
+        if(node)simulation.models_complete=0;
     }
     peBackgroundEndFrame(gDisplayState.drawEnv[bufferIndex].clip.y,
         fieldReady,gDisplayState.gameTick,gDisplayState.vsyncCount,&simulation);

@@ -465,7 +465,7 @@ classic foreground, and wide buffer 0. Wide buffer 272 differed in both inputs
 correctly stopped as unverified before malformed-pack controls. This is fresh
 evidence that a single passing repeat does not settle model-state determinism.
 Current v3 captures additionally record `simulation_state`: animation frame,
-game-owned vblank count, loop count/ticks and the shared gameplay LCG state,
+game-owned vblank count, loop count/ticks and gameplay LCG/BIOS RNG states,
 passed by value from the field presentation call. This adds observation only;
 no clock or RNG is advanced/reset. The live checker requires complete uint32
 values and equality in compared runs, alongside the existing clocks and GP0
@@ -531,6 +531,39 @@ The borrowed matrix is read only for opted-in ready-field diagnostics. Another
 Recorded input, observed clocks/LCG and the root transform therefore do not
 explain the different model commands. Bone/animation and later transform state
 still require investigation; no motion or interpolation code was changed.
+
+Subsequent pose diagnostics found unchanged player local/composed matrices and
+view matrix in 16 original-only runs, including two divergent GPU streams.
+The ordered model audit then localized both divergent runs (1 and 7 of 16) to
+model ordinal 5: a 21-part enemy at root [0,0,-10000]. Its local and composed
+pose hashes differed while its root and all other models remained unchanged.
+Matrix hashes include defined signed coefficients/translation serialized as
+little-endian 32-bit values; padding, pointers and composition stamps are excluded.
+`models_complete` rejects truncated (>64 models) or unsupported coordinate
+records. Hashes are diagnostic evidence, not a full animation-state snapshot.
+
+The game was still resolving `rand()`/`srand()` to host libc, independently of
+its shared gameplay LCG. That gives platform-specific sequences/ranges and
+shares state with unrelated host consumers. `port/random.h` is now forced only
+into resident game and overlay/variant compilation, mapping those calls to
+PsyZ's existing `Psyz_Rand`/`Psyz_Srand` BIOS generator. Host libraries and port
+utilities keep their normal libc symbols; PsyZ is unmodified. The new
+`port_random_test` checks the BIOS recurrence for multiple seeds and verifies
+that unrelated host draws/reseeds do not consume game RNG state and game
+draws/reseeds do not consume host RNG state. Native game
+AI/animation choices can intentionally differ from the old host-libc build;
+old native baselines remain historical rather than expected hashes for this
+compatibility correction. No save-file format changed.
+
+Twenty original-only runs on the mapped build
+(`native-corridor-bios-random`) matched exactly. The subsequent current-build
+nine-control foreground check (`foreground-bios-random-corridor`) passes
+classic/wide, both physical buffers and malformed/missing-pack fallbacks with
+matching original inputs and exact native VRAM. Captures now record
+`random_bios` through `Psyz_RandState()` without consuming a draw; the live
+checker requires equality of both RNG states. These local results support the
+isolation correction; they do not yet prove all-room repeatability, identify
+an unrelated libc consumer, or establish all-platform/traversal correctness.
 Neither a partial run nor these synthetic fixtures establish all-game,
 traversal, artwork or all-platform completion.
 
@@ -634,7 +667,7 @@ can be close while the actual foreground contours remain displaced.
 
 ## Verification checkpoint
 
-- 48 C host tests pass, including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
+- 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
   out-of-bounds and unsupported cases. The hidden GPU probe also proves that
   native 1x rendering falls back exactly with a valid wide pack supplied.
 - Two synthetic pack tests and two synthetic inventory tests pass (duplicate pixel hashes, missing inputs,
