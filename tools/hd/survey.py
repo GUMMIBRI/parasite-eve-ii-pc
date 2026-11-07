@@ -27,12 +27,16 @@ def startup_replay(path,frames=8001):
             output.write(f'{index} {reply.hex()}\n')
 
 
-def validate_capture(directory,target):
+def validate_capture(directory,target,require_gpu_state=False):
     report=json.loads((directory/'report.json').read_text())
     if report.get('format')!='pe2-static-view-survey-v2' or report.get('matched_frames',0)<30:
         raise ValueError('Missing current settled-frame evidence')
     if report['key']!=target['keys'][0] or report['location']!=target['location']:
         raise ValueError(f'Captured a different source/location: {report}')
+    if require_gpu_state:
+        audit=json.loads((directory/'gpu-state.json').read_text())
+        if audit.get('format')!='pe2-gpu-state-audit-v1' or not audit.get('complete') or audit.get('buffer_y') not in [0,272] or audit.get('key')!=report['key'] or audit.get('location')!=report['location']:
+            raise ValueError('GPU-state traversal is incomplete or belongs to another frame')
     native=(directory/'vram.bin').read_bytes()
     if len(native)!=1024*512*2:raise ValueError('Incomplete VRAM capture')
     with Image.open(directory/'frame.ppm') as image:
@@ -52,6 +56,8 @@ def main():
     parser.add_argument('--limit',type=int,default=0,help='0 tests every eligible candidate; scope is recorded')
     parser.add_argument('--jobs',type=int,default=4)
     parser.add_argument('--timeout',type=float,default=40)
+    parser.add_argument('--gpu-state',action='store_true',help='Require a complete ordered GPU-state audit for each capture')
+    parser.add_argument('--backend',choices=['software','gpu'],default='software')
     args=parser.parse_args()
     if args.limit<0 or args.jobs<1:parser.error('Invalid limit/jobs')
     catalog=json.loads(args.catalog.read_text())
@@ -69,13 +75,14 @@ def main():
         runs=[];data=[]
         for wide in [0,1]:
             capture=directory/str(wide);capture.mkdir(exist_ok=True)
-            for name in ['report.json','frame.ppm','vram.bin']:(capture/name).unlink(missing_ok=True)
+            for name in ['report.json','frame.ppm','vram.bin','gpu-state.json']:(capture/name).unlink(missing_ok=True)
             with tempfile.TemporaryDirectory(prefix='profile-',dir=directory) as profile:
                 env={k:v for k,v in os.environ.items() if not k.startswith('PE2_')}
-                env.update(PSYZ_HEADLESS='1',PSYZ_RASTER_CLOCK='virtual',SDL_AUDIODRIVER='dummy',PE2_SKIPINTRO='1',
+                env.update(PSYZ_HEADLESS='1' if args.backend=='software' else 'gpu',PSYZ_RASTER_CLOCK='virtual',SDL_AUDIODRIVER='dummy',PE2_SKIPINTRO='1',
                     PE2_CONFIG_DIR=profile,PE2_MEMORY_CARD_DIR=str(Path(profile)/'cards'),PE2_PAD_REPLAY=str(replay),
                     PE2_START_LOCATION=','.join(map(str,target['location'])),PE2_SURVEY_KEEP_VIEW='1',
                     PE2_SURVEY_TARGET=','.join(map(str,target['location'][:4]))+':'+target['keys'][0],PE2_SURVEY_OUTPUT=str(capture))
+                if args.gpu_state:env['PE2_DUMP_GPU_STATE']='1'
                 command=[str(args.binary.resolve()),'--disc',str(args.disc.resolve()),'--disc2',str(args.disc2.resolve()),'--widescreen',str(wide)]
                 with (capture/'run.log').open('w') as log:
                     process=subprocess.run(command,env=env,stdout=log,stderr=subprocess.STDOUT,timeout=args.timeout)
@@ -86,9 +93,10 @@ def main():
                 if process.returncode:raise RuntimeError(f'{case}/{wide}: exited {process.returncode}')
             if not (capture/'report.json').is_file():
                 raise RuntimeError(f'{case}/{wide}: replay ended without a settled target capture')
-            report,native=validate_capture(capture,target)
+            report,native=validate_capture(capture,target,args.gpu_state)
             image=(capture/'frame.ppm').read_bytes()
             runs.append(dict(widescreen=wide,report=report,renderer_warnings=warnings,
+                             gpu_state_sha256=hashlib.sha256((capture/'gpu-state.json').read_bytes()).hexdigest() if args.gpu_state else None,
                              native_sha256=hashlib.sha256(native).hexdigest(),frame_sha256=hashlib.sha256(image).hexdigest()))
             data.append((native,image))
             (capture/'vram.bin.z').write_bytes(zlib.compress(native));(capture/'vram.bin').unlink()
@@ -107,7 +115,7 @@ def main():
             print(f'{len(passed)} matched parity, {len(errors)} unverified / {len(selected)}',flush=True)
     if hashlib.sha256(args.binary.read_bytes()).hexdigest()!=binary_hash:raise SystemExit('Binary changed during survey; results cannot be attributed to one build')
     report=dict(format='pe2-static-view-parity-survey-v1',binary_sha256=binary_hash,
-                scope=dict(eligible_total=len(eligible),selected=len(selected),requested_room=args.room,limit=args.limit,
+                scope=dict(eligible_total=len(eligible),selected=len(selected),requested_room=args.room,limit=args.limit,gpu_state=args.gpu_state,backend=args.backend,
                            note='Forced static cameras; excludes unresolved source entries; not physical traversal or all-game correctness.'),
                 selected_complete=True,parity_verified=len(passed),unverified=len(errors),
                 cases=passed,errors=errors,source_diagnostics=catalog.get('source_diagnostics',[]))

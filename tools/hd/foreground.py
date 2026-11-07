@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image
 
 
-def decode_sprite(vram,source):
+def decode_sprite(vram,source,texture_window=0):
     """Resolve PS1 texture-page/CLUT addressing, retaining zero and STP words."""
     if vram.shape!=(512,1024):raise ValueError('Expected full native VRAM')
     width,height=source['w'],source['h']
@@ -24,6 +24,9 @@ def decode_sprite(vram,source):
     if mode==3:raise ValueError('Reserved texture depth')
     u=(source['u0']+np.arange(width))&255
     v=(source['v0']+np.arange(height))&255
+    mx=(texture_window&31)*8;my=((texture_window>>5)&31)*8
+    u=(u&~mx)|((((texture_window>>10)&31)*8)&mx)
+    v=(v&~my)|((((texture_window>>15)&31)*8)&my)
     shift=[2,1,0][mode]
     x=(page&15)*64+(u>>shift);y=((page>>4)&1)*256+v
     if len(x) and x.max()>=1024:raise ValueError('Texture rectangle exceeds VRAM')
@@ -60,6 +63,29 @@ def layers(view,fields,vram):
                     native_sha256=hashlib.sha256(words.astype('<u2').tobytes()).hexdigest())
         result.append((record,rgba,words))
     return result,coverage
+
+
+def observed_coverage(sprites,vram,audit,capture):
+    if audit.get('format')!='pe2-gpu-state-audit-v1' or not audit.get('complete') or audit.get('key')!=capture['key'] or audit.get('location')!=capture['location']:
+        raise ValueError('Incomplete or mismatched GPU-state evidence')
+    buffer_y=audit['buffer_y']
+    if buffer_y not in [0,272]:raise ValueError('Unexpected physical framebuffer')
+    coverage=np.zeros((240,320),np.uint8)
+    for record,_,_ in sprites:
+        s=record['source']
+        draws=[d for d in audit['sprites'] if d['position']==[s['x0'],s['y0']] and d['size']==[s['w'],s['h']]
+               and d['uv']==[s['u0'],s['v0']] and d['clut']==s['clut'] and d['draw_mode']&0x1ff==s['tpage']&0x1ff]
+        record['observed_draws']=draws
+        for draw in draws:
+            words,_=decode_sprite(vram,s,draw['texture_window'])
+            x=s['x0']+draw['offset'][0];y=s['y0']+draw['offset'][1]-buffer_y
+            cx,cy,cw,ch=draw['clip'];cy-=buffer_y
+            left,top=max(0,x,cx),max(0,y,cy)
+            right,bottom=min(320,x+s['w'],cx+cw),min(240,y+s['h'],cy+ch)
+            if left<right and top<bottom:
+                mask=((words[top-y:bottom-y,left-x:right-x]!=0)*255).astype(np.uint8)
+                coverage[top:bottom,left:right]=np.maximum(coverage[top:bottom,left:right],mask)
+    return coverage
 
 
 def select_view(scene,catalog,capture):
@@ -103,8 +129,16 @@ def audit_survey(survey_path,scenes_path,catalog):
             if hashlib.sha256(data).hexdigest()!=case['runs'][0]['native_sha256']:
                 raise ValueError('VRAM changed since the runtime survey')
             sprites,mask=layers(view,scene['sprites']['fields'],np.frombuffer(data,dtype='<u2').reshape(512,1024))
-            results.append(dict(location=case['location'],room=case['room'],key=case['key'],sources=len(sprites),
-                                potential_pixels=int(np.count_nonzero(mask))))
+            row=dict(location=case['location'],room=case['room'],key=case['key'],sources=len(sprites),
+                     potential_pixels=int(np.count_nonzero(mask)))
+            if survey.get('scope',{}).get('gpu_state'):
+                gpu_path=directory/'gpu-state.json'
+                if hashlib.sha256(gpu_path.read_bytes()).hexdigest()!=case['runs'][0].get('gpu_state_sha256'):
+                    raise ValueError('GPU-state evidence changed since the runtime survey')
+                observed=observed_coverage(sprites,np.frombuffer(data,dtype='<u2').reshape(512,1024),json.loads(gpu_path.read_text()),capture)
+                row.update(observed_sources=sum(bool(r['observed_draws']) for r,_,_ in sprites),
+                           observed_source_pixels=int(np.count_nonzero(observed)))
+            results.append(row)
         except Exception as error:errors.append(dict(location=case['location'],room=case['room'],error=str(error)))
     return dict(format='pe2-foreground-source-survey-v1',
                 scope='Authored sources sampled from passing static-view VRAM captures; not live visibility or HD masks.',
@@ -136,6 +170,10 @@ def main():
     view=select_view(scene,catalog,capture)
     data=read_vram(args.capture)
     sprites,coverage=layers(view,scene['sprites']['fields'],np.frombuffer(data,dtype='<u2').reshape(512,1024))
+    gpu_state=args.capture/'gpu-state.json';observed=None
+    if gpu_state.is_file():
+        observed=observed_coverage(sprites,np.frombuffer(data,dtype='<u2').reshape(512,1024),json.loads(gpu_state.read_text()),capture)
+        Image.fromarray(observed).save(args.output/'observed-source-coverage.png')
     args.output.mkdir(parents=True,exist_ok=True)
     records=[]
     for record,rgba,words in sprites:
@@ -149,8 +187,12 @@ def main():
                 covered_screen_pixels=int(np.count_nonzero(coverage)),draw_areas=view['drawAreaList'],
                 runtime_visibility_verified=False,hd_foreground_implemented=False,
                 limits=['Potential authored sources, including hidden/skipped batches; not live OT visibility.',
-                        'Texture window, live packet changes, draw-area ordering and model depth are not captured.',
+                        'Ordered clip/offset/window state is available only with gpu-state.json; source matching is by exact static geometry/texture tuple.',
+                        'Final VRAM is not a per-draw palette snapshot; mask tests and model occlusion are not resolved.',
                         'No inferred HD alpha, feathering, extra geometry or sprite resampling.'])
+    if observed is not None:
+        report.update(observed_sources=sum(bool(r['observed_draws']) for r,_,_ in sprites),
+                      observed_source_pixels=int(np.count_nonzero(observed)),gpu_state_sha256=hashlib.sha256(gpu_state.read_bytes()).hexdigest())
     (args.output/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     print(f"{len(records)} authored sprite sources; {report['covered_screen_pixels']} potential covered screen pixels")
 

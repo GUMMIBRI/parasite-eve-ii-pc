@@ -1,5 +1,6 @@
 #include "port/backgrounds.h"
 #include "port/background_pack.h"
+#include "port/gpu_state.h"
 #include <psyz/gpu.h>
 #include <psyz/video.h>
 #include <SDL3/SDL.h>
@@ -44,6 +45,50 @@ int peBackgroundConfigurePack(const char* path,int enabled)
 }
 
 static struct { int y; PeBackgroundFrameInfo info; } frameInfo[2]={{.y=-1},{.y=-1}};
+enum { GPU_AUDIT_MAX_SPRITES=8192 };
+typedef struct {uint32_t words[4];PeGpuState state;} GpuSpriteAudit;
+static GpuSpriteAudit* gpuAuditSprites;
+static PeGpuState gpuAuditState;
+static int gpuAuditEnabled=-1,gpuAuditStarted,gpuAuditComplete,gpuAuditY;
+static unsigned gpuAuditCount;
+static void observeGpuSprite(const void* packet,unsigned offset,const uint32_t* words,unsigned count,const PeGpuState* state,void* context)
+{
+    (void)packet;(void)offset;(void)count;(void)context;
+    if(((words[0]>>24)&~3u)!=0x64)return;
+    if(gpuAuditCount==GPU_AUDIT_MAX_SPRITES) {gpuAuditComplete=0;return;}
+    GpuSpriteAudit* sprite=&gpuAuditSprites[gpuAuditCount++];
+    memcpy(sprite->words,words,sizeof sprite->words);sprite->state=*state;
+}
+void peBackgroundSubmitOt(const void* head)
+{
+    if(gpuAuditEnabled==1 && gpuAuditComplete) {
+        if(!gpuAuditStarted) {
+            DRAWENV environment;GetDrawEnv(&environment);
+            gpuAuditComplete=peGpuStateFromEnv(&gpuAuditState,&environment);gpuAuditStarted=1;
+        }
+        if(gpuAuditComplete && !peGpuWalkOt(&gpuAuditState,head,observeGpuSprite,NULL))gpuAuditComplete=0;
+    }
+    DrawOTag((OT_TYPE*)head);
+}
+static int writeGpuAudit(const char* root,int buffer_y,const PeBackgroundFrameInfo* info)
+{
+    char path[4352];snprintf(path,sizeof path,"%s/gpu-state.json",root);
+    FILE* file=fopen(path,"w");if(!file)return 0;
+    fprintf(file,"{\"format\":\"pe2-gpu-state-audit-v1\",\"complete\":%s,\"buffer_y\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"sprites\":[",
+            gpuAuditStarted && gpuAuditComplete && gpuAuditY==buffer_y?"true":"false",buffer_y,info->key,
+            info->location[0],info->location[1],info->location[2],info->location[3],info->location[4],info->location[5]);
+    for(unsigned i=0;i<gpuAuditCount;i++) {
+        const GpuSpriteAudit* sprite=&gpuAuditSprites[i];const PeGpuState* s=&sprite->state;
+        const uint32_t* w=sprite->words;
+        fprintf(file,"%s{\"command\":%u,\"position\":[%d,%d],\"size\":[%u,%u],\"uv\":[%u,%u],\"clut\":%u,\"clip\":[%d,%d,%d,%d],\"offset\":[%d,%d],\"draw_mode\":%u,\"texture_window\":%u,\"mask_mode\":%u}",
+                i?",":"",w[0],(int)(int16_t)w[1],(int)(int16_t)(w[1]>>16),w[3]&65535,w[3]>>16,
+                w[2]&255,(w[2]>>8)&255,w[2]>>16,s->clip_left,s->clip_top,
+                s->clip_right-s->clip_left+1,s->clip_bottom-s->clip_top+1,s->offset_x,s->offset_y,
+                s->draw_mode,s->texture_window,s->mask_mode);
+    }
+    fprintf(file,"]}\n");int failed=ferror(file);if(fclose(file))failed=1;
+    if(failed)remove(path);return !failed;
+}
 static int frameSlot(int y)
 {
     for(int i=0;i<2;i++)if(frameInfo[i].y==y)return i;
@@ -54,6 +99,13 @@ static int frameSlot(int y)
 void peBackgroundBeginFrame(int y)
 {
     int slot=frameSlot(y);memset(&frameInfo[slot].info,0,sizeof frameInfo[slot].info);
+    if(gpuAuditEnabled<0) {
+        const char* enabled=getenv("PE2_DUMP_GPU_STATE");gpuAuditEnabled=enabled && !strcmp(enabled,"1");
+        if(gpuAuditEnabled)gpuAuditSprites=malloc(GPU_AUDIT_MAX_SPRITES*sizeof(*gpuAuditSprites));
+    }
+    if(gpuAuditEnabled) {
+        gpuAuditStarted=0;gpuAuditComplete=gpuAuditSprites!=NULL;gpuAuditCount=0;gpuAuditY=y;
+    }
 }
 int peBackgroundGetFrameInfo(int y,PeBackgroundFrameInfo* info)
 {
@@ -264,6 +316,7 @@ void peBackgroundEndFrame(int buffer_y,int field_frame)
     for(unsigned i=0;i<1024*512;i++) {fputc(vram[i]&255,file);fputc(vram[i]>>8,file);}
     failed|=ferror(file);if(fclose(file))failed=1;
     free(rgb);free(vram);if(failed)exit(2);
+    if(gpuAuditEnabled==1 && !writeGpuAudit(root,buffer_y,&info))exit(2);
     snprintf(path,sizeof path,"%s/report.json",root);file=fopen(path,"w");if(!file)exit(2);
     fprintf(file,"{\"format\":\"pe2-static-view-survey-v2\",\"matched_frames\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"width\":%d,\"height\":%d}\n",
             matchingFrames,info.key,info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5],w,h);

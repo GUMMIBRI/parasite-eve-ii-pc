@@ -230,7 +230,11 @@ void displayPresentTaskFrame(s32 bufferIndex)
                 streamPresentMovieFrame();
                 gDisplayState.drawBuffer = savedDrawBuffer;
             }
+#ifdef __psyz
+            peBackgroundSubmitOt(gGpuFrameOrderingTables[gDisplayState.otBuffer].tag);
+#else
             DrawOTag((OT_TYPE*)gGpuFrameOrderingTables[gDisplayState.otBuffer].tag);
+#endif
         } else if (gDisplayTaskImageSourceSnapshot == DISPLAY_IMAGE_TRANSITION_STRIPS) {
             displayUploadBackgroundImage(bufferIndex);
         } else if (gDisplayTaskImageSourceSnapshot == DISPLAY_IMAGE_ROOM_SLOT) {
@@ -238,7 +242,11 @@ void displayPresentTaskFrame(s32 bufferIndex)
         }
         // The snapshot is read as a signed byte; keep its high-bit behavior.
         if ((s8)gDisplayTaskFlipControlSnapshot < DISPLAY_FLIP_SKIP_TASK_OT) {
+#ifdef __psyz
+            peBackgroundSubmitOt(gGpuTaskOrderingTables[bufferIndex].tag);
+#else
             DrawOTag((OT_TYPE*)gGpuTaskOrderingTables[bufferIndex].tag);
+#endif
         }
 #ifdef __psyz
         peBackgroundEndFrame(gDisplayState.drawEnv[bufferIndex].clip.y,0);
@@ -267,7 +275,11 @@ static inline void _displayPresentFrame(s32 bufferIndex)
     }
     streamPresentMovieFrame();
     if (gDisplayState.skipDraw == 0) {
+#ifdef __psyz
+        peBackgroundSubmitOt(gGpuFrameOrderingTables[bufferIndex].tag);
+#else
         DrawOTag((OT_TYPE*)gGpuFrameOrderingTables[bufferIndex].tag);
+#endif
     }
 #ifdef __psyz
     peBackgroundEndFrame(gDisplayState.drawEnv[bufferIndex].clip.y,

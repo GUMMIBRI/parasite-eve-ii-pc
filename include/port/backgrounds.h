@@ -7,6 +7,8 @@ typedef struct { uint64_t key; int location[6]; } PeBackgroundFrameInfo;
 void peBackgroundBeginFrame(int buffer_y);
 int peBackgroundGetFrameInfo(int buffer_y,PeBackgroundFrameInfo* info);
 void peBackgroundEndFrame(int buffer_y,int field_frame);
+/* Original OT submission, with optional read-only PE2_DUMP_GPU_STATE=1 audit. */
+void peBackgroundSubmitOt(const void* head);
 /* Main-thread configuration; GPU resources change at the next background draw.
  * Empty path or enabled=0 restores the original image. Returns 0 for bad input. */
 int peBackgroundConfigurePack(const char* path,int enabled);

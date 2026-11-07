@@ -34,6 +34,26 @@ class ForegroundTest(unittest.TestCase):
         words,_=module.decode_sprite(vram,source)
         self.assertEqual(words.tolist(),[[0x1234,0xabcd]])
 
+    def test_observed_draw_uses_physical_buffer_offset_clip_and_window(self):
+        vram=np.zeros((512,1024),np.uint16);vram[0,0]=0x3210;vram[2,:4]=[31,0,0x8000,31<<5]
+        source=self.source();fields=list(source)
+        view=dict(sourceCount=1,rows=[list(source.values())],batchList=[dict(firstSprite=0,spriteCount=1,hidden=0,skipCachedPackets=0)])
+        sprites,_=module.layers(view,fields,vram)
+        capture=dict(key='a',location=[1,2,3,1,1,1])
+        draw=dict(position=[-162,-120],size=[4,1],uv=[0,0],clut=128,draw_mode=0xe1000000,
+                  offset=[160,392],clip=[0,272,1,240],texture_window=0,mask_mode=0)
+        audit=dict(format='pe2-gpu-state-audit-v1',complete=True,buffer_y=272,**capture,sprites=[draw])
+        mask=module.observed_coverage(sprites,vram,audit,capture)
+        self.assertEqual(int(np.count_nonzero(mask)),1)
+        self.assertEqual(len(sprites[0][0]['observed_draws']),1)
+        source.update(w=1,x0=0,y0=0)
+        # A window forces bit 3 of U to one: texel 0 samples texel 8.
+        vram[0,2]=3
+        words,_=module.decode_sprite(vram,source,1|(1<<10))
+        self.assertEqual(int(words[0,0]),31<<5)
+        audit['complete']=False
+        with self.assertRaises(ValueError):module.observed_coverage(sprites,vram,audit,capture)
+
     def test_direct_colour_wraps_uv_within_page(self):
         vram=np.zeros((512,1024),np.uint16);source=self.source()
         source.update(tpage=256|16,u0=255,v0=255,w=2,h=2)

@@ -201,8 +201,44 @@ missing-atlas and changed-palette cases retain exact original rendered pixels.
 This is not yet connected to room OTs or a foreground pack loader. Its caller
 must provide the actual clip/offset at that primitive's place in the OT;
 `GetDrawEnv` only returns the last SDK environment and cannot establish later
-depth-sorted DR_AREA changes. Reflection, view and actor clipping still need
-ordered state tracking before the builder can safely serve every room.
+depth-sorted DR_AREA changes.
+
+The read-only `gpu_state.c` walker now observes those changes in actual OT
+order. It follows PsyZ's native/packed LP64 command ABI, including MargePrim's
+marker, tracks E1..E6 state and texture pages inherited from textured polygons,
+and skips complete primitive payloads rather than reading vertex/colour data
+as commands. Unknown/truncated commands, oversized packets and cyclic lists
+invalidate the audit. It never submits or modifies commands. Frame submission
+still sends the original OT exactly once.
+
+```sh
+venv/bin/python3 tools/hd/survey.py --catalog /local/selected-catalog.json \
+  --gpu-state --backend software --disc /path/to/disc1.cue \
+  --disc2 /path/to/disc2.cue --output build-hd-study/state-survey
+```
+
+`--gpu-state` opts into `PE2_DUMP_GPU_STATE=1`. Settled survey captures include
+`gpu-state.json`, with the physical buffer origin and each variable SPRT's
+current clip, offset, draw mode, texture window and mask mode. The survey
+requires complete matching evidence and records its SHA-256. Foreground exports
+can join this to an exact static geometry/texture tuple and produce an
+`observed-source-coverage.png` mask. These are issued-source coverage estimates,
+not final visibility: final VRAM is not a per-draw palette snapshot, and model
+occlusion/mask-test results still require renderer validation.
+
+A selected 51-case survey of previously captured room/file combinations with
+authored draw areas completed with exact off/on frame/VRAM parity and complete
+state traversal. All 1772 authored foreground source references in those cases
+matched issued sprites. Thirty-five cases used non-full clips at sprite draw
+time, including offscreen render regions. Gallery view 10 matched all nine
+foreground sources and 5394 covered source pixels. The gallery's audit-on/off
+control comparisons have exact frame and VRAM equality on software and hidden
+GPU backends. Evidence: `build-hd-study/state-clips/`,
+`foreground-state-clips/`, `state-view10*/` and `foreground-state-view10/`.
+This is a selected forced-camera sample, not a new complete-game survey.
+Ordered observations are now available; actual OT replacement, immutable
+foreground asset identity and reflected/actor-clipped runtime integration remain
+unfinished. The packet builder is still not enabled for live room drawing.
 
 The native catalog now decodes all 1759 distinct BS inputs with the game's own
 VLC implementation and PsyZ MDEC, rather than treating an approximate Python
@@ -272,18 +308,20 @@ registration experiments do not establish production artwork quality.
 
 ## Verification checkpoint
 
-- 45 C host tests pass, including foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
+- 46 C host tests pass, including ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
   out-of-bounds and unsupported cases. The hidden GPU probe also proves that
   native 1x rendering falls back exactly with a valid wide pack supplied.
 - Two synthetic pack tests and two synthetic inventory tests pass (duplicate pixel hashes, missing inputs,
   stage-0 classification, special renderers and raw-store path resolution).
-- Sixteen Python HD tests pass in total. Additional checks exercise the native
+- Seventeen Python HD tests pass in total. Additional checks exercise the native
   BS decoder with generated grayscale inputs, logical/mapped view joins,
   unresolved entries, source-guided artwork constraints, and rejection of stale,
   wrong-location, black or incomplete runtime capture evidence.
   Synthetic foreground fixtures check palette lookup, transparent colour zero,
   STP black, UV wrapping, screen clipping, diagnostic scope, and rejection of
-  VRAM changed after the runtime survey.
+  VRAM changed after the runtime survey. Ordered-state checks cover physical
+  buffer origins, texture windows, clipped observed coverage and incomplete or
+  mismatched GPU-state evidence.
 - CLI rejection, preference persistence and subsequent settings reload pass
   against isolated local profiles and the owner's two disc images.
 - A 6001-sample New Game replay reaches the gallery course menu. At pad tick
