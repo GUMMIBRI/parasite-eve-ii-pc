@@ -785,6 +785,40 @@ collection is retained separately. No art or pack was committed or published.
 
 
 
+#### Read-only artwork registration diagnostics
+
+`check_art_registration.py` compares native and fitted material gradient maps
+in each authored foreground rectangle, including a four-pixel context margin:
+
+```sh
+venv/bin/python tools/hd/check_art_registration.py \
+  --native path/to/background.rgb555 --art path/to/candidate.png \
+  --sources path/to/foreground-audit --output path/to/registration.json
+```
+
+The source audit must identify the same native background. Without `--sources`,
+the tool compares the view interior. Canvas fitting follows the packer's bounds,
+aspect and opacity checks. Search samples include generated side margins so a
+source near x=320 retains its visible pixels rather than losing them to an
+inward-clamped search window. Reports identify clipped searches, flat regions,
+ambiguous peaks and boundary peaks. They always contain `approved: false`:
+integer shifts after downsampling cannot prove subpixel contours, occlusion or
+artwork quality. Three synthetic tests check known shifts, side-margin searches,
+input immutability and invalid or uninformative evidence. All 31 Python HD tests
+pass at this checkpoint.
+
+The existing view-10 v8 candidate reports zero displacement in all nine source
+regions with this tool. On the controller-reached view 11, key
+`1503fa132d262605`, four local generated candidates have been inspected. V3 is
+the best current geometry candidate: 12 of 13 regions report zero displacement;
+the right central-wall edge reports one native pixel left. Floor joins still
+need review. V4 worsens central-wall and right-wall alignment, including
+ambiguous and search-boundary peaks, and is rejected. These remain local artwork
+experiments; no view-11 replacement is approved or runtime-validated. Its source
+audit uses an explicit route capture at warp 6; the minimal derived catalog
+record remains `runtime_verified: false`, rather than weakening location checks
+or claiming a complete catalog traversal.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
