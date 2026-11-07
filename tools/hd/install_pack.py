@@ -35,6 +35,8 @@ def read_manifest(root):
         raise ValueError('Invalid pack identity or version')
     files=data.get('files')
     if not isinstance(files,dict) or not files or len(files)>20000:raise ValueError('Invalid file inventory')
+    if any(PAYLOAD.fullmatch(file.name) and file.name not in files for file in root.iterdir()):
+        raise ValueError('Unlisted renderer payload in pack folder')
     for name,entry in files.items():
         if not PAYLOAD.fullmatch(name):raise ValueError('Invalid payload filename')
         if not isinstance(entry,dict) or type(entry.get('size')) is not int or not 0<entry['size']<=128*1024*1024:
