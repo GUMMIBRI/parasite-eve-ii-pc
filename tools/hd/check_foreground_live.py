@@ -20,6 +20,7 @@ from foreground_evidence import check_material_evidence,verify_empty_sources,com
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--runner',type=Path,help='Optional executable launcher receiving the binary path and arguments')
     parser.add_argument('--binary',type=Path,default=Path('build-port/parasite-eve-ii-pc'))
     parser.add_argument('--disc',type=Path,required=True);parser.add_argument('--disc2',type=Path,required=True)
     parser.add_argument('--base-pack',type=Path,required=True)
@@ -36,6 +37,7 @@ def main():
     empty_sources=verify_empty_sources(args.empty_sources,args.key,location,(args.combined_pack/descriptor).read_bytes()) if args.empty_sources else 0
     replay=root/'startup.pad';startup_replay(replay)
     identity=hashlib.sha256(args.binary.read_bytes()).hexdigest();results=[]
+    runner_identity=hashlib.sha256(args.runner.read_bytes()).hexdigest() if args.runner else None
     def run(name,pack,wide,settle):
         destination=root/name;destination.mkdir(exist_ok=True)
         for filename in ['report.json','frame.ppm','vram.bin','gpu-state.json','gpu-commands.bin']:(destination/filename).unlink(missing_ok=True)
@@ -49,8 +51,9 @@ def main():
                        PE2_DUMP_GPU_STATE='1')
             if pack is not None:env['PE2_HD_BACKGROUNDS']=str(pack.resolve())
             with (destination/'run.log').open('w') as log:
-                subprocess.run([str(args.binary.resolve()),'--disc',str(args.disc.resolve()),'--disc2',str(args.disc2.resolve()),
-                                '--widescreen',str(wide)],env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=40)
+                command=[str(args.binary.resolve()),'--disc',str(args.disc.resolve()),'--disc2',str(args.disc2.resolve()),'--widescreen',str(wide)]
+                if args.runner:command.insert(0,str(args.runner.resolve()))
+                subprocess.run(command,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=40)
         report,native=validate_capture(destination,dict(keys=[args.key],location=location),True)
         frame=(destination/'frame.ppm').read_bytes()
         results.append(dict(case=name,report=report,native_sha256=hashlib.sha256(native).hexdigest(),
@@ -97,7 +100,8 @@ def main():
             require_same_commands('classic-base',name)
             assert not capture[0]['foreground_replacements'] and capture[1:]==classic[1:],name
     if hashlib.sha256(args.binary.read_bytes()).hexdigest()!=identity:raise RuntimeError('Executable changed during check')
-    (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,cases=results,empty_sources_verified=empty_sources,
+    if args.runner and hashlib.sha256(args.runner.read_bytes()).hexdigest()!=runner_identity:raise RuntimeError('Launcher changed during check')
+    (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,runner_sha256=runner_identity,cases=results,empty_sources_verified=empty_sources,
         scope='One forced static camera. v3 captures present the completed draw buffer. '+('Audited empty sources require exact unchanged material; no visible HD activation is claimed.' if empty_sources else 'Both physical buffers require active foreground replacements in 16:9.')),indent=2)+'\n')
     print('PASS: '+('verified empty foreground' if empty_sources else 'live foreground material')+', both buffer parities, exact native VRAM and malformed-pack fallback')
 

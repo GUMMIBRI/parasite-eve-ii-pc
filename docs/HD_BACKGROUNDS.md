@@ -453,9 +453,11 @@ stable 46/46 sweep. Deterministic model-input control remains open.
 The live checker now requires matching original command streams before comparing
 native output, including original/base and malformed-pack controls. It records
 `input-comparisons.jsonl` and rejects unequal inputs as unverified. Normalization
-ignores only raw-texture RGB modulation, unused subsequent polygon colour high
-bytes, and unused third/fourth textured polygon UV high halves. Other words stay
-exact. Equality supports input comparability; it does not prove equal initial
+ignores raw-texture RGB modulation, unused subsequent polygon colour high
+bytes, unused third/fourth textured polygon UV high halves, and CLUT fields
+only when a known 16-bit texture page proves palette sampling unused. Polygon
+TPage updates are tracked for following sprites. Unknown, indexed and reserved
+texture depths retain exact CLUT comparisons; other words stay exact. Equality supports input comparability; it does not prove equal initial
 VRAM, PGXP hints or all game state. Regression fixtures reject meaningful XY,
 CLUT, texture-page, UV, modulated-colour and command-count differences.
 A fresh guarded corridor run (`foreground-input-guard-corridor/assessment.json`)
@@ -564,6 +566,53 @@ matching original inputs and exact native VRAM. Captures now record
 checker requires equality of both RNG states. These local results support the
 isolation correction; they do not yet prove all-room repeatability, identify
 an unrelated libc consumer, or establish all-platform/traversal correctness.
+
+The 46-camera BIOS-RNG sweep completed with 43 passing cameras and three
+unverified airlock views. All three had identical native VRAM and differing
+unused CLUT fields on direct-colour sprites under known E1 page 0x700. This
+was an over-strict input comparator, not an observed material/native mismatch.
+After the depth-aware comparison correction, all three isolated views pass all
+nine controls (`foreground-bios-random-airlock`). The original failed report
+is retained. `foreground-bios-random-all/assessment.json` joins same-binary
+results: 45 cameras demonstrate visible foreground material and one has
+verified empty sources, covering all 46 selected cameras. This is combined
+per-camera evidence, not a newly green single sweep. Direct-colour CLUT
+regressions preserve rejection of indexed, reserved and unknown-page changes.
+
+### Linux ARM64 checkpoint
+
+The current code builds with GCC 13.3.0 in a local Ubuntu 24.04 ARM64 container.
+The offline build reused the already fetched libwebp source via
+`FETCHCONTENT_SOURCE_DIR_PSYZ_WEBP`; no PsyZ source change was needed.
+All 49 C tests pass with headless software rendering. The first invocation
+without a video device failed two GPU tests at SDL initialization; CTest now
+sets headless/dummy-audio explicitly for `gpu_tpage_test`, `caption_packet_test`
+and `gpu_state_test`, consistent with CI's existing environment.
+
+Both 56-case foreground probes pass on Linux: Vulkan through Mesa lavapipe
+(`linux-bios-foreground-gpu`) and the software backend
+(`linux-bios-foreground-software`). The real corridor's full nine-control check
+also passes on Linux Vulkan (`linux-bios-foreground-corridor-mounted`), including
+active 24-source replacements in classic/wide on both physical buffers and
+exact within-platform native VRAM. This validates a software Vulkan driver in
+a local VM, not physical Linux GPU hardware or interactive traversal.
+
+The live/presenter/room checkers accept `--runner /local/launcher` to execute a
+native binary in another environment. The launcher receives the actual binary
+path and arguments, must forward the supplied test environment and expose
+identical paths, and must return the native process status. Successful live
+and probe reports hash the actual native binary plus launcher; neither may
+change during a check. The local container wrapper forwards only PE2/PSYZ/SDL
+settings, selects offscreen Vulkan/lavapipe and keeps disc mounts read-only.
+The temporary validation container was stopped and removed after capture.
+
+Cross-platform corridor comparison finds matching normalized commands,
+observed clocks/both RNGs and model matrix hashes in all nine cases. Native
+VRAM is not byte-identical between Metal and Vulkan: 8–9 displayed words differ
+by at most one RGB555 level per channel, with no STP or off-display differences
+(`linux-bios-cross-platform-corridor.json`). Within each backend, the HD/original
+comparisons remain exact. No general cross-backend pixel-equivalence claim is
+made; Windows/other architectures and hardware backends remain unverified here.
 Neither a partial run nor these synthetic fixtures establish all-game,
 traversal, artwork or all-platform completion.
 

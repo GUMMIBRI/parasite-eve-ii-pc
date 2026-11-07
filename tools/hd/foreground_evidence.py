@@ -55,15 +55,22 @@ def normalized_gpu_commands(data):
     or game state. Unknown commands remain byte-exact for conservative checks.
     """
     if len(data)%4:raise ValueError('Truncated GPU command audit')
-    words=struct.unpack('<'+'I'*(len(data)//4),data);offset=0;commands=[]
+    words=struct.unpack('<'+'I'*(len(data)//4),data);offset=0;commands=[];draw_mode=None
     while offset<len(words):
         count=words[offset];offset+=1
         if not count or count>len(words)-offset:raise ValueError('Invalid GPU command audit length')
         command=list(words[offset:offset+count]);offset+=count;code=command[0]>>24
+        if code==0xe1:
+            if count!=1:raise ValueError('Invalid draw-mode length')
+            draw_mode=command[0]
         if 0x20<=code<0x40:
             vertices=4 if code&8 else 3;gouraud=bool(code&16);textured=bool(code&4)
             expected=1+vertices*(1+textured+gouraud)-gouraud
             if count!=expected:raise ValueError('Invalid textured polygon length')
+            if textured:
+                # A polygon's own TPage also becomes the following sprite page.
+                draw_mode=(command[5 if gouraud else 4]>>16)&0x1ff
+                if (draw_mode&0x180)==0x100:command[2]&=0xffff
             cursor=1
             if textured and code&1:command[0]&=0xff000000
             for vertex in range(vertices):
@@ -75,8 +82,12 @@ def normalized_gpu_commands(data):
                 if textured:
                     if vertex>=2:command[cursor]&=0xffff  # UV high half unused
                     cursor+=1
-        elif 0x60<=code<0x80 and code&4 and code&1:
-            command[0]&=0xff000000  # raw texture ignores RGB modulation
+        elif 0x60<=code<0x80 and code&4:
+            if count!=(3 if code&0x18 else 4):raise ValueError('Invalid textured sprite length')
+            if code&1:command[0]&=0xff000000  # raw texture ignores RGB modulation
+            # Direct-colour sampling never reads a palette. Keep CLUT exact if
+            # the initial page is unknown or the texture is indexed/reserved.
+            if draw_mode is not None and (draw_mode&0x180)==0x100:command[2]&=0xffff
         commands.append(tuple(command))
     if not commands:raise ValueError('Empty GPU command audit')
     return commands

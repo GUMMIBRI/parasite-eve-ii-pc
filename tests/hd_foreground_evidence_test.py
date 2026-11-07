@@ -36,6 +36,19 @@ class ForegroundEvidenceTest(unittest.TestCase):
         for malformed in [b'',b'x',struct.pack('<I',0),struct.pack('<II',2,0)]:
             with self.assertRaises(ValueError):normalized_gpu_commands(malformed)
 
+    def test_direct_colour_clut_is_ignored_only_with_known_page(self):
+        def trace(*commands):return b''.join(struct.pack('<'+'I'*(len(c)+1),len(c),*c) for c in commands)
+        sprite=[0x65000000,0x00100020,0x12340000,0x00080008]
+        other=sprite.copy();other[2]=0x56780000
+        for page,equal in [(0xe1000700,True),(0xe1000000,False),(0xe1000080,False),(0xe1000180,False)]:
+            self.assertEqual(compare_gpu_commands(trace([page],sprite),trace([page],other))['equal'],equal)
+        self.assertFalse(compare_gpu_commands(trace(sprite),trace(other))['equal'])
+        polygon=[0x25000000,0x00100020,0x12340000,0x00300040,0x01000010,0x00500060,0x00000020]
+        changed=polygon.copy();changed[2]=0x56780000
+        self.assertTrue(compare_gpu_commands(trace(polygon,sprite),trace(changed,other))['equal'])
+        polygon[4]=changed[4]=0x00800010
+        self.assertFalse(compare_gpu_commands(trace(polygon,sprite),trace(changed,other))['equal'])
+
     def test_simulation_state_requires_complete_integer_evidence(self):
         state=dict(anim_frame=600,frame_count=800,loop_count=900,loop_ticks=1200,random_lcg=0xffffffff,random_bios=1)
         self.assertEqual(simulation_state(dict(simulation_state=state)),state)

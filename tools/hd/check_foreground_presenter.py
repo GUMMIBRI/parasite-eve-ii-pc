@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Probe clipped foreground HD cells on a real hidden GPU, using synthetic VRAM."""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -30,12 +31,15 @@ def atlas(words,inset=False):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--runner',type=Path,help='Optional executable launcher receiving the probe path and arguments')
     parser.add_argument('--probe',type=Path,default=Path('build-port/foreground_presenter_probe'))
     parser.add_argument('--output',type=Path,default=Path('build-hd-study/foreground-presenter'))
     parser.add_argument('--backend',choices=['gpu','software'],default='gpu')
     parser.add_argument('--ot',action='store_true',help='Exercise registered live-OT substitution and packet restoration')
     args=parser.parse_args();root=args.output.resolve();root.mkdir(parents=True,exist_ok=True)
     (root/'report.json').unlink(missing_ok=True)
+    identity=hashlib.sha256(args.probe.read_bytes()).hexdigest()
+    runner_identity=hashlib.sha256(args.runner.read_bytes()).hexdigest() if args.runner else None
     vram=np.zeros((512,1024),np.uint16);vram[:240,:320]=0x1084
     vram[:240,:320:2]|=0x8000
     for y in range(256):
@@ -73,6 +77,7 @@ def main():
         prefix=root/f'case-{index:02d}'
         command=[str(args.probe.resolve()),str(native),'123456789abcdef0',str(image) if available else 'none',
                  str(prefix),str(width),str(height),str(flags),str(scale),str(wide),str(palette)]
+        if args.runner:command.insert(0,str(args.runner.resolve()))
         current_env={**env,'PE2_PROBE_MASK':str(mask)}
         if window:current_env['PE2_PROBE_WINDOW']='1'
         if inset:current_env['PE2_PROBE_INSET']='1'
@@ -101,7 +106,9 @@ def main():
             assert np.array_equal(original[~potential],enhanced[~potential]),('coverage leaked',index)
         results.append(dict(width=width,height=height,flags=flags,scale=scale,wide=wide,palette_changed=palette,
                             atlas_available=available,mask_mode=mask,texture_window=window,inset=inset,feedback=feedback,aligned=aligned,staging_allowed=not no_staging,native_differences=0,changed_channels=changed))
-    (root/'report.json').write_text(json.dumps(dict(passed=True,backend=args.backend,ot_substitution=args.ot,cases=results,
+    if hashlib.sha256(args.probe.read_bytes()).hexdigest()!=identity:raise RuntimeError('Probe changed during check')
+    if args.runner and hashlib.sha256(args.runner.read_bytes()).hexdigest()!=runner_identity:raise RuntimeError('Launcher changed during check')
+    (root/'report.json').write_text(json.dumps(dict(passed=True,probe_sha256=identity,runner_sha256=runner_identity,backend=args.backend,ot_substitution=args.ot,cases=results,
         scope='Synthetic explicit-state foreground builder; not live room/OT integration.'),indent=2)+'\n')
     print(f'PASS: {len(results)} clipped foreground {args.backend} cases preserve all native VRAM')
 

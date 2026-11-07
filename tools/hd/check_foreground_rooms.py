@@ -25,6 +25,7 @@ def main():
     parser.add_argument('--scenes',type=Path,default=Path('build-hd-study/scenes'))
     parser.add_argument('--catalog',type=Path,default=Path('build-hd-study/view-catalog.json'))
     parser.add_argument('--native',type=Path,default=Path('build-hd-study/native-catalog/native'))
+    parser.add_argument('--runner',type=Path,help='Optional native binary launcher passed to the live checker')
     parser.add_argument('--binary',type=Path,default=Path('build-port/parasite-eve-ii-pc'))
     parser.add_argument('--disc',type=Path,required=True);parser.add_argument('--disc2',type=Path,required=True)
     parser.add_argument('--location',action='append',help='Select a six-component location; repeat to select more')
@@ -84,6 +85,7 @@ def main():
                 '--binary',str(args.binary),'--disc',str(args.disc),'--disc2',str(args.disc2),
                 '--base-pack',str(base),'--combined-pack',str(combined),'--location',','.join(map(str,case['location'])),
                 '--key',case['key'],'--output',str(destination/'live')]
+            if args.runner:command+=['--runner',str(args.runner)]
             if not any(r['covered_texels'] for r in records):command+=['--empty-sources',str(source)]
             with (destination/'check.log').open('w') as log:subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=420)
             checked=json.loads((destination/'live/report.json').read_text())
