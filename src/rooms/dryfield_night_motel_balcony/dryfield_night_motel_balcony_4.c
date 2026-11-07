@@ -215,22 +215,21 @@ static WorldCoordRoomLights             _gDryfieldNightMotelBalconyRoom2Lights;
 
 /// World-space end of the fourth balcony light shaft, in signed game units.
 ///
-/// Drawing reaches this point through `gDryfieldNightMotelBalconyShaft4Start` in
-/// the preceding translation unit. The containing two-point declaration
-/// remains unresolved; only this translation unit draws the endpoint.
+/// The shaft adapter explicitly pairs it with gDryfieldNightMotelBalconyShaft4Start
+/// from the other translation unit; their storage need not be adjacent.
 static const SVECTOR _gDryfieldNightMotelBalconyShaft4End SECTION(".data") = { -160, -2800, 8790, 0 };
 
 /// World-space first point of the balcony's fifth light shaft.
 ///
-/// XYZ uses signed game-coordinate units. The two-point drawer also reads the
-/// following storage; the containing glow-table declaration remains unresolved.
+/// XYZ uses signed game-coordinate units. The shaft adapter explicitly pairs
+/// this scalar with its separately declared endpoint.
 static SVECTOR _gDryfieldNightMotelBalconyShaft5Start = { -300, -3190, -4610, 0 };
 
 /// Fifth-shaft endpoint followed by the balcony's eight world-space flare centres.
 ///
 /// Signed game-coordinate XYZ. Element 0 is the preceding shaft's end;
-/// elements 1..8 correspond to glow-mask slots 10..17. The shaft pair still
-/// crosses separate C objects; flare reads stay within this array.
+/// elements 1..8 correspond to glow-mask slots 10..17. The shaft adapter copies
+/// element 0 into an explicit pair; flare reads stay within this array.
 static const SVECTOR _gDryfieldNightMotelBalconyShaft5EndAndFlarePoints[9] SECTION(".data") = {
     { -300, -3250, -4100, 0 },
     { -4140, -1700, 0x2AB2, 0 },
@@ -245,14 +244,14 @@ static const SVECTOR _gDryfieldNightMotelBalconyShaft5EndAndFlarePoints[9] SECTI
 
 /// World-space first point of the balcony's sixth light shaft.
 ///
-/// XYZ uses signed game-coordinate units. The two-point drawer also reads the
-/// following storage; the containing glow-table declaration remains unresolved.
+/// XYZ uses signed game-coordinate units. The shaft adapter explicitly pairs
+/// this scalar with its separately declared endpoint.
 static SVECTOR _gDryfieldNightMotelBalconyShaft6Start = { -0x312E, -5670, 490, 0 };
 
 /// World-space end of the sixth balcony light shaft, in signed game units.
 ///
-/// The drawer reaches this point through the preceding scalar; their
-/// containing pair is not yet represented by an in-bounds C declaration.
+/// The shaft adapter copies this point and the separately declared start into
+/// an in-bounds two-point array before drawing.
 static const SVECTOR _gDryfieldNightMotelBalconyShaft6End SECTION(".data") = { -0x2F3A, -5320, 490, 0 };
 
 /// Scattered-puff and debris origin for the balcony break in logical view 20.
@@ -4330,6 +4329,14 @@ WorldCollisionSurfaceProperties* gDryfieldNightMotelBalconySurfacePropertiesByCl
 static void _glowDrawFlare(const SVECTOR* worldPoint, s32 textureIndex, s32 radiusScale);
 static void _glowDrawShaft(const SVECTOR worldPoints[2], s32 radiusScale);
 
+// Native overlay neighbors are separate C objects on the host. Build an
+// explicit pair rather than reading a second vector beyond a scalar's bounds.
+static void _dryfieldNightMotelBalconyDrawShaft(const SVECTOR* start, const SVECTOR* end, s32 radiusScale)
+{
+    const SVECTOR points[2] = { *start, *end };
+    _glowDrawShaft(points, radiusScale);
+}
+
 void dryfieldNightMotelBalconyAmbientEffectsTask(Task* task)
 {
     enum {
@@ -4384,16 +4391,16 @@ void dryfieldNightMotelBalconyAmbientEffectsTask(Task* task)
         _glowDrawShaft(&gDryfieldNightMotelBalconyGlowPoints[0], DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
     }
     if (viewBit & _gDryfieldNightMotelBalconyGlowViewMasks[viewMaskWord][2]) {
-        _glowDrawShaft(&gDryfieldNightMotelBalconyLampShaftStart, DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
+        _dryfieldNightMotelBalconyDrawShaft(&gDryfieldNightMotelBalconyLampShaftStart, &gDryfieldNightMotelBalconyLampShaftEnd, DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
     }
     if (viewBit & _gDryfieldNightMotelBalconyGlowViewMasks[viewMaskWord][4]) {
-        _glowDrawShaft(&gDryfieldNightMotelBalconyShaft3Start, DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
+        _dryfieldNightMotelBalconyDrawShaft(&gDryfieldNightMotelBalconyShaft3Start, &gDryfieldNightMotelBalconyShaft3End, DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
     }
     if (viewBit & _gDryfieldNightMotelBalconyGlowViewMasks[viewMaskWord][6]) {
-        _glowDrawShaft(&gDryfieldNightMotelBalconyShaft4Start, DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
+        _dryfieldNightMotelBalconyDrawShaft(&gDryfieldNightMotelBalconyShaft4Start, &_gDryfieldNightMotelBalconyShaft4End, DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
     }
     if (viewBit & _gDryfieldNightMotelBalconyGlowViewMasks[viewMaskWord][8]) {
-        _glowDrawShaft(&_gDryfieldNightMotelBalconyShaft5Start, DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
+        _dryfieldNightMotelBalconyDrawShaft(&_gDryfieldNightMotelBalconyShaft5Start, &_gDryfieldNightMotelBalconyShaft5EndAndFlarePoints[0], DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
     }
     for (effectIndex = DRYFIELD_NIGHT_MOTEL_BALCONY_FIRST_FLARE_POINT; effectIndex < DRYFIELD_NIGHT_MOTEL_BALCONY_FLARE_POINT_END; effectIndex++) {
         if (viewBit & _gDryfieldNightMotelBalconyGlowViewMasks[viewMaskWord][effectIndex]) {
@@ -4401,7 +4408,7 @@ void dryfieldNightMotelBalconyAmbientEffectsTask(Task* task)
         }
     }
     if (viewBit & _gDryfieldNightMotelBalconyGlowViewMasks[viewMaskWord][18]) {
-        _glowDrawShaft(&_gDryfieldNightMotelBalconyShaft6Start, DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
+        _dryfieldNightMotelBalconyDrawShaft(&_gDryfieldNightMotelBalconyShaft6Start, &_gDryfieldNightMotelBalconyShaft6End, DRYFIELD_NIGHT_MOTEL_BALCONY_SHAFT_RADIUS_SCALE);
     }
     // Keep a broken lamp dark across subsequent visits.
     if (gameFlagGetNibble(GAME_FLAG_07F) == DRYFIELD_NIGHT_MOTEL_BALCONY_LAMP_BREAK_PENDING) {

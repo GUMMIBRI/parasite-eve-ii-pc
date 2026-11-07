@@ -1322,6 +1322,35 @@ targets, with no crashes (`historical-crash-coordinate-width-fixed`). Existing
 52 C and 39 Python HD tests pass. This is not Linux/Windows runtime validation
 of these latest coordinate changes, nor full natural boss/creature traversal.
 
+#### Completed v3 whole-catalog survey and balcony shaft bounds
+
+The completed macOS software survey selected all 3314 eligible static starts
+from the reviewed catalog and required complete ordered GPU-state evidence.
+It recorded 2703 exact off/on VRAM and rendered-image matches, 606 normal
+replay completions without a settled target, and five image differences; no
+process crashed (`full-survey-current-v3/report.json`). The binary and original
+reports are retained locally. This baseline predates the latest coordinate
+pointer changes. The 32 ineligible logical entries remain outside its scope.
+
+All five differences belong to the nighttime motel balcony. Repeating them
+also changed pixels between runs with the same widescreen setting, despite
+equal captured simulation/player state. The room passed scalar point addresses
+to a two-point light-shaft drawer, reading beyond separate C objects. The room
+adapter now copies each named start and endpoint into an explicit two-vector
+array. Existing endpoint values, lamp-break position and flare table remain
+in use; no light geometry is guessed from neighboring storage. Five failing
+cases now pass, and all 117 eligible balcony room/view variants pass exact
+software off/on parity on the corrected binary
+(`balcony-explicit-pairs-all-views`). All 52 C tests pass. The earlier whole
+survey and this room retry have distinct binary hashes and scopes.
+
+Separately, the Linux ARM64 coordinate-pointer build (before the balcony
+adapter) passes all 52 C tests, all 48 historical forced-start replay completions
+and the nine Vulkan/lavapipe foreground controls
+(`linux-historical-crash-coordinate-width`,
+`linux-coordinate-width-foreground-view11`). This does not establish physical
+GPU performance, Windows runtime behavior, or natural story traversal.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
