@@ -2207,6 +2207,9 @@ camera. It checks complete screen words, signed rejection and the untouched
 adjacent depth field. The old LP64 layout fails six checks; the correction passes.
 The updated test also passes as a Windows PE executable under Wine. All 53 macOS
 host tests pass with the corrected shared layout and this regression.
+The patched Linux x86-64 Release build also passes all 53 host tests under
+amd64 emulation; this does not yet verify Linux rendering for the shadow fix.
+See `shadow-gte-abi-v1/linux-build-assessment.json` and its immutable binary.
 
 The final macOS binary is SHA-256
 `82d42eba8ded6e1fe97cdd47b36a5210ae57f1c69d5a366d0177b93af4e849f1`.
