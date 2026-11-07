@@ -556,6 +556,13 @@ static void _actor450900CompanionDistressTask(Task* task)
             if (gSceneCombatState.actorControl != SCENE_COMBAT_ACTORS_RUNNING) {
                 break;
             }
+            // The room controller can run before the companion is attached, or
+            // after it has left. Keep reaction timing paused until its model is live.
+            if (companionTask == NULL || companionTask->bodyKind != TASK_BODY_TMD ||
+                companionTask->extra.tmd == NULL || companionTask->extra.tmd->coords == NULL ||
+                companionTask->extra.tmd->partCount == 0) {
+                break;
+            }
             // Count eligible updates across visits; demo playback retains the counter.
             if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.demoScene != ACTOR_450900_DISTRESS_DEMO_SCENE) {
                 gMapNeoArkCompanionDistressTicks = gMapNeoArkCompanionDistressTicks + 1;
@@ -564,7 +571,7 @@ static void _actor450900CompanionDistressTask(Task* task)
             if (_gActor450900PostChoiceConversationStarted == false && gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.companionHp > 0 && distressTicks >= 0) {
                 _gActor450900CompanionDistressStarted = state;
                 if (distressTicks % ACTOR_450900_REACTION_PERIOD_TICKS == 0) {
-                    companionCoord = gameGetTaskSlot(GAME_TASK_SLOT_COMPANION)->extra.tmd->coords;
+                    companionCoord = companionTask->extra.tmd->coords;
                     pan            = (s8)worldCoordGetOriginAudioPan(companionCoord);
                     depth          = (s8)worldCoordGetOriginAudioDepth(companionCoord);
                     if (rand() & 1) {

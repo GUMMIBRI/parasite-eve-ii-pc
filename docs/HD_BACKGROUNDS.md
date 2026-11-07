@@ -1244,6 +1244,24 @@ subset, five still pass parity, 37 reach EOF without a target and six still cras
 Earlier reports and debugger traces remain local and unchanged; these results
 do not prove natural gameplay traversal or other-platform correctness.
 
+#### Wait for the growth-room companion model before distress reactions
+
+The six remaining historical crash probes all entered Shelter B6 Growth Room.
+A headless LLDB reproduction stopped in the distress controller while reading
+coordinates through an absent companion task (address `0x58`). Fresh forced
+starts can retain positive companion HP without having a companion actor.
+The controller now pauses its timer and reactions until that slot owns a live
+TMD with root coordinates. Available-companion sound, animation and damage
+requests retain their existing order and timing; no actor or story flags are
+fabricated. The model lookup uses the task already fetched for that update.
+
+The complete 48-case retry (`historical-crash-retry-companion-ready`) now has
+no crashes: five exact parity passes and 43 normal replay EOF results without
+a settled target capture, including all six growth-room cases. These 43 remain
+unverified, rather than becoming parity passes. All 51 C and 39 Python HD tests
+pass on macOS. Loaded-companion natural traversal and other platforms still
+need runtime validation; this probe does not establish them.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
