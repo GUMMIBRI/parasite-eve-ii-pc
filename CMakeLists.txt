@@ -355,6 +355,16 @@ target_link_libraries(weapon_mp5a5_test PRIVATE psyz)
 
 add_executable(anim_cue_latch_test EXCLUDE_FROM_ALL tests/anim_cue_latch_test.c)
 
+add_executable(host_menu_probe EXCLUDE_FROM_ALL tests/host_menu_probe.c src/port/background_coverage.c)
+target_include_directories(host_menu_probe PRIVATE include include/decomp)
+target_compile_definitions(host_menu_probe PRIVATE __psyz SKIP_ASM)
+target_link_libraries(host_menu_probe PRIVATE psyz)
+if(APPLE)
+    target_link_options(host_menu_probe PRIVATE -Wl,-dead_strip)
+else()
+    target_link_options(host_menu_probe PRIVATE -Wl,--gc-sections)
+endif()
+
 add_executable(scene_image_timeout_test EXCLUDE_FROM_ALL tests/scene_image_timeout_test.c)
 target_include_directories(scene_image_timeout_test PRIVATE include include/decomp)
 target_compile_definitions(scene_image_timeout_test PRIVATE __psyz SKIP_ASM)

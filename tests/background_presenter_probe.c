@@ -36,5 +36,21 @@ int main(int argc,char** argv)
     file=fopen(argv[3],"wb");if(!file)return 3;
     fprintf(file,"P6\n%d %d\n255\n",w,h);fwrite(rgb,3,(size_t)w*h,file);fclose(file);free(rgb);
     printf("Native differences: %u; rendered %dx%d\n",differences,w,h);
+    if(getenv("PE2_PROBE_RELOAD")) {
+        const char* root=getenv("PE2_HD_BACKGROUNDS");if(!root)return 4;
+        for(int step=0;step<5;step++) {
+            const char* suffix[]={"disabled","reenabled","missing","restored","same-folder"};
+            if(!peBackgroundConfigurePack(step==2?"/nonexistent-pe2-probe-pack":root,step!=0))return 4;
+            LoadImage(&rect,(u_long*)pixels);DrawSync(0);
+            peBackgroundDraw(pixels,0,0,0);DrawSync(0);Psyz_VideoVSync(0);
+            StoreImage(&all,(u_long*)after);
+            for(unsigned i=0;i<1024*512;i++)if(before[i]!=after[i])return 4;
+            rgb=Psyz_VideoAllocRenderedFrame(&w,&h);if(!rgb)return 4;
+            char path[4096];snprintf(path,sizeof path,"%s.%s.ppm",argv[3],suffix[step]);
+            file=fopen(path,"wb");if(!file)return 4;
+            fprintf(file,"P6\n%d %d\n255\n",w,h);fwrite(rgb,3,(size_t)w*h,file);fclose(file);free(rgb);
+        }
+        if(peBackgroundConfigurePack("invalid\npath",1) || peBackgroundConfigurePack("",2))return 4;
+    }
     return !atoi(argv[2]) && differences?1:0;
 }

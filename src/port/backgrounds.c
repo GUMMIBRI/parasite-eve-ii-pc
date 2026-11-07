@@ -29,6 +29,19 @@ static PeBackgroundPack currentPack;
 static int packAvailable;
 static char packRoot[4096];
 static int configured;
+static int packConfigurationSet,packEnabled=1,packDirty;
+
+int peBackgroundConfigurePack(const char* path,int enabled)
+{
+    if(!path || strlen(path)>=sizeof packRoot || strpbrk(path,"\r\n") || (enabled!=0 && enabled!=1))return 0;
+    /* Re-selecting the same folder explicitly reloads edited/replaced artwork. */
+    strcpy(packRoot,path);packEnabled=enabled;packDirty=1;
+    /* Stop claiming the previous pack's side coverage immediately. Keep
+     * the user's widescreen preference for rooms with valid wider art. */
+    peBackgroundSetCoverage(0,0,320);peBackgroundSetCoverage(272,0,320);
+    packConfigurationSet=1;
+    return 1;
+}
 
 static struct { int y; PeBackgroundFrameInfo info; } frameInfo[2]={{.y=-1},{.y=-1}};
 static int frameSlot(int y)
@@ -154,12 +167,16 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
 {
     if(!configured) {
         const char* root=getenv("PE2_HD_BACKGROUNDS");
-        if(root && strlen(root)<sizeof packRoot)strcpy(packRoot,root);
+        if(!packConfigurationSet)peBackgroundConfigurePack(root?root:"",1);
         Psyz_GpuRegisterCommandHandler(0xf8,selectAtlas,NULL);
         configured=1;
     }
+    if(packDirty) {
+        if(packAvailable)Psyz_GpuResetSpriteAtlases();
+        packAvailable=0;previousKey=0;packDirty=0;
+    }
     /* Cropped transitions and movies do not claim static full-frame coverage. */
-    if(!source || offset_y || (!*packRoot && !getenv("PE2_DUMP_BACKGROUNDS") && !getenv("PE2_DUMP_FRAME") && !getenv("PE2_SURVEY_TARGET"))) {
+    if(!source || offset_y || (!(packEnabled && *packRoot) && !getenv("PE2_DUMP_BACKGROUNDS") && !getenv("PE2_DUMP_FRAME") && !getenv("PE2_SURVEY_TARGET"))) {
         peBackgroundSetCoverage(buffer_y,0,320);return;
     }
     uint64_t key=peBackgroundCopyNative(nativeRows,source,columns);
@@ -169,7 +186,7 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
     if(observedKey!=key) {dumpNative(key);observedKey=key;}
     /* PsyZ's material plane is display-only above native resolution. At 1x,
      * enabling wide without that plane would expose an unsqueezed LoadImage. */
-    if(Psyz_VideoGetInternalResolution()<2) {peBackgroundSetCoverage(buffer_y,0,320);return;}
+    if(!packEnabled || Psyz_VideoGetInternalResolution()<2) {peBackgroundSetCoverage(buffer_y,0,320);return;}
     preparePack(key);
     if(!packAvailable) { peBackgroundSetCoverage(buffer_y,0,320);return; }
     int wide=peBackgroundSetCoverage(buffer_y,currentPack.left,currentPack.right);

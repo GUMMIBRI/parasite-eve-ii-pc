@@ -15,7 +15,22 @@ or duplicate values fail before launch. The preference persists in settings.ini.
 It is separate from the renderer's effective widescreen state. The coverage gate
 only enables widescreen for complete centred artwork at least 428 pixels wide;
 unsupported backends and narrower spans fall back to original rendering.
-The optional loader is enabled with `PE2_HD_BACKGROUNDS=/absolute/pack/path`.
+Select a pack folder with Graphics > Background pack, then use Graphics >
+HD backgrounds to switch it off/on. Both choices persist in settings.ini.
+The folder chooser does not install, copy or download artwork. Individual
+missing/invalid assets retain the original image. Picture detail must be at
+least 2x for HD presentation. No production pack is bundled yet.
+
+The equivalent command-line options are `--hd-backgrounds /absolute/pack/path`
+and `--no-hd-backgrounds`. They are mutually exclusive and reject duplicates,
+empty/missing paths and newlines. Relative paths are saved as absolute paths,
+so restarting from a different directory does not change the selected folder.
+`PE2_HD_BACKGROUNDS=/absolute/pack/path` remains supported. Command-line options
+override that environment variable, which overrides saved preferences.
+Pack disable/change drops old wide coverage immediately; the next background
+draw releases the previous atlas and reloads the current source, even when the
+camera/key has not changed. Selecting the same folder again reloads edited
+artwork. This permits switching packs without restarting.
 It identifies the unmodified MDEC output by a 64-bit FNV-1a hash over all original
 RGB555 words in row order, serialized little endian. It supports contiguous and
 20-column image layouts. Without an available valid pack, frame submission keeps
@@ -49,8 +64,8 @@ Create a pack for one registered canvas:
 venv/bin/python3 tools/hd/pack.py --native /local/<key>.rgb555 \
   --art /local/registered.png --left -64 --right 384 \
   --output build-hd-study/pack
-PE2_HD_BACKGROUNDS="$PWD/build-hd-study/pack" ./build-port/parasite-eve-ii-pc \
-  --disc /path/to/disc1.cue --widescreen 1
+./build-port/parasite-eve-ii-pc --disc /path/to/disc1.cue \
+  --hd-backgrounds "$PWD/build-hd-study/pack" --widescreen 1
 ```
 
 Use Picture detail 2x or above for HD atlas presentation; the current shader's
@@ -87,12 +102,21 @@ GPU integration gate (requires Pillow, NumPy and a GPU):
 cmake --build build-port --target background_presenter_probe
 venv/bin/python3 tools/hd/check_presenter.py
 venv/bin/python3 tests/hd_pack_test.py
+venv/bin/python3 tools/hd/check_activation.py --disc /path/to/disc1.cue \
+  --disc2 /path/to/disc2.cue
 ```
 
 This gate uses entirely synthetic native pixels with mixed STP/transparent
 values and a centred game-style draw offset. It checks native VRAM equality,
 a visible HD material change, full 16:9 corner coverage, and exact original
 fallback for eight bad-pack cases. It does not prove all-game mask correctness.
+It also disables, re-enables, replaces with a missing folder, and restores a
+pack in one GPU process, proving exact original fallback and restored wide
+pixels without any native VRAM change. The activation check exercises real
+CLI parsing, saved preference reload, environment precedence and rejection of
+invalid/conflicting options using an isolated temporary profile.
+`host_menu_probe` renders the real settings painter into a PPM without opening
+a desktop window, for visual inspection of the scrolled Graphics page.
 
 ## Local inventory and artwork inputs
 
@@ -213,7 +237,7 @@ registration experiments do not establish production artwork quality.
 
 1. Finish production pack activation/installation/versioning and transition handling.
    The native source loader and PE1-compatible atlas presentation are implemented;
-   downloader/UI activation, hot reload, title/captured-screen handling, and full
+   downloader/versioned installation, title/captured-screen handling, and full
    validation across the game remain open. Keep PsyZ unmodified.
 2. Extend synthetic and real-scene validation to all views and foreground layers.
    One active gallery checkpoint at tick 10000 of a 12001-sample replay with

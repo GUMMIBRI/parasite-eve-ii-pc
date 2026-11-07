@@ -34,11 +34,12 @@ def main():
     metaName=f'{key:016x}.pe2bg';imageName=f'{key:016x}.png'
     (pack/metaName).write_bytes(metadata);atlas.save(pack/imageName)
     results={}
-    def run(case,wide,directory=None,scale=4):
+    def run(case,wide,directory=None,scale=4,reload=False):
         output=root/(case+'.ppm');output.unlink(missing_ok=True)
         env={k:v for k,v in os.environ.items() if not k.startswith('PE2_')}
         env.update(PSYZ_HEADLESS='gpu',SDL_AUDIODRIVER='dummy')
         if directory:env['PE2_HD_BACKGROUNDS']=str(directory)
+        if reload:env['PE2_PROBE_RELOAD']='1'
         process=subprocess.run([str(args.probe.resolve()),str(source),str(wide),str(output),str(scale)],env=env,capture_output=True,text=True,timeout=30)
         (root/(case+'.log')).write_text(process.stdout+process.stderr)
         if process.returncode:raise RuntimeError(f'{case} failed: {process.stdout} {process.stderr}')
@@ -48,6 +49,12 @@ def main():
         return output
     baseline=run('baseline',0)
     hd=run('hd',0,pack);wide=run('wide',1,pack)
+    reload=run('reload',1,pack,reload=True)
+    for suffix in ['disabled','missing']:
+        assert Path(str(reload)+'.'+suffix+'.ppm').read_bytes()==baseline.read_bytes(),suffix
+    for suffix in ['reenabled','restored','same-folder']:
+        assert Path(str(reload)+'.'+suffix+'.ppm').read_bytes()==wide.read_bytes(),suffix
+    assert (root/'reload.log').read_text().count('[background] loaded ')==4
     assert hd.read_bytes()!=baseline.read_bytes()
     assert results['wide']['width']>results['baseline']['width']*1.3
     assert results['wide']['height']==results['baseline']['height']
@@ -74,7 +81,7 @@ def main():
         (directory/metaName).write_bytes(data)
         assert run(case,1,directory).read_bytes()==baseline.read_bytes(),case
     (root/'report.json').write_text(json.dumps(dict(passed=True,cases=results),indent=2)+'\n')
-    print('PASS: original native pixels, HD material, full 16:9 coverage, safe 1x fallback, eight malformed-pack fallbacks')
+    print('PASS: original native pixels, HD material, full 16:9 coverage, live pack disable/reload, safe 1x fallback, eight malformed-pack fallbacks')
 
 
 if __name__=='__main__':main()

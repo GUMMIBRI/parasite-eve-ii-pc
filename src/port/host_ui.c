@@ -44,6 +44,8 @@ static const Color kPanel={0.075f,0.082f,0.102f,0.96f}, kText={0.93f,0.95f,0.98f
 #include "ui/gpu.h"
 
 static char discPaths[2][4096], configPath[4096], statusText[256];
+static char hdPackPath[4096];
+static int hdEnabled=1;
 static int requiredDisc, selectedDisc;
 static const char* const pages[]={"Graphics","Controls","Audio","Discs"};
 static const char* const buttons[]={"L2","R2","L1","R1","Triangle","Circle","Cross","Square",
@@ -53,7 +55,7 @@ static PsyzOverlayEventFilter_SDL3 previousFilter;
 static SDL_Window* uiWindow;
 
 static int rowCount(void) {
-    return s_overlayState.page==0?8:s_overlayState.page==2?1:s_overlayState.page==1?16:2;
+    return s_overlayState.page==0?10:s_overlayState.page==2?1:s_overlayState.page==1?16:2;
 }
 
 static int maxScroll(void) { int n=rowCount()-VISIBLE_ROWS; return n>0?n:0; }
@@ -83,6 +85,7 @@ static void saveOptions(void) {
         discPaths[0],discPaths[1],Psyz_VideoGetInternalResolution(),Psyz_VideoGetAspectMode(),peBackgroundGetWidescreen(),
         Psyz_VideoGetDitheringMode(),Psyz_VideoGetGeometryCorrection(),Psyz_VideoGetAntialiasing(),
         Psyz_VideoGetModelFiltering(),Psyz_VideoGetDynamicLighting(),Psyz_AudioGetOutputVolume());
+    fprintf(f,"hd_backgrounds=%d\nhd_background_path=%s\n",hdEnabled,hdPackPath);
     for(unsigned i=0;i<16;i++) fprintf(f,"key%u=%d\n",i,Psyz_GetKeyboardBinding_SDL3(i));
     int failed=ferror(f); if(fclose(f)) failed=1;
     if(failed || rename(temp,configPath)) snprintf(statusText,sizeof statusText,"Could not save preferences.");
@@ -104,10 +107,15 @@ static void loadOptions(void) {
             if(strlen(eq)<sizeof discPaths[0]) strcpy(discPaths[line[4]-'1'],eq);
             continue;
         }
+        if(!strcmp(line,"hd_background_path")) {
+            if(strlen(eq)<sizeof hdPackPath)strcpy(hdPackPath,eq);
+            continue;
+        }
         char* end; long n=strtol(eq,&end,10); if(end==eq || *end)continue;
         if(!strcmp(line,"scale") && n>=1 && n<=8) Psyz_VideoSetInternalResolution((unsigned)n);
         else if(!strcmp(line,"aspect") && n>=0 && n<=1) Psyz_VideoSetAspectMode(n);
         else if(!strcmp(line,"widescreen") && n>=0 && n<=1) widescreen=(int)n;
+        else if(!strcmp(line,"hd_backgrounds") && n>=0 && n<=1) hdEnabled=(int)n;
         else if(!strcmp(line,"dither") && n>=0 && n<=1) Psyz_VideoSetDitheringMode(n);
         else if(!strcmp(line,"geometry") && n>=0 && n<=1) Psyz_VideoSetGeometryCorrection(n);
         else if(!strcmp(line,"aa") && n>=0 && n<=1) Psyz_VideoSetAntialiasing(n);
@@ -200,10 +208,30 @@ static int chooseDiscs(SDL_Window* window,int expected) {
     return count;
 }
 
+static void chooseBackgroundPack(SDL_Window* window) {
+    DiscDialog d={0};
+    /* Called only by the settings modal, which owns the paused clock/audio. */
+    SDL_ShowOpenFolderDialog(discChosen,&d,window,*hdPackPath?hdPackPath:NULL,false);
+    while(!SDL_GetAtomicInt(&d.done)) {SDL_PumpEvents();SDL_Delay(10);}
+    if(d.failed)snprintf(statusText,sizeof statusText,"Could not open the folder chooser.");
+    else if(d.paths[0]) {
+        SDL_PathInfo info;
+        if(!SDL_GetPathInfo(d.paths[0],&info) || info.type!=SDL_PATHTYPE_DIRECTORY ||
+           !peBackgroundConfigurePack(d.paths[0],1))
+            snprintf(statusText,sizeof statusText,"Choose an available background pack folder.");
+        else {
+            strcpy(hdPackPath,d.paths[0]);hdEnabled=1;
+            snprintf(statusText,sizeof statusText,"Pack selected; missing artwork uses the original image.");
+        }
+    }
+    for(int i=0;i<2;i++)SDL_free(d.paths[i]);
+    s_overlayState.dirty=1;
+}
+
 static void rowText(int row,char label[128],char value[256]) {
     value[0]=0;
     if(s_overlayState.page==0) {
-        const char* labels[]={"Picture detail","Aspect ratio","Dithering","Geometry correction","Fullscreen","Antialiasing","Model filtering","Smooth lighting"};
+        const char* labels[]={"Picture detail","Aspect ratio","Dithering","Geometry correction","Fullscreen","Antialiasing","Model filtering","Smooth lighting","HD backgrounds","Background pack"};
         strcpy(label,labels[row]);
         if(row==0)snprintf(value,256,"%ux",Psyz_VideoGetInternalResolution());
         if(row==1)strcpy(value,peBackgroundGetWidescreen()?"Widescreen (16:9)":Psyz_VideoGetAspectMode()?"Square pixels":"Classic 4:3");
@@ -213,6 +241,12 @@ static void rowText(int row,char label[128],char value[256]) {
         if(row==5)strcpy(value,Psyz_VideoGetAntialiasing()?"On":"Off");
         if(row==6)strcpy(value,Psyz_VideoGetModelFiltering()?"On":"Off");
         if(row==7)strcpy(value,Psyz_VideoGetDynamicLighting()?"On":"Off");
+        if(row==8)strcpy(value,!hdEnabled?"Off":!*hdPackPath?"No pack selected":Psyz_VideoGetInternalResolution()<2?"Requires 2x detail":"On");
+        if(row==9) {
+            const char* name=hdPackPath;
+            for(const char* p=hdPackPath;*p;p++)if((*p=='/' || *p=='\\') && p[1])name=p+1;
+            snprintf(value,256,"%.40s",*name?name:"Choose folder...");
+        }
     } else if(s_overlayState.page==2) {
         strcpy(label,"Master volume");snprintf(value,256,"%u%%",Psyz_AudioGetOutputVolume());
     } else if(s_overlayState.page==1) {
@@ -298,6 +332,11 @@ static void changeRow(int direction,int activate) {
         if(r==5)Psyz_VideoSetAntialiasing(!Psyz_VideoGetAntialiasing());
         if(r==6)Psyz_VideoSetModelFiltering(!Psyz_VideoGetModelFiltering());
         if(r==7)Psyz_VideoSetDynamicLighting(!Psyz_VideoGetDynamicLighting());
+        if(r==8) {
+            hdEnabled=!hdEnabled;peBackgroundConfigurePack(hdPackPath,hdEnabled);
+            if(hdEnabled && !*hdPackPath)snprintf(statusText,sizeof statusText,"Select a background pack folder below.");
+        }
+        if(r==9 && activate)chooseBackgroundPack(s_overlayGpuWindow);
     } else if(s_overlayState.page==2) {
         int n=(int)Psyz_AudioGetOutputVolume()+direction*5;
         Psyz_AudioSetOutputVolume(n<0?0:n>100?100:n);
@@ -420,7 +459,8 @@ static bool settingsEvent(const SDL_Event* e) {
 
 int peHostStartup(int argc,char** argv,const char** disc) {
     loadOptions();
-    int menuOnly=0,validateOnly=0,widescreenSeen=0;
+    int menuOnly=0,validateOnly=0,widescreenSeen=0,hdSeen=0;
+    const char* hdEnvironment=getenv("PE2_HD_BACKGROUNDS");
     const char* explicitDisc=getenv("PE2_DISC");
     const char* explicitDisc2=getenv("PE2_DISC2");
     for(int i=1;i<argc;i++) {
@@ -435,9 +475,37 @@ int peHostStartup(int argc,char** argv,const char** disc) {
             widescreenSeen=1;
             applyWidescreen(argv[++i][0]=='1');
         }
+        else if(!strcmp(argv[i],"--hd-backgrounds")) {
+            if(hdSeen || i+1>=argc || !*argv[i+1] || argv[i+1][0]=='-' ||
+               strlen(argv[i+1])>=sizeof hdPackPath || strpbrk(argv[i+1],"\r\n")) {
+                fprintf(stderr,"Missing, invalid or duplicate --hd-backgrounds path.\n");return -1;
+            }
+            hdSeen=1;hdEnabled=1;strcpy(hdPackPath,argv[++i]);
+        }
+        else if(!strcmp(argv[i],"--no-hd-backgrounds")) {
+            if(hdSeen) {fprintf(stderr,"Duplicate or conflicting HD background options.\n");return -1;}
+            hdSeen=1;hdEnabled=0;
+        }
         else if(argv[i][0]!='-' && !explicitDisc)explicitDisc=argv[i];
-        else { fprintf(stderr,"usage: %s [disc.cue|disc.bin] [--disc2 image] [--host-menu] [--widescreen 0|1]\n",argv[0]);return -1; }
+        else { fprintf(stderr,"usage: %s [disc.cue|disc.bin] [--disc2 image] [--host-menu] [--widescreen 0|1] [--hd-backgrounds folder|--no-hd-backgrounds]\n",argv[0]);return -1; }
     }
+    if(hdEnvironment && !hdSeen) {
+        if(strlen(hdEnvironment)>=sizeof hdPackPath || strpbrk(hdEnvironment,"\r\n")) {
+            fprintf(stderr,"Invalid PE2_HD_BACKGROUNDS path.\n");return -1;
+        }
+        strcpy(hdPackPath,hdEnvironment);hdEnabled=1;
+    }
+    if(*hdPackPath && hdPackPath[0]!='/' && hdPackPath[0]!='\\' &&
+       !(hdPackPath[0] && hdPackPath[1]==':')) {
+        char absolute[4096];char* directory=SDL_GetCurrentDirectory();
+        int length=directory?snprintf(absolute,sizeof absolute,"%s%s",directory,hdPackPath):-1;
+        SDL_free(directory);
+        if(length<0 || length>=(int)sizeof absolute) {
+            fprintf(stderr,"Could not resolve background pack path.\n");return -1;
+        }
+        strcpy(hdPackPath,absolute);
+    }
+    peBackgroundConfigurePack(hdPackPath,hdEnabled);
     if(explicitDisc && acceptPath(explicitDisc,1)!=1) {fprintf(stderr,"%s\n",statusText);return -1;}
     if(explicitDisc2 && acceptPath(explicitDisc2,2)!=2) {fprintf(stderr,"%s\n",statusText);return -1;}
     if(validateOnly) {
