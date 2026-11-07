@@ -8,6 +8,13 @@ int Psyz_VideoSetWidescreen(int enabled) { effective=unsupported?0:enabled;retur
 void Psyz_VideoSetWidescreenPicture(int y,int left,int right) { bufferY=y;leftEdge=left;rightEdge=right; }
 int main(void)
 {
+    peBackgroundRequestNativeFrame(-1);peBackgroundRequestNativeFrame(2);
+    CHECK(!peBackgroundConsumeNativeFrame(0) && !peBackgroundConsumeNativeFrame(272));
+    peBackgroundRequestNativeFrame(1);peBackgroundRequestNativeFrame(1);
+    CHECK(!peBackgroundConsumeNativeFrame(256) && !peBackgroundConsumeNativeFrame(0));
+    CHECK(peBackgroundConsumeNativeFrame(272) && !peBackgroundConsumeNativeFrame(272));
+    peBackgroundRequestNativeFrame(0);peBackgroundRequestNativeFrame(1);
+    CHECK(peBackgroundConsumeNativeFrame(0) && peBackgroundConsumeNativeFrame(272));
     peBackgroundSetWidescreen(1);
     CHECK(peBackgroundGetWidescreen()==1 && effective==0);
     CHECK(peBackgroundSetCoverage(272,0,320)==0);

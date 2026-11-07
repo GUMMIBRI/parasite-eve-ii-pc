@@ -35,6 +35,7 @@ static int packAvailable;
 static PeForegroundPack foregroundPack;
 static int foregroundAvailable,packLocation[4];
 static int materialPresented;
+static int nativeFrameRequired;
 static char packRoot[4096];
 static int configured;
 static int packConfigurationSet,packEnabled=1,packDirty;
@@ -147,6 +148,8 @@ static int frameSlot(int y)
 }
 void peBackgroundBeginFrame(int y)
 {
+    nativeFrameRequired=peBackgroundConsumeNativeFrame(y);
+    if(nativeFrameRequired)peBackgroundSetCoverage(y,0,320);
     drawFrameIndex++;
     int slot=frameSlot(y);memset(&frameInfo[slot].info,0,sizeof frameInfo[slot].info);
     if(gpuAuditEnabled<0) {
@@ -313,7 +316,7 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
     if(observedKey!=key) {dumpNative(key);observedKey=key;}
     /* PsyZ's material plane is display-only above native resolution. At 1x,
      * enabling wide without that plane would expose an unsqueezed LoadImage. */
-    if(!packEnabled || Psyz_VideoGetInternalResolution()<2) {peBackgroundSetCoverage(buffer_y,0,320);return;}
+    if(nativeFrameRequired || !packEnabled || Psyz_VideoGetInternalResolution()<2) {peBackgroundSetCoverage(buffer_y,0,320);return;}
     preparePack(key);
     if(!packAvailable) { peBackgroundSetCoverage(buffer_y,0,320);return; }
     int wide=peBackgroundSetCoverage(buffer_y,currentPack.left,currentPack.right);

@@ -12,6 +12,9 @@
 /// storage until the frame finishes. No capacity or layout checks are made.
 static void _crossfadeDrawLive(s32 shade)
 {
+#ifdef __psyz
+    peBackgroundRequestNativeFrame(gDisplayState.drawBuffer);
+#endif
     enum {
         CROSSFADE_LEFT_STRIP_WIDTH_PIXELS = 192,
         CROSSFADE_LOWER_BUFFER_PAGE_Y     = 256,

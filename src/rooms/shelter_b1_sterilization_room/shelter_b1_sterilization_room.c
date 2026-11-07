@@ -1096,6 +1096,9 @@ static void _shelterB1SterilizationRoomRebuildActorObstacle(const GfxCoord* mode
 /// Advances the task's state after queuing; capture completes asynchronously.
 static void _shelterB1SterilizationRoomCaptureCrossfadeState(Task* task)
 {
+#ifdef __psyz
+    peBackgroundRequestNativeFrame(gDisplayState.drawBuffer);
+#endif
     enum {
         SHELTER_B1_STERILIZATION_ROOM_CAPTURE_LEFT_VRAM_X  = 832,
         SHELTER_B1_STERILIZATION_ROOM_CAPTURE_RIGHT_VRAM_X = 384,

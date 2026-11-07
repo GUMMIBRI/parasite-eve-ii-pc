@@ -497,6 +497,9 @@ static void _mistR18DrawFadeSprites(s32 fadeActive, s32 shade)
 /// Captures the current 320x240 draw framebuffer as the crossfade's saved backdrop.
 static void _mistR18CaptureBackdropState(Task* task)
 {
+#ifdef __psyz
+    peBackgroundRequestNativeFrame(gDisplayState.drawBuffer);
+#endif
     RECT     sourceRect;
     DR_STP*  maskCommand;
     DR_MOVE* copyCommand;

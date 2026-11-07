@@ -16,6 +16,9 @@
 
 #include "main/display.h"
 #include "main/task_types.h"
+#ifdef __psyz
+#include "port/backgrounds.h"
+#endif
 
 /// Ordering tag, RGB modulation scale and captured-frame geometry for crossfades.
 enum {

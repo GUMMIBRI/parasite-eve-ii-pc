@@ -2,6 +2,18 @@
 #include <psyz/video.h>
 
 static int requestedWidescreen;
+static unsigned nativeFrames;
+
+void peBackgroundRequestNativeFrame(int buffer_index)
+{
+    if(buffer_index>=0 && buffer_index<2)nativeFrames|=1u<<buffer_index;
+}
+int peBackgroundConsumeNativeFrame(int buffer_y)
+{
+    if(buffer_y!=0 && buffer_y!=272)return 0;
+    unsigned bit=1u<<(buffer_y==272),result=nativeFrames&bit;
+    nativeFrames&=~bit;return result!=0;
+}
 
 void peBackgroundSetWidescreen(int enabled)
 {

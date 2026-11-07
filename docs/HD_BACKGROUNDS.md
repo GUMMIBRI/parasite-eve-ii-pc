@@ -1057,6 +1057,42 @@ expected framebuffer copies, and the captured image was visually inspected.
 This is transient native fallback evidence, not HD-art crossfade support or a
 settled-view approval. All 49 C tests and 39 Python HD tests pass; PsyZ is unchanged.
 
+#### Captured-frame crossfade fallback
+
+An eight-background synthetic material pack for MIST r18 reproduced an actual
+presentation defect: at transient checkpoints 1304 and 1310 the copied native
+centre overlaid the current HD pattern, while its unblended sides stayed wide.
+The native and material runs have equal original commands and observed simulation
+states, isolating this from different gameplay inputs. The pre-fix collection
+remains in `mist-pattern-crossfade`.
+
+Captured-backdrop producers now request a native frame for their logical draw
+buffer. Presentation consumes the request once for physical y=0 or 272, disables
+HD base/foreground material for that frame, and reports native 4:3 coverage.
+MIST r18 and Shelter B1 sterilization-room capture callbacks request this before
+their copy packets; the shared live-frame crossfade drawer requests it for each
+blend frame. Ordinary frames resume their normal pack selection afterward.
+This preserves captured images without claiming an extended version of them.
+Psyz and original game packet contents remain unchanged.
+
+`mist-pattern-crossfade-guarded/assessment.json` verifies macOS Metal at 4x:
+checkpoints 1292 (capture), 1304 and 1310 (blend) produce 1280x960 RGB exactly
+equal to no-pack controls; checkpoint 1340 resumes 1707x960 HD presentation.
+The blend checks cover both physical buffers. Each current native framebuffer
+also matches exactly. At 1292 and 1304, 2951 words in the *other*, older framebuffer
+still differ from earlier wide rendering; by 1310 full VRAM matches. This is not
+a full-history native VRAM parity claim. Unit coverage verifies per-buffer
+requests, duplicate requests, invalid buffers and one-shot consumption; all 49
+C tests pass. Sterilization-room runtime traversal, other backends and actual
+extended captured-frame artwork remain unverified.
+
+All four no-pack checkpoints also match pre-fix rendered RGB, full VRAM,
+normalized commands and observed simulation state exactly. The installed two-view
+gallery route's nine controls pass again on the new binary
+(`foreground-view11-after-crossfade-guard`), including active foreground material
+in both buffers and malformed-pack fallback. This limits regression evidence to
+these concrete routes rather than all-room or all-platform correctness.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,

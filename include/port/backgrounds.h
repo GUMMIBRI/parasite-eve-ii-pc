@@ -5,6 +5,10 @@
 typedef struct { uint64_t key; int location[6]; } PeBackgroundFrameInfo;
 /* Metadata for a diagnostic capture of one physical display buffer. */
 void peBackgroundBeginFrame(int buffer_y);
+/* Queue native presentation for an OT containing captured-frame feedback.
+ * Producer uses logical buffer 0/1; presentation consumes once at y=0/272. */
+void peBackgroundRequestNativeFrame(int buffer_index);
+int peBackgroundConsumeNativeFrame(int buffer_y);
 int peBackgroundGetFrameInfo(int buffer_y,PeBackgroundFrameInfo* info);
 typedef struct {
     uint32_t parts,flags;
