@@ -1904,6 +1904,40 @@ relaxed or relabelled. The successful 300/301-frame captures independently satis
 the existing settled gate. Python compilation and real debugger checkpoints
 validate the diagnostic additions; no game executable or PsyZ code changes.
 
+#### Native course-0 countdown, completion and return
+
+The earlier attack replay kept pressing Cross, which releases a target lock;
+holding Square continuously then cannot acquire the next target. A revised
+controller trace preserves the menu prefix, then periodically releases/represses
+Square and pulses R1 without Cross. Native attack handling also performs the
+necessary automatic reloads. This is authored controller input, not a scene,
+position, camera or flag override.
+
+Read-only checkpoints on prefixes of the same 12001-sample trace show course 0
+in timed-wave phase 15 at sample 8001 (13 paper-target kills, three live targets,
+1295 clock frames remaining), then controller finishing state 2 at sample 10801
+(23 kills, one remaining target, clock zero). At sample 12001 training is inactive,
+the live course task is gone and the player is in view 8 with HP 100. This proves
+the sampled tutorial/wave/countdown/finish route; no high-score prize or completion
+of other courses is claimed.
+
+Three headless Metal 4x runs use that exact trace: no pack in classic, the view-14
+study pack in classic, and the same pack with widescreen requested. Each reaches
+30 settled frames in uncovered view 8 at vsync 11120. All three captures have
+identical full native VRAM, presented RGB, simulation counters, complete models
+and player pose; normalized original GPU command comparisons also pass. Output
+is 1280x960 with zero foreground replacements, despite the pack having loaded
+view 14 and its 29-source atlas earlier in the run. The returned classic frame
+was visually inspected. Thus this course completion restores native framing
+without stale extended artwork.
+
+`gallery-course1-return-fallback/assessment.json` binds all three runs, input
+hashes and the separate course-progress checkpoints. Its local `check.py`
+reproduces the collection. This is one authored-warp course route and one
+post-course return checkpoint; it does not establish per-frame parity throughout
+the course, final artwork quality, other courses, other platforms or an entire
+story playthrough.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
