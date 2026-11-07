@@ -63,6 +63,16 @@ limit during the combined-pack classic run; it is retained as incomplete in
 native-state and material gates unchanged. A separate 180-second collection is
 in progress; a timeout or installed-file parity alone is not runtime approval.
 
+Installer foreground checks now also cover PE2FG1/PE2FG2 descriptor size,
+background/atlas identity, filename/location binding, required base descriptor,
+source ordering, page/CLUT ranges, inset constraints, contiguous cell allocation
+and PNG dimensions/integrity. New tests recompute manifests around deliberately
+corrupt descriptors, so SHA-256 agreement alone cannot make those inputs pass.
+Both legacy and inset formats are exercised. All 38 Python HD tests pass on
+macOS; all seven installer tests pass on Linux ARM64. The existing eight-file
+gallery candidate passes the stricter verifier. This remains structural
+validation; runtime native-texel, alpha/material and occlusion checks still apply.
+
 The equivalent command-line options are `--hd-backgrounds /absolute/pack/path`
 and `--no-hd-backgrounds`. They are mutually exclusive and reject duplicates,
 empty/missing paths and newlines. Relative paths are saved as absolute paths,

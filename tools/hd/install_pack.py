@@ -63,7 +63,28 @@ def read_manifest(root):
         if name.endswith('.pe2fg'):
             raw=(root/name).read_bytes()
             if len(raw)<48 or raw[:8] not in [b'PE2FG1\0\0',b'PE2FG2\0\0']:raise ValueError('Invalid foreground header')
-            if f'{int.from_bytes(raw[16:24],"little"):016x}.fg.png' not in files:raise ValueError('Missing foreground atlas')
+            magic,background,atlas_key,stage,area,view,room,count,cells=struct.unpack('<8sQQ6I',raw[:48])
+            context=[int(v) for v in name[:-6].split('-')[1:]]
+            if (not background or background!=int(name[:16],16) or not atlas_key or atlas_key==background
+                or context!=[stage,area,view,room] or not 1<=stage<=5 or not 1<=area<=255
+                or not 1<=view<=50 or not 1<=room<=255 or not 1<=count<=512 or not 1<=cells<=960
+                or len(raw)!=48+count*16 or f'{background:016x}.pe2bg' not in files):
+                raise ValueError('Invalid foreground identity, context or extent')
+            next_cell=0;previous=-1
+            for offset in range(48,len(raw),16):
+                source,tpage,clut,w,h,u,v,first=struct.unpack('<IHHHHBBH',raw[offset:offset+16])
+                inset=bool(source&4096) if magic==b'PE2FG2\0\0' else False
+                if magic==b'PE2FG2\0\0':source&=~4096
+                if (not previous<source<=4095 or tpage>511 or (tpage>>7)&3==3 or clut>32767
+                    or not 1<=w<=320 or not 1<=h<=240 or (inset and (w<16 or h<16)) or first!=next_cell):
+                    raise ValueError('Invalid foreground source record')
+                previous=source;next_cell+=((w+15)//16)*((h+15)//16)
+            if next_cell!=cells:raise ValueError('Invalid foreground cell count')
+            atlas=f'{atlas_key:016x}.fg.png'
+            if atlas not in files:raise ValueError('Missing foreground atlas')
+            with Image.open(root/atlas) as image:
+                if image.format!='PNG' or image.size!=(1088,((cells+15)//16)*136):raise ValueError('Invalid foreground atlas')
+                image.verify()
     return data
 
 
