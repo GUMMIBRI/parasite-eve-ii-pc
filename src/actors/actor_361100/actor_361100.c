@@ -978,6 +978,14 @@ static TaskMessageEntry _gActor361100EveMessageTable[] = {
 /// consumption. This branch has no capacity check. Written count must be in
 /// 0..0x18000; allocation must succeed because the retained failure path exits
 /// and then continues using the allocation. Other view IDs leave the task live.
+#ifdef __psyz
+/* Keep the ripple at offset zero for the existing task-work users. Native
+ * stream-tail budgets assume 40-byte packets; host GPU tags are larger. */
+typedef struct {
+    Actor403600Ripple ripple;
+    POLY_FT4 packets[2][321]; /* 320 strips plus a leading refraction slot. */
+} Actor361100StreamWaterWork;
+#endif
 static void _actor361100StreamWaterTask(Task* task)
 {
     enum { ACTOR_361100_STREAM_WINDOW_BYTES          = 0x18000,
@@ -1007,7 +1015,11 @@ static void _actor361100StreamWaterTask(Task* task)
         streamWrite = gFsActorBuffer2Base + gFsActorBufferWrittenBytes[2];
         // Seed a shallow disc before either water presentation can draw.
         if (task->state == 0) {
+#ifdef __psyz
+            ripple = memCalloc(sizeof(Actor361100StreamWaterWork), false);
+#else
             ripple = memCalloc(sizeof(Actor403600Ripple), false);
+#endif
             if (ripple == NULL) {
                 taskCallExit(task);
                 return;
@@ -1035,6 +1047,9 @@ static void _actor361100StreamWaterTask(Task* task)
         } else if (viewId == ACTOR_361100_STREAM_VIEW_RIPPLE) {
             // Borrow the current buffer's half of the free streaming tail.
             gActor403600EffectPrimitiveCursor = streamWrite + (gDisplayState.otBuffer * ((s32)(freeBytes + (freeBytes >> 0x1F)) >> 1));
+#ifdef __psyz
+            gActor403600EffectPrimitiveCursor = (u8*)((Actor361100StreamWaterWork*)task->work)->packets[gDisplayState.otBuffer];
+#endif
             actor403600TickRipple(ripple);
             actor403600DrawRipple(ripple, discCoord);
             return;
@@ -1181,6 +1196,9 @@ static void _actor361100DrawStreamRefraction(Task* task)
             packetBytes += freeBytes >> 1;
         }
         quad = (POLY_FT4*)packetBytes;
+#ifdef __psyz
+        quad = ((Actor361100StreamWaterWork*)task->work)->packets[displayBuffer]+1;
+#endif
         quad--;
         if (gSceneCombatState.actorControl == SCENE_COMBAT_ACTORS_RUNNING) {
             task->killCountdown = (u16)task->killCountdown + ACTOR_361100_REFRACTION_PHASE_STEP;

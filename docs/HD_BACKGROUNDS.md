@@ -1183,6 +1183,40 @@ now ends normally without settled *source* targets, rather than crashing
 successful later-room replay does not make their original static parity pass.
 Other platforms and natural-story traversal remain separate validation work.
 
+#### Streamed water packet layout and lifetime
+
+The Shelter B2 pod-bottom replay reproduces GPU packet corruption in view 12:
+its supposed length is `0x2D000009`. The custom actor-403600 water-grid quad had
+only a pointer-width link, omitting PsyZ's separate length field. Writing its
+command byte therefore corrupted the length. Its declaration now uses `O_TAG`,
+with actual host size/command-offset assertions, and shares a private packet
+header with a regression test that writes/link-checks the real type and verifies
+all four corner offsets against `POLY_FT4`. PsyZ is unchanged.
+
+Actor-361100 streamed water also placed host-sized packets into legacy streaming
+tail halves sized for 40-byte PS1 packets. Host builds now allocate two aligned
+packet arrays in the water task's own work block, with the existing ripple state
+at offset zero. Refraction has 320 strip slots plus a leading slot, avoiding a
+pointer before the array; ripple output uses the same per-buffer storage. The
+task owns its allocation and normal teardown frees it. The native stream-tail
+eligibility gate remains unchanged and the effect is retained.
+
+All 51 C tests pass on macOS. Fourteen of the 15 old pod-bottom crash probes
+now reach replay EOF without a crash, while remaining unverified because they
+do not capture their settled target. View 11 still faults in a CD-sector copy
+to an invalid destination (`pod-bottom-view11-after-packet-debug.log`), a separate
+unresolved path. An ASan/UBSan build reaches EOF for the view-1 replay with no
+AddressSanitizer error when UBSan recovery is enabled; it records 85 UBSan
+diagnostics, including world-coordinate overflow, CD bit shifts and animation
+scratch alignment. The first halt-on-UB attempt and full logs are retained;
+this is explicitly not a clean sanitizer pass.
+
+The complete 48-case historical subset was rerun on the combined current build
+(`historical-crash-retry-water-fix`). Five cases still pass exact parity; all
+other outcomes remain unverified and separately classified in its assessment.
+No all-room completion, final water artwork, natural-story traversal, or
+cross-platform approval follows from these macOS software probes.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
