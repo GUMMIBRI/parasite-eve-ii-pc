@@ -836,6 +836,27 @@ not final geometry, complete actor mattes, intermediate transition frames or
 other platforms. Only the view-11 candidate pack was supplied for this check;
 it does not establish a continuous HD-to-HD transition from view 10.
 
+A subsequent local two-view pack combines view-10 v8 and view-11 v3. The six
+controller runs in `gallery-two-view-transitions-reviewed/report.json` complete
+both routes, each with no-pack classic, no-pack wide and combined-pack wide
+controls. The settled view-10 preview and view-11 endpoint are both 1707x960;
+13 foreground sources activate at view 11. Continuing to unpacked view 12 gives
+1707x960 at the preview and 1280x960 at the endpoint, with no replacements and
+exact native VRAM and rendered RGB against the no-pack control. Original command
+streams and observed simulation state match at both endpoints. For active wide
+view 11, full native VRAM equals the earlier single-view-11 wide control exactly.
+An initial failed comparison with the narrow control is retained separately:
+its 34962 changed native words reproduce the existing wide presentation, rather
+than showing a new two-pack transition divergence. The assessment records the
+control and pack/replay/script hashes. These are settled observations on one
+macOS Metal route, not a capture of every intermediate transition frame.
+
+View-11 artwork v5, made with built-in imagegen to repair only outer floor joins,
+improves those joins visually but drifts in central sources 3–6 and right source
+8. Its image, prompt, provenance and registration report remain local under
+`build-hd-study/art/mist-shooting-gallery-view11/`; it is rejected as a replacement
+for v3. No generated image or native-derived pack is committed or published.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
