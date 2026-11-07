@@ -1,6 +1,8 @@
 #include "gamemain.h"
 #ifdef __psyz
 #include "port/backgrounds.h"
+#include "main/wipsys.h"
+#include <stdlib.h>
 #endif
 
 #include <psyz.h>
@@ -282,12 +284,20 @@ static inline void _displayPresentFrame(s32 bufferIndex)
 #endif
     }
 #ifdef __psyz
-    peBackgroundEndFrame(gDisplayState.drawEnv[bufferIndex].clip.y,
-        gDisplayState.skipDraw==0 && !gCdCmdQueue.blockGamePause &&
+    PeBackgroundSimulationState simulation={.anim_frame=gDisplayState.animFrame,.frame_count=gDisplayState.frameCount,
+        .loop_count=gDisplayState.loopCount,.loop_ticks=gDisplayState.loopTicks,.random_lcg=gRandomLcgState};
+    int fieldReady=gDisplayState.skipDraw==0 && !gCdCmdQueue.blockGamePause &&
         gFsCdOperationStatus==FILE_SYSTEM_CD_OPERATION_COMPLETE && gpuExtIsDisplayEnabled() &&
-        gDisplayState.pendingMode==DISPLAY_MODE_NONE,gDisplayState.gameTick,gDisplayState.vsyncCount,
-        &(PeBackgroundSimulationState){gDisplayState.animFrame,gDisplayState.frameCount,
-            gDisplayState.loopCount,gDisplayState.loopTicks,gRandomLcgState});
+        gDisplayState.pendingMode==DISPLAY_MODE_NONE;
+    /* Borrow player coordinates only for an opted-in, ready-field diagnostic. */
+    const MATRIX* playerRoot=fieldReady && getenv("PE2_SURVEY_TARGET") ? playerStatusCoordMtx(&gPlayerStatus) : NULL;
+    if(playerRoot) {
+        simulation.player_root_valid=1;
+        for(unsigned i=0;i<9;i++)simulation.player_root[i]=playerRoot->m[i/3][i%3];
+        for(unsigned i=0;i<3;i++)simulation.player_root[9+i]=playerRoot->t[i];
+    }
+    peBackgroundEndFrame(gDisplayState.drawEnv[bufferIndex].clip.y,
+        fieldReady,gDisplayState.gameTick,gDisplayState.vsyncCount,&simulation);
 #endif
 }
 

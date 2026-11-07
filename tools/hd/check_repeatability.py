@@ -55,6 +55,7 @@ def main():
                 env={k:v for k,v in os.environ.items() if not k.startswith('PE2_')}
                 env.update(PSYZ_HEADLESS='gpu',PSYZ_RASTER_CLOCK='virtual',SDL_AUDIODRIVER='dummy',PE2_SKIPINTRO='1',
                     PE2_CONFIG_DIR=profile,PE2_MEMORY_CARD_DIR=profile+'/cards',PE2_PAD_REPLAY=str(replay),
+                    PE2_PAD_RECORD=str(destination/'input.pad'),
                     PE2_START_LOCATION=args.location,PE2_SURVEY_KEEP_VIEW='1',PE2_SURVEY_SETTLE_FRAMES=str(args.settle),
                     PE2_SURVEY_TARGET=','.join(map(str,location[:4]))+':'+args.key,
                     PE2_SURVEY_OUTPUT=str(destination),PE2_DUMP_GPU_STATE='1')
@@ -65,18 +66,20 @@ def main():
                     subprocess.run(command,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=40)
             report,native=validate_capture(destination,dict(keys=[args.key],location=location),True)
             commands=(destination/'gpu-commands.bin').read_bytes();frame=(destination/'frame.ppm').read_bytes()
+            inputs=(destination/'input.pad').read_bytes()
             state=simulation_state(report);clocks={k:report[k] for k in ['draw_frame','game_tick','vsync_count','buffer_y']}
-            row=dict(case=name,mode=mode,report=report,native_sha256=hashlib.sha256(native).hexdigest(),frame_sha256=hashlib.sha256(frame).hexdigest())
-            if reference is None:reference=(commands,native,frame,state,clocks)
+            row=dict(case=name,mode=mode,report=report,native_sha256=hashlib.sha256(native).hexdigest(),frame_sha256=hashlib.sha256(frame).hexdigest(),
+                input_sha256=hashlib.sha256(inputs).hexdigest(),input_samples=inputs.count(b'\n')-1)
+            if reference is None:reference=(commands,native,frame,state,clocks,inputs,report.get('player_root'))
             comparison=compare_gpu_commands(reference[0],commands)
             row.update(commands=comparison,native_equal=reference[1]==native,frame_equal=reference[2]==frame,
-                       simulation_equal=reference[3]==state,clocks_equal=reference[4]==clocks)
-            local=variant_references.setdefault(mode,(commands,native,frame,state,clocks))
+                       simulation_equal=reference[3]==state,clocks_equal=reference[4]==clocks,input_equal=reference[5]==inputs,player_root_equal=reference[6]==report.get('player_root'))
+            local=variant_references.setdefault(mode,(commands,native,frame,state,clocks,inputs,report.get('player_root')))
             row['equal_to_variant_reference']=(compare_gpu_commands(local[0],commands)['equal'] and
-                local[1]==native and local[2]==frame and local[3]==state and local[4]==clocks)
+                local[1]==native and local[2]==frame and local[3]==state and local[4]==clocks and local[5]==inputs and local[6]==report.get('player_root'))
             # HD material intentionally changes frame RGB; assess native/input
             # repeatability separately when comparing across pack variants.
-            row['native_and_inputs_equal']=comparison['equal'] and row['native_equal'] and row['simulation_equal'] and row['clocks_equal']
+            row['native_and_inputs_equal']=comparison['equal'] and row['native_equal'] and row['simulation_equal'] and row['clocks_equal'] and row['input_equal'] and row['player_root_equal']
             (destination/'vram.bin.z').write_bytes(zlib.compress(native));(destination/'vram.bin').unlink()
             rows.append(row);save();print(name,row['native_and_inputs_equal'],flush=True)
     if hashlib.sha256(binary.read_bytes()).hexdigest()!=identity:raise RuntimeError('Executable changed during check')

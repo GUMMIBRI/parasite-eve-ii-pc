@@ -519,6 +519,18 @@ replacements and equal recorded simulation state and clocks. This directly
 reproduces the same input-divergence symptom without any HD material/staging.
 It establishes a native-path repeatability issue, not its root cause, and does
 not independently prove every HD path correct.
+The repeatability tool now records the samples actually consumed by the pad
+callback in each `input.pad`, with hashes and sample counts in the report. A
+12-run no-HD collection (`native-corridor-input-records`) has identical 994
+samples in every run; runs 3 and 8 still diverge in original GPU inputs.
+Current captures also include `player_root`: nine row-major signed rotation
+coefficients followed by three translation components, or null when unavailable.
+The borrowed matrix is read only for opted-in ready-field diagnostics. Another
+12-run collection (`native-corridor-player-roots`) reproduces divergence in run
+11 while all roots remain the identity rotation at translation [0,128,-19000].
+Recorded input, observed clocks/LCG and the root transform therefore do not
+explain the different model commands. Bone/animation and later transform state
+still require investigation; no motion or interpolation code was changed.
 Neither a partial run nor these synthetic fixtures establish all-game,
 traversal, artwork or all-platform completion.
 

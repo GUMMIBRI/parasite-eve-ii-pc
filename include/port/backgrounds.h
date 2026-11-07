@@ -8,6 +8,8 @@ void peBackgroundBeginFrame(int buffer_y);
 int peBackgroundGetFrameInfo(int buffer_y,PeBackgroundFrameInfo* info);
 typedef struct {
     uint32_t anim_frame,frame_count,loop_count,loop_ticks,random_lcg;
+    int player_root_valid;
+    int32_t player_root[12]; /* row-major rotation, then XYZ translation */
 } PeBackgroundSimulationState;
 void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsigned vsync_count,
                           const PeBackgroundSimulationState* simulation);
