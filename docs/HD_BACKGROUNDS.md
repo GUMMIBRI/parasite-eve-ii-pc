@@ -2067,6 +2067,29 @@ unpacks/acquires/hydrates all atlas pixels and descriptor bytes identically
 between Pillow versions. No game binary changes or additional runtime approval
 are implied; the archive and resulting runtime packs remain private.
 
+#### First gallery return-view-8 artwork study
+
+Native background `0915825986800bae` now has a first private outpaint/detail
+study. Its foreground source audit exports 25 authored sprites from the
+verified post-course return capture. The route retains authored warp 3; a
+separate scoped catalog records that observed location while preserving the
+source/view mapping. The general inventory's default probe warp is unchanged,
+and no identity gate is relaxed.
+
+A built-in image edit of the native geometry guide produces raw v1 at 1713x918,
+with 14/25 zero, non-ambiguous local registration results. The near-right booth
+divider has nonzero one/two-native-pixel shifts. A second edit targets only that
+divider and produces v2 at 1714x918, improving to 16/25 zero, non-ambiguous
+regions but leaving nonzero/ambiguous edges and changing other local peaks.
+Neither image is packed or approved. Bench geometry, signs/glyphs, floor joints
+and full silhouettes need further review beyond the gradient diagnostic.
+
+Candidates, exact built-in prompts, source/audit hashes and failed regions stay
+in the ignored `art/mist-shooting-gallery-view8/` study directory. The existing
+installed gallery fixture still has no view-8 replacement, preserving all prior
+native-fallback return evidence. No game/renderer code changes, artwork commit
+or public distribution is implied.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
