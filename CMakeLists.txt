@@ -395,6 +395,17 @@ target_include_directories(hd_native_decode PRIVATE include include/decomp)
 target_compile_definitions(hd_native_decode PRIVATE __psyz SKIP_ASM)
 target_link_libraries(hd_native_decode PRIVATE psyz)
 
+add_executable(foreground_presenter_probe EXCLUDE_FROM_ALL tests/foreground_presenter_probe.c
+    src/port/background_foreground.c src/port/backgrounds.c src/port/background_coverage.c src/port/background_pack.c)
+target_include_directories(foreground_presenter_probe PRIVATE include)
+target_compile_definitions(foreground_presenter_probe PRIVATE __psyz SKIP_ASM)
+target_link_libraries(foreground_presenter_probe PRIVATE psyz)
+
+add_executable(foreground_packet_test EXCLUDE_FROM_ALL tests/foreground_packet_test.c src/port/background_foreground.c)
+target_include_directories(foreground_packet_test PRIVATE include)
+target_compile_definitions(foreground_packet_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(foreground_packet_test PRIVATE psyz)
+
 enable_testing()
 set(PE_DATA_TESTS cap_room_command_test rupert_eyes_test tmd_layout_assets_test text_palette_test
     observatory_scene_lifecycle_test action_trigger_test fountain_trigger_test)

@@ -178,6 +178,32 @@ also include widths of eight pixels and arbitrary heights. Replacing these
 requires preserving their exact clipping, palettes, blending and OT order,
 without changing PsyZ or the original native framebuffer.
 
+`background_foreground.c` now provides an experimental packet builder for this
+case: it divides an original SPRT into 16x16 atlas cells, intersects the actual
+current clip with the original rectangle, and restores that clip afterwards.
+The normal atlas path retains native transparency/STP and palette-reference
+fallback; it also works in HD 4:3, without using the widescreen-only extension
+flag. Unsupported dimensions, sprite-origin wrapping and flip modes return
+no replacement, leaving the caller's original primitive available.
+
+```sh
+cmake --build build-port --target foreground_presenter_probe
+venv/bin/python3 tools/hd/check_foreground_presenter.py
+venv/bin/python3 tools/hd/check_foreground_presenter.py --backend software \
+  --output build-hd-study/foreground-presenter-software
+```
+
+Both backends pass 25 synthetic cases with exact full native VRAM equality.
+The GPU cases visibly change HD material while preserving original cutouts,
+a later foreground primitive, all four blend modes, raw/modulated colours,
+UV wrapping, forced/tested mask bits and restored draw-area state. Native 1x,
+missing-atlas and changed-palette cases retain exact original rendered pixels.
+This is not yet connected to room OTs or a foreground pack loader. Its caller
+must provide the actual clip/offset at that primitive's place in the OT;
+`GetDrawEnv` only returns the last SDK environment and cannot establish later
+depth-sorted DR_AREA changes. Reflection, view and actor clipping still need
+ordered state tracking before the builder can safely serve every room.
+
 The native catalog now decodes all 1759 distinct BS inputs with the game's own
 VLC implementation and PsyZ MDEC, rather than treating an approximate Python
 decode as a runtime identity. All 1899 source references resolve, with zero
@@ -246,7 +272,7 @@ registration experiments do not establish production artwork quality.
 
 ## Verification checkpoint
 
-- 44 C host tests pass, including missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
+- 45 C host tests pass, including foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
   out-of-bounds and unsupported cases. The hidden GPU probe also proves that
   native 1x rendering falls back exactly with a valid wide pack supplied.
 - Two synthetic pack tests and two synthetic inventory tests pass (duplicate pixel hashes, missing inputs,
