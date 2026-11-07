@@ -19,7 +19,7 @@ scope describe those builds rather than superseding this summary.
 | Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Finish excluded-row/source diagnostics and runtime checks of special screens; MIST R21 is an empty debug room without static views. |
 | Broad runtime survey | Complete software survey before the two-room glow endpoint fix: 2708 exact matches, 606 without settled captures; no pixel differences or crashes. All 5416 ordered GPU audits validate. The endpoint fix additionally passes all 38 two-room variants on macOS software and Metal. | Repeat the broad survey after the endpoint fix. A supplemental menu route verifies gallery view 14; resolve the other 605 no-target locations and complete natural traversal, transient/scripted/special screens and supported GPU backends. This is forced static coverage, not an all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
-| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests on both hosts, 69 Python HD tests on macOS, and 16 Windows PE tests plus software gameplay under Wine pass. | Native Windows/D3D12, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
+| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests on both hosts, 69 Python HD tests on macOS, and 16 Windows PE tests plus software gameplay under Wine pass. Linux x86-64 under amd64 emulation passes 53 host tests and 38 two-room software/Vulkan controls. | Native Windows/D3D12, native Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
 All source captures, generated artwork and native-reference pack payloads remain
 local. Passing renderer controls do not approve artwork or grant distribution
@@ -2169,9 +2169,24 @@ game and passes all 53 registered host tests with assertions enabled. Its
 binary is SHA-256 `70dabdc9f19edac7861c834900c31036e117c35e1300ce581ddcee4d28a87d5d`;
 private logs and image/source provenance are in `linux-x86-release-v1/`.
 The initial baseline build was intentionally cancelled before completion to
-apply the diagnosed fix; it supplies no passing result. The patched run does
-not yet verify Linux x86-64 gameplay, a physical GPU or native Windows behavior.
+apply the diagnosed fix; it supplies no passing result. The host tests alone do not verify gameplay, a physical GPU or native Windows behavior.
 
+
+The same patched Linux x86-64 binary now passes all 38 two-room source/location
+pairs in software and separately in headless Vulkan/lavapipe under amd64
+emulation. Each backend preserves exact off/on RGB and full VRAM, normalized
+GP0, complete model/player state and clocks/RNGs. All 76 software runs exactly
+match patched macOS software pixels/VRAM/state/commands. Vulkan also matches
+all macOS software state and normalized commands, but only 44/76 RGB and 28/76
+full-VRAM captures are pixel-identical; no cross-renderer pixel-equivalence
+claim is made. The assessed comparison keeps the differing records intact.
+Private evidence: `glow-endpoints-fix-v1/linux-x86-assessment.json`, scoped
+software/Vulkan reports and `linux-x86-runtime-provenance.json` (container image,
+read-only source mount, immutable binary/runner hashes). The initial malformed
+source mount prevented disc access; its failed reports are retained and excluded
+from these successes. Vulkan pilot and corrected full runs use separate outputs.
+This is emulated two-room rendering coverage, not a physical Linux PC or GPU,
+a full traversal, pack-artwork approval, or a finished broad current-build survey.
 
 ## Remaining required work
 
