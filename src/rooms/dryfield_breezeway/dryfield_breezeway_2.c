@@ -1082,7 +1082,7 @@ static void _dryfieldBreezewayDrawKeyItemLineSegment(s16 angle, s16 length, cons
     /// X/Y are screen-pixel offsets narrowed to s16; Z is zero and the input's
     /// fourth halfword is retained. The caller installs the Z rotation and zero
     /// translation first. Borrows distinct writable input/output SVECTORs and a
-    /// long GTE FLAG output. `localPoint` is evaluated four times; the other
+    /// signed 32-bit GTE FLAG output. `localPoint` is evaluated four times; the other
     /// arguments once. Use stable expressions without side effects as a statement.
 #define DRYFIELD_BREEZEWAY_ROTATE_LINE_POINT(localPoint, x, y, rotatedPoint, flags) \
     {                                                                               \
@@ -1102,7 +1102,7 @@ static void _dryfieldBreezewayDrawKeyItemLineSegment(s16 angle, s16 length, cons
     SVECTOR   rotatedFarLeft;
     SVECTOR   rotatedFarRight;
     MATRIX    rotation;
-    long      transformFlags;
+    s32       transformFlags;
     POLY_FT4* quad;
 
     gfxSetRotIdentity(&rotation);

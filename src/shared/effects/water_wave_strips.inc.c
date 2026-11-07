@@ -201,8 +201,8 @@ static void WATER_WAVE_STRIPS_DRAW_FUNCTION(Task* task)
         WATER_WAVE_STRIPS_HIDDEN_VIEW_COUNT  = 2
     };
     SVECTOR                            vertex0, vertex1, vertex2, vertex3;
-    long                               screenXY0, screenXY1, screenXY2, screenXY3;
-    long                               projectionScale, projectionFlags;
+    s32                                screenXY0, screenXY1, screenXY2, screenXY3;
+    s32                                projectionScale, projectionFlags;
     s32                                wavePhase;
     const WATER_WAVE_STRIPS_SURFACE_T* surface;
     WaterQuadScratch*                  strip;

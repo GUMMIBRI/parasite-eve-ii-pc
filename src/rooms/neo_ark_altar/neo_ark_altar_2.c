@@ -1189,12 +1189,12 @@ static void _neoArkAltarDrawTileWallSide(const SVECTOR* floorStart, const SVECTO
     SVECTOR  lowerEnd;
     SVECTOR  upperStart;
     SVECTOR  upperEnd;
-    long     screenLowerStart;
-    long     screenLowerEnd;
-    long     screenUpperStart;
-    long     screenUpperEnd;
-    long     unusedDepthCue;
-    long     projectionFlags;
+    s32      screenLowerStart;
+    s32      screenLowerEnd;
+    s32      screenUpperStart;
+    s32      screenUpperEnd;
+    s32      unusedDepthCue;
+    s32      projectionFlags;
     s32      depth;
     s16      heightStep;
     s32      stripIndex;

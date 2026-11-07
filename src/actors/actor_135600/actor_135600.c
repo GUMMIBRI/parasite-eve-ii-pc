@@ -254,10 +254,10 @@ static s32 _actor135600DrawHeldItemQuad(GfxCoord* itemRoot, s32 lengthScale12)
     SVECTOR   itemWorldPosition;
     SVECTOR   screenCorners[4];
     MATRIX    matrix;
-    long      nearScreenXY;
-    long      depthCue;
-    long      projectionFlags;
-    long      farScreenXY;
+    s32       nearScreenXY;
+    s32       depthCue;
+    s32       projectionFlags;
+    s32       farScreenXY;
     s16       nearScreenY;
     s16       farScreenY;
     s32       screenAngle;

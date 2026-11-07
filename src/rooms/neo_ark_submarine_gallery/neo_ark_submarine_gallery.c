@@ -290,11 +290,11 @@ static void _neoArkSubmarineGalleryDrawRedDisc(u16 radius)
     SVECTOR  center;
     SVECTOR  rimStart;
     SVECTOR  rimEnd;
-    long     screenCenter;
-    long     screenStart;
-    long     screenEnd;
-    long     perspective;
-    long     projectionFlags;
+    s32      screenCenter;
+    s32      screenStart;
+    s32      screenEnd;
+    s32      perspective;
+    s32      projectionFlags;
     POLY_G3* triangle;
     DR_MODE* drawMode;
     s32      depth;

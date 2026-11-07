@@ -1020,7 +1020,7 @@ void shelterB1SterilizationRoomTask(Task* task)
 static void _shelterB1SterilizationRoomRebuildActorObstacle(const GfxCoord* modelRoot, const s16 roomOffset[3])
 {
     MATRIX                    modelToRoom;
-    long                      transformFlags;
+    s32                       transformFlags;
     s32                       elementIndex;
     SVECTOR*                  destinationVector;
     SVECTOR*                  sourceVector;

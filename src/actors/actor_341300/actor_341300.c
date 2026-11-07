@@ -437,7 +437,7 @@ static Task* _gActor341300ScriptTaskHandle = NULL;
 /// Requires a composed view coordinate, space for two POLY_FT4 packets, and
 /// the texture at VRAM (448, 256) with its CLUT at (0, 248). Quads with a
 /// negative projection flag are skipped; accepted depths use the display's
-/// ordering-table scaling. Screen XY stays packed in SDK `long` words.
+/// ordering-table scaling. Screen XY stays packed in signed 32-bit SDK words.
 static void _actor341300DrawTexturedQuads(void)
 {
     enum {
@@ -451,7 +451,7 @@ static void _actor341300DrawTexturedQuads(void)
 
     s16     screenX[8];
     s16     screenY[8];
-    long    packedScreenXY[8];
+    s32     packedScreenXY[8];
     s32     quadDepth[2];
     SVECTOR corners[8] = {
         { 0x80C, -0xBC6, 0x150 },
@@ -463,8 +463,8 @@ static void _actor341300DrawTexturedQuads(void)
         { 0x747, -0xBC6, 0x180 },
         { 0x777, -0xBC6, 0x180 },
     };
-    long      perspective;
-    long      projectionFlags;
+    s32       perspective;
+    s32       projectionFlags;
     s32       quadIndex;
     s32       cornerIndex;
     long      firstCorner;

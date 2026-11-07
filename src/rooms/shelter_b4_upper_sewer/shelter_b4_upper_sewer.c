@@ -1548,8 +1548,8 @@ static void _shelterB4UpperSewerDrawWaterSurfaces(Task* task, const _ShelterB4Up
             drawMode);
 
     SVECTOR           corner0, corner1, corner2, corner3;
-    long              screenXY0, screenXY1, screenXY2, screenXY3;
-    long              depthCue, projectionFlags;
+    s32               screenXY0, screenXY1, screenXY2, screenXY3;
+    s32               depthCue, projectionFlags;
     WaterQuadScratch* scratch;
     WaterQuadScratch* scratchEnd;
     POLY_F4*          waterQuad;

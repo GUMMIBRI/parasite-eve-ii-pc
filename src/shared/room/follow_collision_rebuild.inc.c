@@ -25,7 +25,7 @@ static void _followCollisionRebuildObstacle(const GfxCoord* modelRoot, const SVE
         FOLLOW_COLLISION_OBSTACLE_VERTEX_COUNT = 8,
     };
     MATRIX                    modelToRoom;
-    long                      transformFlags;
+    s32                       transformFlags;
     s32                       elementIndex;
     SVECTOR*                  destinationVector;
     SVECTOR*                  sourceVector;

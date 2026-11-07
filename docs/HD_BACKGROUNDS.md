@@ -2246,8 +2246,9 @@ Private evidence is `build-hd-study/shadow-gte-abi-v1/`: failing/passing test lo
 scoped catalog, immutable staged binaries, `macos-v2-to-prior-windows.json` and
 `assessment-v2.json`. Earlier partial v1 captures are retained separately: their
 remaining underpass discrepancy led to the actor-400500 local-output correction.
-The running broad `full-survey-current-v5` uses its immutable pre-shadow-fix
-binary; it cannot establish current-code whole-game coverage. Other GTE output
+The completed broad `full-survey-current-v5` uses its immutable pre-shadow-fix
+binary: 2708 exact off/on pairs and the same 606 no-target locations as v4.
+It cannot establish current-code whole-game coverage. Other GTE output
 call sites using host `long` still require audit; these scoped shadow/stain
 corrections do not establish complete supported-platform behavior.
 
@@ -2262,6 +2263,58 @@ pass or an audit of macro stores through `void *`. Private evidence:
 `gte-output-audit-v1/report.json`, `unique-diagnostics.json`, per-TU logs and the
 recorded compilation database/source/header hashes. External code and generated
 variant wrappers are excluded; PsyZ remains unmodified.
+
+### Remaining SDK output widths and completed baseline sweeps
+
+The reviewed GTE output corrections now cover 17 further files: signed screen
+words, projection/depth-cue values and transform flags use `s32`, matching the
+SDK's `int *` outputs. Ordinary host indices are unchanged. This covers water
+strips/reservoir/sewers, effect and held-model projections, collision rebuilds
+and the departure helicopter. No coordinates, effect parameters, game flags,
+PsyZ code or artwork were changed.
+
+The original 593-source audit missed the factory lift because it is compiled
+only through generated day/night wrappers. A second audit includes all 713
+repository source and generated overlay-variant commands. Before the lift fix,
+it reports two residual `long *` diagnostics; after it, all 713 syntax checks
+pass with zero such diagnostics. This is a pointer-type audit, not a guarantee
+about every macro store through `void *` or runtime execution. Shared source and
+header hashes, compiler commands and diagnostic logs remain private under
+`gte-output-audit-v1` through `v4`.
+
+All three game builds succeed. macOS and Linux x86-64 pass all 53 host tests;
+all 16 currently built portable Windows PE tests pass serially under Wine9.
+The latest macOS software binary is SHA-256
+`8336bccf7f7d09bd9a8c7559d9ce1d8d5d72f35630b6075f8db722c24a4a7f45`.
+All 471 eligible static source variants in 18 carrier rooms pass off/on RGB,
+full VRAM, normalized GP0, complete model/player state and clocks/RNGs. This
+scoped probe does not activate every scripted effect or moving collision path,
+verify those routes, or establish native Windows/physical-GPU behavior.
+Private binaries, scoped catalog, hashes, reports and `macos-assessment.json`
+are in `gte-output-width-fix-v1/`.
+
+The completed original Windows software sweep uses preserved binary
+`7169346e8ebca24d627eea02c7ab3b88832722075520782814f02dd149d5caf0`,
+before the endpoint and GTE fixes. All 3314 eligible locations were attempted:
+2520 exact off/on pairs, 596 replay EOFs without settled captures and 198
+process exits 133 whose retained logs contain Rosetta `invalid gdt selector`.
+All accepted Windows locations are a subset of the original macOS passes;
+188 macOS-passing locations fail this Windows attempt. This does not clear the
+existing 605 locations without generic or supplemental runtime coverage.
+Revalidation checks all 5040 accepted captures' metadata, full VRAM hashes,
+pixel pairs and ordered GPU-context hashes/buffer bindings. All 2520 pairs also
+match recorded state and GP0 streams; two pairs have no GP0 commands in either
+mode, explicitly counted rather than treated as nonempty command evidence.
+The main report retains all rejected attempts.
+
+A single-case follow-up starts bridge view 7 with the same original Windows
+binary after all other own game processes have ended. It still exits 133 with
+the same Rosetta message, so concurrency alone is not an established cause.
+The error's emulation/game root cause and native Windows behavior remain open.
+See `windows-full-survey-v1/completed-assessment.json`,
+`completed-integrity.json`, `quiet-retry/` and the before-run process inventory.
+The completed macOS v5 sweep similarly retains its earlier immutable binary;
+neither completed broad report supplies latest-code whole-game approval.
 
 ## Remaining required work
 

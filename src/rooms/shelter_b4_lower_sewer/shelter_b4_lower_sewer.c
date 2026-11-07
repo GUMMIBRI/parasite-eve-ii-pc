@@ -194,8 +194,8 @@ static void _shelterB4LowerSewerDrawXWaveStrips(Task* task)
 {
     enum { SHELTER_B4_LOWER_SEWER_WAVE_SEGMENTS_PER_STRIP = 32 };
     SVECTOR                        vertex0, vertex1, vertex2, vertex3;
-    long                           screenXY0, screenXY1, screenXY2, screenXY3;
-    long                           projectionScale, projectionFlags;
+    s32                            screenXY0, screenXY1, screenXY2, screenXY3;
+    s32                            projectionScale, projectionFlags;
     const RoomCompactWaterSurface* surface;
     WaterQuadScratch*              scratchTop;
     WaterQuadScratch*              strip;
@@ -337,8 +337,8 @@ static void _shelterB4LowerSewerDrawXWaveStrip(Task* task)
 {
     enum { SHELTER_B4_LOWER_SEWER_WAVE_SEGMENTS_PER_STRIP = 8 };
     SVECTOR                        vertex0, vertex1, vertex2, vertex3;
-    long                           screenXY0, screenXY1, screenXY2, screenXY3;
-    long                           projectionScale, projectionFlags;
+    s32                            screenXY0, screenXY1, screenXY2, screenXY3;
+    s32                            projectionScale, projectionFlags;
     s32                            wavePhase;
     WaterQuadScratch*              scratchTop;
     WaterQuadScratch*              strip;

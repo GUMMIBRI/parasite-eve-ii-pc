@@ -1986,8 +1986,8 @@ static void _shelterB4ReservoirDrawMainWaterStrip(Task* task)
 
     enum { SHELTER_B4_RESERVOIR_MAIN_WATER_SEGMENTS = 32 };
     SVECTOR                 corner0, corner1, corner2, corner3;
-    long                    screenXY0, screenXY1, screenXY2, screenXY3;
-    long                    depthCue, projectionFlags;
+    s32                     screenXY0, screenXY1, screenXY2, screenXY3;
+    s32                     depthCue, projectionFlags;
     WaterQuadScratch*       scratchEnd;
     WaterQuadScratch*       scratch;
     const RoomWaterSurface* surface;
@@ -2049,8 +2049,8 @@ static void _shelterB4ReservoirDrawZWaterStrips(Task* task)
 {
 
     SVECTOR                 corner0, corner1, corner2, corner3;
-    long                    screenXY0, screenXY1, screenXY2, screenXY3;
-    long                    depthCue, projectionFlags;
+    s32                     screenXY0, screenXY1, screenXY2, screenXY3;
+    s32                     depthCue, projectionFlags;
     WaterQuadScratch*       scratchEnd;
     WaterQuadScratch*       scratch;
     const RoomWaterSurface* surface;
@@ -2112,8 +2112,8 @@ static void _shelterB4ReservoirDrawXWaterStrips(Task* task)
 {
 
     SVECTOR                 corner0, corner1, corner2, corner3;
-    long                    screenXY0, screenXY1, screenXY2, screenXY3;
-    long                    depthCue, projectionFlags;
+    s32                     screenXY0, screenXY1, screenXY2, screenXY3;
+    s32                     depthCue, projectionFlags;
     WaterQuadScratch*       scratchEnd;
     WaterQuadScratch*       scratch;
     const RoomWaterSurface* surface;
@@ -2206,8 +2206,8 @@ static void _shelterB4ReservoirDrawView10WaterStrips(Task* task)
             drawMode);
 
     SVECTOR                 corner0, corner1, corner2, corner3;
-    long                    screenXY0, screenXY1, screenXY2, screenXY3;
-    long                    depthCue, projectionFlags;
+    s32                     screenXY0, screenXY1, screenXY2, screenXY3;
+    s32                     depthCue, projectionFlags;
     WaterQuadScratch*       scratchEnd;
     WaterQuadScratch*       scratch;
     const RoomWaterSurface* surface;

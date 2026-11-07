@@ -3403,9 +3403,9 @@ static void _dryfieldNightGasStationDrawTrackRedStreak(s32 frameIndex)
     SVECTOR   worldOffset;
     MATRIX    trackRotation;
     SVECTOR   worldPoint;
-    long      screenXY;
-    long      perspective;
-    long      projectionFlags;
+    s32       screenXY;
+    s32       perspective;
+    s32       projectionFlags;
     u16       coreX;
     u16       coreY;
     u16       streakTipX;
@@ -3514,10 +3514,10 @@ static void _dryfieldNightGasStationDrawCompanionRedStreak(s32 unusedFrame)
     SVECTOR   worldStart;
     SVECTOR   worldEnd;
     SVECTOR   localOffset;
-    long      screenXY;
-    long      perspective;
-    long      startFlags;
-    long      endFlags;
+    s32       screenXY;
+    s32       perspective;
+    s32       startFlags;
+    s32       endFlags;
     u16       startX;
     u16       startY;
     u16       endX;

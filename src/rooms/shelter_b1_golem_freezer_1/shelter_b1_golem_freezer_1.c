@@ -623,7 +623,7 @@ static void _shelterB1GolemFreezer1InitMeetingObstacle(s32 unusedArg)
 static void _shelterB1GolemFreezer1RebuildMeetingObstacle(const GfxCoord* modelRoot, const s16* roomOffset)
 {
     MATRIX                    modelToRoom;
-    long                      transformFlags;
+    s32                       transformFlags;
     s32                       elementIndex;
     SVECTOR*                  destinationVector;
     SVECTOR*                  sourceVector;

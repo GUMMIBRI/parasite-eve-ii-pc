@@ -857,9 +857,9 @@ static void _helicopterDepartureDrawHelicopterSearchlightGlow(Task* task, const 
     SVECTOR   worldOrigin;
     DVECTOR   screenRim[RIM_POINT_COUNT];
     MATRIX    worldTransform;
-    long      screenCenter;
-    long      projectionScale;
-    long      projectionFlags;
+    s32       screenCenter;
+    s32       projectionScale;
+    s32       projectionFlags;
     s32       sortDepth;
     POLY_G3*  triangle;
     DR_TPAGE* drawMode;

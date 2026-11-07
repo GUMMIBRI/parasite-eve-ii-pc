@@ -1331,8 +1331,8 @@ static void _shelterB4WaterSupplyDrawXWaveStrips(Task* task)
         SHELTER_B4_WATER_SUPPLY_WAVE_AMPLITUDE_SHIFT    = 6  // Q12 sine to -64..64 world units
     };
     SVECTOR                  vertex0, vertex1, vertex2, vertex3;
-    long                     screenXY0, screenXY1, screenXY2, screenXY3;
-    long                     projectionScale, projectionFlags;
+    s32                      screenXY0, screenXY1, screenXY2, screenXY3;
+    s32                      projectionScale, projectionFlags;
     s32                      wavePhase;
     RoomCompactWaterSurface* surface;
     WaterQuadScratch*        strip;

@@ -469,7 +469,7 @@ static void _factoryLiftSyncCollision(Task* task, s32 remapFaces, s32 useTurnedT
            FACTORY_LIFT_COLLISION_FACE_COUNT   = 4,
            FACTORY_LIFT_COLLISION_FIRST_VERTEX = 8,
            FACTORY_LIFT_COLLISION_VERTEX_COUNT = 8 };
-    long                          gteFlags;
+    s32                           gteFlags;
     GfxCoord*                     liftCoord;
     MATRIX*                       modelToRoom;
     WorldCollisionGrid*           roomGrid;
