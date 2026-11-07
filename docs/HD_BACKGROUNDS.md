@@ -2081,8 +2081,13 @@ with 14/25 zero, non-ambiguous local registration results. The near-right booth
 divider has nonzero one/two-native-pixel shifts. A second edit targets only that
 divider and produces v2 at 1714x918, improving to 16/25 zero, non-ambiguous
 regions but leaving nonzero/ambiguous edges and changing other local peaks.
-Neither image is packed or approved. Bench geometry, signs/glyphs, floor joints
-and full silhouettes need further review beyond the gradient diagnostic.
+Neither image is packed or approved. A third built-in edit again targets only
+the numbered divider, yielding 1713x918 and 17/25 zero, non-ambiguous regions.
+Eight regions remain unresolved, with source 22 reaching the nine-native-pixel
+search boundary. This candidate is rejected and not packed; the metric is not
+contour approval. `generated-v3-candidate.png`, `prompt-v3.txt`, registration and
+`provenance-v3.json` are retained privately with the earlier attempts. Bench
+geometry, signs/glyphs, floor joints and full silhouettes still require review.
 
 Candidates, exact built-in prompts, source/audit hashes and failed regions stay
 in the ignored `art/mist-shooting-gallery-view8/` study directory. The existing
@@ -2292,6 +2297,17 @@ scoped probe does not activate every scripted effect or moving collision path,
 verify those routes, or establish native Windows/physical-GPU behavior.
 Private binaries, scoped catalog, hashes, reports and `macos-assessment.json`
 are in `gte-output-width-fix-v1/`.
+
+The same current binary also completes all 471 variants on headless Metal.
+All off/on RGB/full-VRAM pairs, state and normalized GP0 streams match. All 942
+Metal captures match macOS software state and commands, while 926/942 RGB and
+916/942 full-VRAM captures are pixel-identical across the renderers. Differences
+remain recorded; no cross-renderer pixel-identity claim is made. All 942 Metal
+GPU-context hashes and source/location/buffer bindings are revalidated, as are
+the native hashes and off/on image pairs. See `macos-metal-assessment.json` and
+the complete Metal report in the same private study directory. This scoped
+source-gated pass does not activate every corrected scripted effect.
+
 
 The completed original Windows software sweep uses preserved binary
 `7169346e8ebca24d627eea02c7ab3b88832722075520782814f02dd149d5caf0`,
