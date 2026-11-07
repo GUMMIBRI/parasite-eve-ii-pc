@@ -143,6 +143,41 @@ scroll, Underpass/Garden foreground sprites, Pyramid puzzle overlay, Water Hole
 water and West Elevator Hall glow. These warnings are not a runtime sweep.
 The title's 8-bit texture use is its chrome effect, not proof of wider base art.
 
+### Foreground source audit
+
+View foregrounds are separate paletted/native sprites, linked by authored
+depth; an HD base image alone does not replace them. `foreground.py` resolves
+their 4/8/16-bit texture pages and CLUTs from a settled runtime VRAM capture,
+retaining exact RGB555 words, zero-texel coverage and STP bits. It exports
+individual RGBA source images and a 320x240 potential-coverage mask:
+
+```sh
+venv/bin/python3 tools/hd/foreground.py \
+  --scene build-hd-study/scenes/mist_shooting_gallery.json \
+  --capture /local/settled-capture --output build-hd-study/foreground-gallery
+venv/bin/python3 tools/hd/foreground.py \
+  --survey build-hd-study/survey-all/report.json \
+  --output build-hd-study/foreground-survey
+```
+
+The survey mode checks capture metadata and VRAM SHA-256 against the original
+runtime report. It decoded 56,867 source references across 2697 of the 2698
+passing static captures. The remaining laboratory view (stage 4, area 31,
+view 5) has a source-table diagnostic: batches reach 24 sprites, but its known
+source array contains 23. That view remains unresolved. Diagnostics scoped to
+another mapped view do not invalidate an otherwise complete source table.
+Gallery view 10 has nine sprite sources and 5394 potential covered screen
+pixels, including the doorway regions where the generated candidate shows seams.
+
+These masks are authoring evidence, not accepted HD foregrounds or live
+occlusion proof. They include authored hidden/skipped batches and do not
+capture runtime packet changes, texture windows, depth interleaving or
+draw-area ordering. All exported images/masks/VRAM remain ignored local data.
+Psyz's existing HD atlas path accepts 16x16 sprites; PE2's foreground strips
+also include widths of eight pixels and arbitrary heights. Replacing these
+requires preserving their exact clipping, palettes, blending and OT order,
+without changing PsyZ or the original native framebuffer.
+
 The native catalog now decodes all 1759 distinct BS inputs with the game's own
 VLC implementation and PsyZ MDEC, rather than treating an approximate Python
 decode as a runtime identity. All 1899 source references resolve, with zero
@@ -216,10 +251,13 @@ registration experiments do not establish production artwork quality.
   native 1x rendering falls back exactly with a valid wide pack supplied.
 - Two synthetic pack tests and two synthetic inventory tests pass (duplicate pixel hashes, missing inputs,
   stage-0 classification, special renderers and raw-store path resolution).
-- Eleven Python HD tests pass in total. Additional checks exercise the native
+- Sixteen Python HD tests pass in total. Additional checks exercise the native
   BS decoder with generated grayscale inputs, logical/mapped view joins,
   unresolved entries, source-guided artwork constraints, and rejection of stale,
   wrong-location, black or incomplete runtime capture evidence.
+  Synthetic foreground fixtures check palette lookup, transparent colour zero,
+  STP black, UV wrapping, screen clipping, diagnostic scope, and rejection of
+  VRAM changed after the runtime survey.
 - CLI rejection, preference persistence and subsequent settings reload pass
   against isolated local profiles and the owner's two disc images.
 - A 6001-sample New Game replay reaches the gallery course menu. At pad tick
