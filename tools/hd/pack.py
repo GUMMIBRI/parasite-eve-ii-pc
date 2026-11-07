@@ -16,10 +16,7 @@ import numpy as np
 from PIL import Image
 
 
-def identity(data):
-    value=14695981039346656037
-    for byte in data:value=((value^byte)*1099511628211)&((1<<64)-1)
-    return value
+from native_identity import identity
 
 
 def native_image(data):

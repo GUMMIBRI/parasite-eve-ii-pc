@@ -19,7 +19,7 @@ scope describe those builds rather than superseding this summary.
 | Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Resolve/classify excluded rows and remaining diagnostics, including the room with no view rows. |
 | Broad runtime survey | One complete earlier-build software survey: 2703 exact matches, 606 without settled captures, five balcony differences subsequently fixed in room-specific tests; no crashes. | Current-build full coverage and natural traversal, including transient/scripted/special screens. Do not combine different binary reports into one all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
-| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 51 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
+| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 57 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
 All source captures, generated artwork and native-reference pack payloads remain
 local. Passing renderer controls do not approve artwork or grant distribution
@@ -68,8 +68,22 @@ pixel. Source-guided candidate materials may still contain native-derived paint,
 and metadata/artwork require distribution review. Neither the cache nor hydrated
 pack is for publication. All current gallery candidates remain private and
 unapproved. The cache is independent of material colors, so matching references
-can come from a locally generated placeholder-material pack; this tool does not
-yet generate that cache automatically from owned discs or live game data.
+can come from local native exports without the author's runtime pack or cache:
+
+```sh
+venv/bin/python tools/hd/material_bundle.py acquire MATERIAL_FOLDER \
+  --private-cache PRIVATE_CACHE --native-root LOCAL_BACKGROUND_EXPORTS \
+  --foreground-sources LOCAL_FOREGROUND_AUDIT
+```
+
+Background exports are `<key>.rgb555` files from the local inventory. Foreground
+inputs are source-audit directories containing `report.json` and native sprite
+exports; repeat `--foreground-sources` for additional contexts. Acquisition
+checks native identities, source context/parameters, source hashes and the
+expected complete reference-plane pixel hash before caching. Already verified
+entries are reusable without their original exports. This command consumes
+existing local exports; automatic extraction from owned discs/live gameplay
+remains unimplemented.
 
 ### Local versioned installation
 
@@ -1631,7 +1645,7 @@ operation prevent output publication.
 Ten new tests cover material-only plane contents, exact base/foreground runtime
 reconstruction and installation, reference-cache independence from material
 colors, missing/changed references, path escapes/symlinks, output immutability,
-input changes and interrupted writes. All 51 Python HD tests pass on macOS;
+input changes and interrupted writes. All 57 Python HD tests pass on macOS;
 the ten new tests also pass on Linux ARM64 with Pillow 10.2.0.
 
 The private four-view gallery fixture separates into eight reference planes and
@@ -1641,6 +1655,21 @@ folder (`gallery-four-view-material-roundtrip.json`). Linux reconstruction of
 that Mac-origin input preserves every decoded atlas pixel and descriptor byte;
 PNG encoding/hashes differ across Pillow versions, and a fresh local runtime
 manifest records the new encoded files (`material-bundle-linux-roundtrip.json`).
+
+Reference acquisition now reconstructs the cache from local RGB555 background
+and foreground source exports. Six additional tests cover legacy/inset/partial
+foreground cells, exact reconstruction without the author's runtime/cache,
+changed sources, missing or ambiguous contexts, mismatched sprite parameters,
+invalid descriptors, expected-plane hash mismatches and cache reuse. Descriptor
+layout validation is shared with the runtime installer and runs before cache
+construction. The real four-view fixture acquires all eight reference planes
+from native exports, then hydrates all 16 payloads plus its manifest byte-for-byte
+(`gallery-four-view-acquired-roundtrip.json`). This acquisition does not read the
+author's runtime pack or reference cache. All six acquisition and ten material
+bundle tests also pass on Linux ARM64. Acquisition and hydration of the real
+four-view fixture there preserve all atlas pixels and descriptor bytes
+(`reference-acquisition-linux-roundtrip.json`); encoded PNGs may differ by
+Pillow version.
 
 A real Metal route to view 13 compares the original and hydrated installations:
 rendered RGB, full native VRAM, normalized original GPU inputs and captured

@@ -16,7 +16,7 @@ import struct
 import tempfile
 
 from PIL import Image
-from install_pack import PAYLOAD, TOKEN, create, digest, read_manifest
+from install_pack import PAYLOAD, TOKEN, create, digest, read_manifest, validate_layout
 
 MANIFEST = 'pe2-materials.json'
 HASH = re.compile(r'[0-9a-f]{64}\Z')
@@ -113,6 +113,13 @@ def read_bundle(root):
                 if image.format != 'PNG' or list(image.size) != size:
                     raise ValueError('Material plane dimensions disagree')
                 image.verify()
+    def check_atlas(name, size):
+        plane = atlases.get(name)
+        if plane is None or tuple([plane['size'][0], plane['size'][1]*2]) != size:
+            raise ValueError('Material plane does not match descriptor layout')
+    referenced = validate_layout(files, lambda name: (root/name).read_bytes(), check_atlas)
+    if referenced != set(atlases):
+        raise ValueError('Unreferenced material plane')
     return data
 
 
@@ -181,6 +188,53 @@ def hydrate(materials, cache, output):
     return read_manifest(output)
 
 
+def acquire(materials, cache, native_root, foreground_roots=()):
+    """Prepare only expected reference planes from private native exports."""
+    from reference_sources import (background_reference, foreground_context,
+                                   foreground_exports, foreground_reference)
+    separate_paths(materials, cache, native_root, *foreground_roots)
+    original = read_bundle(materials)
+    plans = {}
+    for name in sorted(original['files']):
+        if name.endswith('.pe2bg'):
+            plans.setdefault(name[:-6] + '.png', []).append(('background', (materials/name).read_bytes()))
+        elif name.endswith('.pe2fg'):
+            metadata = (materials/name).read_bytes()
+            atlas_key = struct.unpack_from('<Q', metadata, 16)[0]
+            plans.setdefault(f'{atlas_key:016x}.fg.png', []).append(('foreground', metadata))
+    exports = None
+    cache.mkdir(parents=True, exist_ok=True)
+    records = []
+    for name, choices in plans.items():
+        spec = original['atlases'][name]
+        path = cache/(spec['reference'] + '.png')
+        if path.exists() or path.is_symlink():
+            read_reference(path, spec['size'], spec['reference'])
+            records.append(dict(atlas=name, reference=spec['reference'], cached=True))
+            continue
+        matched = None
+        for kind, metadata in choices:
+            if kind == 'background':
+                plane = background_reference(metadata, native_root)
+            else:
+                if exports is None:
+                    exports = foreground_exports(foreground_roots)
+                export = exports.get(foreground_context(metadata))
+                if export is None:
+                    continue
+                plane = foreground_reference(metadata, *export)
+            if list(plane.size) == spec['size'] and reference_digest(plane) == spec['reference']:
+                matched = plane
+                break
+        if matched is None:
+            raise ValueError('No matching native export for reference plane: ' + name)
+        store_reference(cache, matched, spec['reference'])
+        records.append(dict(atlas=name, reference=spec['reference'], cached=False))
+    if read_bundle(materials) != original:
+        raise ValueError('Material bundle changed during reference acquisition')
+    return dict(id=original['id'], version=original['version'], references=records, complete=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
@@ -194,12 +248,22 @@ def main():
     restore.add_argument('--output', type=Path, required=True)
     verify = commands.add_parser('verify')
     verify.add_argument('materials', type=Path)
+    prepare = commands.add_parser('acquire')
+    prepare.add_argument('materials', type=Path)
+    prepare.add_argument('--private-cache', type=Path, required=True)
+    prepare.add_argument('--native-root', type=Path, required=True, help='Local <key>.rgb555 background exports')
+    prepare.add_argument('--foreground-sources', type=Path, action='append', default=[],
+                         help='A foreground audit directory or parent containing one directory per context; repeatable')
     args = parser.parse_args()
     try:
         if args.command == 'split':
             data = split(args.source, args.materials, args.private_cache)
         elif args.command == 'hydrate':
             data = hydrate(args.materials, args.private_cache, args.output)
+        elif args.command == 'acquire':
+            data = acquire(args.materials, args.private_cache, args.native_root, args.foreground_sources)
+            print(f'{data["id"]} {data["version"]}: {len(data["references"])} verified reference planes')
+            return
         else:
             data = read_bundle(args.materials)
         print(f'{data["id"]} {data["version"]}: {len(data["files"])} verified files')

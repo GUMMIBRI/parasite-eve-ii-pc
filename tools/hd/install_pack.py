@@ -26,44 +26,26 @@ def digest(path):
     return result.hexdigest()
 
 
-def read_manifest(root):
-    path=root/MANIFEST
-    if path.is_symlink():raise ValueError('Manifest must not be a symlink')
-    data=json.loads(path.read_text())
-    if data.get('format')!='pe2-local-pack-v1':raise ValueError('Unknown manifest format')
-    if any(not isinstance(data.get(k),str) or not TOKEN.fullmatch(data[k]) for k in ['id','version']):
-        raise ValueError('Invalid pack identity or version')
-    files=data.get('files')
-    if not isinstance(files,dict) or not files or len(files)>20000:raise ValueError('Invalid file inventory')
-    if any(PAYLOAD.fullmatch(file.name) and file.name not in files for file in root.iterdir()):
-        raise ValueError('Unlisted renderer payload in pack folder')
-    for name,entry in files.items():
-        if not PAYLOAD.fullmatch(name):raise ValueError('Invalid payload filename')
-        if not isinstance(entry,dict) or type(entry.get('size')) is not int or not 0<entry['size']<=128*1024*1024:
-            raise ValueError('Invalid payload size')
-        if not isinstance(entry.get('sha256'),str) or not re.fullmatch('[0-9a-f]{64}',entry['sha256']):
-            raise ValueError('Invalid payload hash')
-        file=root/name
-        if file.is_symlink() or not file.is_file() or file.stat().st_size!=entry['size'] or digest(file)!=entry['sha256']:
-            raise ValueError('Missing or changed payload: '+name)
+def validate_layout(files,read_file,check_atlas):
+    """Validate descriptors independently of where reference pixels are stored."""
+    atlases=set()
     backgrounds=[name for name in files if name.endswith('.pe2bg')]
     if not backgrounds:raise ValueError('Pack has no backgrounds')
     for name in backgrounds:
         atlas=name[:-6]+'.png'
         if atlas not in files:raise ValueError('Missing background atlas')
-        raw=(root/name).read_bytes()
+        raw=read_file(name)
         if len(raw)!=48:raise ValueError('Invalid background header')
         magic,key,w,h,left,right,flags,scale,cells,reserved=struct.unpack('<8sQIIiiIIII',raw)
         if (magic!=b'PE2BG1\0\0' or key!=int(name[:16],16) or not key or (w,h)!=(320,240)
             or not -96<=left<=0 or not 320<=right<=416 or left%16 or right%16
             or (flags,scale,reserved)!=(1,4,0) or cells!=(right-left)//16*15):
             raise ValueError('Invalid background metadata')
-        with Image.open(root/atlas) as image:
-            if image.format!='PNG' or image.size!=(1088,((cells+15)//16)*136):raise ValueError('Invalid background atlas')
-            image.verify()
+        check_atlas(atlas,(1088,((cells+15)//16)*136))
+        atlases.add(atlas)
     for name in files:
         if name.endswith('.pe2fg'):
-            raw=(root/name).read_bytes()
+            raw=read_file(name)
             if len(raw)<48 or raw[:8] not in [b'PE2FG1\0\0',b'PE2FG2\0\0']:raise ValueError('Invalid foreground header')
             magic,background,atlas_key,stage,area,view,room,count,cells=struct.unpack('<8sQQ6I',raw[:48])
             context=[int(v) for v in name[:-6].split('-')[1:]]
@@ -84,9 +66,36 @@ def read_manifest(root):
             if next_cell!=cells:raise ValueError('Invalid foreground cell count')
             atlas=f'{atlas_key:016x}.fg.png'
             if atlas not in files:raise ValueError('Missing foreground atlas')
-            with Image.open(root/atlas) as image:
-                if image.format!='PNG' or image.size!=(1088,((cells+15)//16)*136):raise ValueError('Invalid foreground atlas')
-                image.verify()
+            check_atlas(atlas,(1088,((cells+15)//16)*136))
+            atlases.add(atlas)
+    return atlases
+
+
+def read_manifest(root):
+    path=root/MANIFEST
+    if path.is_symlink():raise ValueError('Manifest must not be a symlink')
+    data=json.loads(path.read_text())
+    if data.get('format')!='pe2-local-pack-v1':raise ValueError('Unknown manifest format')
+    if any(not isinstance(data.get(k),str) or not TOKEN.fullmatch(data[k]) for k in ['id','version']):
+        raise ValueError('Invalid pack identity or version')
+    files=data.get('files')
+    if not isinstance(files,dict) or not files or len(files)>20000:raise ValueError('Invalid file inventory')
+    if any(PAYLOAD.fullmatch(file.name) and file.name not in files for file in root.iterdir()):
+        raise ValueError('Unlisted renderer payload in pack folder')
+    for name,entry in files.items():
+        if not PAYLOAD.fullmatch(name):raise ValueError('Invalid payload filename')
+        if not isinstance(entry,dict) or type(entry.get('size')) is not int or not 0<entry['size']<=128*1024*1024:
+            raise ValueError('Invalid payload size')
+        if not isinstance(entry.get('sha256'),str) or not re.fullmatch('[0-9a-f]{64}',entry['sha256']):
+            raise ValueError('Invalid payload hash')
+        file=root/name
+        if file.is_symlink() or not file.is_file() or file.stat().st_size!=entry['size'] or digest(file)!=entry['sha256']:
+            raise ValueError('Missing or changed payload: '+name)
+    def check_atlas(name,size):
+        with Image.open(root/name) as image:
+            if image.format!='PNG' or image.size!=size:raise ValueError('Invalid runtime atlas')
+            image.verify()
+    validate_layout(files,lambda name:(root/name).read_bytes(),check_atlas)
     return data
 
 
