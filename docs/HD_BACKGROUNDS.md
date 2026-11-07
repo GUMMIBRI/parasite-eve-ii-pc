@@ -928,6 +928,36 @@ improves those joins visually but drifts in central sources 3–6 and right sour
 `build-hd-study/art/mist-shooting-gallery-view11/`; it is rejected as a replacement
 for v3. No generated image or native-derived pack is committed or published.
 
+#### Controller-reached view-12 artwork study
+
+View 12 has native key `9800711c12f1bc39`. Its existing controller route from
+view 10 reaches world position [11611,132,5781]. A source export using that
+completed native capture finds 14 authored sources and 17199 potentially covered
+screen pixels. Eight narrow sources require at most 53 staging cells, below the
+64-cell staging-page budget. The explicit warp-6 catalog record preserves the
+full captured location and remains `runtime_verified: false`; this is no
+complete catalog traversal claim.
+
+Two built-in imagegen candidates and their prompts/provenance remain local in
+`build-hd-study/art/mist-shooting-gallery-view12/`. The native geometry guide
+calibrates all 14 diagnostic regions at zero integer shift. V1 has 11 zero-shift
+regions; sources 8/11 have ambiguous left shifts and source 12 shifts [4,8]. A
+source-guided correction and second generation improve v2 to 12 zero-shift
+regions, but source 8 shifts [0,-1] and source 12 [4,7] with an ambiguous peak.
+Source 11's zero peak is also ambiguous. Neither candidate has final artwork
+approval. Downsampled gradients do not establish subpixel contours or occlusion.
+
+The local v2 base/foreground packs were tested as technical candidates only.
+`foreground-view12-v2-route/report.json` passes all nine controls on macOS Metal
+after the controller replay reaches view 12. All 14 foreground sources activate
+in classic and wide modes; the wide frames are 1707x960 on buffers 0 and 272.
+Base/combined native VRAM, normalized original commands and observed simulation
+state match; classic base matches original native VRAM, and malformed metadata
+or missing atlas falls back exactly. The completed image was visually inspected.
+This verifies renderer integration at this endpoint, not final geometry, full
+actor mattes, intermediate frames or another platform. No art or native-derived
+pack is committed or published.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
