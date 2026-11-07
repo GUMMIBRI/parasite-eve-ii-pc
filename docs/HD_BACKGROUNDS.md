@@ -1843,6 +1843,32 @@ sharpness bands remain obvious. This is renderer integration evidence for a new
 view, not final art or moving-target occlusion approval. The local assessment
 binds the runtime report, candidate hashes and unresolved diagnostics.
 
+#### Linux Vulkan training-view integration
+
+The same private view-14 fixture and native training-menu controller trace pass
+all nine controls on Linux ARM64 with Vulkan/lavapipe at 4x
+(`linux-foreground-view14-source-guided-v1-route/report.json`). The current Linux
+executable is rebuilt before collection and retained at SHA-256
+`89a2a7d4c452e9ebb776926cfd55637ca74a2f59a4c49f9f6ab343a89c123ad3`.
+Both physical buffers 0/272 activate all 29 foreground replacements in 1707x960
+wide presentation. Within Linux, base/combined pairs preserve full native VRAM,
+normalized original GPU inputs, simulation counters and complete model/player
+pose hashes. Invalid metadata and missing atlases fall back exactly.
+
+Classic and wide Linux captures were visually inspected. Across all nine
+corresponding Metal/Linux cases, captured model/pose hashes, simulation counters
+and normalized GPU command sequences agree. Native VRAM differs across the
+backends in six or seven RGB555 words; cross-backend framebuffer or native-VRAM
+identity is not claimed. The bound assessment records these differences rather
+than hiding them (`linux-foreground-view14-source-guided-v1-route/assessment.json`).
+Lavapipe is CPU rendering, so this does not establish physical-GPU performance,
+Windows behavior, full training playback or final artwork quality.
+
+A further local rail-repair image edit (raw view-14 v3) produces a 1622x970
+canvas. It is rejected by the unchanged aspect check and never packed; the
+exact built-in prompt and result remain private in `provenance-v3.json`.
+Centre/side sharpness and moving-target occlusion review remain open.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
