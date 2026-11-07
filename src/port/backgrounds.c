@@ -303,7 +303,7 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
         packAvailable=foregroundAvailable=0;previousKey=0;packDirty=0;
     }
     /* Cropped transitions and movies do not claim static full-frame coverage. */
-    if(!source || offset_y || (!(packEnabled && *packRoot) && !getenv("PE2_DUMP_BACKGROUNDS") && !getenv("PE2_DUMP_FRAME") && !getenv("PE2_SURVEY_TARGET"))) {
+    if(!source || offset_y || (!(packEnabled && *packRoot) && !getenv("PE2_DUMP_BACKGROUNDS") && !getenv("PE2_DUMP_FRAME") && !getenv("PE2_SURVEY_TARGET") && !getenv("PE2_CAPTURE_FRAME_COUNT"))) {
         peBackgroundSetCoverage(buffer_y,0,320);return;
     }
     uint64_t key=peBackgroundCopyNative(nativeRows,source,columns);
@@ -376,18 +376,21 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
     if(first)materialPresented=1;
 }
 
-/* Opt-in static-camera survey. Ordinary gameplay never enters this path. */
+/* Opt-in settled survey or transient checkpoint. Ordinary gameplay skips both. */
 void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsigned vsync_count,
                           const PeBackgroundSimulationState* simulation)
 {
     static int initialized,enabled,matchingFrames,settleFrames=30;
     static unsigned stage,area,view,room;
+    static unsigned checkpointFrame;
     static uint64_t expected;
     static char root[4096];
     if(!initialized) {
         const char* target=getenv("PE2_SURVEY_TARGET");
         const char* output=getenv("PE2_SURVEY_OUTPUT");
         const char* settle=getenv("PE2_SURVEY_SETTLE_FRAMES");
+        const char* checkpoint=getenv("PE2_CAPTURE_FRAME_COUNT");
+        const char* checkpointOutput=getenv("PE2_CAPTURE_OUTPUT");
         if(settle) {char* end;long value=strtol(settle,&end,10);if(*settle && !*end && value>=30 && value<=36000)settleFrames=(int)value;}
         int used=0;
         if(target && output && strlen(output)<sizeof root &&
@@ -396,14 +399,28 @@ void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsign
            view>=1 && view<=50 && room>=1 && room<=255 && expected) {
             strcpy(root,output);enabled=1;
         }
+        /* A transient checkpoint is deliberately a different evidence format.
+         * It must never satisfy the settled-view survey's 30-frame gate. */
+        if(!target && checkpoint && checkpointOutput && *checkpointOutput && strlen(checkpointOutput)<sizeof root) {
+            char* end;unsigned long long value=strtoull(checkpoint,&end,10);
+            if(*checkpoint && strlen(checkpoint)<=10 && strspn(checkpoint,"0123456789")==strlen(checkpoint) && !*end && value>0 && value<=UINT32_MAX) {
+                checkpointFrame=(unsigned)value;strcpy(root,checkpointOutput);enabled=2;
+            }
+        }
         initialized=1;
     }
     if(!enabled)return;
     PeBackgroundFrameInfo info={0};
-    if(!field_frame || !simulation || !peBackgroundGetFrameInfo(buffer_y,&info) || info.key!=expected ||
-       info.location[0]!=(int)stage || info.location[1]!=(int)area ||
-       info.location[2]!=(int)view || info.location[3]!=(int)room) {matchingFrames=0;return;}
-    if(++matchingFrames<settleFrames)return;
+    if(enabled==2) {
+        if(!simulation || simulation->frame_count!=checkpointFrame ||
+           !peBackgroundGetFrameInfo(buffer_y,&info))return;
+        matchingFrames=0;
+    } else {
+        if(!field_frame || !simulation || !peBackgroundGetFrameInfo(buffer_y,&info) || info.key!=expected ||
+           info.location[0]!=(int)stage || info.location[1]!=(int)area ||
+           info.location[2]!=(int)view || info.location[3]!=(int)room) {matchingFrames=0;return;}
+        if(++matchingFrames<settleFrames)return;
+    }
     DrawSync(0);
     /* PE2 displays the opposite buffer while drawing. This diagnostic exits
      * after capture: present the completed draw buffer so pixels, OT state,
@@ -430,8 +447,8 @@ void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsign
     free(rgb);free(vram);if(failed)exit(2);
     if(gpuAuditEnabled==1 && !writeGpuAudit(root,buffer_y,&info))exit(2);
     snprintf(path,sizeof path,"%s/report.json",root);file=fopen(path,"w");if(!file)exit(2);
-    fprintf(file,"{\"format\":\"pe2-static-view-survey-v3\",\"matched_frames\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"width\":%d,\"height\":%d,\"buffer_y\":%d,\"foreground_replacements\":%u,\"draw_frame\":%u,\"game_tick\":%u,\"vsync_count\":%u,\"simulation_state\":{\"anim_frame\":%u,\"frame_count\":%u,\"loop_count\":%u,\"loop_ticks\":%u,\"random_lcg\":%u,\"random_bios\":%u},\"player_root\":",
-            matchingFrames,info.key,info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5],w,h,buffer_y,foregroundDrawn,drawFrameIndex,game_tick,vsync_count,
+    fprintf(file,"{\"format\":\"%s\",\"matched_frames\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"width\":%d,\"height\":%d,\"buffer_y\":%d,\"foreground_replacements\":%u,\"draw_frame\":%u,\"game_tick\":%u,\"vsync_count\":%u,\"simulation_state\":{\"anim_frame\":%u,\"frame_count\":%u,\"loop_count\":%u,\"loop_ticks\":%u,\"random_lcg\":%u,\"random_bios\":%u},\"player_root\":",
+            enabled==2?"pe2-frame-checkpoint-v1":"pe2-static-view-survey-v3",matchingFrames,info.key,info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5],w,h,buffer_y,foregroundDrawn,drawFrameIndex,game_tick,vsync_count,
             simulation->anim_frame,simulation->frame_count,simulation->loop_count,simulation->loop_ticks,simulation->random_lcg,simulation->random_bios);
     if(simulation->player_root_valid) {
         fputc('[',file);

@@ -21,7 +21,7 @@ class SurveyTest(unittest.TestCase):
             for field,value in [('complete',False),('buffer_y',256),('key','wrong'),('location',[1,2,4,1,1,1]),('format','unknown')]:
                 (root/'gpu-state.json').write_text(json.dumps({**audit,field:value}))
                 with self.assertRaises(ValueError):module.validate_capture(root,target,True)
-            for field,value in [('format','pe2-static-view-survey-v1'),('format','pe2-static-view-survey-v2'),('buffer_y',256),('matched_frames',3),('key','wrong'),('location',[1,2,4,1,1,1]),('width',1)]:
+            for field,value in [('format','pe2-static-view-survey-v1'),('format','pe2-static-view-survey-v2'),('format','pe2-frame-checkpoint-v1'),('buffer_y',256),('matched_frames',3),('key','wrong'),('location',[1,2,4,1,1,1]),('width',1)]:
                 changed={**report,field:value};(root/'report.json').write_text(json.dumps(changed))
                 with self.assertRaises(ValueError):module.validate_capture(root,target)
             (root/'report.json').write_text(json.dumps(report))

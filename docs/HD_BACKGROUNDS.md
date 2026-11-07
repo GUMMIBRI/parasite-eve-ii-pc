@@ -1036,6 +1036,27 @@ This identifies a reproducible concrete transition event for further work; it
 does not prove rendered crossfade pixels, both-buffer parity, or correct HD
 coverage. No renderer behavior or settled-capture validation gate was changed.
 
+#### Completed transient-frame checkpoints
+
+`PE2_CAPTURE_FRAME_COUNT=N PE2_CAPTURE_OUTPUT=/absolute/output` opts into a
+single completed-frame checkpoint at the game's `frameCount`. Use it without
+`PE2_SURVEY_TARGET`; survey mode takes precedence. A known native background and
+simulation record are required, but the frame may be a loading/script transition
+without the ready-field state required by settled surveys. The path shares the
+completed-buffer capture implementation and optional `PE2_DUMP_GPU_STATE=1`.
+It emits `pe2-frame-checkpoint-v1` with zero matched frames. Settled-view validators
+reject that format even if its matched count is edited to 30; their existing
+ready-field and minimum-30-frame gates are unchanged. A requested count that is
+not presented with known background information produces no checkpoint.
+
+`mist-crossfade-completed-frame/assessment.json` verifies no-pack classic/wide
+preference parity at count 1292, view 2, buffer 272 on macOS Metal at 4x. Both
+completed images are 1280x960 and match exactly, as do full native VRAM, original
+commands and observed simulation state. The completed GP0 audit contains both
+expected framebuffer copies, and the captured image was visually inspected.
+This is transient native fallback evidence, not HD-art crossfade support or a
+settled-view approval. All 49 C tests and 39 Python HD tests pass; PsyZ is unchanged.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
