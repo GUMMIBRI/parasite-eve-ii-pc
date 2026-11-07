@@ -1382,6 +1382,31 @@ run through the updated survey (`macos-survey-input-hashes`). These results
 cover this room's forced static starts; natural traversal, physical GPU
 performance and other rooms/backends retain their separate validation scope.
 
+#### Incinerator reachability diagnosis
+
+The 280 incinerator catalog entries are source-authored: seven room-state maps
+with 40 views each. Only 21 entries have an arrival warp matching their logical
+view; the other 259 reuse another arrival. The whole survey verified 13 entries
+and left 267 without settled targets. These remain unverified.
+
+Read-only EOF checkpoints from the forced view-1 start show active scripted
+playback: at 1000 input samples the live room is view 11, and at 1600 it is
+view 13, both with eventState 1, actor mode 2 and HP 110. At the full replay EOF,
+the player is unavailable with negative HP and the session area is zero.
+Neutral input after sample 700 also fails to produce settled captures for
+starts 1, 8 and 9. This diagnoses these sampled starts only; it does not prove
+the same cause for every unverified incinerator entry.
+
+Three attempted frame-count checkpoints captured location [0,0,0,0,0,0] with
+no player/model after returning to title, when frame counters were reused.
+They are explicitly rejected despite equal off/on pixels. Their local
+assessment records that rejection; they add no room coverage. Future transient
+checks must verify location and source identity in addition to frame number.
+No story flags, player position or camera state were injected. Local evidence:
+`incinerator-start-timeline`, `incinerator-neutral-arrivals`,
+`incinerator-reachability-assessment.json` and the rejected
+`incinerator-intro-checkpoints` experiment.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
