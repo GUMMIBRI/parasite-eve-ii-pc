@@ -1542,6 +1542,21 @@ created. The source-guided v2 technical fixture and its runtime evidence remain
 unchanged. The local assessment retains all three outputs, prompts, dimensions,
 rejection reasons and hashes. No final view-13 artwork is approved.
 
+#### View-12 additional geometry attempts
+
+Three further built-in image edits try to preserve the source-guided canvas's
+far-left ceiling corner while restoring coherent surface detail. V6 and v8
+produce 1659x948 canvases; the existing aspect check rejects both. V7 produces
+1714x918, within integer-rounding tolerance, but its geometry diagnostic still
+finds nonzero/ambiguous shifts for sources 7, 8, 11, 12 and 13 (source 12's best
+shift is five native pixels left). These candidates are rejected and never
+packed; no crop, stretch or registration tolerance change is used to conceal
+the mismatch. Outputs, exact prompts, hashes, dimensions and failed regions are
+retained privately in `art/mist-shooting-gallery-view12/`
+`followup-v6-v8-assessment.json` and `provenance-v6.json` through
+`provenance-v8.json`. View 12 remains unfinished, and the older installed v2
+material remains an unapproved technical fixture.
+
 #### View-13 full-detail v6 candidate
 
 A new built-in image edit of the source-guided v2 canvas improves uniform
