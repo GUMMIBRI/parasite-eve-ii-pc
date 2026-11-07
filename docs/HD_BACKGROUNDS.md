@@ -17,7 +17,7 @@ scope describe those builds rather than superseding this summary.
 | --- | --- | --- |
 | Options and loader | Persistent aspect/pack controls, native fallback, foreground presentation and immutable local installation are implemented. | Production pack and distribution/download/update workflow. |
 | Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Finish excluded-row/source diagnostics and runtime checks of special screens; MIST R21 is an empty debug room without static views. |
-| Broad runtime survey | Complete current-binary software survey: 2708 exact matches, 606 without settled captures; no pixel differences or crashes. All 5416 ordered GPU audits validate. | A supplemental menu route verifies gallery view 14; resolve the other 605 no-target locations and complete natural traversal, transient/scripted/special screens and supported GPU backends. This is forced static coverage, not an all-game pass. |
+| Broad runtime survey | Complete software survey before the two-room glow endpoint fix: 2708 exact matches, 606 without settled captures; no pixel differences or crashes. All 5416 ordered GPU audits validate. The endpoint fix additionally passes all 38 two-room variants on macOS software and Metal. | Repeat the broad survey after the endpoint fix. A supplemental menu route verifies gallery view 14; resolve the other 605 no-target locations and complete natural traversal, transient/scripted/special screens and supported GPU backends. This is forced static coverage, not an all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
 | Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests on both hosts, 69 Python HD tests on macOS, and 16 Windows PE tests plus software gameplay under Wine pass. | Native Windows/D3D12, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
@@ -2121,6 +2121,57 @@ This historical snapshot predates the current verification summary above.
 - The software baseline for this exact replay, before option edits, has SHA-1
   `c5f7de402de5dc1c6057ac55b15cafda1381b59f` at tick 6000. This is a different
   checkpoint from the earlier handoff's default-scene hash.
+
+### Bounded glow endpoints in the night garage and trailer coach
+
+A software cross-platform snapshot compared 2834 completed Windows/Wine runs
+with the same macOS source locations and input trace. All recorded clocks, RNGs,
+player poses and complete model states matched. 80 runs differed in VRAM: 52
+only in the mask bit, and 28 also in visible RGB. These differences are separate
+from widescreen off/on parity, which passed within each completed platform pair.
+The snapshot is not a complete Windows survey or native Windows GPU approval.
+Private evidence: `windows-full-survey-v1/macos-comparison-snapshot.json` and
+`macos-difference-characterization.json` under `build-hd-study/`.
+
+Two affected drawers indexed beyond separately declared static objects. The
+night garage read its fourth capsule beyond a six-endpoint array, and read two
+more pairs through a scalar endpoint. The trailer coach read four capsule pairs
+through indices 1/3/5/7 of its scalar marker. These pointers relied on host linker
+adjacency. The garage now stores five explicit endpoint pairs, and the trailer
+coach borrows the first four pairs of its existing view-3 array. Coordinates,
+radii and view selection stay unchanged; PsyZ is unmodified.
+
+The patched macOS binary is SHA-256
+`c193ab0099981e1787ccd49647f5190b5cd8e76eda8265c373f6866bde7c1f36`.
+All 38 eligible source/location variants across the two rooms pass software and
+Metal off/on controls, with exact within-backend RGB, full VRAM, normalized GP0
+commands, complete model/player poses and simulation state. Against the prior
+macOS software baseline, the 58 unaffected-view runs preserve exact RGB, VRAM
+and normalized commands; the 18 affected-view runs change their glow packets
+and visible pixels. All 76 retain the same model and simulation state.
+Private evidence is `glow-endpoints-fix-v1/` (scoped catalog, immutable binaries,
+reports, `macos-assessment.json`, `macos-before-after.json`, provenance).
+This does not replace the earlier full survey with current-build whole-game
+coverage, approve any artwork, or establish cross-backend pixel identity.
+
+The patched Windows binary is SHA-256
+`a7ab071df794df903ac00fab980e75b00aca73c6cb13527b0b9230e4d33f0c06`. Its first scoped Wine/Rosetta
+run passes 37/38 locations; the remaining view-8 widescreen process exits 133
+with `rosetta error: invalid gdt selector index 5`. A separately retained
+one-case retry passes. Combining those attributed successes, all 38 pairs / 76
+runs exactly match patched macOS software RGB, full VRAM, normalized GP0,
+complete model/player state and simulation clocks/RNGs. The original failure
+remains in the first report; this does not establish its root cause.
+See `windows-assessment.json` and both `windows/` and `windows-retry/` reports.
+
+A Linux x86-64 Release build under amd64 emulation also compiles the patched
+game and passes all 53 registered host tests with assertions enabled. Its
+binary is SHA-256 `70dabdc9f19edac7861c834900c31036e117c35e1300ce581ddcee4d28a87d5d`;
+private logs and image/source provenance are in `linux-x86-release-v1/`.
+The initial baseline build was intentionally cancelled before completion to
+apply the diagnosed fix; it supplies no passing result. The patched run does
+not yet verify Linux x86-64 gameplay, a physical GPU or native Windows behavior.
+
 
 ## Remaining required work
 

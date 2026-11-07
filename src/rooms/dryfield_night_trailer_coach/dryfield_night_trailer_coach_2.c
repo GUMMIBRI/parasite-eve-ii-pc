@@ -1110,11 +1110,11 @@ void dryfieldNightTrailerCoachDrawGlowsTask(Task* unusedTask)
         case 7:
             markerPoint = &_gDryfieldNightTrailerCoachGlowMarkerPoint;
             _glowDrawDiamond(markerPoint, DRYFIELD_NIGHT_TRAILER_COACH_MARKER_PULSE_RATE, DRYFIELD_NIGHT_TRAILER_COACH_DIAMOND_RADIUS);
-            // The binary reuses the marker base for the following strip pairs.
-            _dryfieldNightTrailerCoachDrawGlowCapsule(&markerPoint[1], DRYFIELD_NIGHT_TRAILER_COACH_GLOW_RADIUS);
-            _dryfieldNightTrailerCoachDrawGlowCapsule(&markerPoint[3], DRYFIELD_NIGHT_TRAILER_COACH_GLOW_RADIUS);
-            _dryfieldNightTrailerCoachDrawGlowCapsule(&markerPoint[5], DRYFIELD_NIGHT_TRAILER_COACH_GLOW_RADIUS);
-            _dryfieldNightTrailerCoachDrawGlowCapsule(&markerPoint[7], DRYFIELD_NIGHT_TRAILER_COACH_GLOW_RADIUS);
+            // These strips follow the marker in the disc layout, but are separate host objects.
+            _dryfieldNightTrailerCoachDrawGlowCapsule(_gDryfieldNightTrailerCoachView3GlowStripPoints[0], DRYFIELD_NIGHT_TRAILER_COACH_GLOW_RADIUS);
+            _dryfieldNightTrailerCoachDrawGlowCapsule(_gDryfieldNightTrailerCoachView3GlowStripPoints[1], DRYFIELD_NIGHT_TRAILER_COACH_GLOW_RADIUS);
+            _dryfieldNightTrailerCoachDrawGlowCapsule(_gDryfieldNightTrailerCoachView3GlowStripPoints[2], DRYFIELD_NIGHT_TRAILER_COACH_GLOW_RADIUS);
+            _dryfieldNightTrailerCoachDrawGlowCapsule(_gDryfieldNightTrailerCoachView3GlowStripPoints[3], DRYFIELD_NIGHT_TRAILER_COACH_GLOW_RADIUS);
             break;
         case 8:
             _glowDrawPulsingDisc(&_gDryfieldNightTrailerCoachGlowMarkerPoint, DRYFIELD_NIGHT_TRAILER_COACH_MARKER_PULSE_RATE, DRYFIELD_NIGHT_TRAILER_COACH_DISC_RADIUS);

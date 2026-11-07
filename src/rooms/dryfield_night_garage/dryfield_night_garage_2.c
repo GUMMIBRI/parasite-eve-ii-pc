@@ -299,35 +299,15 @@ TaskDesc gDryfieldNightGarageMovieTasks[2] = {
 /// consumer of this retained descriptor is established.
 static TaskDesc _gDryfieldNightGarageBlackoutTaskDesc = { { { TASK_BODY_NONE, TASK_PRIORITY_CONTROL } }, _dryfieldNightGarageBlackoutTask, { .value = 0 } };
 
-/// The first three grey-capsule endpoint pairs, in whole world-coordinate units.
-///
-/// Views 3 and 15 draw these three pairs; views 7 and 14 draw only the first.
-/// The retained fourth draw crosses this object's bounds into the following
-/// endpoint storage, whose containing declaration remains unresolved.
-static SVECTOR _gDryfieldNightGarageFirstThreeGlowPairs[6] = {
-    { 1950, -3260, 6199, 0 },
-    { 1950, -3260, 5142, 0 },
-    { 4034, -3260, 6199, 0 },
-    { 4034, -3260, 5142, 0 },
-    { 1950, -3260, 2714, 0 },
-    { 1950, -3260, 1662, 0 },
-};
-
-/// The first endpoint of the capsule shared by views 3, 15 and 11.
-///
-/// Whole world-coordinate units. View 11 starts its two-pair run here, sharing
-/// only the fourth capsule of views 3/15 and adding a fifth. The retained pair
-/// reads cross this scalar into the following storage; its bounds are unresolved.
-static SVECTOR _gDryfieldNightGarageView11FirstGlowStart = { 4034, -3260, 2714, 0 };
-
-/// End of the shared fourth glow strip and both endpoints of view 11's fifth strip.
-///
-/// Whole world-coordinate units. The drawer reaches these three endpoints
-/// beyond the preceding endpoint objects; their containing bounds are unresolved.
-static SVECTOR _gDryfieldNightGarageFinalGlowEndpoints[3] = {
-    { 4034, -3260, 1662, 0 },
-    { 6940, -3260, 2714, 0 },
-    { 6940, -3260, 1662, 0 },
+/// Five grey-capsule endpoint pairs, in whole world-coordinate units.
+/// Views 3/15 draw pairs 0..3; views 7/14 draw pair 0; view 11 draws pairs 3/4.
+/// Keep both endpoints in one array instead of depending on linker adjacency.
+static SVECTOR _gDryfieldNightGarageGlowPairs[5][2] = {
+    { { 1950, -3260, 6199, 0 }, { 1950, -3260, 5142, 0 } },
+    { { 4034, -3260, 6199, 0 }, { 4034, -3260, 5142, 0 } },
+    { { 1950, -3260, 2714, 0 }, { 1950, -3260, 1662, 0 } },
+    { { 4034, -3260, 2714, 0 }, { 4034, -3260, 1662, 0 } },
+    { { 6940, -3260, 2714, 0 }, { 6940, -3260, 1662, 0 } },
 };
 
 WorldCoordRoomLighting gDryfieldNightGarageRoomLighting[2] = {
@@ -1680,22 +1660,22 @@ void dryfieldNightGarageDrawGlowsTask(Task* unusedTask)
     switch (gGameSession->location.view) {
         case 3:
         case 15: {
-            const SVECTOR* endpoints = _gDryfieldNightGarageFirstThreeGlowPairs;
-            _glowDrawGreyCapsule(&endpoints[0], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, 0);
-            _glowDrawGreyCapsule(&endpoints[2], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, 0);
-            _glowDrawGreyCapsule(&endpoints[4], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, 0);
-            _glowDrawGreyCapsule(&endpoints[6], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, 0);
+            const SVECTOR (*endpoints)[2] = _gDryfieldNightGarageGlowPairs;
+            _glowDrawGreyCapsule(endpoints[0], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, 0);
+            _glowDrawGreyCapsule(endpoints[1], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, 0);
+            _glowDrawGreyCapsule(endpoints[2], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, 0);
+            _glowDrawGreyCapsule(endpoints[3], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, 0);
             break;
         }
         case 7:
         case 14:
-            _glowDrawGreyCapsule(&_gDryfieldNightGarageFirstThreeGlowPairs[0], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, 0);
+            _glowDrawGreyCapsule(_gDryfieldNightGarageGlowPairs[0], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, 0);
             break;
         case 11: {
-            const SVECTOR* endpoints = &_gDryfieldNightGarageView11FirstGlowStart;
+            const SVECTOR (*endpoints)[2] = &_gDryfieldNightGarageGlowPairs[3];
             // Turn the capsule caps to face the opposite end of the projected strips.
-            _glowDrawGreyCapsule(&endpoints[0], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, DRYFIELD_NIGHT_GARAGE_GLOW_HALF_TURN);
-            _glowDrawGreyCapsule(&endpoints[2], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, DRYFIELD_NIGHT_GARAGE_GLOW_HALF_TURN);
+            _glowDrawGreyCapsule(endpoints[0], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, DRYFIELD_NIGHT_GARAGE_GLOW_HALF_TURN);
+            _glowDrawGreyCapsule(endpoints[1], DRYFIELD_NIGHT_GARAGE_GLOW_RADIUS_SCALE, DRYFIELD_NIGHT_GARAGE_GLOW_HALF_TURN);
             break;
         }
     }
