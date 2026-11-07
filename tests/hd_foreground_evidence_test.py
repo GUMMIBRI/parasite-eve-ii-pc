@@ -6,7 +6,7 @@ import struct
 import tempfile
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools/hd'))
-from foreground_evidence import check_material_evidence,verify_empty_sources,compare_gpu_commands,normalized_gpu_commands
+from foreground_evidence import check_material_evidence,verify_empty_sources,compare_gpu_commands,normalized_gpu_commands,simulation_state
 
 class ForegroundEvidenceTest(unittest.TestCase):
     def test_visible_and_empty_material_have_distinct_evidence(self):
@@ -35,6 +35,12 @@ class ForegroundEvidenceTest(unittest.TestCase):
         self.assertFalse(compare_gpu_commands(trace(gouraud),trace(padding))['equal'])
         for malformed in [b'',b'x',struct.pack('<I',0),struct.pack('<II',2,0)]:
             with self.assertRaises(ValueError):normalized_gpu_commands(malformed)
+
+    def test_simulation_state_requires_complete_integer_evidence(self):
+        state=dict(anim_frame=600,frame_count=800,loop_count=900,loop_ticks=1200,random_lcg=0xffffffff)
+        self.assertEqual(simulation_state(dict(simulation_state=state)),state)
+        for invalid in [None,{},dict(state,random_lcg=-1),dict(state,loop_count=True),dict(state,anim_frame=2**32)]:
+            with self.assertRaises(ValueError):simulation_state(dict(simulation_state=invalid))
 
     def test_empty_proof_rejects_stp_black_changes_and_wrong_capture(self):
         with tempfile.TemporaryDirectory() as folder:

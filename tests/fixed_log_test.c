@@ -45,6 +45,20 @@ int main(void)
         CHECK(actualMask == mask);
         CHECK(*SCRATCH_STACK_CURSOR_SLOT == (void*)SCRATCH_STACK_CURSOR_SLOT);
     }
+    WorldCollisionContact contact = {
+        .flags = WORLD_COLLISION_CONTACT_OCCUPIED | WORLD_COLLISION_CONTACT_LAST,
+        .distance = 126,
+        .key.value = WORLD_COLLISION_CONTACT_GRID_FLOOR,
+        .response.direction = {0, -4096, 0, 0},
+    };
+    WorldCollisionDelta delta;
+    worldCollisionResolvePushback(&contact, &delta, 1, NULL);
+    CHECK(delta.fixed.vx.word == 0 && delta.fixed.vy.word == -8257536 && delta.fixed.vz.word == 0);
+    contact.response.direction.vx = -4096;
+    contact.response.direction.vy = 0;
+    contact.response.direction.vz = 4096;
+    worldCollisionResolvePushback(&contact, &delta, 1, NULL);
+    CHECK(delta.fixed.vx.word == -8257536 && delta.fixed.vy.word == 0 && delta.fixed.vz.word == 8257536);
     puts("SDK Q12 logarithm and all eight tagged floor/contact surface classes OK");
     return 0;
 }

@@ -464,6 +464,27 @@ classic foreground, and wide buffer 0. Wide buffer 272 differed in both inputs
 (674 versus 675 commands, first difference 430) and native output. The checker
 correctly stopped as unverified before malformed-pack controls. This is fresh
 evidence that a single passing repeat does not settle model-state determinism.
+Current v3 captures additionally record `simulation_state`: animation frame,
+game-owned vblank count, loop count/ticks and the shared gameplay LCG state,
+passed by value from the field presentation call. This adds observation only;
+no clock or RNG is advanced/reset. The live checker requires complete uint32
+values and equality in compared runs, alongside the existing clocks and GP0
+stream. Older v3 captures lacking these fields remain historical evidence and
+cannot pass this strengthened live check. In a fresh
+`foreground-simulation-guard-corridor` run, classic base/combined had identical
+additional state (including LCG 1373713762), but 673/674 GP0 commands with the
+first difference at 429. These observations rule out differing values of those
+specific counters/state as an explanation; they do not prove identical actor,
+heap or animation pose state. The run remains unverified.
+The ASan/UBSan build exposed a negative signed left shift in collision pushback
+(`object_lists.c`, floor correction). Conversion now shifts unsigned 32-bit
+values and adds floor corrections with explicit 32-bit wrap, matching MIPS
+arithmetic. A regression checks negative floor and negative/positive wall-axis
+corrections. With `UBSAN_OPTIONS=halt_on_error=1`, the subsequent corridor run
+reports no sanitizer error through its captured cases, but still stops at
+wide buffer 272 because original streams differ (674/675 commands). The
+collision fix is verified separately; it is not claimed to resolve input
+nondeterminism. No all-game sanitizer claim is made.
 Neither a partial run nor these synthetic fixtures establish all-game,
 traversal, artwork or all-platform completion.
 

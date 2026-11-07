@@ -598,13 +598,14 @@ s32 worldCollisionResolvePushback(const WorldCollisionContact* contacts, WorldCo
         }
 
         // Convert the 12-bit products to a 16.16 correction, averaging the floors.
-        delta->fixed.vx.word = scratch->nonFloorSum.vx << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
-        delta->fixed.vy.word = scratch->nonFloorSum.vy << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
-        delta->fixed.vz.word = scratch->nonFloorSum.vz << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+        // MIPS shifts/additions wrap in 32 bits, including negative pushback.
+        delta->fixed.vx.word = (s32)((u32)scratch->nonFloorSum.vx << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT);
+        delta->fixed.vy.word = (s32)((u32)scratch->nonFloorSum.vy << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT);
+        delta->fixed.vz.word = (s32)((u32)scratch->nonFloorSum.vz << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT);
         if (scratch->floorCount != 0) {
-            delta->fixed.vx.word += (scratch->floorSum.vx / scratch->floorCount) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
-            delta->fixed.vy.word += (scratch->floorSum.vy / scratch->floorCount) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
-            delta->fixed.vz.word += (scratch->floorSum.vz / scratch->floorCount) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT;
+            delta->fixed.vx.word = (s32)((u32)delta->fixed.vx.word + ((u32)(scratch->floorSum.vx / scratch->floorCount) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT));
+            delta->fixed.vy.word = (s32)((u32)delta->fixed.vy.word + ((u32)(scratch->floorSum.vy / scratch->floorCount) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT));
+            delta->fixed.vz.word = (s32)((u32)delta->fixed.vz.word + ((u32)(scratch->floorSum.vz / scratch->floorCount) << WORLD_COLLISION_PUSHBACK_FRACTION_SHIFT));
         }
 
         SCRATCH_STACK_RELEASE_BLOCK(_WorldCollisionPushbackScratch);

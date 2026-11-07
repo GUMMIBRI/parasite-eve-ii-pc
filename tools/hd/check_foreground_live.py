@@ -15,7 +15,7 @@ import tempfile
 import zlib
 from PIL import Image
 from survey import startup_replay,validate_capture
-from foreground_evidence import check_material_evidence,verify_empty_sources,compare_gpu_commands
+from foreground_evidence import check_material_evidence,verify_empty_sources,compare_gpu_commands,simulation_state
 
 
 def main():
@@ -61,8 +61,12 @@ def main():
         return report,native,frame
     def require_same_commands(first,second):
         evidence=compare_gpu_commands((root/first/'gpu-commands.bin').read_bytes(),(root/second/'gpu-commands.bin').read_bytes())
-        evidence.update(first=first,second=second)
+        first_state=simulation_state(json.loads((root/first/'report.json').read_text()))
+        second_state=simulation_state(json.loads((root/second/'report.json').read_text()))
+        evidence.update(first=first,second=second,first_simulation=first_state,second_simulation=second_state,
+                        simulation_equal=first_state==second_state)
         with (root/'input-comparisons.jsonl').open('a') as file:file.write(json.dumps(evidence)+'\n')
+        assert evidence['simulation_equal'],(first,second,'different simulation state; renderer comparison is unverified',evidence)
         assert evidence['equal'],(first,second,'different original GPU inputs; renderer comparison is unverified',evidence)
     (root/'input-comparisons.jsonl').unlink(missing_ok=True)
     original=run('original',None,0,30)

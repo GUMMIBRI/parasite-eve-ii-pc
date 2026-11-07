@@ -249,7 +249,7 @@ void displayPresentTaskFrame(s32 bufferIndex)
 #endif
         }
 #ifdef __psyz
-        peBackgroundEndFrame(gDisplayState.drawEnv[bufferIndex].clip.y,0,gDisplayState.gameTick,gDisplayState.vsyncCount);
+        peBackgroundEndFrame(gDisplayState.drawEnv[bufferIndex].clip.y,0,gDisplayState.gameTick,gDisplayState.vsyncCount,NULL);
 #endif
     }
 }
@@ -285,7 +285,9 @@ static inline void _displayPresentFrame(s32 bufferIndex)
     peBackgroundEndFrame(gDisplayState.drawEnv[bufferIndex].clip.y,
         gDisplayState.skipDraw==0 && !gCdCmdQueue.blockGamePause &&
         gFsCdOperationStatus==FILE_SYSTEM_CD_OPERATION_COMPLETE && gpuExtIsDisplayEnabled() &&
-        gDisplayState.pendingMode==DISPLAY_MODE_NONE,gDisplayState.gameTick,gDisplayState.vsyncCount);
+        gDisplayState.pendingMode==DISPLAY_MODE_NONE,gDisplayState.gameTick,gDisplayState.vsyncCount,
+        &(PeBackgroundSimulationState){gDisplayState.animFrame,gDisplayState.frameCount,
+            gDisplayState.loopCount,gDisplayState.loopTicks,gRandomLcgState});
 #endif
 }
 

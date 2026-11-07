@@ -88,3 +88,12 @@ def compare_gpu_commands(first,second):
     if differing is None and len(a)!=len(b):differing=min(len(a),len(b))
     return dict(equal=differing is None,first_count=len(a),second_count=len(b),
                 first_difference=differing)
+
+
+def simulation_state(report):
+    """Require the capture's additional integer clocks and shared gameplay RNG."""
+    state=report.get('simulation_state')
+    fields=['anim_frame','frame_count','loop_count','loop_ticks','random_lcg']
+    if not isinstance(state,dict) or any(type(state.get(k)) is not int or not 0<=state[k]<=0xffffffff for k in fields):
+        raise ValueError('Missing or invalid simulation-state evidence')
+    return {key:state[key] for key in fields}

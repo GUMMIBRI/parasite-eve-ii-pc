@@ -377,7 +377,8 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
 }
 
 /* Opt-in static-camera survey. Ordinary gameplay never enters this path. */
-void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsigned vsync_count)
+void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsigned vsync_count,
+                          const PeBackgroundSimulationState* simulation)
 {
     static int initialized,enabled,matchingFrames,settleFrames=30;
     static unsigned stage,area,view,room;
@@ -399,7 +400,7 @@ void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsign
     }
     if(!enabled)return;
     PeBackgroundFrameInfo info={0};
-    if(!field_frame || !peBackgroundGetFrameInfo(buffer_y,&info) || info.key!=expected ||
+    if(!field_frame || !simulation || !peBackgroundGetFrameInfo(buffer_y,&info) || info.key!=expected ||
        info.location[0]!=(int)stage || info.location[1]!=(int)area ||
        info.location[2]!=(int)view || info.location[3]!=(int)room) {matchingFrames=0;return;}
     if(++matchingFrames<settleFrames)return;
@@ -429,8 +430,9 @@ void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsign
     free(rgb);free(vram);if(failed)exit(2);
     if(gpuAuditEnabled==1 && !writeGpuAudit(root,buffer_y,&info))exit(2);
     snprintf(path,sizeof path,"%s/report.json",root);file=fopen(path,"w");if(!file)exit(2);
-    fprintf(file,"{\"format\":\"pe2-static-view-survey-v3\",\"matched_frames\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"width\":%d,\"height\":%d,\"buffer_y\":%d,\"foreground_replacements\":%u,\"draw_frame\":%u,\"game_tick\":%u,\"vsync_count\":%u}\n",
-            matchingFrames,info.key,info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5],w,h,buffer_y,foregroundDrawn,drawFrameIndex,game_tick,vsync_count);
+    fprintf(file,"{\"format\":\"pe2-static-view-survey-v3\",\"matched_frames\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"width\":%d,\"height\":%d,\"buffer_y\":%d,\"foreground_replacements\":%u,\"draw_frame\":%u,\"game_tick\":%u,\"vsync_count\":%u,\"simulation_state\":{\"anim_frame\":%u,\"frame_count\":%u,\"loop_count\":%u,\"loop_ticks\":%u,\"random_lcg\":%u}}\n",
+            matchingFrames,info.key,info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5],w,h,buffer_y,foregroundDrawn,drawFrameIndex,game_tick,vsync_count,
+            simulation->anim_frame,simulation->frame_count,simulation->loop_count,simulation->loop_ticks,simulation->random_lcg);
     failed=ferror(file);if(fclose(file))failed=1;
     if(failed) {remove(path);exit(2);}
     fprintf(stderr,"[survey] captured %u/%u/%u room %u key %016" PRIx64 "\n",stage,area,view,room,expected);
