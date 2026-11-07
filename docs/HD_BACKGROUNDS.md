@@ -19,7 +19,7 @@ scope describe those builds rather than superseding this summary.
 | Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Finish excluded-row/source diagnostics and runtime checks of special screens; MIST R21 is an empty debug room without static views. |
 | Broad runtime survey | Complete current-binary software survey: 2708 exact matches, 606 without settled captures; no pixel differences or crashes. All 5416 ordered GPU audits validate. | A supplemental menu route verifies gallery view 14; resolve the other 605 no-target locations and complete natural traversal, transient/scripted/special screens and supported GPU backends. This is forced static coverage, not an all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
-| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 60 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
+| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests on both hosts, 60 Python HD tests on macOS, and 16 Windows PE tests plus software gameplay under Wine pass. | Native Windows/D3D12, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
 All source captures, generated artwork and native-reference pack payloads remain
 local. Passing renderer controls do not approve artwork or grant distribution
@@ -1655,8 +1655,9 @@ coverage, all possible transition states or final artistic approval.
 A local MinGW-w64 GCC 16.2 cross-build produces the current Windows x86-64
 SDL_GPU game executable and all 16 members of the new `portable_graphics_tests`
 CMake target. The local assessment records PE files, sizes, hashes and system
-DLL imports (`windows-cross/assessment.json`). No Windows runtime or Wine is
-configured here; cross-compilation is not a Windows gameplay/test pass.
+DLL imports (`windows-cross/assessment.json`). At that checkpoint no Windows
+runtime was configured; the later Wine evidence below executes these binaries
+without establishing native Windows gameplay.
 
 The build exposed two fixture portability problems. `background_coverage_test`
 now defines `__psyz` when including the public runtime types, preserving the
@@ -1674,8 +1675,9 @@ have not been run on GitHub for these unpublished commits.
 All registered host-test targets now undefine `NDEBUG` in release configurations,
 so checks and fixture setup inside `assert()` actually execute. With assertions
 enabled, all 53 C tests pass on macOS and Linux ARM64. The Windows executables
-compile with assertions as well (the cache fixture imports `_assert`), but their
-execution remains unverified. No change to PsyZ was required.
+compile with assertions as well (the cache fixture imports `_assert`). The 16
+portable executables subsequently pass under Wine, as detailed below; native
+Windows execution remains required. No change to PsyZ was required.
 
 The bundled runtime also declares an experimental build-time `sdl3_gl` backend.
 Its atlas-loading and widescreen entry points are unsupported stubs, and the
@@ -1938,6 +1940,41 @@ post-course return checkpoint; it does not establish per-frame parity throughout
 the course, final artwork quality, other courses, other platforms or an entire
 story playthrough.
 
+#### Windows PE execution under Wine
+
+A local amd64 Linux container with Ubuntu Wine 9.0 executes all 16 cross-built
+Windows x86-64 `portable-graphics` tests successfully, with assertions active.
+The executable list comes directly from CTest's label selection; each PE and log
+hash is recorded in `windows-wine-runtime/assessment.json`. A current rebuild
+reports no work required. The game PE hash remains
+`7169346e8ebca24d627eea02c7ab3b88832722075520782814f02dd149d5caf0`.
+`--help` loads the executable and prints usage with the existing exit status 2;
+this is the CLI's current usage-error behavior, matching release CI's text check.
+
+With the owner's two disc images mounted read-only, the Windows game reaches
+training view 14 through the native menu trace, then a second trace reaches
+uncovered view 8 after course-0 countdown/completion. Both routes obtain complete
+source/location-gated 30-frame captures with widescreen off and on under the
+headless software renderer at 1x. Each pair has exactly identical RGB, full
+native VRAM, original GPU commands, simulation state, models and player pose.
+The training capture is at vsync 3134; the course return is at vsync 11120.
+The returned Windows frame was visually inspected.
+
+The Windows training capture also matches the native macOS software capture
+exactly in RGB and full VRAM, with all 558 normalized GPU commands and captured
+model/simulation state equal. At course return, the 787 normalized commands and
+model/pose/simulation state match the earlier Metal route; framebuffer equality
+across software and Metal is not asserted. Input hashes, captured reports,
+comparison records, Wine version and local runtime-image identity are retained
+in the ignored assessment. Test-only runtime caching occurred before mounting
+any game data, and source captures are not included in the cached image.
+
+This executes the actual Windows PE code and exercises Windows ABI, file IO,
+disc decoding, native menus and a sampled training route. Wine in an emulated
+Linux container is not native Windows. D3D12, physical GPUs, the Windows HD
+presenter, other courses and whole-game play remain unverified. No public CI
+job, release or upload is implied by these local results.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
@@ -1994,8 +2031,9 @@ This historical snapshot predates the current verification summary above.
    reference pixels and must stay private. Keep native game pixels out of public
    distribution and keep PsyZ unmodified.
 5. Verify supported platforms and GPU backends with appropriate builds and
-   runtime evidence. Metal and Linux ARM64/lavapipe subsets do not establish
-   Windows, Linux x86-64, physical GPU or all-game behavior.
+   runtime evidence. Metal, Linux ARM64/lavapipe and Windows-PE-under-Wine
+   subsets do not establish native Windows/D3D12, Linux x86-64, physical GPU
+   or all-game behavior.
 6. Prove complete off/baseline parity and wide coverage without holes, retaining
    native state and masks. Extend missing-art returns, pack toggles, malformed
    input and foreground occlusion checks across required scenes and player poses.
