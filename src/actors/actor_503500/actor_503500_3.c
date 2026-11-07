@@ -1768,8 +1768,8 @@ static inline void _actor503500ClampBossWalkPosition(Actor503500Work* work, GfxC
         ACTOR_503500_WALK_MIN_Z = 6000 << ACTOR_503500_BOSS_FIXED_FRACTION_BITS,
         ACTOR_503500_WALK_MAX_Z = 8000 << ACTOR_503500_BOSS_FIXED_FRACTION_BITS,
     };
-    long* positionX;
-    long* positionZ;
+    s32* positionX;
+    s32* positionZ;
 
     positionX = &work->position.vx;
     positionZ = &work->position.vz;

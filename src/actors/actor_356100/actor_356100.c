@@ -572,7 +572,7 @@ static inline void _actorMovementStepLocalZFromSave(McSaveData* save, GfxCoord* 
 /// `translation` is a live writable parent-frame component. Negative fractions
 /// take an extra negative unit below the signed integer half's flooring.
 /// The corrected translation must fit a signed word; no pointers are retained.
-static inline void _actorContactApplyRootFraction(s32 correctionWord, long* translation)
+static inline void _actorContactApplyRootFraction(s32 correctionWord, s32* translation)
 {
     if ((correctionWord & ACTOR_CONTACT_ROOT_FRACTION_MASK) != 0) {
         if (correctionWord > 0) {

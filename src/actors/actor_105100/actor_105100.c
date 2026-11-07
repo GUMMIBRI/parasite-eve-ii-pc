@@ -1695,7 +1695,7 @@ static void _actor105100FireballSpawn(Enemy* enemy, Task* task)
     _Actor105100FireballWork* work;
     GfxCoord*                 coord;
     GfxCoord*                 parentCoord;
-    long*                     translationY;
+    s32*                      translationY;
     void*                     startOffsetOrSweepCoord;
     s32                       childIndexOrFlags;
     s32                       offsetY;

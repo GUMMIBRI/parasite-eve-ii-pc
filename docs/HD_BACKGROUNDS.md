@@ -1302,6 +1302,26 @@ SHA256 values. V3 remains rejected for incompatible canvas aspect. No final
 view-12 artwork is approved, and these experiments do not extend verified pack
 coverage. The v2 runtime fixture remains technical evidence only.
 
+#### Further host coordinate-width corrections
+
+A syntax-only incompatible-pointer audit found 13 diagnostic sites involving
+`int *` model components and `long *` accessors. Review identified six actual
+pointer declarations: three fractional root-push helpers (actors 00400, 01100,
+356100), the fireball Y component (105100), and boss walk X/Z components
+(503500). These accessors now use `s32 *`, matching MATRIX/VECTOR storage and
+preserving adjacent components on LP64. The correction arithmetic is unchanged.
+A targeted syntax pass over all five source files succeeds with none of those
+13 diagnostics remaining. The wider audit's other warnings remain unaudited.
+
+The corrected five objects were compiled and linked to a separate local binary
+(`host-coordinate-width-build/build.json`), preserving the executable used by
+the concurrent full survey. Its nine Metal gallery controls pass
+(`foreground-view11-coordinate-width-fixed`). Its complete historical 48-case
+survey has five parity passes and 43 normal replay EOF results without settled
+targets, with no crashes (`historical-crash-coordinate-width-fixed`). Existing
+52 C and 39 Python HD tests pass. This is not Linux/Windows runtime validation
+of these latest coordinate changes, nor full natural boss/creature traversal.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,

@@ -798,7 +798,7 @@ static inline s32 _actor01100FindAttackContact(SVECTOR* hitPoint, const WorldCol
 /// therefore subtract an extra unit from that arithmetic floor, as retained by
 /// the grid pushback behavior. `translation` is one writable MATRIX translation
 /// component; the addition must fit its signed word. No pointer is retained.
-static inline void _actor01100ApplyFractionalPush(s32 correctionWord, long* translation)
+static inline void _actor01100ApplyFractionalPush(s32 correctionWord, s32* translation)
 {
     enum { ACTOR_01100_PUSH_FRACTION_MASK = 0xFFFF };
     if (correctionWord & ACTOR_01100_PUSH_FRACTION_MASK) {

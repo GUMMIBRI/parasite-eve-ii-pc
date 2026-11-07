@@ -1310,7 +1310,7 @@ static void _actor00400InitCollisionBodies(Task* task)
 /// correctionWord is signed 16.16; translation is one writable root component.
 /// Call after adding the signed high half. Negative fractions step one unit
 /// below that floor; addition must fit the word. No pointer is retained.
-static inline void _actor00400ApplyRootFractionalPush(s32 correctionWord, long* translation)
+static inline void _actor00400ApplyRootFractionalPush(s32 correctionWord, s32* translation)
 {
     enum { ACTOR_00400_PUSH_FRACTION_MASK = 0xFFFF };
 
