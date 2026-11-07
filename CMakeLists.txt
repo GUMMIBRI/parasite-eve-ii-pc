@@ -439,6 +439,17 @@ if(APPLE)
 else()
     target_link_options(scene_timing_buffer_test PRIVATE -Wl,--gc-sections)
 endif()
+if(MINGW)
+    # lld (MSYS2 CLANG64) only discards COMDAT sections, and -ffunction-sections
+    # does not make them COMDAT on MinGW, so the unused cdcmd paths keep their
+    # references to the rest of the game. GNU ld discards them; lld must be told
+    # to leave those never-called references unresolved.
+    include(CheckLinkerFlag)
+    check_linker_flag(C "-Wl,-Xlink=-force:unresolved" PE_LLD_FORCE_UNRESOLVED)
+    if(PE_LLD_FORCE_UNRESOLVED)
+        target_link_options(scene_timing_buffer_test PRIVATE -Wl,-Xlink=-force:unresolved)
+    endif()
+endif()
 
 add_executable(water_grid_packet_test EXCLUDE_FROM_ALL tests/water_grid_packet_test.c)
 target_include_directories(water_grid_packet_test PRIVATE include include/decomp)
