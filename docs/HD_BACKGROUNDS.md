@@ -17,7 +17,7 @@ scope describe those builds rather than superseding this summary.
 | --- | --- | --- |
 | Options and loader | Persistent aspect/pack controls, native fallback, foreground presentation and immutable local installation are implemented. | Production pack and distribution/download/update workflow. |
 | Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Finish excluded-row/source diagnostics and runtime checks of special screens; MIST R21 is an empty debug room without static views. |
-| Broad runtime survey | One complete earlier-build software survey: 2703 exact matches, 606 without settled captures, five balcony differences subsequently fixed in room-specific tests; no crashes. | Current-build full coverage and natural traversal, including transient/scripted/special screens. Do not combine different binary reports into one all-game pass. |
+| Broad runtime survey | Complete current-binary software survey: 2708 exact matches, 606 without settled captures; no pixel differences or crashes. All 5416 ordered GPU audits validate. | Resolve the 606 no-target cases and complete natural traversal, transient/scripted/special screens and supported GPU backends. This is forced static coverage, not an all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
 | Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 58 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
@@ -1753,6 +1753,34 @@ setup. Thus it is not a missing static artwork target. Its four raw exporter
 diagnostics remain visible as source facts; no passing runtime capture is
 inferred. Other camera/source-boundary diagnostics remain unresolved.
 
+#### Current-binary complete static survey
+
+`full-survey-current-v4/report.json` completes all 3314 eligible source rows
+against a preserved copy of the current executable, SHA-256
+`d4ea6bfb17d03395b83f903e213b5f4d16b749953ab3da808f940f7d1d1a7d7a`.
+The catalog includes the special-room classification described above, with its
+hash and replay hash recorded. Eight parallel headless software workers use
+virtual raster timing, video audio timing, isolated settings/cards and no art.
+Every successful run requires the expected native source and exact six-part
+location, at least 30 matching field-ready frames, and a complete attributed
+ordered GPU audit.
+
+Results: 2708 exact off/on comparisons of full native VRAM and presented RGB;
+606 replays end without a settled target capture. There are no renderer parity
+differences, process crashes or timeouts in the completed report. The survey
+returns nonzero because missing captures remain unverified. All 5416 successful
+run audits were separately hash-checked and validated against their capture
+identity/buffer. Successful pairs by stage are 477, 463, 749, 681 and 338.
+
+Compared with the earlier complete v3 survey, the five balcony pixel-difference
+cases now pass in this single complete current-binary run. Every previous
+passing location still passes, and the exact same 606 no-target locations remain
+unverified (`full-survey-current-v4/assessment.json`). Thus the old broad report
+and later room-specific evidence no longer need to be combined to establish
+current static off/on parity. The excluded 32 source rows, all no-target cases,
+natural gameplay transitions, production artwork and physical GPU/platform
+coverage remain outstanding; this report does not prove them.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
@@ -1795,7 +1823,7 @@ This historical snapshot predates the current verification summary above.
    remaining source diagnostics. MIST R21 is classified as an empty debug room
    with no static views; plaza uses streamed scenes. Finish distinguishing
    other unused/special assets from views needing authored routes or playback.
-3. Complete current-build runtime coverage across both discs: natural movement,
+3. Complete remaining runtime coverage across both discs: natural movement,
    view and room transitions, menus/dialogue, title, captured-room screens,
    special panorama/scroll renderers and RGB24 movies. The 606 no-target cases
    remain unverified. Context-gated transient checkpoints supplement rather than
