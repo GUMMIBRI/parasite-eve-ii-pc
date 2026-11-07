@@ -84,6 +84,8 @@ def main():
                 if len(logData)>256*1024:
                     (capture/'run.log.z').write_bytes(zlib.compress(logData));logPath.unlink()
                 if process.returncode:raise RuntimeError(f'{case}/{wide}: exited {process.returncode}')
+            if not (capture/'report.json').is_file():
+                raise RuntimeError(f'{case}/{wide}: replay ended without a settled target capture')
             report,native=validate_capture(capture,target)
             image=(capture/'frame.ppm').read_bytes()
             runs.append(dict(widescreen=wide,report=report,renderer_warnings=warnings,

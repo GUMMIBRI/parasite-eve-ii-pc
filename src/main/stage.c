@@ -1234,7 +1234,8 @@ static inline void _mdecFinishImageDecode(void)
 /// and output waits finish after 91 polls as well. Requires aligned, in-bounds
 /// payload offsets and live image, VLC, timing and auxiliary workspaces. The VLC
 /// expansion is unrestricted; this function does not check its output capacity.
-/// Timeout completion uses the cached header and does not stop MDEC DMA itself.
+/// A missing-header timeout has no payload capacity to commit. Output timeouts
+/// retain the selected header and do not stop MDEC DMA themselves.
 static void _mdecStepSceneImageDecode(void)
 {
     enum {
@@ -1251,12 +1252,13 @@ static void _mdecStepSceneImageDecode(void)
     switch (queue->imageDecodeStep) {
         case CD_COMMAND_IMAGE_WAIT_HEADER:
             mdecRequestSceneImageDecode(&gGameSession->location.view);
-            if ((u32)++_gMdecSceneWaitPolls >= MDEC_SCENE_TIMEOUT_POLLS) {
+            if (queue->imageDecodeStep == CD_COMMAND_IMAGE_WAIT_HEADER &&
+                (u32)++_gMdecSceneWaitPolls >= MDEC_SCENE_TIMEOUT_POLLS) {
                 _gMdecSceneWaitPolls = 0;
                 gpuResetAndInvalidateModelBuffers();
-                if (_gMdecSceneImageHeader->bufferKind == STREAM_SCENE_BUFFER_DECODE) {
-                    queue->decodeBufferBytes = queue->nextDecodeBufferBytes;
-                }
+                /* No header was selected for this view. The cached pointer may
+                 * be null (cold entry) or belong to an earlier payload. Neither
+                 * can authorize a decode-buffer capacity update. */
                 _mdecFinishImageDecode();
             }
             break;

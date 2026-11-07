@@ -147,9 +147,26 @@ It accepts only 30 consecutive visible field frames with the expected native
 key and exact six-component location, rejects black/loading captures, and
 compares the complete native VRAM and rendered frame with widescreen off/on.
 The executable hash must remain unchanged throughout a survey. The initial
-20-camera run passed; the full run is still pending and has already exposed
-unverified cases, including a scene decoder crash in Mist Center R18.
-These cases must not be counted as successful coverage.
+20-camera run passed. The full 3314-candidate run completed on executable
+SHA-256 `2367b99d2b42d3c64b68c9589310c4301f7e993633f70c4c4efcdbee05e80d5f`:
+2698 exact off/on matches, 616 unverified. Of the latter, 563 ended the replay
+without the required capture, 46 exited with signal 11, two with signal 10,
+and five differed in rendered/native pixels on the night motel balcony.
+Passing runs also emitted 130 unsupported-renderer-command warnings; pixel
+parity does not establish that these commands render correctly.
+The full local report is `build-hd-study/survey-all/report.json`.
+
+The Mist Center R18 crash was reproduced under LLDB: the header wait timed out
+while `_gMdecSceneImageHeader` was null, then dereferenced its buffer kind.
+The timeout now releases bookkeeping without reading or committing capacity
+from an unselected/stale header. A production-code test covers both cold and
+stale caches, and a valid header arriving at the timeout boundary. A targeted
+runtime retry no longer crashes, but still does not produce the requested
+static camera; room scripts change cameras and stream their own backgrounds.
+This is not successful runtime coverage. Three identical widescreen-off
+balcony retries also produced distinct VRAM/frame hashes, so the five original
+differences require deterministic-state investigation before attribution to
+the aspect preference. They remain unverified.
 
 The first imagegen candidate is local under
 `build-hd-study/art/mist-shooting-gallery-view10/`: source metadata, source PNG,
@@ -170,7 +187,7 @@ registration experiments do not establish production artwork quality.
 
 ## Verification checkpoint
 
-- 43 C host tests pass, including native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
+- 44 C host tests pass, including missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
   out-of-bounds and unsupported cases. The hidden GPU probe also proves that
   native 1x rendering falls back exactly with a valid wide pack supplied.
 - Two synthetic pack tests and two synthetic inventory tests pass (duplicate pixel hashes, missing inputs,

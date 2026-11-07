@@ -355,6 +355,16 @@ target_link_libraries(weapon_mp5a5_test PRIVATE psyz)
 
 add_executable(anim_cue_latch_test EXCLUDE_FROM_ALL tests/anim_cue_latch_test.c)
 
+add_executable(scene_image_timeout_test EXCLUDE_FROM_ALL tests/scene_image_timeout_test.c)
+target_include_directories(scene_image_timeout_test PRIVATE include include/decomp)
+target_compile_definitions(scene_image_timeout_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(scene_image_timeout_test PRIVATE psyz)
+if(APPLE)
+    target_link_options(scene_image_timeout_test PRIVATE -Wl,-dead_strip)
+else()
+    target_link_options(scene_image_timeout_test PRIVATE -Wl,--gc-sections)
+endif()
+
 add_executable(background_coverage_test EXCLUDE_FROM_ALL tests/background_coverage_test.c src/port/background_coverage.c)
 target_include_directories(background_coverage_test PRIVATE include)
 # video.h uses PsyZ public types; this test supplies stub renderer entry points.
