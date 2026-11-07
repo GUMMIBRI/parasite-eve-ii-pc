@@ -20,6 +20,8 @@ from foreground_evidence import check_material_evidence,verify_empty_sources,com
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--replay',type=Path,help='Use an existing route instead of the default startup trace')
+    parser.add_argument('--settle',type=int,default=30,help='Matching field frames before capture (30..35999); wide also checks the next frame')
     parser.add_argument('--runner',type=Path,help='Optional executable launcher receiving the binary path and arguments')
     parser.add_argument('--binary',type=Path,default=Path('build-port/parasite-eve-ii-pc'))
     parser.add_argument('--disc',type=Path,required=True);parser.add_argument('--disc2',type=Path,required=True)
@@ -30,12 +32,16 @@ def main():
     parser.add_argument('--empty-sources',type=Path,help='Audited all-zero native sources; require unchanged material instead of visible HD')
     parser.add_argument('--output',type=Path,default=Path('build-hd-study/foreground-live-check'))
     args=parser.parse_args();location=list(map(int,args.location.split(',')))
+    if not 30<=args.settle<36000:parser.error('--settle must be in 30..35999')
     if len(location)!=6 or len(args.key)!=16:parser.error('Expected a six-component location and native key')
     int(args.key,16)
     context='-'.join(map(str,location[:4]));descriptor=f'{args.key}-{context}.pe2fg'
     root=args.output.resolve();root.mkdir(parents=True,exist_ok=True);(root/'report.json').unlink(missing_ok=True)
     empty_sources=verify_empty_sources(args.empty_sources,args.key,location,(args.combined_pack/descriptor).read_bytes()) if args.empty_sources else 0
-    replay=root/'startup.pad';startup_replay(replay)
+    replay=root/'startup.pad'
+    if args.replay:replay.write_bytes(args.replay.read_bytes())
+    else:startup_replay(replay,frames=max(8001,2*args.settle+4000))
+    replay_identity=hashlib.sha256(replay.read_bytes()).hexdigest()
     identity=hashlib.sha256(args.binary.read_bytes()).hexdigest();results=[]
     runner_identity=hashlib.sha256(args.runner.read_bytes()).hexdigest() if args.runner else None
     def run(name,pack,wide,settle):
@@ -55,6 +61,7 @@ def main():
                 if args.runner:command.insert(0,str(args.runner.resolve()))
                 subprocess.run(command,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=40)
         report,native=validate_capture(destination,dict(keys=[args.key],location=location),True)
+        assert report['matched_frames']==settle,(name,'capture ignored the requested settle interval')
         frame=(destination/'frame.ppm').read_bytes()
         results.append(dict(case=name,report=report,native_sha256=hashlib.sha256(native).hexdigest(),
                             frame_sha256=hashlib.sha256(frame).hexdigest()))
@@ -72,8 +79,9 @@ def main():
         assert evidence['simulation_equal'],(first,second,'different simulation state; renderer comparison is unverified',evidence)
         assert evidence['equal'],(first,second,'different original GPU inputs; renderer comparison is unverified',evidence)
     (root/'input-comparisons.jsonl').unlink(missing_ok=True)
-    original=run('original',None,0,30)
-    for name,wide,settle in [('classic',0,30),('wide30',1,30),('wide31',1,31)]:
+    original=run('original',None,0,args.settle)
+    wide_buffers=set()
+    for name,wide,settle in [('classic',0,args.settle),(f'wide{args.settle}',1,args.settle),(f'wide{args.settle+1}',1,args.settle+1)]:
         base=run(name+'-base',args.base_pack,wide,settle)
         combined=run(name+'-combined',args.combined_pack,wide,settle)
         clock_fields=['draw_frame','game_tick','vsync_count']
@@ -82,6 +90,7 @@ def main():
         require_same_commands(name+'-base',name+'-combined')
         assert base[1]==combined[1],(name,'foreground changed native VRAM')
         assert base[0]['buffer_y']==combined[0]['buffer_y'],(name,'different physical buffers')
+        if wide:wide_buffers.add(combined[0]['buffer_y'])
         changed=base[2]!=combined[2]
         replacements=combined[0]['foreground_replacements']
         try:check_material_evidence(changed,replacements,empty=bool(empty_sources))
@@ -90,19 +99,21 @@ def main():
             require_same_commands('original',name+'-base')
             assert base[1]==original[1],'Base material changed the original native framebuffer'
         if not wide:classic=base
+    assert wide_buffers=={0,272},('missing physical buffer coverage',wide_buffers)
     for name in ['bad-metadata','missing-atlas']:
         with tempfile.TemporaryDirectory(prefix=name+'-',dir=root) as directory:
             pack=Path(directory);shutil.copytree(args.combined_pack,pack,dirs_exist_ok=True)
             data=bytearray((pack/descriptor).read_bytes())
             if name=='bad-metadata':data[0]^=255;(pack/descriptor).write_bytes(data)
             else:(pack/f'{int.from_bytes(data[16:24],"little"):016x}.fg.png').unlink()
-            capture=run(name,pack,0,30)
+            capture=run(name,pack,0,args.settle)
             require_same_commands('classic-base',name)
             assert not capture[0]['foreground_replacements'] and capture[1:]==classic[1:],name
     if hashlib.sha256(args.binary.read_bytes()).hexdigest()!=identity:raise RuntimeError('Executable changed during check')
+    if hashlib.sha256(replay.read_bytes()).hexdigest()!=replay_identity:raise RuntimeError('Replay changed during check')
     if args.runner and hashlib.sha256(args.runner.read_bytes()).hexdigest()!=runner_identity:raise RuntimeError('Launcher changed during check')
-    (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,runner_sha256=runner_identity,cases=results,empty_sources_verified=empty_sources,
-        scope='One forced static camera. v3 captures present the completed draw buffer. '+('Audited empty sources require exact unchanged material; no visible HD activation is claimed.' if empty_sources else 'Both physical buffers require active foreground replacements in 16:9.')),indent=2)+'\n')
+    (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,runner_sha256=runner_identity,replay_sha256=replay_identity,settle_frames=args.settle,cases=results,empty_sources_verified=empty_sources,
+        scope=('One replayed camera endpoint. ' if args.replay else 'One forced static camera. ')+'v3 captures present the completed draw buffer. '+('Audited empty sources require exact unchanged material; no visible HD activation is claimed.' if empty_sources else 'Both physical buffers require active foreground replacements in 16:9.')),indent=2)+'\n')
     print('PASS: '+('verified empty foreground' if empty_sources else 'live foreground material')+', both buffer parities, exact native VRAM and malformed-pack fallback')
 
 

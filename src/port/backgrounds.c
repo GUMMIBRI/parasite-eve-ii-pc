@@ -388,7 +388,7 @@ void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsign
         const char* target=getenv("PE2_SURVEY_TARGET");
         const char* output=getenv("PE2_SURVEY_OUTPUT");
         const char* settle=getenv("PE2_SURVEY_SETTLE_FRAMES");
-        if(settle) {char* end;long value=strtol(settle,&end,10);if(*settle && !*end && value>=30 && value<=600)settleFrames=(int)value;}
+        if(settle) {char* end;long value=strtol(settle,&end,10);if(*settle && !*end && value>=30 && value<=36000)settleFrames=(int)value;}
         int used=0;
         if(target && output && strlen(output)<sizeof root &&
            sscanf(target,"%u,%u,%u,%u:%16" SCNx64 "%n",&stage,&area,&view,&room,&expected,&used)==5 &&

@@ -632,7 +632,8 @@ presents the completed draw buffer explicitly. Its reported `buffer_y`, native
 VRAM, GPU-state audit and image now refer to the same frame. v2 captures remain
 useful native-source inputs and literal off/on comparisons, but cannot prove
 current-buffer visuals. Visual coverage must be repeated with v3. The optional
-`PE2_SURVEY_SETTLE_FRAMES=30..600` exercises odd/even buffer parity. This
+`PE2_SURVEY_SETTLE_FRAMES=30..36000` permits longer controller routes and
+odd/even buffer parity checks (default 30). This
 diagnostic presentation change is never used in ordinary gameplay.
 
 The native catalog now decodes all 1759 distinct BS inputs with the game's own
@@ -738,6 +739,50 @@ sources, exact full native VRAM and invalid/missing-pack fallback. Completed
 classic/wide frames were inspected: earlier vertical joins are not visible.
 The player is outside these forced-camera frames, so player occlusion,
 traversal and final artwork approval remain open. No art or pack was committed.
+
+#### Controller-driven v8 gallery checks
+
+`check_foreground_live.py` now accepts `--replay` and `--settle`; it copies and
+hashes the route, checks the requested matching-frame count was honored, and
+requires both physical buffers in the wide pair. Larger default traces grow
+with the settle interval. The native diagnostic accepts up to 36000 matching
+frames; regular gameplay and the default 30-frame check remain unchanged.
+The read-only LLDB checkpoint also records composed camera rotation/translation,
+projection distance and the player's cached view-space origin, without calling
+any target function.
+
+Real movement from warp 6 reaches a visible player pose at [4719,131,6302].
+A slightly longer second leg reaches [6022,131,5701], beside the left foreground
+post. `foreground-v8-gallery-walk` and `foreground-v8-gallery-occlusion` each
+pass all nine controls at 1300/1301 matching frames, including exact native VRAM,
+matching original GP0 input and RNG/clocks, nine active foreground sources,
+both physical buffers and malformed/missing-pack fallback. Original and HD
+completed-buffer images show the character in the frame; no coordinate or
+actor-state injection was used.
+
+For the latter pose, exact 4x colour differencing against the earlier empty
+original frame identifies 4461 visible model/shadow contribution pixels.
+Foreground-HD versus base-HD changes zero RGB channels on those pixels.
+The 578 original-to-base differences include the translucent foot shadow over
+changed floor artwork. An earlier native-cell-upsampled estimate included 11
+subpixels of original occluder inside actor cells; it is retained as an
+insufficient mask, superseded by the exact-resolution colour assessment.
+This is evidence for preserved visible contributions at this pose, not a
+complete per-primitive matte, equal-colour coverage, hidden geometry, all poses
+or final artwork approval.
+
+The same native controller path proceeds into views 11 and 12. The independent
+`gallery-v8-transitions-settled/report.json` completes three controls per view:
+original 4:3, native wide preference, and wide preference with only the v8
+view-10 pack available. The settled view-10 preview is 1707x960 with the pack;
+the completed view-11/view-12 frame returns to 1280x960, with zero foreground
+replacements and exact native VRAM plus rendered RGB against the no-pack
+control. Normalized original commands and observed simulation states also match.
+This proves two concrete in-room transitions and missing-art fallback on one
+macOS Metal route, not every room transition. The initial tick-1000 preview
+had a transient source key and was rejected as activation evidence; its failed
+collection is retained separately. No art or pack was committed or published.
+
 
 
 ## Verification checkpoint

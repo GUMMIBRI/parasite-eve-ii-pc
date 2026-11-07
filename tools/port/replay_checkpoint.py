@@ -125,6 +125,14 @@ def collect(target):
         "eventState": number(child(session, "eventState")),
     }
     display = target.FindFirstGlobalVariable("gDisplayState")
+    view = child(target.FindFirstGlobalVariable("gGfxViewCoord"), "workm")
+    snapshot["camera"] = {
+        "rotation": [[number(child(view, "m").GetChildAtIndex(row).GetChildAtIndex(column))
+                      for column in range(3)] for row in range(3)],
+        "translation": [number(child(view, "t").GetChildAtIndex(i)) for i in range(3)],
+        "screenDistance": number(child(display, "screenDistance")),
+        "playerViewPosition": [number(child(child(coord, "workm"), "t").GetChildAtIndex(i)) for i in range(3)],
+    }
     snapshot["flow"] = {
         "pendingMode": number(child(display, "pendingMode")),
         "gameMode": number(child(display, "gameMode")),

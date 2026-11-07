@@ -29,12 +29,12 @@ def main():
     parser.add_argument('--base-pack',type=Path)
     parser.add_argument('--combined-pack',type=Path)
     args=parser.parse_args();location=list(map(int,args.location.split(',')))
-    if len(location)!=6 or len(args.key)!=16 or not 1<=args.runs<=100 or not 30<=args.settle<=600:
-        parser.error('Expected six location components, 16-digit key, 1..100 runs and 30..600 settle frames')
+    if len(location)!=6 or len(args.key)!=16 or not 1<=args.runs<=100 or not 30<=args.settle<=36000:
+        parser.error('Expected six location components, 16-digit key, 1..100 runs and 30..36000 settle frames')
     int(args.key,16)
     if bool(args.base_pack)!=bool(args.combined_pack):parser.error('Supply both pack variants or neither')
     root=args.output.resolve();root.mkdir(parents=True,exist_ok=False)
-    replay=root/'startup.pad';startup_replay(replay)
+    replay=root/'startup.pad';startup_replay(replay,frames=max(8001,2*args.settle+4000))
     binary=args.binary.resolve();identity=hashlib.sha256(binary.read_bytes()).hexdigest()
     variants=[('original',None)]
     if args.base_pack:variants += [('base',args.base_pack),('combined',args.combined_pack)]
