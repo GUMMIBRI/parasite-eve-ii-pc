@@ -1,4 +1,7 @@
 #include "gamemain.h"
+#ifdef __psyz
+#include "port/backgrounds.h"
+#endif
 
 #include <psyz.h>
 #include <libgte.h>
@@ -210,6 +213,9 @@ void displayPresentTaskFrame(s32 bufferIndex)
 
     flipMode = gDisplayTaskFlipControlSnapshot & DISPLAY_FLIP_MODE_MASK;
     if (flipMode != DISPLAY_FLIP_HOLD) {
+#ifdef __psyz
+        peBackgroundSetCoverage(gDisplayState.drawEnv[bufferIndex].clip.y,0,320);
+#endif
         PutDrawEnv(&gDisplayState.drawEnv[bufferIndex]);
         PutDispEnv(&gDisplayState.dispEnv[bufferIndex]);
         if (flipMode == DISPLAY_FLIP_FULL) {
@@ -242,6 +248,9 @@ void displayPresentTaskFrame(s32 bufferIndex)
 /// of reused buffers must have finished; image/movie storage must survive transfer.
 static inline void _displayPresentFrame(s32 bufferIndex)
 {
+#ifdef __psyz
+    peBackgroundSetCoverage(gDisplayState.drawEnv[bufferIndex].clip.y,0,320);
+#endif
     PutDrawEnv(&gDisplayState.drawEnv[bufferIndex]);
     PutDispEnv(&gDisplayState.dispEnv[bufferIndex]);
     if (gDisplayState.control.flags.imageSource != DISPLAY_IMAGE_NONE) {

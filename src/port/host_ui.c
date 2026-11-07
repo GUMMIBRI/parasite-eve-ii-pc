@@ -16,6 +16,7 @@
 #include <psyz/overlay_sdl3_gpu.h>
 #include <libgpu.h>
 #include "port/host_ui.h"
+#include "port/backgrounds.h"
 #include "port/disc_assets.h"
 #include "port/asset_bind.h"
 #define STBTT_STATIC
@@ -68,13 +69,18 @@ static void ensureRowVisible(void) {
 
 static void setPage(int page) { s_overlayState.page=page;s_overlayState.row=0;s_overlayState.scroll=0; }
 
+static void applyWidescreen(int enabled) {
+    if(enabled)Psyz_VideoSetAspectMode(PSYZ_ASPECT_DISPLAY);
+    peBackgroundSetWidescreen(enabled);
+}
+
 static void saveOptions(void) {
     char temp[4120];
     snprintf(temp,sizeof temp,"%s.tmp",configPath);
     FILE* f=fopen(temp,"w");
     if(!f) { snprintf(statusText,sizeof statusText,"Could not save preferences."); return; }
-    fprintf(f,"disc1=%s\ndisc2=%s\nscale=%u\naspect=%d\ndither=%d\ngeometry=%d\naa=%d\nfilter=%d\nlight=%d\nvolume=%u\n",
-        discPaths[0],discPaths[1],Psyz_VideoGetInternalResolution(),Psyz_VideoGetAspectMode(),
+    fprintf(f,"disc1=%s\ndisc2=%s\nscale=%u\naspect=%d\nwidescreen=%d\ndither=%d\ngeometry=%d\naa=%d\nfilter=%d\nlight=%d\nvolume=%u\n",
+        discPaths[0],discPaths[1],Psyz_VideoGetInternalResolution(),Psyz_VideoGetAspectMode(),peBackgroundGetWidescreen(),
         Psyz_VideoGetDitheringMode(),Psyz_VideoGetGeometryCorrection(),Psyz_VideoGetAntialiasing(),
         Psyz_VideoGetModelFiltering(),Psyz_VideoGetDynamicLighting(),Psyz_AudioGetOutputVolume());
     for(unsigned i=0;i<16;i++) fprintf(f,"key%u=%d\n",i,Psyz_GetKeyboardBinding_SDL3(i));
@@ -89,6 +95,7 @@ static void loadOptions(void) {
     SDL_CreateDirectory(configDir);
     snprintf(configPath,sizeof configPath,"%s/settings.ini",configDir);
     FILE* f=fopen(configPath,"r"); if(!f)return;
+    int widescreen=0;
     char line[8192];
     while(fgets(line,sizeof line,f)) {
         line[strcspn(line,"\r\n")]=0;
@@ -100,6 +107,7 @@ static void loadOptions(void) {
         char* end; long n=strtol(eq,&end,10); if(end==eq || *end)continue;
         if(!strcmp(line,"scale") && n>=1 && n<=8) Psyz_VideoSetInternalResolution((unsigned)n);
         else if(!strcmp(line,"aspect") && n>=0 && n<=1) Psyz_VideoSetAspectMode(n);
+        else if(!strcmp(line,"widescreen") && n>=0 && n<=1) widescreen=(int)n;
         else if(!strcmp(line,"dither") && n>=0 && n<=1) Psyz_VideoSetDitheringMode(n);
         else if(!strcmp(line,"geometry") && n>=0 && n<=1) Psyz_VideoSetGeometryCorrection(n);
         else if(!strcmp(line,"aa") && n>=0 && n<=1) Psyz_VideoSetAntialiasing(n);
@@ -113,6 +121,7 @@ static void loadOptions(void) {
         }
     }
     fclose(f);
+    applyWidescreen(widescreen);
 }
 
 /* Raw BINs are presented to the SDK through a generated CUE in preferences.
@@ -197,7 +206,7 @@ static void rowText(int row,char label[128],char value[256]) {
         const char* labels[]={"Picture detail","Aspect ratio","Dithering","Geometry correction","Fullscreen","Antialiasing","Model filtering","Smooth lighting"};
         strcpy(label,labels[row]);
         if(row==0)snprintf(value,256,"%ux",Psyz_VideoGetInternalResolution());
-        if(row==1)strcpy(value,Psyz_VideoGetAspectMode()?"Square pixels":"Classic 4:3");
+        if(row==1)strcpy(value,peBackgroundGetWidescreen()?"Widescreen (16:9)":Psyz_VideoGetAspectMode()?"Square pixels":"Classic 4:3");
         if(row==2)strcpy(value,Psyz_VideoGetDitheringMode()?"Off":"Original");
         if(row==3)strcpy(value,Psyz_VideoGetGeometryCorrection()?"On":"Off");
         if(row==4)strcpy(value,(s_overlayGpuWindow && SDL_GetWindowFlags(s_overlayGpuWindow)&SDL_WINDOW_FULLSCREEN)?"On":"Off");
@@ -276,7 +285,12 @@ static void changeRow(int direction,int activate) {
     if(s_overlayState.page==0) {
         if(r==0) { int n=(int)Psyz_VideoGetInternalResolution()+direction;
             if(n>=1&&n<=8)Psyz_VideoSetInternalResolution(n); }
-        if(r==1)Psyz_VideoSetAspectMode(!Psyz_VideoGetAspectMode());
+        if(r==1) {
+            int choice=peBackgroundGetWidescreen()?2:Psyz_VideoGetAspectMode()?1:0;
+            choice=(choice+(direction<0?2:1))%3;
+            applyWidescreen(choice==2);
+            Psyz_VideoSetAspectMode(choice==1?PSYZ_ASPECT_SQUARE:PSYZ_ASPECT_DISPLAY);
+        }
         if(r==2)Psyz_VideoSetDitheringMode(!Psyz_VideoGetDitheringMode());
         if(r==3)Psyz_VideoSetGeometryCorrection(!Psyz_VideoGetGeometryCorrection());
         if(r==4 && s_overlayGpuWindow)SDL_SetWindowFullscreen(s_overlayGpuWindow,
@@ -406,7 +420,7 @@ static bool settingsEvent(const SDL_Event* e) {
 
 int peHostStartup(int argc,char** argv,const char** disc) {
     loadOptions();
-    int menuOnly=0,validateOnly=0;
+    int menuOnly=0,validateOnly=0,widescreenSeen=0;
     const char* explicitDisc=getenv("PE2_DISC");
     const char* explicitDisc2=getenv("PE2_DISC2");
     for(int i=1;i<argc;i++) {
@@ -414,8 +428,15 @@ int peHostStartup(int argc,char** argv,const char** disc) {
         else if(!strcmp(argv[i],"--validate-discs"))validateOnly=1;
         else if(!strcmp(argv[i],"--disc") && i+1<argc)explicitDisc=argv[++i];
         else if(!strcmp(argv[i],"--disc2") && i+1<argc)explicitDisc2=argv[++i];
+        else if(!strcmp(argv[i],"--widescreen")) {
+            if(widescreenSeen || i+1>=argc || (strcmp(argv[i+1],"0") && strcmp(argv[i+1],"1"))) {
+                fprintf(stderr,"Missing, invalid or duplicate --widescreen (use 0 or 1).\n");return -1;
+            }
+            widescreenSeen=1;
+            applyWidescreen(argv[++i][0]=='1');
+        }
         else if(argv[i][0]!='-' && !explicitDisc)explicitDisc=argv[i];
-        else { fprintf(stderr,"usage: %s [disc.cue|disc.bin] [--disc2 image] [--host-menu]\n",argv[0]);return -1; }
+        else { fprintf(stderr,"usage: %s [disc.cue|disc.bin] [--disc2 image] [--host-menu] [--widescreen 0|1]\n",argv[0]);return -1; }
     }
     if(explicitDisc && acceptPath(explicitDisc,1)!=1) {fprintf(stderr,"%s\n",statusText);return -1;}
     if(explicitDisc2 && acceptPath(explicitDisc2,2)!=2) {fprintf(stderr,"%s\n",statusText);return -1;}

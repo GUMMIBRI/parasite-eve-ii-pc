@@ -355,6 +355,11 @@ target_link_libraries(weapon_mp5a5_test PRIVATE psyz)
 
 add_executable(anim_cue_latch_test EXCLUDE_FROM_ALL tests/anim_cue_latch_test.c)
 
+add_executable(background_coverage_test EXCLUDE_FROM_ALL tests/background_coverage_test.c src/port/backgrounds.c)
+target_include_directories(background_coverage_test PRIVATE include)
+# video.h uses PsyZ public types; this test supplies stub renderer entry points.
+target_include_directories(background_coverage_test PRIVATE ${PSYZ_DIR}/psyz/include)
+
 enable_testing()
 set(PE_DATA_TESTS cap_room_command_test rupert_eyes_test tmd_layout_assets_test text_palette_test
     observatory_scene_lifecycle_test action_trigger_test fountain_trigger_test)

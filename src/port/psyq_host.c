@@ -385,6 +385,21 @@ void Psyz_PadsOverride(int port, char* frame, int len)
             if (f) { fwrite(vram, sizeof vram, 1, f); fclose(f); }
         }
     }
+    if (port == 0) {   /* Capture the actual presenter, including widescreen bars, without a desktop window. */
+        static int frameTick = -2;
+        static char framePath[512];
+        if (frameTick == -2) {
+            const char* spec = getenv("PE2_DUMP_FRAME");
+            frameTick = spec && sscanf(spec, "%d:%511s", &frameTick, framePath) == 2 ? frameTick : -1;
+        }
+        if (frameTick >= 0 && currentTick == frameTick) {
+            int w=0,h=0;
+            unsigned char* rgb=Psyz_VideoAllocRenderedFrame(&w,&h);
+            FILE* file=rgb?fopen(framePath,"wb"):NULL;
+            if(file) { fprintf(file,"P6\n%d %d\n255\n",w,h);fwrite(rgb,3,(size_t)w*h,file);fclose(file); }
+            free(rgb);
+        }
+    }
     if (port == 0) {   /* development: PE2_WARP=<tick>:stage,area,view,roomState,warp,variant[;<tick>:...] changes stage mid-game */
         enum { MAX_WARPS = 8 };
         static struct { int tick; unsigned key[6]; } warps[MAX_WARPS];
