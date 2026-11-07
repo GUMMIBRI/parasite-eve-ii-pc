@@ -29,6 +29,8 @@ void* peForegroundBuild(PeForegroundPackets* packets,const SPRT* source,
 void peForegroundBeginOt(const void* first_tag,unsigned tag_count);
 void peForegroundRegister(const void* depth_base,const void* packet,unsigned source_id);
 /* Validate/compose in OT order, submit once, then restore all original links.
- * PsyZ snapshots the OT synchronously in DrawOTag. Returns replacement count. */
-unsigned peForegroundSubmitOt(const void* head,const PeGpuState* initial,const PeForegroundPack* pack);
+ * PsyZ snapshots the OT synchronously in DrawOTag. render_height is the actual
+ * GP1 draw-time height (240 or 256), not the cached presentation DISPENV.
+ * Returns replacement count. */
+unsigned peForegroundSubmitOt(const void* head,const PeGpuState* initial,const PeForegroundPack* pack,unsigned render_height);
 #endif

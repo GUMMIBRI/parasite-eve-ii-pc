@@ -66,7 +66,7 @@ int main(int argc,char** argv)
             OT_TYPE savedRoot=root;DR_AREA savedArea=area;DR_STP savedMask=mask;DR_TWIN savedTwin=twin;
             unsigned char savedMerged[sizeof merged];memcpy(savedMerged,&merged,sizeof merged);
             SPRT savedUi=ui;TILE savedFront=front,savedWitness=witness;
-            unsigned replaced=peForegroundSubmitOt(&root,&state,&pack);
+            unsigned replaced=peForegroundSubmitOt(&root,&state,&pack,240);
             if(memcmp(&root,&savedRoot,sizeof root) || memcmp(&area,&savedArea,sizeof area) || memcmp(&mask,&savedMask,sizeof mask) || memcmp(&twin,&savedTwin,sizeof twin) ||
                memcmp(&merged,savedMerged,sizeof merged) || memcmp(&ui,&savedUi,sizeof ui) ||
                memcmp(&front,&savedFront,sizeof front) || memcmp(&witness,&savedWitness,sizeof witness))return 4;

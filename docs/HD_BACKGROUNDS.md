@@ -297,16 +297,28 @@ classic foreground replacements, visible material changes, exact full VRAM
 equality against the original/base-only controls, and exact fallback for bad
 metadata or a missing atlas. The source image remains an unapproved candidate.
 
-**Widescreen foreground integration is incomplete.** PsyZ's drawing-area
-classification assumes two display heights: PE2's second buffer ends at row
-511, beyond two 240-line images. Narrowing its scissor can change whether the
-same primitive is squeezed. Such cases now retain the entire original sprite;
-partial-width sprites with fractional squeezed boundaries also retain their
-original primitive. In the gallery, completed-buffer captures demonstrate nine
-replacements on buffer 0, but zero on buffer 272 in 16:9. This is a known
-limitation, not completed widescreen support. Base/model registration on both
-physical buffers, reflections, moving layers and other GPU backends still need
-full validation. PsyZ remains unmodified.
+The port now handles PE2's non-contiguous framebuffer rows during wide draws.
+Psyz's classifier normally accepts only two display heights; the second buffer
+ends at row 511 rather than 479. Around an HD base draw or its room OT, the port
+uses the public GP1 command to set a temporary 256-line draw range, drains the
+commands, then restores the actual 240-line display range before presentation.
+The cached game DISPENV and requested aspect remain unchanged. This only applies
+to validated 320x240 RGB15 timing with active wide artwork; movies, original
+backgrounds and classic 4:3 do not use this adapter. PsyZ remains unmodified.
+
+Completed-buffer captures in `build-hd-study/foreground-wide-range-check` now
+show nine gallery foreground replacements on both buffer 0 and buffer 272 in
+16:9. Each matches its base-only control in full native VRAM; classic base and
+foreground still match the original native VRAM. The synthetic base presenter
+also requires byte-identical output on both buffers in 4:3 and 16:9, verifies
+240-line output restoration, and preserves all native VRAM including STP/zero
+pixels. These are specific integration checks, not full-game validation.
+
+Partial-width sprites with fractional squeezed boundaries, nonzero texture
+windows, and any case where clipping changes the wide classification still
+retain their original primitive. Base/model registration, player occlusion,
+reflections, moving layers and other GPU backends require further validation.
+The source image remains an unapproved candidate.
 
 New settled captures use `pe2-static-view-survey-v3`. PE2 normally displays the
 opposite buffer while drawing; immediately before this diagnostic exits, it

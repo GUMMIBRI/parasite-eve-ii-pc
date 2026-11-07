@@ -18,16 +18,18 @@ int main(int argc,char** argv)
     ResetGraph(0);
     Psyz_VideoSetVsyncMode(PSYZ_VSYNC_LIMITLESS);
     Psyz_VideoSetInternalResolution(argc==5?(unsigned)atoi(argv[4]):4);
+    int buffer_y=getenv("PE2_PROBE_BUFFER_Y")?atoi(getenv("PE2_PROBE_BUFFER_Y")):0;
+    if(buffer_y!=0 && buffer_y!=272)return 2;
     DRAWENV draw;DISPENV display;
-    SetDefDrawEnv(&draw,0,0,320,240);SetDefDispEnv(&display,0,0,320,240);
-    draw.ofs[0]=160;draw.ofs[1]=120; /* PE2 uses centred coordinates. */
+    SetDefDrawEnv(&draw,0,buffer_y,320,240);SetDefDispEnv(&display,0,buffer_y,320,240);
+    draw.ofs[0]=160;draw.ofs[1]=120+buffer_y; /* PE2 uses centred coordinates. */
     PutDrawEnv(&draw);PutDispEnv(&display);SetDispMask(1);
     Psyz_VideoVSync(0);
-    RECT rect={0,0,320,240},all={0,0,1024,512};
+    RECT rect={0,buffer_y,320,240},all={0,0,1024,512};
     LoadImage(&rect,(u_long*)pixels);DrawSync(0);
     StoreImage(&all,(u_long*)before);
     peBackgroundSetWidescreen(atoi(argv[2]));
-    peBackgroundDraw(pixels,0,0,0);
+    peBackgroundDraw(pixels,0,buffer_y,0);
     DrawSync(0);Psyz_VideoVSync(0);
     StoreImage(&all,(u_long*)after);
     unsigned differences=0;for(unsigned i=0;i<1024*512;i++)differences+=before[i]!=after[i];
@@ -42,7 +44,7 @@ int main(int argc,char** argv)
             const char* suffix[]={"disabled","reenabled","missing","restored","same-folder"};
             if(!peBackgroundConfigurePack(step==2?"/nonexistent-pe2-probe-pack":root,step!=0))return 4;
             LoadImage(&rect,(u_long*)pixels);DrawSync(0);
-            peBackgroundDraw(pixels,0,0,0);DrawSync(0);Psyz_VideoVSync(0);
+            peBackgroundDraw(pixels,0,buffer_y,0);DrawSync(0);Psyz_VideoVSync(0);
             StoreImage(&all,(u_long*)after);
             for(unsigned i=0;i<1024*512;i++)if(before[i]!=after[i])return 4;
             rgb=Psyz_VideoAllocRenderedFrame(&w,&h);if(!rgb)return 4;

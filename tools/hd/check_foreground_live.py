@@ -64,8 +64,8 @@ def main():
         changed=base[2]!=combined[2]
         replacements=combined[0]['foreground_replacements']
         assert changed==bool(replacements),(name,'material/counter evidence disagrees')
+        assert replacements>0,(name,'No active foreground material was demonstrated')
         if not wide:
-            assert replacements>0,'No active classic foreground material was demonstrated'
             assert base[1]==original[1],'Base material changed the original native framebuffer'
         if not wide:classic=base
     context='-'.join(map(str,location[:4]));descriptor=f'{args.key}-{context}.pe2fg'
@@ -79,7 +79,7 @@ def main():
             assert not capture[0]['foreground_replacements'] and capture[1:]==classic[1:],name
     if hashlib.sha256(args.binary.read_bytes()).hexdigest()!=identity:raise RuntimeError('Executable changed during check')
     (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,cases=results,
-        scope='One forced static camera. v3 captures present the completed draw buffer; unresolved widescreen cases retain original sprites.'),indent=2)+'\n')
+        scope='One forced static camera. v3 captures present the completed draw buffer; both physical buffers require active foreground replacements in 16:9.'),indent=2)+'\n')
     print('PASS: live foreground material, both buffer parities, exact native VRAM and malformed-pack fallback')
 
 

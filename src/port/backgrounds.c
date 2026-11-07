@@ -6,6 +6,7 @@
 #include <psyz/video.h>
 #include <SDL3/SDL.h>
 #include <libgpu.h>
+#include <libetc.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,6 +66,26 @@ static void observeGpuSprite(const void* packet,unsigned offset,const uint32_t* 
     GpuSpriteAudit* sprite=&gpuAuditSprites[gpuAuditCount++];
     memcpy(sprite->words,words,sizeof sprite->words);sprite->state=*state;
 }
+/* PE2's buffers are [0,239] and [272,511]. PsyZ's draw classifier
+ * expects two contiguous display heights. Extend only the draw-time range;
+ * drain all commands before restoring the real 240-line presentation range.
+ * Raw GP1 avoids changing libgpu's cached DISPENV or the game's timing. */
+static unsigned beginWideRender(int enabled,DISPENV* saved)
+{
+    if(!enabled || !Psyz_VideoGetWidescreen())return 240;
+    GetDispEnv(saved);
+    if(saved->isrgb24 || saved->disp.w!=320 || saved->disp.h!=240 ||
+       (saved->screen.h && saved->screen.h!=240) || saved->screen.y<0 || saved->screen.y>2)return 240;
+    DrawSync(0);Psyz_GpuDisplayCommand(0x07000000u|(256u<<10));
+    return 256;
+}
+static void endWideRender(unsigned height,const DISPENV* saved)
+{
+    if(height!=256)return;
+    DrawSync(0);
+    unsigned start=saved->screen.y+(GetVideoMode()==MODE_PAL?0x13u:0x10u);
+    Psyz_GpuDisplayCommand(0x07000000u|start|((start+240u)<<10));
+}
 void peBackgroundSubmitOt(const void* head)
 {
     PeBackgroundFrameInfo info;int foregroundReady=materialPresented && foregroundAvailable && packAvailable && packEnabled &&
@@ -80,8 +101,10 @@ void peBackgroundSubmitOt(const void* head)
         if(gpuAuditComplete && !peGpuWalkOt(&gpuAuditState,head,gpuAuditEnabled==1?observeGpuSprite:NULL,NULL))gpuAuditComplete=0;
         canReplace=gpuAuditComplete && foregroundReady;
     }
-    if(canReplace)foregroundDrawn+=peForegroundSubmitOt(head,&before,&foregroundPack);
+    DISPENV savedDisplay;unsigned renderHeight=beginWideRender(materialPresented,&savedDisplay);
+    if(canReplace)foregroundDrawn+=peForegroundSubmitOt(head,&before,&foregroundPack,renderHeight);
     else DrawOTag((OT_TYPE*)head);
+    endWideRender(renderHeight,&savedDisplay);
 }
 static int writeGpuAudit(const char* root,int buffer_y,const PeBackgroundFrameInfo* info)
 {
@@ -319,8 +342,10 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
     }
     /* One FIFO submission preserves atlas selection per sprite and avoids a
      * separate GPU submission/transfer allocation for every single tile. */
+    DISPENV savedDisplay;unsigned renderHeight=beginWideRender(wide && first,&savedDisplay);
     if(first)DrawOTag(first);
     DrawSync(0);
+    endWideRender(renderHeight,&savedDisplay);
     if(!wide && first) {
         Psyz_VideoSetWidescreen(0);
         /* Restoring E4h inside the same list would classify queued vertices

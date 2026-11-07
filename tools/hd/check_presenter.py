@@ -34,10 +34,11 @@ def main():
     metaName=f'{key:016x}.pe2bg';imageName=f'{key:016x}.png'
     (pack/metaName).write_bytes(metadata);atlas.save(pack/imageName)
     results={}
-    def run(case,wide,directory=None,scale=4,reload=False):
+    def run(case,wide,directory=None,scale=4,reload=False,buffer_y=0):
         output=root/(case+'.ppm');output.unlink(missing_ok=True)
         env={k:v for k,v in os.environ.items() if not k.startswith('PE2_')}
         env.update(PSYZ_HEADLESS='gpu',SDL_AUDIODRIVER='dummy')
+        env['PE2_PROBE_BUFFER_Y']=str(buffer_y)
         if directory:env['PE2_HD_BACKGROUNDS']=str(directory)
         if reload:env['PE2_PROBE_RELOAD']='1'
         process=subprocess.run([str(args.probe.resolve()),str(source),str(wide),str(output),str(scale)],env=env,capture_output=True,text=True,timeout=30)
@@ -66,6 +67,9 @@ def main():
         # Solid art should cover the entire wider image, including all four corners.
         for x,y in [(0,0),(image.width-1,0),(0,image.height-1),(image.width-1,image.height-1)]:
             assert max(abs(a-b) for a,b in zip(image.getpixel((x,y)),(192,64,128)))<=1,(x,y)
+    for case,wide_mode,directory,reference in [('baseline',0,None,baseline),('hd',0,pack,hd),('wide',1,pack,wide)]:
+        lower=run(case+'-buffer272',wide_mode,directory,buffer_y=272)
+        assert lower.read_bytes()==reference.read_bytes(),(case,'physical buffers differ')
     nativeBaseline=run('native-baseline',0,scale=1)
     assert run('native-pack',1,pack,scale=1).read_bytes()==nativeBaseline.read_bytes()
     for case in ['bad-magic','wrong-key','missing-atlas','bad-atlas-header','trailing-metadata','oversized-span','oversized-png','transparent-material']:

@@ -69,10 +69,10 @@ static void observe(const void* packet,unsigned offset,const uint32_t* words,uns
     }
     p->bad=1;
 }
-unsigned peForegroundSubmitOt(const void* head,const PeGpuState* initial,const PeForegroundPack* pack)
+unsigned peForegroundSubmitOt(const void* head,const PeGpuState* initial,const PeForegroundPack* pack,unsigned render_height)
 {
     Registry* r=registryAt(head);
-    if(!r || !r->valid || !r->count || !initial || !pack || !pack->atlas_key || !pack->count ||
+    if(!r || !r->valid || !r->count || !initial || !pack || !pack->atlas_key || !pack->count || (render_height!=240 && render_height!=256) ||
        pack->count>PE_FOREGROUND_MAX_SOURCES) {DrawOTag((OT_TYPE*)head);return 0;}
     if(!r->sorted) {qsort(r->entries,r->count,sizeof(*r->entries),orderRegistration);r->sorted=1;}
     for(unsigned i=1;i<r->count;i++)if(r->entries[i-1].packet==r->entries[i].packet) {DrawOTag((OT_TYPE*)head);return 0;}
@@ -97,16 +97,17 @@ unsigned peForegroundSubmitOt(const void* head,const PeGpuState* initial,const P
             DISPENV display;GetDispEnv(&display);
             /* PsyZ classifies a draw as widescreen from its current scissor.
              * Partial-cell clipping must not change that classification (PE2's
-             * second buffer ends at row 511, beyond two 240-line displays).
-             * Keep complete original sprites for these unresolved cases. */
+             * second buffer ends at row 511). The caller supplies the actual
+             * draw-time display height, including the port's 256-line range.
+             * Retain original sprites if clipping would change classification. */
             if(display.isrgb24 || display.disp.w!=320 || display.disp.h!=240 ||
                (display.screen.h && display.screen.h!=240) || display.screen.y<0 || display.screen.y>2)continue;
             int x=p->source.x0+p->state.offset_x,y=p->source.y0+p->state.offset_y;
             int left=x>clip.x?x:clip.x,top=y>clip.y?y:clip.y;
             int right=x+p->source.w<clip.x+clip.w?x+p->source.w:clip.x+clip.w;
             int bottom=y+p->source.h<clip.y+clip.h?y+p->source.h:clip.y+clip.h;
-            int oldWide=clip.x>=display.disp.x && clip.x+clip.w<=display.disp.x+320 && clip.y>=0 && clip.y+clip.h<=480;
-            int newWide=left>=display.disp.x && right<=display.disp.x+320 && top>=0 && bottom<=480;
+            int oldWide=clip.x>=display.disp.x && clip.x+clip.w<=display.disp.x+320 && clip.y>=0 && clip.y+clip.h<=2*(int)render_height;
+            int newWide=left>=display.disp.x && right<=display.disp.x+320 && top>=0 && bottom<=2*(int)render_height;
             if(oldWide!=newWide)continue;
             if(oldWide && ((p->source.w%16 && (x+p->source.w)%4) ||
                (clip.w==320 && (x<clip.x || x+p->source.w>clip.x+clip.w))))continue;
