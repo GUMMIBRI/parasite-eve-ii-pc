@@ -140,6 +140,13 @@ def collect(target):
         "flowFlags": number(child(session, "flowFlags")),
         "transitionTasks": [],
     }
+    in_gallery = snapshot["location"]["stage"] == 1 and snapshot["location"]["area"] == 20
+    if in_gallery:
+        snapshot["gallery"] = {
+            "trainingActive": number(target.FindFirstGlobalVariable("gShootingGalleryPierceGalleryTrainingActive")),
+            "selectedCourse": number(target.FindFirstGlobalVariable("gShootingGalleryPierceGallerySelectedCourseLevel")),
+            "tasks": [],
+        }
     task = child(target.FindFirstGlobalVariable("gTaskDefaultList"), "next")
     visited = set()
     while task.GetValueAsUnsigned():
@@ -150,6 +157,18 @@ def collect(target):
         value = task.Dereference()
         callback = child(value, "callback").GetValueAsUnsigned()
         name = target.ResolveLoadAddress(callback).GetSymbol().GetName() or ""
+        if in_gallery and name in ("_mistShootingGalleryCourseTask", "shootingGalleryPierceGalleryTrainingMenuTask"):
+            entry = {"callback": name, "state": number(child(value, "state"))}
+            if name == "_mistShootingGalleryCourseTask" and child(value, "work").GetValueAsUnsigned():
+                work_type = target.FindFirstType("MistShootingGalleryWork")
+                if not work_type.IsValid():
+                    raise RuntimeError("missing gallery course debug type")
+                work = target.CreateValueFromAddress("galleryCourse", lldb.SBAddress(child(value, "work").GetValueAsUnsigned(), target), work_type)
+                entry["course"] = {field: number(child(work, field)) for field in
+                                   ("course", "phase", "resumePhase", "scriptFrame", "timeLeft", "spawnIndex", "timer",
+                                    "liveTargets", "targetLockMask", "interrupted", "actionTriggered", "captionStep", "lethalHit")}
+                entry["course"]["kills"] = [number(child(work, "kills").GetChildAtIndex(i)) for i in range(13)]
+            snapshot["gallery"]["tasks"].append(entry)
         if name in ("_sceneBattleResultTask", "gameFlowReloadSessionTask",
                     "gameFlowPrepareSessionReloadTask", "loadingFinishSessionLoadTask"):
             snapshot["flow"]["transitionTasks"].append({

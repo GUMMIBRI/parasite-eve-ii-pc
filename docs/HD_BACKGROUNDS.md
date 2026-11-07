@@ -1869,6 +1869,41 @@ canvas. It is rejected by the unchanged aspect check and never packed; the
 exact built-in prompt and result remain private in `provenance-v3.json`.
 Centre/side sharpness and moving-target occlusion review remain open.
 
+#### Later training target and native attack inputs
+
+Read-only gallery checkpoint diagnostics now report live course/menu tasks,
+selected course, phase, target count/lock mask, spawn index, timer and per-kind
+kills. Work is read only through a matching live controller task in the default
+list, rather than trusting the retained global controller pointer after task
+retirement. Existing room diagnostics remain unchanged.
+
+The earlier menu trace reaches course 0 phase 7 with one target and waits for
+lock-on; it does not exercise the subsequent tutorial. A native input extension
+holds Square and pulses R1/Cross from pad tick 3600. A nearby EOF checkpoint
+then finds phase 10, one recorded target kill and another live target. It also
+shows the ammo-instruction interruption; this trace does not complete the course.
+The checkpoint is 12 vsyncs before the corresponding rendered capture, explicitly
+recorded as a nearby state observation rather than same-frame proof.
+
+Nine Metal 4x controls with `--settle 300` replay that trace
+(`foreground-view14-source-guided-v1-active-target/report.json`). The captured
+paper target is visible and the scene contains 11 complete models, compared
+with the earlier training-entry pose. All base/combined pairs preserve full
+native VRAM, normalized original GPU inputs, simulation counters, complete
+models and player pose. All 29 foreground sources activate on both physical
+buffers. Invalid metadata/missing-atlas fallback passes. Sampled opaque target
+interiors are pixel-identical between base/combined pairs in classic, wide-300
+and wide-301 captures; this is not complete silhouette/occlusion coverage.
+Original and wide-combined captures were visually inspected, with known artwork
+sharpness issues still visible. The local bound assessment records target crop
+rectangles, report/replay hashes and the separate debugger observation.
+
+An exploratory 1700-settled-frame capture reaches replay EOF without the required
+consecutive field-ready interval and remains unverified. Its threshold was not
+relaxed or relabelled. The successful 300/301-frame captures independently satisfy
+the existing settled gate. Python compilation and real debugger checkpoints
+validate the diagnostic additions; no game executable or PsyZ code changes.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
