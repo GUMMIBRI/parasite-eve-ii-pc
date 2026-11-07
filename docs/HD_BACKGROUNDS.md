@@ -19,7 +19,7 @@ scope describe those builds rather than superseding this summary.
 | Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Finish excluded-row/source diagnostics and runtime checks of special screens; MIST R21 is an empty debug room without static views. |
 | Broad runtime survey | Complete current-binary software survey: 2708 exact matches, 606 without settled captures; no pixel differences or crashes. All 5416 ordered GPU audits validate. | A supplemental menu route verifies gallery view 14; resolve the other 605 no-target locations and complete natural traversal, transient/scripted/special screens and supported GPU backends. This is forced static coverage, not an all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
-| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests on both hosts, 60 Python HD tests on macOS, and 16 Windows PE tests plus software gameplay under Wine pass. | Native Windows/D3D12, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
+| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests on both hosts, 69 Python HD tests on macOS, and 16 Windows PE tests plus software gameplay under Wine pass. | Native Windows/D3D12, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
 All source captures, generated artwork and native-reference pack payloads remain
 local. Passing renderer controls do not approve artwork or grant distribution
@@ -84,6 +84,36 @@ expected complete reference-plane pixel hash before caching. Already verified
 entries are reusable without their original exports. This command consumes
 existing local exports; automatic extraction from owned discs/live gameplay
 remains unimplemented.
+
+### Transferring a material archive
+
+Use a material folder, rather than a private runtime pack or reference cache,
+as the input to the archive tool:
+
+```sh
+venv/bin/python tools/hd/material_archive.py create MATERIAL_FOLDER \
+  --output MATERIALS.zip
+venv/bin/python tools/hd/material_archive.py unpack MATERIALS.zip \
+  --sha256 TRUSTED_ARCHIVE_SHA256 --output NEW_MATERIAL_FOLDER
+```
+
+Creation prints a deterministic archive SHA-256. Obtain that checksum through a
+trusted channel when receiving someone else's archive; a hash does not establish
+artwork ownership. Unpacking requires the exact checksum, validates the full
+material manifest/layout and publishes a new folder only after verification.
+Then use `material_bundle.py acquire` with local native exports and `hydrate`
+as above. The extracted folder is not directly loadable by the game.
+
+The flat ZIP contains only material payloads and `pe2-materials.json`, with fixed
+timestamps/permissions and stored PNG bytes. Duplicate/unlisted/path-bearing
+entries, directories, symlinks/non-regular entries, encrypted entries and
+unsupported compression are rejected. Limits are 20001 entries, 128 MiB per
+entry and 64 GiB total uncompressed data, accommodating the full inventory
+without unbounded extraction. Existing archives/material outputs are immutable;
+failed or interrupted operations do not publish partial outputs. Input changes
+prevent publication. This provides local archive transfer, not an online
+catalog/downloader or automatic update policy. Current candidate materials and
+layout metadata remain unapproved for public distribution.
 
 ### Local versioned installation
 
@@ -2009,6 +2039,34 @@ shader requirements and game renderer code remain unchanged. The earlier 16
 Windows PE regression tests and successful software gameplay remain valid;
 native Windows/D3D12 and Windows HD presentation still require verification.
 
+#### Verified portable material archives
+
+`material_archive.py` creates deterministic flat material-only ZIPs and unpacks
+with a required trusted SHA-256 into a staged, fully verified new folder. It
+reuses the material/descriptor verifier and never exports the separate reference
+cache. Native references can subsequently be rebuilt from owner exports using
+the acquisition command. Material provenance and public distribution approval
+remain separate requirements.
+
+Nine new tests cover deterministic byte-for-byte transfer/hydration, exact entry
+inventory, checksum rejection, immutable outputs, path traversal and cache-file
+rejection, duplicates/symlinks/directories, unsupported compression, changed
+payloads and rehashed bad descriptors, resource limits, interrupted creation,
+CRC failure, source changes during creation/extraction, and symlink inputs and
+outputs. All 69 Python HD tests pass on macOS; all nine archive tests also pass
+on Linux ARM64.
+
+The actual four-view fixture creates archive SHA-256
+`897de8a85df51038fac24406172a236a7967e88f9945d20ace251c58949be48a`.
+A fresh extraction, reconstruction of eight reference planes from raw native
+exports and hydration preserve all 16 original runtime payloads and their
+manifest byte-for-byte on macOS (`material-archive-roundtrip.json`). Linux
+creates the exact same archive bytes from the same material inputs, then
+unpacks/acquires/hydrates all atlas pixels and descriptor bytes identically
+(`material-archive-linux-roundtrip.json`). Hydrated PNG encodings may differ
+between Pillow versions. No game binary changes or additional runtime approval
+are implied; the archive and resulting runtime packs remain private.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
@@ -2059,8 +2117,9 @@ This historical snapshot predates the current verification summary above.
    satisfy the settled survey's field-ready/30-frame gate.
 4. Finish the consumable production-pack/distribution workflow and outstanding
    download/update decision. Local activation, manifest verification and
-   immutable version installation already work. Material/reference separation
-   and hydration now work, but automatic owner-reference acquisition and reviewed
+   immutable version installation already work. Material/reference separation,
+   verified archive transfer and hydration now work, but automatic live/disc
+   owner-reference acquisition and reviewed
    material distribution remain open. Caches and runtime packs include native
    reference pixels and must stay private. Keep native game pixels out of public
    distribution and keep PsyZ unmodified.
