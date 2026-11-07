@@ -46,3 +46,45 @@ def check_material_evidence(changed,replacements,empty=False):
         if changed:raise AssertionError('Verified empty foreground changed the rendered frame')
     elif not replacements or not changed:
         raise AssertionError('Visible foreground needs active replacements and a material change')
+
+
+def normalized_gpu_commands(data):
+    """Decode an original GP0 audit, ignoring only unused textured fields.
+
+    Equality is supporting input evidence, not proof of equal VRAM, PGXP hints,
+    or game state. Unknown commands remain byte-exact for conservative checks.
+    """
+    if len(data)%4:raise ValueError('Truncated GPU command audit')
+    words=struct.unpack('<'+'I'*(len(data)//4),data);offset=0;commands=[]
+    while offset<len(words):
+        count=words[offset];offset+=1
+        if not count or count>len(words)-offset:raise ValueError('Invalid GPU command audit length')
+        command=list(words[offset:offset+count]);offset+=count;code=command[0]>>24
+        if 0x20<=code<0x40:
+            vertices=4 if code&8 else 3;gouraud=bool(code&16);textured=bool(code&4)
+            expected=1+vertices*(1+textured+gouraud)-gouraud
+            if count!=expected:raise ValueError('Invalid textured polygon length')
+            cursor=1
+            if textured and code&1:command[0]&=0xff000000
+            for vertex in range(vertices):
+                if vertex and gouraud:
+                    command[cursor]&=0xffffff
+                    if textured and code&1:command[cursor]=0
+                    cursor+=1
+                cursor+=1  # XY
+                if textured:
+                    if vertex>=2:command[cursor]&=0xffff  # UV high half unused
+                    cursor+=1
+        elif 0x60<=code<0x80 and code&4 and code&1:
+            command[0]&=0xff000000  # raw texture ignores RGB modulation
+        commands.append(tuple(command))
+    if not commands:raise ValueError('Empty GPU command audit')
+    return commands
+
+
+def compare_gpu_commands(first,second):
+    a=normalized_gpu_commands(first);b=normalized_gpu_commands(second)
+    differing=next((i for i,(x,y) in enumerate(zip(a,b)) if x!=y),None)
+    if differing is None and len(a)!=len(b):differing=min(len(a),len(b))
+    return dict(equal=differing is None,first_count=len(a),second_count=len(b),
+                first_difference=differing)

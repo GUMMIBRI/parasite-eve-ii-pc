@@ -6,7 +6,7 @@ import struct
 import tempfile
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools/hd'))
-from foreground_evidence import check_material_evidence,verify_empty_sources
+from foreground_evidence import check_material_evidence,verify_empty_sources,compare_gpu_commands,normalized_gpu_commands
 
 class ForegroundEvidenceTest(unittest.TestCase):
     def test_visible_and_empty_material_have_distinct_evidence(self):
@@ -15,6 +15,21 @@ class ForegroundEvidenceTest(unittest.TestCase):
         check_material_evidence(False,0,empty=True)
         for changed,count,empty in [(False,1,False),(True,0,False),(False,0,False),(True,1,True)]:
             with self.assertRaises(AssertionError):check_material_evidence(changed,count,empty)
+
+    def test_gpu_input_comparison_preserves_meaningful_fields(self):
+        def trace(words):return struct.pack('<'+'I'*(len(words)+1),len(words),*words)
+        original=[0x25010203,0x00100020,0x12340000,0x00300040,0x01800010,0x00500060,0xabcd0020]
+        ignored=original.copy();ignored[0]=0x25abcdef;ignored[6]=0x98760020
+        self.assertTrue(compare_gpu_commands(trace(original),trace(ignored))['equal'])
+        for index in [1,2,3,4,5,6]:
+            changed=original.copy();changed[index]^=1
+            self.assertFalse(compare_gpu_commands(trace(original),trace(changed))['equal'])
+        modulated=original.copy();modulated[0]=0x24010203
+        changed=modulated.copy();changed[0]^=1
+        self.assertFalse(compare_gpu_commands(trace(modulated),trace(changed))['equal'])
+        self.assertEqual(compare_gpu_commands(trace(original),trace(original)*2)['first_difference'],1)
+        for malformed in [b'',b'x',struct.pack('<I',0),struct.pack('<II',2,0)]:
+            with self.assertRaises(ValueError):normalized_gpu_commands(malformed)
 
     def test_empty_proof_rejects_stp_black_changes_and_wrong_capture(self):
         with tempfile.TemporaryDirectory() as folder:

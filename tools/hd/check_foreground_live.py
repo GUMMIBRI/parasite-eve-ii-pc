@@ -15,7 +15,7 @@ import tempfile
 import zlib
 from PIL import Image
 from survey import startup_replay,validate_capture
-from foreground_evidence import check_material_evidence,verify_empty_sources
+from foreground_evidence import check_material_evidence,verify_empty_sources,compare_gpu_commands
 
 
 def main():
@@ -38,7 +38,7 @@ def main():
     identity=hashlib.sha256(args.binary.read_bytes()).hexdigest();results=[]
     def run(name,pack,wide,settle):
         destination=root/name;destination.mkdir(exist_ok=True)
-        for filename in ['report.json','frame.ppm','vram.bin','gpu-state.json']:(destination/filename).unlink(missing_ok=True)
+        for filename in ['report.json','frame.ppm','vram.bin','gpu-state.json','gpu-commands.bin']:(destination/filename).unlink(missing_ok=True)
         with tempfile.TemporaryDirectory(prefix='profile-',dir=root) as profile:
             Path(profile,'settings.ini').write_text('scale=4\n')
             env={k:v for k,v in os.environ.items() if not k.startswith('PE2_')}
@@ -59,6 +59,12 @@ def main():
         with Image.open(destination/'frame.ppm') as image:image.save(destination/'frame.png')
         (destination/'frame.ppm').unlink()
         return report,native,frame
+    def require_same_commands(first,second):
+        evidence=compare_gpu_commands((root/first/'gpu-commands.bin').read_bytes(),(root/second/'gpu-commands.bin').read_bytes())
+        evidence.update(first=first,second=second)
+        with (root/'input-comparisons.jsonl').open('a') as file:file.write(json.dumps(evidence)+'\n')
+        assert evidence['equal'],(first,second,'different original GPU inputs; renderer comparison is unverified',evidence)
+    (root/'input-comparisons.jsonl').unlink(missing_ok=True)
     original=run('original',None,0,30)
     for name,wide,settle in [('classic',0,30),('wide30',1,30),('wide31',1,31)]:
         base=run(name+'-base',args.base_pack,wide,settle)
@@ -66,6 +72,7 @@ def main():
         clock_fields=['draw_frame','game_tick','vsync_count']
         assert all(isinstance(pair[0].get(k),int) for pair in [base,combined] for k in clock_fields),(name,'missing simulation clock evidence')
         assert [base[0][k] for k in clock_fields]==[combined[0][k] for k in clock_fields],(name,'different simulation moments')
+        require_same_commands(name+'-base',name+'-combined')
         assert base[1]==combined[1],(name,'foreground changed native VRAM')
         assert base[0]['buffer_y']==combined[0]['buffer_y'],(name,'different physical buffers')
         changed=base[2]!=combined[2]
@@ -73,6 +80,7 @@ def main():
         try:check_material_evidence(changed,replacements,empty=bool(empty_sources))
         except AssertionError as error:raise AssertionError(name,str(error)) from error
         if not wide:
+            require_same_commands('original',name+'-base')
             assert base[1]==original[1],'Base material changed the original native framebuffer'
         if not wide:classic=base
     for name in ['bad-metadata','missing-atlas']:
@@ -82,6 +90,7 @@ def main():
             if name=='bad-metadata':data[0]^=255;(pack/descriptor).write_bytes(data)
             else:(pack/f'{int.from_bytes(data[16:24],"little"):016x}.fg.png').unlink()
             capture=run(name,pack,0,30)
+            require_same_commands('classic-base',name)
             assert not capture[0]['foreground_replacements'] and capture[1:]==classic[1:],name
     if hashlib.sha256(args.binary.read_bytes()).hexdigest()!=identity:raise RuntimeError('Executable changed during check')
     (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,cases=results,empty_sources_verified=empty_sources,

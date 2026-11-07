@@ -450,6 +450,14 @@ defect. An isolated same-binary corridor repeat in
 `build-hd-study/foreground-staged-corridor-repeat` passes all nine controls.
 The original failed sweep is retained: a passing repeat does not prove a
 stable 46/46 sweep. Deterministic model-input control remains open.
+The live checker now requires matching original command streams before comparing
+native output, including original/base and malformed-pack controls. It records
+`input-comparisons.jsonl` and rejects unequal inputs as unverified. Normalization
+ignores only raw-texture RGB modulation, unused subsequent polygon colour high
+bytes, and unused third/fourth textured polygon UV high halves. Other words stay
+exact. Equality supports input comparability; it does not prove equal initial
+VRAM, PGXP hints or all game state. Regression fixtures reject meaningful XY,
+CLUT, texture-page, UV, modulated-colour and command-count differences.
 Neither a partial run nor these synthetic fixtures establish all-game,
 traversal, artwork or all-platform completion.
 
