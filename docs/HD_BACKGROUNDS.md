@@ -958,6 +958,22 @@ This verifies renderer integration at this endpoint, not final geometry, full
 actor mattes, intermediate frames or another platform. No art or native-derived
 pack is committed or published.
 
+#### Retrying an old unverified survey crash
+
+The old full survey recorded exit 139 at Dryfield garage target
+`2,24,7,1,1,1`. A current no-pack software retry times out at 40 seconds;
+a separate retry with `PSYZ_AUDIO_CLOCK=video` instead completes its replay
+without reaching the settled target. Neither reproduces the old SIGSEGV.
+Read-only LLDB inspection observes location `2,24,14,1,1,1`, demonstrating that
+the requested view is not the current camera during that replay. Stack samples
+are in scene pacing and kernel polling. A transient deadline of 518720 with
+accumulated lines 12823 initially suggests an unreachable masked-counter wait,
+but eventual process completion contradicts a permanent-loop conclusion;
+stream servicing can change timing data while polling. No game/PsyZ change is
+justified from this evidence. `garage-crash-retry-assessment.json` retains logs,
+report hashes and this limitation. The target remains unverified; this neither
+clears the old crash nor proves that natural gameplay reaches view 7 correctly.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
