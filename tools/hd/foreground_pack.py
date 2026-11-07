@@ -11,13 +11,14 @@ from pathlib import Path
 import struct
 import numpy as np
 from PIL import Image
-from pack import identity
+from pack import identity,prepare_canvas
 
 
-def build(report,source_root,art=None,left=-64,materials=None):
+def build(report,source_root,art=None,left=-64,materials=None,fit=False,right=384):
     if report.get('format')!='pe2-foreground-source-audit-v1':raise ValueError('Expected a foreground source audit')
     if (art is None)==(materials is None):raise ValueError('Choose registered artwork or individual source materials')
     if art is not None:
+        if fit:art=prepare_canvas(art,left,right,True)
         if art.height!=960 or art.width%64 or left%16 or not -96<=left<=0 or not 320<=left+art.width//4<=416:
             raise ValueError('Expected registered 4x artwork with complete aligned native bounds')
         if art.convert('RGBA').getchannel('A').getextrema()!=(255,255):raise ValueError('Artwork must be opaque')
@@ -72,11 +73,15 @@ def main():
     material=parser.add_mutually_exclusive_group(required=True)
     material.add_argument('--art',type=Path,help='Registered base canvas; candidate crops, not blend approval')
     material.add_argument('--materials',type=Path,help='Individual 4x sprite-NNNN.png material directory')
+    parser.add_argument('--fit-canvas',action='store_true',help='Explicit size-only normalization of the shared base canvas')
+    parser.add_argument('--right',type=int,default=384,help='Canonical right bound when fitting the canvas')
     parser.add_argument('--left',type=int,default=-64)
     parser.add_argument('--output',type=Path,required=True,help='Existing/local background pack directory')
-    args=parser.parse_args();report=json.loads((args.sources/'report.json').read_text())
+    args=parser.parse_args()
+    if args.fit_canvas and args.materials:parser.error('--fit-canvas requires --art')
+    report=json.loads((args.sources/'report.json').read_text())
     if args.art:
-        with Image.open(args.art) as art:key,metadata,atlas=build(report,args.sources,art,args.left)
+        with Image.open(args.art) as art:key,metadata,atlas=build(report,args.sources,art,args.left,fit=args.fit_canvas,right=args.right)
     else:key,metadata,atlas=build(report,args.sources,materials=args.materials)
     args.output.mkdir(parents=True,exist_ok=True)
     context='-'.join(map(str,report['capture']['location'][:4]));base=report['capture']['key']
@@ -86,7 +91,7 @@ def main():
                     source_audit_sha256=hashlib.sha256((args.sources/'report.json').read_bytes()).hexdigest(),
                     art_sha256=hashlib.sha256(args.art.read_bytes()).hexdigest() if args.art else None,
                     individual_materials={f'sprite-{r["index"]:04d}.png':hashlib.sha256((args.materials/f'sprite-{r["index"]:04d}.png').read_bytes()).hexdigest() for r in report['sprites']} if args.materials else None,
-                    left=args.left if args.art else None,candidate_only=True,
+                    left=args.left if args.art else None,explicit_canvas_fit=args.fit_canvas,right=args.right if args.fit_canvas else None,candidate_only=True,
                     note='Individual 4x RGB materials or candidate base crops; blending/occlusion, moving layers and artistic consistency require runtime review.')
     (args.output/(name+'.foreground.json')).write_text(json.dumps(provenance,indent=2)+'\n')
     print(f'{name}: {len(report["sprites"])} sources, atlas {key:016x} {atlas.size}')

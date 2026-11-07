@@ -714,6 +714,32 @@ no warping, production pack update or artwork commit was made. A global
 nearest-edge statistic alone must not approve geometry: invented texture edges
 can be close while the actual foreground contours remain displaced.
 
+The next v8 edit uses the full-resolution v4 source-geometry canvas as the edit
+target, restoring surface detail and the two obvious vertical composite joins.
+Its output is 1713x918 with the original view occupying the middle 5/7 width.
+All nine foreground rectangles prefer zero integer gradient displacement
+(correlations approximately 0.82–0.91), unlike v6/v7. This is a registration
+indicator, not proof of exact subpixel contours. The local candidate, assessment
+and provenance are beside earlier rejected variants.
+
+Both pack builders now accept explicit `--fit-canvas`: material-only size
+normalization with Lanczos, retaining the full canvas/framing. Aspect changes
+beyond integer-size rounding are rejected, opacity is checked before fitting,
+and the default still rejects all wrong-size art. Base and foreground builders
+use the same preparation function; native reference planes are never fitted.
+The source artwork file remains unchanged. Tests cover default rejection,
+explicit matching-canvas fitting, wrong aspect/transparency rejection, unchanged
+input bytes and exact native background/foreground reference values.
+
+Local `view10-v8-base-pack` and `view10-v8-combined-pack` fit the candidate to
+1792x960 at bounds -64..384. `foreground-v8-gallery/report.json` passes all nine
+real-game controls: classic and wide, both buffers, nine active foreground
+sources, exact full native VRAM and invalid/missing-pack fallback. Completed
+classic/wide frames were inspected: earlier vertical joins are not visible.
+The player is outside these forced-camera frames, so player occlusion,
+traversal and final artwork approval remain open. No art or pack was committed.
+
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,

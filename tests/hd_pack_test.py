@@ -21,6 +21,17 @@ class PackTest(unittest.TestCase):
         self.assertEqual(atlas.getpixel((4*68+2,1836+2)),(255,0,0,255))
         self.assertEqual(atlas.getpixel((4*68,0)),(12,34,56,255))
 
+    def test_explicit_size_fit_retains_framing_native_references_and_input(self):
+        native=struct.pack('<H',31)*(320*240)
+        art=Image.new('RGBA',(896,480),(12,34,56,255));before=art.tobytes()
+        with self.assertRaises(ValueError):pack.build(native,art,-64,384)
+        _,_,atlas=pack.build(native,art,-64,384,fit=True)
+        self.assertEqual(art.tobytes(),before)
+        self.assertEqual(atlas.getpixel((4*68+2,2)),(12,34,56,255))
+        self.assertEqual(atlas.getpixel((4*68+2,1836+2)),(255,0,0,255))
+        for invalid in [Image.new('RGB',(800,480)),Image.new('RGBA',(896,480),(1,2,3,0))]:
+            with self.assertRaises(ValueError):pack.build(native,invalid,-64,384,fit=True)
+
     def test_geometry_alpha_and_native_length_are_strict(self):
         native=bytes(320*240*2)
         for art,left,right in [(Image.new('RGB',(1659,948)),-64,384),

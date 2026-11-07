@@ -24,6 +24,14 @@ class ForegroundPackTest(unittest.TestCase):
             header=struct.unpack('<8sQQ6I',metadata[:48]);self.assertEqual(header,(b'PE2FG2\0\0',0x1234,key,1,20,10,1,1,2))
             self.assertEqual(atlas.getpixel((2,2)),(192,64,128,255))
             self.assertEqual(atlas.getpixel((6,70)),(8,0,0,255))
+    def test_explicit_fit_uses_same_registered_canvas_and_native_plane(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);report=self.fixture(root);art=Image.new('RGB',(896,480),(192,64,128))
+            with self.assertRaises(ValueError):foreground_pack.build(report,root,art)
+            _,_,atlas=foreground_pack.build(report,root,art,fit=True)
+            self.assertEqual(atlas.getpixel((2,2)),(192,64,128,255))
+            self.assertEqual(atlas.getpixel((6,70)),(8,0,0,255))
+
     def test_inset_tail_cells_preserve_source_coordinates(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);raw=np.arange(32*40,dtype='<u2').reshape(40,32)
