@@ -2208,8 +2208,16 @@ adjacent depth field. The old LP64 layout fails six checks; the correction passe
 The updated test also passes as a Windows PE executable under Wine. All 53 macOS
 host tests pass with the corrected shared layout and this regression.
 The patched Linux x86-64 Release build also passes all 53 host tests under
-amd64 emulation; this does not yet verify Linux rendering for the shadow fix.
-See `shadow-gte-abi-v1/linux-build-assessment.json` and its immutable binary.
+amd64 emulation. Its binary SHA-256 is
+`b9b65623d45d8a0c16d4170e45b9379b2cfec1139b426a8eaf2424f3062c78fc`.
+It subsequently passes all 40 source locations in software and separately in
+headless Vulkan/lavapipe. Off/on RGB, full VRAM, complete model/player state,
+clocks/RNGs and normalized GP0 match within each backend. All 80 software runs
+exactly match patched macOS software. Vulkan matches all state/commands but only
+44/80 RGB and 16/80 full-VRAM captures; cross-renderer pixel identity is not
+claimed. See `shadow-gte-abi-v1/linux-build-assessment.json`,
+`linux-runtime-provenance.json`, the immutable binary and `assessment-v2.json`.
+These runs do not establish physical-PC/GPU or whole-game behavior.
 
 The final macOS binary is SHA-256
 `82d42eba8ded6e1fe97cdd47b36a5210ae57f1c69d5a366d0177b93af4e849f1`.
@@ -2242,6 +2250,18 @@ The running broad `full-survey-current-v5` uses its immutable pre-shadow-fix
 binary; it cannot establish current-code whole-game coverage. Other GTE output
 call sites using host `long` still require audit; these scoped shadow/stain
 corrections do not establish complete supported-platform behavior.
+
+A read-only syntax audit replays all 593 repository `src/` translation-unit
+commands from the macOS compilation database with incompatible-pointer warnings
+enabled (the normal game build suppresses them). All compile syntactically;
+192 emitted `long *` diagnostics normalize to 138 source locations in 16 files,
+including repeated shared water drawers. They cover remaining projection and
+transformation outputs in water/effects, collision rebuilds and held-model or
+helicopter drawers. This is an outstanding source-review/fix list, not a runtime
+pass or an audit of macro stores through `void *`. Private evidence:
+`gte-output-audit-v1/report.json`, `unique-diagnostics.json`, per-TU logs and the
+recorded compilation database/source/header hashes. External code and generated
+variant wrappers are excluded; PsyZ remains unmodified.
 
 ## Remaining required work
 
