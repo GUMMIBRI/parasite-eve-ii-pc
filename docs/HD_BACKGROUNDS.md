@@ -1975,6 +1975,40 @@ Linux container is not native Windows. D3D12, physical GPUs, the Windows HD
 presenter, other courses and whole-game play remain unverified. No public CI
 job, release or upload is implied by these local results.
 
+#### Windows GPU compatibility probes remain unsuccessful
+
+Additional Windows PE probes use Xvfb, Wine 9 and Mesa 25.2.8 lavapipe in an
+isolated amd64 Linux container. The cached Windows SDL build enables both
+D3D12 and Vulkan, so an absent build backend is not the cause of rejection.
+However, the unchanged PsyZ Windows runtime requests DXIL shader format only;
+SDL's Vulkan device preparation requires SPIR-V. Forcing `SDL_GPU_DRIVER=vulkan`
+therefore cannot validate this Windows executable's GPU presentation.
+
+The default Windows backend, forced as `direct3d12`, is also rejected by the
+built-in Wine stack. Verbose SDL logging identifies the reason: DXIL is not
+supported and the application supplies no DXBC. These runs continue without a
+valid device and were explicitly terminated after diagnosis; they provide no
+renderer parity evidence. A separate 15-second bounded verbose probe confirms
+the capability rejection. The successful `gpu_state_test.exe` only exercises
+command-state parsing and never initializes SDL_GPU, so its result is not
+promoted to backend evidence.
+
+A separate Wine prefix then loads the published
+[vkd3d-proton 3.1](https://github.com/HansKristian-Work/vkd3d-proton/releases/tag/v3.1)
+D3D12 DLLs with DXVK 2.3.1 DXGI. The vkd3d release archive matches the release
+API's SHA-256. DXVK 3.x is not used because its
+[driver requirements](https://github.com/doitsujin/dxvk/wiki/Driver-support)
+include Wine 10.1+, while this environment has Wine 9. The alternative stack
+enumerates llvmpipe, then the process exits 133 with Rosetta's invalid-GDT-selector
+error before producing any capture. This is an unsuccessful compatibility-stack
+probe; it does not establish a defect in the game's D3D12 renderer.
+
+`windows-wine-gpu-runtime/assessment.json` records failed outcomes, log/source
+hashes and dependency DLL/archive hashes. No settled GPU capture exists. PsyZ,
+shader requirements and game renderer code remain unchanged. The earlier 16
+Windows PE regression tests and successful software gameplay remain valid;
+native Windows/D3D12 and Windows HD presentation still require verification.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
