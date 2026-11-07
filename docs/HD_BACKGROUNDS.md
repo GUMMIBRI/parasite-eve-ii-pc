@@ -1141,6 +1141,28 @@ This resolves the reproduced initialization stall and verifies one crossfade
 route on two backends; it does not establish all scene timing, physical Linux
 GPUs, Windows, or the sterilization-room story route.
 
+#### Retest of all historical crash cases
+
+The current binary retests all 48 old exit-139/138 locations with the software
+backend, video audio-clock, virtual raster clock and complete GPU-state audits.
+`historical-crash-retry-timing-init/report.json` records five exact off/on parity
+passes: MIST r18 views 3, 4, 5, 6 and 10. The other 43 remain unverified: 35 exit
+139, five exit 138 and three finish without a settled target. Neither the old
+full survey nor this failed subset is rewritten as complete coverage.
+
+Read-only LLDB reproduction of requested Dryfield r08 `2,8,1,2,1,1` faults in
+`viewGetMappedIndex`, but the current location is already `3,9,6,2,3,1`.
+Both maps for the initial r08 room state correctly point to the identity map.
+The later transition and its room-state/table semantics need investigation;
+an arbitrary NULL fallback in the initial room would conceal that distinction.
+Logs and report identities are retained in the subset assessment. No fix for
+this later crash is claimed.
+
+View-12 artwork v3 is retained locally with its built-in imagegen prompt and
+provenance. It has the wrong canvas aspect beyond permitted rounding and is
+rejected by `prepare_canvas`, before registration or packing. No stretch/crop
+exception was introduced and no artwork is approved or published.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
