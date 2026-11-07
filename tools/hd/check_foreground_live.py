@@ -22,6 +22,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--replay',type=Path,help='Use an existing route instead of the default startup trace')
     parser.add_argument('--settle',type=int,default=30,help='Matching field frames before capture (30..35999); wide also checks the next frame')
+    parser.add_argument('--timeout',type=int,default=40,help='Per-case runtime limit in seconds (1..3600); slow software GPU runners may need more time')
     parser.add_argument('--runner',type=Path,help='Optional executable launcher receiving the binary path and arguments')
     parser.add_argument('--binary',type=Path,default=Path('build-port/parasite-eve-ii-pc'))
     parser.add_argument('--disc',type=Path,required=True);parser.add_argument('--disc2',type=Path,required=True)
@@ -34,6 +35,7 @@ def main():
     parser.add_argument('--output',type=Path,default=Path('build-hd-study/foreground-live-check'))
     args=parser.parse_args();location=list(map(int,args.location.split(',')))
     if not 30<=args.settle<36000:parser.error('--settle must be in 30..35999')
+    if not 1<=args.timeout<=3600:parser.error('--timeout must be in 1..3600 seconds')
     if len(location)!=6 or len(args.key)!=16:parser.error('Expected a six-component location and native key')
     try:start_location=list(map(int,(args.start_location or args.location).split(',')))
     except ValueError:parser.error('--start-location must contain six integers')
@@ -64,7 +66,7 @@ def main():
             with (destination/'run.log').open('w') as log:
                 command=[str(args.binary.resolve()),'--disc',str(args.disc.resolve()),'--disc2',str(args.disc2.resolve()),'--widescreen',str(wide)]
                 if args.runner:command.insert(0,str(args.runner.resolve()))
-                subprocess.run(command,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=40)
+                subprocess.run(command,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=args.timeout)
         report,native=validate_capture(destination,dict(keys=[args.key],location=location),True)
         assert report['matched_frames']==settle,(name,'capture ignored the requested settle interval')
         frame=(destination/'frame.ppm').read_bytes()
@@ -117,7 +119,7 @@ def main():
     if hashlib.sha256(args.binary.read_bytes()).hexdigest()!=identity:raise RuntimeError('Executable changed during check')
     if hashlib.sha256(replay.read_bytes()).hexdigest()!=replay_identity:raise RuntimeError('Replay changed during check')
     if args.runner and hashlib.sha256(args.runner.read_bytes()).hexdigest()!=runner_identity:raise RuntimeError('Launcher changed during check')
-    (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,runner_sha256=runner_identity,replay_sha256=replay_identity,start_location=start_location,target_location=location,settle_frames=args.settle,cases=results,empty_sources_verified=empty_sources,
+    (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,runner_sha256=runner_identity,replay_sha256=replay_identity,start_location=start_location,target_location=location,settle_frames=args.settle,timeout_seconds=args.timeout,cases=results,empty_sources_verified=empty_sources,
         scope=('One replayed camera endpoint. ' if args.replay else 'One forced static camera. ')+'v3 captures present the completed draw buffer. '+('Audited empty sources require exact unchanged material; no visible HD activation is claimed.' if empty_sources else 'Both physical buffers require active foreground replacements in 16:9.')),indent=2)+'\n')
     print('PASS: '+('verified empty foreground' if empty_sources else 'live foreground material')+', both buffer parities, exact native VRAM and malformed-pack fallback')
 

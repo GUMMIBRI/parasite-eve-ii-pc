@@ -53,6 +53,16 @@ on the controller route from view 10 to 11 on macOS Metal, including both physic
 buffers and malformed-foreground fallback. This does not approve the candidate
 artwork or establish installation/runtime behavior on other operating systems.
 
+The five installer tests also pass on Ubuntu 24.04 ARM64, Python 3.12.3 and
+Pillow 10.2.0. Installation there produces the same eight payloads and manifest
+byte-for-byte as macOS (`linux-installed-pack-file-parity.json`). The first
+controller-route Vulkan/lavapipe collection exceeded its 40-second per-case
+limit during the combined-pack classic run; it is retained as incomplete in
+`linux-foreground-view11-installed-route`. The capture tool now accepts
+`--timeout 1..3600` seconds (default 40), records the limit, and keeps all capture,
+native-state and material gates unchanged. A separate 180-second collection is
+in progress; a timeout or installed-file parity alone is not runtime approval.
+
 The equivalent command-line options are `--hd-backgrounds /absolute/pack/path`
 and `--no-hd-backgrounds`. They are mutually exclusive and reject duplicates,
 empty/missing paths and newlines. Relative paths are saved as absolute paths,
