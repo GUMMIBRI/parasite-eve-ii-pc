@@ -19,7 +19,7 @@ scope describe those builds rather than superseding this summary.
 | Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Resolve/classify excluded rows and remaining diagnostics, including the room with no view rows. |
 | Broad runtime survey | One complete earlier-build software survey: 2703 exact matches, 606 without settled captures, five balcony differences subsequently fixed in room-specific tests; no crashes. | Current-build full coverage and natural traversal, including transient/scripted/special screens. Do not combine different binary reports into one all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
-| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 41 Python HD tests on macOS. | Windows runtime, Linux x86-64/physical GPU behavior and complete supported-backend traversal. |
+| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 41 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
 All source captures, generated artwork and native-reference pack payloads remain
 local. Passing renderer controls do not approve artwork or grant distribution
@@ -1550,6 +1550,40 @@ Both Linux reports identify the same binary and the private installed manifest;
 `linux-gallery-four-view-study-assessment.json` binds their hashes. This adds
 one Linux reached endpoint and one return checkpoint, not Windows/physical GPU
 coverage, all possible transition states or final artistic approval.
+
+#### Windows cross-build and portable graphics CI
+
+A local MinGW-w64 GCC 16.2 cross-build produces the current Windows x86-64
+SDL_GPU game executable and all 16 members of the new `portable_graphics_tests`
+CMake target. The local assessment records PE files, sizes, hashes and system
+DLL imports (`windows-cross/assessment.json`). No Windows runtime or Wine is
+configured here; cross-compilation is not a Windows gameplay/test pass.
+
+The build exposed two fixture portability problems. `background_coverage_test`
+now defines `__psyz` when including the public runtime types, preserving the
+pointer-sized `u_long` contract on LLP64. The isolated scene-buffer allocator
+test disables COFF unwind tables so dead-section linking can discard unrelated
+CD command handlers. The game retains its unwind tables; the cross-built game
+object has `.pdata` sections while the isolated test object has none.
+
+CTest's portable graphics label selects the same 16 tests as the aggregate
+build target. The normal CI workflow now has a Windows CLANG64 build/test/help
+job, and Windows release packaging uses that target/label instead of a separate
+five-test list. Both workflows pass actionlint and shellcheck locally; the jobs
+have not been run on GitHub for these unpublished commits.
+
+All registered host-test targets now undefine `NDEBUG` in release configurations,
+so checks and fixture setup inside `assert()` actually execute. With assertions
+enabled, all 53 C tests pass on macOS and Linux ARM64. The Windows executables
+compile with assertions as well (the cache fixture imports `_assert`), but their
+execution remains unverified. No change to PsyZ was required.
+
+The bundled runtime also declares an experimental build-time `sdl3_gl` backend.
+Its atlas-loading and widescreen entry points are unsupported stubs, and the
+macOS/iOS configurations reject that backend explicitly. The default SDL_GPU
+binary cannot switch to OpenGL through `SDL_GPU_DRIVER=opengl`. This corrects
+the earlier overly broad statement that the repository contains no GL backend;
+no experimental GL build/runtime validation is claimed here.
 
 ## Earlier verification checkpoint
 

@@ -383,6 +383,7 @@ add_executable(background_coverage_test EXCLUDE_FROM_ALL tests/background_covera
 target_include_directories(background_coverage_test PRIVATE include)
 # video.h uses PsyZ public types; this test supplies stub renderer entry points.
 target_include_directories(background_coverage_test PRIVATE ${PSYZ_DIR}/psyz/include)
+target_compile_definitions(background_coverage_test PRIVATE __psyz)
 
 add_executable(background_pack_test EXCLUDE_FROM_ALL tests/background_pack_test.c src/port/background_pack.c)
 target_include_directories(background_pack_test PRIVATE include)
@@ -427,6 +428,11 @@ add_executable(scene_timing_buffer_test EXCLUDE_FROM_ALL tests/scene_timing_buff
 target_include_directories(scene_timing_buffer_test PRIVATE include include/decomp src/main)
 target_compile_definitions(scene_timing_buffer_test PRIVATE __psyz SKIP_ASM)
 target_compile_options(scene_timing_buffer_test PRIVATE -ffunction-sections -fdata-sections)
+if(MINGW)
+    # COFF unwind records keep otherwise-unused cdcmd functions live in this
+    # isolated allocator fixture. The game retains its normal unwind metadata.
+    target_compile_options(scene_timing_buffer_test PRIVATE -fno-asynchronous-unwind-tables -fno-unwind-tables)
+endif()
 target_link_libraries(scene_timing_buffer_test PRIVATE psyz)
 if(APPLE)
     target_link_options(scene_timing_buffer_test PRIVATE -Wl,-dead_strip)
@@ -457,7 +463,22 @@ add_custom_target(host_tests)
 foreach(_t IN LISTS _pe_targets)
     if(_t MATCHES "_test$" AND NOT _t IN_LIST PE_DATA_TESTS)
         add_dependencies(host_tests ${_t})
+        # Release builds must still execute checks and fixture setup in assert().
+        if(MSVC)
+            target_compile_options(${_t} PRIVATE /UNDEBUG)
+        else()
+            target_compile_options(${_t} PRIVATE -UNDEBUG)
+        endif()
         add_test(NAME ${_t} COMMAND ${_t})
     endif()
 endforeach()
 set_tests_properties(gpu_state_test gpu_tpage_test caption_packet_test PROPERTIES ENVIRONMENT "PSYZ_HEADLESS=1;SDL_AUDIODRIVER=dummy")
+
+# These regressions avoid the POSIX filesystem fixtures and can run on Windows.
+set(PE_PORTABLE_GRAPHICS_TESTS
+    actor_walk_gap_test sdk_random_test port_random_test screen_negative_test
+    gte_compat_test asset_disc_cache_test background_coverage_test background_pack_test
+    foreground_packet_test gpu_state_test foreground_pack_test foreground_stage_test
+    scene_timing_buffer_test water_grid_packet_test bezier_curve_test background_capture_target_test)
+add_custom_target(portable_graphics_tests DEPENDS ${PE_PORTABLE_GRAPHICS_TESTS})
+set_tests_properties(${PE_PORTABLE_GRAPHICS_TESTS} PROPERTIES LABELS "portable-graphics")

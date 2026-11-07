@@ -157,13 +157,13 @@ jobs:
       - name: Build
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --parallel 2 --target parasite-eve-ii-pc actor_walk_gap_test sdk_random_test screen_negative_test gte_compat_test asset_disc_cache_test
+          cmake --build build --parallel 2 --target parasite-eve-ii-pc portable_graphics_tests
       # Filesystem host tests currently require POSIX APIs; run the portable regressions on Windows.
       - name: Portable host regression tests
         env:
           PSYZ_HEADLESS: '1'
           SDL_AUDIODRIVER: dummy
-        run: ctest --test-dir build --output-on-failure --no-tests=error -R '^(actor_walk_gap|sdk_random|screen_negative|gte_compat|asset_disc_cache)_test$'
+        run: ctest --test-dir build --output-on-failure --no-tests=error -L portable-graphics
       - name: The executable starts
         run: |
           out=$(build/parasite-eve-ii-pc.exe --help 2>&1 || true)

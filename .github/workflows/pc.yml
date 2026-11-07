@@ -1,7 +1,8 @@
 name: native-c
 
-# CI has no game data, so it builds and runs the host tests only (PE_BUILD_GAME turns itself off when the generated
-# sources are missing). The game executable is built locally from your own disc images; see README.md.
+# CI uses committed layout sources and synthetic fixtures, never disc data.
+# Windows also builds the game and the portable graphics test group; gameplay
+# and renderer traversal still require local owner-disc validation.
 
 on:
   push:
@@ -58,6 +59,45 @@ jobs:
         run: cmake --build build --target host_tests --parallel 4
       - name: Run the host tests
         run: ctest --test-dir build --output-on-failure --no-tests=error
+
+  windows-graphics:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      PSYZ_HEADLESS: '1'
+      SDL_AUDIODRIVER: dummy
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: false
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANG64
+          update: true
+          install: >-
+            git
+            mingw-w64-clang-x86_64-clang
+            mingw-w64-clang-x86_64-cmake
+            mingw-w64-clang-x86_64-ninja
+            mingw-w64-clang-x86_64-python
+      - name: Fetch PsyZ and SDL
+        run: |
+          git submodule update --init third_party/psyz
+          git -C third_party/psyz submodule update --init external/SDL
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build game and portable graphics regressions
+        run: cmake --build build --parallel 2 --target parasite-eve-ii-pc portable_graphics_tests
+      - name: Portable graphics regressions
+        run: ctest --test-dir build --output-on-failure --no-tests=error -L portable-graphics
+      - name: The executable starts
+        run: |
+          out=$(build/parasite-eve-ii-pc.exe --help 2>&1 || true)
+          echo "$out"
+          echo "$out" | grep -q '^usage:'
 
   save-editor:
     runs-on: ubuntu-24.04
