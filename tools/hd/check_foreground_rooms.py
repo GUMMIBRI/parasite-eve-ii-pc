@@ -84,10 +84,11 @@ def main():
                 '--binary',str(args.binary),'--disc',str(args.disc),'--disc2',str(args.disc2),
                 '--base-pack',str(base),'--combined-pack',str(combined),'--location',','.join(map(str,case['location'])),
                 '--key',case['key'],'--output',str(destination/'live')]
+            if not any(r['covered_texels'] for r in records):command+=['--empty-sources',str(source)]
             with (destination/'check.log').open('w') as log:subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=420)
             checked=json.loads((destination/'live/report.json').read_text())
             if not checked.get('passed') or checked['binary_sha256']!=binary_hash:raise ValueError('Incomplete or changed executable evidence')
-            results.append(dict(location=case['location'],room=case['room'],key=case['key'],sources=len(records),
+            results.append(dict(location=case['location'],room=case['room'],key=case['key'],sources=len(records),empty_sources_verified=checked.get('empty_sources_verified',0),
                 runs=[dict(case=r['case'],buffer_y=r['report']['buffer_y'],replacements=r['report']['foreground_replacements']) for r in checked['cases']]))
             print(f'PASS {name}: {len(records)} sources',flush=True)
         except Exception as error:

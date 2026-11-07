@@ -15,6 +15,7 @@ import tempfile
 import zlib
 from PIL import Image
 from survey import startup_replay,validate_capture
+from foreground_evidence import check_material_evidence,verify_empty_sources
 
 
 def main():
@@ -25,11 +26,14 @@ def main():
     parser.add_argument('--combined-pack',type=Path,required=True)
     parser.add_argument('--location',required=True,help='stage,area,view,room,warp,variant')
     parser.add_argument('--key',required=True,help='16-digit native background key')
+    parser.add_argument('--empty-sources',type=Path,help='Audited all-zero native sources; require unchanged material instead of visible HD')
     parser.add_argument('--output',type=Path,default=Path('build-hd-study/foreground-live-check'))
     args=parser.parse_args();location=list(map(int,args.location.split(',')))
     if len(location)!=6 or len(args.key)!=16:parser.error('Expected a six-component location and native key')
     int(args.key,16)
+    context='-'.join(map(str,location[:4]));descriptor=f'{args.key}-{context}.pe2fg'
     root=args.output.resolve();root.mkdir(parents=True,exist_ok=True);(root/'report.json').unlink(missing_ok=True)
+    empty_sources=verify_empty_sources(args.empty_sources,args.key,location,(args.combined_pack/descriptor).read_bytes()) if args.empty_sources else 0
     replay=root/'startup.pad';startup_replay(replay)
     identity=hashlib.sha256(args.binary.read_bytes()).hexdigest();results=[]
     def run(name,pack,wide,settle):
@@ -66,12 +70,11 @@ def main():
         assert base[0]['buffer_y']==combined[0]['buffer_y'],(name,'different physical buffers')
         changed=base[2]!=combined[2]
         replacements=combined[0]['foreground_replacements']
-        assert changed==bool(replacements),(name,'material/counter evidence disagrees')
-        assert replacements>0,(name,'No active foreground material was demonstrated')
+        try:check_material_evidence(changed,replacements,empty=bool(empty_sources))
+        except AssertionError as error:raise AssertionError(name,str(error)) from error
         if not wide:
             assert base[1]==original[1],'Base material changed the original native framebuffer'
         if not wide:classic=base
-    context='-'.join(map(str,location[:4]));descriptor=f'{args.key}-{context}.pe2fg'
     for name in ['bad-metadata','missing-atlas']:
         with tempfile.TemporaryDirectory(prefix=name+'-',dir=root) as directory:
             pack=Path(directory);shutil.copytree(args.combined_pack,pack,dirs_exist_ok=True)
@@ -81,9 +84,9 @@ def main():
             capture=run(name,pack,0,30)
             assert not capture[0]['foreground_replacements'] and capture[1:]==classic[1:],name
     if hashlib.sha256(args.binary.read_bytes()).hexdigest()!=identity:raise RuntimeError('Executable changed during check')
-    (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,cases=results,
-        scope='One forced static camera. v3 captures present the completed draw buffer; both physical buffers require active foreground replacements in 16:9.'),indent=2)+'\n')
-    print('PASS: live foreground material, both buffer parities, exact native VRAM and malformed-pack fallback')
+    (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,cases=results,empty_sources_verified=empty_sources,
+        scope='One forced static camera. v3 captures present the completed draw buffer. '+('Audited empty sources require exact unchanged material; no visible HD activation is claimed.' if empty_sources else 'Both physical buffers require active foreground replacements in 16:9.')),indent=2)+'\n')
+    print('PASS: '+('verified empty foreground' if empty_sources else 'live foreground material')+', both buffer parities, exact native VRAM and malformed-pack fallback')
 
 
 if __name__=='__main__':main()

@@ -371,6 +371,35 @@ foreground support remains open. Old failure evidence is retained locally in
 `build-hd-study/foreground-five-stages`; the repaired case is also recorded in
 `build-hd-study/foreground-airlock-inset`.
 
+The expanded 46-camera run is recorded in
+`build-hd-study/foreground-state-rooms-inset`. Its initial strict visible-material
+check passes 43 cameras and reports three failures. One has an entirely empty
+native foreground (`1,16,27,1,1,1`): rewriting its packet should not change any
+pixels. The live checker now accepts `--empty-sources /local/audit` only after
+verifying the capture identity, complete descriptor source records, exact raw
+source hashes/sizes, and that every RGB555 word is zero. Covered black `0x8000`
+is rejected. An empty case must preserve both the rendered material and native
+VRAM exactly; it never counts as demonstrated visible HD activation. The room
+runner selects this mode only for all-zero audited sources.
+
+The repeated empty-camera run passes all nine checks in
+`build-hd-study/foreground-empty-camera-check`. The aggregate `assessment.json`
+records 44 verified cameras (43 with visible material, one verified empty) and
+two unresolved cases, tied to identical executable hashes:
+
+- Main corridor `4,15,7,1,1,1`: classic foreground changes 6246 native VRAM
+  words. Its sources include narrow/short legacy cells needing extra scissor
+  commands. The cause still needs isolation; 4:3 native preservation is not
+  established for this camera.
+- Incinerator `4,40,4,1,1,1`: classic material passes, and wide native VRAM is
+  unchanged, but none of its fourteen 8-pixel-wide sources receives an active
+  HD replacement in 16:9. This is unsupported visible coverage, not observed
+  native corruption. It remains unverified by the active-material gate.
+
+The broad check therefore remains failed. No all-room claim follows from the
+five-stage selection, and no artwork or traversal approval follows from these
+synthetic fixtures.
+
 New settled captures use `pe2-static-view-survey-v3`. PE2 normally displays the
 opposite buffer while drawing; immediately before this diagnostic exits, it
 presents the completed draw buffer explicitly. Its reported `buffer_y`, native
@@ -453,7 +482,7 @@ registration experiments do not establish production artwork quality.
   native 1x rendering falls back exactly with a valid wide pack supplied.
 - Two synthetic pack tests and two synthetic inventory tests pass (duplicate pixel hashes, missing inputs,
   stage-0 classification, special renderers and raw-store path resolution).
-- Twenty-one Python HD tests pass in total. Additional checks exercise the native
+- Twenty-three Python HD tests pass in total. Additional checks exercise the native
   BS decoder with generated grayscale inputs, logical/mapped view joins,
   unresolved entries, source-guided artwork constraints, and rejection of stale,
   wrong-location, black or incomplete runtime capture evidence.
