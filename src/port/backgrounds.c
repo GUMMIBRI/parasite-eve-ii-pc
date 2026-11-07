@@ -1,6 +1,7 @@
 #include "port/backgrounds.h"
 #include "port/background_pack.h"
 #include "port/gpu_state.h"
+#include "port/foreground_stage.h"
 #include "port/background_foreground.h"
 #include <psyz/gpu.h>
 #include <psyz/video.h>
@@ -55,12 +56,14 @@ enum { GPU_AUDIT_MAX_SPRITES=8192 };
 typedef struct {uint32_t words[4];PeGpuState state;} GpuSpriteAudit;
 static GpuSpriteAudit* gpuAuditSprites;
 static PeGpuState gpuAuditState;
+static PeForegroundStage gpuAuditStage;
 static int gpuAuditEnabled=-1,gpuAuditStarted,gpuAuditComplete,gpuAuditY;
 static unsigned gpuAuditCount;
 static unsigned foregroundDrawn,drawFrameIndex;
 static void observeGpuSprite(const void* packet,unsigned offset,const uint32_t* words,unsigned count,const PeGpuState* state,void* context)
 {
-    (void)packet;(void)offset;(void)count;(void)context;
+    peForegroundStageObserve(packet,offset,words,count,state,&gpuAuditStage);
+    (void)context;
     if(((words[0]>>24)&~3u)!=0x64)return;
     if(gpuAuditCount==GPU_AUDIT_MAX_SPRITES) {gpuAuditComplete=0;return;}
     GpuSpriteAudit* sprite=&gpuAuditSprites[gpuAuditCount++];
@@ -122,7 +125,7 @@ static int writeGpuAudit(const char* root,int buffer_y,const PeBackgroundFrameIn
                 s->clip_right-s->clip_left+1,s->clip_bottom-s->clip_top+1,s->offset_x,s->offset_y,
                 s->draw_mode,s->texture_window,s->mask_mode);
     }
-    fprintf(file,"],\"foreground_replacements\":%u}\n",foregroundDrawn);int failed=ferror(file);if(fclose(file))failed=1;
+    fprintf(file,"],\"foreground_replacements\":%u,\"staging_free_pages\":\"%08" PRIx32 "\"}\n",foregroundDrawn,~gpuAuditStage.occupied);int failed=ferror(file);if(fclose(file))failed=1;
     if(failed)remove(path);return !failed;
 }
 static int frameSlot(int y)
@@ -140,6 +143,7 @@ void peBackgroundBeginFrame(int y)
         const char* enabled=getenv("PE2_DUMP_GPU_STATE");gpuAuditEnabled=enabled && !strcmp(enabled,"1");
         if(gpuAuditEnabled)gpuAuditSprites=malloc(GPU_AUDIT_MAX_SPRITES*sizeof(*gpuAuditSprites));
     }
+    peForegroundStageBegin(&gpuAuditStage,NULL);
     gpuAuditStarted=0;gpuAuditComplete=!gpuAuditEnabled || gpuAuditSprites!=NULL;gpuAuditCount=0;gpuAuditY=y;foregroundDrawn=0;materialPresented=0;
 }
 int peBackgroundGetFrameInfo(int y,PeBackgroundFrameInfo* info)

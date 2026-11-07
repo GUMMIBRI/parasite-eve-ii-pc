@@ -396,6 +396,35 @@ two unresolved cases, tied to identical executable hashes:
   HD replacement in 16:9. This is unsupported visible coverage, not observed
   native corruption. It remains unverified by the active-material gate.
 
+The corridor failure is reduced to source 0 alone (16x8), in
+`build-hd-study/corridor-source0-check`. A feasibility audit also rejects simply
+expanding every narrow sprite into neighbouring native texels: all fourteen
+incinerator sources have covered neighbours, and some expansions exceed their
+texture page. Extra padding cannot be assumed transparent.
+
+`foreground_stage.c` now provides a preparatory native staging planner. It
+conservatively excludes original polygon/sprite texture pages, indexed CLUTs,
+draw areas, fills, copies, readbacks and both display buffers from a candidate
+64x256 direct-colour page. An optional writable known-map copy invalidates
+source texels affected by preceding primitives. Its native decoder handles
+4/8/16-bit textures, UV wrap, exact STP words, unknown inputs and literal zero
+padding without downloading or modifying VRAM. A known-backup selector refuses
+regions with any unknown word. One page holds at most 64 cells.
+
+With `PE2_DUMP_GPU_STATE=1`, completed ordered audits now include
+`staging_free_pages`: a hexadecimal 32-bit geometry-availability mask, with bit
+`16*(y/256)+x/64` representing a 64x256 page. Only a complete audit is usable;
+this mask does not establish that a CPU backup is known. Live original-OT
+audits in `build-hd-study/foreground-stage-plan-final` identify (320,0), among
+other candidates, for both unresolved cameras. These diagnostic additions do
+not change submitted GPU commands. The staging decoder/planner is not yet
+connected to foreground replacement: GPU uploads, source-page remapping,
+original draw-mode restoration and exact backup restoration still need runtime
+integration and validation. The incinerator still has no active wide replacement. The latest diagnostic
+binary passes the corridor comparison without a rendering fix, whereas the
+previous binary and the isolated 16x8 source failed. Treat that binary-sensitive
+failure as unresolved; a passing repeat does not establish its cause or repair.
+
 The broad check therefore remains failed. No all-room claim follows from the
 five-stage selection, and no artwork or traversal approval follows from these
 synthetic fixtures.
@@ -477,7 +506,7 @@ registration experiments do not establish production artwork quality.
 
 ## Verification checkpoint
 
-- 47 C host tests pass, including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
+- 48 C host tests pass, including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
   out-of-bounds and unsupported cases. The hidden GPU probe also proves that
   native 1x rendering falls back exactly with a valid wide pack supplied.
 - Two synthetic pack tests and two synthetic inventory tests pass (duplicate pixel hashes, missing inputs,
