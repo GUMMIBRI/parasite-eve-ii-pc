@@ -263,10 +263,13 @@ venv/bin/python3 tools/hd/foreground_pack.py \
   --output /local/background-pack
 ```
 
-The 48-byte header is `<8sQQ6I`: `PE2FG1\0\0`, background key, foreground
+The 48-byte header is `<8sQQ6I`: `PE2FG2\0\0`, background key, foreground
 atlas key, stage, area, logical view, room state, source count, cell count.
 Each 16-byte `<IHHHHBBH` record contains source ID, texture page, CLUT,
-width, height, U, V and first cell. IDs are sorted/unique; cells are contiguous;
+width, height, U, V and first cell. In version 2, source-ID bit 12 marks
+inset tail cells; bits 0..11 hold the ID and higher bits are rejected. Inset
+sources must be at least 16 pixels in each dimension. Version 1 remains readable
+with its original padded-cell layout. IDs are sorted/unique; cells are contiguous;
 limits are 512 sources and 960 cells. The atlas key must differ from the base.
 Metadata is named `<background>-<stage>-<area>-<view>-<room>.pe2fg`, and its
 opaque material/reference atlas is `<atlas-key>.fg.png`. Native texels own
@@ -290,7 +293,7 @@ venv/bin/python3 tools/hd/check_foreground_live.py \
   --location 1,20,10,1,1,1 --key 83f3736e454385c9
 ```
 
-The registered OT probe passes 26 GPU and 26 software cases, including exact
+The registered OT probe passes 33 GPU and 33 software cases, including exact
 restoration of all original packet bytes and exclusion of an unregistered
 sprite with the same texture tuple. The real gallery check demonstrates nine
 classic foreground replacements, visible material changes, exact full VRAM
@@ -306,16 +309,19 @@ The cached game DISPENV and requested aspect remain unchanged. This only applies
 to validated 320x240 RGB15 timing with active wide artwork; movies, original
 backgrounds and classic 4:3 do not use this adapter. PsyZ remains unmodified.
 
-Completed-buffer captures in `build-hd-study/foreground-wide-range-check` now
-show nine gallery foreground replacements on both buffer 0 and buffer 272 in
-16:9. Each matches its base-only control in full native VRAM; classic base and
-foreground still match the original native VRAM. The synthetic base presenter
-also requires byte-identical output on both buffers in 4:3 and 16:9, verifies
-240-line output restoration, and preserves all native VRAM including STP/zero
-pixels. These are specific integration checks, not full-game validation.
+Completed-buffer captures in `build-hd-study/foreground-gallery-inset` show
+nine classic and four widescreen gallery foreground replacements on both
+buffers. The five sources narrower than 16 pixels retain original sprites in
+16:9; their native strips remain visible against the geometrically misaligned,
+unapproved candidate artwork. Each replaced frame matches its base-only control
+in full native VRAM; classic base and foreground also match the original native
+VRAM. The synthetic base presenter requires byte-identical output on both
+buffers in 4:3 and 16:9, verifies 240-line output restoration, and preserves all
+native VRAM including STP/zero pixels. These are specific integration checks,
+not full-game or artwork validation.
 
 Partial-width sprites with fractional squeezed boundaries, nonzero texture
-windows, and any case where clipping changes the wide classification still
+windows, and unsupported partial-cell layouts still
 retain their original primitive. Base/model registration, player occlusion,
 reflections, moving layers and other GPU backends require further validation.
 The source image remains an unapproved candidate.
@@ -335,20 +341,35 @@ each source-bearing camera. `--location` selects repeatable six-component
 locations; `--limit` bounds a run. All fixtures remain local disc-derived data.
 Errors are recorded individually and make the final check fail.
 
-The initial five-stage selection passes four cameras: helicopter landing pad
-`1,16,7,1,1,1` (29 sources), motel room `2,12,5,1,1,1` (83), night balcony
-`3,29,2,1,1,1` (185), and sleeping quarters `4,14,6,1,1,1` (112).
-**Airlock `5,5,5,1,2,1` remains a reproducible native-VRAM failure in 16:9.**
-Classic mode passes, and identical base-only wide controls pass, but enabling
-36 foreground replacements changes native VRAM in both framebuffers and the
-scratch area. Repeated captures have the same draw index (620), game tick (789)
-and VSync count (971); a different reported simulation moment does not explain
-this failure. Its rendering/feedback cause is still under investigation. Do not
-interpret the passing gallery test as general native-VRAM preservation.
-Evidence is in `build-hd-study/foreground-five-stages` and
-`build-hd-study/foreground-airlock-game-clock`. New diagnostic captures include
-`draw_frame`, `game_tick` and `vsync_count`; the live checker requires equal
-clock evidence for base/foreground comparisons.
+The five-stage selection in `build-hd-study/foreground-five-stages-inset`
+passes all five cameras: helicopter landing pad `1,16,7,1,1,1` (29 sources),
+motel room `2,12,5,1,1,1` (83), night balcony `3,29,2,1,1,1` (185), sleeping
+quarters `4,14,6,1,1,1` (112), and airlock `5,5,5,1,2,1` (36).
+This is integration evidence for selected forced cameras, not traversal or
+artwork approval. New diagnostic captures include `draw_frame`, `game_tick`
+and `vsync_count`; the live checker requires equal clock evidence for each
+base/foreground comparison.
+
+The airlock exposed a native-feedback bug: inserting DR_AREA commands around a
+partial sprite flushes preceding GPU work, changing later framebuffer reads.
+A single 32x40 source reproduces it. Version 2 places the final opaque 16x16
+cell inside the source extent, overlapping the preceding row/column, and samples
+the corresponding material/reference coordinates. Repeated opaque pixels retain
+the same colour and STP. Complete or inset cells emit no added scissor commands;
+this preserves the original OT's batching. A synthetic framebuffer-read test
+has 121 native differences when scissor commands are deliberately reinstated,
+and zero with the inset path. Mask modes, raw/modulated colour and rejection of
+semitransparent overlap are covered by the 33-case GPU/software probes.
+
+The airlock now uses 36 replacements in classic mode and 19 on each buffer in
+16:9, with full native-VRAM equality against its controls. Its remaining 17
+narrow sources retain original sprites in 16:9. Inset overlap is never used for
+semitransparent sprites, sources narrower/shorter than 16, or incompatible live
+flags. Partial legacy cells and partial semitransparent cells retain the entire
+original primitive in 16:9. These limits preserve native rendering while wider
+foreground support remains open. Old failure evidence is retained locally in
+`build-hd-study/foreground-five-stages`; the repaired case is also recorded in
+`build-hd-study/foreground-airlock-inset`.
 
 New settled captures use `pe2-static-view-survey-v3`. PE2 normally displays the
 opposite buffer while drawing; immediately before this diagnostic exits, it
@@ -432,7 +453,7 @@ registration experiments do not establish production artwork quality.
   native 1x rendering falls back exactly with a valid wide pack supplied.
 - Two synthetic pack tests and two synthetic inventory tests pass (duplicate pixel hashes, missing inputs,
   stage-0 classification, special renderers and raw-store path resolution).
-- Twenty Python HD tests pass in total. Additional checks exercise the native
+- Twenty-one Python HD tests pass in total. Additional checks exercise the native
   BS decoder with generated grayscale inputs, logical/mapped view joins,
   unresolved entries, source-guided artwork constraints, and rejection of stale,
   wrong-location, black or incomplete runtime capture evidence.

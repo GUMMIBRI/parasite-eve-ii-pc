@@ -92,27 +92,23 @@ unsigned peForegroundSubmitOt(const void* head,const PeGpuState* initial,const P
         Replacement* p=&storage[i];const PeForegroundSource* e=p->entry;
         if(!e || p->bad || p->modes!=1 || p->sprites!=1 || p->state.texture_window || p->source.w!=e->width || p->source.h!=e->height ||
            p->source.u0!=e->u || p->source.v0!=e->v || p->source.clut!=e->clut || ((p->state.draw_mode^e->tpage)&0x19f))continue;
+        if(e->inset && (p->source.code&2))continue;
         RECT clip={p->state.clip_left,p->state.clip_top,p->state.clip_right-p->state.clip_left+1,p->state.clip_bottom-p->state.clip_top+1};
         if(Psyz_VideoGetWidescreen()) {
             DISPENV display;GetDispEnv(&display);
-            /* PsyZ classifies a draw as widescreen from its current scissor.
-             * Partial-cell clipping must not change that classification (PE2's
-             * second buffer ends at row 511). The caller supplies the actual
-             * draw-time display height, including the port's 256-line range.
-             * Retain original sprites if clipping would change classification. */
+            /* Partial legacy cells require an extra scissor, which flushes
+             * native work and changes framebuffer feedback. Only full cells
+             * or explicitly inset opaque tails preserve the original batch. */
             if(display.isrgb24 || display.disp.w!=320 || display.disp.h!=240 ||
                (display.screen.h && display.screen.h!=240) || display.screen.y<0 || display.screen.y>2)continue;
-            int x=p->source.x0+p->state.offset_x,y=p->source.y0+p->state.offset_y;
-            int left=x>clip.x?x:clip.x,top=y>clip.y?y:clip.y;
-            int right=x+p->source.w<clip.x+clip.w?x+p->source.w:clip.x+clip.w;
-            int bottom=y+p->source.h<clip.y+clip.h?y+p->source.h:clip.y+clip.h;
+            int x=p->source.x0+p->state.offset_x;
+            int partial=p->source.w%16 || p->source.h%16;
+            if(partial && !e->inset)continue;
             int oldWide=clip.x>=display.disp.x && clip.x+clip.w<=display.disp.x+320 && clip.y>=0 && clip.y+clip.h<=2*(int)render_height;
-            int newWide=left>=display.disp.x && right<=display.disp.x+320 && top>=0 && bottom<=2*(int)render_height;
-            if(oldWide!=newWide)continue;
             if(oldWide && ((p->source.w%16 && (x+p->source.w)%4) ||
                (clip.w==320 && (x<clip.x || x+p->source.w>clip.x+clip.w))))continue;
         }
-        if(peForegroundBuild(&p->packets,&p->source,p->state.draw_mode,&clip,p->state.offset_x,p->state.offset_y,pack->atlas_key,e->first_cell)) {p->ready=1;ready++;}
+        if(peForegroundBuildLayout(&p->packets,&p->source,p->state.draw_mode,&clip,p->state.offset_x,p->state.offset_y,pack->atlas_key,e->first_cell,e->inset)) {p->ready=1;ready++;}
     }
     if(!ready) {DrawOTag((OT_TYPE*)head);return 0;}
     struct {OT_TYPE* node;u_long address;} changed[PE_FOREGROUND_MAX_SOURCES];unsigned changes=0;

@@ -21,5 +21,10 @@ int main(void)
     memcpy(bad,data,sizeof data);bad[80]=0;CHECK(!peForegroundParsePack(&pack,bad,sizeof bad,0x1234,location));
     memcpy(bad,data,sizeof data);put(bad+64,0,4);CHECK(!peForegroundParsePack(&pack,bad,sizeof data,0x1234,location));
     memcpy(bad,data,sizeof data);put(bad+16,0,4);CHECK(!peForegroundParsePack(&pack,bad,sizeof data,0x1234,location));
+    memcpy(bad,data,sizeof data);bad[5]='2';put(bad+64,4099,4);
+    CHECK(peForegroundParsePack(&pack,bad,sizeof data,0x1234,location));
+    CHECK(pack.sources[1].source_id==3 && pack.sources[1].inset==1 && !pack.sources[0].inset);
+    put(bad+48,4096,4);CHECK(!peForegroundParsePack(&pack,bad,sizeof data,0x1234,location));
+    put(bad+48,0,4);put(bad+64,8195,4);CHECK(!peForegroundParsePack(&pack,bad,sizeof data,0x1234,location));
     puts("Foreground pack: exact identity/context, bounded contiguous cells and strict metadata length OK");return 0;
 }

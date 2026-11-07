@@ -25,6 +25,10 @@ typedef struct {
 void* peForegroundBuild(PeForegroundPackets* packets,const SPRT* source,
                        uint32_t draw_mode,const RECT* current_clip,
                        int offset_x,int offset_y,uint64_t atlas_key,unsigned first_cell);
+/* Inset tails overlap only opaque sources; no extra scissor/flush is emitted. */
+void* peForegroundBuildLayout(PeForegroundPackets* packets,const SPRT* source,
+                       uint32_t draw_mode,const RECT* current_clip,
+                       int offset_x,int offset_y,uint64_t atlas_key,unsigned first_cell,unsigned inset);
 /* Registry epochs follow actual OT clears. Only room sprite emitters register. */
 void peForegroundBeginOt(const void* first_tag,unsigned tag_count);
 void peForegroundRegister(const void* depth_base,const void* packet,unsigned source_id);

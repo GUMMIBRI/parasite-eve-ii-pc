@@ -51,37 +51,52 @@ int main(int argc,char** argv)
     clearMask.code[0]=0xe6000000u;
     mask.code[0]=0xe6000000u|(getenv("PE2_PROBE_MASK")?atoi(getenv("PE2_PROBE_MASK"))&3:0);
     DR_TWIN twin={0};setlen(&twin,1);twin.code[0]=getenv("PE2_PROBE_WINDOW")?0xe2000001u:0xe2000000u;
+    int inset=getenv("PE2_PROBE_INSET")!=NULL,feedback=getenv("PE2_PROBE_FEEDBACK")!=NULL;
+    DR_TPAGE feedbackMode=mode;setDrawTPage(&feedbackMode,0,0,getTPage(2,0,0,0));
+    DR_TPAGE feedbackRestore=mode;
+    SPRT feedbackSprite;setSprt(&feedbackSprite);feedbackSprite.code|=1;setRGB0(&feedbackSprite,128,128,128);
+    setXY0(&feedbackSprite,60,0);setWH(&feedbackSprite,32,40);feedbackSprite.u0=153;feedbackSprite.v0=109;feedbackSprite.clut=0;
     int useOt=getenv("PE2_PROBE_OT")!=NULL;
     for(int pass=0;pass<2;pass++) {
         DrawPrim(&clearMask);DrawSync(0);LoadImage(&all,(u_long*)initial);DrawSync(0);
-        if(pass && useOt) {
+        if(useOt) {
             OT_TYPE root={0};struct {DR_TPAGE mode;SPRT sprite;} merged={mode,sprite};
             if(MargePrim(&merged.mode,&merged.sprite))return 2;
             catPrim(&root,&area);catPrim(&area,&mask);catPrim(&mask,&twin);catPrim(&twin,&merged.mode);catPrim(&merged.mode,&ui);
+            if(feedback) {catPrim(&merged.mode,&feedbackMode);catPrim(&feedbackMode,&feedbackSprite);
+                catPrim(&feedbackSprite,&feedbackRestore);catPrim(&feedbackRestore,&ui);}
             catPrim(&ui,&front);catPrim(&front,&witness);termPrim(&witness);
             peForegroundBeginOt(&root,1);peForegroundRegister(&root,&merged.mode,0);
             PeForegroundPack pack={.atlas_key=key,.count=1};
-            pack.sources[0]=(PeForegroundSource){0,(unsigned)mode.code[0]&511,sprite.clut,sprite.w,sprite.h,sprite.u0,sprite.v0,0};
+            pack.sources[0]=(PeForegroundSource){0,(unsigned)mode.code[0]&511,sprite.clut,sprite.w,sprite.h,sprite.u0,sprite.v0,0,(unsigned)inset};
             PeGpuState state;if(!peGpuStateFromEnv(&state,&draw))return 2;
             OT_TYPE savedRoot=root;DR_AREA savedArea=area;DR_STP savedMask=mask;DR_TWIN savedTwin=twin;
             unsigned char savedMerged[sizeof merged];memcpy(savedMerged,&merged,sizeof merged);
             SPRT savedUi=ui;TILE savedFront=front,savedWitness=witness;
-            unsigned replaced=peForegroundSubmitOt(&root,&state,&pack,240);
+            unsigned replaced=0;
+            if(pass)replaced=peForegroundSubmitOt(&root,&state,&pack,240);else DrawOTag(&root);
             if(memcmp(&root,&savedRoot,sizeof root) || memcmp(&area,&savedArea,sizeof area) || memcmp(&mask,&savedMask,sizeof mask) || memcmp(&twin,&savedTwin,sizeof twin) ||
                memcmp(&merged,savedMerged,sizeof merged) || memcmp(&ui,&savedUi,sizeof ui) ||
                memcmp(&front,&savedFront,sizeof front) || memcmp(&witness,&savedWitness,sizeof witness))return 4;
             printf("OT replacements: %u; original packet bytes restored\n",replaced);
         } else if(pass) {
             DrawPrim(&area);DrawPrim(&mask);DrawPrim(&twin);
-            void* head=peForegroundBuild(&packets,&sprite,(uint32_t)mode.code[0],&clip,160,120,key,0);
+            void* head=peForegroundBuildLayout(&packets,&sprite,(uint32_t)mode.code[0],&clip,160,120,key,0,inset);
             if(!head)return 2;DrawOTag(head);
+            if(feedback) {DrawPrim(&feedbackMode);DrawPrim(&feedbackSprite);DrawPrim(&feedbackRestore);}
             DrawPrim(&ui);DrawPrim(&front);DrawPrim(&witness);
-        } else {DrawPrim(&area);DrawPrim(&mask);DrawPrim(&twin);DrawPrim(&mode);DrawPrim(&sprite);DrawPrim(&ui);DrawPrim(&front);DrawPrim(&witness);}
+        } else {DrawPrim(&area);DrawPrim(&mask);DrawPrim(&twin);DrawPrim(&mode);DrawPrim(&sprite);
+            if(feedback) {DrawPrim(&feedbackMode);DrawPrim(&feedbackSprite);DrawPrim(&feedbackRestore);}
+            DrawPrim(&ui);DrawPrim(&front);DrawPrim(&witness);}
         DrawSync(0);Psyz_VideoVSync(0);
         StoreImage(&all,(u_long*)(pass?enhanced:original));
         if(!capture(argv[4],pass?"hd":"original"))return 2;
     }
     unsigned differences=0;for(unsigned i=0;i<1024*512;i++)differences+=original[i]!=enhanced[i];
+    if(differences)for(int pass=0;pass<2;pass++) {
+        char path[4096];snprintf(path,sizeof path,"%s.%s.bin",argv[4],pass?"hd":"original");
+        FILE* dump=fopen(path,"wb");if(dump) {fwrite(pass?enhanced:original,2,1024*512,dump);fclose(dump);}
+    }
     printf("Native differences: %u\n",differences);
     return differences?1:0;
 }

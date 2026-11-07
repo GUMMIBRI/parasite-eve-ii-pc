@@ -21,9 +21,23 @@ class ForegroundPackTest(unittest.TestCase):
             root=Path(directory);report=self.fixture(root)
             key,metadata,atlas=foreground_pack.build(report,root,Image.new('RGB',(1792,960),(192,64,128)))
             self.assertEqual(len(metadata),64);self.assertEqual(atlas.size,(1088,136))
-            header=struct.unpack('<8sQQ6I',metadata[:48]);self.assertEqual(header,(b'PE2FG1\0\0',0x1234,key,1,20,10,1,1,2))
+            header=struct.unpack('<8sQQ6I',metadata[:48]);self.assertEqual(header,(b'PE2FG2\0\0',0x1234,key,1,20,10,1,1,2))
             self.assertEqual(atlas.getpixel((2,2)),(192,64,128,255))
             self.assertEqual(atlas.getpixel((6,70)),(8,0,0,255))
+    def test_inset_tail_cells_preserve_source_coordinates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);raw=np.arange(32*40,dtype='<u2').reshape(40,32)
+            report=self.fixture(root);report['sprites'][0]['source'].update(w=32,h=40)
+            (root/'sprite-0000.rgb555').write_bytes(raw.tobytes())
+            report['sprites'][0]['native_sha256']=hashlib.sha256(raw.tobytes()).hexdigest()
+            _,metadata,atlas=foreground_pack.build(report,root,Image.new('RGB',(1792,960),(192,64,128)))
+            self.assertEqual(struct.unpack_from('<I',metadata,48)[0],4096)
+            word=int(raw[24,0]);expected=tuple(((word>>b)&31)*255//31 for b in [0,5,10])+(255,)
+            self.assertEqual(atlas.getpixel((4*68+2,70)),expected)
+            report['sprites'][0]['source']['codeFlags']=2
+            _,metadata,_=foreground_pack.build(report,root,Image.new('RGB',(1792,960),(192,64,128)))
+            self.assertEqual(struct.unpack_from('<I',metadata,48)[0],0)
+
     def test_changed_native_input_or_transparent_art_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);report=self.fixture(root);art=Image.new('RGBA',(1792,960),(1,2,3,0))

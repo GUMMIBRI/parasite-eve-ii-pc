@@ -11,12 +11,13 @@ from PIL import Image
 from foreground import decode_sprite
 
 
-def atlas(words):
+def atlas(words,inset=False):
     height,width=words.shape;columns=(width+15)//16;count=columns*((height+15)//16)
     rows=(count+15)//16;output=Image.new('RGBA',(16*68,rows*136))
     rgb=np.stack([((words>>bit)&31)*255//31 for bit in [0,5,10]],axis=-1).astype(np.uint8)
     for cell in range(count):
         x,y=cell%columns*16,cell//columns*16
+        if inset:x,y=min(x,width-16),min(y,height-16)
         source=np.zeros((16,16,4),np.uint8);crop=rgb[y:y+16,x:x+16]
         source[:crop.shape[0],:crop.shape[1],:3]=crop;source[:,:,3]=255
         reference=np.repeat(np.repeat(source,4,axis=0),4,axis=1)
@@ -57,21 +58,26 @@ def main():
     cases += [(8,23,3,4,0,0,True,mask) for mask in [1,2,3]]
     cases=[(*case,0) for case in cases]
     if args.ot:cases.append((8,23,1,4,0,0,True,0,1))
-    for index,(width,height,flags,scale,wide,palette,available,mask,window) in enumerate(cases):
+    cases=[(*case,0,0) for case in cases]
+    if args.ot:cases += [(32,40,flags,4,wide,0,True,mask,0,1,1)
+                        for flags,wide,mask in [(1,0,0),(1,1,0),(0,1,0),(1,1,1),(1,1,2),(1,1,3),(3,1,0)]]
+    for index,(width,height,flags,scale,wide,palette,available,mask,window,inset,feedback) in enumerate(cases):
         source=dict(w=width,h=height,tpage=128|13,clut=255*64,u0=248,v0=248)
-        words,_=decode_sprite(vram,source);image=root/f'{width}-{height}.png';atlas(words).save(image)
+        words,_=decode_sprite(vram,source);image=root/f'{width}-{height}.png';atlas(words,inset).save(image)
         prefix=root/f'case-{index:02d}'
         command=[str(args.probe.resolve()),str(native),'123456789abcdef0',str(image) if available else 'none',
                  str(prefix),str(width),str(height),str(flags),str(scale),str(wide),str(palette)]
         current_env={**env,'PE2_PROBE_MASK':str(mask)}
         if window:current_env['PE2_PROBE_WINDOW']='1'
+        if inset:current_env['PE2_PROBE_INSET']='1'
+        if feedback:current_env['PE2_PROBE_FEEDBACK']='1'
         process=subprocess.run(command,env=current_env,capture_output=True,text=True,timeout=30)
         prefix.with_suffix('.log').write_text(process.stdout+process.stderr)
         assert process.returncode==0,(index,process.stdout,process.stderr[-1500:])
         original=np.array(Image.open(str(prefix)+'.original.ppm'))
         enhanced=np.array(Image.open(str(prefix)+'.hd.ppm'))
         changed=int(np.count_nonzero(original!=enhanced))
-        if scale==1 or not available or palette or window or args.backend=='software' or (args.ot and wide):assert changed==0,index
+        if scale==1 or not available or palette or window or args.backend=='software' or (args.ot and wide and not inset) or (inset and flags&2):assert changed==0,index
         elif mask!=3:assert changed>0,index
         green=lambda pixels:np.all(pixels==[0,255,0],axis=2)
         assert np.array_equal(green(original),green(enhanced)),('front primitive overwritten',index)
@@ -85,7 +91,7 @@ def main():
             potential=np.repeat(np.repeat(potential,sy,axis=0),sx,axis=1)
             assert np.array_equal(original[~potential],enhanced[~potential]),('coverage leaked',index)
         results.append(dict(width=width,height=height,flags=flags,scale=scale,wide=wide,palette_changed=palette,
-                            atlas_available=available,mask_mode=mask,texture_window=window,native_differences=0,changed_channels=changed))
+                            atlas_available=available,mask_mode=mask,texture_window=window,inset=inset,feedback=feedback,native_differences=0,changed_channels=changed))
     (root/'report.json').write_text(json.dumps(dict(passed=True,backend=args.backend,ot_substitution=args.ot,cases=results,
         scope='Synthetic explicit-state foreground builder; not live room/OT integration.'),indent=2)+'\n')
     print(f'PASS: {len(results)} clipped foreground {args.backend} cases preserve all native VRAM')

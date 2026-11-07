@@ -45,22 +45,24 @@ def build(report,source_root,art=None,left=-64,materials=None):
         else:
             material=art.convert('RGB').crop(((s['x0']+160-left)*4,(s['y0']+120)*4,
                                            (s['x0']+160-left+w)*4,(s['y0']+120+h)*4))
-        entries.append(struct.pack('<IHHHHBBH',index,s['tpage']&511,s['clut'],w,h,s['u0'],s['v0'],cell))
+        inset=w>=16 and h>=16 and not s.get('codeFlags',0)&2
+        entries.append(struct.pack('<IHHHHBBH',index|(4096 if inset else 0),s['tpage']&511,s['clut'],w,h,s['u0'],s['v0'],cell))
         for y in range(0,h,16):
             for x in range(0,w,16):
-                reference=np.zeros((16,16,4),np.uint8);crop=rgb[y:y+16,x:x+16]
+                sx,sy=(min(x,w-16),min(y,h-16)) if inset else (x,y)
+                reference=np.zeros((16,16,4),np.uint8);crop=rgb[sy:sy+16,sx:sx+16]
                 reference[:crop.shape[0],:crop.shape[1],:3]=crop;reference[:,:,3]=255
                 ref=Image.fromarray(reference).resize((64,64),Image.Resampling.NEAREST)
-                tile=material.crop((x*4,y*4,(x+16)*4,(y+16)*4)).convert('RGBA');tile.putalpha(255)
+                tile=material.crop((sx*4,sy*4,(sx+16)*4,(sy+16)*4)).convert('RGBA');tile.putalpha(255)
                 for plane,image in enumerate([tile,ref]):
                     atlas.paste(Image.fromarray(np.pad(np.array(image),((2,2),(2,2),(0,0)),mode='edge')),
                                 (cell%16*68,cell//16*68+plane*rows*68))
                 cell+=1
     background=int(report['capture']['key'],16)
-    key=identity(b'PE2FG1'+atlas.tobytes())
+    key=identity(b'PE2FG2'+atlas.tobytes())
     if not key or key==background:raise ValueError('Atlas identity collision')
     location=report['capture']['location'][:4]
-    header=struct.pack('<8sQQ6I',b'PE2FG1\0\0',background,key,*location,len(sources),count)
+    header=struct.pack('<8sQQ6I',b'PE2FG2\0\0',background,key,*location,len(sources),count)
     return key,header+b''.join(entries),atlas
 
 
@@ -80,7 +82,7 @@ def main():
     context='-'.join(map(str,report['capture']['location'][:4]));base=report['capture']['key']
     name=f'{base}-{context}'
     atlas.save(args.output/f'{key:016x}.fg.png');(args.output/(name+'.pe2fg')).write_bytes(metadata)
-    provenance=dict(format='PE2FG1',background_key=base,atlas_key=f'{key:016x}',context=context,
+    provenance=dict(format='PE2FG2',background_key=base,atlas_key=f'{key:016x}',context=context,
                     source_audit_sha256=hashlib.sha256((args.sources/'report.json').read_bytes()).hexdigest(),
                     art_sha256=hashlib.sha256(args.art.read_bytes()).hexdigest() if args.art else None,
                     individual_materials={f'sprite-{r["index"]:04d}.png':hashlib.sha256((args.materials/f'sprite-{r["index"]:04d}.png').read_bytes()).hexdigest() for r in report['sprites']} if args.materials else None,
