@@ -1289,6 +1289,19 @@ This checks replay termination with native backgrounds; it does not establish
 settled image parity, natural story traversal or full platform correctness.
 The macOS R48 replay also completes after the correction.
 
+#### View-12 further geometry review
+
+Two additional generated candidates were checked against all 14 native
+foreground source regions. View-12 v4 retained the required canvas aspect but
+moved multiple architectural edges and added ceiling seams; its source-12
+corner remained ambiguous. A v5 local-corner repair from the better v2 input
+also changed other regions: sources 7, 8, 11, 12 and 13 no longer had zero
+best shifts, with ambiguous evidence. Both are rejected and were not packed.
+The local art assessment retains candidates, prompts, diagnostic reports and
+SHA256 values. V3 remains rejected for incompatible canvas aspect. No final
+view-12 artwork is approved, and these experiments do not extend verified pack
+coverage. The v2 runtime fixture remains technical evidence only.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
