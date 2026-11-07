@@ -1,5 +1,12 @@
 #ifndef PORT_BACKGROUNDS_H
 #define PORT_BACKGROUNDS_H
+#include <stdint.h>
+
+typedef struct { uint64_t key; int location[6]; } PeBackgroundFrameInfo;
+/* Metadata for a diagnostic capture of one physical display buffer. */
+void peBackgroundBeginFrame(int buffer_y);
+int peBackgroundGetFrameInfo(int buffer_y,PeBackgroundFrameInfo* info);
+void peBackgroundEndFrame(int buffer_y,int field_frame);
 
 /* Saved user preference; actual widescreen requires reviewed artwork coverage. */
 void peBackgroundSetWidescreen(int enabled);

@@ -1397,7 +1397,7 @@ class Scene:
                                          "prompt": bool(r["state"] & 0x200), "position": position, "atOrigin": position == [0, 0, 0], "yaw": r["yaw"],
                                          "spawn": spawns.get(r["kind"])})
         for key in self.p.models_of.get(self.room, []):
-            out["roomModels"].append({"key": key, "address": f"0x{self.p.embedded[key]['vram']:08X}", "spawnedByObjectTable": key in placed_models})
+            out["roomModels"].append({"key": key, "address": f"0x{asset_schema.embedded_address(self.p.embedded[key]):08X}", "spawnedByObjectTable": key in placed_models})
         return out
 
     def model_key(self, address: int) -> str | None:

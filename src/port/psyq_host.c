@@ -1,5 +1,7 @@
 /* Host implementations of the PSY-Q calls PsyZ does not provide. */
 #include "port/pad_trace.h"
+#include "port/backgrounds.h"
+#include <inttypes.h>
 #include "port/memory_card.h"
 #include <math.h>
 #include <stdlib.h>
@@ -397,6 +399,19 @@ void Psyz_PadsOverride(int port, char* frame, int len)
             unsigned char* rgb=Psyz_VideoAllocRenderedFrame(&w,&h);
             FILE* file=rgb?fopen(framePath,"wb"):NULL;
             if(file) { fprintf(file,"P6\n%d %d\n255\n",w,h);fwrite(rgb,3,(size_t)w*h,file);fclose(file); }
+            if(rgb) {
+                DISPENV display;GetDispEnv(&display);
+                PeBackgroundFrameInfo info={0};
+                int known=peBackgroundGetFrameInfo(display.disp.y,&info);
+                char metadata[520];snprintf(metadata,sizeof metadata,"%s.json",framePath);
+                FILE* sidecar=fopen(metadata,"w");
+                if(sidecar) {
+                    fprintf(sidecar,"{\"tick\":%d,\"width\":%d,\"height\":%d,\"buffer_y\":%d,\"known_source\":%s,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d]}\n",
+                            currentTick,w,h,display.disp.y,known?"true":"false",info.key,
+                            info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5]);
+                    fclose(sidecar);
+                }
+            }
             free(rgb);
         }
     }

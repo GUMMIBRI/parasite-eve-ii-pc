@@ -119,6 +119,38 @@ scroll, Underpass/Garden foreground sprites, Pyramid puzzle overlay, Water Hole
 water and West Elevator Hall glow. These warnings are not a runtime sweep.
 The title's 8-bit texture use is its chrome effect, not proof of wider base art.
 
+The native catalog now decodes all 1759 distinct BS inputs with the game's own
+VLC implementation and PsyZ MDEC, rather than treating an approximate Python
+decode as a runtime identity. All 1899 source references resolve, with zero
+decoder errors. A runtime gallery capture matches the offline native bytes.
+The publisher logo is a separate INIT.BS source outside the room inventory.
+
+```sh
+cmake --build build-port --target hd_native_decode
+venv/bin/python3 tools/hd/native_catalog.py
+venv/bin/python3 tools/peassets/room_scene.py --all --out build-hd-study/scenes
+venv/bin/python3 tools/hd/view_catalog.py
+venv/bin/python3 tools/hd/survey.py --disc /path/to/disc1.cue \
+  --disc2 /path/to/disc2.cue --output build-hd-study/survey-all
+```
+
+The resulting local catalog covers 168 rooms and 3346 logical
+view rows; 3314 are eligible static-camera candidates. Nineteen source-table
+diagnostics and the room without view rows remain explicit unresolved entries.
+Logical view IDs and mapped background file indices are distinct.
+
+`survey.py` uses an isolated profile and replay for each launch. The opt-in
+`PE2_SURVEY_KEEP_VIEW=1` diagnostic retains the requested camera after arrival
+warp initialization; ordinary startup otherwise selects the warp's authored
+camera. This is a forced static-camera test, not proof of physical traversal.
+It accepts only 30 consecutive visible field frames with the expected native
+key and exact six-component location, rejects black/loading captures, and
+compares the complete native VRAM and rendered frame with widescreen off/on.
+The executable hash must remain unchanged throughout a survey. The initial
+20-camera run passed; the full run is still pending and has already exposed
+unverified cases, including a scene decoder crash in Mist Center R18.
+These cases must not be counted as successful coverage.
+
 The first imagegen candidate is local under
 `build-hd-study/art/mist-shooting-gallery-view10/`: source metadata, source PNG,
 generated-v1.png and provenance.json with the exact prompt. Requested canvas:
@@ -127,6 +159,15 @@ side. Actual output: 1659x948. **Unapproved:** its registration/geometry has not
 been verified and it must not be used as accepted artwork or committed.
 The built-in imagegen tool was used; no API-key fallback was used.
 
+A second generated candidate also returned 1659x948. Its resized 1792x960
+canvas was exercised in the real GPU presenter at gallery view 10, with exact
+native VRAM preservation. Visible foreground seams and geometry differences
+prevent approval. `normalize_art.py` is an experimental source-guided texture
+normalizer: protected source edges and boundary bands remain exact, while
+interior detail changes are bounded. Its audits prove those numerical
+constraints only. The resulting candidates and rejected optical-flow
+registration experiments do not establish production artwork quality.
+
 ## Verification checkpoint
 
 - 43 C host tests pass, including native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
@@ -134,6 +175,10 @@ The built-in imagegen tool was used; no API-key fallback was used.
   native 1x rendering falls back exactly with a valid wide pack supplied.
 - Two synthetic pack tests and two synthetic inventory tests pass (duplicate pixel hashes, missing inputs,
   stage-0 classification, special renderers and raw-store path resolution).
+- Eleven Python HD tests pass in total. Additional checks exercise the native
+  BS decoder with generated grayscale inputs, logical/mapped view joins,
+  unresolved entries, source-guided artwork constraints, and rejection of stale,
+  wrong-location, black or incomplete runtime capture evidence.
 - CLI rejection, preference persistence and subsequent settings reload pass
   against isolated local profiles and the owner's two disc images.
 - A 6001-sample New Game replay reaches the gallery course menu. At pad tick

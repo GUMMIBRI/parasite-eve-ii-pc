@@ -1,4 +1,7 @@
 #include "loading.h"
+#ifdef __psyz
+#include <stdlib.h>
+#endif
 
 #include <psyz.h>
 #include <libgte.h>
@@ -239,6 +242,9 @@ void areaStartRoomRuntime(s32 skipViewGate)
         gameSetTaskSlot(taskSpawn(VIEW_TRANSITION_GATE_TASK_BANK, VIEW_TRANSITION_GATE_TASK_TYPE, 0, 0), GAME_TASK_SLOT_VIEW_GATE);
     }
     gameSetTaskSlot(taskSpawn(LOADING_ROOM_RESOURCES_TASK_BANK, LOADING_ROOM_RESOURCES_TASK_TYPE, 0, 0), 2);
+#ifdef __psyz
+    u8 requestedSurveyView=location->view;
+#endif
     // The destination endpoint supplies actor placements and the default view.
     stage     = location->stage;
     warpId    = location->warp;
@@ -256,6 +262,13 @@ void areaStartRoomRuntime(s32 skipViewGate)
             gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view = gGameSession->location.view = warpEntry.initialView;
         }
     }
+#ifdef __psyz
+    /* Explicit static-camera survey only: retain the requested camera instead
+     * of the arrival warp's natural view. This does not prove traversability. */
+    const char* keepView=getenv("PE2_SURVEY_KEEP_VIEW");
+    if(keepView && keepView[0]=='1' && keepView[1]==0 && requestedSurveyView)
+        gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.location.view=location->view=requestedSurveyView;
+#endif
     gPlayerActorTasks[PLAYER_ACTOR_TASK_PLAYER]    = NULL;
     gPlayerActorTasks[PLAYER_ACTOR_TASK_COMPANION] = NULL;
     if (gDisplayState.control.flags.pendingPlayerPos == true) {

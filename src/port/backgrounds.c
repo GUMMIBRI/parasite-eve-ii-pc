@@ -30,6 +30,25 @@ static int packAvailable;
 static char packRoot[4096];
 static int configured;
 
+static struct { int y; PeBackgroundFrameInfo info; } frameInfo[2]={{.y=-1},{.y=-1}};
+static int frameSlot(int y)
+{
+    for(int i=0;i<2;i++)if(frameInfo[i].y==y)return i;
+    int slot=frameInfo[0].y<0?0:1;
+    frameInfo[slot].y=y;memset(&frameInfo[slot].info,0,sizeof frameInfo[slot].info);
+    return slot;
+}
+void peBackgroundBeginFrame(int y)
+{
+    int slot=frameSlot(y);memset(&frameInfo[slot].info,0,sizeof frameInfo[slot].info);
+}
+int peBackgroundGetFrameInfo(int y,PeBackgroundFrameInfo* info)
+{
+    if(!info)return 0;
+    for(int i=0;i<2;i++)if(frameInfo[i].y==y && frameInfo[i].info.key) {*info=frameInfo[i].info;return 1;}
+    return 0;
+}
+
 static int location[6],locationDirty=1;
 void peBackgroundSetLocation(int stage,int area,int view,int room_state,int warp,int variant)
 {
@@ -140,10 +159,12 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
         configured=1;
     }
     /* Cropped transitions and movies do not claim static full-frame coverage. */
-    if(!source || offset_y || (!*packRoot && !getenv("PE2_DUMP_BACKGROUNDS"))) {
+    if(!source || offset_y || (!*packRoot && !getenv("PE2_DUMP_BACKGROUNDS") && !getenv("PE2_DUMP_FRAME") && !getenv("PE2_SURVEY_TARGET"))) {
         peBackgroundSetCoverage(buffer_y,0,320);return;
     }
     uint64_t key=peBackgroundCopyNative(nativeRows,source,columns);
+    int slot=frameSlot(buffer_y);
+    frameInfo[slot].info.key=key;memcpy(frameInfo[slot].info.location,location,sizeof location);
     if(observedKey!=key || locationDirty) {recordLocation(key);locationDirty=0;}
     if(observedKey!=key) {dumpNative(key);observedKey=key;}
     /* PsyZ's material plane is display-only above native resolution. At 1x,
@@ -180,4 +201,57 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
      * separate GPU submission/transfer allocation for every single tile. */
     if(first)DrawOTag(first);
     DrawSync(0);
+}
+
+/* Opt-in static-camera survey. Ordinary gameplay never enters this path. */
+void peBackgroundEndFrame(int buffer_y,int field_frame)
+{
+    static int initialized,enabled,matchingFrames;
+    static unsigned stage,area,view,room;
+    static uint64_t expected;
+    static char root[4096];
+    if(!initialized) {
+        const char* target=getenv("PE2_SURVEY_TARGET");
+        const char* output=getenv("PE2_SURVEY_OUTPUT");
+        int used=0;
+        if(target && output && strlen(output)<sizeof root &&
+           sscanf(target,"%u,%u,%u,%u:%16" SCNx64 "%n",&stage,&area,&view,&room,&expected,&used)==5 &&
+           !target[used] && stage>=1 && stage<=5 && area>=1 && area<=255 &&
+           view>=1 && view<=50 && room>=1 && room<=255 && expected) {
+            strcpy(root,output);enabled=1;
+        }
+        initialized=1;
+    }
+    if(!enabled)return;
+    PeBackgroundFrameInfo info={0};
+    if(!field_frame || !peBackgroundGetFrameInfo(buffer_y,&info) || info.key!=expected ||
+       info.location[0]!=(int)stage || info.location[1]!=(int)area ||
+       info.location[2]!=(int)view || info.location[3]!=(int)room) {matchingFrames=0;return;}
+    if(++matchingFrames<30)return;
+    DrawSync(0);
+    int w=0,h=0;
+    unsigned char* rgb=Psyz_VideoAllocRenderedFrame(&w,&h);
+    if(!rgb)exit(2);
+    size_t nonzero=0;
+    for(size_t i=0;i<(size_t)w*h*3;i++)nonzero+=rgb[i]!=0;
+    if(!nonzero) {free(rgb);return;} /* Never accept the initial blackout. */
+    uint16_t* vram=malloc(1024*512*2);
+    if(!vram || !SDL_CreateDirectory(root))exit(2);
+    RECT all={0,0,1024,512};StoreImage(&all,(u_long*)vram);DrawSync(0);
+    char path[4352];
+    snprintf(path,sizeof path,"%s/frame.ppm",root);
+    FILE* file=fopen(path,"wb");if(!file)exit(2);
+    fprintf(file,"P6\n%d %d\n255\n",w,h);fwrite(rgb,3,(size_t)w*h,file);
+    int failed=ferror(file);if(fclose(file))failed=1;
+    snprintf(path,sizeof path,"%s/vram.bin",root);file=fopen(path,"wb");if(!file)exit(2);
+    for(unsigned i=0;i<1024*512;i++) {fputc(vram[i]&255,file);fputc(vram[i]>>8,file);}
+    failed|=ferror(file);if(fclose(file))failed=1;
+    free(rgb);free(vram);if(failed)exit(2);
+    snprintf(path,sizeof path,"%s/report.json",root);file=fopen(path,"w");if(!file)exit(2);
+    fprintf(file,"{\"format\":\"pe2-static-view-survey-v2\",\"matched_frames\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"width\":%d,\"height\":%d}\n",
+            matchingFrames,info.key,info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5],w,h);
+    failed=ferror(file);if(fclose(file))failed=1;
+    if(failed) {remove(path);exit(2);}
+    fprintf(stderr,"[survey] captured %u/%u/%u room %u key %016" PRIx64 "\n",stage,area,view,room,expected);
+    exit(0);
 }

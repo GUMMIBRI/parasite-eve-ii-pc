@@ -214,6 +214,7 @@ void displayPresentTaskFrame(s32 bufferIndex)
     flipMode = gDisplayTaskFlipControlSnapshot & DISPLAY_FLIP_MODE_MASK;
     if (flipMode != DISPLAY_FLIP_HOLD) {
 #ifdef __psyz
+        peBackgroundBeginFrame(gDisplayState.drawEnv[bufferIndex].clip.y);
         if(flipMode!=DISPLAY_FLIP_FULL || gDisplayTaskImageSourceSnapshot==DISPLAY_IMAGE_NONE ||
            gGameMainPersistentState.movieStreamActive || gDisplayState.vramYOffset)
             peBackgroundSetCoverage(gDisplayState.drawEnv[bufferIndex].clip.y,0,320);
@@ -239,6 +240,9 @@ void displayPresentTaskFrame(s32 bufferIndex)
         if ((s8)gDisplayTaskFlipControlSnapshot < DISPLAY_FLIP_SKIP_TASK_OT) {
             DrawOTag((OT_TYPE*)gGpuTaskOrderingTables[bufferIndex].tag);
         }
+#ifdef __psyz
+        peBackgroundEndFrame(gDisplayState.drawEnv[bufferIndex].clip.y,0);
+#endif
     }
 }
 
@@ -251,6 +255,7 @@ void displayPresentTaskFrame(s32 bufferIndex)
 static inline void _displayPresentFrame(s32 bufferIndex)
 {
 #ifdef __psyz
+    peBackgroundBeginFrame(gDisplayState.drawEnv[bufferIndex].clip.y);
     if(gDisplayState.control.flags.imageSource==DISPLAY_IMAGE_NONE ||
        gGameMainPersistentState.movieStreamActive || gDisplayState.vramYOffset)
         peBackgroundSetCoverage(gDisplayState.drawEnv[bufferIndex].clip.y,0,320);
@@ -264,6 +269,12 @@ static inline void _displayPresentFrame(s32 bufferIndex)
     if (gDisplayState.skipDraw == 0) {
         DrawOTag((OT_TYPE*)gGpuFrameOrderingTables[bufferIndex].tag);
     }
+#ifdef __psyz
+    peBackgroundEndFrame(gDisplayState.drawEnv[bufferIndex].clip.y,
+        gDisplayState.skipDraw==0 && !gCdCmdQueue.blockGamePause &&
+        gFsCdOperationStatus==FILE_SYSTEM_CD_OPERATION_COMPLETE && gpuExtIsDisplayEnabled() &&
+        gDisplayState.pendingMode==DISPLAY_MODE_NONE);
+#endif
 }
 
 /// Presents a due framebuffer and services the resident drivers at vertical blank.

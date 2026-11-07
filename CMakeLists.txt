@@ -369,6 +369,12 @@ target_include_directories(background_presenter_probe PRIVATE include)
 target_compile_definitions(background_presenter_probe PRIVATE __psyz SKIP_ASM)
 target_link_libraries(background_presenter_probe PRIVATE psyz)
 
+add_executable(hd_native_decode EXCLUDE_FROM_ALL tools/hd/native_decode.c
+    src/port/mdec_vlc.c src/port/background_pack.c)
+target_include_directories(hd_native_decode PRIVATE include include/decomp)
+target_compile_definitions(hd_native_decode PRIVATE __psyz SKIP_ASM)
+target_link_libraries(hd_native_decode PRIVATE psyz)
+
 enable_testing()
 set(PE_DATA_TESTS cap_room_command_test rupert_eyes_test tmd_layout_assets_test text_palette_test
     observatory_scene_lifecycle_test action_trigger_test fountain_trigger_test)
