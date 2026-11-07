@@ -996,6 +996,27 @@ bytes and verification states unchanged. Its separate joined catalog is
 `view-catalog-captured-review.json`. Historical catalogs and survey results are
 retained. No runtime rendering fix or captured-screen HD support is claimed.
 
+#### Script-reached MIST briefing endpoint
+
+Read-only EOF checkpointing of the MIST r18 replay identifies view 4 with the
+briefing controller and UI open, rather than requested initial view 1. A new
+collection starts at `1,18,1,1,1,1` and waits for actual target
+`1,18,4,1,1,1`, key `d3659a3b298379b5`. Both no-pack classic and wide-preference
+runs produce valid completed v3 captures after 30 matching field frames, with
+complete ordered GPU audits. Full native VRAM, 320x240 rendered RGB, normalized
+original commands and observed simulation states match exactly on macOS Metal
+at 1x. Evidence and binary/replay identities are retained in
+`mist-r18-reached-view4/parity-assessment.json`.
+
+This is one script-reached endpoint, not the original forced-view-1 test or a
+full briefing traversal. The settled endpoint has no GP0 VRAM-copy commands and
+its observed sprites use indexed pages, so it does not exercise the earlier
+captured-backdrop transition. Code inspection alone does not establish whether
+that transition correctly preserves or drops HD side coverage. Intermediate
+crossfade frames and installed-art behavior remain required work; no fallback
+or renderer change was made on speculation. The old survey's crash record is
+retained and remains separate from this successful endpoint observation.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
