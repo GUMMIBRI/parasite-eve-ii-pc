@@ -251,7 +251,7 @@ target_include_directories(parasite-eve-ii-pc PRIVATE include include/decomp src
 target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz SKIP_ASM)
 target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)
 target_sources(parasite-eve-ii-pc PRIVATE src/port/spu_voice_attributes.c)
-target_sources(parasite-eve-ii-pc PRIVATE src/port/host_ui.c src/port/backgrounds.c)
+target_sources(parasite-eve-ii-pc PRIVATE src/port/host_ui.c src/port/backgrounds.c src/port/background_coverage.c src/port/background_pack.c)
 
 # Variant units: a package compiled from another package's shared source with its own -D parameters.
 # Each is a separate object library so the parameters stay per package (see docs/PORT_PLAN.md).

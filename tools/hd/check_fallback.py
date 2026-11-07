@@ -42,7 +42,7 @@ def main():
                 # Explicit inputs take precedence over inherited development overrides.
                 for name in ['PE2_DISC','PE2_DISC2','PE2_WARP','PE2_START_LOCATION',
                              'PE2_PAD_CONTROL','PE2_PAD_CONTROL_FIFO','PE2_PAD_RECORD',
-                             'PE2_AUTOPRESS','PE2_PAD_HOLD','PE2_DEBUG_PORT','PE_HD_BACKGROUNDS']:
+                             'PE2_HD_BACKGROUNDS','PE2_DUMP_BACKGROUNDS','PE2_AUTOPRESS','PE2_PAD_HOLD','PE2_DEBUG_PORT','PE_HD_BACKGROUNDS']:
                     env.pop(name,None)
                 command=[str(args.binary.resolve()),str(args.disc.resolve()),'--widescreen',str(wide)]
                 if args.disc2:command+=['--disc2',str(args.disc2.resolve())]

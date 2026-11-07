@@ -214,7 +214,9 @@ void displayPresentTaskFrame(s32 bufferIndex)
     flipMode = gDisplayTaskFlipControlSnapshot & DISPLAY_FLIP_MODE_MASK;
     if (flipMode != DISPLAY_FLIP_HOLD) {
 #ifdef __psyz
-        peBackgroundSetCoverage(gDisplayState.drawEnv[bufferIndex].clip.y,0,320);
+        if(flipMode!=DISPLAY_FLIP_FULL || gDisplayTaskImageSourceSnapshot==DISPLAY_IMAGE_NONE ||
+           gGameMainPersistentState.movieStreamActive || gDisplayState.vramYOffset)
+            peBackgroundSetCoverage(gDisplayState.drawEnv[bufferIndex].clip.y,0,320);
 #endif
         PutDrawEnv(&gDisplayState.drawEnv[bufferIndex]);
         PutDispEnv(&gDisplayState.dispEnv[bufferIndex]);
@@ -249,7 +251,9 @@ void displayPresentTaskFrame(s32 bufferIndex)
 static inline void _displayPresentFrame(s32 bufferIndex)
 {
 #ifdef __psyz
-    peBackgroundSetCoverage(gDisplayState.drawEnv[bufferIndex].clip.y,0,320);
+    if(gDisplayState.control.flags.imageSource==DISPLAY_IMAGE_NONE ||
+       gGameMainPersistentState.movieStreamActive || gDisplayState.vramYOffset)
+        peBackgroundSetCoverage(gDisplayState.drawEnv[bufferIndex].clip.y,0,320);
 #endif
     PutDrawEnv(&gDisplayState.drawEnv[bufferIndex]);
     PutDispEnv(&gDisplayState.dispEnv[bufferIndex]);
@@ -668,6 +672,13 @@ void displayUploadBackgroundImage(s32 bufferIndex)
     s32  offsetY;
     s8   offsetYByte;
 
+#ifdef __psyz
+    if(gGameSession) {
+        const GameLocationKey* location=&gGameSession->location;
+        peBackgroundSetLocation(location->stage,location->area,location->view,
+                                location->roomState,location->warp,location->variant);
+    } else peBackgroundSetLocation(0,0,0,0,0,0);
+#endif
     // Crop contiguous pixels at the top or bottom without extending the image workspace.
     if (gCdCmdQueue.imageLayout == FILE_SYSTEM_IMAGE_CONTIGUOUS) {
         if (gDisplayState.vramYOffset >= 0) {
@@ -680,6 +691,10 @@ void displayUploadBackgroundImage(s32 bufferIndex)
             rect.w = FILE_SYSTEM_IMAGE_WIDTH;
             rect.h = FILE_SYSTEM_IMAGE_HEIGHT - gDisplayState.vramYOffset;
             LoadImage(&rect, gFsImageWorkspacePtr->strips[0]);
+#ifdef __psyz
+            if(!gGameMainPersistentState.movieStreamActive)
+                peBackgroundDraw(gFsImageWorkspacePtr,0,bufferIndex*DISPLAY_BUFFER_STRIDE_ROWS,gDisplayState.vramYOffset);
+#endif
             return;
         }
         if (bufferIndex == 0) {
@@ -718,6 +733,10 @@ void displayUploadBackgroundImage(s32 bufferIndex)
             stripIndex++;
         } while ((u32)(stripIndex & DISPLAY_BACKGROUND_STRIP_INDEX_MASK) < (u32)ARRAY_SIZE(gFsImageWorkspacePtr->strips));
     }
+#ifdef __psyz
+    if(gCdCmdQueue.imageLayout==FILE_SYSTEM_IMAGE_STRIPS && !gGameMainPersistentState.movieStreamActive)
+        peBackgroundDraw(gFsImageWorkspacePtr,1,bufferIndex*DISPLAY_BUFFER_STRIDE_ROWS,gDisplayState.vramYOffset);
+#endif
 }
 
 void displaySetFrameTiming(s32 timingMode)

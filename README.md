@@ -20,7 +20,7 @@ Known limits:
 - All five stages are linked and load (Akropolis, Dryfield, Dryfield by night, the mine, the Shelter / Neo Ark; the last two need disc 2), with native progression exercised into the Shelter Laboratory on macOS. Attract demos are disabled.
 - Audio, movies and saves are incomplete.
 - Played on macOS (arm64) only. The Linux ARM64 build was started with both discs on Ubuntu 24.04 and renders; Linux x86-64 and Windows are built in CI but not run on a real PC yet.
-- The host menu has Graphics (detail, aspect, dithering, geometry correction, fullscreen, antialiasing, model filtering, smooth lighting), Controls, Audio and Discs pages; widescreen, frame interpolation, HD packs and mods are not there yet (the first game's port has them).
+- The host menu has Graphics (detail, aspect, dithering, geometry correction, fullscreen, antialiasing, model filtering, smooth lighting), Controls, Audio and Discs pages; widescreen / HD backgrounds have an experimental local loader, but no reviewed artwork pack is bundled (see [HD backgrounds](docs/HD_BACKGROUNDS.md)). Frame interpolation and mods are not there yet.
 
 ## What you need
 
@@ -59,6 +59,9 @@ and copy the result back (see [docs/PORT_PLAN.md](docs/PORT_PLAN.md)).
 | Variable | Effect |
 | --- | --- |
 | `PE2_SKIPINTRO=1` | skip the opening movie |
+| `PE2_HD_BACKGROUNDS=<directory>` | experimental local PE2BG1 atlas pack; use Picture detail 2x+ and `--widescreen 0|1`; missing/invalid art retains 4:3 |
+| `PE2_DUMP_BACKGROUNDS=<directory>` | export native RGB555 backdrops and observed logical locations for local artwork work; never commit these exports |
+| `PE2_DUMP_FRAME=<tick>:<file.ppm>` | capture the actual presenter, including HD/widescreen framing; `PSYZ_HEADLESS=gpu` uses a hidden GPU window |
 | `PE2_DUMP_VRAM=<tick>:<file>` | write the raw VRAM once at that pad tick; `tools/port/export_vram.py` turns it into a PNG (no screen capture needed) |
 | `PE2_DEBUG_PORT=<port>` | start PsyZ's HTTP debug server on 127.0.0.1: `curl localhost:<port>/screenshot -o shot.png` captures what the window shows (the real renderer, unlike the VRAM dump) |
 | `PE2_MENU_PAGE=<0-3>` | open the host menu on this page (with `--host-menu`) |
