@@ -26,6 +26,8 @@ SPECIAL = {
     'neo_ark_pyramid': 'puzzle overlay',
     'dryfield_night_water_hole': 'animated water overlays',
     'akropolis_west_elevator_hall': 'additive light effect',
+    'mist_r18': 'captured-frame backdrop crossfade',
+    'shelter_b1_sterilization_room': 'captured-frame backdrop crossfade',
 }
 
 

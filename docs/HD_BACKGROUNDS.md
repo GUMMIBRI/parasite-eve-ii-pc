@@ -974,6 +974,28 @@ justified from this evidence. `garage-crash-retry-assessment.json` retains logs,
 report hashes and this limitation. The target remains unverified; this neither
 clears the old crash nor proves that natural gameplay reaches view 7 correctly.
 
+#### Captured-backdrop rooms need separate review
+
+A current no-pack Metal retry of historical MIST r18 target `1,18,1,1,1,1`
+finishes its 8001-sample replay without a settled target capture, rather than
+reproducing the old exit 139. The failed collection is retained in
+`mist-r18-retry`; the target and the other old room failures remain unverified.
+
+Source inspection identifies an inventory omission: MIST r18 and Shelter B1
+sterilization room share captured-backdrop crossfade code. In MIST r18,
+`_mistR18CaptureBackdropState` copies the current 320x240 physical draw buffer
+into two texture regions; the shared live-frame renderer samples that framebuffer
+again during blending. A static image match cannot validate these transitions.
+Both rooms are now explicitly classified as `captured-frame backdrop crossfade`
+by the inventory tool. A synthetic inventory test preserves that review label
+and the unverified state; all 39 Python HD tests pass.
+
+The local `native-catalog/index-captured-review.json` updates only review metadata
+for 32 source references, retains the prior catalog hash, and leaves decoded
+bytes and verification states unchanged. Its separate joined catalog is
+`view-catalog-captured-review.json`. Historical catalogs and survey results are
+retained. No runtime rendering fix or captured-screen HD support is claimed.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,

@@ -43,5 +43,14 @@ class InventoryTest(unittest.TestCase):
             self.assertEqual(report['records'][0]['raw_source'],'raw/bs/bs_123.bs')
             self.assertNotIn('size',report['records'][0])
 
+    def test_captured_backdrops_require_special_runtime_review(self):
+        with tempfile.TemporaryDirectory() as name:
+            rooms=['mist_r18','shelter_b1_sterilization_room']
+            manifest={'stage1':{'folders':{room:{'file1':{'view.bs':{'type':'room_background','path':'missing.png'}}} for room in rooms}}}
+            report=inventory_module.inventory(manifest,Path(name))
+            self.assertEqual(len(report['records']),2)
+            self.assertTrue(all(r['review']=='captured-frame backdrop crossfade' for r in report['records']))
+            self.assertTrue(all(not r['runtime_verified'] for r in report['records']))
+
 
 if __name__=='__main__':unittest.main()
