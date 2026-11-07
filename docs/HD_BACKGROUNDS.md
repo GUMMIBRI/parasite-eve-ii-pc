@@ -60,8 +60,26 @@ controller-route Vulkan/lavapipe collection exceeded its 40-second per-case
 limit during the combined-pack classic run; it is retained as incomplete in
 `linux-foreground-view11-installed-route`. The capture tool now accepts
 `--timeout 1..3600` seconds (default 40), records the limit, and keeps all capture,
-native-state and material gates unchanged. A separate 180-second collection is
-in progress; a timeout or installed-file parity alone is not runtime approval.
+native-state and material gates unchanged. The separate 180-second collection
+has now completed all nine controls successfully; the initial timeout is kept
+as incomplete evidence rather than overwritten.
+
+`linux-foreground-view11-installed-route-180s/report.json` verifies the installed
+two-view pack on the controller route from view 10 to 11 on Linux ARM64,
+Ubuntu 24.04, Mesa Vulkan/lavapipe 25.2.8. All 13 foreground sources activate;
+the wide completed frames are 1707x960 on buffers 0 and 272. Native VRAM remains
+exact between base and combined packs within this backend, as do the original
+command inputs and observed simulation state. Both malformed-foreground controls
+fall back exactly. No physical Linux GPU, Windows or complete-game claim follows.
+
+`linux-installed-gallery-cross-backend.json` compares all nine endpoints with
+the corresponding macOS Metal installed-pack run: normalized commands and
+observed simulation state agree in each case. Full native VRAM differs at one
+word for narrow controls and three words for wide controls; every difference is
+one RGB555 channel level, with identical STP bits. Each base/combined pair has
+the same cross-backend differences. This is evidence for a small pre-existing
+renderer rounding difference at this endpoint, not cross-backend pixel identity
+or a full artistic/occlusion approval. The test container was stopped afterward.
 
 Installer foreground checks now also cover PE2FG1/PE2FG2 descriptor size,
 background/atlas identity, filename/location binding, required base descriptor,
