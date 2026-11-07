@@ -1542,6 +1542,38 @@ created. The source-guided v2 technical fixture and its runtime evidence remain
 unchanged. The local assessment retains all three outputs, prompts, dimensions,
 rejection reasons and hashes. No final view-13 artwork is approved.
 
+#### View-13 full-detail v6 candidate
+
+A new built-in image edit of the source-guided v2 canvas improves uniform
+surface detail across the centre and side extensions. The saved image is
+1714x918, within the packer's existing integer-rounding aspect tolerance; an
+explicit size-only fit produces the canonical 1792x960 canvas. No geometry
+translation, crop, format relaxation or source-guided repaint is applied.
+All 12 foreground-region diagnostics have zero best displacement, with 11
+non-ambiguous peaks. Source 1's narrow upper-right wall region remains ambiguous
+(score gap 0.00682); the diagnostic is not contour or artwork approval.
+
+The private `view13-generated-v6-base-pack` and
+`view13-generated-v6-combined-pack` use this same canvas for background and
+foreground materials. Nine Metal controls replay the controller route from
+view 10 to view 13 (`foreground-view13-generated-v6-route/report.json`). Both
+physical buffers activate all 12 foreground replacements. Base/combined pairs
+preserve full native VRAM, normalized original GPU commands and captured
+simulation state; malformed metadata and missing foreground atlases fall back
+exactly to the base pack. Classic and wide captures were visually inspected:
+former vertical sharpness bands are no longer apparent at this sampled pose.
+A further nine controls capture at 180/181 matching frames on the same route
+(`foreground-view13-generated-v6-route-later/report.json`), with the player
+farther down the corridor. The later wide capture and its native original were
+also visually inspected. Across all six base/combined presentation pairs, the
+complete captured model lists, player roots and pose hashes match exactly
+(`art/mist-shooting-gallery-view13/assessment-v6.json`).
+The candidate is still unapproved: the ambiguous region, exact contours,
+additional player occlusion and broader transitions require review. It does not
+replace the installed four-view fixture. Its prompt, input/output hashes and
+review notes remain in the ignored `art/mist-shooting-gallery-view13/`
+`provenance-v6.json`; no artwork or native data is committed.
+
 #### Installed four-view gallery transition fixture
 
 A private `gallery-four-view-study--1` installation combines view 10 v8,
