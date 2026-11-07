@@ -552,6 +552,19 @@ interior detail changes are bounded. Its audits prove those numerical
 constraints only. The resulting candidates and rejected optical-flow
 registration experiments do not establish production artwork quality.
 
+The v6 generated candidate (1672x941, central 75% assumed to represent the
+original view) has a global median nearest-edge distance of about 0.96 source
+pixels, but local gradient matching in all nine foreground source rectangles
+prefers offsets of 3–5 source pixels. A whole-image affine fit also requires
+scale/shear changes. It is rejected as registered artwork and retained only as
+a texture reference. The subsequent v7 original-frame 4:3 restoration
+(1448x1086) still prefers local offsets of 2–5 source pixels and is likewise
+unapproved. Corresponding local JSON assessments are beside the candidates in
+`build-hd-study/art/mist-shooting-gallery-view10`. These are read-only analyses;
+no warping, production pack update or artwork commit was made. A global
+nearest-edge statistic alone must not approve geometry: invented texture edges
+can be close while the actual foreground contours remain displaced.
+
 ## Verification checkpoint
 
 - 48 C host tests pass, including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
