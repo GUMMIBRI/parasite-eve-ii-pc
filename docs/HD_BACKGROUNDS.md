@@ -1465,6 +1465,19 @@ quality across poses or other-platform behavior. Art, native sources and packs
 remain local under `build-hd-study`; no artwork is committed or distributed.
 The view-13 art assessment retains prompts, candidates, audits and hashes.
 
+#### View-13 sharpness follow-up
+
+Three further generated edits attempt to remove the normalized candidate's
+centre/side sharpness difference. V3 improves surface detail but most source
+regions move about one native pixel and the right-wall joint changes more;
+it is rejected. A local right-wall repair (v4) and another high-fidelity
+restoration (v5) produce incompatible canvas aspects and are rejected before
+packing. A diagnostic one-pixel bounds offset is also rejected by the format's
+16-pixel alignment rule; no format invariant was relaxed or translated pack
+created. The source-guided v2 technical fixture and its runtime evidence remain
+unchanged. The local assessment retains all three outputs, prompts, dimensions,
+rejection reasons and hashes. No final view-13 artwork is approved.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
