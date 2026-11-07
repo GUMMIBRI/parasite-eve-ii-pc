@@ -1436,6 +1436,35 @@ still pass (`capture-target-settled-regression`). All 53 C tests pass on both
 hosts and all 41 Python HD tests pass on macOS. No player/story/camera state is
 changed by this diagnostic filter.
 
+#### Gallery view 13: local material candidate and reached endpoint
+
+The view-13 native key is `f0ce18a723c50c14`. Its 12 authored foreground sources
+were exported from a passing static capture. Generated v1 is rejected for an
+incompatible canvas aspect; raw v2 retains the correct aspect but moves some
+source edges. A source-guided v2 normalization retains native structural edges
+and bounded generated microtexture; all 12 diagnostic regions then have zero,
+non-ambiguous best shifts. Its centre-to-outpaint sharpness and surface joins
+remain visible, so this is not approved final artwork.
+
+Local base and combined packs pass the nine Metal controls initially at a
+forced view. That initial player's position was off-screen and is not an
+occlusion-pose validation. A controller route now reaches view 13 from the
+existing view-10 start, through 11 and 12: continue forward to tick 3000, hold
+Right for 96 ticks, then Up+Circle until 4200 and release. The endpoint remains
+at [12675,133,123] with warp 6. Read-only EOF snapshots confirm the location;
+no player/camera/story values were injected. The route uses the earlier gallery
+startup controls before tick 2900.
+
+The same candidate passes all nine controls after that route
+(`foreground-view13-source-guided-v2-route`), with a visible player, all 12
+foreground sources active on physical buffers 0 and 272, exact native VRAM
+within the compared modes and malformed-pack fallback. Re-exported route
+sources have identical native hashes to all 12 static sources. The two wider
+captures are 1707x960. This proves one endpoint's integration, not final matte
+quality across poses or other-platform behavior. Art, native sources and packs
+remain local under `build-hd-study`; no artwork is committed or distributed.
+The view-13 art assessment retains prompts, candidates, audits and hashes.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
