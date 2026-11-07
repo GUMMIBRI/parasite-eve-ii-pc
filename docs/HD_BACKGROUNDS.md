@@ -19,7 +19,7 @@ scope describe those builds rather than superseding this summary.
 | Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Resolve/classify excluded rows and remaining diagnostics, including the room with no view rows. |
 | Broad runtime survey | One complete earlier-build software survey: 2703 exact matches, 606 without settled captures, five balcony differences subsequently fixed in room-specific tests; no crashes. | Current-build full coverage and natural traversal, including transient/scripted/special screens. Do not combine different binary reports into one all-game pass. |
 | Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
-| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 41 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
+| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 51 Python HD tests on macOS. | Windows binaries cross-compile; Windows execution, Linux x86-64/physical GPU behavior and complete supported-backend traversal remain unverified. |
 
 All source captures, generated artwork and native-reference pack payloads remain
 local. Passing renderer controls do not approve artwork or grant distribution
@@ -38,6 +38,38 @@ HD backgrounds to switch it off/on. Both choices persist in settings.ini.
 The folder chooser does not install, copy or download artwork. Individual
 missing/invalid assets retain the original image. Picture detail must be at
 least 2x for HD presentation. No production pack is bundled yet.
+
+### Separating material and private reference planes
+
+The runtime atlases contain two planes: material and native reference pixels.
+`tools/hd/material_bundle.py` separates these without changing either plane:
+
+```sh
+venv/bin/python tools/hd/material_bundle.py split PRIVATE_RUNTIME_PACK \
+  --materials MATERIAL_FOLDER --private-cache PRIVATE_CACHE
+venv/bin/python tools/hd/material_bundle.py verify MATERIAL_FOLDER
+venv/bin/python tools/hd/material_bundle.py hydrate MATERIAL_FOLDER \
+  --private-cache PRIVATE_CACHE --output NEW_PRIVATE_RUNTIME_PACK
+venv/bin/python tools/hd/install_pack.py install NEW_PRIVATE_RUNTIME_PACK \
+  --destination PRIVATE_INSTALLED_FOLDER
+```
+
+Use separate, non-overlapping directories. Material folders contain layout
+metadata, upper-plane PNGs and `pe2-materials.json`; they are not directly
+loadable game packs. The private cache contains content-addressed reference
+planes. Hydration checks their dimensions and pixel hashes, reconstructs full
+atlases, and runs the existing runtime-pack structural verifier before publishing
+an output directory. Existing outputs/cache entries are never overwritten.
+Unlisted material-folder files/directories and symlink payloads are rejected;
+failed operations do not publish partial material/runtime folders.
+
+This separates reference planes, not ownership or provenance of every material
+pixel. Source-guided candidate materials may still contain native-derived paint,
+and metadata/artwork require distribution review. Neither the cache nor hydrated
+pack is for publication. All current gallery candidates remain private and
+unapproved. The cache is independent of material colors, so matching references
+can come from a locally generated placeholder-material pack; this tool does not
+yet generate that cache automatically from owned discs or live game data.
 
 ### Local versioned installation
 
@@ -1585,6 +1617,39 @@ binary cannot switch to OpenGL through `SDL_GPU_DRIVER=opengl`. This corrects
 the earlier overly broad statement that the repository contains no GL backend;
 no experimental GL build/runtime validation is claimed here.
 
+#### Material/reference separation and reconstruction
+
+`material_bundle.py` splits validated runtime atlases into material-plane PNGs
+and a separate content-addressed private reference cache. It preserves existing
+layout descriptors, uses disjoint directories, rejects unlisted files/symlinks,
+and stages outputs without overwriting earlier artifacts. Reference cache
+entries are published atomically and identified by dimensions plus RGBA pixel
+hashes. Hydration verifies those references and invokes the existing structural
+pack verifier before publishing a runtime folder. Input changes during either
+operation prevent output publication.
+
+Ten new tests cover material-only plane contents, exact base/foreground runtime
+reconstruction and installation, reference-cache independence from material
+colors, missing/changed references, path escapes/symlinks, output immutability,
+input changes and interrupted writes. All 51 Python HD tests pass on macOS;
+the ten new tests also pass on Linux ARM64 with Pillow 10.2.0.
+
+The private four-view gallery fixture separates into eight reference planes and
+16 material/descriptor payloads. On macOS, hydration reproduces all 16 original
+files and the runtime manifest byte-for-byte and installs as a new immutable
+folder (`gallery-four-view-material-roundtrip.json`). Linux reconstruction of
+that Mac-origin input preserves every decoded atlas pixel and descriptor byte;
+PNG encoding/hashes differ across Pillow versions, and a fresh local runtime
+manifest records the new encoded files (`material-bundle-linux-roundtrip.json`).
+
+A real Metal route to view 13 compares the original and hydrated installations:
+rendered RGB, full native VRAM, normalized original GPU inputs and captured
+simulation counters are identical, with all 12 foreground sources active
+(`material-bundle-runtime/assessment.json`). This does not approve the candidate
+artwork, layout metadata or a public bundle. Automatic reference acquisition
+from owner discs/live gameplay and the full production distribution workflow
+remain required. Caches and hydrated packs stay private.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
@@ -1633,9 +1698,11 @@ This historical snapshot predates the current verification summary above.
    satisfy the settled survey's field-ready/30-frame gate.
 4. Finish the consumable production-pack/distribution workflow and outstanding
    download/update decision. Local activation, manifest verification and
-   immutable version installation already work. Current runtime packs include
-   native reference planes and must remain private; keep native game pixels out
-   of any public distribution. Keep PsyZ unmodified.
+   immutable version installation already work. Material/reference separation
+   and hydration now work, but automatic owner-reference acquisition and reviewed
+   material distribution remain open. Caches and runtime packs include native
+   reference pixels and must stay private. Keep native game pixels out of public
+   distribution and keep PsyZ unmodified.
 5. Verify supported platforms and GPU backends with appropriate builds and
    runtime evidence. Metal and Linux ARM64/lavapipe subsets do not establish
    Windows, Linux x86-64, physical GPU or all-game behavior.
