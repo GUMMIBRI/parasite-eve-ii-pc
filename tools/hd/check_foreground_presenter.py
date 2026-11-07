@@ -61,7 +61,13 @@ def main():
     cases=[(*case,0,0) for case in cases]
     if args.ot:cases += [(32,40,flags,4,wide,0,True,mask,0,1,1)
                         for flags,wide,mask in [(1,0,0),(1,1,0),(0,1,0),(1,1,1),(1,1,2),(1,1,3),(3,1,0)]]
-    for index,(width,height,flags,scale,wide,palette,available,mask,window,inset,feedback) in enumerate(cases):
+    cases=[(*case,0,0) for case in cases]
+    if args.ot:
+        cases += [(8,23,flags,4,1,0,True,0,0,0,0,1,0) for flags in range(16)]
+        cases += [(8,23,3,4,1,0,True,mask,0,0,0,1,0) for mask in [1,2,3]]
+        cases += [(8,23,1,4,wide,0,True,0,0,0,1,1,0) for wide in [0,1]]
+        cases += [(8,23,1,4,wide,0,True,0,0,0,0,1,1) for wide in [0,1]]
+    for index,(width,height,flags,scale,wide,palette,available,mask,window,inset,feedback,aligned,no_staging) in enumerate(cases):
         source=dict(w=width,h=height,tpage=128|13,clut=255*64,u0=248,v0=248)
         words,_=decode_sprite(vram,source);image=root/f'{width}-{height}.png';atlas(words,inset).save(image)
         prefix=root/f'case-{index:02d}'
@@ -71,13 +77,15 @@ def main():
         if window:current_env['PE2_PROBE_WINDOW']='1'
         if inset:current_env['PE2_PROBE_INSET']='1'
         if feedback:current_env['PE2_PROBE_FEEDBACK']='1'
+        if aligned:current_env['PE2_PROBE_ALIGNED']='1'
+        if no_staging:current_env['PE2_PROBE_NO_STAGING']='1'
         process=subprocess.run(command,env=current_env,capture_output=True,text=True,timeout=30)
         prefix.with_suffix('.log').write_text(process.stdout+process.stderr)
         assert process.returncode==0,(index,process.stdout,process.stderr[-1500:])
         original=np.array(Image.open(str(prefix)+'.original.ppm'))
         enhanced=np.array(Image.open(str(prefix)+'.hd.ppm'))
         changed=int(np.count_nonzero(original!=enhanced))
-        if scale==1 or not available or palette or window or args.backend=='software' or (args.ot and wide and not inset) or (inset and flags&2):assert changed==0,index
+        if scale==1 or not available or palette or window or args.backend=='software' or (args.ot and wide and not inset and not aligned) or (inset and flags&2) or no_staging:assert changed==0,index
         elif mask!=3:assert changed>0,index
         green=lambda pixels:np.all(pixels==[0,255,0],axis=2)
         assert np.array_equal(green(original),green(enhanced)),('front primitive overwritten',index)
@@ -85,13 +93,14 @@ def main():
             potential=np.zeros((240,320),bool)
             # Source origin (153,109), current clip (150,100,80,100).
             w=min(width,230-153);h=min(height,200-109)
-            potential[109:109+h,153:153+w]=words[:h,:w]!=0
+            start=152 if aligned else 153
+            potential[109:109+h,start:start+w]=words[:h,:w]!=0
             sy,sx=original.shape[0]//240,original.shape[1]//320
             assert original.shape[:2]==(240*sy,320*sx)
             potential=np.repeat(np.repeat(potential,sy,axis=0),sx,axis=1)
             assert np.array_equal(original[~potential],enhanced[~potential]),('coverage leaked',index)
         results.append(dict(width=width,height=height,flags=flags,scale=scale,wide=wide,palette_changed=palette,
-                            atlas_available=available,mask_mode=mask,texture_window=window,inset=inset,feedback=feedback,native_differences=0,changed_channels=changed))
+                            atlas_available=available,mask_mode=mask,texture_window=window,inset=inset,feedback=feedback,aligned=aligned,staging_allowed=not no_staging,native_differences=0,changed_channels=changed))
     (root/'report.json').write_text(json.dumps(dict(passed=True,backend=args.backend,ot_substitution=args.ot,cases=results,
         scope='Synthetic explicit-state foreground builder; not live room/OT integration.'),indent=2)+'\n')
     print(f'PASS: {len(results)} clipped foreground {args.backend} cases preserve all native VRAM')

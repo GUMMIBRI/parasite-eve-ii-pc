@@ -78,8 +78,9 @@ pixels at 4x plus 2-pixel replicated gutters, and original RGB reference cells
 below. Base materials are presentation-only. A direct LoadImage background is
 opaque even where its RGB555 word is zero; treating it as a normal texture
 caused black pinholes in classic HD. The classic presenter now uses the existing
-material-only plane with a full-height VRAM scissor, which prevents squeezing
-on both buffers. The temporary renderer switch is drained/restored before room
+material-only plane with a 321-pixel-wide scissor at the original frame height,
+which prevents squeezing on both buffers without marking unrelated CLUT rows
+as drawn. The temporary renderer switch is drained/restored before room
 OTs. Original native pixels remain unchanged. The decoded catalog's 1759
 mode-0 MDEC sources all have STP clear; this is not a claim about arbitrary
 modified workspaces. Foreground textures separately retain native transparency,
@@ -293,7 +294,7 @@ venv/bin/python3 tools/hd/check_foreground_live.py \
   --location 1,20,10,1,1,1 --key 83f3736e454385c9
 ```
 
-The registered OT probe passes 33 GPU and 33 software cases, including exact
+The registered OT probe passes 56 GPU and 56 software cases, including exact
 restoration of all original packet bytes and exclusion of an unregistered
 sprite with the same texture tuple. The real gallery check demonstrates nine
 classic foreground replacements, visible material changes, exact full VRAM
@@ -309,16 +310,15 @@ The cached game DISPENV and requested aspect remain unchanged. This only applies
 to validated 320x240 RGB15 timing with active wide artwork; movies, original
 backgrounds and classic 4:3 do not use this adapter. PsyZ remains unmodified.
 
-Completed-buffer captures in `build-hd-study/foreground-gallery-inset` show
-nine classic and four widescreen gallery foreground replacements on both
-buffers. The five sources narrower than 16 pixels retain original sprites in
-16:9; their native strips remain visible against the geometrically misaligned,
-unapproved candidate artwork. Each replaced frame matches its base-only control
-in full native VRAM; classic base and foreground also match the original native
-VRAM. The synthetic base presenter requires byte-identical output on both
-buffers in 4:3 and 16:9, verifies 240-line output restoration, and preserves all
-native VRAM including STP/zero pixels. These are specific integration checks,
-not full-game or artwork validation.
+Completed-buffer captures in `build-hd-study/foreground-staged-gallery` show
+nine gallery foreground replacements in classic and widescreen modes, on both
+buffers. Narrow sources now use native staging instead of an added scissor.
+Each replaced frame matches its base-only control in full native VRAM; classic
+base and foreground also match the original native VRAM. The candidate artwork
+still has geometry drift and is not approved. The synthetic base presenter
+requires byte-identical output on both buffers in 4:3 and 16:9, verifies 240-line
+output restoration, and preserves all native VRAM including STP/zero pixels.
+These are specific integration checks, not full-game or artwork validation.
 
 Partial-width sprites with fractional squeezed boundaries, nonzero texture
 windows, and unsupported partial-cell layouts still
@@ -359,17 +359,14 @@ the same colour and STP. Complete or inset cells emit no added scissor commands;
 this preserves the original OT's batching. A synthetic framebuffer-read test
 has 121 native differences when scissor commands are deliberately reinstated,
 and zero with the inset path. Mask modes, raw/modulated colour and rejection of
-semitransparent overlap are covered by the 33-case GPU/software probes.
+semitransparent overlap are covered by the 56-case GPU/software probes.
 
-The airlock now uses 36 replacements in classic mode and 19 on each buffer in
-16:9, with full native-VRAM equality against its controls. Its remaining 17
-narrow sources retain original sprites in 16:9. Inset overlap is never used for
+The inset-only airlock checkpoint uses 36 classic and 19 wide replacements;
+its seventeen narrow wide sources originally remained native. That limitation
+motivated the native staging path below. Inset overlap is never used for
 semitransparent sprites, sources narrower/shorter than 16, or incompatible live
-flags. Partial legacy cells and partial semitransparent cells retain the entire
-original primitive in 16:9. These limits preserve native rendering while wider
-foreground support remains open. Old failure evidence is retained locally in
-`build-hd-study/foreground-five-stages`; the repaired case is also recorded in
-`build-hd-study/foreground-airlock-inset`.
+flags. Old failure and repaired-inset evidence remain local in
+`build-hd-study/foreground-five-stages` and `foreground-airlock-inset`.
 
 The expanded 46-camera run is recorded in
 `build-hd-study/foreground-state-rooms-inset`. Its initial strict visible-material
@@ -385,16 +382,17 @@ runner selects this mode only for all-zero audited sources.
 The repeated empty-camera run passes all nine checks in
 `build-hd-study/foreground-empty-camera-check`. The aggregate `assessment.json`
 records 44 verified cameras (43 with visible material, one verified empty) and
-two unresolved cases, tied to identical executable hashes:
+two failures on that executable (now addressed by staging below):
 
 - Main corridor `4,15,7,1,1,1`: classic foreground changes 6246 native VRAM
   words. Its sources include narrow/short legacy cells needing extra scissor
-  commands. The cause still needs isolation; 4:3 native preservation is not
-  established for this camera.
+  commands. That run did not establish classic native preservation; it did not record
+  complete model inputs. Independent synthetic clip controls also exposed
+  native differences with the old extra-scissor path.
 - Incinerator `4,40,4,1,1,1`: classic material passes, and wide native VRAM is
   unchanged, but none of its fourteen 8-pixel-wide sources receives an active
   HD replacement in 16:9. This is unsupported visible coverage, not observed
-  native corruption. It remains unverified by the active-material gate.
+  native corruption. The old path failed the active-material gate.
 
 The corridor failure is reduced to source 0 alone (16x8), in
 `build-hd-study/corridor-source0-check`. A feasibility audit also rejects simply
@@ -402,32 +400,68 @@ expanding every narrow sprite into neighbouring native texels: all fourteen
 incinerator sources have covered neighbours, and some expansions exceed their
 texture page. Extra padding cannot be assumed transparent.
 
-`foreground_stage.c` now provides a preparatory native staging planner. It
-conservatively excludes original polygon/sprite texture pages, indexed CLUTs,
-draw areas, fills, copies, readbacks and both display buffers from a candidate
-64x256 direct-colour page. An optional writable known-map copy invalidates
-source texels affected by preceding primitives. Its native decoder handles
-4/8/16-bit textures, UV wrap, exact STP words, unknown inputs and literal zero
-padding without downloading or modifying VRAM. A known-backup selector refuses
-regions with any unknown word. One page holds at most 64 cells.
+`foreground_stage.c` tracks original polygon/sprite texture pages, indexed
+CLUTs, draw areas, fills, copies, readbacks and both display buffers. The runtime
+uses it to select an unreferenced 64x256 direct-colour page. A completed
+1024x512 native snapshot supplies exact current texels and a backup of that
+page. During the original ordered walk, preceding primitive writes invalidate
+the temporary known map; affected sources cannot be staged. The decoder handles
+4/8/16-bit textures, UV wrap, original STP and literal zero padding. One page
+holds at most 64 cells; incompatible or over-budget sources retain original
+primitives, including in classic mode. No added DR_AREA is used by a live
+partial-cell replacement.
 
-With `PE2_DUMP_GPU_STATE=1`, completed ordered audits now include
+Staging is restricted to the main field's sole resident OT at a drained
+background boundary, with validated 320x240 RGB15 timing and internal resolution
+above 1x. Task OTs do not introduce transfer/flush boundaries. The native page is
+uploaded before the whole OT, and each staged cell uses a 16-bit native source
+with its original HD atlas/reference selection. Every staged replacement restores
+the original draw mode before following primitives. Original non-foreground
+packet addresses and all links are preserved. The complete OT is drained, then
+the exact page backup is uploaded/restored before readback or presentation.
+No simulation, input or VSync step is added. PsyZ remains unmodified.
+
+A CPU upload mirror, a partial-page backup readback and extra DrawSync calls
+were insufficient for the corridor model: a native-only upload control still
+changed its output. Uploading identical backup pixels passed; resolving the
+complete native snapshot before staging also passed. The exact backend/cache
+cause is not established. The runtime therefore keeps the complete snapshot
+boundary, rather than assuming that an unused page alone makes transfers safe.
+This synchronous GPU readback has a performance cost. A local hidden Metal
+4x wall-time sample (`foreground-staged-benchmark/timings.json`), subtracting
+30-frame from 300-frame runs, estimates base/combined costs of 2.64/6.17 ms
+per frame in the gallery and 2.29/8.12 ms on the balcony. These single samples
+include timing noise; sustained frame timing and all-platform performance
+remain release gates.
+
+`build-hd-study/foreground-staged-snapshot-live` verifies all 24 corridor and
+14 incinerator replacements in classic and wide modes on both physical buffers,
+with exact full native VRAM against the base-only controls, original native
+VRAM in classic mode, and bad/missing-pack fallbacks. The 56-case GPU/software
+probe also covers aligned 8-pixel sources, every blend mode, masks, framebuffer
+reads, following unregistered sprites, and staging-disabled/1x fallbacks.
+The updated 46-camera run in `build-hd-study/foreground-staged-all` is separate
+from the old failed run: it completed with 45 passing cameras and one
+unverified bad-metadata fallback in the corridor. That control performed no
+HD replacements, but its original GP0 stream had 673 commands versus 674 and
+different meaningful model coordinates/colours despite equal global clocks.
+It therefore does not establish equivalent model inputs or isolate a renderer
+defect. An isolated same-binary corridor repeat in
+`build-hd-study/foreground-staged-corridor-repeat` passes all nine controls.
+The original failed sweep is retained: a passing repeat does not prove a
+stable 46/46 sweep. Deterministic model-input control remains open.
+Neither a partial run nor these synthetic fixtures establish all-game,
+traversal, artwork or all-platform completion.
+
+With `PE2_DUMP_GPU_STATE=1`, complete ordered audits include
 `staging_free_pages`: a hexadecimal 32-bit geometry-availability mask, with bit
-`16*(y/256)+x/64` representing a 64x256 page. Only a complete audit is usable;
-this mask does not establish that a CPU backup is known. Live original-OT
-audits in `build-hd-study/foreground-stage-plan-final` identify (320,0), among
-other candidates, for both unresolved cameras. These diagnostic additions do
-not change submitted GPU commands. The staging decoder/planner is not yet
-connected to foreground replacement: GPU uploads, source-page remapping,
-original draw-mode restoration and exact backup restoration still need runtime
-integration and validation. The incinerator still has no active wide replacement. The latest diagnostic
-binary passes the corridor comparison without a rendering fix, whereas the
-previous binary and the isolated 16x8 source failed. Treat that binary-sensitive
-failure as unresolved; a passing repeat does not establish its cause or repair.
-
-The broad check therefore remains failed. No all-room claim follows from the
-five-stage selection, and no artwork or traversal approval follows from these
-synthetic fixtures.
+`16*(y/256)+x/64` representing a 64x256 page. A complete audit is required; the
+mask alone does not prove a CPU backup is known. `gpu-commands.bin` records the
+original pre-replacement GP0 stream as little-endian word-count/word-array
+records, capped at 262144 words including counts. Unused UV padding and raw
+texture colour fields can vary without changing rendering; raw byte inequality
+alone does not prove different effective model inputs. All captures contain
+disc-derived data and stay local/ignored.
 
 New settled captures use `pe2-static-view-survey-v3`. PE2 normally displays the
 opposite buffer while drawing; immediately before this diagnostic exits, it

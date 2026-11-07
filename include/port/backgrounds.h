@@ -8,8 +8,9 @@ void peBackgroundBeginFrame(int buffer_y);
 int peBackgroundGetFrameInfo(int buffer_y,PeBackgroundFrameInfo* info);
 void peBackgroundEndFrame(int buffer_y,int field_frame,unsigned game_tick,unsigned vsync_count);
 /* Submit original OTs, or registered foreground material when a pack matches.
- * Optional PE2_DUMP_GPU_STATE=1 records ordered native state before replacement. */
-void peBackgroundSubmitOt(const void* head);
+ * Optional PE2_DUMP_GPU_STATE=1 records ordered native state before replacement.
+ * allow_staging is true only for the main field's sole resident OT. */
+void peBackgroundSubmitOt(const void* head,int allow_staging);
 /* Main-thread configuration; GPU resources change at the next background draw.
  * Empty path or enabled=0 restores the original image. Returns 0 for bad input. */
 int peBackgroundConfigurePack(const char* path,int enabled);

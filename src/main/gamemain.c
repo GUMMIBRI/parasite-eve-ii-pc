@@ -231,7 +231,7 @@ void displayPresentTaskFrame(s32 bufferIndex)
                 gDisplayState.drawBuffer = savedDrawBuffer;
             }
 #ifdef __psyz
-            peBackgroundSubmitOt(gGpuFrameOrderingTables[gDisplayState.otBuffer].tag);
+            peBackgroundSubmitOt(gGpuFrameOrderingTables[gDisplayState.otBuffer].tag,0);
 #else
             DrawOTag((OT_TYPE*)gGpuFrameOrderingTables[gDisplayState.otBuffer].tag);
 #endif
@@ -243,7 +243,7 @@ void displayPresentTaskFrame(s32 bufferIndex)
         // The snapshot is read as a signed byte; keep its high-bit behavior.
         if ((s8)gDisplayTaskFlipControlSnapshot < DISPLAY_FLIP_SKIP_TASK_OT) {
 #ifdef __psyz
-            peBackgroundSubmitOt(gGpuTaskOrderingTables[bufferIndex].tag);
+            peBackgroundSubmitOt(gGpuTaskOrderingTables[bufferIndex].tag,0);
 #else
             DrawOTag((OT_TYPE*)gGpuTaskOrderingTables[bufferIndex].tag);
 #endif
@@ -276,7 +276,7 @@ static inline void _displayPresentFrame(s32 bufferIndex)
     streamPresentMovieFrame();
     if (gDisplayState.skipDraw == 0) {
 #ifdef __psyz
-        peBackgroundSubmitOt(gGpuFrameOrderingTables[bufferIndex].tag);
+        peBackgroundSubmitOt(gGpuFrameOrderingTables[bufferIndex].tag,1);
 #else
         DrawOTag((OT_TYPE*)gGpuFrameOrderingTables[bufferIndex].tag);
 #endif

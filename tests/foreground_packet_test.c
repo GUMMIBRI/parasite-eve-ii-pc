@@ -18,7 +18,7 @@ int main(void)
     CHECK(p->tiles[1].sprite.u0==248 && p->tiles[1].sprite.v0==8);
     CHECK(p->tiles[0].selection.words[0]==0xf8000007);
     CHECK(p->tiles[1].selection.words[0]==0xf8000008);
-    CHECK(nextPrim(&p->tiles[1].sprite)==&p->restore && isendprim(&p->restore));
+    CHECK(nextPrim(&p->tiles[1].sprite)==&p->restore_mode && isendprim(&p->restore));
     DR_AREA expected;SetDrawArea(&expected,&clip);
     CHECK(!memcmp(p->restore.code,expected.code,sizeof expected.code));
     sprite.x0=1000;sprite.w=32;
@@ -27,7 +27,7 @@ int main(void)
     CHECK(!peForegroundBuild(p,&sprite,0xe100008d,&clip,160,120,1,0x7fffff));
     sprite.w=320;sprite.h=240;
     CHECK(peForegroundBuild(p,&sprite,0xe100008d,&clip,160,120,1,0));
-    CHECK(nextPrim(&p->tiles[PE_FOREGROUND_MAX_CELLS-1].sprite)==&p->restore);
+    CHECK(nextPrim(&p->tiles[PE_FOREGROUND_MAX_CELLS-1].sprite)==&p->restore_mode);
     CHECK(storage.guard==UINT64_C(0xfedcba9876543210));
     sprite=original;sprite.w=32;sprite.h=40;
     CHECK(peForegroundBuildLayout(p,&sprite,0xe100008d,&clip,160,120,1,0,1));
@@ -36,6 +36,11 @@ int main(void)
     CHECK(p->tiles[4].sprite.v0==(unsigned char)(sprite.v0+24));
     sprite.code|=2;CHECK(!peForegroundBuildLayout(p,&sprite,0xe100008d,&clip,160,120,1,0,1));
     sprite=original;CHECK(!peForegroundBuildLayout(p,&sprite,0xe100008d,&clip,160,120,1,0,1));
+    sprite=original;
+    CHECK(peForegroundBuildLayout(p,&sprite,0xe1000105,&clip,160,120,1,0,2));
+    CHECK(getlen(&p->clip)==0 && getlen(&p->restore)==0 && getlen(&p->restore_mode)==0);
+    CHECK(nextPrim(&p->tiles[1].sprite)==&p->restore_mode && nextPrim(&p->restore_mode)==&p->restore);
+    CHECK(!peForegroundBuildLayout(p,&sprite,0xe100008d,&clip,160,120,1,0,2));
     puts("Foreground packets: wrapped UV, exact clip restore, bounded cells and unsupported-state fallback OK");
     return 0;
 }

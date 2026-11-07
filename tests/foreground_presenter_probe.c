@@ -39,7 +39,7 @@ int main(int argc,char** argv)
     }
     if(atoi(argv[10]))for(int i=0;i<256;i++)initial[255*1024+i]^=31;
     SPRT sprite;setSprt(&sprite);setRGB0(&sprite,96,160,128);sprite.code|=atoi(argv[7])&3;
-    setXY0(&sprite,-7,-11);sprite.u0=248;sprite.v0=248;sprite.clut=getClut(0,255);
+    setXY0(&sprite,getenv("PE2_PROBE_ALIGNED")?-8:-7,-11);sprite.u0=248;sprite.v0=248;sprite.clut=getClut(0,255);
     sprite.w=atoi(argv[5]);sprite.h=atoi(argv[6]);
     RECT all={0,0,1024,512},clip={150,100,80,100};
     DR_AREA area;SetDrawArea(&area,&clip);
@@ -74,7 +74,7 @@ int main(int argc,char** argv)
             unsigned char savedMerged[sizeof merged];memcpy(savedMerged,&merged,sizeof merged);
             SPRT savedUi=ui;TILE savedFront=front,savedWitness=witness;
             unsigned replaced=0;
-            if(pass)replaced=peForegroundSubmitOt(&root,&state,&pack,240);else DrawOTag(&root);
+            if(pass)replaced=peForegroundSubmitOt(&root,&state,&pack,240,!getenv("PE2_PROBE_NO_STAGING"));else DrawOTag(&root);
             if(memcmp(&root,&savedRoot,sizeof root) || memcmp(&area,&savedArea,sizeof area) || memcmp(&mask,&savedMask,sizeof mask) || memcmp(&twin,&savedTwin,sizeof twin) ||
                memcmp(&merged,savedMerged,sizeof merged) || memcmp(&ui,&savedUi,sizeof ui) ||
                memcmp(&front,&savedFront,sizeof front) || memcmp(&witness,&savedWitness,sizeof witness))return 4;

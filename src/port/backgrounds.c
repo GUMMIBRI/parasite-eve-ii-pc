@@ -55,6 +55,9 @@ static struct { int y; PeBackgroundFrameInfo info; } frameInfo[2]={{.y=-1},{.y=-
 enum { GPU_AUDIT_MAX_SPRITES=8192 };
 typedef struct {uint32_t words[4];PeGpuState state;} GpuSpriteAudit;
 static GpuSpriteAudit* gpuAuditSprites;
+static uint32_t* gpuAuditCommands;
+static unsigned gpuAuditCommandWords;
+enum {GPU_AUDIT_MAX_COMMAND_WORDS=262144};
 static PeGpuState gpuAuditState;
 static PeForegroundStage gpuAuditStage;
 static int gpuAuditEnabled=-1,gpuAuditStarted,gpuAuditComplete,gpuAuditY;
@@ -62,6 +65,9 @@ static unsigned gpuAuditCount;
 static unsigned foregroundDrawn,drawFrameIndex;
 static void observeGpuSprite(const void* packet,unsigned offset,const uint32_t* words,unsigned count,const PeGpuState* state,void* context)
 {
+    if(count+1>GPU_AUDIT_MAX_COMMAND_WORDS-gpuAuditCommandWords) {gpuAuditComplete=0;return;}
+    gpuAuditCommands[gpuAuditCommandWords++]=count;
+    memcpy(gpuAuditCommands+gpuAuditCommandWords,words,count*4);gpuAuditCommandWords+=count;
     peForegroundStageObserve(packet,offset,words,count,state,&gpuAuditStage);
     (void)context;
     if(((words[0]>>24)&~3u)!=0x64)return;
@@ -89,7 +95,7 @@ static void endWideRender(unsigned height,const DISPENV* saved)
     unsigned start=saved->screen.y+(GetVideoMode()==MODE_PAL?0x13u:0x10u);
     Psyz_GpuDisplayCommand(0x07000000u|start|((start+240u)<<10));
 }
-void peBackgroundSubmitOt(const void* head)
+void peBackgroundSubmitOt(const void* head,int allow_staging)
 {
     PeBackgroundFrameInfo info;int foregroundReady=materialPresented && foregroundAvailable && packAvailable && packEnabled &&
         Psyz_VideoGetInternalResolution()>1 && peBackgroundGetFrameInfo(gpuAuditY,&info) && info.key==foregroundPack.background_key;
@@ -105,7 +111,7 @@ void peBackgroundSubmitOt(const void* head)
         canReplace=gpuAuditComplete && foregroundReady;
     }
     DISPENV savedDisplay;unsigned renderHeight=beginWideRender(materialPresented,&savedDisplay);
-    if(canReplace)foregroundDrawn+=peForegroundSubmitOt(head,&before,&foregroundPack,renderHeight);
+    if(canReplace)foregroundDrawn+=peForegroundSubmitOt(head,&before,&foregroundPack,renderHeight,allow_staging);
     else DrawOTag((OT_TYPE*)head);
     endWideRender(renderHeight,&savedDisplay);
 }
@@ -126,6 +132,10 @@ static int writeGpuAudit(const char* root,int buffer_y,const PeBackgroundFrameIn
                 s->draw_mode,s->texture_window,s->mask_mode);
     }
     fprintf(file,"],\"foreground_replacements\":%u,\"staging_free_pages\":\"%08" PRIx32 "\"}\n",foregroundDrawn,~gpuAuditStage.occupied);int failed=ferror(file);if(fclose(file))failed=1;
+    if(failed) {remove(path);return 0;}
+    snprintf(path,sizeof path,"%s/gpu-commands.bin",root);file=fopen(path,"wb");if(!file)return 0;
+    for(unsigned i=0;i<gpuAuditCommandWords;i++)for(unsigned b=0;b<4;b++)fputc((gpuAuditCommands[i]>>(8*b))&255,file);
+    failed=ferror(file);if(fclose(file))failed=1;
     if(failed)remove(path);return !failed;
 }
 static int frameSlot(int y)
@@ -141,10 +151,13 @@ void peBackgroundBeginFrame(int y)
     int slot=frameSlot(y);memset(&frameInfo[slot].info,0,sizeof frameInfo[slot].info);
     if(gpuAuditEnabled<0) {
         const char* enabled=getenv("PE2_DUMP_GPU_STATE");gpuAuditEnabled=enabled && !strcmp(enabled,"1");
-        if(gpuAuditEnabled)gpuAuditSprites=malloc(GPU_AUDIT_MAX_SPRITES*sizeof(*gpuAuditSprites));
+        if(gpuAuditEnabled) {
+            gpuAuditSprites=malloc(GPU_AUDIT_MAX_SPRITES*sizeof(*gpuAuditSprites));
+            gpuAuditCommands=malloc(GPU_AUDIT_MAX_COMMAND_WORDS*4);
+        }
     }
     peForegroundStageBegin(&gpuAuditStage,NULL);
-    gpuAuditStarted=0;gpuAuditComplete=!gpuAuditEnabled || gpuAuditSprites!=NULL;gpuAuditCount=0;gpuAuditY=y;foregroundDrawn=0;materialPresented=0;
+    gpuAuditStarted=0;gpuAuditComplete=!gpuAuditEnabled || (gpuAuditSprites!=NULL && gpuAuditCommands!=NULL);gpuAuditCommandWords=0;gpuAuditCount=0;gpuAuditY=y;foregroundDrawn=0;materialPresented=0;
 }
 int peBackgroundGetFrameInfo(int y,PeBackgroundFrameInfo* info)
 {
@@ -307,7 +320,8 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
     DRAWENV saved;
     GetDrawEnv(&saved);
     DISPENV display;GetDispEnv(&display);
-    if(display.isrgb24 || display.disp.w!=320 || display.disp.h!=240 ||
+    if((buffer_y!=0 && buffer_y!=272) || saved.clip.x || saved.clip.y!=buffer_y || saved.clip.w!=320 || saved.clip.h!=240 ||
+       display.isrgb24 || display.disp.w!=320 || display.disp.h!=240 ||
        (display.screen.h && display.screen.h!=240) || display.screen.y<0 || display.screen.y>2) {
         peBackgroundSetCoverage(buffer_y,0,320);return;
     }
@@ -336,10 +350,12 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
     if(!wide && first) {
         /* A direct LoadImage background is opaque even at RGB555 zero. The
          * normal texture path would turn those pixels into black pinholes.
-         * Use PsyZ's existing material-only plane; a full-height VRAM scissor
-         * keeps WidescreenDraw false, so neither buffer gets squeezed. The
+         * Use PsyZ's existing material-only plane; a 321-pixel scissor
+         * keeps WidescreenDraw false at the original frame height, without
+         * needlessly marking unrelated CLUT rows as drawn. Neither buffer
+         * gets squeezed. The
          * temporary switch is completely drained/restored before room OTs. */
-        RECT broad={saved.clip.x,0,saved.clip.w,512},original=saved.clip;
+        RECT broad={saved.clip.x,saved.clip.y,saved.clip.w+1,saved.clip.h},original=saved.clip;
         SetDrawArea(&opaqueClipPacket,&broad);SetDrawArea(&opaqueRestorePacket,&original);
         catPrim(&opaqueClipPacket,first);first=&opaqueClipPacket;
         termPrim(&opaqueRestorePacket);

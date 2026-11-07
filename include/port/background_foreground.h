@@ -12,6 +12,7 @@ typedef struct {
     DR_AREA clip;
     DR_TPAGE mode;
     PeForegroundTile tiles[PE_FOREGROUND_MAX_CELLS];
+    DR_TPAGE restore_mode;
     DR_AREA restore;
 } PeForegroundPackets;
 
@@ -25,16 +26,20 @@ typedef struct {
 void* peForegroundBuild(PeForegroundPackets* packets,const SPRT* source,
                        uint32_t draw_mode,const RECT* current_clip,
                        int offset_x,int offset_y,uint64_t atlas_key,unsigned first_cell);
-/* Inset tails overlap only opaque sources; no extra scissor/flush is emitted. */
+/* Layout 1 insets opaque tails. Layout 2 requires a staged direct-colour
+ * source with proved zero padding; neither emits an extra scissor/flush. */
 void* peForegroundBuildLayout(PeForegroundPackets* packets,const SPRT* source,
                        uint32_t draw_mode,const RECT* current_clip,
-                       int offset_x,int offset_y,uint64_t atlas_key,unsigned first_cell,unsigned inset);
+                       int offset_x,int offset_y,uint64_t atlas_key,unsigned first_cell,unsigned layout);
 /* Registry epochs follow actual OT clears. Only room sprite emitters register. */
 void peForegroundBeginOt(const void* first_tag,unsigned tag_count);
 void peForegroundRegister(const void* depth_base,const void* packet,unsigned source_id);
 /* Validate/compose in OT order, submit once, then restore all original links.
  * PsyZ snapshots the OT synchronously in DrawOTag. render_height is the actual
  * GP1 draw-time height (240 or 256), not the cached presentation DISPENV.
+ * allow_staging requires the sole resident field OT at a drained background
+ * boundary; task OTs retain original partial sprites. Staging snapshots native
+ * VRAM, uses an unreferenced page, drains the complete OT and restores its bytes.
  * Returns replacement count. */
-unsigned peForegroundSubmitOt(const void* head,const PeGpuState* initial,const PeForegroundPack* pack,unsigned render_height);
+unsigned peForegroundSubmitOt(const void* head,const PeGpuState* initial,const PeForegroundPack* pack,unsigned render_height,int allow_staging);
 #endif
