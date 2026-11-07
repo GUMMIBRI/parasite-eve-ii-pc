@@ -70,6 +70,8 @@ def observed_coverage(sprites,vram,audit,capture):
         raise ValueError('Incomplete or mismatched GPU-state evidence')
     buffer_y=audit['buffer_y']
     if buffer_y not in [0,272]:raise ValueError('Unexpected physical framebuffer')
+    if capture.get('format')=='pe2-static-view-survey-v3' and capture.get('buffer_y')!=buffer_y:
+        raise ValueError('GPU state belongs to the other physical framebuffer')
     coverage=np.zeros((240,320),np.uint8)
     for record,_,_ in sprites:
         s=record['source']
@@ -89,7 +91,9 @@ def observed_coverage(sprites,vram,audit,capture):
 
 
 def select_view(scene,catalog,capture):
-    if capture.get('format')!='pe2-static-view-survey-v2' or capture.get('matched_frames',0)<30:
+    # Legacy v2 remains useful for its native texture snapshot; only v3 binds
+    # the rendered image to this completed draw buffer (rather than its peer).
+    if capture.get('format') not in ['pe2-static-view-survey-v2','pe2-static-view-survey-v3'] or capture.get('matched_frames',0)<30:
         raise ValueError('A settled current-format capture is required')
     matches=[r for r in catalog['records'] if r['location']==capture['location'] and r['room']==scene['room']]
     if len(matches)!=1 or matches[0]['keys']!=[capture['key']]:raise ValueError('Capture/catalog identity mismatch')

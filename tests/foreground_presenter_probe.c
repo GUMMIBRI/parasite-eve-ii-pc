@@ -45,17 +45,39 @@ int main(int argc,char** argv)
     DR_AREA area;SetDrawArea(&area,&clip);
     DR_TPAGE mode;setDrawTPage(&mode,0,0,getTPage(1,(atoi(argv[7])>>2)&3,832,0));
     TILE front,witness;setTile(&front);setRGB0(&front,0,255,0);setXY0(&front,-3,-4);setWH(&front,3,4);
+    SPRT ui=sprite;ui.x0=40; /* Same texture tuple, deliberately NOT registered. */
     setTile(&witness);setRGB0(&witness,0,0,255);setXY0(&witness,60,60);setWH(&witness,4,4);
     DR_STP mask={0},clearMask={0};setlen(&clearMask,1);setlen(&mask,1);
     clearMask.code[0]=0xe6000000u;
     mask.code[0]=0xe6000000u|(getenv("PE2_PROBE_MASK")?atoi(getenv("PE2_PROBE_MASK"))&3:0);
+    DR_TWIN twin={0};setlen(&twin,1);twin.code[0]=getenv("PE2_PROBE_WINDOW")?0xe2000001u:0xe2000000u;
+    int useOt=getenv("PE2_PROBE_OT")!=NULL;
     for(int pass=0;pass<2;pass++) {
-        DrawPrim(&clearMask);DrawSync(0);LoadImage(&all,(u_long*)initial);DrawSync(0);DrawPrim(&area);DrawPrim(&mask);
-        if(pass) {
+        DrawPrim(&clearMask);DrawSync(0);LoadImage(&all,(u_long*)initial);DrawSync(0);
+        if(pass && useOt) {
+            OT_TYPE root={0};struct {DR_TPAGE mode;SPRT sprite;} merged={mode,sprite};
+            if(MargePrim(&merged.mode,&merged.sprite))return 2;
+            catPrim(&root,&area);catPrim(&area,&mask);catPrim(&mask,&twin);catPrim(&twin,&merged.mode);catPrim(&merged.mode,&ui);
+            catPrim(&ui,&front);catPrim(&front,&witness);termPrim(&witness);
+            peForegroundBeginOt(&root,1);peForegroundRegister(&root,&merged.mode,0);
+            PeForegroundPack pack={.atlas_key=key,.count=1};
+            pack.sources[0]=(PeForegroundSource){0,(unsigned)mode.code[0]&511,sprite.clut,sprite.w,sprite.h,sprite.u0,sprite.v0,0};
+            PeGpuState state;if(!peGpuStateFromEnv(&state,&draw))return 2;
+            OT_TYPE savedRoot=root;DR_AREA savedArea=area;DR_STP savedMask=mask;DR_TWIN savedTwin=twin;
+            unsigned char savedMerged[sizeof merged];memcpy(savedMerged,&merged,sizeof merged);
+            SPRT savedUi=ui;TILE savedFront=front,savedWitness=witness;
+            unsigned replaced=peForegroundSubmitOt(&root,&state,&pack);
+            if(memcmp(&root,&savedRoot,sizeof root) || memcmp(&area,&savedArea,sizeof area) || memcmp(&mask,&savedMask,sizeof mask) || memcmp(&twin,&savedTwin,sizeof twin) ||
+               memcmp(&merged,savedMerged,sizeof merged) || memcmp(&ui,&savedUi,sizeof ui) ||
+               memcmp(&front,&savedFront,sizeof front) || memcmp(&witness,&savedWitness,sizeof witness))return 4;
+            printf("OT replacements: %u; original packet bytes restored\n",replaced);
+        } else if(pass) {
+            DrawPrim(&area);DrawPrim(&mask);DrawPrim(&twin);
             void* head=peForegroundBuild(&packets,&sprite,(uint32_t)mode.code[0],&clip,160,120,key,0);
             if(!head)return 2;DrawOTag(head);
-        } else {DrawPrim(&mode);DrawPrim(&sprite);}
-        DrawPrim(&front);DrawPrim(&witness);DrawSync(0);Psyz_VideoVSync(0);
+            DrawPrim(&ui);DrawPrim(&front);DrawPrim(&witness);
+        } else {DrawPrim(&area);DrawPrim(&mask);DrawPrim(&twin);DrawPrim(&mode);DrawPrim(&sprite);DrawPrim(&ui);DrawPrim(&front);DrawPrim(&witness);}
+        DrawSync(0);Psyz_VideoVSync(0);
         StoreImage(&all,(u_long*)(pass?enhanced:original));
         if(!capture(argv[4],pass?"hd":"original"))return 2;
     }

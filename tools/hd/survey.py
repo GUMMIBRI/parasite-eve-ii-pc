@@ -29,13 +29,13 @@ def startup_replay(path,frames=8001):
 
 def validate_capture(directory,target,require_gpu_state=False):
     report=json.loads((directory/'report.json').read_text())
-    if report.get('format')!='pe2-static-view-survey-v2' or report.get('matched_frames',0)<30:
+    if report.get('format')!='pe2-static-view-survey-v3' or report.get('matched_frames',0)<30 or report.get('buffer_y') not in [0,272]:
         raise ValueError('Missing current settled-frame evidence')
     if report['key']!=target['keys'][0] or report['location']!=target['location']:
         raise ValueError(f'Captured a different source/location: {report}')
     if require_gpu_state:
         audit=json.loads((directory/'gpu-state.json').read_text())
-        if audit.get('format')!='pe2-gpu-state-audit-v1' or not audit.get('complete') or audit.get('buffer_y') not in [0,272] or audit.get('key')!=report['key'] or audit.get('location')!=report['location']:
+        if audit.get('format')!='pe2-gpu-state-audit-v1' or not audit.get('complete') or audit.get('buffer_y')!=report['buffer_y'] or audit.get('key')!=report['key'] or audit.get('location')!=report['location']:
             raise ValueError('GPU-state traversal is incomplete or belongs to another frame')
     native=(directory/'vram.bin').read_bytes()
     if len(native)!=1024*512*2:raise ValueError('Incomplete VRAM capture')

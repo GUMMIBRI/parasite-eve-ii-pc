@@ -790,6 +790,9 @@ void gpuClearFrameOrderingTable(s16 bufferIndex)
 {
     OT_TYPE* tableStart = gGpuFrameOtTags[bufferIndex];
     ClearOTagR(tableStart, GPU_ORDERING_TABLE_BUFFER_ENTRIES);
+#ifdef __psyz
+    peForegroundBeginOt(tableStart,GPU_ORDERING_TABLE_BUFFER_ENTRIES);
+#endif
     // End at the first frame tag instead of following the SDK's trailing packets.
     GPU_OT_SET_END(tableStart);
 }

@@ -1,4 +1,7 @@
 #include "gameplay/loading.h"
+#ifdef __psyz
+#include "port/background_foreground.h"
+#endif
 
 #include <psyz.h>
 #include <libgte.h>
@@ -606,6 +609,9 @@ static void _spriteLinkCachedBatch(const SpriteSource* sources, const SpriteBatc
     for (spriteIndex = 0; spriteIndex < batch->spriteCount; packet++, spriteIndex++, source++) {
         if (batch->hidden == 0) {
             addPrim(&gGpuCurrentOt[((u32)source->depth << gDisplayState.otDepthShift) >> 4 & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK >> 2)], packet);
+#ifdef __psyz
+            peForegroundRegister(gGpuCurrentOt,packet,batch->firstSprite+spriteIndex);
+#endif
         }
     }
     _gSpriteViewCachedPacketCursor = packet;

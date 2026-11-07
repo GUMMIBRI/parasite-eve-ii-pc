@@ -75,9 +75,15 @@ or transparent base artwork. It never crops, resizes or shifts it. For -64..384,
 input must be exactly 1792x960, with the original centre at x=256..1535. The
 PNG uses PE1/PsyZ's existing two-plane 68-pixel cell atlas format: 64 material
 pixels at 4x plus 2-pixel replicated gutters, and original RGB reference cells
-below. New side cells are presentation-only. Existing native sprites continue
-to own foreground occlusion, palettes, masks, effects and model rendering;
-they are not HD foreground artwork yet.
+below. Base materials are presentation-only. A direct LoadImage background is
+opaque even where its RGB555 word is zero; treating it as a normal texture
+caused black pinholes in classic HD. The classic presenter now uses the existing
+material-only plane with a full-height VRAM scissor, which prevents squeezing
+on both buffers. The temporary renderer switch is drained/restored before room
+OTs. Original native pixels remain unchanged. The decoded catalog's 1759
+mode-0 MDEC sources all have STP clear; this is not a claim about arbitrary
+modified workspaces. Foreground textures separately retain native transparency,
+STP, blending and palette-reference fallback.
 
 Each asset has a 48-byte `<key>.pe2bg` descriptor. Its Python layout is
 `<8sQIIiiIIII`: magic `PE2BG1\0\0`, key, native width/height (320/240), left/right
@@ -198,7 +204,7 @@ The GPU cases visibly change HD material while preserving original cutouts,
 a later foreground primitive, all four blend modes, raw/modulated colours,
 UV wrapping, forced/tested mask bits and restored draw-area state. Native 1x,
 missing-atlas and changed-palette cases retain exact original rendered pixels.
-This is not yet connected to room OTs or a foreground pack loader. Its caller
+The packet builder's caller
 must provide the actual clip/offset at that primitive's place in the OT;
 `GetDrawEnv` only returns the last SDK environment and cannot establish later
 depth-sorted DR_AREA changes.
@@ -236,9 +242,80 @@ control comparisons have exact frame and VRAM equality on software and hidden
 GPU backends. Evidence: `build-hd-study/state-clips/`,
 `foreground-state-clips/`, `state-view10*/` and `foreground-state-view10/`.
 This is a selected forced-camera sample, not a new complete-game survey.
-Ordered observations are now available; actual OT replacement, immutable
-foreground asset identity and reflected/actor-clipped runtime integration remain
-unfinished. The packet builder is still not enabled for live room drawing.
+The live integration now registers only packets emitted by the room-sprite
+paths, with source-array IDs and an epoch following each actual OT clear. A
+matching pack can replace those packets at their original depth, using the
+walker's exact state. The whole OT is validated before any links change;
+unrelated packets keep their original addresses/interpolation metadata. PsyZ
+snapshots submission synchronously, then all original links are restored.
+Unknown commands, invalid packet shapes, registry overflow and incompatible
+source descriptors retain the original primitives. An identical unregistered
+HUD texture tuple is not eligible for replacement.
+
+### Foreground pack and current limits
+
+Build a local candidate from exported native sources and the registered canvas:
+
+```sh
+venv/bin/python3 tools/hd/foreground_pack.py \
+  --sources build-hd-study/foreground-state-view10 \
+  --art /local/registered-candidate.png --left -64 \
+  --output /local/background-pack
+```
+
+The 48-byte header is `<8sQQ6I`: `PE2FG1\0\0`, background key, foreground
+atlas key, stage, area, logical view, room state, source count, cell count.
+Each 16-byte `<IHHHHBBH` record contains source ID, texture page, CLUT,
+width, height, U, V and first cell. IDs are sorted/unique; cells are contiguous;
+limits are 512 sources and 960 cells. The atlas key must differ from the base.
+Metadata is named `<background>-<stage>-<area>-<view>-<room>.pe2fg`, and its
+opaque material/reference atlas is `<atlas-key>.fg.png`. Native texels own
+coverage/STP; reference colour mismatches fall back per pixel. Position is
+taken from the live packet, so moving sources can retain their material.
+The builder records provenance and marks its outputs as candidates; a crop of
+the base image is not sufficient proof of individual-layer blend correctness.
+Use `--materials /local/sprites` instead of `--art` to supply individual
+`sprite-NNNN.png` materials at exactly 4x the source dimensions. This is the
+appropriate path for independently enhanced/blended textures. Input may retain
+native transparent holes, but cannot remove native-covered pixels; the shader
+continues to own coverage. Nonzero live texture-window states currently keep
+the original sprite until explicit window-specific material identities exist.
+
+```sh
+venv/bin/python3 tools/hd/check_foreground_presenter.py --ot \
+  --output build-hd-study/foreground-ot
+venv/bin/python3 tools/hd/check_foreground_live.py \
+  --disc /path/to/disc1.cue --disc2 /path/to/disc2.cue \
+  --base-pack /local/base-only --combined-pack /local/base-and-foreground \
+  --location 1,20,10,1,1,1 --key 83f3736e454385c9
+```
+
+The registered OT probe passes 26 GPU and 26 software cases, including exact
+restoration of all original packet bytes and exclusion of an unregistered
+sprite with the same texture tuple. The real gallery check demonstrates nine
+classic foreground replacements, visible material changes, exact full VRAM
+equality against the original/base-only controls, and exact fallback for bad
+metadata or a missing atlas. The source image remains an unapproved candidate.
+
+**Widescreen foreground integration is incomplete.** PsyZ's drawing-area
+classification assumes two display heights: PE2's second buffer ends at row
+511, beyond two 240-line images. Narrowing its scissor can change whether the
+same primitive is squeezed. Such cases now retain the entire original sprite;
+partial-width sprites with fractional squeezed boundaries also retain their
+original primitive. In the gallery, completed-buffer captures demonstrate nine
+replacements on buffer 0, but zero on buffer 272 in 16:9. This is a known
+limitation, not completed widescreen support. Base/model registration on both
+physical buffers, reflections, moving layers and other GPU backends still need
+full validation. PsyZ remains unmodified.
+
+New settled captures use `pe2-static-view-survey-v3`. PE2 normally displays the
+opposite buffer while drawing; immediately before this diagnostic exits, it
+presents the completed draw buffer explicitly. Its reported `buffer_y`, native
+VRAM, GPU-state audit and image now refer to the same frame. v2 captures remain
+useful native-source inputs and literal off/on comparisons, but cannot prove
+current-buffer visuals. Visual coverage must be repeated with v3. The optional
+`PE2_SURVEY_SETTLE_FRAMES=30..600` exercises odd/even buffer parity. This
+diagnostic presentation change is never used in ordinary gameplay.
 
 The native catalog now decodes all 1759 distinct BS inputs with the game's own
 VLC implementation and PsyZ MDEC, rather than treating an approximate Python
@@ -308,12 +385,12 @@ registration experiments do not establish production artwork quality.
 
 ## Verification checkpoint
 
-- 46 C host tests pass, including ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
+- 47 C host tests pass, including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
   out-of-bounds and unsupported cases. The hidden GPU probe also proves that
   native 1x rendering falls back exactly with a valid wide pack supplied.
 - Two synthetic pack tests and two synthetic inventory tests pass (duplicate pixel hashes, missing inputs,
   stage-0 classification, special renderers and raw-store path resolution).
-- Seventeen Python HD tests pass in total. Additional checks exercise the native
+- Twenty Python HD tests pass in total. Additional checks exercise the native
   BS decoder with generated grayscale inputs, logical/mapped view joins,
   unresolved entries, source-guided artwork constraints, and rejection of stale,
   wrong-location, black or incomplete runtime capture evidence.
@@ -321,7 +398,8 @@ registration experiments do not establish production artwork quality.
   STP black, UV wrapping, screen clipping, diagnostic scope, and rejection of
   VRAM changed after the runtime survey. Ordered-state checks cover physical
   buffer origins, texture windows, clipped observed coverage and incomplete or
-  mismatched GPU-state evidence.
+  mismatched GPU-state evidence. Foreground packing tests independently check
+  native references, registered RGB crops and rejection of changed inputs.
 - CLI rejection, preference persistence and subsequent settings reload pass
   against isolated local profiles and the owner's two disc images.
 - A 6001-sample New Game replay reaches the gallery course menu. At pad tick

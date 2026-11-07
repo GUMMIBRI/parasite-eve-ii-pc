@@ -1,6 +1,7 @@
 #include "port/backgrounds.h"
 #include "port/background_pack.h"
 #include "port/gpu_state.h"
+#include "port/background_foreground.h"
 #include <psyz/gpu.h>
 #include <psyz/video.h>
 #include <SDL3/SDL.h>
@@ -14,6 +15,7 @@ typedef struct { u_long addr,len,words[3]; } AtlasSelection;
 typedef struct { DR_TPAGE mode; AtlasSelection selection; SPRT_16 sprite; } BackgroundTile;
 static BackgroundTile tilePackets[480];
 static DR_TPAGE restorePacket;
+static DR_AREA opaqueClipPacket,opaqueRestorePacket;
 
 static int selectAtlas(const u_long* words,int available,void* unused)
 {
@@ -28,6 +30,9 @@ static uint16_t nativeRows[PE_BACKGROUND_PIXELS];
 static uint64_t previousKey,observedKey;
 static PeBackgroundPack currentPack;
 static int packAvailable;
+static PeForegroundPack foregroundPack;
+static int foregroundAvailable,packLocation[4];
+static int materialPresented;
 static char packRoot[4096];
 static int configured;
 static int packConfigurationSet,packEnabled=1,packDirty;
@@ -51,6 +56,7 @@ static GpuSpriteAudit* gpuAuditSprites;
 static PeGpuState gpuAuditState;
 static int gpuAuditEnabled=-1,gpuAuditStarted,gpuAuditComplete,gpuAuditY;
 static unsigned gpuAuditCount;
+static unsigned foregroundDrawn;
 static void observeGpuSprite(const void* packet,unsigned offset,const uint32_t* words,unsigned count,const PeGpuState* state,void* context)
 {
     (void)packet;(void)offset;(void)count;(void)context;
@@ -61,14 +67,21 @@ static void observeGpuSprite(const void* packet,unsigned offset,const uint32_t* 
 }
 void peBackgroundSubmitOt(const void* head)
 {
-    if(gpuAuditEnabled==1 && gpuAuditComplete) {
+    PeBackgroundFrameInfo info;int foregroundReady=materialPresented && foregroundAvailable && packAvailable && packEnabled &&
+        Psyz_VideoGetInternalResolution()>1 && peBackgroundGetFrameInfo(gpuAuditY,&info) && info.key==foregroundPack.background_key;
+    for(unsigned i=0;i<4 && foregroundReady;i++)if((unsigned)info.location[i]!=foregroundPack.location[i])foregroundReady=0;
+    PeGpuState before;int canReplace=0;
+    if((gpuAuditEnabled==1 || foregroundReady) && gpuAuditComplete) {
         if(!gpuAuditStarted) {
             DRAWENV environment;GetDrawEnv(&environment);
             gpuAuditComplete=peGpuStateFromEnv(&gpuAuditState,&environment);gpuAuditStarted=1;
         }
-        if(gpuAuditComplete && !peGpuWalkOt(&gpuAuditState,head,observeGpuSprite,NULL))gpuAuditComplete=0;
+        before=gpuAuditState;
+        if(gpuAuditComplete && !peGpuWalkOt(&gpuAuditState,head,gpuAuditEnabled==1?observeGpuSprite:NULL,NULL))gpuAuditComplete=0;
+        canReplace=gpuAuditComplete && foregroundReady;
     }
-    DrawOTag((OT_TYPE*)head);
+    if(canReplace)foregroundDrawn+=peForegroundSubmitOt(head,&before,&foregroundPack);
+    else DrawOTag((OT_TYPE*)head);
 }
 static int writeGpuAudit(const char* root,int buffer_y,const PeBackgroundFrameInfo* info)
 {
@@ -86,7 +99,7 @@ static int writeGpuAudit(const char* root,int buffer_y,const PeBackgroundFrameIn
                 s->clip_right-s->clip_left+1,s->clip_bottom-s->clip_top+1,s->offset_x,s->offset_y,
                 s->draw_mode,s->texture_window,s->mask_mode);
     }
-    fprintf(file,"]}\n");int failed=ferror(file);if(fclose(file))failed=1;
+    fprintf(file,"],\"foreground_replacements\":%u}\n",foregroundDrawn);int failed=ferror(file);if(fclose(file))failed=1;
     if(failed)remove(path);return !failed;
 }
 static int frameSlot(int y)
@@ -103,9 +116,7 @@ void peBackgroundBeginFrame(int y)
         const char* enabled=getenv("PE2_DUMP_GPU_STATE");gpuAuditEnabled=enabled && !strcmp(enabled,"1");
         if(gpuAuditEnabled)gpuAuditSprites=malloc(GPU_AUDIT_MAX_SPRITES*sizeof(*gpuAuditSprites));
     }
-    if(gpuAuditEnabled) {
-        gpuAuditStarted=0;gpuAuditComplete=gpuAuditSprites!=NULL;gpuAuditCount=0;gpuAuditY=y;
-    }
+    gpuAuditStarted=0;gpuAuditComplete=!gpuAuditEnabled || gpuAuditSprites!=NULL;gpuAuditCount=0;gpuAuditY=y;foregroundDrawn=0;materialPresented=0;
 }
 int peBackgroundGetFrameInfo(int y,PeBackgroundFrameInfo* info)
 {
@@ -175,12 +186,13 @@ static int materialIsOpaque(const char* path,const PeBackgroundPack* pack)
 
 static void preparePack(uint64_t key)
 {
-    if(previousKey==key)return;
+    if(previousKey==key && !memcmp(packLocation,location,sizeof packLocation))return;
     previousKey=key;
+    memcpy(packLocation,location,sizeof packLocation);
     /* One live background's atlas: room/view changes cannot accumulate GPU memory.
      * Missing/animated unmodified sources do not force an idle GPU wait. */
     if(packAvailable)Psyz_GpuResetSpriteAtlases();
-    packAvailable=0;
+    packAvailable=foregroundAvailable=0;
     if(!*packRoot)return;
     char path[4352];
     int n=snprintf(path,sizeof path,"%s/%016" PRIx64 ".pe2bg",packRoot,key);
@@ -213,10 +225,32 @@ static void preparePack(uint64_t key)
     }
     packAvailable=1;
     fprintf(stderr,"[background] loaded %016" PRIx64 " span %d..%d\n",key,currentPack.left,currentPack.right);
+    n=snprintf(path,sizeof path,"%s/%016" PRIx64 "-%d-%d-%d-%d.pe2fg",packRoot,key,location[0],location[1],location[2],location[3]);
+    if(n<0 || n>=(int)sizeof path)return;
+    file=fopen(path,"rb");if(!file)return;
+    unsigned char foregroundMetadata[PE_FOREGROUND_PACK_HEADER+PE_FOREGROUND_MAX_SOURCES*PE_FOREGROUND_PACK_ENTRY+1];
+    bytes=fread(foregroundMetadata,1,sizeof foregroundMetadata,file);failed=ferror(file);fclose(file);
+    if(failed || !peForegroundParsePack(&foregroundPack,foregroundMetadata,bytes,key,location)) {
+        fprintf(stderr,"[foreground] invalid metadata; using original sprites\n");return;
+    }
+    n=snprintf(path,sizeof path,"%s/%016" PRIx64 ".fg.png",packRoot,foregroundPack.atlas_key);
+    if(n<0 || n>=(int)sizeof path)return;
+    PeBackgroundPack dimensions={.cells=foregroundPack.cells};valid=0;file=fopen(path,"rb");
+    if(file) {
+        size_t got=fread(pngHeader,1,sizeof pngHeader,file);
+        if(!fseek(file,0,SEEK_END)) {long encoded=ftell(file);valid=encoded>=24 && encoded<=64*1024*1024 && peBackgroundCheckPngHeader(pngHeader,got,&dimensions);}
+        fclose(file);
+    }
+    if(!valid || !materialIsOpaque(path,&dimensions) || Psyz_GpuLoadSpriteAtlas(foregroundPack.atlas_key,path)!=1) {
+        fprintf(stderr,"[foreground] unavailable atlas; using original sprites\n");return;
+    }
+    foregroundAvailable=1;
+    fprintf(stderr,"[foreground] loaded %u sources, %u cells\n",foregroundPack.count,foregroundPack.cells);
 }
 
 void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
 {
+    materialPresented=0;
     if(!configured) {
         const char* root=getenv("PE2_HD_BACKGROUNDS");
         if(!packConfigurationSet)peBackgroundConfigurePack(root?root:"",1);
@@ -225,7 +259,7 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
     }
     if(packDirty) {
         if(packAvailable)Psyz_GpuResetSpriteAtlases();
-        packAvailable=0;previousKey=0;packDirty=0;
+        packAvailable=foregroundAvailable=0;previousKey=0;packDirty=0;
     }
     /* Cropped transitions and movies do not claim static full-frame coverage. */
     if(!source || offset_y || (!(packEnabled && *packRoot) && !getenv("PE2_DUMP_BACKGROUNDS") && !getenv("PE2_DUMP_FRAME") && !getenv("PE2_SURVEY_TARGET"))) {
@@ -244,6 +278,11 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
     int wide=peBackgroundSetCoverage(buffer_y,currentPack.left,currentPack.right);
     DRAWENV saved;
     GetDrawEnv(&saved);
+    DISPENV display;GetDispEnv(&display);
+    if(display.isrgb24 || display.disp.w!=320 || display.disp.h!=240 ||
+       (display.screen.h && display.screen.h!=240) || display.screen.y<0 || display.screen.y>2) {
+        peBackgroundSetCoverage(buffer_y,0,320);return;
+    }
     unsigned cell=0,used=0;
     void* first=NULL;
     void* previous=NULL;
@@ -253,7 +292,7 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
         int sourceX=x<0 || x>=320?0:x;
         setDrawTPage(&tile->mode,0,0,getTPage(2,0,sourceX&~255,buffer_y&~255));
         setlen(&tile->selection,3);
-        tile->selection.words[0]=0xf8000000u|cell|(wide?0x800000u:0);
+        tile->selection.words[0]=0xf8800000u|cell;
         tile->selection.words[1]=(uint32_t)key;
         tile->selection.words[2]=(uint32_t)(key>>32);
         setSprt16(&tile->sprite);setRGB0(&tile->sprite,128,128,128);
@@ -266,22 +305,43 @@ void peBackgroundDraw(const void* source,int columns,int buffer_y,int offset_y)
     setDrawTPage(&restorePacket,saved.dfe,saved.dtd,saved.tpage);
     if(previous)catPrim(previous,&restorePacket);
     termPrim(&restorePacket);
+    if(!wide && first) {
+        /* A direct LoadImage background is opaque even at RGB555 zero. The
+         * normal texture path would turn those pixels into black pinholes.
+         * Use PsyZ's existing material-only plane; a full-height VRAM scissor
+         * keeps WidescreenDraw false, so neither buffer gets squeezed. The
+         * temporary switch is completely drained/restored before room OTs. */
+        RECT broad={saved.clip.x,0,saved.clip.w,512},original=saved.clip;
+        SetDrawArea(&opaqueClipPacket,&broad);SetDrawArea(&opaqueRestorePacket,&original);
+        catPrim(&opaqueClipPacket,first);first=&opaqueClipPacket;
+        termPrim(&opaqueRestorePacket);
+        DrawSync(0);Psyz_VideoSetWidescreen(1);
+    }
     /* One FIFO submission preserves atlas selection per sprite and avoids a
      * separate GPU submission/transfer allocation for every single tile. */
     if(first)DrawOTag(first);
     DrawSync(0);
+    if(!wide && first) {
+        Psyz_VideoSetWidescreen(0);
+        /* Restoring E4h inside the same list would classify queued vertices
+         * using the restored narrow area before its flush. Drain first. */
+        DrawPrim(&opaqueRestorePacket);DrawSync(0);peBackgroundSetCoverage(buffer_y,0,320);
+    }
+    if(first)materialPresented=1;
 }
 
 /* Opt-in static-camera survey. Ordinary gameplay never enters this path. */
 void peBackgroundEndFrame(int buffer_y,int field_frame)
 {
-    static int initialized,enabled,matchingFrames;
+    static int initialized,enabled,matchingFrames,settleFrames=30;
     static unsigned stage,area,view,room;
     static uint64_t expected;
     static char root[4096];
     if(!initialized) {
         const char* target=getenv("PE2_SURVEY_TARGET");
         const char* output=getenv("PE2_SURVEY_OUTPUT");
+        const char* settle=getenv("PE2_SURVEY_SETTLE_FRAMES");
+        if(settle) {char* end;long value=strtol(settle,&end,10);if(*settle && !*end && value>=30 && value<=600)settleFrames=(int)value;}
         int used=0;
         if(target && output && strlen(output)<sizeof root &&
            sscanf(target,"%u,%u,%u,%u:%16" SCNx64 "%n",&stage,&area,&view,&room,&expected,&used)==5 &&
@@ -296,14 +356,19 @@ void peBackgroundEndFrame(int buffer_y,int field_frame)
     if(!field_frame || !peBackgroundGetFrameInfo(buffer_y,&info) || info.key!=expected ||
        info.location[0]!=(int)stage || info.location[1]!=(int)area ||
        info.location[2]!=(int)view || info.location[3]!=(int)room) {matchingFrames=0;return;}
-    if(++matchingFrames<30)return;
+    if(++matchingFrames<settleFrames)return;
     DrawSync(0);
+    /* PE2 displays the opposite buffer while drawing. This diagnostic exits
+     * after capture: present the completed draw buffer so pixels, OT state,
+     * native VRAM and reported source all describe the very same frame. */
+    DISPENV savedDisplay,captureDisplay;GetDispEnv(&savedDisplay);captureDisplay=savedDisplay;
+    captureDisplay.disp.y=buffer_y;PutDispEnv(&captureDisplay);DrawSync(0);
     int w=0,h=0;
     unsigned char* rgb=Psyz_VideoAllocRenderedFrame(&w,&h);
     if(!rgb)exit(2);
     size_t nonzero=0;
     for(size_t i=0;i<(size_t)w*h*3;i++)nonzero+=rgb[i]!=0;
-    if(!nonzero) {free(rgb);return;} /* Never accept the initial blackout. */
+    if(!nonzero) {free(rgb);PutDispEnv(&savedDisplay);return;} /* Never accept the initial blackout. */
     uint16_t* vram=malloc(1024*512*2);
     if(!vram || !SDL_CreateDirectory(root))exit(2);
     RECT all={0,0,1024,512};StoreImage(&all,(u_long*)vram);DrawSync(0);
@@ -318,8 +383,8 @@ void peBackgroundEndFrame(int buffer_y,int field_frame)
     free(rgb);free(vram);if(failed)exit(2);
     if(gpuAuditEnabled==1 && !writeGpuAudit(root,buffer_y,&info))exit(2);
     snprintf(path,sizeof path,"%s/report.json",root);file=fopen(path,"w");if(!file)exit(2);
-    fprintf(file,"{\"format\":\"pe2-static-view-survey-v2\",\"matched_frames\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"width\":%d,\"height\":%d}\n",
-            matchingFrames,info.key,info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5],w,h);
+    fprintf(file,"{\"format\":\"pe2-static-view-survey-v3\",\"matched_frames\":%d,\"key\":\"%016" PRIx64 "\",\"location\":[%d,%d,%d,%d,%d,%d],\"width\":%d,\"height\":%d,\"buffer_y\":%d,\"foreground_replacements\":%u}\n",
+            matchingFrames,info.key,info.location[0],info.location[1],info.location[2],info.location[3],info.location[4],info.location[5],w,h,buffer_y,foregroundDrawn);
     failed=ferror(file);if(fclose(file))failed=1;
     if(failed) {remove(path);exit(2);}
     fprintf(stderr,"[survey] captured %u/%u/%u room %u key %016" PRIx64 "\n",stage,area,view,room,expected);

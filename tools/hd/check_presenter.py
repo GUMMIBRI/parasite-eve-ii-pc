@@ -56,6 +56,10 @@ def main():
         assert Path(str(reload)+'.'+suffix+'.ppm').read_bytes()==wide.read_bytes(),suffix
     assert (root/'reload.log').read_text().count('[background] loaded ')==4
     assert hd.read_bytes()!=baseline.read_bytes()
+    with Image.open(hd) as image:
+        # LoadImage backgrounds are opaque: native RGB555 zero/STP must not
+        # punch black holes through a valid material, even in classic 4:3.
+        assert all(abs(low-value)<=1 and abs(high-value)<=1 for (low,high),value in zip(image.getextrema(),(192,64,128)))
     assert results['wide']['width']>results['baseline']['width']*1.3
     assert results['wide']['height']==results['baseline']['height']
     with Image.open(wide) as image:

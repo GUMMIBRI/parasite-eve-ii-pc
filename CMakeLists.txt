@@ -384,7 +384,7 @@ add_executable(background_pack_test EXCLUDE_FROM_ALL tests/background_pack_test.
 target_include_directories(background_pack_test PRIVATE include)
 
 add_executable(background_presenter_probe EXCLUDE_FROM_ALL tests/background_presenter_probe.c
-    src/port/backgrounds.c src/port/background_coverage.c src/port/background_pack.c src/port/gpu_state.c)
+    src/port/backgrounds.c src/port/background_coverage.c src/port/background_pack.c src/port/gpu_state.c src/port/background_foreground.c src/port/foreground_ot.c src/port/foreground_pack.c)
 target_include_directories(background_presenter_probe PRIVATE include)
 target_compile_definitions(background_presenter_probe PRIVATE __psyz SKIP_ASM)
 target_link_libraries(background_presenter_probe PRIVATE psyz)
@@ -396,7 +396,7 @@ target_compile_definitions(hd_native_decode PRIVATE __psyz SKIP_ASM)
 target_link_libraries(hd_native_decode PRIVATE psyz)
 
 add_executable(foreground_presenter_probe EXCLUDE_FROM_ALL tests/foreground_presenter_probe.c
-    src/port/background_foreground.c src/port/backgrounds.c src/port/background_coverage.c src/port/background_pack.c src/port/gpu_state.c)
+    src/port/background_foreground.c src/port/backgrounds.c src/port/background_coverage.c src/port/background_pack.c src/port/gpu_state.c src/port/foreground_ot.c src/port/foreground_pack.c)
 target_include_directories(foreground_presenter_probe PRIVATE include)
 target_compile_definitions(foreground_presenter_probe PRIVATE __psyz SKIP_ASM)
 target_link_libraries(foreground_presenter_probe PRIVATE psyz)
@@ -410,6 +410,9 @@ add_executable(gpu_state_test EXCLUDE_FROM_ALL tests/gpu_state_test.c src/port/g
 target_include_directories(gpu_state_test PRIVATE include)
 target_compile_definitions(gpu_state_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(gpu_state_test PRIVATE psyz)
+
+add_executable(foreground_pack_test EXCLUDE_FROM_ALL tests/foreground_pack_test.c src/port/foreground_pack.c)
+target_include_directories(foreground_pack_test PRIVATE include)
 
 enable_testing()
 set(PE_DATA_TESTS cap_room_command_test rupert_eyes_test tmd_layout_assets_test text_palette_test

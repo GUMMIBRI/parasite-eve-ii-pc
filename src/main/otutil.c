@@ -145,6 +145,9 @@ s32 displayRunTaskFrame(GsOT* unusedOrderingTables, s32 frameStartLines, s32 unu
     // Borrow the task OT and its primitive half until this frame is submitted.
     display = &gDisplayState;
     DISPLAY_BEGIN_TASK_FRAME(display, savedOt);
+#ifdef __psyz
+    peForegroundBeginOt(gGpuCurrentOt,1u<<gGpuTaskOrderingTables[display->frameBuffer].length);
+#endif
     taskExecList(&gDisplayTaskList);
     cdCmdService();
     if (display->mdecActive == 0) {
@@ -432,6 +435,9 @@ void gpuInitTaskOrderingTables(void)
     firstTag      = (OT_TYPE*)orderingTables[display->frameBuffer].org;
     GPU_OT_SET_END(firstTag);
     gGpuCurrentOt = firstTag;
+#ifdef __psyz
+    peForegroundBeginOt(firstTag,1u<<orderingTables[display->frameBuffer].length);
+#endif
 }
 
 void displayUseHeapTaskPrimitiveBuffer(void)

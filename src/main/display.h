@@ -1,5 +1,8 @@
 #ifndef MAIN_PRIVATE_DISPLAY_H
 #define MAIN_PRIVATE_DISPLAY_H
+#ifdef __psyz
+#include "port/background_foreground.h"
+#endif
 
 #include <psyz.h>
 #include <libgte.h>
@@ -212,6 +215,9 @@ static inline void _gpuBeginOt(s32 bufferIndex)
     // Clear the reverse DMA chain before drawing tasks borrow its depth base.
     gGpuCurrentOt = gGpuFrameOtTags[bufferIndex];
     ClearOTagR(gGpuCurrentOt, GPU_ORDERING_TABLE_BUFFER_ENTRIES);
+#ifdef __psyz
+    peForegroundBeginOt(gGpuCurrentOt,GPU_ORDERING_TABLE_BUFFER_ENTRIES);
+#endif
     firstTag      = gGpuCurrentOt;
     GPU_OT_SET_END(firstTag);
     gGpuCurrentOt = firstTag + GPU_ORDERING_TABLE_RESERVED_ENTRIES;
