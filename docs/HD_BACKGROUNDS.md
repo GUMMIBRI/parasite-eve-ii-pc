@@ -1814,6 +1814,35 @@ during collection; all 60 Python HD tests pass. The original full report retains
 its 606 generic no-target entries. This supplemental route accounts for one of
 them, leaving 605 without settled evidence rather than rewriting that report.
 
+#### Gallery fixed-training view-14 artwork study
+
+The verified menu route supplies a first artwork study for native background
+`843ae3abe481d815`. Its source audit exports all 29 authored foreground sources
+from the settled training capture. A 1792x960 native geometry guide marks
+256-pixel side margins for outpainting. Built-in image edits produce two
+1713x918 candidates, retaining prompts and hashes under the ignored
+`art/mist-shooting-gallery-view14/` directory.
+
+Raw v1 and v2 are not approved: lower foreground-rail regions show nonzero or
+ambiguous gradient matches, despite sharper coherent material. A source-guided
+v1 technical canvas preserves native high-contrast geometry and bounded
+surface microtexture. All 29 best shifts are zero, with 25 non-ambiguous peaks;
+sources 2, 11, 12 and 13 remain ambiguous. Its centre/side sharpness transitions
+remain visible, and its centre includes native-derived pixels. It stays private
+and is not a substitute for finished authored artwork. Base/foreground packs
+are separate study folders and do not replace the installed four-view fixture.
+
+Nine headless Metal 4x controls replay the verified training-menu trace
+(`foreground-view14-source-guided-v1-route/report.json`). Classic and wide
+base/combined pairs preserve native VRAM, normalized original GPU commands,
+captured simulation counters and complete model/player-pose hashes. All 29
+foreground replacements activate; wide captures cover physical buffers 0 and
+272, and malformed/missing foreground payloads fall back exactly. The 1707x960
+wide training frame was visually inspected: the player is visible, but material
+sharpness bands remain obvious. This is renderer integration evidence for a new
+view, not final art or moving-target occlusion approval. The local assessment
+binds the runtime report, candidate hashes and unresolved diagnostics.
+
 ## Earlier verification checkpoint
 
 This historical snapshot predates the current verification summary above.
