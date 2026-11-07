@@ -1093,6 +1093,24 @@ gallery route's nine controls pass again on the new binary
 in both buffers and malformed-pack fallback. This limits regression evidence to
 these concrete routes rather than all-room or all-platform correctness.
 
+#### Crossfade validation still open on Linux and the sterilization route
+
+The updated game and per-buffer coverage test build on Linux ARM64; all 49 C
+tests pass there. A Vulkan/lavapipe 4x replay targeting transient frame 1292
+times out after 180 seconds in the first **no-pack control**, before producing a
+checkpoint. `linux-mist-pattern-crossfade-guarded` retains the failed collection;
+it provides no crossfade rendering approval. The remaining container process was
+terminated and the test container stopped. The cause is not established: next
+diagnosis must distinguish scene pacing from a skipped exact counter, rather
+than crediting the macOS result to Linux or attributing the timeout to HD.
+
+Source inspection of the sterilization-room action handler shows that trap
+entry requires both a dormant trap and `GAME_FLAG_B2_NORTH_WALKWAY_SCENE_SEEN`.
+An ordinary fresh forced start does not supply that story prerequisite. A real
+prior route or an appropriate unmodified save is needed to exercise this second
+carrier; setting the flag through the debugger would not validate that route.
+Its crossfade remains runtime-unverified despite sharing the tested guard code.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
