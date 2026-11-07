@@ -48,6 +48,12 @@ Put the second disc next to the first (or pick it when the game asks for it). Yo
 passing the path. Host tests: `cmake --build build --target host_tests && ctest --test-dir build`. Nothing from your
 disc is ever committed: `tools/ci/check_no_game_data.sh` enforces that.
 
+**If it does not start:** a disc or start-up error is shown in a window and written to the log. Started from a
+terminal, the log is the terminal itself. Started from Finder or a desktop launcher, it is `parasite-eve-ii.log` in the
+preferences folder, rewritten on each start: `~/Library/Application Support/parasite-eve/parasite-eve-ii/` on macOS,
+`~/.local/share/parasite-eve/parasite-eve-ii/` on Linux. Attach that file to a bug report. `PE2_LOG=<file>` writes the
+log to a file of your choice.
+
 An optional local HD background pack can be selected in Graphics > Background pack
 or with `--hd-backgrounds /path/to/pack`; `--no-hd-backgrounds` disables it.
 Use Picture detail 2x or above. No reviewed artwork pack is bundled yet; see
@@ -64,6 +70,7 @@ and copy the result back (see [docs/PORT_PLAN.md](docs/PORT_PLAN.md)).
 | Variable | Effect |
 | --- | --- |
 | `PE2_SKIPINTRO=1` | skip the opening movie |
+| `PE2_LOG=<file>` | write standard output and error to this file (rewritten on each start) |
 | `PE2_HD_BACKGROUNDS=<directory>` | experimental local PE2BG1 atlas pack; use Picture detail 2x+ and `--widescreen 0|1`; missing/invalid art retains 4:3 |
 | `PE2_DUMP_BACKGROUNDS=<directory>` | export native RGB555 backdrops and observed logical locations for local artwork work; never commit these exports |
 | `PE2_DUMP_FRAME=<tick>:<file.ppm>` | capture the actual presenter, including HD/widescreen framing; `PSYZ_HEADLESS=gpu` uses a hidden GPU window |

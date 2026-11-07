@@ -3,8 +3,19 @@
  * event ownership, native file dialogs, audio/clock pause and pad reset).
  * Kept separate from retail headers: their bool typedef is not SDL's ABI. */
 #include <SDL3/SDL.h>
+#include <errno.h>
 #include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <time.h>
+#ifdef _WIN32
+#include <io.h>
+#define isatty _isatty
+#define fileno _fileno
+#else
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <psyz.h>
@@ -43,7 +54,9 @@ static const Color kPanel={0.075f,0.082f,0.102f,0.96f}, kText={0.93f,0.95f,0.98f
 #include "ui/paint.h"
 #include "ui/gpu.h"
 
-static char discPaths[2][4096], configPath[4096], statusText[256];
+static char discPaths[2][4096], configPath[4096], statusText[1024];
+static char logPath[4096];
+static int logToFile, stderrIsTerminal;
 static char hdPackPath[4096];
 static int hdEnabled=1;
 static int requiredDisc, selectedDisc;
@@ -132,10 +145,61 @@ static void loadOptions(void) {
     applyWidescreen(widescreen);
 }
 
+
+/* A game started from Finder or a desktop launcher has its standard error on /dev/null or the system journal,
+ * so nothing it reports can be found. Then (or when PE2_LOG names a file) standard output and error go to
+ * parasite-eve-ii.log in the preferences folder, rewritten on each start. A terminal, pipe or file the user
+ * chose is left alone. */
+static void openLog(int argc,char** argv) {
+    const char* forced=getenv("PE2_LOG");
+    stderrIsTerminal=isatty(fileno(stderr));
+    int detached=0;
+#ifndef _WIN32
+    struct stat st;
+    detached=fstat(STDERR_FILENO,&st)!=0 || (!stderrIsTerminal && (S_ISCHR(st.st_mode) || S_ISSOCK(st.st_mode)));
+#endif
+    if(forced && *forced) snprintf(logPath,sizeof logPath,"%s",forced);
+    else if(detached && !getenv("PSYZ_HEADLESS")) {
+        size_t n=strlen(configDir);
+        snprintf(logPath,sizeof logPath,"%s%sparasite-eve-ii.log",configDir,n && (configDir[n-1]=='/'||configDir[n-1]=='\\')?"":"/");
+    }
+    else return;
+    fflush(stdout);fflush(stderr);
+    if(!freopen(logPath,"w",stderr)) { /* stderr is gone; keep going without a log */
+        logPath[0]=0;return;
+    }
+    setvbuf(stderr,NULL,_IONBF,0);
+#ifndef _WIN32
+    dup2(STDERR_FILENO,STDOUT_FILENO);
+#endif
+    logToFile=1;stderrIsTerminal=0;
+    time_t now=time(NULL);char when[64];
+    strftime(when,sizeof when,"%Y-%m-%d %H:%M:%S",localtime(&now));
+    fprintf(stderr,"Parasite Eve II PC port, started %s\nPreferences: %s\nCommand line:",when,configDir);
+    for(int i=0;i<argc;i++)fprintf(stderr," %s",argv[i]);
+    fputc('\n',stderr);
+}
+
+void peHostReportError(const char* format,...) {
+    char message[2048];
+    va_list args;va_start(args,format);vsnprintf(message,sizeof message,format,args);va_end(args);
+    fprintf(stderr,"error: %s\n",message);fflush(stderr);
+    /* Someone at a terminal reads it there; a game started from a launcher shows it in a window. */
+    if(stderrIsTerminal || getenv("PSYZ_HEADLESS"))return;
+    char text[3072];
+    if(logToFile)snprintf(text,sizeof text,"%s\n\nThe log is in:\n%s",message,logPath);
+    else snprintf(text,sizeof text,"%s",message);
+    if(!SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,"Parasite Eve II",text,uiWindow))
+        fprintf(stderr,"(could not show the error window: %s)\n",SDL_GetError());
+}
+
 /* Raw BINs are presented to the SDK through a generated CUE in preferences.
  * The user's image is opened read-only and is never modified. */
 static int preparePath(const char* path,char out[4096]) {
-    if(strlen(path)>=4096 || strpbrk(path,"\r\n\"")) return 0;
+    if(strlen(path)>=4096 || strpbrk(path,"\r\n\"")) {
+        snprintf(statusText,sizeof statusText,"Cannot use %s: the path is too long or contains a quote or line break. Rename or move the file.",path);
+        return 0;
+    }
     const char* ext=strrchr(path,'.');
     if(ext && !SDL_strcasecmp(ext,".bin")) {
         char* absolute=SDL_GetCurrentDirectory();
@@ -143,19 +207,25 @@ static int preparePath(const char* path,char out[4096]) {
         int length=path[0]=='/'?snprintf(bin,sizeof bin,"%s",path):
             snprintf(bin,sizeof bin,"%s%s",absolute?absolute:"",path);
         SDL_free(absolute);
-        if(length<0 || length>=(int)sizeof bin)return 0;
+        if(length<0 || length>=(int)sizeof bin) {
+            snprintf(statusText,sizeof statusText,"Cannot use %s: the full path is too long.",path);
+            return 0;
+        }
         /* Slot determined after validation; one temporary CUE per candidate. */
         snprintf(out,4096,"%s/selected-image.cue",configDir);
-        FILE* f=fopen(out,"w"); if(!f)return 0;
+        FILE* f=fopen(out,"w");
+        if(!f) {snprintf(statusText,sizeof statusText,"Cannot write %s: %s.",out,strerror(errno));return 0;}
         fprintf(f,"FILE \"%s\" BINARY\n  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n",bin);
         int failed=ferror(f); if(fclose(f))failed=1;
+        if(failed)snprintf(statusText,sizeof statusText,"Cannot write %s: %s.",out,strerror(errno));
         return !failed;
     }
     if(path[0]=='/' || path[0]=='\\' || (path[0] && path[1]==':'))strcpy(out,path);
     else {
         char* directory=SDL_GetCurrentDirectory();
         int length=snprintf(out,4096,"%s%s",directory?directory:"",path);
-        SDL_free(directory);if(length<0||length>=4096)return 0;
+        SDL_free(directory);
+        if(length<0||length>=4096) {snprintf(statusText,sizeof statusText,"Cannot use %s: the full path is too long.",path);return 0;}
     }
     return 1;
 }
@@ -165,32 +235,48 @@ static int acceptPath(const char* path,int expected) {
     PeDisc* d=peDiscOpen(cue); int number=peDiscNumber(d); peDiscClose(d);
     if(!number || (expected && number!=expected)) {
         FILE* probe=fopen(path,"rb");
-        if(!probe)snprintf(statusText,sizeof statusText,"Cannot open %s. Check the path and permissions.",path);
+        if(!probe)snprintf(statusText,sizeof statusText,"Cannot open %s: %s.",path,strerror(errno));
         else {
             fclose(probe);
             if(number)snprintf(statusText,sizeof statusText,"This is USA Disc %d, but Disc %d is needed here.",number,expected);
-            else snprintf(statusText,sizeof statusText,"Not a supported USA Parasite Eve II image (keep the CUE next to its BIN, and use the North American release).");
+            else snprintf(statusText,sizeof statusText,"Not a supported image: %s.",peDiscError());
         }
         return 0;
     }
     const char* ext=strrchr(path,'.');
     if(ext && !SDL_strcasecmp(ext,".bin")) {
         char stable[4096]; snprintf(stable,sizeof stable,"%s/disc%d.cue",configDir,number);
-        if(rename(cue,stable))return 0;
+        if(rename(cue,stable)) {
+            snprintf(statusText,sizeof statusText,"Cannot save %s: %s.",stable,strerror(errno));
+            fprintf(stderr,"[disc] %s\n",statusText);
+            return 0;
+        }
         strcpy(cue,stable);
     }
+    fprintf(stderr,"[disc] USA Disc %d: %s\n",number,path);
     strcpy(discPaths[number-1],cue);
     snprintf(statusText,sizeof statusText,"USA Disc %d configured.",number);
     return number;
 }
 
-typedef struct { SDL_AtomicInt done; char* paths[2]; int failed; } DiscDialog;
+typedef struct { SDL_AtomicInt done; char* paths[2]; int failed,cancelled; char error[512]; } DiscDialog;
+enum { DIALOG_CHOSEN, DIALOG_CANCELLED, DIALOG_FAILED };
+static int lastDialogOutcome;
 static void SDLCALL discChosen(void* user,const char* const* files,int filter) {
     DiscDialog* d=user; (void)filter;
-    if(!files)d->failed=1;
+    if(!files) {
+        d->failed=1;
+        snprintf(d->error,sizeof d->error,"Could not open the file chooser: %s",SDL_GetError());
+    }
+    else if(!files[0])d->cancelled=1;
     else for(int i=0;files[i];i++) {
-        if(i>=2) { d->failed=1; break; }
-        d->paths[i]=SDL_strdup(files[i]); if(!d->paths[i])d->failed=1;
+        if(i>=2) {
+            d->failed=1;
+            snprintf(d->error,sizeof d->error,"Select at most two images (Disc 1 and Disc 2).");
+            break;
+        }
+        d->paths[i]=SDL_strdup(files[i]);
+        if(!d->paths[i]) {d->failed=1;snprintf(d->error,sizeof d->error,"Out of memory.");}
     }
     SDL_SetAtomicInt(&d->done,1);
 }
@@ -201,7 +287,12 @@ static int chooseDiscs(SDL_Window* window,int expected) {
     SDL_ShowOpenFileDialog(discChosen,&d,window,filters,1,NULL,expected==0);
     while(!SDL_GetAtomicInt(&d.done)) { SDL_PumpEvents(); SDL_Delay(10); }
     int count=0;
-    if(!d.failed)for(int i=0;i<2;i++) if(d.paths[i])count+=acceptPath(d.paths[i],expected)!=0;
+    lastDialogOutcome=d.failed?DIALOG_FAILED:d.cancelled?DIALOG_CANCELLED:DIALOG_CHOSEN;
+    if(d.failed) {snprintf(statusText,sizeof statusText,"%s",d.error);fprintf(stderr,"[disc] %s\n",d.error);}
+    else for(int i=0;i<2;i++) if(d.paths[i]) {
+        if(acceptPath(d.paths[i],expected))count++;
+        else fprintf(stderr,"[disc] rejected %s: %s\n",d.paths[i],statusText);
+    }
     for(int i=0;i<2;i++)SDL_free(d.paths[i]);
     Psyz_PauseHostClock_SDL3(false);
     s_overlayState.dirty=1;
@@ -459,6 +550,7 @@ static bool settingsEvent(const SDL_Event* e) {
 
 int peHostStartup(int argc,char** argv,const char** disc) {
     loadOptions();
+    openLog(argc,argv);
     int menuOnly=0,validateOnly=0,widescreenSeen=0,hdSeen=0;
     const char* hdEnvironment=getenv("PE2_HD_BACKGROUNDS");
     const char* explicitDisc=getenv("PE2_DISC");
@@ -506,12 +598,15 @@ int peHostStartup(int argc,char** argv,const char** disc) {
         strcpy(hdPackPath,absolute);
     }
     peBackgroundConfigurePack(hdPackPath,hdEnabled);
-    if(explicitDisc && acceptPath(explicitDisc,1)!=1) {fprintf(stderr,"%s\n",statusText);return -1;}
-    if(explicitDisc2 && acceptPath(explicitDisc2,2)!=2) {fprintf(stderr,"%s\n",statusText);return -1;}
+    if(explicitDisc && acceptPath(explicitDisc,1)!=1) {peHostReportError("Disc 1: %s",statusText);return -1;}
+    if(explicitDisc2 && acceptPath(explicitDisc2,2)!=2) {peHostReportError("Disc 2: %s",statusText);return -1;}
     if(validateOnly) {
         for(int i=0;i<2;i++) {
             PeDisc* d=peDiscOpen(discPaths[i]);int number=peDiscNumber(d);peDiscClose(d);
-            if(number!=i+1) {fprintf(stderr,"Disc %d validation failed.\n",i+1);return -1;}
+            if(number!=i+1) {
+                peHostReportError("Disc %d validation failed: %s",i+1,*discPaths[i]?peDiscError():"no image is configured");
+                return -1;
+            }
             fprintf(stderr,"USA Disc %d validated: %s\n",number,discPaths[i]);
         }
         saveOptions();return 0;
@@ -521,7 +616,9 @@ int peHostStartup(int argc,char** argv,const char** disc) {
     s_prevOverlayDestroy=Psyz_OverlayDestroyCB(Host_OverlayDestroyGPU);
     previousFilter=Psyz_SetOverlayEventFilter_SDL3(settingsEvent);
     if(menuOnly) {
-        if(!SDL_InitSubSystem(SDL_INIT_VIDEO|SDL_INIT_GAMEPAD))return -1;
+        if(!SDL_InitSubSystem(SDL_INIT_VIDEO|SDL_INIT_GAMEPAD)) {
+            peHostReportError("Cannot start the video system: %s",SDL_GetError());return -1;
+        }
         Psyz_SetTitle("Parasite Eve II - Settings");
         ResetGraph(0);
         DISPENV display;
@@ -531,13 +628,39 @@ int peHostStartup(int argc,char** argv,const char** disc) {
         Psyz_VideoVSync(0);
         settings();return 0;
     }
-    if(!*discPaths[0]) {
-        if(getenv("PSYZ_HEADLESS")) { fprintf(stderr,"Provide Disc 1 with --disc or PE2_DISC.\n");return -1; }
-        if(!SDL_InitSubSystem(SDL_INIT_VIDEO|SDL_INIT_GAMEPAD))return -1;
-        if(!chooseDiscs(NULL,0))return 0;
+    /* Disc 1 comes from the command line, the saved preferences or the file chooser. A saved image that has
+     * moved or a wrong choice asks again rather than quitting without a word. */
+    int videoReady=0;
+    for(;;) {
+        if(*discPaths[0]) {
+            PeDisc* d=peDiscOpen(discPaths[0]);int number=peDiscNumber(d);peDiscClose(d);
+            if(number==1)break;
+            char reason[1024];
+            snprintf(reason,sizeof reason,"%s",number?"it is not Disc 1":peDiscError());
+            if(explicitDisc || getenv("PSYZ_HEADLESS")) {
+                peHostReportError("Disc 1 (%s) cannot be used: %s",discPaths[0],reason);return -1;
+            }
+            peHostReportError("The Disc 1 image chosen before (%s) cannot be used: %s\n\nChoose the Disc 1 image again.",
+                              discPaths[0],reason);
+            discPaths[0][0]=0;
+        }
+        if(getenv("PSYZ_HEADLESS")) {peHostReportError("Provide Disc 1 with --disc or PE2_DISC.");return -1;}
+        if(!videoReady) {
+            if(!SDL_InitSubSystem(SDL_INIT_VIDEO|SDL_INIT_GAMEPAD)) {
+                peHostReportError("Cannot start the video system: %s",SDL_GetError());return -1;
+            }
+            videoReady=1;
+        }
+        statusText[0]=0;
+        chooseDiscs(NULL,0);
+        if(lastDialogOutcome==DIALOG_CANCELLED) {fprintf(stderr,"No disc image chosen; exiting.\n");return 0;}
+        if(lastDialogOutcome==DIALOG_FAILED) {peHostReportError("%s",statusText);return -1;}
+        if(!*discPaths[0]) {
+            if(*discPaths[1] && !strncmp(statusText,"USA Disc 2",10))
+                peHostReportError("That image is Disc 2. Choose the Disc 1 image (you can select both discs at once).");
+            else peHostReportError("%s",*statusText?statusText:"The chosen file cannot be used as Disc 1.");
+        }
     }
-    PeDisc* d=peDiscOpen(discPaths[0]);int valid=peDiscNumber(d)==1;peDiscClose(d);
-    if(!valid) {fprintf(stderr,"Configured Disc 1 is unavailable or unsupported.\n");return -1;}
     saveOptions();*disc=discPaths[0];return 1;
 }
 
@@ -549,11 +672,22 @@ int peHostSwapDisc(int number) {
     snprintf(statusText,sizeof statusText,"Please select USA Disc %d.",number);
     if(!*discPaths[number-1])settings();
     requiredDisc=0;
-    if(!*discPaths[number-1] || s_overlayState.quit)return 0;
+    if(!*discPaths[number-1] || s_overlayState.quit) {
+        fprintf(stderr,"[disc] no Disc %d image chosen\n",number);return 0;
+    }
     PeDisc* d=peDiscOpen(discPaths[number-1]);
-    if(peDiscNumber(d)!=number) {peDiscClose(d);return 0;}
+    int found=peDiscNumber(d);
+    if(found!=number) {
+        peHostReportError("Disc %d (%s) cannot be used: %s",number,discPaths[number-1],
+                          found?"it is a different disc":peDiscError());
+        peDiscClose(d);return 0;
+    }
     Psyz_CdShellOpen(1);
-    if(Psyz_CdSetDiskPath(discPaths[number-1])) {Psyz_CdShellOpen(0);peDiscClose(d);return 0;}
+    if(Psyz_CdSetDiskPath(discPaths[number-1])) {
+        peHostReportError("Cannot mount Disc %d (%s).",number,discPaths[number-1]);
+        Psyz_CdShellOpen(0);peDiscClose(d);return 0;
+    }
+    fprintf(stderr,"[disc] mounted Disc %d: %s\n",number,discPaths[number-1]);
     peAssetsLoad(d);
     peDiscClose(d);return 1;
 }

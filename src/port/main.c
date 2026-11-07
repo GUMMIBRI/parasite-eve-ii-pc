@@ -51,14 +51,17 @@ int main(int argc, char** argv) {
     struct sigaction sa = { .sa_sigaction = crashHandler, .sa_flags = SA_SIGINFO };
     sigaction(SIGSEGV, &sa, NULL);
     sigaction(SIGBUS, &sa, NULL);
+    sigaction(SIGILL, &sa, NULL);
+    sigaction(SIGFPE, &sa, NULL);
+    sigaction(SIGABRT, &sa, NULL);
 #endif
     /* Disc image: first argument, or PE2_DISC. Game data is read from it at run time. */
     const char* disc = NULL;
     int startup = peHostStartup(argc, argv, &disc);
     if (startup <= 0) return startup < 0 ? 2 : 0;
     if (Psyz_CdSetDiskPath(disc) != 0) {
-        fprintf(stderr, "Cannot open the disc image \"%s\". Check that the file exists and that it is a CUE sheet or BIN image\n"
-                        "of the North American Parasite Eve II (disc 1). Run with --host-menu to choose a different image.\n", disc);
+        peHostReportError("Cannot mount the disc image \"%s\". Check that the file exists and that it is a CUE sheet or BIN "
+                          "image of the North American Parasite Eve II (disc 1). Choose another image with --host-menu.", disc);
         return 2;
     }
     Psyz_SetTitle("Parasite Eve II");
@@ -67,11 +70,16 @@ int main(int argc, char** argv) {
         extern int peAssetsDump(const char*);
         struct PeDisc* assets = peDiscOpen(disc);
         if (!assets) {
-            fprintf(stderr, "Cannot read the game files from \"%s\". It is not a North American Parasite Eve II disc image,\n"
-                            "or the image is damaged (other regions and re-encoded images are not supported).\n", disc);
+            peHostReportError("Cannot read the game files from \"%s\": %s.", disc, peDiscError());
             return 2;
         }
-        fprintf(stderr, "[assets] %d arrays loaded from the disc\n", peAssetsLoad(assets));
+        int loaded = peAssetsLoad(assets);
+        if (loaded <= 0) {
+            peHostReportError("Cannot load the game tables from \"%s\"; the image may be damaged.", disc);
+            peDiscClose(assets);
+            return 2;
+        }
+        fprintf(stderr, "[assets] %d arrays loaded from the disc\n", loaded);
         if (getenv("PE2_DISC2_ASSETS")) { /* development: load disc 2's arrays now, to compare the dump */
             struct PeDisc* second = peDiscOpen(getenv("PE2_DISC2_ASSETS"));
             if (second) { fprintf(stderr, "[assets] %d arrays loaded from disc 2\n", peAssetsLoad(second)); peDiscClose(second); }

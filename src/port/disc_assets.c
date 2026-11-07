@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
+#include <stdarg.h>
 
 enum { SECTOR_USER = 2048, SECTOR_RAW = 2352, MODE2_USER_OFFSET = 24 };
 
@@ -14,7 +16,20 @@ struct PeDisc {
     uint32_t cdfStart[6]; /* absolute sector of STAGE<n>.CDF, 0 if absent */
     uint32_t hedStart;
     uint8_t* hed;         /* STAGE0.HED contents (0x1B80 bytes) */
+    int      bad;         /* no readable ISO 9660 volume; the reason is in peDiscError() */
 };
+
+static char gDiscError[1024];
+
+static void discFail(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(gDiscError, sizeof gDiscError, fmt, args);
+    va_end(args);
+}
+
+const char* peDiscError(void) { return gDiscError[0] ? gDiscError : "unknown error"; }
 
 static int readSector(PeDisc* d, uint32_t lba, uint8_t* out)
 {
@@ -25,30 +40,66 @@ static int readSector(PeDisc* d, uint32_t lba, uint8_t* out)
 static uint32_t rd32(const uint8_t* p) { return p[0] | p[1] << 8 | p[2] << 16 | (uint32_t)p[3] << 24; }
 static uint32_t rd32le(const uint8_t* p) { return rd32(p); }
 
+static int startsWithWord(const char* s, const char* word)
+{
+    size_t n = strlen(word);
+    for (size_t i = 0; i < n; i++)
+        if (toupper((unsigned char)s[i]) != word[i]) return 0;
+    return isspace((unsigned char)s[n]) != 0;
+}
+
+/* The BIN named by the cue sheet's first FILE line, relative to the sheet's folder. Accepts a UTF-8 byte-order
+ * mark, a lower-case keyword and an unquoted name, which other tools write. */
 static int cueBinPath(const char* cue, char* out, size_t cap)
 {
-    FILE* f = fopen(cue, "r");
-    char  line[1024];
-    if (!f) return 0;
+    FILE* f = fopen(cue, "rb");
+    char  line[4096];
+    int   first = 1;
+    if (!f) { discFail("cannot open \"%s\": %s", cue, strerror(errno)); return 0; }
     while (fgets(line, sizeof line, f)) {
         char* start = line;
+        if (first && (unsigned char)start[0] == 0xEF && (unsigned char)start[1] == 0xBB && (unsigned char)start[2] == 0xBF)
+            start += 3;
+        first = 0;
         while (isspace((unsigned char)*start)) start++;
-        char* q = strchr(start, '"');
-        char* e = q ? strchr(q + 1, '"') : NULL;
-        if (strncmp(start, "FILE", 4) == 0 && q && e) {
-            const char* slash = strrchr(cue, '/');
-            size_t      dir = slash ? (size_t)(slash - cue + 1) : 0;
-            *e = 0;
-            if (q[1] == '/' || q[1] == '\\' || (q[1] && q[2] == ':')) dir = 0;
-            if (dir + strlen(q + 1) + 1 > cap) { fclose(f); return 0; }
-            memcpy(out, cue, dir);
-            strcpy(out + dir, q + 1);
-            fclose(f);
-            return 1;
+        if (!startsWithWord(start, "FILE")) continue;
+        char* name = start + 4;
+        while (isspace((unsigned char)*name)) name++;
+        char* end;
+        if (*name == '"') {
+            end = strchr(++name, '"');
+            if (!end) break;
+        } else {
+            end = name;
+            while (*end && !isspace((unsigned char)*end)) end++;
         }
+        *end = 0;
+        if (!*name) break;
+        const char* slash = strrchr(cue, '/');
+        const char* back = strrchr(cue, '\\');
+        if (back && (!slash || back > slash)) slash = back;
+        size_t dir = slash ? (size_t)(slash - cue + 1) : 0;
+        if (name[0] == '/' || name[0] == '\\' || (name[0] && name[1] == ':')) dir = 0;
+        if (dir + strlen(name) + 1 > cap) {
+            fclose(f);
+            discFail("the image path named by \"%s\" is too long", cue);
+            return 0;
+        }
+        memcpy(out, cue, dir);
+        strcpy(out + dir, name);
+        fclose(f);
+        return 1;
     }
     fclose(f);
+    discFail("\"%s\" has no usable FILE line, so it is not a CUE sheet for a disc image", cue);
     return 0;
+}
+
+static int hasIsoVolume(FILE* bin, long offset)
+{
+    uint8_t magic[6];
+    return fseek(bin, offset, SEEK_SET) == 0 && fread(magic, 1, sizeof magic, bin) == sizeof magic &&
+           memcmp(magic + 1, "CD001", 5) == 0;
 }
 
 /* Finds a file in the ISO 9660 root directory (names compared without the ";1" version suffix). */
@@ -83,12 +134,33 @@ static int isoFind(PeDisc* d, const char* name, uint32_t* lba, uint32_t* size)
 
 PeDisc* peDiscOpen(const char* cuePath)
 {
-    char    bin[1024];
+    char    bin[4096];
     PeDisc* d = calloc(1, sizeof *d);
     uint32_t lba, size;
-    if (!d || !cueBinPath(cuePath, bin, sizeof bin) || !(d->bin = fopen(bin, "rb"))) { free(d); return NULL; }
+    gDiscError[0] = 0;
+    if (!d) { discFail("out of memory"); return NULL; }
+    if (!cuePath || !*cuePath) { free(d); discFail("no disc image was given"); return NULL; }
+    if (!cueBinPath(cuePath, bin, sizeof bin)) { free(d); return NULL; }
+    if (!(d->bin = fopen(bin, "rb"))) {
+        discFail("the CUE sheet \"%s\" names \"%s\", which cannot be opened: %s (keep the BIN next to its CUE)",
+                 cuePath, bin, strerror(errno));
+        free(d);
+        return NULL;
+    }
     d->sectorSize = SECTOR_RAW;
     d->userOffset = MODE2_USER_OFFSET;
+    if (!hasIsoVolume(d->bin, 16L * SECTOR_RAW + MODE2_USER_OFFSET)) {
+        if (fseek(d->bin, 0, SEEK_END) == 0 && ftell(d->bin) < 17L * SECTOR_RAW)
+            discFail("\"%s\" is too small to be a disc image (%ld bytes); it may be incomplete", bin, ftell(d->bin));
+        else if (hasIsoVolume(d->bin, 16L * SECTOR_USER))
+            discFail("\"%s\" is an ISO with 2048-byte sectors; a raw BIN with 2352-byte MODE2 sectors is needed", bin);
+        else if (hasIsoVolume(d->bin, 16L * SECTOR_RAW + 16))
+            discFail("\"%s\" has MODE1 sectors; a PlayStation disc image has MODE2/2352 sectors", bin);
+        else
+            discFail("\"%s\" has no ISO 9660 volume; it is damaged or not a PlayStation disc image", bin);
+        d->bad = 1;
+        return d;
+    }
     for (int n = 0; n <= 5; n++) {
         char name[16];
         snprintf(name, sizeof name, "STAGE%d.CDF", n);
@@ -96,10 +168,11 @@ PeDisc* peDiscOpen(const char* cuePath)
     }
     if (isoFind(d, "STAGE0.HED", &lba, &size)) {
         d->hed = malloc(4 * SECTOR_USER);
-        if (!d->hed) { peDiscClose(d); return NULL; }
+        if (!d->hed) { peDiscClose(d); discFail("out of memory"); return NULL; }
         for (int i = 0; i < 4; i++) {
             if (!readSector(d, lba + i, d->hed + i * SECTOR_USER)) {
                 peDiscClose(d);
+                discFail("\"%s\" ends inside STAGE0.HED; the image is incomplete", bin);
                 return NULL;
             }
         }
@@ -111,12 +184,19 @@ int peDiscNumber(PeDisc* d)
 {
     uint32_t lba, size;
     if (!d) return 0;
+    if (d->bad) return 0; /* peDiscOpen recorded why */
     if (d->cdfStart[1] && d->cdfStart[2] &&
         isoFind(d, "PE_DISK.01", &lba, &size) &&
         isoFind(d, "SLUS_010.42", &lba, &size)) return 1;
     if (d->cdfStart[4] && d->cdfStart[5] &&
         isoFind(d, "PE_DISK.02", &lba, &size) &&
         isoFind(d, "SLUS_010.55", &lba, &size)) return 2;
+    if (isoFind(d, "SYSTEM.CNF", &lba, &size) && !isoFind(d, "PE_DISK.01", &lba, &size) &&
+        !isoFind(d, "PE_DISK.02", &lba, &size))
+        discFail("this is a PlayStation disc, but not Parasite Eve II");
+    else
+        discFail("this is not the North American Parasite Eve II (SLUS-01042/SLUS-01055); other regions are not "
+                 "supported");
     return 0;
 }
 

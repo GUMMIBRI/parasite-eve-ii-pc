@@ -33,5 +33,29 @@ int main(void) {
     PeDisc* absolute=peDiscOpen(cue);assert(absolute);assert(peDiscNumber(absolute)==2);peDiscClose(absolute);
     fixture(bin,1,1);PeDisc* d=peDiscOpen(cue);assert(d);assert(peDiscNumber(d)==0);peDiscClose(d);
     assert(peDiscNumber(NULL)==0);
+    assert(strstr(peDiscError(),"not the North American"));
+
+    /* Cue sheets other tools write: a UTF-8 byte-order mark, a lower-case keyword, an unquoted name. */
+    fixture(bin,1,0);
+    f=fopen(cue,"wb");assert(f);fputs("\xEF\xBB\xBF" "file game.bin BINARY\r\n  TRACK 01 MODE2/2352\r\n",f);fclose(f);
+    d=peDiscOpen(cue);assert(d);assert(peDiscNumber(d)==1);peDiscClose(d);
+
+    /* Every failure says why. */
+    char missing[600];snprintf(missing,sizeof missing,"%s/none.cue",dir);
+    assert(!peDiscOpen(missing));assert(strstr(peDiscError(),"cannot open"));
+    assert(!peDiscOpen(""));assert(strstr(peDiscError(),"no disc image"));
+    f=fopen(cue,"w");assert(f);fputs("REM nothing here\n",f);fclose(f);
+    assert(!peDiscOpen(cue));assert(strstr(peDiscError(),"no usable FILE line"));
+    f=fopen(cue,"w");assert(f);fputs("FILE \"gone.bin\" BINARY\n",f);fclose(f);
+    assert(!peDiscOpen(cue));assert(strstr(peDiscError(),"gone.bin"));assert(strstr(peDiscError(),"next to its CUE"));
+    f=fopen(cue,"w");assert(f);fputs("FILE \"game.bin\" BINARY\n",f);fclose(f);
+    f=fopen(bin,"wb");assert(f);fputs("tiny",f);fclose(f);
+    d=peDiscOpen(cue);assert(d);assert(peDiscNumber(d)==0);assert(strstr(peDiscError(),"too small"));peDiscClose(d);
+    memset(image,0,sizeof image);memcpy(image+16*2048+1,"CD001",5); /* a cooked 2048-byte ISO */
+    f=fopen(bin,"wb");assert(f);assert(fwrite(image,1,sizeof image,f)==sizeof image);fclose(f);
+    d=peDiscOpen(cue);assert(d);assert(peDiscNumber(d)==0);assert(strstr(peDiscError(),"2048-byte"));peDiscClose(d);
+    memset(image,0,sizeof image);
+    f=fopen(bin,"wb");assert(f);assert(fwrite(image,1,sizeof image,f)==sizeof image);fclose(f);
+    d=peDiscOpen(cue);assert(d);assert(peDiscNumber(d)==0);assert(strstr(peDiscError(),"no ISO 9660"));peDiscClose(d);
     unlink(bin);unlink(cue);rmdir(dir);return 0;
 }
