@@ -814,10 +814,27 @@ the best current geometry candidate: 12 of 13 regions report zero displacement;
 the right central-wall edge reports one native pixel left. Floor joins still
 need review. V4 worsens central-wall and right-wall alignment, including
 ambiguous and search-boundary peaks, and is rejected. These remain local artwork
-experiments; no view-11 replacement is approved or runtime-validated. Its source
+experiments; no view-11 replacement is approved. Its source
 audit uses an explicit route capture at warp 6; the minimal derived catalog
 record remains `runtime_verified: false`, rather than weakening location checks
 or claiming a complete catalog traversal.
+
+`check_foreground_live.py --start-location` separates the initial location from
+the `--location` capture target, requires an explicit controller replay, and
+records both locations in the final report. The target's full location and key
+are still checked against the completed runtime capture. With the existing
+6000-sample view-11 route, start `1,20,10,1,6,1` and target
+`1,20,11,1,6,1`, local `foreground-view11-v3-route/report.json` passes all nine
+controls on macOS Metal. All 13 foreground sources activate in classic and wide
+modes; wide captures cover physical buffers 0 and 272 at 1707x960. Native VRAM,
+normalized original commands and observed simulation states match the respective
+controls; malformed metadata and missing atlas fall back exactly. The player
+reaches world position [8052,128,5688] through the controller route. The completed
+image was inspected and still shows floor joins requiring artwork correction.
+This validates this candidate's renderer integration at one reached endpoint,
+not final geometry, complete actor mattes, intermediate transition frames or
+other platforms. Only the view-11 candidate pack was supplied for this check;
+it does not establish a continuous HD-to-HD transition from view 10.
 
 ## Verification checkpoint
 

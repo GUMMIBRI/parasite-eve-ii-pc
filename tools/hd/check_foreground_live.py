@@ -28,12 +28,17 @@ def main():
     parser.add_argument('--base-pack',type=Path,required=True)
     parser.add_argument('--combined-pack',type=Path,required=True)
     parser.add_argument('--location',required=True,help='stage,area,view,room,warp,variant')
+    parser.add_argument('--start-location',help='Initial location for a controller route; defaults to --location, which remains the capture target')
     parser.add_argument('--key',required=True,help='16-digit native background key')
     parser.add_argument('--empty-sources',type=Path,help='Audited all-zero native sources; require unchanged material instead of visible HD')
     parser.add_argument('--output',type=Path,default=Path('build-hd-study/foreground-live-check'))
     args=parser.parse_args();location=list(map(int,args.location.split(',')))
     if not 30<=args.settle<36000:parser.error('--settle must be in 30..35999')
     if len(location)!=6 or len(args.key)!=16:parser.error('Expected a six-component location and native key')
+    try:start_location=list(map(int,(args.start_location or args.location).split(',')))
+    except ValueError:parser.error('--start-location must contain six integers')
+    if len(start_location)!=6:parser.error('--start-location must contain six integers')
+    if args.start_location and not args.replay:parser.error('--start-location requires an explicit --replay route')
     int(args.key,16)
     context='-'.join(map(str,location[:4]));descriptor=f'{args.key}-{context}.pe2fg'
     root=args.output.resolve();root.mkdir(parents=True,exist_ok=True);(root/'report.json').unlink(missing_ok=True)
@@ -52,7 +57,7 @@ def main():
             env={k:v for k,v in os.environ.items() if not k.startswith('PE2_')}
             env.update(PSYZ_HEADLESS='gpu',PSYZ_RASTER_CLOCK='virtual',SDL_AUDIODRIVER='dummy',PE2_SKIPINTRO='1',
                        PE2_CONFIG_DIR=profile,PE2_MEMORY_CARD_DIR=profile+'/cards',PE2_PAD_REPLAY=str(replay),
-                       PE2_START_LOCATION=args.location,PE2_SURVEY_KEEP_VIEW='1',PE2_SURVEY_SETTLE_FRAMES=str(settle),
+                       PE2_START_LOCATION=','.join(map(str,start_location)),PE2_SURVEY_KEEP_VIEW='1',PE2_SURVEY_SETTLE_FRAMES=str(settle),
                        PE2_SURVEY_TARGET=','.join(map(str,location[:4]))+':'+args.key,PE2_SURVEY_OUTPUT=str(destination),
                        PE2_DUMP_GPU_STATE='1')
             if pack is not None:env['PE2_HD_BACKGROUNDS']=str(pack.resolve())
@@ -112,7 +117,7 @@ def main():
     if hashlib.sha256(args.binary.read_bytes()).hexdigest()!=identity:raise RuntimeError('Executable changed during check')
     if hashlib.sha256(replay.read_bytes()).hexdigest()!=replay_identity:raise RuntimeError('Replay changed during check')
     if args.runner and hashlib.sha256(args.runner.read_bytes()).hexdigest()!=runner_identity:raise RuntimeError('Launcher changed during check')
-    (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,runner_sha256=runner_identity,replay_sha256=replay_identity,settle_frames=args.settle,cases=results,empty_sources_verified=empty_sources,
+    (root/'report.json').write_text(json.dumps(dict(passed=True,binary_sha256=identity,runner_sha256=runner_identity,replay_sha256=replay_identity,start_location=start_location,target_location=location,settle_frames=args.settle,cases=results,empty_sources_verified=empty_sources,
         scope=('One replayed camera endpoint. ' if args.replay else 'One forced static camera. ')+'v3 captures present the completed draw buffer. '+('Audited empty sources require exact unchanged material; no visible HD activation is claimed.' if empty_sources else 'Both physical buffers require active foreground replacements in 16:9.')),indent=2)+'\n')
     print('PASS: '+('verified empty foreground' if empty_sources else 'live foreground material')+', both buffer parities, exact native VRAM and malformed-pack fallback')
 
