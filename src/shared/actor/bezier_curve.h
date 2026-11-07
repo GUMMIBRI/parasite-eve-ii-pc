@@ -34,7 +34,7 @@ enum {
     BEZIER_CURVE_PARAMETER_MAX           = (1 << BEZIER_CURVE_PARAMETER_FRACTION_BITS) - 1 // Greatest parameter below t = 1
 };
 
-static void _bezierCurveEvaluate(const SVECTOR controlPoints[3], const SVECTOR* endPoint, s32 stepCount, s32 stepIndex, long outXyz[3]);
+static void _bezierCurveEvaluate(const SVECTOR controlPoints[3], const SVECTOR* endPoint, s32 stepCount, s32 stepIndex, s32 outXyz[3]);
 static void _bezierCurveCoefficients(s32 startValue, s32 firstControlValue, s32 secondControlValue, s32 endValue, _BezierCurveAxisCoefficients* coefficients);
 
 #endif /* SRC_SHARED_BEZIER_CURVE_H */

@@ -439,6 +439,11 @@ target_include_directories(water_grid_packet_test PRIVATE include include/decomp
 target_compile_definitions(water_grid_packet_test PRIVATE __psyz SKIP_ASM)
 target_link_libraries(water_grid_packet_test PRIVATE psyz)
 
+add_executable(bezier_curve_test EXCLUDE_FROM_ALL tests/bezier_curve_test.c)
+target_include_directories(bezier_curve_test PRIVATE include include/decomp)
+target_compile_definitions(bezier_curve_test PRIVATE __psyz SKIP_ASM)
+target_link_libraries(bezier_curve_test PRIVATE psyz)
+
 enable_testing()
 set(PE_DATA_TESTS cap_room_command_test rupert_eyes_test tmd_layout_assets_test text_palette_test
     observatory_scene_lifecycle_test action_trigger_test fountain_trigger_test)

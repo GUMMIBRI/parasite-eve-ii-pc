@@ -4057,7 +4057,7 @@ static void _dryfieldDilapidatedHouseDrawCurveSamples(Task* task)
     SVECTOR                             point;
     DVECTOR                             screenX; // Only vx is used as a signed pixel coordinate.
     DVECTOR                             screenY; // Only vx is used; vy is never accessed.
-    long                                sampleXyz[3];
+    s32                                 sampleXyz[3];
     s32                                 screenWord;
     s32                                 depthCue;
     s32                                 projectionFlags;

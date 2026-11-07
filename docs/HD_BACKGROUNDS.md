@@ -1262,6 +1262,33 @@ unverified, rather than becoming parity passes. All 51 C and 39 Python HD tests
 pass on macOS. Loaded-companion natural traversal and other platforms still
 need runtime validation; this probe does not establish them.
 
+#### Linux ARM64 validation and fixed-width Bezier output
+
+A fresh Linux ARM64 build compiled the timing, room-return, water-packet,
+scene-reservation and companion fixes. All 51 then-current C tests passed.
+The nine gallery view-11 controls passed through Vulkan/lavapipe, covering the
+controller route from view 10, active foreground material on both buffers,
+original command/simulation equality, native VRAM equality within each comparison
+and malformed-pack fallback (`linux-current-fixes-foreground-view11`). This was
+before the Bezier correction below and is not a physical-GPU performance test.
+
+The 48 historical forced starts exposed an additional Linux failure: 47 reached
+normal 8001-frame replay completion, while Shelter R48 view 10 aborted with
+stack protection. GDB identified `_actor503500LargeChainLayoutLinks`.
+The shared Bezier evaluator accepted a host `long[3]` output while its chain
+callers supplied the 32-bit XYZ prefix of `VECTOR`; on LP64 it wrote 24 bytes
+into that 12-byte prefix. The output contract and the debug-room caller now use
+`s32[3]`. Arithmetic and sampling order are unchanged. The regression test runs
+the actual shared evaluator, verifies three independent axes, VECTOR padding
+and surrounding canaries, checks a nonconstant midpoint and zero-count inputs.
+All 52 C tests pass on both macOS and Linux ARM64. The formerly aborting Linux
+R48 replay now completes all 8001 frames (`linux-r48-bezier-fixed.log`).
+The final rebuilt Linux binary also completes all 48 historical forced-start
+replays without crashes (`linux-historical-crash-bezier-fixed/report.json`).
+This checks replay termination with native backgrounds; it does not establish
+settled image parity, natural story traversal or full platform correctness.
+The macOS R48 replay also completes after the correction.
+
 ## Verification checkpoint
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,

@@ -27,18 +27,18 @@ static inline s32 _bezierCurveEvaluateAxis(const _BezierCurveAxisCoefficients* c
 /// Coefficients narrow to signed halfwords before evaluation; each Horner
 /// stage uses signed 32-bit multiplication and an arithmetic right shift.
 ///
-/// Writes three consecutive signed 32-bit SDK `long` coordinates (X, Y, Z)
+/// Writes three consecutive signed 32-bit coordinates (X, Y, Z)
 /// to caller-owned `outXyz`, also accepting the XYZ prefix of a `VECTOR`.
 /// A zero `stepCount` accesses neither points nor output. Inputs must keep
 /// the parameter scaling and polynomial arithmetic within signed 32-bit range.
-static void _bezierCurveEvaluate(const SVECTOR controlPoints[3], const SVECTOR* endPoint, s32 stepCount, s32 stepIndex, long outXyz[3])
+static void _bezierCurveEvaluate(const SVECTOR controlPoints[3], const SVECTOR* endPoint, s32 stepCount, s32 stepIndex, s32 outXyz[3])
 {
     _BezierCurveAxisCoefficients coefficients[3];
     const SVECTOR*               firstControlPoint;
     const SVECTOR*               secondControlPoint;
     s32                          parameterQ16;
     s32                          axis;
-    long*                        coordinateOut;
+    s32*                         coordinateOut;
 
     if (stepCount != 0) {
         parameterQ16       = ((stepCount - stepIndex) * BEZIER_CURVE_PARAMETER_MAX) / stepCount;
