@@ -7,6 +7,24 @@ Only a fully covered extended background may activate 16:9. Missing or unreviewe
 artwork must retain the original, centred 4:3 image. Square pixels remains an
 independent existing option.
 
+## Current verification status
+
+The feature is incomplete and no reviewed production artwork pack is available.
+The sections below retain historical experiments; their local test counts and
+scope describe those builds rather than superseding this summary.
+
+| Area | Current evidence | Work still required |
+| --- | --- | --- |
+| Options and loader | Persistent aspect/pack controls, native fallback, foreground presentation and immutable local installation are implemented. | Production pack and distribution/download/update workflow. |
+| Inventory | 1759 unique decoded native backgrounds; 3346 logical rows across 168 rooms, 3314 eligible for forced-start probes. | Resolve/classify excluded rows and remaining diagnostics, including the room with no view rows. |
+| Broad runtime survey | One complete earlier-build software survey: 2703 exact matches, 606 without settled captures, five balcony differences subsequently fixed in room-specific tests; no crashes. | Current-build full coverage and natural traversal, including transient/scripted/special screens. Do not combine different binary reports into one all-game pass. |
+| Artwork | A private installed fixture contains four gallery views; none is approved final artwork. | Finish geometry, sharpness, side joins and foreground/matte reviews; author/review the remaining backgrounds. |
+| Platforms | Scoped Metal and Linux ARM64 Vulkan/lavapipe evidence; 53 C tests pass on both hosts and 41 Python HD tests on macOS. | Windows runtime, Linux x86-64/physical GPU behavior and complete supported-backend traversal. |
+
+All source captures, generated artwork and native-reference pack payloads remain
+local. Passing renderer controls do not approve artwork or grant distribution
+permission. The detailed reports below state each endpoint, binary and backend.
+
 ## Current implementation
 
 The Graphics page cycles Classic 4:3 / Square pixels / Widescreen (16:9).
@@ -1508,7 +1526,34 @@ through 11 and 10 before the uncovered view. Evidence is local under
 and one missing-art return on Metal, not all-game traversal, other GPU backends
 or final artistic/occlusion approval. No artwork or native payload is committed.
 
-## Verification checkpoint
+#### Four-view installed fixture on Linux Vulkan
+
+The same installed 16-file `gallery-four-view-study--1` fixture passes all nine
+Vulkan/lavapipe controls at reached view 13 after the route through views 10–13
+(`linux-gallery-four-view-study-route-13`). All 12 foreground sources activate
+on physical buffers 0 and 272; base/combined native VRAM and normalized
+original GPU inputs agree within the checked modes. Both malformed-foreground
+controls return to the expected native foreground path.
+
+The return to uncovered view 8 also passes on that same Linux ARM64 binary
+(`linux-gallery-four-view-return-fallback`). Installed-pack widescreen and
+original rendering have identical full VRAM, rendered RGB, all 765 normalized
+original GP0 commands and captured simulation counters at the context-gated
+frame-8000 checkpoint. The output stays 1280x960 with zero foreground
+replacements. The log records all four covered backgrounds before the native
+return. Model hashes are incomplete, so this is supporting render/input evidence
+rather than complete actor-state equality. The unchanged prior Metal captures
+also have identical 765-command audits (`input-comparisons.json` beside the
+Metal return assessment).
+
+Both Linux reports identify the same binary and the private installed manifest;
+`linux-gallery-four-view-study-assessment.json` binds their hashes. This adds
+one Linux reached endpoint and one return checkpoint, not Windows/physical GPU
+coverage, all possible transition states or final artistic approval.
+
+## Earlier verification checkpoint
+
+This historical snapshot predates the current verification summary above.
 
 - 49 C host tests pass (including BIOS RNG isolation), including foreground metadata/context validation, ordered GP0 state/LP64 merge traversal, foreground packet bounds/state rejection, missing scene-header timeouts, native layout hashing, metadata/PNG-header checks and coverage gating for complete, missing, partial,
   out-of-bounds and unsupported cases. The hidden GPU probe also proves that
@@ -1540,29 +1585,30 @@ or final artistic/occlusion approval. No artwork or native payload is committed.
 
 ## Remaining required work
 
-1. Finish production pack activation/installation/versioning and transition handling.
-   The native source loader and PE1-compatible atlas presentation are implemented;
-   downloader/versioned installation, title/captured-screen handling, and full
-   validation across the game remain open. Keep PsyZ unmodified.
-2. Extend synthetic and real-scene validation to all views and foreground layers.
-   One active gallery checkpoint at tick 10000 of a 12001-sample replay with
-   `PSYZ_RASTER_CLOCK=virtual` has exact full VRAM equality between baseline and
-   HD 4:3. Both HD and wide material are visible; the wide capture is 1707x960.
-   Evidence: `build-hd-study/game-integration-centred/`, with baseline in
-   `build-hd-study/game-integration/baseline/`. This is one scene only. Earlier
-   misaligned-offset captures under `fixture-check/` are rejected evidence.
-3. Register/review the first generated artwork and its side coverage. Preserve
-   masks, occluders, effects, dynamic layers and original lettering. Do not accept
-   a visually plausible generation as geometry evidence.
-4. Map every logical room/view to decoded background identity; run a complete
-   runtime sweep including both discs, special renderers, view transitions,
-   menus, dialogue, title, captured-room screens and RGB24 movies.
-5. Produce and review the remaining artwork, make the pack consumable, expose
-   activation and document distribution. Source/artwork files remain local;
-   committing generated artwork requires the owner's agreement.
-6. Prove full all-room off/baseline parity and wide coverage without holes. Check
-   native state and masks as well as rendered captures; exercise missing art
-   fallback, toggles, malformed packs and each supported GPU backend.
+1. Finish and review the authored HD/outpainted artwork across the background
+   inventory. The four-view gallery installation is a technical fixture, with
+   documented geometry/sharpness issues; it is not the finished production pack.
+   Preserve camera registration, masks, effects, dynamic layers and lettering.
+2. Finish logical-view/source classification, including the 32 excluded rows,
+   remaining source diagnostics and MIST R21's missing view rows. Distinguish
+   unused/special assets from views that need authored routes or scene playback.
+3. Complete current-build runtime coverage across both discs: natural movement,
+   view and room transitions, menus/dialogue, title, captured-room screens,
+   special panorama/scroll renderers and RGB24 movies. The 606 no-target cases
+   remain unverified. Context-gated transient checkpoints supplement rather than
+   satisfy the settled survey's field-ready/30-frame gate.
+4. Finish the consumable production-pack/distribution workflow and outstanding
+   download/update decision. Local activation, manifest verification and
+   immutable version installation already work. Current runtime packs include
+   native reference planes and must remain private; keep native game pixels out
+   of any public distribution. Keep PsyZ unmodified.
+5. Verify supported platforms and GPU backends with appropriate builds and
+   runtime evidence. Metal and Linux ARM64/lavapipe subsets do not establish
+   Windows, Linux x86-64, physical GPU or all-game behavior.
+6. Prove complete off/baseline parity and wide coverage without holes, retaining
+   native state and masks. Extend missing-art returns, pack toggles, malformed
+   input and foreground occlusion checks across required scenes and player poses.
+   Do not promote candidate artwork from a passing integration test alone.
 
 Work remains on local main. No push is authorized by the handoff. Do not commit
 hd_handoff.md, modify PsyZ, or publish local source captures.
