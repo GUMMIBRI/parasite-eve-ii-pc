@@ -21,6 +21,38 @@ The folder chooser does not install, copy or download artwork. Individual
 missing/invalid assets retain the original image. Picture detail must be at
 least 2x for HD presentation. No production pack is bundled yet.
 
+### Local versioned installation
+
+The offline installer copies an owner-disc pack into an immutable version folder:
+
+```sh
+venv/bin/python tools/hd/install_pack.py manifest path/to/pack --id my-pack --version v1
+venv/bin/python tools/hd/install_pack.py verify path/to/pack
+venv/bin/python tools/hd/install_pack.py install path/to/pack --destination path/to/installed
+```
+
+Select the printed `installed/my-pack--v1` directory in Background pack, or pass
+it to `--hd-backgrounds`. A new version gets a separate directory; reverting
+means selecting the older directory. Existing versions are never overwritten.
+The `pe2-pack.json` manifest records payload sizes and SHA-256 hashes. Installation
+copies only listed renderer payloads, verifies the staged copy, and publishes
+the directory after successful checks. Private notes and source audit JSON files
+are excluded. Invalid filenames, symlink payloads, changed files, missing atlases
+and invalid base metadata/PNG files are rejected. Runtime foreground validation
+remains authoritative; the installer does not replace it. Manifest hashes detect
+corruption and changes, not publisher authenticity, artistic quality or permission
+to distribute. These packs contain native reference planes and stay local.
+There is no automatic download, signed release manifest or game-managed update UI.
+
+At this checkpoint all 36 Python HD tests pass, including five installer tests
+for immutable versions, rejected changed/path-escape payloads, symlinks, invalid
+base metadata and interrupted-copy cleanup. The local eight-file gallery pack
+was installed as `gallery-study--v10-8-v11-3`. The nine controls in
+`foreground-view11-installed-route/report.json` pass using that installed folder
+on the controller route from view 10 to 11 on macOS Metal, including both physical
+buffers and malformed-foreground fallback. This does not approve the candidate
+artwork or establish installation/runtime behavior on other operating systems.
+
 The equivalent command-line options are `--hd-backgrounds /absolute/pack/path`
 and `--no-hd-backgrounds`. They are mutually exclusive and reject duplicates,
 empty/missing paths and newlines. Relative paths are saved as absolute paths,
@@ -91,7 +123,8 @@ Each asset has a 48-byte `<key>.pe2bg` descriptor. Its Python layout is
 bounds, static-base flag (1), scale (4), cell count, reserved zero. Bounds must
 be 16-pixel aligned within -96..0 and 320..416; count must cover every 16x16
 cell in the span and all 240 rows. This is a format/version marker, not proof of
-artistic review. A whole-pack installer/download manifest is not implemented.
+artistic review. The separate local installation manifest described above covers
+whole-pack file integrity; an online distribution manifest remains unimplemented.
 
 The loader rejects extra/truncated metadata, wrong identities, invalid flags,
 scale/count/bounds, mismatched/oversized PNG headers and transparent material
