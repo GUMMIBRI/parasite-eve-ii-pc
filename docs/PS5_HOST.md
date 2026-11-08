@@ -6,16 +6,22 @@ graph, PE2 storage routing, directory ABI bridge and a compatibility patch
 for this project's exact PsyZ pin. It does not change PE2 combat, story,
 inventory, save-file bytes or disc asset formats.
 
-Status: a local predecessor linked and converted, but the first human console
-attempt reported a black screen and choppy audio. Its log identified an SDL
-GPU backend rejection. The revised device-property/header/library pairing
-and startup guards subsequently reached gameplay in the owner's revised
-console candidate. The owner reports character wobble and FMV audio stutter;
-font/HD presentation work is incomplete. This is not full-game stability or
-general firmware qualification. The public recipe below has separately
-completed an actual native SDK compile/link with the unchanged dependency
-pin and its build-local compatibility patch; no public-recipe game run was
-performed.
+## Parasite Eve 2 PS5 source preview
+
+This branch provides the opt-in PS5 host source and build recipe. The public
+recipe has completed a native SDK compile and link. It does not reproduce the
+separate Test17 executable and has not been played on a PS5 from this checkout.
+
+Test17 (PPSA77023, version 01.000.017) was a separately packaged local build.
+The tester confirmed that it boots into gameplay and reported improved movie
+presentation. Inventory font overlap, facial rendering artifacts and HD
+background replacement remain open. Save/reload, the Disc 2 handoff and
+completion have not been verified on PS5.
+
+Use your own North American disc images (SLUS-01042 and SLUS-01055). Keep each
+CUE with its corresponding BIN. This source preview includes no installable
+PS5 package, proprietary runtime modules, disc images, saves or private HD
+art. See the repository license and platform notices for source obligations.
 
 ## Build prerequisites
 
