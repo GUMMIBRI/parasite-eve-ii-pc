@@ -137,7 +137,25 @@ int main(void)
     MemCardClose();
     assert(MemCardFormat(0) == McErrNone);
 
+    /* The game draws save-name characters from "A-Za-z0-9;:"; ':' cannot be in a
+     * Windows file name, so it is stored as '!' and still reported as ':'. */
+    char colonName[] = "BASLUS-01042A:;x:9Zq";
     char path[1024];
+    assert(MemCardCreateFile(0, colonName, 1) == McErrNone);
+    assert(MemCardCreateFile(0, colonName, 1) == McErrAlreadyExist);
+    snprintf(path, sizeof(path), "%s/card0/BASLUS-01042A!;x!9Zq", root);
+    struct stat stored;
+    assert(stat(path, &stored) == 0 && stored.st_size == 8192);
+    assert(MemCardWriteFile(0, colonName, data, 0, sizeof(data)) == 1);
+    completed(McFuncWriteFile, McErrNone);
+    assert(peMemoryCardGetDirentry(0, "BASLUS-01042*", entries, &count, 0, 15) == McErrNone && count == 1);
+    assert(memcmp(entries[0].name, colonName, 20) == 0);
+    assert(MemCardOpen(0, entries[0].name, O_RDONLY) == McErrNone);
+    MemCardClose();
+    assert(MemCardOpen(0, "BASLUS-01042A!;x!9Zq", O_RDONLY) == McErrCardInvalid);
+    assert(MemCardFormat(0) == McErrNone);
+    assert(stat(path, &stored) != 0);
+
     snprintf(path, sizeof(path), "%s/card0", root); assert(rmdir(path) == 0);
     snprintf(path, sizeof(path), "%s/card1", root); assert(rmdir(path) == 0);
     /* An inaccessible storage path must surface an error, never fake success. */

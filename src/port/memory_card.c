@@ -66,7 +66,16 @@ static int pe_mkstemp(char* path)
 #define close(fd) _close(fd)
 #define unlink(path) _unlink(path)
 /* rename() fails on Windows when the target exists; this replaces it. */
-static int pe_rename(const char* from, const char* to) { return MoveFileExA(from, to, PE_MOVEFILE_REPLACE_EXISTING | PE_MOVEFILE_WRITE_THROUGH) ? 0 : -1; }
+/* Antivirus scanners briefly hold a file that was just written, so a failed
+ * replace is retried for up to half a second. */
+static int pe_rename(const char* from, const char* to)
+{
+    for (int attempt = 0; attempt < 10; attempt++) {
+        if (MoveFileExA(from, to, PE_MOVEFILE_REPLACE_EXISTING | PE_MOVEFILE_WRITE_THROUGH)) return 0;
+        SDL_Delay(50);
+    }
+    return -1;
+}
 #define rename(from, to) pe_rename(from, to)
 #else
 #include <fnmatch.h>
@@ -82,19 +91,43 @@ enum { CARD_IO_IDLE, CARD_IO_RUNNING, CARD_IO_COMPLETE };
 static int started, ioState, newCard[2];
 static long completedCommand, completedResult;
 
+/* Card file names as the game sees them. Its save names end in random characters
+ * from "A-Za-z0-9;:", and ':' is not allowed in Windows file names (macOS shows it
+ * as '/'), so on disk ':' is stored as HOST_COLON, which the game never uses. */
+enum { HOST_COLON = '!' };
 static int validName(const char* name)
 {
     if (!name || !*name || strlen(name) > 20 || name[0] == '.') return 0;
-    return strpbrk(name, "/\\:*?") == NULL;
+    return strpbrk(name, "/\\*?!") == NULL;
+}
+
+static void hostName(const char* name, char* host)
+{
+    for (; *name; ++name, ++host) *host = *name == ':' ? HOST_COLON : *name;
+    *host = 0;
+}
+
+/* The game's name for a file on disk, or 0 for a file that is not a card file. */
+static int gameName(const char* host, char* name)
+{
+    if (strlen(host) > 20 || strchr(host, ':')) return 0;
+    for (; *host; ++host, ++name) *name = *host == HOST_COLON ? ':' : *host;
+    *name = 0;
+    return 1;
+}
+
+static void cardLog(const char* what, const char* path)
+{
+    fprintf(stderr, "[memory card] %s %s: %s\n", what, path, strerror(errno));
 }
 
 static long cardDirectory(long channel, char* path)
 {
     if (!started || !cardRoot[0] || (channel != 0 && channel != 0x10)) return McErrCardNotExist;
     if (snprintf(path, PATH_MAX, "%s/card%d", cardRoot, channel == 0x10) >= PATH_MAX) return McErrCardInvalid;
-    if (mkdir(path, 0700) != 0 && errno != EEXIST) return McErrCardInvalid;
+    if (mkdir(path, 0700) != 0 && errno != EEXIST) { cardLog("cannot create", path); return McErrCardInvalid; }
     struct stat st;
-    if (lstat(path, &st) != 0 || !S_ISDIR(st.st_mode)) return McErrCardInvalid;
+    if (lstat(path, &st) != 0 || !S_ISDIR(st.st_mode)) { cardLog("not a folder:", path); return McErrCardInvalid; }
     return McErrNone;
 }
 
@@ -108,7 +141,10 @@ static long filePath(long channel, const char* name, char* path)
     if (!name) return McErrCardInvalid;
     strncpy(filename, name, 20);
     filename[20] = 0;
-    if (!validName(filename) || snprintf(path, PATH_MAX, "%s/%s", directory, filename) >= PATH_MAX) return McErrCardInvalid;
+    char host[21];
+    if (!validName(filename)) return McErrCardInvalid;
+    hostName(filename, host);
+    if (snprintf(path, PATH_MAX, "%s/%s", directory, host) >= PATH_MAX) return McErrCardInvalid;
     return McErrNone;
 }
 
@@ -124,24 +160,30 @@ static long listFiles(long channel, CardFile* files, int* count, int* blocks)
     *count = *blocks = 0;
     if (result != McErrNone) return result;
     DIR* dir = opendir(directory);
-    if (!dir) return McErrCardInvalid;
+    if (!dir) { cardLog("cannot list", directory); return McErrCardInvalid; }
     struct dirent* entry;
     for (;;) {
         /* NULL also signals an error; calls below may change errno. */
         errno = 0;
         entry = readdir(dir);
         if (!entry) {
-            if (errno != 0) result = McErrCardInvalid;
+            if (errno != 0) { cardLog("cannot list", directory); result = McErrCardInvalid; }
             break;
         }
-        if (!validName(entry->d_name)) continue;
+        char name[21];
+        if (!gameName(entry->d_name, name) || !validName(name)) continue;
         if (snprintf(path, sizeof(path), "%s/%s", directory, entry->d_name) >= sizeof(path)) { result = McErrCardInvalid; break; }
         struct stat st;
-        if (lstat(path, &st) != 0) { result = McErrCardInvalid; break; }
+        if (lstat(path, &st) != 0) { cardLog("cannot read", path); result = McErrCardInvalid; break; }
         if (!S_ISREG(st.st_mode)) continue;
-        if (*count == CARD_BLOCKS || st.st_size <= 0 || st.st_size > CARD_BLOCKS * CARD_BLOCK_BYTES) { result = McErrCardInvalid; break; }
+        if (*count == CARD_BLOCKS || st.st_size <= 0 || st.st_size > CARD_BLOCKS * CARD_BLOCK_BYTES) {
+            if (*count == CARD_BLOCKS) fprintf(stderr, "[memory card] more than %d files in %s\n", CARD_BLOCKS, directory);
+            else fprintf(stderr, "[memory card] %s (%lld bytes) is not a save file; move it out of %s\n", entry->d_name, (long long)st.st_size, directory);
+            result = McErrCardInvalid;
+            break;
+        }
         CardFile* file = &files[(*count)++];
-        strcpy(file->name, entry->d_name);
+        strcpy(file->name, name);
         file->bytes = (size_t)st.st_size;
         file->blocks = (file->bytes + CARD_BLOCK_BYTES - 1) / CARD_BLOCK_BYTES;
         *blocks += file->blocks;
@@ -160,7 +202,7 @@ static long storeFile(const char* path, const void* data, size_t bytes)
     const char* slash = strrchr(path, '/');
     if (!slash || snprintf(temporary, sizeof(temporary), "%.*s/.write-XXXXXX", (int)(slash - path), path) >= sizeof(temporary)) return McErrCardInvalid;
     int fd = mkstemp(temporary);
-    if (fd < 0) return McErrCardInvalid;
+    if (fd < 0) { cardLog("cannot create a file in the folder of", path); return McErrCardInvalid; }
     const unsigned char* cursor = data;
     size_t remaining = bytes;
     int ok = 1;
@@ -173,7 +215,9 @@ static long storeFile(const char* path, const void* data, size_t bytes)
     }
     if (ok && fsync(fd) != 0) ok = 0;
     if (close(fd) != 0) ok = 0;
-    if (ok && rename(temporary, path) == 0) return McErrNone;
+    if (!ok) cardLog("cannot write", temporary);
+    else if (rename(temporary, path) == 0) return McErrNone;
+    else cardLog("cannot replace", path);
     unlink(temporary);
     return McErrCardInvalid;
 }
@@ -181,13 +225,18 @@ static long storeFile(const char* path, const void* data, size_t bytes)
 static long transfer(const char* path, void* data, long offset, long bytes, int writing)
 {
     struct stat st;
-    if (lstat(path, &st) != 0) return errno == ENOENT ? McErrFileNotExist : McErrCardInvalid;
+    if (lstat(path, &st) != 0) {
+        if (errno == ENOENT) return McErrFileNotExist;
+        cardLog("cannot read", path);
+        return McErrCardInvalid;
+    }
     if (!S_ISREG(st.st_mode) || st.st_size <= 0 || st.st_size > CARD_BLOCKS * CARD_BLOCK_BYTES ||
         offset > st.st_size || bytes > st.st_size - offset) return McErrCardInvalid;
     unsigned char* contents = malloc((size_t)st.st_size);
     if (!contents) return McErrCardInvalid;
     FILE* file = fopen(path, "rb");
     long result = McErrCardInvalid;
+    if (!file) cardLog("cannot open", path);
     if (file) {
         int ok = fread(contents, 1, (size_t)st.st_size, file) == (size_t)st.st_size;
         if (fclose(file) != 0) ok = 0;
