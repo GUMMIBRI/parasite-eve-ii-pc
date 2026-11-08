@@ -158,3 +158,19 @@ values. PE2 retains its save format, block limits, temp-write/fsync/rename
 logic and real error handling. No PE1 cards or saves are imported.
 
 See `platform/ps5/NOTICES.md` for component provenance and license limits.
+
+## From a linked ELF to an installable package
+
+The recipe output, game/parasite-eve-ii-ps5.elf, is a linked development
+artifact. The private Test17 installation used a converted eboot.bin,
+sce_sys/param.json, shell artwork and sce_module/libc.prx. A successful
+link neither validates that packaging path on console nor grants
+redistribution rights for the runtime module.
+
+Before publishing a PS5 download, build from the exact public source
+revision, verify the converted executable and record its SHA-256, inventory
+the archive and establish redistribution rights for each payload and the
+linked dependencies. Include the applicable notices and source references.
+A package without libc.prx needs a verified boot using the intended
+replacement provider or a documented, supported user-supplied runtime
+setup. The private Test17 archive is not a public release input.
