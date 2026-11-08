@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Fix saving on every platform: about one save in ten failed with "Failed to access MEMORY CARD." because the game's random save name can contain ':', which the port rejected (Windows does not allow it in file names). Such names are now stored with '!' on disk. Memory-card errors are written to the log, and on Windows a save that an antivirus scan holds up is retried.
+
 ## 0.3
 
 - Report start-up and disc errors instead of exiting silently: a window explains what is wrong with the chosen image (missing BIN, wrong game or region, ISO instead of CUE/BIN, damaged image) and the log is written to `parasite-eve-ii.log` in the preferences folder when the game is not started from a terminal (`PE2_LOG=<file>` chooses another file). CUE sheets with a byte-order mark, lower-case keywords, unquoted names or Windows paths are accepted, and a raw BIN chosen by a Windows path keeps that path.
