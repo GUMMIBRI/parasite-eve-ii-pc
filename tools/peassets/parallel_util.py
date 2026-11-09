@@ -23,11 +23,11 @@ def default_jobs(cap: int = 16) -> int:
 
 @contextmanager
 def shared_pool(jobs: int | None = None) -> Iterator[ProcessPoolExecutor]:
-    """One fork pool for everything run while it is open. Its workers are all forked on entry, while this process
+    """One process pool for everything run while it is open. Fork workers are all started on entry, while this process
     has a single thread: forking once phases run in threads could copy a lock some thread holds."""
     global _SHARED
     n_jobs = default_jobs() if jobs is None else max(1, jobs)
-    with ProcessPoolExecutor(max_workers=n_jobs, mp_context=mp.get_context("fork")) as pool:
+    with ProcessPoolExecutor(max_workers=n_jobs, mp_context=mp.get_context("fork" if "fork" in mp.get_all_start_methods() else "spawn")) as pool:
         pool.submit(int).result()                   # a fork pool starts all its workers at the first submit
         _SHARED = pool
         try:
@@ -65,7 +65,7 @@ def run_jobs(
 
     if _SHARED is not None:
         return _collect(_SHARED, worker, work, label_key)
-    with ProcessPoolExecutor(max_workers=n_jobs, mp_context=mp.get_context("fork")) as pool:
+    with ProcessPoolExecutor(max_workers=n_jobs, mp_context=mp.get_context("fork" if "fork" in mp.get_all_start_methods() else "spawn")) as pool:
         return _collect(pool, worker, work, label_key)
 
 
