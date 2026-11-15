@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.6
+
+- Prevent off-camera targeting reticles from wrapping across the GPU's signed coordinate boundary and stretching their green/yellow texture across the screen. Reproduced in the first Akropolis SWAT encounter; target lock and off-screen attacks remain enabled.
+- Add regression coverage for saturated projections, both coordinate axes, small/large reticles, off-screen lock retention and scratch-stack balance.
+
 ## 0.3.5
 
 - Prevent task callbacks and child teardown from accessing freed actors or skipping live tasks during scene changes.

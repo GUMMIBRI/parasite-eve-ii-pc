@@ -1,8 +1,9 @@
 # Tester follow-up: 0.3.4-alpha
 
 The tester's “PE2 v3.4a” report is tracked here as 0.3.4-alpha. The owner
-confirmed Windows. Renderer, exact location and reproduction steps remain
-unknown.
+confirmed Windows. On November 15, the tester specified the first Akropolis
+SWAT encounter, aiming/firing from far away at a mostly off-screen enemy.
+Renderer settings and the separate actor/background symptom remain unknown.
 
 | Report | Status | Follow-up |
 | --- | --- | --- |
@@ -10,7 +11,7 @@ unknown.
 | Starting Gun Range level 3 | Tester identified skipped Pierce instructions | No gameplay change requested for this observation. |
 | Incorrect weapon-loading SFX | Appears resolved according to tester; observation continues | Do not mark definitively closed or change audio without a new reproduction. |
 | 3D actor/model and background inconsistency | Open | Need the affected scene and settings; no reproduction established yet. |
-| Green/yellow combat graphics, possibly reticle or enemy HP | Open | Need the affected scene and settings; do not infer the cause from color alone. |
+| Green/yellow combat graphics, possibly reticle or enemy HP | Reproduced and fixed locally | First SWAT encounter with an off-screen locked target; signed-coordinate wrap stretches the reticle. Verified on Metal; new Windows runtime validation pending. See November 15 evidence below. |
 | Save button blends into editor UI | Implemented locally | Prominent blue button, white bold label, contrasting border, larger hit area. Always visible; disabled until a slot is available. Label: “Save changes to card”. Persistence behavior unchanged. |
 
 ## Local verification
@@ -165,6 +166,59 @@ Logs, inputs, source archive, image comparisons, hashes and assessment are
 retained privately in `build-hd-study/windows-vm-feedback/` and in the VM's
 isolated workspace. No game process remains running. The VM remains on for
 further investigation. Both tester graphics reports remain open.
+
+## Off-screen reticle reproduction (2026-11-15)
+
+The tester clarified that the symptom occurs in the first Akropolis battle,
+standing far from the monster attacking SWAT, with the enemy mostly off-screen.
+Earlier Fire Escape/No.9 checkpoints were actual gameplay captures, but did not
+establish coverage of that condition. Equal disc-image sizes do not establish
+content identity; no disc corruption claim follows from those sizes.
+
+A production-function fixture using real GTE projection reproduces an invalid
+reticle: raw X 1007..1039 becomes GPU signed-11 X 1007..-1009, spanning 2016
+pixels instead of 32. The host GPU reads signed 11-bit vertex coordinates.
+Expanding a saturated projected position by 8/16 pixels crosses that boundary.
+The local fix omits only quads that would cross it, after updating target/easing
+state and releasing scratch storage. It does not remove the enemy from lock-on
+or clip all models/attacks to the original viewport.
+
+Real hidden-Metal gameplay reproduces the green slabs in the specified first
+SWAT fight. The route starts at `[1,3,3,1,4,1]`, triggers the ordinary opening
+with controller input, then holds Square without taking the original 240-step
+forward approach. Read-only EOF inspection confirms cutscene progress 3,
+no event/UI hold, Aya at `[1452,129,593]`, and a live, locked Stranger with
+160 HP at `[-7720,0,290]`. At frame 13800, published 0.3.5 emits reticle corners
+`(-1040,1007)..(-1008,1039)` and displays huge green rectangles. The fixed build
+omits this packet and displays the scene normally. Simulation state is equal;
+every other normalized GPU command is equal and both packet audits complete.
+The same user-owned disc image is used for both runs.
+
+A follow-up controller burst fires the M93R while the target is still off
+screen: loaded rounds decrease from 20 to 17. The enemy then approaches and
+the normal reticle returns. At frame 14200, published/fixed builds have
+identical simulation, normalized GPU commands and rendered images. The fixed
+build's read-only EOF inspection also confirms the live target and consumed
+rounds. The published hardened app refused debugger attachment for this extra
+EOF inspection; that failed debugger attempt is excluded, while both GPU
+checkpoints completed normally. No standalone HP-bar corruption was separately
+reproduced; the demonstrated artifact comes from the reticle quad.
+
+The native suite passes 61/61 tests, including the new production overlay
+fixture covering both axes, positive/negative saturation, off-screen but
+representable coordinates, small/large cursors, lock retention and scratch
+balance. The fixture also passes ASan/UBSan and Windows x64 syntax checking.
+The new Windows VM runtime check could not start because its SSH endpoint is
+unreachable; no Windows runtime pass is claimed for this change. The separate
+actor/background report remains open. No SDK sources were changed, and the
+fix is included in the 0.3.6 release changes. Windows runtime gameplay
+validation remains distinct from the portable Windows regression suite.
+
+Private evidence, inputs, before/after images and scripts are retained under
+`build-hd-study/offscreen-reticle/`. The first long-route attempt reached the
+parking area rather than the fight; it is excluded. An earlier direct attempt
+stopped in inventory, and another did not trigger the opening; neither is
+counted as reproducing the tester's battle. The validated v3 route is separate.
 
 ## Paused artwork handoff
 

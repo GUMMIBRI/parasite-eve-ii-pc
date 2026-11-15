@@ -337,6 +337,7 @@ void worldTargetDrawOverlay(void)
     s32                          cursorFrame;
     s32                          textureU;
     s32                          textureV;
+    s32                          cursorHalfSize;
 
     /// Eases a changed target and marks this pass for the small reticle.
     ///
@@ -415,6 +416,18 @@ void worldTargetDrawOverlay(void)
 #undef WORLD_TARGET_EASE_CURSOR
             // Remove screen shake after easing; draw the eight-cell cursor animation.
             projection->screen.vy -= gDisplayState.vramYOffset;
+            cursorHalfSize = cursorEasing == 1 ? WORLD_TARGET_CURSOR_SMALL_HALF_SIZE : WORLD_TARGET_CURSOR_FULL_HALF_SIZE;
+            /* GP0 vertices are signed 11-bit coordinates. RTPS can saturate
+             * an off-camera target to an endpoint; expanding it into a quad
+             * would wrap one edge and stretch the reticle across the screen.
+             * Retain the lock and easing state, but emit no wrapping packet. */
+            if (projection->screen.vx - cursorHalfSize < -1024 ||
+                projection->screen.vx + cursorHalfSize > 1023 ||
+                projection->screen.vy - cursorHalfSize < -1024 ||
+                projection->screen.vy + cursorHalfSize > 1023) {
+                SCRATCH_STACK_RELEASE_BLOCK(WorldCoordProjectionScratch);
+                break;
+            }
             cursorFrame            = gDisplayState.animFrame % (WORLD_TARGET_CURSOR_FRAME_COUNT * WORLD_TARGET_CURSOR_TICKS_PER_FRAME) /
                           WORLD_TARGET_CURSOR_TICKS_PER_FRAME;
             cursorQuad     = gGpuPrimCursor;
