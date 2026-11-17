@@ -8,6 +8,14 @@
 #include "main/coord.h"
 
 #include <psyz/gte.h>
+#ifdef PE2_PS5_HOST
+#include "gameplay/shadow_capture.h"
+#endif
+
+#if defined(PE2_PS5_HOST)
+/* Private presentation bridge; original GfxCoord layout is untouched. */
+extern int actorRenderGetPgxpPartMatrix(const GfxCoord*, double[3][3], double[3]);
+#endif
 
 enum { MAX_HANDLERS = 256 };
 
@@ -56,6 +64,9 @@ u32* Tmd_DispatchStream(TmdStreamWorkspace* ws, s32 flags, u32* stream)
         ws->elemCount  = (s32)(dimensions >> 16);
         ws->elemStride = (s32)(dimensions & 0xFFFF);
         stream += 3;
+#ifdef PE2_PS5_HOST
+        Pe2ShadowCaptureRecord(ws, (const void*)handler, ws->elemCount);
+#endif
         stream = handler(ws, ws->dispatchObjectFlags, stream);
     }
     return stream;
@@ -115,16 +126,38 @@ static void tmdInstallPartTransform(TmdStreamWorkspace* ws, const GfxCoord* part
     Psyz_GteCtrlWrite(5, (u32)part->workm.t[0]);
     Psyz_GteCtrlWrite(6, (u32)part->workm.t[1]);
     Psyz_GteCtrlWrite(7, (u32)part->workm.t[2]);
+#if defined(PE2_PS5_HOST)
+    /* Integer register writes above deliberately invalidate any previous
+     * companion. Install ONLY for this part, after the original light setup.
+     */
+    double preciseRot[3][3], preciseTrans[3];
+    if (actorRenderGetPgxpPartMatrix(part, preciseRot, preciseTrans))
+        Psyz_GteSetPgxpMatrix(preciseRot, preciseTrans);
+    else
+        Psyz_GteClearPgxpMatrix();
+#endif
 }
 
 void tmdDrawModelStream(TmdStreamWorkspace* ws, u32 objectFlags, u32* stream, TmdObject* model)
 {
     s32       parts = model->partCount;
     GfxCoord* part  = model->coords;
+#ifdef PE2_PS5_HOST
+    Pe2ShadowCaptureBegin(ws, model);
+#endif
 
     for (;;) {
         u32 word = *stream;
         if (word == (u32)-1) { /* TMD_STREAM_END */
+#ifdef PE2_PS5_HOST
+            Pe2ShadowCaptureEnd(ws);
+#endif
+#ifdef PE2_PS5_HOST
+            Psyz_GteRetirePgxpMorphs();
+#endif
+#if defined(PE2_PS5_HOST)
+            Psyz_GteClearPgxpMatrix();
+#endif
             return;
         }
         if (parts > 0 && word != (u32)-2) {

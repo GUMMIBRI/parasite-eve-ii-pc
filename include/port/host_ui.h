@@ -3,4 +3,5 @@
 /* 1: start game, 0: host UI finished/cancelled, -1: invalid arguments/image. */
 int peHostStartup(int argc, char** argv, const char** disc);
 int peHostSwapDisc(int requiredDisc);
+const char *peHostLastStatus(void);
 #endif

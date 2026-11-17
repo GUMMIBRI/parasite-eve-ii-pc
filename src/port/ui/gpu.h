@@ -354,6 +354,11 @@ static void Host_OverlayRenderGPU(SDL_GPUCommandBuffer *command, SDL_GPURenderPa
         s_overlayVertexBuffer == NULL || s_overlayWindowW <= 0 || s_overlayWindowH <= 0) {
         return;
     }
+#elif defined(PE2_PS5_HOST)
+    if ((!s_overlayState.open && !PePresentationStatsReady()) || s_overlayPipeline == NULL || s_overlayTexture == NULL ||
+        s_overlayVertexBuffer == NULL || s_overlayWindowW <= 0 || s_overlayWindowH <= 0) {
+        return;
+    }
 #else
     if (!s_overlayState.open || s_overlayPipeline == NULL || s_overlayTexture == NULL ||
         s_overlayVertexBuffer == NULL || s_overlayWindowW <= 0 || s_overlayWindowH <= 0) {

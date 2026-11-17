@@ -14,6 +14,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#ifdef PE2_PS5_HOST
+#include <fcntl.h>
+extern int sceKernelOpen(const char *,int,unsigned);
+extern int sceKernelClose(int);
+extern int sceKernelMkdir(const char *,unsigned);
+static int nativeMissing(int raw){return raw==-ENOENT||(uint32_t)raw==0x80020002u;}
+/* The owned base is already prepared by ps5_paths. Only its cardN child may
+ * need creation. An existing directory is positively opened, not classified
+ * from mkdir's unnormalized EEXIST/errno or an invented native stat layout. */
+static int nativeCardDirectory(const char *path)
+{
+    if(!pePs5WritePathAllowed(path))return 0;
+    int flags=O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_NOFOLLOW;
+    int fd=sceKernelOpen(path,flags,0);
+    if(fd<0){
+        if(!nativeMissing(fd)||sceKernelMkdir(path,0700)!=0)return 0;
+        if(!pePs5WritePathAllowed(path))return 0;
+        fd=sceKernelOpen(path,flags,0);
+        if(fd<0)return 0;
+    }
+    return sceKernelClose(fd)==0;
+}
+#endif
 #ifdef _WIN32
 #include <direct.h>
 #include <fcntl.h>
@@ -79,16 +102,53 @@ static int pe_rename(const char* from, const char* to) { return MoveFileExA(from
 enum { CARD_BLOCK_BYTES = 8192, CARD_BLOCKS = 15, CARD_SECTOR_BYTES = 128 };
 typedef struct { char name[21]; size_t bytes; int blocks; } CardFile;
 static char cardRoot[PATH_MAX];
+const char* peMemoryCardOwnedRoot(void) { return cardRoot[0] ? cardRoot : NULL; }
 static char openPath[PATH_MAX];
 static long openMode;
 enum { CARD_IO_IDLE, CARD_IO_RUNNING, CARD_IO_COMPLETE };
 static int started, ioState, newCard[2];
 static long completedCommand, completedResult;
 
+/* Card file names as the game sees them. Its save names end in random characters
+ * from "A-Za-z0-9;:", and ':' is not allowed in Windows file names (macOS shows it
+ * as '/'), so on disk ':' is stored as HOST_COLON, which the game never uses. */
+enum { HOST_COLON = '!' };
 static int validName(const char* name)
 {
     if (!name || !*name || strlen(name) > 20 || name[0] == '.') return 0;
-    return strpbrk(name, "/\\:*?") == NULL;
+    return strpbrk(name, "/\\*?!") == NULL;
+}
+
+static void hostName(const char* name, char* host)
+{
+    for (; *name; ++name, ++host) *host = *name == ':' ? HOST_COLON : *name;
+    *host = 0;
+}
+
+/* The game's name for a file on disk, or 0 for a file that is not a card file. */
+static int gameName(const char* host, char* name)
+{
+    if (strlen(host) > 20 || strchr(host, ':')) return 0;
+    for (; *host; ++host, ++name) *name = *host == HOST_COLON ? ':' : *host;
+    *name = 0;
+    return 1;
+}
+
+/*0 metadata read,1 missing file,-1 IO/unsafe path. SDK struct stat is retained:
+ * selected game/provider public headers match; no SCE struct is fabricated. */
+static int cardStat(const char *path,struct stat *st)
+{
+#ifdef PE2_PS5_HOST
+    if(!pePs5WritePathAllowed(path))return -1;
+    int fd=sceKernelOpen(path,O_RDONLY|O_NONBLOCK|O_NOFOLLOW,0);
+    if(fd<0)return nativeMissing(fd)?1:-1;
+    int result=fstat(fd,st);
+    if(sceKernelClose(fd)!=0)result=-1;
+    return result==0?0:-1;
+#else
+    if(lstat(path,st)==0)return 0;
+    return errno==ENOENT?1:-1;
+#endif
 }
 
 static long cardDirectory(long channel, char* path)
@@ -96,11 +156,12 @@ static long cardDirectory(long channel, char* path)
     if (!started || !cardRoot[0] || (channel != 0 && channel != 0x10)) return McErrCardNotExist;
     if (snprintf(path, PATH_MAX, "%s/card%d", cardRoot, channel == 0x10) >= PATH_MAX) return McErrCardInvalid;
 #ifdef PE2_PS5_HOST
-    if (!pePs5WritePathAllowed(path)) return McErrCardInvalid;
-#endif
+    if (!nativeCardDirectory(path)) return McErrCardInvalid;
+#else
     if (mkdir(path, 0700) != 0 && errno != EEXIST) return McErrCardInvalid;
     struct stat st;
     if (lstat(path, &st) != 0 || !S_ISDIR(st.st_mode)) return McErrCardInvalid;
+#endif
     return McErrNone;
 }
 
@@ -114,7 +175,10 @@ static long filePath(long channel, const char* name, char* path)
     if (!name) return McErrCardInvalid;
     strncpy(filename, name, 20);
     filename[20] = 0;
-    if (!validName(filename) || snprintf(path, PATH_MAX, "%s/%s", directory, filename) >= PATH_MAX) return McErrCardInvalid;
+    char host[21];
+    if (!validName(filename)) return McErrCardInvalid;
+    hostName(filename, host);
+    if (snprintf(path, PATH_MAX, "%s/%s", directory, host) >= PATH_MAX) return McErrCardInvalid;
 #ifdef PE2_PS5_HOST
     if (!pePs5WritePathAllowed(path)) return McErrCardInvalid;
 #endif
@@ -133,22 +197,36 @@ static long listFiles(long channel, CardFile* files, int* count, int* blocks)
     *count = *blocks = 0;
     if (result != McErrNone) return result;
     DIR* dir = opendir(directory);
-    if (!dir) return McErrCardInvalid;
+    if (!dir) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "PE2 card: open %s failed (errno %d)", directory, errno);
+        return McErrCardInvalid;
+    }
     struct dirent* entry;
-    while ((entry = readdir(dir))) {
-        if (!validName(entry->d_name)) continue;
+    for (;;) {
+        /* The bridge restores prior errno on EOF. Clear before EVERY read so
+         * a real directory error cannot masquerade as a successful short list. */
+        errno=0;entry=readdir(dir);
+        if (!entry) {
+            if (errno) {
+                SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "PE2 card: enumerate %s failed (errno %d)", directory, errno);
+                result = McErrCardInvalid;
+            }
+            break;
+        }
+        char name[21];
+        if (!gameName(entry->d_name, name) || !validName(name)) continue;
         if (snprintf(path, sizeof(path), "%s/%s", directory, entry->d_name) >= sizeof(path)) { result = McErrCardInvalid; break; }
         struct stat st;
-        if (lstat(path, &st) != 0) { result = McErrCardInvalid; break; }
+        if (cardStat(path, &st) != 0) { result = McErrCardInvalid; break; }
         if (!S_ISREG(st.st_mode)) continue;
         if (*count == CARD_BLOCKS || st.st_size <= 0 || st.st_size > CARD_BLOCKS * CARD_BLOCK_BYTES) { result = McErrCardInvalid; break; }
         CardFile* file = &files[(*count)++];
-        strcpy(file->name, entry->d_name);
+        strcpy(file->name, name);
         file->bytes = (size_t)st.st_size;
         file->blocks = (file->bytes + CARD_BLOCK_BYTES - 1) / CARD_BLOCK_BYTES;
         *blocks += file->blocks;
     }
-    closedir(dir);
+    if(closedir(dir)!=0)result=McErrCardInvalid;
     if (*blocks > CARD_BLOCKS) result = McErrCardInvalid;
     qsort(files, *count, sizeof(*files), compareFiles);
     return result;
@@ -165,7 +243,10 @@ static long storeFile(const char* path, const void* data, size_t bytes)
     if (!pePs5WritePathAllowed(path) || !pePs5WritePathAllowed(temporary)) return McErrCardInvalid;
 #endif
     int fd = mkstemp(temporary);
-    if (fd < 0) return McErrCardInvalid;
+    if (fd < 0) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "PE2 card: create temporary file for %s failed (errno %d)", path, errno);
+        return McErrCardInvalid;
+    }
     const unsigned char* cursor = data;
     size_t remaining = bytes;
     int ok = 1;
@@ -181,7 +262,12 @@ static long storeFile(const char* path, const void* data, size_t bytes)
 #ifdef PE2_PS5_HOST
     if (!pePs5WritePathAllowed(temporary) || !pePs5WritePathAllowed(path)) ok = 0;
 #endif
-    if (ok && rename(temporary, path) == 0) return McErrNone;
+    if (ok) {
+        if (rename(temporary, path) == 0) return McErrNone;
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "PE2 card: publish %s failed (errno %d)", path, errno);
+    } else {
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "PE2 card: write, flush, close, or path validation failed for %s", path);
+    }
 #ifdef PE2_PS5_HOST
     if (pePs5WritePathAllowed(temporary))
 #endif
@@ -192,7 +278,8 @@ static long storeFile(const char* path, const void* data, size_t bytes)
 static long transfer(const char* path, void* data, long offset, long bytes, int writing)
 {
     struct stat st;
-    if (lstat(path, &st) != 0) return errno == ENOENT ? McErrFileNotExist : McErrCardInvalid;
+    int status=cardStat(path,&st);
+    if(status!=0)return status==1?McErrFileNotExist:McErrCardInvalid;
     if (!S_ISREG(st.st_mode) || st.st_size <= 0 || st.st_size > CARD_BLOCKS * CARD_BLOCK_BYTES ||
         offset > st.st_size || bytes > st.st_size - offset) return McErrCardInvalid;
     unsigned char* contents = malloc((size_t)st.st_size);
@@ -240,12 +327,14 @@ void MemCardInit(long unused)
 #else
     const char* root = override ? override : (allocated = SDL_GetPrefPath("parasite-eve-ii-port", "parasite-eve-ii"));
 #endif
+    if (root && *root && strlen(root) < sizeof(cardRoot) &&
 #ifdef PE2_PS5_HOST
-    /* Checked native helper already created and opened this directory. */
-    if (root && *root && strlen(root) < sizeof(cardRoot)) strcpy(cardRoot, root);
+        nativeCardDirectory(root)
 #else
-    if (root && *root && strlen(root) < sizeof(cardRoot) && (mkdir(root, 0700) == 0 || errno == EEXIST)) strcpy(cardRoot, root);
+        (mkdir(root, 0700) == 0 || errno == EEXIST)
 #endif
+        ) strcpy(cardRoot, root);
+    SDL_Log("PE2 card root: %s", cardRoot[0] ? cardRoot : "(unavailable)");
     SDL_free(allocated);
 }
 void MemCardStart(void) { started = 1; }
@@ -297,7 +386,8 @@ long MemCardOpen(long channel, char* name, long mode)
     if (result != McErrNone) return result;
     if (mode != O_RDONLY && mode != O_WRONLY) return McErrCardInvalid;
     struct stat st;
-    if (lstat(path, &st) != 0) return errno == ENOENT ? McErrFileNotExist : McErrCardInvalid;
+    int status=cardStat(path,&st);
+    if(status!=0)return status==1?McErrFileNotExist:McErrCardInvalid;
     if (!S_ISREG(st.st_mode)) return McErrCardInvalid;
     strcpy(openPath, path);
     openMode = mode;
@@ -311,8 +401,9 @@ long MemCardCreateFile(long channel, char* name, long blocks)
     long result = filePath(channel, name, path);
     if (result != McErrNone) return result;
     struct stat st;
-    if (lstat(path, &st) == 0) return McErrAlreadyExist;
-    if (errno != ENOENT) return McErrCardInvalid;
+    int status=cardStat(path,&st);
+    if(status==0)return McErrAlreadyExist;
+    if(status!=1)return McErrCardInvalid;
     CardFile files[CARD_BLOCKS];
     int count, used;
     result = listFiles(channel, files, &count, &used);

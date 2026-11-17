@@ -174,6 +174,34 @@ static void DrawText(OverlaySurface *s, float x, float baseline, float em,
     }
 }
 
+/* Same-project adaptation of PE1 Build17 FitRowText. Bounded copy and
+ * ellipsis keep Large row labels within the existing column/hit geometry.
+ * Truncation does not leave a partial UTF-8 sequence; the existing painter's
+ * supported character coverage is otherwise unchanged. */
+static const char *OverlayFitRowText(const char *text,float em,float width,char out[1024]) {
+    SDL_strlcpy(out,text?text:"",1024);
+    size_t n=strlen(out);
+    /* A clipped input may end inside a multibyte sequence. Native setting
+     * labels are ASCII; retain only complete input codepoints when supplied. */
+    if(text && n==1023 && text[n]) {
+        while(n && (((unsigned char)text[n]&0xc0)==0x80)) --n;
+        out[n]=0;
+    }
+    if(width<=0) { out[0]=0;return out; }
+    if(TextWidth(out,em)<=width) return out;
+    while(n) {
+        do { --n; } while(n && (((unsigned char)out[n]&0xc0)==0x80));
+        out[n]=0;
+        if(n+3<1024) {
+            strcat(out,"...");
+            if(TextWidth(out,em)<=width) return out;
+            out[n]=0;
+        }
+    }
+    out[0]=0;
+    return out;
+}
+
 /* ---- geometry helpers ---- */
 
 static int OverlayDesignHeight(int rowCount) {

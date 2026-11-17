@@ -1,3 +1,6 @@
+#ifdef PE2_PS5_HOST
+#include "port/ps5_paths.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -144,6 +147,9 @@ int peAssetsDump(const char* path)
 {
     size_t n;
     const PeAssetBinding* b = bindings(&n);
+#ifdef PE2_PS5_HOST
+    if (!pePs5WritePathAllowed(path)) return 0;
+#endif
     FILE* f = fopen(path, "w");
     if (!f) return 0;
     for (size_t i = 0; i < n; i++) {
@@ -187,6 +193,9 @@ int peAssetsDump(const char* path)
         if (getenv("PE2_DUMP_KEY") && strstr(b[i].key, getenv("PE2_DUMP_KEY"))) {   /* development: raw bytes of one array */
             char name[512];
             snprintf(name, sizeof name, "%s.%s.bin", path, strrchr(b[i].key, '/') ? strrchr(b[i].key, '/') + 1 : b[i].key);
+#ifdef PE2_PS5_HOST
+            if (!pePs5WritePathAllowed(name)) continue;
+#endif
             FILE* g = fopen(name, "wb");
             if (g) { fwrite(b[i].dst, 1, b[i].size, g); fclose(g); }
         }

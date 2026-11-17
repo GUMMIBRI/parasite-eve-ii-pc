@@ -13,6 +13,9 @@ typedef struct {
     char system[4];
 } PeMemoryCardDirectoryEntry;
 
+/* Read-only owned root, or NULL before successful initialization. No IO. */
+const char* peMemoryCardOwnedRoot(void);
+
 /* One host pad-poll pulse, independent of wall-clock replay speed. */
 void peMemoryCardAdvanceIo(void);
 

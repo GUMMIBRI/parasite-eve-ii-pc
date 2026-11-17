@@ -1,3 +1,6 @@
+#ifdef PE2_PS5_HOST
+#include "port/ps5_paths.h"
+#endif
 /* Host implementations of the PSY-Q calls PsyZ does not provide. */
 #include "port/pad_trace.h"
 #include "port/memory_card.h"
@@ -13,6 +16,9 @@
 static FILE* pePadOpenControlFifo(const char* path)
 {
     struct stat info;
+#ifdef PE2_PS5_HOST
+    if (!pePs5WritePathAllowed(path)) return NULL;
+#endif
     int fd = open(path, O_RDWR | O_NONBLOCK);
     if (fd < 0) return NULL;
     if (fstat(fd, &info) != 0 || !S_ISFIFO(info.st_mode) || fcntl(fd, F_SETFL, 0) < 0) {
@@ -153,14 +159,25 @@ MATRIX* ScaleMatrixL(MATRIX* m, VECTOR* v)
     return m;
 }
 
+#ifdef PE2_PS5_HOST
+#include <psyz/gte.h>
+#endif
+
 void gteMIMefunc(SVECTOR* out, const SVECTOR* delta, int count, int weight)
 {
     for (int i = 0; i < count; i++) {
+#ifdef PE2_PS5_HOST
+        /* Keep the actual pre-morph source, before the original Q12 shift. */
+        const SVECTOR before = out[i];
+#endif
         long long v[3] = { out[i].vx + (((long long)delta[i].vx * weight) >> 12),
                            out[i].vy + (((long long)delta[i].vy * weight) >> 12),
                            out[i].vz + (((long long)delta[i].vz * weight) >> 12) };
         for (int k = 0; k < 3; k++) v[k] = v[k] > 32767 ? 32767 : v[k] < -32768 ? -32768 : v[k];
         out[i].vx = (short)v[0]; out[i].vy = (short)v[1]; out[i].vz = (short)v[2];
+#ifdef PE2_PS5_HOST
+        Psyz_GteRecordPgxpMorph(&out[i], &before, &delta[i], weight);
+#endif
     }
 }
 
@@ -174,13 +191,46 @@ void gteMIMefunc(SVECTOR* out, const SVECTOR* delta, int count, int weight)
 #include <libetc.h>
 #include <psyz/gte.h>
 
-/* The emulated controller is a digital pad (ID 4): InfoModeCurID = 1 reports its type; no extended ID. */
+#ifdef PE2_PS5_HOST
+#include <psyz/input.h>
+#include "../main/pad.h"
+/* Expose the actual emulated controller and fulfill PE2's original analog-mode
+ * negotiation. SDL already supplies both sticks when the selected kind is73. */
+int PadInfoMode(int port, int term, int offs)
+{
+    if (port != 0 && port != 0x10) return 0;
+    PsyzControllerKind kind=Psyz_PadsSetKind(port>>4,0,PSYZ_CTRL_QUERY_KIND);
+    int dualshock=kind == PSYZ_CTRL_DIGITAL_PAD || kind == PSYZ_CTRL_ANALOG_PAD;
+    switch (term) {
+    case 1: {
+        /* A successful mode request takes effect on the next received frame,
+         * not on stale digital bytes already sampled by the original poller. */
+        const PadRawPort *raw=&gPadRawPorts[port>>4];
+        return raw->status || raw->controllerId == 0xFF ? 0 : raw->controllerId>>4;
+    }
+    case 2: return dualshock ? 7 : 0;
+    case 3: return dualshock && kind == PSYZ_CTRL_ANALOG_PAD ? 1 : 0;
+    case 4: return !dualshock ? 0 : offs == -1 ? 2 : offs == 0 ? 4 : offs == 1 ? 7 : 0;
+    default: return 0;
+    }
+}
+int PadSetMainMode(int port, int offs, int lock)
+{
+    if ((port != 0 && port != 0x10) || (offs != 0 && offs != 1) || lock < 0 || lock > 3) return 0;
+    PsyzControllerKind current=Psyz_PadsSetKind(port>>4,0,PSYZ_CTRL_QUERY_KIND);
+    if (current != PSYZ_CTRL_DIGITAL_PAD && current != PSYZ_CTRL_ANALOG_PAD) return 0;
+    PsyzControllerKind previous=Psyz_PadsSetKind(port>>4,0,offs ? PSYZ_CTRL_ANALOG_PAD : PSYZ_CTRL_DIGITAL_PAD);
+    return previous != PSYZ_CTRL_ERROR;
+}
+#else
+/* Keep the existing desktop compatibility behavior. */
 int PadInfoMode(int port, int term, int offs)
 {
     (void)port; (void)offs;
     return term == 1 ? 4 : 0;
 }
 int PadSetMainMode(int port, int offs, int lock) { (void)port; (void)offs; (void)lock; return 1; }
+#endif
 
 long SpuReserveReverbWorkArea(long on_off) { return on_off; }
 
@@ -304,14 +354,14 @@ static void pePadControlRead(uint64_t index, char* frame, size_t length)
         fprintf(stderr, "[pad] control waiting at frame %llu\n", (unsigned long long)index);
         fflush(stderr);
         while (!fgets(line, sizeof line, commands)) {
-            if (ferror(commands) && errno == EINTR) {
-                clearerr(commands);
+            if ((ferror)(commands) && errno == EINTR) {
+                (clearerr)(commands);
                 continue;
             }
-            fprintf(stderr, "[pad] control %s\n", ferror(commands) ? "read failed" : "closed");
-            exit(ferror(commands) ? 1 : 0);
+            fprintf(stderr, "[pad] control %s\n", (ferror)(commands) ? "read failed" : "closed");
+            exit((ferror)(commands) ? 1 : 0);
         }
-        if (!strchr(line, '\n') && !feof(commands)) {
+        if (!strchr(line, '\n') && !(feof)(commands)) {
             fprintf(stderr, "[pad] control command too long\n");
             exit(1);
         }
@@ -379,6 +429,9 @@ void Psyz_PadsOverride(int port, char* frame, int len)
             RECT all = { 0, 0, 1024, 512 };
             StoreImage(&all, (u_long*)(void*)vram);
             DrawSync(0);
+#ifdef PE2_PS5_HOST
+            if (!pePs5WritePathAllowed(dumpPath)) { fprintf(stderr,"[ps5] VRAM dump path is outside permitted storage\n"); return; }
+#endif
             FILE* f = fopen(dumpPath, "wb");
             if (f) { fwrite(vram, sizeof vram, 1, f); fclose(f); }
         }
@@ -432,6 +485,9 @@ void Psyz_PadsOverride(int port, char* frame, int len)
         if (replayPath && (!(replay = fopen(replayPath, "rb")) || !pePadTraceHeader(replay, 0))) {
             fprintf(stderr, "[pad] cannot read replay: %s\n", replayPath); exit(1);
         }
+#ifdef PE2_PS5_HOST
+        if (recordPath && !pePs5WritePathAllowed(recordPath)) { fprintf(stderr,"[ps5] Pad recording path is outside permitted storage\n"); exit(1); }
+#endif
         if (recordPath && (!(record = fopen(recordPath, "wb")) || !pePadTraceHeader(record, 1))) {
             fprintf(stderr, "[pad] cannot write recording: %s\n", recordPath); exit(1);
         }
