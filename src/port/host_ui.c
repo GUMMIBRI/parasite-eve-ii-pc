@@ -119,7 +119,7 @@ static void saveOptions(unsigned scale) {
     fprintf(f,"hd_backgrounds=%d\nhd_background_path=%s\n",hdEnabled,hdPackPath);
     for(unsigned i=0;i<16;i++) fprintf(f,"key%u=%d\n",i,Psyz_GetKeyboardBinding_SDL3(i));
     int failed=ferror(f); if(fclose(f)) failed=1;
-    if(failed || rename(temp,configPath)) snprintf(statusText,sizeof statusText,"Could not save preferences.");
+    if(failed || !SDL_RenamePath(temp,configPath)) snprintf(statusText,sizeof statusText,"Could not save preferences.");
 }
 
 static unsigned loadOptions(void) {
