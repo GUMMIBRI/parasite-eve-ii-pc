@@ -376,6 +376,11 @@ void textUploadPalettes(void);
 /// commands can switch it to queued drawing during the call.
 void textDrawString(TextDrawReq* request, const u8* text);
 
+/// HP/MP numeric typography only. Native medium digits and slash retain their
+/// authored field advances, alignment, baseline and sprite crops. Unsupported
+/// runs or unavailable replacement resources retain the original glyphs.
+void textDrawHudVitalsString(TextDrawReq* request, const u8* text);
+
 /// Writes a signed decimal string, saturating its magnitude at 99,999,999.
 ///
 /// Negative values receive one minus sign; zero is "0". `value` must be

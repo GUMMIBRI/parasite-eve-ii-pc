@@ -9,6 +9,9 @@ struct PeCapAsset {
     unsigned char* bytes;
     CapSequenceTable* sequences;
     CapCommandTable* commands;
+#ifdef PE2_PS5_HOST
+    size_t packedBytes, glyphBegin, glyphCount, textBegin, textEnd;
+#endif
 };
 
 static uint32_t word(const unsigned char* p)
@@ -37,6 +40,21 @@ void peCapFree(PeCapAsset* asset)
     free(asset);
 }
 CapFile* peCapAssetFile(PeCapAsset* asset) { return asset ? &asset->file : NULL; }
+
+#ifdef PE2_PS5_HOST
+int peCapAssetFontSource(const PeCapAsset* asset, PeCapFontSource* source)
+{
+    if (!asset || !source || !asset->bytes ||
+        asset->file.glyphs.cells != (const TextGlyphCell*)(asset->bytes + asset->glyphBegin)) return 0;
+    source->packed = asset->bytes;
+    source->bytes = asset->packedBytes;
+    source->glyphCount = asset->glyphCount;
+    source->cells = asset->file.glyphs.cells;
+    source->textBegin = (const u16*)(asset->bytes + asset->textBegin);
+    source->textEnd = (const u16*)(asset->bytes + asset->textEnd);
+    return 1;
+}
+#endif
 
 PeCapAsset* peCapDecode(const void* data, size_t bytes)
 {
@@ -104,6 +122,13 @@ PeCapAsset* peCapDecode(const void* data, size_t bytes)
         }
     }
     if (!expectCommand || records != count || ((textStart - glyphs) & 3)) goto fail;
+#ifdef PE2_PS5_HOST
+    asset->packedBytes = bytes;
+    asset->glyphBegin = glyphs;
+    asset->glyphCount = (textStart - glyphs) / 4;
+    asset->textBegin = textStart;
+    asset->textEnd = sequences;
+#endif
     for (size_t i = 0; i < commandCount; ++i) {
         size_t ref = word(raw + commands + 4 + i * 4);
         if (!ref) continue;

@@ -3143,6 +3143,16 @@ static void _uiPanelHidden(UiPanel* panel, Task* task)
 /// hidden); dispatch does not check the index. The selected handler receives
 /// the embedded panel and its owning task, and may exit the task and release
 /// the object. Neither is accessed after the handler returns.
+#ifdef PE2_PS5_HOST
+int uiTaskHasContentCallback(const Task* task, TaskFunc callback)
+{
+    if (!task || task->callback != _uiDispatchPanelLifecycle || !task->spawnArg2.pointer)
+        return 0;
+    const UiObject* object = task->spawnArg2.pointer;
+    return object->owner == task && object->panel.contentCallback == callback;
+}
+#endif
+
 static void _uiDispatchPanelLifecycle(Task* owningTask)
 {
     _UiPanelLifecycleFuncTable6 handlers;

@@ -1,4 +1,7 @@
 #include "gameplay/player_actor.h"
+#ifdef PE2_PS5_HOST
+#include "port/analog_controls.h"
+#endif
 
 #include <psyz.h>
 #include <abs.h>
@@ -5853,7 +5856,11 @@ void playerActorUpdateFacing(Task* task)
     actor           = task->work;
     coord           = task->extra.tmd->coords;
     aimAnglesMoving = 0;
+#ifdef PE2_PS5_HOST
+    if (!peAnalogApplyNormalFacing(task) && actor->turnRateIndex != 0) {
+#else
     if (actor->turnRateIndex != 0) {
+#endif
         s32 turnSign = (u8) * (volatile s8*)&actor->turnSign;
 
         actor->rotation.vy = (actor->rotation.vy + _gPlayerActorBodyTurnRates[actor->turnRateIndex] * (s8)turnSign) & ACTOR_TRANSFORM_ANGLE_MASK;
@@ -8462,6 +8469,9 @@ static void _playerActorTickNormal(Task* task)
         actor->movementSign = 0;
         actor->turnSign     = 0;
     }
+#ifdef PE2_PS5_HOST
+    peAnalogUpdateNormalInput(task);
+#endif
     // Paralysis saves the interrupted state before disabling weapon contact.
     status = &gPlayerStatus;
     if (status->statusFlags & PLAYER_STATUS_PARALYSIS) {

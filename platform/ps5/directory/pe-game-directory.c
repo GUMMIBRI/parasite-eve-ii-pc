@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <SDL3/SDL_log.h>
-/* Route bounded native adapter diagnostics through the application's SDL sink. */
+/* stderr dup2 is refused by this title; use its existing captured SDL sink. */
 static void pe_directory_log(const char *fmt,...) {
     static unsigned budget=96;
     if(!budget)return;

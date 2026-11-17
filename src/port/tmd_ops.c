@@ -18,6 +18,21 @@
 #include <libgpu.h>
 #include <libgte.h>
 #include <psyz/gte.h>
+#ifdef PE2_PS5_HOST
+#include "gameplay/shadow_capture.h"
+#define PE2_SHADOW_FACE(ws,a,b,c,d) Pe2ShadowCaptureFace(ws,a,b,c,d)
+#else
+#define PE2_SHADOW_FACE(ws,a,b,c,d) ((void)0)
+#endif
+#ifdef PE2_PS5_HOST
+#include "gameplay/model_fill.h"
+#define PE2_FILL_BEGIN(ws) Pe2ModelFillFrame pe2Fill; Pe2ModelFillPrepare(&pe2Fill, (ws))
+#define PE2_FILL_APPLY(n, v, rgb) Pe2ModelFillApply(&pe2Fill, (const SVECTOR *)(n), (const SVECTOR *)(v), (rgb))
+#else
+#define PE2_FILL_BEGIN(ws) ((void)0)
+#define PE2_FILL_APPLY(n, v, rgb) ((void)0)
+#endif
+
 
 enum {
     GTE_NCCS = 0x4B08041B,
@@ -40,13 +55,18 @@ static void loadV(unsigned slot, const SVECTOR* v)
 {
     Psyz_GteDataWrite(slot * 2, (u32)(u16)v->vx | ((u32)(u16)v->vy << 16));
     Psyz_GteDataWrite(slot * 2 + 1, (u32)(u16)v->vz);
+#ifdef PE2_PS5_HOST
+    /* Attach only metadata owned by this exact, unchanged source vector. */
+    Psyz_GteCapturePgxpMorphInput(slot, v);
+#endif
 }
 
 static void storeXy(short* dst, unsigned sxyReg)
 {
-    u32 v  = Psyz_GteDataRead(sxyReg);
-    dst[0] = (short)(v & 0xFFFF);
-    dst[1] = (short)(v >> 16);
+    /* Keep the original packed screen word, and carry its projection sidecar
+     * to this exact packet address. Plain halfword stores lose that ownership
+     * and the renderer deliberately does not guess by matching screen XY. */
+    Psyz_GteStoreSxyTo(sxyReg, dst);
 }
 
 /* Store RGB FIFO entry `reg` (20..22) as a packet colour word: r, g, b, code. */
@@ -69,12 +89,15 @@ static void linkPacket(TmdStreamWorkspace* ws, void* packet, u32 length)
 /* Untextured Gouraud triangle, one normal per corner. */
 u32* tmdDrawStreamPrimG3CornerNormals(TmdStreamWorkspace* ws, s32 flags, u32* el)
 {
+    PE2_FILL_BEGIN(ws);
     u8* slot = ws->primWrite;
     (void)flags;
 
     for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_G3), el += ws->elemStride) {
         POLY_G3* p = (POLY_G3*)slot;
         u32 w0 = el[0], w1 = el[1], w2 = el[2], w3 = el[3];
+
+        PE2_SHADOW_FACE(ws, vertexAt(ws, w0 & 0xFFFF), vertexAt(ws, w0 >> 16), vertexAt(ws, w1 & 0xFFFF), NULL);
 
         loadV(0, vertexAt(ws, w0 & 0xFFFF));
         loadV(1, vertexAt(ws, w0 >> 16));
@@ -97,8 +120,11 @@ u32* tmdDrawStreamPrimG3CornerNormals(TmdStreamWorkspace* ws, s32 flags, u32* el
         loadV(2, normalAt(ws, w2 >> 16));
         Psyz_GteCommand(GTE_NCCT);
         storeRgb(&p->r0, 20);
+        PE2_FILL_APPLY(normalAt(ws, w1 >> 16), vertexAt(ws, w0 & 0xFFFF), &p->r0);
         storeRgb(&p->r1, 21);
+        PE2_FILL_APPLY(normalAt(ws, w2 & 0xFFFF), vertexAt(ws, w0 >> 16), &p->r1);
         storeRgb(&p->r2, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2 >> 16), vertexAt(ws, w1 & 0xFFFF), &p->r2);
         linkPacket(ws, p, 6);
     }
     ws->primWrite = slot;
@@ -108,12 +134,15 @@ u32* tmdDrawStreamPrimG3CornerNormals(TmdStreamWorkspace* ws, s32 flags, u32* el
 /* Untextured Gouraud quad, one normal per corner. */
 u32* tmdDrawStreamPrimG4CornerNormals(TmdStreamWorkspace* ws, s32 flags, u32* el)
 {
+    PE2_FILL_BEGIN(ws);
     u8* slot = ws->primWrite;
     (void)flags;
 
     for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_G4), el += ws->elemStride) {
         POLY_G4* p = (POLY_G4*)slot;
         u32 w0 = el[0], w1 = el[1], w2 = el[2], w3 = el[3], w4 = el[4];
+
+        PE2_SHADOW_FACE(ws, vertexAt(ws, w0 & 0xFFFF), vertexAt(ws, w0 >> 16), vertexAt(ws, w1 & 0xFFFF), vertexAt(ws, w1 >> 16));
 
         /* Vertex 3 first, so its depth ends up in SZ0 after the triangle projection. */
         loadV(0, vertexAt(ws, w1 >> 16));
@@ -149,11 +178,15 @@ u32* tmdDrawStreamPrimG4CornerNormals(TmdStreamWorkspace* ws, s32 flags, u32* el
         loadV(2, normalAt(ws, w3 & 0xFFFF));
         Psyz_GteCommand(GTE_NCCT);
         storeRgb(&p->r0, 20);
+        PE2_FILL_APPLY(normalAt(ws, w2 & 0xFFFF), vertexAt(ws, w0 & 0xFFFF), &p->r0);
         storeRgb(&p->r1, 21);
+        PE2_FILL_APPLY(normalAt(ws, w2 >> 16), vertexAt(ws, w0 >> 16), &p->r1);
         storeRgb(&p->r2, 22);
+        PE2_FILL_APPLY(normalAt(ws, w3 & 0xFFFF), vertexAt(ws, w1 & 0xFFFF), &p->r2);
         loadV(0, normalAt(ws, w3 >> 16));
         Psyz_GteCommand(GTE_NCCS);
         storeRgb(&p->r3, 22);
+        PE2_FILL_APPLY(normalAt(ws, w3 >> 16), vertexAt(ws, w1 >> 16), &p->r3);
         linkPacket(ws, p, 8);
     }
     ws->primWrite = slot;
@@ -163,12 +196,15 @@ u32* tmdDrawStreamPrimG4CornerNormals(TmdStreamWorkspace* ws, s32 flags, u32* el
 /* Untextured Gouraud triangle with one face normal: one lit colour on all corners. */
 u32* tmdDrawStreamPrimG3(TmdStreamWorkspace* ws, s32 flags, u32* el)
 {
+    PE2_FILL_BEGIN(ws);
     u8* slot = ws->primWrite;
     (void)flags;
 
     for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_G3), el += ws->elemStride) {
         POLY_G3* p = (POLY_G3*)slot;
         u32 w0 = el[0], w1 = el[1], w2 = el[2];
+
+        PE2_SHADOW_FACE(ws, vertexAt(ws, w0 & 0xFFFF), vertexAt(ws, w0 >> 16), vertexAt(ws, w1 & 0xFFFF), NULL);
 
         loadV(0, vertexAt(ws, w0 & 0xFFFF));
         loadV(1, vertexAt(ws, w0 >> 16));
@@ -189,8 +225,11 @@ u32* tmdDrawStreamPrimG3(TmdStreamWorkspace* ws, s32 flags, u32* el)
         loadV(0, normalAt(ws, w1 >> 16));
         Psyz_GteCommand(GTE_NCCS);
         storeRgb(&p->r0, 22);
+        PE2_FILL_APPLY(normalAt(ws, w1 >> 16), vertexAt(ws, w0 & 0xFFFF), &p->r0);
         storeRgb(&p->r1, 22);
+        PE2_FILL_APPLY(normalAt(ws, w1 >> 16), vertexAt(ws, w0 >> 16), &p->r1);
         storeRgb(&p->r2, 22);
+        PE2_FILL_APPLY(normalAt(ws, w1 >> 16), vertexAt(ws, w1 & 0xFFFF), &p->r2);
         linkPacket(ws, p, 6);
     }
     ws->primWrite = slot;
@@ -200,12 +239,15 @@ u32* tmdDrawStreamPrimG3(TmdStreamWorkspace* ws, s32 flags, u32* el)
 /* Untextured Gouraud quad with one face normal. */
 u32* tmdDrawStreamPrimG4(TmdStreamWorkspace* ws, s32 flags, u32* el)
 {
+    PE2_FILL_BEGIN(ws);
     u8* slot = ws->primWrite;
     (void)flags;
 
     for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_G4), el += ws->elemStride) {
         POLY_G4* p = (POLY_G4*)slot;
         u32 w0 = el[0], w1 = el[1], w2 = el[2], w3 = el[3];
+
+        PE2_SHADOW_FACE(ws, vertexAt(ws, w0 & 0xFFFF), vertexAt(ws, w0 >> 16), vertexAt(ws, w1 & 0xFFFF), vertexAt(ws, w1 >> 16));
 
         loadV(0, vertexAt(ws, w1 >> 16));
         Psyz_GteRtps();
@@ -237,9 +279,13 @@ u32* tmdDrawStreamPrimG4(TmdStreamWorkspace* ws, s32 flags, u32* el)
         loadV(0, normalAt(ws, w2)); /* the whole word is the normal's byte offset */
         Psyz_GteCommand(GTE_NCCS);
         storeRgb(&p->r0, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2), vertexAt(ws, w0 & 0xFFFF), &p->r0);
         storeRgb(&p->r1, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2), vertexAt(ws, w0 >> 16), &p->r1);
         storeRgb(&p->r2, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2), vertexAt(ws, w1 & 0xFFFF), &p->r2);
         storeRgb(&p->r3, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2), vertexAt(ws, w1 >> 16), &p->r3);
         linkPacket(ws, p, 8);
     }
     ws->primWrite = slot;
@@ -273,14 +319,16 @@ static u32* xformStreamVerts(TmdStreamWorkspace* ws, u32* el, int elementColour)
             }
             *(u32*)((u8*)ws->szTable + (vOff >> 1)) = depth;
         }
-        u32 xy = Psyz_GteDataRead(14);
         if (elementColour) {
             Psyz_GteDataWrite(6, el[1]);
         }
         loadV(0, normalAt(ws, w0 >> 16));
         Psyz_GteCommand(GTE_NCCS);
         u32 rgb = Psyz_GteDataRead(22);
-        memcpy(base + (dest & 0xFFFF), &xy, 4);
+        /* NCCS changes colour/lighting registers, not the SXY FIFO. Register
+         * this scatter at its remapped host-packet address, just like the
+         * direct polygon path, while retaining the same four packet bytes. */
+        Psyz_GteStoreSxyTo(14, base + (dest & 0xFFFF));
         memcpy(base + (dest >> 16), &rgb, 4);
     }
     return el;
@@ -302,11 +350,17 @@ u32* tmdXformStreamVerts(TmdStreamWorkspace* ws, s32 flags, u32* el)
  * already in the packet; this writes screen XY and lit colours. */
 static u32* gt3(TmdStreamWorkspace* ws, u32* el, u32 colour, int reverse)
 {
+    PE2_FILL_BEGIN(ws);
+#ifdef PE2_PS5_HOST
+    if (colour & 0x02000000u) Pe2ModelFillDisable(&pe2Fill);
+#endif
     u8* slot = ws->primWrite;
 
     for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_GT3), el += ws->elemStride) {
         POLY_GT3* p = (POLY_GT3*)slot;
         u32 w0 = el[0], w1 = el[1], w2 = el[2];
+
+        PE2_SHADOW_FACE(ws, vertexAt(ws, w0 & 0xFFFF), vertexAt(ws, w0 >> 16), vertexAt(ws, w1 & 0xFFFF), NULL);
 
         loadV(0, vertexAt(ws, w0 & 0xFFFF));
         loadV(1, vertexAt(ws, w0 >> 16));
@@ -332,8 +386,11 @@ static u32* gt3(TmdStreamWorkspace* ws, u32* el, u32 colour, int reverse)
         loadV(2, normalAt(ws, w2 >> 16));
         Psyz_GteCommand(GTE_NCCT);
         storeRgb(&p->r0, 20);
+        PE2_FILL_APPLY(normalAt(ws, w1 >> 16), vertexAt(ws, w0 & 0xFFFF), &p->r0);
         storeRgb(&p->r1, 21);
+        PE2_FILL_APPLY(normalAt(ws, w2 & 0xFFFF), vertexAt(ws, w0 >> 16), &p->r1);
         storeRgb(&p->r2, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2 >> 16), vertexAt(ws, w1 & 0xFFFF), &p->r2);
         linkPacket(ws, p, 9);
     }
     ws->primWrite = slot;
@@ -354,11 +411,17 @@ u32* tmdDrawStreamGt3(TmdStreamWorkspace* ws, s32 flags, u32* el)
 /* Gouraud textured quad, per-corner normals. */
 static u32* gt4(TmdStreamWorkspace* ws, u32* el, u32 colour, int reverse)
 {
+    PE2_FILL_BEGIN(ws);
+#ifdef PE2_PS5_HOST
+    if (colour & 0x02000000u) Pe2ModelFillDisable(&pe2Fill);
+#endif
     u8* slot = ws->primWrite;
 
     for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_GT4), el += ws->elemStride) {
         POLY_GT4* p = (POLY_GT4*)slot;
         u32 w0 = el[0], w1 = el[1], w2 = el[2], w3 = el[3];
+
+        PE2_SHADOW_FACE(ws, vertexAt(ws, w0 & 0xFFFF), vertexAt(ws, w0 >> 16), vertexAt(ws, w1 & 0xFFFF), vertexAt(ws, w1 >> 16));
 
         Psyz_GteDataWrite(6, colour);
         loadV(0, vertexAt(ws, w1 >> 16));
@@ -398,11 +461,15 @@ static u32* gt4(TmdStreamWorkspace* ws, u32* el, u32 colour, int reverse)
         loadV(2, normalAt(ws, w3 & 0xFFFF));
         Psyz_GteCommand(GTE_NCCT);
         storeRgb(&p->r0, 20);
+        PE2_FILL_APPLY(normalAt(ws, w2 & 0xFFFF), vertexAt(ws, w0 & 0xFFFF), &p->r0);
         storeRgb(&p->r1, 21);
+        PE2_FILL_APPLY(normalAt(ws, w2 >> 16), vertexAt(ws, w0 >> 16), &p->r1);
         storeRgb(&p->r2, 22);
+        PE2_FILL_APPLY(normalAt(ws, w3 & 0xFFFF), vertexAt(ws, w1 & 0xFFFF), &p->r2);
         loadV(0, normalAt(ws, w3 >> 16));
         Psyz_GteCommand(GTE_NCCS);
         storeRgb(&p->r3, 22);
+        PE2_FILL_APPLY(normalAt(ws, w3 >> 16), vertexAt(ws, w1 >> 16), &p->r3);
         linkPacket(ws, p, 12);
     }
     ws->primWrite = slot;
@@ -423,11 +490,17 @@ u32* tmdDrawStreamGt4(TmdStreamWorkspace* ws, s32 flags, u32* el)
 /* Textured triangle, one face normal and a fixed material: one lit colour on all corners. */
 static u32* gt3OneNormal(TmdStreamWorkspace* ws, u32* el, u32 colour)
 {
+    PE2_FILL_BEGIN(ws);
+#ifdef PE2_PS5_HOST
+    if (colour & 0x02000000u) Pe2ModelFillDisable(&pe2Fill);
+#endif
     u8* slot = ws->primWrite;
 
     for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_GT3), el += ws->elemStride) {
         POLY_GT3* p = (POLY_GT3*)slot;
         u32 w0 = el[0], w1 = el[1];
+
+        PE2_SHADOW_FACE(ws, vertexAt(ws, w0 & 0xFFFF), vertexAt(ws, w0 >> 16), vertexAt(ws, w1 & 0xFFFF), NULL);
 
         loadV(0, vertexAt(ws, w0 & 0xFFFF));
         loadV(1, vertexAt(ws, w0 >> 16));
@@ -448,8 +521,11 @@ static u32* gt3OneNormal(TmdStreamWorkspace* ws, u32* el, u32 colour)
         loadV(0, normalAt(ws, w1 >> 16));
         Psyz_GteCommand(GTE_NCCS);
         storeRgb(&p->r0, 22);
+        PE2_FILL_APPLY(normalAt(ws, w1 >> 16), vertexAt(ws, w0 & 0xFFFF), &p->r0);
         storeRgb(&p->r1, 22);
+        PE2_FILL_APPLY(normalAt(ws, w1 >> 16), vertexAt(ws, w0 >> 16), &p->r1);
         storeRgb(&p->r2, 22);
+        PE2_FILL_APPLY(normalAt(ws, w1 >> 16), vertexAt(ws, w1 & 0xFFFF), &p->r2);
         linkPacket(ws, p, 9);
     }
     ws->primWrite = slot;
@@ -470,11 +546,17 @@ u32* tmdDrawStreamPrimGt3OneNormalSemiTrans(TmdStreamWorkspace* ws, s32 flags, u
 
 static u32* gt4OneNormal(TmdStreamWorkspace* ws, u32* el, u32 colour)
 {
+    PE2_FILL_BEGIN(ws);
+#ifdef PE2_PS5_HOST
+    if (colour & 0x02000000u) Pe2ModelFillDisable(&pe2Fill);
+#endif
     u8* slot = ws->primWrite;
 
     for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_GT4), el += ws->elemStride) {
         POLY_GT4* p = (POLY_GT4*)slot;
         u32 w0 = el[0], w1 = el[1], w2 = el[2];
+
+        PE2_SHADOW_FACE(ws, vertexAt(ws, w0 & 0xFFFF), vertexAt(ws, w0 >> 16), vertexAt(ws, w1 & 0xFFFF), vertexAt(ws, w1 >> 16));
 
         Psyz_GteDataWrite(6, colour);
         loadV(0, vertexAt(ws, w1 >> 16));
@@ -506,9 +588,13 @@ static u32* gt4OneNormal(TmdStreamWorkspace* ws, u32* el, u32 colour)
         loadV(0, normalAt(ws, w2)); /* the whole word is the byte offset */
         Psyz_GteCommand(GTE_NCCS);
         storeRgb(&p->r0, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2), vertexAt(ws, w0 & 0xFFFF), &p->r0);
         storeRgb(&p->r1, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2), vertexAt(ws, w0 >> 16), &p->r1);
         storeRgb(&p->r2, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2), vertexAt(ws, w1 & 0xFFFF), &p->r2);
         storeRgb(&p->r3, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2), vertexAt(ws, w1 >> 16), &p->r3);
         linkPacket(ws, p, 12);
     }
     ws->primWrite = slot;
@@ -538,12 +624,15 @@ static void lightCorner(const SVECTOR* n, u32 colour)
 /* Textured triangle, a normal and a material colour per corner. Ignores reverse culling. */
 u32* tmdDrawStreamPrimGt3CornerColors(TmdStreamWorkspace* ws, s32 flags, u32* el)
 {
+    PE2_FILL_BEGIN(ws);
     u8* slot = ws->primWrite;
     u8  code = (flags & TMD_OBJECT_SEMI_TRANS) ? 0x36 : 0x34;
 
     for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_GT3), el += ws->elemStride) {
         POLY_GT3* p = (POLY_GT3*)slot;
         u32 w0 = el[0], w1 = el[1], w2 = el[2];
+
+        PE2_SHADOW_FACE(ws, vertexAt(ws, w0 & 0xFFFF), vertexAt(ws, w0 >> 16), vertexAt(ws, w1 & 0xFFFF), NULL);
 
         loadV(0, vertexAt(ws, w0 & 0xFFFF));
         loadV(1, vertexAt(ws, w0 >> 16));
@@ -562,10 +651,13 @@ u32* tmdDrawStreamPrimGt3CornerColors(TmdStreamWorkspace* ws, s32 flags, u32* el
         Psyz_GteAvsz3();
         lightCorner(normalAt(ws, w1 >> 16), el[3]);
         storeRgb(&p->r0, 22);
+        PE2_FILL_APPLY(normalAt(ws, w1 >> 16), vertexAt(ws, w0 & 0xFFFF), &p->r0);
         lightCorner(normalAt(ws, w2 & 0xFFFF), el[4]);
         storeRgb(&p->r1, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2 & 0xFFFF), vertexAt(ws, w0 >> 16), &p->r1);
         lightCorner(normalAt(ws, w2 >> 16), el[5]);
         storeRgb(&p->r2, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2 >> 16), vertexAt(ws, w1 & 0xFFFF), &p->r2);
         p->code = code;
         linkPacket(ws, p, 9);
     }
@@ -576,12 +668,15 @@ u32* tmdDrawStreamPrimGt3CornerColors(TmdStreamWorkspace* ws, s32 flags, u32* el
 /* Textured quad, a normal and a material colour per corner. */
 u32* tmdDrawStreamPrimGt4CornerColors(TmdStreamWorkspace* ws, s32 flags, u32* el)
 {
+    PE2_FILL_BEGIN(ws);
     u8* slot = ws->primWrite;
     u8  code = (flags & TMD_OBJECT_SEMI_TRANS) ? 0x3E : 0x3C;
 
     for (s32 count = ws->elemCount; count != 0; count--, slot += sizeof(POLY_GT4), el += ws->elemStride) {
         POLY_GT4* p = (POLY_GT4*)slot;
         u32 w0 = el[0], w1 = el[1], w2 = el[2], w3 = el[3];
+
+        PE2_SHADOW_FACE(ws, vertexAt(ws, w0 & 0xFFFF), vertexAt(ws, w0 >> 16), vertexAt(ws, w1 & 0xFFFF), vertexAt(ws, w1 >> 16));
 
         loadV(0, vertexAt(ws, w1 >> 16));
         Psyz_GteRtps();
@@ -611,12 +706,16 @@ u32* tmdDrawStreamPrimGt4CornerColors(TmdStreamWorkspace* ws, s32 flags, u32* el
         Psyz_GteAvsz4();
         lightCorner(normalAt(ws, w2 & 0xFFFF), el[4]);
         storeRgb(&p->r0, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2 & 0xFFFF), vertexAt(ws, w0 & 0xFFFF), &p->r0);
         lightCorner(normalAt(ws, w2 >> 16), el[5]);
         storeRgb(&p->r1, 22);
+        PE2_FILL_APPLY(normalAt(ws, w2 >> 16), vertexAt(ws, w0 >> 16), &p->r1);
         lightCorner(normalAt(ws, w3 & 0xFFFF), el[6]);
         storeRgb(&p->r2, 22);
+        PE2_FILL_APPLY(normalAt(ws, w3 & 0xFFFF), vertexAt(ws, w1 & 0xFFFF), &p->r2);
         lightCorner(normalAt(ws, w3 >> 16), el[7]);
         storeRgb(&p->r3, 22);
+        PE2_FILL_APPLY(normalAt(ws, w3 >> 16), vertexAt(ws, w1 >> 16), &p->r3);
         p->code = code;
         linkPacket(ws, p, 12);
     }

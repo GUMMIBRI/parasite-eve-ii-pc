@@ -1,10 +1,21 @@
 #include "gameplay/model_lighting.h"
+#include "gameplay/hd_player_textures.h"
 
 #include <psyz.h>
 #include <libgte.h>
 #include <libgpu.h>
 #include <libgte.h>
 #include <memory.h>
+#include <psyz/gte.h>
+#ifdef PE2_PS5_HOST
+#include "gameplay/model_fill.h"
+#define PE2_FILL_BEGIN(ws) Pe2ModelFillFrame pe2Fill; Pe2ModelFillPrepare(&pe2Fill, (ws))
+#define PE2_FILL_APPLY(n, v, rgb) Pe2ModelFillApply(&pe2Fill, (const SVECTOR *)(n), (const SVECTOR *)(v), (rgb))
+#else
+#define PE2_FILL_BEGIN(ws) ((void)0)
+#define PE2_FILL_APPLY(n, v, rgb) ((void)0)
+#endif
+
 #include <stdlib.h>
 
 #include "common.h"
@@ -23,6 +34,19 @@
 #include "gameplay/player_actor.h"
 #include "gameplay/room_effects.h"
 #include "scene_runtime.h"
+
+
+#ifdef PE2_PS5_HOST
+/* The original PS1 operation copies one32-bit XY word, not pointer-width
+ * u_long plus adjacent UV/CLUT bytes. The caller copies that fixed word;
+ * this companion carries its exact final-address projection ownership. */
+static void modelLightingCopyScreenMetadata(const void *from, const void *to)
+{
+    unsigned int xy;
+    memcpy(&xy, to, sizeof xy);
+    Psyz_GteCopyPgxpSxy(from, to, xy);
+}
+#endif
 
 /// Writable packet word containing vertex 0's texture coordinates and CLUT address.
 ///
@@ -295,6 +319,8 @@ static inline void _modelLightingInitFt3Texture(POLY_FT3* triangle, const u32* e
     *(u16*)&triangle->u2                    = (u16)elementWords[MODEL_LIGHTING_FT3_UV2_WORD];
     triangle->tpage                        += workspace->texturePageOffset;
     triangle->clut                         += workspace->encodedClutOffset;
+    pe2HdPlayerRegisterPacket(workspace->obj, triangle->tpage, triangle->clut);
+    {const unsigned char uv[8]={triangle->u0,triangle->v0,triangle->u1,triangle->v1,triangle->u2,triangle->v2};pe2HdModelRegisterPacket(workspace->obj,&triangle->r0,28,3,0,triangle->tpage,triangle->clut,uv);}
 }
 
 /// Initializes one flat textured quad's persistent texture coordinates and GPU addresses.
@@ -327,6 +353,8 @@ static inline void _modelLightingInitFt4Texture(POLY_FT4* quad, const u32* eleme
     *(u16*)&quad->u3 = (u16)(elementWords[MODEL_LIGHTING_FT4_UV2_UV3_WORD] >> 16);
     quad->tpage     += workspace->texturePageOffset;
     quad->clut      += workspace->encodedClutOffset;
+    pe2HdPlayerRegisterPacket(workspace->obj, quad->tpage, quad->clut);
+    {const unsigned char uv[8]={quad->u0,quad->v0,quad->u1,quad->v1,quad->u2,quad->v2,quad->u3,quad->v3};pe2HdModelRegisterPacket(workspace->obj,&quad->r0,36,4,0,quad->tpage,quad->clut,uv);}
 }
 
 /// Initializes one gouraud textured triangle's persistent texture coordinates and GPU addresses.
@@ -359,6 +387,8 @@ static inline void _tmdInitGt3Texture(POLY_GT3* triangle, const u32* elementWord
     *(u16*)&triangle->u2 = (u16)elementWords[TMD_GT3_UV2_WORD];
     triangle->tpage     += workspace->texturePageOffset;
     triangle->clut      += workspace->encodedClutOffset;
+    pe2HdPlayerRegisterPacket(workspace->obj, triangle->tpage, triangle->clut);
+    {const unsigned char uv[8]={triangle->u0,triangle->v0,triangle->u1,triangle->v1,triangle->u2,triangle->v2};pe2HdModelRegisterPacket(workspace->obj,&triangle->r0,36,3,1,triangle->tpage,triangle->clut,uv);}
 }
 
 /// Seeds one Gouraud textured quad's persistent texture data for the draw pass.
@@ -400,6 +430,8 @@ static inline void _modelLightingInitGt4Texture(POLY_GT4* quad, const u32* eleme
     *(u16*)&quad->u3 = (u16)(elementWords[MODEL_LIGHTING_GT4_UV2_UV3_WORD] >> 16);
     quad->tpage     += workspace->texturePageOffset;
     quad->clut      += workspace->encodedClutOffset;
+    pe2HdPlayerRegisterPacket(workspace->obj, quad->tpage, quad->clut);
+    {const unsigned char uv[8]={quad->u0,quad->v0,quad->u1,quad->v1,quad->u2,quad->v2,quad->u3,quad->v3};pe2HdModelRegisterPacket(workspace->obj,&quad->r0,48,4,1,quad->tpage,quad->clut,uv);}
 }
 
 /// Seeds one per-corner-colour Gouraud quad's persistent texture data for the draw pass.
@@ -445,6 +477,8 @@ static inline void _modelLightingInitGt4CornerColorsTexture(POLY_GT4* quad, cons
     *(u16*)&quad->u3 = (u16)(elementWords[MODEL_LIGHTING_GT4_CORNER_COLORS_UV2_UV3_WORD] >> 16);
     quad->tpage     += workspace->texturePageOffset;
     quad->clut      += workspace->encodedClutOffset;
+    pe2HdPlayerRegisterPacket(workspace->obj, quad->tpage, quad->clut);
+    {const unsigned char uv[8]={quad->u0,quad->v0,quad->u1,quad->v1,quad->u2,quad->v2,quad->u3,quad->v3};pe2HdModelRegisterPacket(workspace->obj,&quad->r0,48,4,1,quad->tpage,quad->clut,uv);}
 }
 
 /// Initializes one Gouraud textured quad's persistent texture fields from packed element words.
@@ -504,6 +538,8 @@ static inline void _modelLightingInitGt4TextureWords(POLY_GT4* quad, const u32* 
     *(u16*)&quad->u3 = (u16)(elementWords[uv0ClutWordIndex + MODEL_LIGHTING_GT4_UV2_UV3_WORD_OFFSET] >> 16);
     quad->tpage     += workspace->texturePageOffset;
     quad->clut      += workspace->encodedClutOffset;
+    pe2HdPlayerRegisterPacket(workspace->obj, quad->tpage, quad->clut);
+    {const unsigned char uv[8]={quad->u0,quad->v0,quad->u1,quad->v1,quad->u2,quad->v2,quad->u3,quad->v3};pe2HdModelRegisterPacket(workspace->obj,&quad->r0,48,4,1,quad->tpage,quad->clut,uv);}
 }
 
 /// Initializes the offset-layer texture of one layered Gouraud triangle.
@@ -678,6 +714,8 @@ static inline void _modelLightingInitGt3CornerColorsTexture(POLY_GT3* triangle, 
     *(u16*)&triangle->u2 = (u16)elementWords[MODEL_LIGHTING_GT3_CORNER_COLORS_UV2_WORD];
     triangle->tpage     += workspace->texturePageOffset;
     triangle->clut      += workspace->encodedClutOffset;
+    pe2HdPlayerRegisterPacket(workspace->obj, triangle->tpage, triangle->clut);
+    {const unsigned char uv[8]={triangle->u0,triangle->v0,triangle->u1,triangle->v1,triangle->u2,triangle->v2};pe2HdModelRegisterPacket(workspace->obj,&triangle->r0,36,3,1,triangle->tpage,triangle->clut,uv);}
 }
 
 /// Initializes a Gouraud textured triangle's persistent texture fields from packed element words.
@@ -730,6 +768,8 @@ static inline void _modelLightingInitGt3TextureWords(POLY_GT3* triangle, const u
     *(u16*)&triangle->u2 = (u16)elementWords[uv0ClutWordIndex + MODEL_LIGHTING_GT3_UV2_WORD_OFFSET];
     triangle->tpage     += workspace->texturePageOffset;
     triangle->clut      += workspace->encodedClutOffset;
+    pe2HdPlayerRegisterPacket(workspace->obj, triangle->tpage, triangle->clut);
+    {const unsigned char uv[8]={triangle->u0,triangle->v0,triangle->u1,triangle->v1,triangle->u2,triangle->v2};pe2HdModelRegisterPacket(workspace->obj,&triangle->r0,36,3,1,triangle->tpage,triangle->clut,uv);}
 }
 
 /// Initializes the blended offset-layer texture of one pre-transformed Gouraud triangle.
@@ -1005,9 +1045,9 @@ u32* tmdXformStreamVertsEnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags,
                 workspace->szTable[cornerRefs->vertexByteRef >> TMD_STREAM_VERTEX_INDEX_SHIFT] = workspace->gteResult;
             }
             previousVertexRef = cornerRefs->vertexByteRef;
-            gte_stsxy(workspace->preXformWrite + cornerRefs->layerColorByteOffset + (OFFSET_OF(POLY_GT3, x0) - OFFSET_OF(POLY_GT3, r0)));
-            gte_stsxy(workspace->preXformWrite + cornerRefs->baseColorByteOffset + (OFFSET_OF(POLY_GT3, x0) - OFFSET_OF(POLY_GT3, r0)));
-            gte_stsxy(&workspace->texCoord);
+            Psyz_GteStoreSxyTo(15, workspace->preXformWrite + cornerRefs->layerColorByteOffset + (OFFSET_OF(POLY_GT3, x0) - OFFSET_OF(POLY_GT3, r0)));
+            Psyz_GteStoreSxyTo(15, workspace->preXformWrite + cornerRefs->baseColorByteOffset + (OFFSET_OF(POLY_GT3, x0) - OFFSET_OF(POLY_GT3, r0)));
+            Psyz_GteStoreSxyTo(15, &workspace->texCoord);
             gte_ldv0((const u8*)workspace->normals + (cornerRefs->normalByteRef & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
             gte_ldrgb(&_gModelLightingEnvironmentLayerMaterial);
             gte_nccs();
@@ -1090,10 +1130,10 @@ u32* tmdXformStreamVertsOffsetLayer(TmdStreamWorkspace* workspace, s32 objectFla
             }
             previousVertexRef = cornerRefs->vertexByteRef;
             screenDestination = workspace->preXformWrite + cornerRefs->layerColorByteOffset + sizeof(CVECTOR);
-            gte_stsxy(screenDestination);
+            Psyz_GteStoreSxyTo(15, screenDestination);
             screenDestination = workspace->preXformWrite + cornerRefs->baseColorByteOffset + sizeof(CVECTOR);
-            gte_stsxy(screenDestination);
-            gte_stsxy(&workspace->texCoord);
+            Psyz_GteStoreSxyTo(15, screenDestination);
+            Psyz_GteStoreSxyTo(15, &workspace->texCoord);
             MODEL_LIGHTING_LIGHT_OFFSET_LAYER_CORNER(workspace, cornerRefs, &layerMaterial, &baseMaterial);
             elements += workspace->elemStride;
         } while (workspace->elemCount-- > 0);
@@ -1124,7 +1164,7 @@ u32* tmdDrawStreamPrimGt3EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags
 
     packetPair       = (POLY_GT3*)workspace->primWrite;
     referenceColor   = gModelLightingNeutralColor;
-    payloadWordCount = 9;
+    payloadWordCount = sizeof(*packetPair) / sizeof(u32) - 1;
     if (workspace->elemCount-- > 0) {
         do {
             elementHalfwords = (const u16*)elements;
@@ -1249,7 +1289,7 @@ u32* tmdDrawStreamPrimGt3OffsetLayer(TmdStreamWorkspace* workspace, s32 objectFl
     baseMaterial.r  = baseIntensity;
     if (workspace->elemCount-- > 0) {
         gteResultDestination = &workspace->gteResult;
-        payloadWordCount     = 9;
+        payloadWordCount     = sizeof(*packetPair) / sizeof(u32) - 1;
         baseCommand          = TMD_GT3_OPAQUE_COMMAND;
         displayState         = &gDisplayState;
         addressMask          = GPU_DMA_LINK_ADDRESS_MASK;
@@ -1366,7 +1406,7 @@ u32* tmdDrawStreamPrimGt4OffsetLayer(TmdStreamWorkspace* workspace, s32 objectFl
                         gte_ldrgb(&baseMaterial);
                         gte_nccs();
                         gte_strgb(&packetPair[1].r3);
-                        payloadWordCount = 12;
+                        payloadWordCount = sizeof(*packetPair) / sizeof(u32) - 1;
                         baseCommand      = TMD_GT4_OPAQUE_COMMAND;
                         displayState     = &gDisplayState;
                         addressMask      = GPU_DMA_LINK_ADDRESS_MASK;
@@ -1438,8 +1478,14 @@ u32* tmdDrawStreamPrimGt4EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags
                 gte_stsxy2(&packetPair[1].x3);
                 // Collapse the rejected half into a repeated endpoint; retain AVSZ4 depths.
                 if (workspace->gteResult <= 0) {
-                    *(u_long*)&packetPair[0].x0 = *(u_long*)&packetPair[0].x1;
-                    *(u_long*)&packetPair[1].x0 = *(u_long*)&packetPair[1].x1;
+                    memcpy(&packetPair[0].x0, &packetPair[0].x1, sizeof(u32));
+#ifdef PE2_PS5_HOST
+                    modelLightingCopyScreenMetadata(&packetPair[0].x1, &packetPair[0].x0);
+#endif
+                    memcpy(&packetPair[1].x0, &packetPair[1].x1, sizeof(u32));
+#ifdef PE2_PS5_HOST
+                    modelLightingCopyScreenMetadata(&packetPair[1].x1, &packetPair[1].x0);
+#endif
                     gte_stopz(gteResultDestination);
                     if (workspace->gteResult >= 0) {
                         continue;
@@ -1447,8 +1493,14 @@ u32* tmdDrawStreamPrimGt4EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags
                 } else {
                     gte_stopz(gteResultDestination);
                     if (workspace->gteResult >= 0) {
-                        *(u_long*)&packetPair[0].x3 = *(u_long*)&packetPair[0].x2;
-                        *(u_long*)&packetPair[1].x3 = *(u_long*)&packetPair[1].x2;
+                        memcpy(&packetPair[0].x3, &packetPair[0].x2, sizeof(u32));
+#ifdef PE2_PS5_HOST
+                    modelLightingCopyScreenMetadata(&packetPair[0].x2, &packetPair[0].x3);
+#endif
+                        memcpy(&packetPair[1].x3, &packetPair[1].x2, sizeof(u32));
+#ifdef PE2_PS5_HOST
+                    modelLightingCopyScreenMetadata(&packetPair[1].x2, &packetPair[1].x3);
+#endif
                     }
                 }
                 gte_avsz4();
@@ -1535,7 +1587,7 @@ u32* tmdDrawStreamPrimGt4EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags
                     packetPair[0].tpage = TMD_ENV_SECOND_TEXTURE_PAGE;
                 }
 
-                payloadWordCount = 12;
+                payloadWordCount = sizeof(*packetPair) / sizeof(u32) - 1;
                 setlen(&packetPair[0], payloadWordCount);
                 setcode(&packetPair[0], TMD_GT4_SEMI_TRANS_COMMAND);
                 setlen(&packetPair[1], payloadWordCount);
@@ -1552,6 +1604,7 @@ u32* tmdDrawStreamPrimGt4EnvLayer(TmdStreamWorkspace* workspace, s32 objectFlags
 
 u32* tmdDrawStreamPrimGt3ElemColor(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
 {
+    PE2_FILL_BEGIN(workspace);
     enum { TMD_GT3_ELEMENT_COLOR_WORD_INDEX = 3 };
     enum { TMD_GT3_OPAQUE_COMMAND     = 0x34,
            TMD_GT3_SEMI_TRANS_COMMAND = 0x36 };
@@ -1584,7 +1637,10 @@ u32* tmdDrawStreamPrimGt3ElemColor(TmdStreamWorkspace* workspace, s32 objectFlag
                     gte_ldv3(normalBytes + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), normalBytes + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK));
                     gte_ncct();
                     gte_strgb3_gt3(triangle);
-                    setlen(triangle, 9);
+                    PE2_FILL_APPLY(normalBytes + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r0);
+                    PE2_FILL_APPLY(normalBytes + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r1);
+                    PE2_FILL_APPLY(normalBytes + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r2);
+                    setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
                     setcode(triangle, TMD_GT3_OPAQUE_COMMAND);
                     if (workspace->obj->flags & TMD_OBJECT_SEMI_TRANS) {
                         setcode(triangle, TMD_GT3_SEMI_TRANS_COMMAND);
@@ -1603,6 +1659,7 @@ u32* tmdDrawStreamPrimGt3ElemColor(TmdStreamWorkspace* workspace, s32 objectFlag
 
 u32* tmdDrawStreamPrimGt4ElemColor(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
 {
+    PE2_FILL_BEGIN(workspace);
     enum { TMD_GT4_ELEMENT_COLOR_WORD_INDEX = 4 };
     enum { TMD_GT4_OPAQUE_COMMAND     = 0x3C,
            TMD_GT4_SEMI_TRANS_COMMAND = 0x3E };
@@ -1641,7 +1698,11 @@ u32* tmdDrawStreamPrimGt4ElemColor(TmdStreamWorkspace* workspace, s32 objectFlag
                         gte_stsxy2(&quad->x3);
                         gte_avsz4();
                         _modelLightingLightGt4CornerNormals(quad, workspace, geometryRefs);
-                        setlen(quad, 12);
+                        PE2_FILL_APPLY((const u8*)workspace->normals + (geometryRefs->normalByteRefs[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (geometryRefs->vertexByteRefs[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r0);
+                        PE2_FILL_APPLY((const u8*)workspace->normals + (geometryRefs->normalByteRefs[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (geometryRefs->vertexByteRefs[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r1);
+                        PE2_FILL_APPLY((const u8*)workspace->normals + (geometryRefs->normalByteRefs[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (geometryRefs->vertexByteRefs[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r2);
+                        PE2_FILL_APPLY((const u8*)workspace->normals + (geometryRefs->normalByteRefs[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (geometryRefs->vertexByteRefs[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r3);
+                        setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
                         setcode(quad, TMD_GT4_OPAQUE_COMMAND);
                         if (workspace->obj->flags & TMD_OBJECT_SEMI_TRANS) {
                             setcode(quad, TMD_GT4_SEMI_TRANS_COMMAND);
@@ -1828,7 +1889,7 @@ u32* tmdDrawStreamPrimF4(TmdStreamWorkspace* workspace, s32 objectFlags, u32* el
                     if (workspace->gteResult > 0 || _modelLightingQuadSecondTriangleFacesViewer(workspace, gteResultDestination)) {
                         gte_stsxy2(&quad->x3);
                         gte_avsz4();
-                        setlen(quad, 5);
+                        setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
                         setcode(quad, TMD_F4_OPAQUE_COMMAND);
                         gte_stotz(gteResultDestination);
                         addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
@@ -1875,7 +1936,7 @@ u32* tmdDrawStreamPrimF3(TmdStreamWorkspace* workspace, s32 objectFlags, u32* el
                     gte_stflg(gteFlagDestination);
                     if ((workspace->gteFlag & projectionErrorMask) == 0) {
                         gte_avsz3();
-                        setlen(triangle, 4);
+                        setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
                         setcode(triangle, TMD_F3_OPAQUE_COMMAND);
                         gte_stotz(gteResultDestination);
                         addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], triangle);
@@ -1972,6 +2033,7 @@ u32* tmdDrawStreamPrimFt4SemiTrans(TmdStreamWorkspace* workspace, s32 objectFlag
 
 u32* tmdDrawStreamPrimG3CornerColors(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
 {
+    PE2_FILL_BEGIN(workspace);
     enum { TMD_CORNER_COLOR_WORD_INDEX = 3 };
     enum { TMD_G3_OPAQUE_COMMAND = 0x30 };
     POLY_G3*            triangle;
@@ -1998,9 +2060,12 @@ u32* tmdDrawStreamPrimG3CornerColors(TmdStreamWorkspace* workspace, s32 objectFl
                     gte_stsxy3_g3(triangle);
                     gte_avsz3();
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX, (const u8*)workspace->normals + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r0);
+                    PE2_FILL_APPLY((const u8*)workspace->normals + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r0);
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r1);
+                    PE2_FILL_APPLY((const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r1);
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r2);
-                    setlen(triangle, 6);
+                    PE2_FILL_APPLY((const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r2);
+                    setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
                     setcode(triangle, TMD_G3_OPAQUE_COMMAND);
                     gte_stotz(gteResultDestination);
                     addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], triangle);
@@ -2044,7 +2109,7 @@ u32* tmdDrawStreamPrimG3CornerColorsSemiTrans(TmdStreamWorkspace* workspace, s32
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX, (const u8*)workspace->normals + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r0);
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r1);
                     MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &triangle->r2);
-                    setlen(triangle, 6);
+                    setlen(triangle, sizeof(*triangle) / sizeof(u32) - 1);
                     setcode(triangle, TMD_G3_SEMI_TRANS_COMMAND);
                     gte_stotz(gteResultDestination);
                     addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], triangle);
@@ -2060,6 +2125,7 @@ u32* tmdDrawStreamPrimG3CornerColorsSemiTrans(TmdStreamWorkspace* workspace, s32
 
 u32* tmdDrawStreamPrimG4CornerColors(TmdStreamWorkspace* workspace, s32 objectFlags, u32* elements)
 {
+    PE2_FILL_BEGIN(workspace);
     enum { TMD_CORNER_COLOR_WORD_INDEX = 4 };
     enum { TMD_G4_OPAQUE_COMMAND = 0x38 };
     POLY_G4*            quad;
@@ -2095,10 +2161,14 @@ u32* tmdDrawStreamPrimG4CornerColors(TmdStreamWorkspace* workspace, s32 objectFl
                         gte_stsxy2(&quad->x3);
                         gte_avsz4();
                         MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX, (const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r0);
+                    PE2_FILL_APPLY((const u8*)workspace->normals + (elementHalfwords[4] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (elementHalfwords[0] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r0);
                         MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r1);
+                    PE2_FILL_APPLY((const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (elementHalfwords[1] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r1);
                         MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[6] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r2);
+                    PE2_FILL_APPLY((const u8*)workspace->normals + (elementHalfwords[6] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (elementHalfwords[2] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r2);
                         MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 3, (const u8*)workspace->normals + (elementHalfwords[7] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r3);
-                        setlen(quad, 8);
+                    PE2_FILL_APPLY((const u8*)workspace->normals + (elementHalfwords[7] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), (const u8*)workspace->verts + (elementHalfwords[3] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r3);
+                        setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
                         setcode(quad, TMD_G4_OPAQUE_COMMAND);
                         gte_stotz(gteResultDestination);
                         addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
@@ -2154,7 +2224,7 @@ u32* tmdDrawStreamPrimG4CornerColorsSemiTrans(TmdStreamWorkspace* workspace, s32
                             MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 1, (const u8*)workspace->normals + (elementHalfwords[5] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r1);
                             MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 2, (const u8*)workspace->normals + (elementHalfwords[6] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r2);
                             MODEL_LIGHTING_LIGHT_STREAM_CORNER(elements + TMD_CORNER_COLOR_WORD_INDEX + 3, (const u8*)workspace->normals + (elementHalfwords[7] & TMD_STREAM_GEOMETRY_BYTE_OFFSET_MASK), &quad->r3);
-                            setlen(quad, 8);
+                            setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
                             setcode(quad, TMD_G4_SEMI_TRANS_COMMAND);
                             gte_stotz(gteResultDestination);
                             addPrim(&workspace->ot[((u32)workspace->gteResult << displayState->otDepthShift) >> TMD_DRAW_OT_INDEX_SHIFT & (GPU_ORDERING_TABLE_DEPTH_BYTE_MASK / GPU_OT_TAG_BYTES)], quad);
@@ -2220,7 +2290,7 @@ u32* tmdXformStreamVertsUnlit(TmdStreamWorkspace* workspace, s32 objectFlags, u3
                 workspace->szTable[elementHalfwords[0] >> TMD_STREAM_VERTEX_INDEX_SHIFT] = workspace->gteResult;
             }
             previousVertexRef = elementHalfwords[0];
-            gte_stsxy(workspace->preXformWrite + elementHalfwords[1]);
+            Psyz_GteStoreSxyTo(15, workspace->preXformWrite + elementHalfwords[1]);
             elements += workspace->elemStride;
         } while (workspace->elemCount-- > 0);
     }
@@ -2475,8 +2545,7 @@ u32* tmdBuildStreamGt4Unlit(TmdStreamWorkspace* workspace, s32 objectFlags, u32*
             GPU_PRIMITIVE_COLOR_WORD(quad, 1) = elements[TMD_GT4_UNLIT_COLOR_WORD_INDEX + 1];
             GPU_PRIMITIVE_COLOR_WORD(quad, 2) = elements[TMD_GT4_UNLIT_COLOR_WORD_INDEX + 2];
             corner3ColorWord                  = elements[TMD_GT4_UNLIT_COLOR_WORD_INDEX + 3];
-            // GP0 words exclude the host pointer-width tag and length fields.
-            setlen(quad, 12);
+            setlen(quad, sizeof(*quad) / sizeof(u32) - 1);
             setcode(quad, TMD_GT4_UNLIT_SEMI_TRANS_COMMAND);
             GPU_PRIMITIVE_COLOR_WORD(quad, 3) = corner3ColorWord;
             _modelLightingInitGt4TextureWords(quad, elements, TMD_GT4_UNLIT_UV0_CLUT_WORD_INDEX, workspace);

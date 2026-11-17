@@ -24,6 +24,10 @@ static u8 _gPadInputPreviousMenuLocked;
 /// latch without reference counting. Suppression edges change this module's
 /// display holds on player-present updates; resident samples remain available.
 static u16 _gPadInputSuppressionMask;
+#ifdef PE2_PS5_HOST
+#include "port/analog_controls.h"
+unsigned peAnalogInputSuppressionMask(void) { return _gPadInputSuppressionMask; }
+#endif
 
 /// Logical-button suppression mask sampled by the preceding player-present update.
 static u16 _gPadInputPreviousSuppressionMask;

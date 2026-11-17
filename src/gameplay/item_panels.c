@@ -1,3 +1,9 @@
+#ifdef PE2_PS5_HOST
+#include "port/playtest_assists.h"
+#define PE_ASSIST_CAST_COST(value) PeAssistAbilityCost(value)
+#else
+#define PE_ASSIST_CAST_COST(value) (value)
+#endif
 #include "gameplay/item_menu.h"
 
 #include <psyz.h>
@@ -785,7 +791,7 @@ void itemMenuApplyHealingPanel(UiObject* object, Task* task, s32 healingId)
                 player->hp = player->hpMax;
             }
         } else if (previousHp < player->hpMax) {
-            player->mp         = player->mp - attachmentGetPackedLevelValue(healingId, ATTACHMENT_LEVEL_CAST_COST);
+            player->mp         = player->mp - PE_ASSIST_CAST_COST(attachmentGetPackedLevelValue(healingId, ATTACHMENT_LEVEL_CAST_COST));
             displayedStats->mp = player->mp;
             player->hp         = player->hp + attachmentGetPackedLevelValue(healingId, ATTACHMENT_LEVEL_AMOUNT);
             save               = &gMcSaveData[MEMORY_CARD_SAVE_LIVE];

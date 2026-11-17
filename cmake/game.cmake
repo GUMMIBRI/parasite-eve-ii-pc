@@ -5,6 +5,9 @@ file(GLOB GAME_MAIN_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameplay/*.c)
 # main.c only switches to the PS1 boot stack; the port entry (src/port/main.c) replaces it.
 list(FILTER GAME_MAIN_SOURCES EXCLUDE REGEX "/src/main/main\\.c$")
+if(NOT PE2_PS5_HOST)
+    list(FILTER GAME_MAIN_SOURCES EXCLUDE REGEX "/src/gameplay/(model_fill|shadow_capture|particle_lights|particle_geometry|playtest_assists)\\.c$")
+endif()
 add_library(game_main OBJECT ${GAME_MAIN_SOURCES})
 target_include_directories(game_main PUBLIC include include/decomp
     ${PE_GENERATED_DIR})
@@ -252,8 +255,12 @@ target_compile_definitions(parasite-eve-ii-pc PRIVATE __psyz SKIP_ASM)
 target_link_libraries(parasite-eve-ii-pc PRIVATE psyz)
 target_sources(parasite-eve-ii-pc PRIVATE src/port/spu_voice_attributes.c)
 target_sources(parasite-eve-ii-pc PRIVATE src/port/host_ui.c)
+target_sources(parasite-eve-ii-pc PRIVATE src/port/hd_background.c)
+target_sources(parasite-eve-ii-pc PRIVATE src/port/qol_controls.c)
+target_sources(parasite-eve-ii-pc PRIVATE src/port/interpolation_bind.c)
 if(PE2_PS5_HOST)
     target_sources(parasite-eve-ii-pc PRIVATE src/port/ps5_paths.c src/port/ps5_app_discovery.c)
+    target_sources(parasite-eve-ii-pc PRIVATE src/port/mod_registry.c)
     target_sources(parasite-eve-ii-pc PRIVATE "${PE2_PS5_SUPPORT_DIR}/app_crt.o"
         "${PE2_PS5_SUPPORT_DIR}/application-stage.c"
         "${PE2_PS5_SUPPORT_DIR}/application-static-dlfcn.c"

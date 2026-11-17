@@ -31,7 +31,7 @@ int pePadTraceRead(FILE* file, uint64_t index, char* pad, size_t length)
 {
     char line[32 + 2 * PAD_TRACE_MAX_BYTES], decoded[PAD_TRACE_MAX_BYTES];
     if (!length || length > PAD_TRACE_MAX_BYTES) return -1;
-    if (!fgets(line, sizeof line, file)) return feof(file) && !ferror(file) ? 0 : -1;
+    if (!fgets(line, sizeof line, file)) return (feof)(file) && !(ferror)(file) ? 0 : -1;
     if (line[0] < '0' || line[0] > '9') return -1;
     char* bytes;
     errno = 0;

@@ -26,6 +26,10 @@ static inline void _capCaptionLoadResource(s16 texturePageX, s16 texturePageY, s
     s32 dataOrdinal;
     s32 slotIndex;
 
+#if defined(PE2_PS5_HOST)
+    /* A missing ordinal must not preserve an old positive font owner. */
+    _gCapCaptionPlexOwner = (PeCapPlexOwner){0};
+#endif
     dataOrdinal              = 0;
     _gCapCaptionTexturePageX = texturePageX;
     _gCapCaptionTexturePageY = texturePageY;

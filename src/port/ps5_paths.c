@@ -103,13 +103,52 @@ static const char *directory(const char *chosen,char output[4096]){
  strcpy(output,path);
  storageReason="Writes use selected existing USB storage; no migration or /data fallback.";return output;
 }
+/* Preserve an existing legacy data directory, including any existing cards.
+ * Select the app-contained root only on a fresh installation. */
+static const char *defaultDataRoot(void){
+ static char selected[4096];
+ static int initialized;
+ if(initialized)return selected[0]?selected:NULL;
+ initialized=1;
+ const char *legacy="/mnt/usb0/parasite-eve-ii";
+ char component[4096];
+ strcpy(component,legacy);
+ size_t length=strlen(component);
+ int present=1;
+ for(size_t i=1;i<=length;i++)if(i==length||component[i]=='/'){
+  char saved=component[i];component[i]=0;
+  errno=0;int fd=discOpen(component,O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_NOFOLLOW),observed=errno;
+  if(fd<0){
+   if(missingLeaf(fd)){present=0;break;}
+   storageRawFail("Open legacy storage component",component,fd,observed);return NULL;
+  }
+  errno=0;int closed=discClose(fd);observed=errno;
+  if(closed<0){storageRawFail("Close legacy storage component",component,closed,observed);return NULL;}
+  component[i]=saved;
+ }
+ if(present){strcpy(selected,legacy);return selected;}
+ char app[4096];int found=pePs5DiscoverApplication(app,sizeof app);
+ if(found<0){storageFail("Discover application",app,EINVAL);return NULL;}
+ if(found==1 && mountLength(app)){
+  int n=snprintf(selected,sizeof selected,"%s/parasite-eve-ii",app);
+  if(n<0||(size_t)n>=sizeof selected){selected[0]=0;return NULL;}
+  return selected;
+ }
+ strcpy(selected,legacy);return selected;
+}
 const char* pePs5ConfigDirectory(void){
  const char *override=getenv("PE2_CONFIG_DIR");
- return directory(override&&*override?override:"/mnt/usb0/parasite-eve-ii",configRoot);
+ const char *root=override&&*override?override:defaultDataRoot();
+ return directory(root,configRoot);
 }
 const char* pePs5CardDirectory(void){
  const char *override=getenv("PE2_MEMORY_CARD_DIR");
- return directory(override&&*override?override:"/mnt/usb0/parasite-eve-ii/memory-cards",cardDirectoryRoot);
+ if(override&&*override)return directory(override,cardDirectoryRoot);
+ const char *root=defaultDataRoot();char path[4096];
+ if(!root)return NULL;
+ int n=snprintf(path,sizeof path,"%s/memory-cards",root);
+ if(n<0||(size_t)n>=sizeof path)return NULL;
+ return directory(path,cardDirectoryRoot);
 }
 const char* pePs5StorageReason(void){return storageReason;}
 

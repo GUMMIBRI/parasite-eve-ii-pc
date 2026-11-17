@@ -1,3 +1,6 @@
+#ifdef PE2_PS5_HOST
+#include "port/playtest_assists.h"
+#endif
 #include "gameplay/items.h"
 
 #include <memory.h>
@@ -42,12 +45,32 @@ enum {
 /// The first carried stack loses one unit if present; a missing stack does
 /// not prevent consumption. `weaponUseCount` advances only below 999999;
 /// counts already at or above that threshold are left intact.
-static inline void _equipmentConsumeLoadedUnit(u8* loadedQuantity, s32 consumableItemId, s32* weaponUseCount)
+static inline void _equipmentConsumeLoadedUnit(u8* loadedQuantity, s32 consumableItemId, s32* weaponUseCount, s32 weaponItemId, s32 loadSelection)
 {
     enum { EQUIPMENT_WEAPON_USE_COUNT_MAX = 999999 };
 
+#ifdef PE2_PS5_HOST
+    int freezeLoaded = 0;
+    if (PeAssistsGet(PE_ASSIST_LOADED_AMMO) && *loadedQuantity > 0 &&
+        weaponItemId >= EQUIPMENT_WEAPON_ITEM_FIRST &&
+        weaponItemId < EQUIPMENT_WEAPON_ITEM_FIRST + ARRAY_SIZE(gEquipmentWeaponPrimaryLoadOptions.rows) &&
+        consumableItemId >= INVENTORY_CONSUMABLE_ITEM_FIRST &&
+        consumableItemId < INVENTORY_CONSUMABLE_ITEM_FIRST + INVENTORY_CONSUMABLE_ITEM_COUNT) {
+        const EquipmentWeaponLoadOptions* options = loadSelection == EQUIPMENT_WEAPON_SUPPLY_PRIMARY ?
+            &gEquipmentWeaponPrimaryLoadOptions.rows[weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST] :
+            &gEquipmentWeaponSecondaryLoadOptions.rows[weaponItemId - EQUIPMENT_WEAPON_ITEM_FIRST];
+        if (*loadedQuantity <= options->capacity) for (unsigned i = 0; i < ARRAY_SIZE(options->acceptedItemIds); ++i)
+            if (options->acceptedItemIds[i] == consumableItemId) freezeLoaded = 1;
+    }
+    if (!freezeLoaded) {
+#else
+    (void)weaponItemId;(void)loadSelection;
+#endif
     (*loadedQuantity)--;
     inventoryConsumeFirstStack(&gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.carriedItems, consumableItemId, 1);
+#ifdef PE2_PS5_HOST
+    }
+#endif
     if (*weaponUseCount < EQUIPMENT_WEAPON_USE_COUNT_MAX) {
         (*weaponUseCount)++;
     }
@@ -166,12 +189,12 @@ s32 equipmentConsumeWeaponLoad(s32 weaponItemId, s32 request)
 
     if (request == EQUIPMENT_WEAPON_LOAD_CONSUME_PRIMARY && weaponLoad->primaryItemId != INVENTORY_ITEM_NONE && weaponLoad->primaryQty != 0) {
         if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.cheatMode == 0) {
-            _equipmentConsumeLoadedUnit(&weaponLoad->primaryQty, weaponLoad->primaryItemId, useCount);
+            _equipmentConsumeLoadedUnit(&weaponLoad->primaryQty, weaponLoad->primaryItemId, useCount, weaponItemId, EQUIPMENT_WEAPON_SUPPLY_PRIMARY);
         }
     } else if (request == EQUIPMENT_WEAPON_LOAD_CONSUME_SECONDARY && weaponLoad->secondaryItemId != INVENTORY_ITEM_NONE && weaponLoad->secondaryItemId != EQUIPMENT_WEAPON_SECONDARY_UNAVAILABLE &&
                weaponLoad->secondaryQty != 0) {
         if (gMcSaveData[MEMORY_CARD_SAVE_LIVE].state.cheatMode == 0) {
-            _equipmentConsumeLoadedUnit(&weaponLoad->secondaryQty, weaponLoad->secondaryItemId, useCount);
+            _equipmentConsumeLoadedUnit(&weaponLoad->secondaryQty, weaponLoad->secondaryItemId, useCount, weaponItemId, EQUIPMENT_WEAPON_SUPPLY_SECONDARY);
         }
     }
 

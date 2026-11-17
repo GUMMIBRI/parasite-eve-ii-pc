@@ -492,7 +492,7 @@ enum {
 /// current view rotation and room grid, changes GTE state and the endpoint,
 /// retains the saved-cursor X reload, and leaves the caller's block reserved.
 /// Expands to several statements; invoke only as a phase inside a braced block.
-#define WORLD_COLLISION_QUERY_GROUND_PROJECTION(savedCursor, probe, sourceZBits, segmentEnd, hitResult) \
+#define WORLD_COLLISION_QUERY_GROUND_PROJECTION(savedCursor, probe, sourceZBits, segmentEnd, hitResult, receiverOut) \
     (probe)->endpoint.vx = 0;                                                                           \
     (probe)->endpoint.vy = WORLD_COLLISION_GROUND_PROBE_LENGTH;                                         \
     (probe)->endpoint.vz = 0;                                                                           \
@@ -505,7 +505,7 @@ enum {
     (probe)->endpoint.vx += (savedCursor)[-1].origin.vx;                                                \
     (probe)->endpoint.vy += (probe)->origin.vy;                                                         \
     (probe)->endpoint.vz += (probe)->origin.vz;                                                         \
-    (hitResult)           = worldCollisionProbeGridSegment((segmentEnd), &(probe)->origin, (segmentEnd), NULL);
+    (hitResult)           = worldCollisionProbeGridSegmentReceiver((segmentEnd), &(probe)->origin, (segmentEnd), NULL, (receiverOut));
 
 static void _effectDarknessScreenDimTaskE8(Task* task);
 
@@ -1591,7 +1591,7 @@ s32 worldCollisionProjectGroundCoord(const GfxCoord* sourceCoord, GfxCoord* hitC
     scratch->origin.vy                                      = (u16)sourceCoord->workm.t[1];
     originZBits                                             = (u16)sourceCoord->workm.t[2];
     SCRATCH_STACK_CURSOR(_WorldCollisionGroundProbeScratch) = scratch;
-    WORLD_COLLISION_QUERY_GROUND_PROJECTION(scratchEnd, scratch, originZBits, endpoint, hitResult);
+    WORLD_COLLISION_QUERY_GROUND_PROJECTION(scratchEnd, scratch, originZBits, endpoint, hitResult, NULL);
     if (hitResult == 1) {
         viewMatrix           = &gGfxViewCoord.workm;
         hitCoord->workm.t[0] = scratch->endpoint.vx;
@@ -1606,7 +1606,7 @@ s32 worldCollisionProjectGroundCoord(const GfxCoord* sourceCoord, GfxCoord* hitC
     return hitResult;
 }
 
-s32 worldCollisionProjectGroundPoint(const VECTOR3* sourcePoint, VECTOR3* hitPoint)
+s32 worldCollisionProjectGroundPointReceiver(const VECTOR3* sourcePoint, VECTOR3* hitPoint, WorldCollisionReceiver* receiver)
 {
     _WorldCollisionGroundProbeScratch* scratchEnd;
     _WorldCollisionGroundProbeScratch* scratch;
@@ -1620,7 +1620,7 @@ s32 worldCollisionProjectGroundPoint(const VECTOR3* sourcePoint, VECTOR3* hitPoi
     scratch->origin.vy                                      = (u16)sourcePoint->vy;
     originZBits                                             = (u16)sourcePoint->vz;
     SCRATCH_STACK_CURSOR(_WorldCollisionGroundProbeScratch) = scratch;
-    WORLD_COLLISION_QUERY_GROUND_PROJECTION(scratchEnd, scratch, originZBits, endpoint, hitResult);
+    WORLD_COLLISION_QUERY_GROUND_PROJECTION(scratchEnd, scratch, originZBits, endpoint, hitResult, receiver);
     if (hitResult == 1) {
         hitPoint->vx = scratch->endpoint.vx;
         hitPoint->vy = scratch->endpoint.vy;
@@ -1632,6 +1632,11 @@ s32 worldCollisionProjectGroundPoint(const VECTOR3* sourcePoint, VECTOR3* hitPoi
     }
     SCRATCH_STACK_RELEASE_BLOCK(_WorldCollisionGroundProbeScratch);
     return hitResult;
+}
+
+s32 worldCollisionProjectGroundPoint(const VECTOR3* sourcePoint, VECTOR3* hitPoint)
+{
+    return worldCollisionProjectGroundPointReceiver(sourcePoint, hitPoint, NULL);
 }
 
 s32 effectGetGroundShadowShade(s16 halfSize, s16 baseShade, s16 viewYDisplacement)

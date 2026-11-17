@@ -1,7 +1,12 @@
+#ifdef PE2_PS5_HOST
+#include <psyz/video.h>
+#include <psyz/font_profiles.h>
+#endif
 #include "main/text.h"
 #include "port/asset_bind.h"
 
 #include <psyz.h>
+#include <psyz/gpu.h>
 #include <libgte.h>
 #include <libgpu.h>
 
@@ -712,7 +717,101 @@ static inline void _textApplyDrawKerning(TextDrawReq* request, u8 previousRightC
     }
 }
 
-void textDrawString(TextDrawReq* request, const u8* text)
+
+/* Only the source-owned printable ASCII UI bank has a verified character
+ * identity. CAP glyph numbers and extended/control glyphs are not Unicode.
+ * The complete line falls back when its identity cannot be proven. */
+static int _plexRunSupported(const u8 *p)
+{
+    while (*p && *p != '\n' && *p != '\r') {
+        if (*p == '\\') {
+            ++p;
+            if (*p == 'n' || *p == 'N') return 1;
+            if (!*p || !p[1]) return 0;
+            switch (*p) {
+            case 'c': case 'C': case 's': case 'S': case 'w': case 'W':
+            case 'u': case 'U': case 'd': case 'D': case 'b': case 'B':
+                p += 2; break;
+            default: return 0;
+            }
+        } else {
+            if (*p < 32 || *p > 126) return 0;
+            ++p;
+        }
+    }
+    return 1;
+}
+
+#ifdef PE2_PS5_HOST
+/* Exact original face selection; no PE1 indices or guessed source glyphs. */
+static unsigned _plexUiFace(const _FontGlyph *table)
+{
+    return table==_gFontGlyphsMedium?0:table==_gFontGlyphsSmall?1:2;
+}
+static int _plexUiFacePrepare(unsigned face)
+{
+    const _FontGlyph *table=face==0?_gFontGlyphsMedium:face==1?_gFontGlyphsSmall:_gFontGlyphsLarge;
+    int bias=face==0?TEXT_GLYPH_V_BIAS_MEDIUM:face==1?TEXT_GLYPH_V_BIAS_SMALL:TEXT_GLYPH_V_BIAS_LARGE;
+    PsyzUiFontMetric metrics[95]={0};
+    for(unsigned i=0;i<95;++i){PsyzUiFontMetric *m=&metrics[i];m->character=i+32;
+        if(face==1&&i+32>'z')continue;
+        const _FontGlyph *g=&table[i];
+        m->u=g->u;m->v=(u8)(g->v+bias);m->width=g->widthMinusOne+1;m->height=g->heightMinusOne+1;
+        m->xOffset=g->xOffset;m->yOffset=g->yOffset;
+        m->advance=g->widthMinusOne+g->advanceExtraX+g->xOffset;
+        m->advanceY=g->advanceY;m->leftKerningClass=g->leftKerningClass;m->rightKerningClass=g->rightKerningClass;
+    }
+    return Psyz_GpuPreparePlexUiFace(face,metrics,95);
+}
+static int _plexUiFaceRunPrepare(const TextDrawReq *request,const u8 *p)
+{
+    unsigned face=request->glyphTable==TEXT_GLYPH_TABLE_MEDIUM?0:request->glyphTable==TEXT_GLYPH_TABLE_SMALL?1:2;
+    unsigned prepared=0,glyphs=0;
+    while(*p&&*p!='\n'&&*p!='\r'){
+        if(*p=='\\'){
+            ++p;if(*p=='n'||*p=='N')break;
+            if(!*p||!p[1])return 0;
+            if(*p=='s'||*p=='S'){
+                if(p[1]=='m'||p[1]=='M')face=0;
+                else if(p[1]=='s'||p[1]=='S')face=1;
+                else if(p[1]=='l'||p[1]=='L')face=2;
+            }
+            p+=2;continue; /* _plexRunSupported has validated command family. */
+        }
+        if(++glyphs>4096||*p<32||*p>126)return 0;
+        if(!(prepared&(1u<<face))){if(!_plexUiFacePrepare(face))return 0;prepared|=1u<<face;}
+        if(!Psyz_GpuPlexUiFaceSupports(face,*p++))return 0;
+    }
+    return Psyz_GpuPreparePlexUiFaceBudget(glyphs*2);
+}
+
+static int _plexHudRunPrepare(const TextDrawReq* request, const u8* text)
+{
+    static const u8 characters[] = "/0123456789";
+    if (request->glyphTable != TEXT_GLYPH_TABLE_MEDIUM || request->drawMode == TEXT_DRAW_IMMEDIATE) return 0;
+    unsigned count = 0;
+    for (const u8* p = text; *p; ++p) {
+        if ((*p < '0' || *p > '9') && *p != '/') return 0;
+        if (++count > 64) return 0;
+    }
+    if (!count) return 0;
+    PsyzHudFontMetric metrics[11];
+    for (unsigned i = 0; i < 11; ++i) {
+        const _FontGlyph* glyph = &_gFontGlyphsMedium[characters[i]-' '];
+        if (glyph->leftKerningClass || glyph->rightKerningClass || glyph->advanceY) return 0;
+        metrics[i].character = characters[i];
+        metrics[i].width = glyph->widthMinusOne + 1;
+        metrics[i].height = glyph->heightMinusOne + 1;
+        metrics[i].xOffset = glyph->xOffset;
+        metrics[i].yOffset = glyph->yOffset;
+        metrics[i].advance = glyph->widthMinusOne + glyph->advanceExtraX + glyph->xOffset;
+    }
+    /* Queued supported numeric modes emit at most fill+outline per glyph. */
+    return Psyz_GpuPreparePlexHud(metrics,11,count*2);
+}
+#endif
+
+static void _textDrawStringProfile(TextDrawReq* request, const u8* text, int hudNumeric)
 {
     enum {
         TEXT_LINE_COLOR_WHITE          = 0x606060,
@@ -737,6 +836,29 @@ void textDrawString(TextDrawReq* request, const u8* text)
     s32               endLine;
     s32               glyphIndex;
     DR_TPAGE*         texturePage;
+
+    int plexRun;
+#ifdef PE2_PS5_HOST
+    int metricUi=!hudNumeric && Psyz_GpuGetFontStyle(PSYZ_FONT_MENU)>=PSYZ_FONT_PLEX;
+#endif
+#ifdef PE2_PS5_HOST
+    if (hudNumeric) plexRun = _plexHudRunPrepare(request,text);
+    else
+#else
+    (void)hudNumeric;
+#endif
+    plexRun =
+#ifdef PE2_PS5_HOST
+        (request->drawMode != TEXT_DRAW_IMMEDIATE || Psyz_VideoGetInternalResolution() > 1) &&
+#else
+        request->drawMode != TEXT_DRAW_IMMEDIATE &&
+#endif
+        _plexRunSupported(text) &&
+#ifdef PE2_PS5_HOST
+        (metricUi ? _plexUiFaceRunPrepare(request,text) : Psyz_GpuPreparePlexUi());
+#else
+        Psyz_GpuPreparePlexUi();
+#endif
 
     cursor                    = text;
     previousRightKerningClass = FONT_KERNING_CLASS_NEUTRAL;
@@ -916,7 +1038,43 @@ void textDrawString(TextDrawReq* request, const u8* text)
         glyph      = &table[glyphIndex];
         _textApplyDrawKerning(request, previousRightKerningClass, glyph);
         previousRightKerningClass = glyph->rightKerningClass;
-        drawGlyph(request, glyph, colorRgb);
+        {
+            unsigned char *begin = (unsigned char *)gGpuPrimCursor;
+#ifdef PE2_PS5_HOST
+            if (drawGlyph == _textDrawGlyphImmediate) {
+                /* DrawPrim synchronously copies this private static payload
+                 * and its semantic record before the next glyph can reuse it.
+                 * The ordinary original metrics, palette, RGB and pen remain
+                 * owned by _textInitImmediateGlyphSprite. No OT allocation. */
+                if(metricUi) Psyz_GpuMarkPlexUiFace(&_gTextImmediateGlyphSprite.r0,
+                    plexRun?(unsigned)*cursor:0,0,_plexUiFace(table));
+                else Psyz_GpuMarkPlexUi(&_gTextImmediateGlyphSprite.r0,
+                    plexRun && !hudNumeric ? (unsigned)*cursor : 0, 0);
+            }
+#endif
+            drawGlyph(request, glyph, colorRgb);
+            unsigned char *end = (unsigned char *)gGpuPrimCursor;
+            /* Draw helpers allocate only SPRTs and DR_TPAGEs. Follow packet
+             * lengths rather than assuming the outlined helper's layout. */
+            while (begin < end) {
+                unsigned long *packet = (unsigned long *)begin;
+                unsigned count = getlen(packet);
+                if (count == 4 && (getcode(packet) & ~3) == 0x64) {
+                    int outline = ((SPRT*)packet)->clut == getClut(0x3F0,0x1FF) ||
+                                  ((SPRT*)packet)->clut == getClut(0x3E0,0x1FF);
+#ifdef PE2_PS5_HOST
+                    if (hudNumeric) Psyz_GpuMarkPlexHud(&((SPRT*)packet)->r0,
+                        plexRun ? (unsigned)*cursor : 0,outline);
+                    else if(metricUi) Psyz_GpuMarkPlexUiFace(&((SPRT*)packet)->r0,
+                        plexRun?(unsigned)*cursor:0,outline,_plexUiFace(table));
+                    else
+#endif
+                    Psyz_GpuMarkPlexUi(&((SPRT*)packet)->r0,
+                        plexRun ? (unsigned)*cursor : 0,outline);
+                }
+                begin += count == 4 ? sizeof(SPRT) : sizeof(OT_TYPE) + count * sizeof(u_long);
+            }
+        }
         cursor++;
         request->x += glyph->widthMinusOne + glyph->advanceExtraX + glyph->xOffset;
         request->y += glyph->advanceY;
@@ -944,6 +1102,16 @@ void textDrawString(TextDrawReq* request, const u8* text)
             addPrim(gGpuCurrentOt + request->otIndex, texturePage);
         }
     }
+}
+
+void textDrawString(TextDrawReq* request, const u8* text)
+{
+    _textDrawStringProfile(request,text,0);
+}
+
+void textDrawHudVitalsString(TextDrawReq* request, const u8* text)
+{
+    _textDrawStringProfile(request,text,1);
 }
 
 /// Writes the saturated unsigned decimal bytes shared by the public formatters.

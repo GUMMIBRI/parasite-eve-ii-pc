@@ -1,3 +1,7 @@
+#if defined(PE2_PS5_HOST)
+#include "port/cap_font_map.h"
+static PeCapPlexOwner _gCapCaptionPlexOwner;
+#endif
 #ifdef __psyz
 #include "port/cap_asset.h"
 #endif
@@ -170,11 +174,17 @@ static inline void _capCaptionStepCaretPulse(s32* pulseLevel, s32* falling)
 /// KSEG0 addresses only republish the tables and return true.
 static bool _capCaptionRelocateFile(CapFile* file)
 {
+#if defined(PE2_PS5_HOST)
+    _gCapCaptionPlexOwner = (PeCapPlexOwner){0};
+#endif
 #ifdef __psyz
     file = peCapResolveResource(file);
     if (file == NULL) return false;
     CAP_CAPTION_GLYPH_CELLS = file->glyphs.cells;
     CAP_CAPTION_COMMAND_REFS = file->commands.table->entries;
+#if defined(PE2_PS5_HOST)
+    peCapPlexBindOwner(file, &_gCapCaptionPlexOwner);
+#endif
     return true;
 #else
     /// Rebases a text reference, preserving terminal records and the next command.
@@ -357,17 +367,29 @@ static s32 _capCaptionDrawText(const u16* textStream, s32 unusedDrawArg, s32 unu
     POLY_GT4*      glyphQuad;
     POLY_GT4*      glyphOutline;
     TextGlyphCell* iconCell;
+#if defined(PE2_PS5_HOST)
+    PeCapPlexRun plexRun = {0};
+#endif
 
     lineIndex = 0;
     title     = titleIndex;
     text      = textStream;
     penX      = _capCaptionGetTextLineLeftX(textStream, 0) - CAP_CAPTION_DRAW_ORIGIN_X;
     baselineY = (u16)CAP_CAPTION_FIRST_BASELINE_Y - CAP_CAPTION_DRAW_ORIGIN_Y;
+#if defined(PE2_PS5_HOST)
+    peCapPlexBeginOwnedRun(&_gCapCaptionPlexOwner, CAP_CAPTION_GLYPH_CELLS,
+        textStream, getTPage(0, 0, _gCapCaptionTexturePageX, _gCapCaptionTexturePageY),
+        CAP_CAPTION_GLYPH_CLUT_BASE, &plexRun);
+#endif
 
     // Queue two blended background passes, then their draw-mode command.
     background     = gGpuPrimCursor;
     gGpuPrimCursor = background + 1;
     setPolyG4(background);
+
+#if defined(PE2_PS5_HOST)
+    Psyz_GpuMarkPlexCap(&background->r0, 0, 0, NULL);
+#endif
     setSemiTrans(background, 1);
     setRGB0(background, 0, 0, 0);
     setRGB1(background, 0, 0, 0);
@@ -385,11 +407,18 @@ static s32 _capCaptionDrawText(const u16* textStream, s32 unusedDrawArg, s32 unu
     backgroundCopy  = gGpuPrimCursor;
     gGpuPrimCursor  = backgroundCopy + 1;
     *backgroundCopy = *background;
+
+#if defined(PE2_PS5_HOST)
+    Psyz_GpuMarkPlexCap(&backgroundCopy->r0, 0, 0, NULL);
+#endif
     addPrim(&gGpuCurrentOt[CAP_CAPTION_BACKGROUND_OT_INDEX], backgroundCopy);
     drawMode       = gGpuPrimCursor;
     gGpuPrimCursor = drawMode + 1;
     setlen((DR_TPAGE*)drawMode, 1);
     drawMode->code[0] = CAP_CAPTION_BACKGROUND_DRAW_MODE;
+#if defined(PE2_PS5_HOST)
+    Psyz_GpuMarkPlexCap(&drawMode->code[0], 0, 0, NULL);
+#endif
     addPrim(&gGpuCurrentOt[CAP_CAPTION_BACKGROUND_OT_INDEX], drawMode);
 
     body = text;
@@ -398,6 +427,10 @@ static s32 _capCaptionDrawText(const u16* textStream, s32 unusedDrawArg, s32 unu
         flatQuad       = gGpuPrimCursor;
         gGpuPrimCursor = flatQuad + 1;
         setPolyFT4(flatQuad);
+
+#if defined(PE2_PS5_HOST)
+    Psyz_GpuMarkPlexCap(&flatQuad->r0, 0, 0, NULL);
+#endif
         setShadeTex(flatQuad, 1);
         title             = title - 1;
         boxTopY           = ((u16)CAP_CAPTION_BOTTOM_BASELINE_Y - CAP_CAPTION_BOX_BOTTOM_ORIGIN_Y) - (u16)CAP_CAPTION_BLOCK_HEIGHT;
@@ -449,6 +482,10 @@ static s32 _capCaptionDrawText(const u16* textStream, s32 unusedDrawArg, s32 unu
             flatQuad       = gGpuPrimCursor;
             gGpuPrimCursor = flatQuad + 1;
             setPolyFT4(flatQuad);
+
+#if defined(PE2_PS5_HOST)
+    Psyz_GpuMarkPlexCap(&flatQuad->r0, 0, 0, NULL);
+#endif
             setShadeTex(flatQuad, 1);
             flatQuad->clut  = CAP_CAPTION_ICON_CLUT;
             flatQuad->tpage = CAP_CAPTION_ICON_TPAGE;
@@ -496,6 +533,10 @@ static s32 _capCaptionDrawText(const u16* textStream, s32 unusedDrawArg, s32 unu
             gGpuPrimCursor      = glyphOutline + 1;
             *glyphOutline       = *glyphQuad;
             glyphOutline->tpage = getTPage(0, GPU_BLEND_SUBTRACT, _gCapCaptionTexturePageX, _gCapCaptionTexturePageY);
+#if defined(PE2_PS5_HOST)
+            peCapPlexTagPair(&plexRun, &glyphQuad->r0, &glyphOutline->r0,
+                             code & CAP_CAPTION_TEXT_GLYPH_INDEX_MASK);
+#endif
             addPrim(&gGpuCurrentOt[CAP_CAPTION_TEXT_OT_INDEX], glyphOutline);
             penX = CAP_CAPTION_GLYPH_CELLS[(s16)code].width + penX - 1;
         }
@@ -563,6 +604,10 @@ static void _capCaptionDrawContinueCaret(void)
     caret          = gGpuPrimCursor;
     gGpuPrimCursor = caret + 1;
     setPolyG3(caret);
+
+#if defined(PE2_PS5_HOST)
+    Psyz_GpuMarkPlexCap(&caret->r0, 0, 0, NULL);
+#endif
     grey = (_gCapCaptionCaretPulseLevel << 7) / CAP_CAPTION_CARET_PULSE_MAX;
     setRGB0(caret, grey, grey, grey);
     grey = (_gCapCaptionCaretPulseLevel * 192) / CAP_CAPTION_CARET_PULSE_MAX;

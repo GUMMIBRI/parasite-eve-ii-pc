@@ -1,3 +1,12 @@
+#ifdef PE2_PS5_HOST
+#include "main/ui.h"
+#endif
+#include "port/interpolation_bind.h"
+#include "port/qol_controls.h"
+#include "port/hd_background.h"
+#if defined(PE2_PS5_HOST)
+#include <psyz/hd_background.h>
+#endif
 #include "gamemain.h"
 
 #include <psyz.h>
@@ -171,6 +180,8 @@ static void _gameMainInitialize(void)
     };
     s32 drawBufferIndex;
 
+    peInterpReset();
+    peQolReset();
     // End driver activity before discarding callbacks and live allocations.
     SetDispMask(0);
     cdAudioCancelAndWait();
@@ -180,7 +191,8 @@ static void _gameMainInitialize(void)
 
     _scratchStackSetCursor(SCRATCH_STACK_CURSOR_SLOT);
     _gGameMainInitializationCount++;
-    memConfigureImageMemory(GAME_STAGE_NONE, 0);
+    peHdBackgroundRetire();
+        memConfigureImageMemory(GAME_STAGE_NONE, 0);
     memInitHeaps();
     taskResetDefaultList();
     actorRenderResetLists();
@@ -205,6 +217,7 @@ static void _gameMainInitialize(void)
 
 void displayPresentTaskFrame(s32 bufferIndex)
 {
+    peInterpPrepare();
     s32 flipMode;
     u8  savedDrawBuffer;
 
@@ -249,6 +262,7 @@ static inline void _displayPresentFrame(s32 bufferIndex)
     }
     streamPresentMovieFrame();
     if (gDisplayState.skipDraw == 0) {
+        peInterpBeforeOt(bufferIndex);
         DrawOTag((OT_TYPE*)gGpuFrameOrderingTables[bufferIndex].tag);
     }
 }
@@ -369,7 +383,7 @@ static void _gameMainShowPauseScreen(s32 haltBitIndex)
             gGameMainHaltFlags |= 1 << haltBitIndex;
             tile                = &_gGameMainPauseTile;
             drawMode            = &_gGameMainPauseDrawMode;
-            if (haltBitIndex == GAME_MAIN_HALT_CONTROLLER_DISCONNECT_BIT) {
+            if (haltBitIndex == GAME_MAIN_HALT_CONTROLLER_DISCONNECT_BIT || haltBitIndex == PE_QOL_HALT_BIT) {
                 sndEvtRequestScriptDuckAcquire();
             }
             // Black average blending dims the current draw buffer; cancel shake.
@@ -492,6 +506,19 @@ static inline void _gameMainBeginFrame(void)
 /// list. Game frames advance their own animation/play clocks and alternate OTs;
 /// scanline pacing uses 15-bit elapsed counts and compensates for callback time.
 /// Restarts rebuild the run while retaining the one-time driver setup and flags.
+#ifdef PE2_PS5_HOST
+static int _gameMainCardDialogActive(void)
+{
+    /* A save spans several synchronous host operations across game frames. */
+    for (const Task* task = gTaskDefaultList.next; task; task = task->node.next) {
+        if (task->callback == mcSaveDialogTask || task->callback == mcLoadDialogTask ||
+            uiTaskHasContentCallback(task, mcSaveDialogTask) || uiTaskHasContentCallback(task, mcLoadDialogTask))
+            return 1;
+    }
+    return 0;
+}
+#endif
+
 static void _gameMainRunLoop(void)
 {
     enum {
@@ -524,6 +551,44 @@ static void _gameMainRunLoop(void)
         // Scratch borrowers cannot carry a reservation into the next iteration.
         _scratchStackSetCursor(SCRATCH_STACK_CURSOR_SLOT);
         padUpdatePort0();
+#if defined(PE2_PS5_HOST)
+        {
+            unsigned qos;
+            int active = gDisplayState.gameMode == DISPLAY_GAME_ACTIVE && gDisplayState.gameRunning != 0;
+            int safe = active && gDisplayState.cdBusy == DISPLAY_CD_IDLE &&
+                gCdCmdQueue.movieStep == 0 && gDisplayState.pendingMode == DISPLAY_MODE_NONE &&
+                gDisplayState.displayOwner == DISPLAY_OWNER_GAME_LOOP && gDisplayState.holdState >= 0 &&
+                gPadStates[0].inputFormat != PAD_INPUT_FORMAT_UNAVAILABLE && gPadStates[0].inputBlockPolls == 0;
+            int skipInput = active && gDisplayState.displayOwner == DISPLAY_OWNER_GAME_LOOP &&
+                gDisplayState.pendingMode == DISPLAY_MODE_NONE && gGameMainHaltFlags == 0 &&
+                gPadStates[0].inputFormat != PAD_INPUT_FORMAT_UNAVAILABLE && gPadStates[0].inputBlockPolls == 0;
+            unsigned allowed = (skipInput ? PE_QOL_SKIP : 0) |
+                (safe ? PE_QOL_PAUSE_TOGGLE : 0);
+            if (safe && !_gameMainPauseBlocked() && !_gameMainCardDialogActive())
+                allowed |= PE_QOL_RETURN_TITLE_CONFIRMED;
+            if (gDisplayState.cdBusy == DISPLAY_CD_IDLE && gCdCmdQueue.movieStep == 0 &&
+                gDisplayState.pendingMode == DISPLAY_MODE_NONE && !_gameMainCardDialogActive())
+                allowed |= PE_QOL_EXIT_GAME_CONFIRMED;
+            qos = peQolPoll(allowed, safe && gGameMainHaltFlags == 0 && !_gameMainPauseBlocked());
+            if (qos & PE_QOL_EXIT_GAME_CONFIRMED)
+                return;
+            if ((qos & PE_QOL_RETURN_TITLE_CONFIRMED) && !_gameMainPauseBlocked()) {
+                /* Same full native reset/title reload lifecycle as original combo. */
+                _gameMainInitialize();
+                gGameMainHaltFlags = 0;
+                continue;
+            }
+            if (qos & PE_QOL_PAUSE_TOGGLE) {
+                if (gGameMainHaltFlags & PE_QOL_HALT_MASK) {
+                    gGameMainHaltFlags &= ~PE_QOL_HALT_MASK;
+                    sndEvtRequestScriptDuckRelease();
+                } else {
+                    _gameMainShowPauseScreen(PE_QOL_HALT_BIT);
+                }
+            }
+        }
+#endif
+
 
         if (gPadStates[0].inputFormat == PAD_INPUT_FORMAT_UNAVAILABLE && gPadStates[0].inputBlockPolls == 0 && gDisplayState.gameRunning != 0 &&
             gDisplayState.suppressDisconnectPause == 0 && gDisplayState.gameMode == DISPLAY_GAME_ACTIVE) {
@@ -536,6 +601,7 @@ static void _gameMainRunLoop(void)
         asyncCbPollMainLoop(0);
 
         if (gGameMainHaltFlags != 0 && !_gameMainPauseBlocked()) {
+            peInterpPrepare();
             VSync(GAME_MAIN_VSYNC_WAIT_NEXT);
             frameStartLines = VSync(GAME_MAIN_VSYNC_SCANLINE_COUNTER) & GAME_MAIN_ELAPSED_SCANLINE_MASK;
             cdCmdService();
@@ -574,6 +640,7 @@ static void _gameMainRunLoop(void)
         }
 
         DrawSync(GAME_MAIN_GPU_WAIT_COMPLETE);
+        peInterpPrepare();
         elapsedLines = _gameMainPaceToSceneTiming(frameStartLines, (VSync(GAME_MAIN_VSYNC_SCANLINE_COUNTER) - frameStartLines) & GAME_MAIN_ELAPSED_SCANLINE_MASK);
 
         // The callback consumes timely flips; late or unconsumed frames submit here.
@@ -659,6 +726,7 @@ void displayUploadBackgroundImage(s32 bufferIndex)
     s32  offsetY;
     s8   offsetYByte;
 
+    peHdBackgroundBegin();
     // Crop contiguous pixels at the top or bottom without extending the image workspace.
     if (gCdCmdQueue.imageLayout == FILE_SYSTEM_IMAGE_CONTIGUOUS) {
         if (gDisplayState.vramYOffset >= 0) {
@@ -670,8 +738,14 @@ void displayUploadBackgroundImage(s32 bufferIndex)
             rect.x = 0;
             rect.w = FILE_SYSTEM_IMAGE_WIDTH;
             rect.h = FILE_SYSTEM_IMAGE_HEIGHT - gDisplayState.vramYOffset;
+
+#if defined(PE2_PS5_HOST)
+            peHdBackgroundLoad(rect.x,rect.y,rect.w,rect.h,gFsImageWorkspacePtr->strips[0]);
+#else
             LoadImage(&rect, gFsImageWorkspacePtr->strips[0]);
-            return;
+#endif
+            peHdBackgroundEnd();
+        return;
         }
         if (bufferIndex == 0) {
             rect.y = 0;
@@ -683,7 +757,13 @@ void displayUploadBackgroundImage(s32 bufferIndex)
         offsetYByte = gDisplayState.vramYOffset;
         rect.h      = offsetYByte + FILE_SYSTEM_IMAGE_HEIGHT;
         // Contiguous rows span the workspace's nominal column boundaries.
-        LoadImage(&rect, (u_long*)((u8*)gFsImageWorkspacePtr + ((-offsetYByte) * FILE_SYSTEM_IMAGE_ROW_BYTES)));
+
+#if defined(PE2_PS5_HOST)
+            peHdBackgroundLoad(rect.x,rect.y,rect.w,rect.h,(u_long*)((u8*)gFsImageWorkspacePtr + ((-offsetYByte) * FILE_SYSTEM_IMAGE_ROW_BYTES)));
+#else
+            LoadImage(&rect, (u_long*)((u8*)gFsImageWorkspacePtr + ((-offsetYByte) * FILE_SYSTEM_IMAGE_ROW_BYTES)));
+#endif
+        peHdBackgroundEnd();
         return;
     }
     sourceRowOffsetBytes = 0;
@@ -705,10 +785,16 @@ void displayUploadBackgroundImage(s32 bufferIndex)
         do {
             stripIndex16 = stripIndex & DISPLAY_BACKGROUND_STRIP_INDEX_MASK;
             rect.x       = stripIndex16 * FILE_SYSTEM_IMAGE_STRIP_WIDTH;
+
+#if defined(PE2_PS5_HOST)
+            peHdBackgroundLoad(rect.x,rect.y,rect.w,rect.h,(u_long*)((u8*)gFsImageWorkspacePtr->strips[stripIndex16] + sourceRowOffsetBytes));
+#else
             LoadImage(&rect, (u_long*)((u8*)gFsImageWorkspacePtr->strips[stripIndex16] + sourceRowOffsetBytes));
+#endif
             stripIndex++;
         } while ((u32)(stripIndex & DISPLAY_BACKGROUND_STRIP_INDEX_MASK) < (u32)ARRAY_SIZE(gFsImageWorkspacePtr->strips));
     }
+    peHdBackgroundEnd();
 }
 
 void displaySetFrameTiming(s32 timingMode)

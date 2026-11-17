@@ -637,13 +637,14 @@ static void _worldCollisionMarkGridFaceCandidates(VECTOR gridEndpoints[2], s32 u
     SCRATCH_STACK_RELEASE_BLOCK(_WorldCollisionGridCandidateScratch);
 }
 
-s32 worldCollisionProbeGridSegment(const SVECTOR* target, const SVECTOR* start, SVECTOR* hitPoint, SVECTOR* surfaceNormal)
+s32 worldCollisionProbeGridSegmentReceiver(const SVECTOR* target, const SVECTOR* start, SVECTOR* hitPoint, SVECTOR* surfaceNormal, WorldCollisionReceiver* receiver)
 {
     WorldCollisionGrid*              grid;
     s32                              hit;
     _WorldCollisionGridProbeScratch* scratch;
     s32                              faceIndex;
 
+    if (receiver != NULL) receiver->valid = 0;
     grid = gWorldCollisionActiveGrid;
     hit  = 0;
     if (grid == NULL) {
@@ -693,6 +694,25 @@ s32 worldCollisionProbeGridSegment(const SVECTOR* target, const SVECTOR* start, 
             surfaceNormal->vy = gWorldCollisionActiveGrid->normals[gWorldCollisionActiveGrid->faces[faceIndex].normalIndex].vy;
             surfaceNormal->vz = gWorldCollisionActiveGrid->normals[gWorldCollisionActiveGrid->faces[faceIndex].normalIndex].vz;
         }
+        if (receiver != NULL) receiver->valid = 0;
+        if (receiver != NULL && grid->faceCount <= 256 && faceIndex >= 0 && faceIndex < grid->faceCount) {
+            /* These exact indices/corners/normal were just consumed by the
+             * ORIGINAL accepted face intersection. No new mesh pool scan. */
+            const WorldCollisionGridFace* accepted = &grid->faces[faceIndex];
+            receiver->gridIdentity = (uintptr_t)grid;
+            receiver->verticesIdentity = (uintptr_t)grid->vertices;
+            receiver->normalsIdentity = (uintptr_t)grid->normals;
+            receiver->facesIdentity = (uintptr_t)grid->faces;
+            receiver->face = *accepted;
+            receiver->faceIndex = (unsigned)faceIndex;
+            receiver->faceCount = grid->faceCount;
+            receiver->cornerCount = accepted->vertexIndices[3] == WORLD_COLLISION_GRID_FACE_NO_VERTEX ? 3 : 4;
+            receiver->normal = grid->normals[accepted->normalIndex];
+            receiver->view = grid->viewCoord->workm;
+            for (unsigned corner = 0; corner < receiver->cornerCount; corner++)
+                receiver->corners[corner] = grid->vertices[accepted->vertexIndices[corner]];
+            receiver->valid = 1;
+        }
         scratch->endpoints[0].vx = scratch->ray[1].vx;
         scratch->endpoints[0].vy = scratch->ray[1].vy;
         scratch->endpoints[0].vz = scratch->ray[1].vz;
@@ -700,6 +720,11 @@ s32 worldCollisionProbeGridSegment(const SVECTOR* target, const SVECTOR* start, 
     }
     SCRATCH_STACK_RELEASE_BLOCK(_WorldCollisionGridProbeScratch);
     return hit;
+}
+
+s32 worldCollisionProbeGridSegment(const SVECTOR* target, const SVECTOR* start, SVECTOR* hitPoint, SVECTOR* surfaceNormal)
+{
+    return worldCollisionProbeGridSegmentReceiver(target, start, hitPoint, surfaceNormal, NULL);
 }
 
 /// Accumulates grid-face candidates along a view-space segment's XZ projection.

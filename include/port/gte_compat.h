@@ -250,13 +250,36 @@ static inline void PortGte_RotTransLV(const void* in, void* out) {
         Psyz_GteStoreSxyTo(13, port_p_ + (o1));                                \
         Psyz_GteStoreSxyTo(14, port_p_ + (o2));                                \
     } while (0)
-/* Packet headers grow on the host; disk offsets would overwrite tag/length. */
-#define gte_stsxy3_f3(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_F3, x0), offsetof(POLY_F3, x1), offsetof(POLY_F3, x2))
-#define gte_stsxy3_ft3(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_FT3, x0), offsetof(POLY_FT3, x1), offsetof(POLY_FT3, x2))
-#define gte_stsxy3_f4(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_F4, x0), offsetof(POLY_F4, x1), offsetof(POLY_F4, x2))
-#define gte_stsxy3_g4(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_G4, x0), offsetof(POLY_G4, x1), offsetof(POLY_G4, x2))
-#define gte_stsxy3_ft4(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_FT4, x0), offsetof(POLY_FT4, x1), offsetof(POLY_FT4, x2))
-#define gte_stsxy3_gt4(r0) PORTGTE_STSXY3_AT(r0, offsetof(POLY_GT4, x0), offsetof(POLY_GT4, x1), offsetof(POLY_GT4, x2))
+/* These arguments are WHOLE native PsyZ primitives. Their O_TAG grows
+ * with pointer width; PS1 byte offsets corrupt len/UV/other corners on64-bit.
+ * offsetof follows the actual typed layout and still registers each SXY word
+ * at its final packet address. Do not apply a fixed tag-size adjustment. */
+#undef gte_stsxy3_g3
+#undef gte_stsxy3_gt3
+#define gte_stsxy3_f3(r0) \
+    PORTGTE_STSXY3_AT(r0, offsetof(POLY_F3, x0), \
+                     offsetof(POLY_F3, x1), offsetof(POLY_F3, x2))
+#define gte_stsxy3_ft3(r0) \
+    PORTGTE_STSXY3_AT(r0, offsetof(POLY_FT3, x0), \
+                     offsetof(POLY_FT3, x1), offsetof(POLY_FT3, x2))
+#define gte_stsxy3_f4(r0) \
+    PORTGTE_STSXY3_AT(r0, offsetof(POLY_F4, x0), \
+                     offsetof(POLY_F4, x1), offsetof(POLY_F4, x2))
+#define gte_stsxy3_g3(r0) \
+    PORTGTE_STSXY3_AT(r0, offsetof(POLY_G3, x0), \
+                     offsetof(POLY_G3, x1), offsetof(POLY_G3, x2))
+#define gte_stsxy3_g4(r0) \
+    PORTGTE_STSXY3_AT(r0, offsetof(POLY_G4, x0), \
+                     offsetof(POLY_G4, x1), offsetof(POLY_G4, x2))
+#define gte_stsxy3_ft4(r0) \
+    PORTGTE_STSXY3_AT(r0, offsetof(POLY_FT4, x0), \
+                     offsetof(POLY_FT4, x1), offsetof(POLY_FT4, x2))
+#define gte_stsxy3_gt3(r0) \
+    PORTGTE_STSXY3_AT(r0, offsetof(POLY_GT3, x0), \
+                     offsetof(POLY_GT3, x1), offsetof(POLY_GT3, x2))
+#define gte_stsxy3_gt4(r0) \
+    PORTGTE_STSXY3_AT(r0, offsetof(POLY_GT4, x0), \
+                     offsetof(POLY_GT4, x1), offsetof(POLY_GT4, x2))
 
 /* ------------------------------------------------------------------------ */
 /* Commands                                                                 */

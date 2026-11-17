@@ -10,6 +10,19 @@ PeCapAsset* peCapDecode(const void* data, size_t bytes);
 CapFile* peCapAssetFile(PeCapAsset* asset);
 void peCapFree(PeCapAsset* asset);
 
+#ifdef PE2_PS5_HOST
+/* Borrowed immutable decoded backing data; valid only while asset is owned by
+ * the current bundle. No caller may modify the packed bytes or cell table. */
+typedef struct {
+    const void* packed;
+    size_t bytes, glyphCount;
+    const TextGlyphCell* cells;
+    const u16* textBegin;
+    const u16* textEnd;
+} PeCapFontSource;
+int peCapAssetFontSource(const PeCapAsset* asset, PeCapFontSource* source);
+#endif
+
 /* Bundle-owned lazy views, shared by gameplay and overlay caption readers.
  * Reset before another bundle overwrites RAM, after old users have stopped.
  * Sizes are published with the directory; resolve only after payload completion. */

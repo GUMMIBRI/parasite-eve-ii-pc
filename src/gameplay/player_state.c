@@ -47,6 +47,24 @@
 
 #include "assets/engine/animation/player_schema.h"
 
+#ifdef PE2_PS5_HOST
+#include "port/playtest_assists.h"
+/* Only actual category4 contact recording calls Record. The common damage
+ * helper and direct/script message routes never acquire this provenance. */
+static PeAssistContact _playerStateAssistContact(Task* task, GameActor* actor)
+{
+    PeAssistContact c = {0};
+    c.task=(uintptr_t)task;c.actor=(uintptr_t)actor;c.session=(uintptr_t)gGameSession;
+    c.model=task->bodyKind==TASK_BODY_TMD?(uintptr_t)task->extra.tmd:0;
+    c.frame=(uint32_t)gDisplayState.animFrame;c.damage=(s16)actor->pendingDamage;
+    c.reaction=actor->damageReaction;c.hitRegion=actor->hitRegion;c.currentHp=gPlayerStatus.hp;
+    c.livePlayer=task==gameGetTaskSlot(GAME_TASK_SLOT_PLAYER)&&!actor->companionWork&&c.model!=0;
+    c.ordinarySession=gGameSession&&gGameSession->eventState==0&&actor->mode!=GAME_ACTOR_MODE_SCRIPTED&&
+        gSceneCombatState.signals.bytes.battlePhase==SCENE_COMBAT_BATTLE_ENGAGED;
+    return c;
+}
+#endif
+
 /// Duration of each timed player ailment, in active status updates.
 enum { PLAYER_STATE_STATUS_DURATION_TICKS = 600 };
 
@@ -471,6 +489,19 @@ void playerStateTickStatusEffects(Task* task)
         }
         gPlayerStatus.statusFlags = statusFlags;
     }
+#ifdef PE2_PS5_HOST
+    /* Sole caller: original normal-player dispatcher, after its state handler
+     * and this tick's poison loss. Dead HP cannot be refilled; later contact
+     * damage and all reaction/script callbacks keep their original semantics. */
+    if (task == gameGetTaskSlot(GAME_TASK_SLOT_PLAYER) && task->work == actor &&
+        task->bodyKind == TASK_BODY_TMD && task->extra.tmd && task->extra.tmd->coords &&
+        !actor->companionWork && actor->mode == GAME_ACTOR_MODE_NORMAL &&
+        playerStatusCoordMtx(&gPlayerStatus) == &task->extra.tmd->coords[0].coord) {
+        int target = PeAssistAliveHpTarget(gPlayerStatus.hp,gPlayerStatus.hpMax,
+            PLAYER_STATUS_STAT_MAX,1,gGameSession && gGameSession->eventState == 0);
+        if (target != gPlayerStatus.hp) gPlayerStatus.hp = (s16)target;
+    }
+#endif
 }
 #undef PLAYER_STATE_TICK_STATUS_DURATION
 
@@ -735,7 +766,7 @@ void playerActorApplyConfusionInput(Task* task)
     }
 }
 
-s32 playerStateApplyHpDamage(s16 damagePoints)
+static s32 _playerStateApplyHpDamage(s16 damagePoints, int preserveHp)
 {
     enum {
         PLAYER_STATE_SURVIVAL_MIN_HP      = 5,
@@ -761,6 +792,9 @@ s32 playerStateApplyHpDamage(s16 damagePoints)
             gPlayerStatus.mp = gPlayerStatus.mpMax;
         }
     }
+    /* The owned contact assist suppresses HP mutations only. Original
+     * reduced-damage MP generation above and outer hit reactions remain. */
+    if (preserveHp) return 0;
     if (equipmentHasEffect(EQUIPMENT_EFFECT_RESIST_IMPACT) != 0) {
         playerStatus = &gPlayerStatus;
         if (playerStatus->hp >= PLAYER_STATE_SURVIVAL_MIN_HP && adjustedDamage >= playerStatus->hp) {
@@ -783,6 +817,12 @@ s32 playerStateApplyHpDamage(s16 damagePoints)
     }
     return fatal;
 }
+
+s32 playerStateApplyHpDamage(s16 damagePoints)
+{
+    return _playerStateApplyHpDamage(damagePoints, 0);
+}
+
 
 void playerActorEnterPendingHit(Task* task)
 {
@@ -857,8 +897,16 @@ static void _playerActorEnterDamageReaction(Task* task)
     gAttachmentState.flags |= ATTACHMENT_FLAG_EVENT_LOCK;
     playerActorResetWeaponAttack(task, playerStatus->weapon, 0);
     if (playerStatus->hp > 0) {
+#ifdef PE2_PS5_HOST
+        PeAssistContact assistContact = _playerStateAssistContact(task, actor);
+        int assistProtectHp = PeAssistProtectEnemyContact(&assistContact);
+#endif
         _playerActorStopForDamageClip(actor);
+#ifdef PE2_PS5_HOST
+        _playerStateApplyHpDamage((s16)actor->pendingDamage, assistProtectHp);
+#else
         playerStateApplyHpDamage(actor->pendingDamage);
+#endif
         actor->collisionBodies[GAME_ACTOR_BODY_WEAPON].flags &= (WORLD_COLLISION_BODY_FLAGS_MASK ^ (WORLD_COLLISION_BODY_GRID_ENABLED | WORLD_COLLISION_BODY_PAIR_ENABLED));
         if (actor->aimTrackingState == GAME_ACTOR_AIM_TRACKING_TARGET) {
             actor->aimTrackingState = GAME_ACTOR_AIM_TRACKING_DECAY;
@@ -1154,6 +1202,9 @@ void playerActorClearPendingHit(Task* task)
     GameActor* actor;
 
     actor                 = task->work;
+#ifdef PE2_PS5_HOST
+    PeAssistForgetEnemyContact((uintptr_t)task,(uintptr_t)actor);
+#endif
     actor->hitRegion      = PLAYER_ACTOR_HIT_REGION_NONE;
     actor->damageReaction = GAME_ACTOR_REACTION_ORDINARY;
     actor->pendingDamage  = 0;
@@ -1214,6 +1265,10 @@ static void _playerActorRecordAttackContact(Task* task, const WorldCollisionCont
         }
         actor->pendingDamage  = damageComputeReceived(contact->key.value, 0, &reaction, isCompanion);
         actor->damageReaction = reaction;
+#ifdef PE2_PS5_HOST
+        PeAssistContact assistContact = _playerStateAssistContact(task, actor);
+        PeAssistRecordEnemyContact(&assistContact);
+#endif
     }
 }
 
@@ -1238,6 +1293,9 @@ static void _playerActorRecordHazardContact(Task* task, const WorldCollisionCont
     hazardId = (u16)contact->key.value;
     // Unhandled hazard IDs still supply damage without latching a hit region.
     if ((u16)actor->hitRegion == PLAYER_ACTOR_HIT_REGION_NONE) {
+#ifdef PE2_PS5_HOST
+        PeAssistForgetEnemyContact((uintptr_t)task,(uintptr_t)actor);
+#endif
         actor->hitBodyIndex = bodyIndex;
         switch (hazardId) {
             case 1: // Placeholder no-op arm; the original selector is unproven

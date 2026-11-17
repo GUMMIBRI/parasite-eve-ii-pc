@@ -1,3 +1,5 @@
+#include "gameplay/hd_player_textures.h"
+#include "port/interpolation_bind.h"
 #include "gameplay/model_objects.h"
 
 #include <psyz.h>
@@ -23,6 +25,11 @@
 #include "main/task.h"
 #include "main/tmd.h"
 #include "main/tmd_stream_types.h"
+
+#if defined(PE2_PS5_HOST)
+/* Shared with the listed-coordinate walker; presentation metadata only. */
+extern void actorRenderRecordPgxpCoord(const GfxCoord*, const GfxCoord*);
+#endif
 
 // Bank-0 descriptor that refreshes coordinates and draws the active model list.
 enum { MODEL_OBJECT_STASH_DRAW_TASK = 0x1A };
@@ -292,6 +299,9 @@ static inline void _actorRenderRefreshCoord(GfxCoord* coord, s32 stamp, s32 pari
         if (coord->composeStamp == GRAPHICS_COORD_DIRTY) {
             coord->workm        = coord->coord;
             coord->composeStamp = stamp;
+#if defined(PE2_PS5_HOST)
+            actorRenderRecordPgxpCoord(coord, NULL);
+#endif
         }
     } else {
         // Ancestors first. A dirty stamp is parity 0, so an even pass still refreshes it.
@@ -317,6 +327,9 @@ static inline void _actorRenderRefreshCoord(GfxCoord* coord, s32 stamp, s32 pari
             gte_SetTransVector(parent->workm.t);
             gte_stclmv(&coord->workm.m[0][2]);
             gte_RotTransLV(coord->coord.t, coord->workm.t);
+#if defined(PE2_PS5_HOST)
+            actorRenderRecordPgxpCoord(coord, parent);
+#endif
         }
     }
     if (parity != 0) {
@@ -341,6 +354,7 @@ TmdObject* modelObjectAttachTmd(Task* task, TmdSource* source)
         sentinel->prev   = &model->link;
         task->extra.tmd  = model;
         task->bodyKind   = TASK_BODY_TMD;
+        peInterpAttach(model,task);
     }
     return model;
 }
@@ -398,6 +412,7 @@ TmdObject* modelObjectAttachTmdWithBufferFlags(Task* task, TmdSource* source, s3
         sentinel->prev   = &model->link;
         task->extra.tmd  = model;
         task->bodyKind   = TASK_BODY_TMD;
+        peInterpAttach(model,task);
     }
     return model;
 }
@@ -422,6 +437,8 @@ void modelObjectUnlinkTmd(TmdListNode* node)
 
 void modelObjectFreeTmd(TmdObject* model)
 {
+    peInterpRetire(model,1);
+    pe2HdModelRetire(model,1);
     // The primitive buffer is a separate auxiliary-heap allocation.
     if (model->buffer != NULL) {
         memFreeFromHeap(model->buffer, true);
