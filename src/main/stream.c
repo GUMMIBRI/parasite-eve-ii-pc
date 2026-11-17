@@ -5,6 +5,9 @@
 #include <libgpu.h>
 #include <libcd.h>
 #include <libpress.h>
+#ifdef PE2_PS5_HOST
+#include <psyz/video.h>
+#endif
 
 #include "types.h"
 
@@ -504,6 +507,11 @@ u32 streamPrepareMoviePlayback(u32 slotIndex)
     CdCmdQueue*     queue;
     u32             movieSlotIndex;
 
+#ifdef PE2_PS5_HOST
+    /* No source is presented until a real display-movie frame completes. */
+    Psyz_VideoSetMovieActive(0);
+#endif
+
     movieSlotIndex           = slotIndex & 0xFFFF;
     queue                    = &gCdCmdQueue;
     queue->movieFrameSubstep = 0;
@@ -570,6 +578,9 @@ s16 streamPollMovieStop(s32 clearFramebuffers)
         } else if (gStreamMovieReleasePauseOnStop != 0) {
             queue->blockGamePause = false;
         }
+#ifdef PE2_PS5_HOST
+        Psyz_VideoSetMovieActive(0);
+#endif
         return 1;
     }
     return 0;
@@ -661,6 +672,12 @@ static void _streamCompleteDecodedFrame(void)
         uploadRect.w = stripWords;
         LoadImage(&uploadRect, gMdecMovieOutputBuffers[gMdecMovieOutputSlot ^ 1]);
         gDisplayState.frameBuffer ^= 1;
+#ifdef PE2_PS5_HOST
+        /* The final decoded display strip has been queued. Texture movies
+         * never take the full-screen movie presentation owner. */
+        Psyz_VideoSetMovieFrameSize(gStreamMovieWidthPixels,gStreamMovieHeightRows);
+        Psyz_VideoSetMovieActive(1);
+#endif
     }
     stagingStripWords = FILE_SYSTEM_IMAGE_STRIP_WIDTH;
     // A staged texture frame is laid out as successive full-height columns.
@@ -1003,6 +1020,9 @@ s32 streamPollMoviePlayback(u16 sectorIsAbsolute, s32 sectorOffset)
             } else if (gStreamMovieReleasePauseOnStop != 0) {
                 stopQueue->blockGamePause = false;
             }
+#ifdef PE2_PS5_HOST
+            Psyz_VideoSetMovieActive(0);
+#endif
             return 1;
         case CD_COMMAND_MOVIE_RECOVER:
             if (cdSyncPollDiscRecovery() != 0) {

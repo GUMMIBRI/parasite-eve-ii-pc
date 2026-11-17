@@ -1,3 +1,8 @@
+#include "port/hd_background.h"
+static int peHdStillRgb16;
+#if defined(PE2_PS5_HOST)
+#include <psyz/hd_background.h>
+#endif
 #include "main/stage.h"
 
 #include <psyz.h>
@@ -596,7 +601,8 @@ static void _stageProcessTransitionRequests(Task* task)
                 gGameSession->location.view             = _gStageTransitionState->pendingView;
                 _gStageTransitionState->entryMode       = STAGE_ENTRY_RELOAD;
                 gDisplayState.control.flags.flipMode    = DISPLAY_FLIP_HOLD;
-                memConfigureImageMemory(gGameSession->location.stage, gGameSession->location.area);
+                peHdBackgroundRetire();
+        memConfigureImageMemory(gGameSession->location.stage, gGameSession->location.area);
                 if (!(_gStageTransitionState->requestFlags & STAGE_REQUEST_KEEP_VIEW)) {
                     _stageBeginViewResourceLoad();
                 } else {
@@ -1084,6 +1090,7 @@ static void _stageBeginModeExitLoad(Task* task)
     entryMode                            = _gStageTransitionState->entryMode;
     // Modes 1, 3 and 4 keep the room's current resources.
     if (entryMode >= STAGE_ENTRY_DRAW_ACTORS + 1U || (entryMode < STAGE_ENTRY_HOLD && entryMode != STAGE_ENTRY_KEEP)) {
+        peHdBackgroundRetire();
         memConfigureImageMemory(gGameSession->location.stage, gGameSession->location.area);
         tmdResetAuxHeapAndRestoreBuffers();
         spriteAllocateViewCachedPackets();
@@ -1136,6 +1143,7 @@ static void _stageModeControllerTask(Task* task)
 
 void mdecRequestSceneImageDecode(const u8* viewId)
 {
+    peHdBackgroundRetire();
     u16         headerIndex;
     u16         headerFound;
     s16         bufferKind;
@@ -1261,6 +1269,8 @@ static void _mdecStepSceneImageDecode(void)
             }
             break;
         case CD_COMMAND_IMAGE_START:
+            peHdBackgroundRetire();
+            peHdStillRgb16 = queue->imageMdecMode == MDEC_IMAGE_MODE_RGB16;
             gpuResetAndInvalidateModelBuffers();
             queue->mdecOutputPending = 1;
             if (queue->sceneVlcTableMode == STREAM_SCENE_VLC_IMAGE_BUFFER) {
@@ -1282,6 +1292,8 @@ static void _mdecStepSceneImageDecode(void)
             /* fallthrough */
         case CD_COMMAND_IMAGE_WAIT_OUTPUT:
             if (queue->mdecOutputPending == 0) {
+                if (peHdStillRgb16 && _gMdecImageStripIndex == 19)
+                    peHdBackgroundRegister(gFsImageWorkspacePtr, 0);
                 // Upload the payload's optional strip lists and image chunks.
                 for (imageIndex = 0; imageIndex < ARRAY_SIZE(_gMdecSceneImageHeader->stripListOffsets); imageIndex++) {
                     if (_gMdecSceneImageHeader->stripListOffsets[imageIndex] != 0) {
@@ -1360,6 +1372,8 @@ static void _mdecStepStandaloneImageDecode(void)
     queue = &gCdCmdQueue;
     switch (queue->imageDecodeStep) {
         case CD_COMMAND_IMAGE_START:
+            peHdBackgroundRetire();
+            peHdStillRgb16 = queue->imageMdecMode == MDEC_IMAGE_MODE_RGB16;
             gpuResetAndInvalidateModelBuffers();
             queue->mdecOutputPending = 1;
             DecDCTReset(0);
@@ -1391,6 +1405,11 @@ static void _mdecStepStandaloneImageDecode(void)
                 display     = &gDisplayState;
                 frameRect.y = (display->drawBuffer ^ 1) * DISPLAY_BUFFER_STRIDE_ROWS;
                 StoreImage(&frameRect, gFsImageWorkspacePtr->strips[0]);
+#if defined(PE2_PS5_HOST)
+                if (peHdStillRgb16 && _gMdecImageStripIndex == 19 && Psyz_GpuLastReadbackAccepted(gFsImageWorkspacePtr->strips[0],
+                        frameRect.x, frameRect.y, frameRect.w, frameRect.h))
+                    peHdBackgroundRegister(gFsImageWorkspacePtr, 1);
+#endif
                 if (queue->preserveDisplayAfterDecode != 0) {
                     frameRect.x = 0;
                     frameRect.w = MDEC_PRESERVED_DISPLAY_WIDTH;
@@ -1432,6 +1451,7 @@ void mdecStepImageDecode(void)
 
 void mdecRequestImageDecode(u_long* bitstream)
 {
+    peHdBackgroundRetire();
     CdCmdQueue* queue;
 
     _gMdecImageStripIndex     = 0;

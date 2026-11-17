@@ -437,7 +437,7 @@ static inline void _hudDrawHpMpValue(s32 x, s32 y, u32 colorRgb, s32 value)
     request.glyphTable = TEXT_GLYPH_TABLE_MEDIUM;
     request.alignment  = TEXT_ALIGNMENT_RIGHT;
     request.drawMode   = TEXT_DRAW_TRANSLUCENT_OUTLINED;
-    textDrawString(&request, textItoaUnsigned(digits, value));
+    textDrawHudVitalsString(&request, textItoaUnsigned(digits, value));
 }
 
 /// Draws the HP and MP captions relative to a borrowed UI panel.

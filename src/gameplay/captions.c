@@ -2,6 +2,10 @@
 #include <libgte.h>
 #include <libgpu.h>
 #include <stdio.h>
+#ifdef PE2_PS5_HOST
+#include "port/cap_font_map.h"
+#include <psyz/font_profiles.h>
+#endif
 
 #include "types.h"
 
@@ -697,6 +701,9 @@ static u16 _capDrawTextStream(const u16* textStream, s32 unusedDrawArg, u8 revea
     CapChoice*           choice;
 
     const CapTextLayout* layout;
+#ifdef PE2_PS5_HOST
+    PeCapPlexRun plexRun = {0};
+#endif
 
     // Convert cached screen-space metrics to centre-relative pen coordinates.
     text              = textStream;
@@ -727,6 +734,14 @@ static u16 _capDrawTextStream(const u16* textStream, s32 unusedDrawArg, u8 revea
         textComplete = 1;
     }
 
+#ifdef PE2_PS5_HOST
+    /* Validate the complete immutable resource/encoding and accepted font
+     * identity before preparing or tagging any visible glyph pair. */
+    if(!layout->vertical || Psyz_GpuGetFontStyle(PSYZ_FONT_DIALOGUE)<PSYZ_FONT_RETRO)
+    peCapPlexBeginRun(gCapGlyphCells, textStream,
+        getTPage(0, 0, gCapTexturePageVramX, gCapTexturePageVramY),
+        CAP_TEXT_GLYPH_CLUT_BASE, &plexRun);
+#endif
     _capDrawTextBackground();
 
     // The title selector uses only its low byte; the published bank bit is ignored.
@@ -758,6 +773,10 @@ static u16 _capDrawTextStream(const u16* textStream, s32 unusedDrawArg, u8 revea
         spriteQuad->v3    = gCapGlyphCells[title].v + gCapGlyphCells[title].height;
         spriteQuad->clut  = CAP_TEXT_TITLE_CLUT;
         spriteQuad->tpage = getTPage(0, GPU_BLEND_ADD, gCapTexturePageVramX, gCapTexturePageVramY);
+#ifdef PE2_PS5_HOST
+        /* Plates and icons retain original rendering at reused addresses. */
+        Psyz_GpuMarkPlexCap(&spriteQuad->r0, 0, 0, NULL);
+#endif
         addPrim(&gGpuCurrentOt[2], spriteQuad);
     }
 
@@ -878,6 +897,10 @@ static u16 _capDrawTextStream(const u16* textStream, s32 unusedDrawArg, u8 revea
                 spriteQuad->v2    = icon->v + icon->height;
                 spriteQuad->u3    = icon->u + icon->width;
                 spriteQuad->v3    = icon->v + icon->height;
+#ifdef PE2_PS5_HOST
+                /* Plates and icons retain original rendering at reused addresses. */
+                Psyz_GpuMarkPlexCap(&spriteQuad->r0, 0, 0, NULL);
+#endif
                 addPrim(&gGpuCurrentOt[2], spriteQuad);
                 penX += icon->width;
                 codeIndex++;
@@ -927,6 +950,10 @@ static u16 _capDrawTextStream(const u16* textStream, s32 unusedDrawArg, u8 revea
                 *subtractGlyphQuad       = *glyphQuad;
                 subtractGlyphQuad->tpage = getTPage(0, GPU_BLEND_SUBTRACT, gCapTexturePageVramX, gCapTexturePageVramY);
                 addPrim(&gGpuCurrentOt[2], subtractGlyphQuad);
+#ifdef PE2_PS5_HOST
+                peCapPlexTagPair(&plexRun, &glyphQuad->r0,
+                    &subtractGlyphQuad->r0, (unsigned)code);
+#endif
                 if (layout->vertical == 0) {
                     penX = gCapGlyphCells[(s16)code].width + penX - 1;
                 } else {

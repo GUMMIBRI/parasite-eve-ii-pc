@@ -1,4 +1,6 @@
+#include "port/interpolation_bind.h"
 #include "main/tmd.h"
+#include "gameplay/hd_player_textures.h"
 #ifdef __psyz
 #include "port/tmd_layout.h"
 #include <stdio.h>
@@ -475,6 +477,9 @@ static void _tmdResolveSourceDrawHandlers(TmdSource* source)
 
 void tmdBuildBufferHalf(TmdObject* model)
 {
+    pe2HdPlayerBeginBuild(model);
+    unsigned peHalf=model->nextBufferHalf,pePart=0;
+    peInterpBuildBegin(model,peHalf);
     TmdStreamWorkspace*    workspace;
     TmdSource*             source;
     u32*                   stream;
@@ -649,11 +654,26 @@ void tmdBuildBufferHalf(TmdObject* model)
             workspace->elemStride = ((u16*)stream)[0];
             workspace->elemCount  = ((u16*)stream)[1];
             stream               += 1;
+#ifdef PE2_PS5_HOST
+            {
+                const void *peBefore=workspace->primWrite,*pePre=workspace->preXformWrite;
+                unsigned peCount=workspace->elemCount,peStride=workspace->elemStride;
+                const void *peRecord=stream;
+                unsigned peKind=0;
+                if ((workspace->opcode & ~TMD_STREAM_SEMI_TRANS)==TMD_STREAM_GT3_CORNER_NORMALS && handler==tmdBuildStreamGt3)peKind=3;
+                if ((workspace->opcode & ~TMD_STREAM_SEMI_TRANS)==TMD_STREAM_GT4_CORNER_NORMALS && handler==tmdBuildStreamGt4)peKind=4;
+                stream=handler(workspace,0,stream);
+                peInterpBuildRecord(model,peHalf,pePart,peRecord,peKind,peCount,peStride,
+                    peBefore,workspace->primWrite,pePre,workspace->preXformWrite);
+            }
+#else
             stream                = handler(workspace, 0, stream);
+#endif
             opcode                = *stream;
         }
-        stream++;
+        stream++;pePart++;
     }
+    peInterpBuildEnd(model,peHalf);
     SCRATCH_STACK_RELEASE_BLOCK(TmdStreamWorkspace);
 }
 
@@ -719,6 +739,8 @@ TmdObject* tmdCreateModel(TmdSource* source, s32 bufferFlags)
             bone++;
         }
         model->buffer = NULL;
+        peInterpCreate(model);
+        pe2HdModelCreate(model);
         if (bufferFlags == 0) {
             buffer = memCalloc(source->bufferHalfBytes * TMD_BUFFER_HALF_COUNT, true);
             if (buffer != NULL) {
@@ -822,6 +844,8 @@ static void _tmdDrawModel(TmdObject* model)
     // Remove the view rotation before combining the light directions with each part.
     _tmdComposeViewLightRotation(model, scratch->workspace.viewLightRotation);
 
+    pe2HdModelDraw(model,model->nextBufferHalf^1u);
+    peInterpDraw(model);
     tmdDrawModelStream(&scratch->workspace, objectFlags, stream, model);
 
     SCRATCH_STACK_RELEASE_BLOCK(_TmdDrawScratch);
@@ -830,6 +854,8 @@ static void _tmdDrawModel(TmdObject* model)
 void tmdFreePrimitiveBuffer(TmdObject* model)
 {
     if (model->buffer != NULL) {
+        peInterpRetire(model,0);
+        pe2HdModelRetire(model,0);
         memFreeFromHeap(model->buffer, true);
         model->buffer = NULL;
     }
@@ -960,6 +986,8 @@ static void _tmdFreeAttachedBuffersTask(Task* task)
     model = PARENT_OF(gTmdList.next, TmdObject, link);
     while (model != NULL) {
         if (model->buffer != NULL) {
+            peInterpRetire(model,0);
+        pe2HdModelRetire(model,0);
             memFreeFromHeap(model->buffer, true);
             model->buffer = NULL;
         }
@@ -987,6 +1015,8 @@ void gpuResetAndInvalidateModelBuffers(void)
     // Forget buffers before their auxiliary storage is reset or used for images.
     while (model != NULL) {
         if (model->buffer != NULL) {
+            peInterpRetire(model,0);
+        pe2HdModelRetire(model,0);
             model->buffer = NULL;
         }
         model = PARENT_OF(model->link.next, TmdObject, link);

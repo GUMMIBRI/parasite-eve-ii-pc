@@ -72,6 +72,18 @@ extern WorldCollisionOccluder* gWorldCollisionOccluderListHead;
 /// Clears the shared candidate mask, changes GTE state and retains no pointers.
 s32 worldCollisionProbeGridSegment(const SVECTOR* target, const SVECTOR* start, SVECTOR* hitPoint, SVECTOR* surfaceNormal);
 
+#include <stdint.h>
+/* Copied ONLY from the original accepted winning face, no retained pointers. */
+typedef struct WorldCollisionReceiver {
+    SVECTOR corners[4], normal;
+    MATRIX view;
+    unsigned cornerCount, valid;
+    uintptr_t gridIdentity, verticesIdentity, normalsIdentity, facesIdentity;
+    WorldCollisionGridFace face;
+    unsigned faceIndex, faceCount;
+} WorldCollisionReceiver;
+s32 worldCollisionProbeGridSegmentReceiver(const SVECTOR* target, const SVECTOR* start, SVECTOR* hitPoint, SVECTOR* surfaceNormal, WorldCollisionReceiver* receiver);
+
 /// Returns 1 when a segment crosses an occluder quad, else 0.
 ///
 /// `start` and `end` are view-space positions in game units; `direction` is

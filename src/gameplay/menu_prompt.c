@@ -692,17 +692,17 @@ void itemMenuDrawPlayerStats(const UiPanel* panel, s32 topOffset)
     hpValueText.x = panel->contentOriginX.unsignedValue + 0x17 + valueX;
     hpValueText.y = panel->contentOriginY.unsignedValue + firstRowY;
     ITEM_MENU_SET_STATS_TEXT_STYLE(hpValueText, panel, textColorRgb, TEXT_GLYPH_TABLE_MEDIUM, TEXT_ALIGNMENT_LEFT, TEXT_DRAW_TRANSLUCENT_OUTLINED);
-    textDrawString(&hpValueText, textItoaUnsigned(numberText, gHudDisplayedVitals.hp));
+    textDrawHudVitalsString(&hpValueText, textItoaUnsigned(numberText, gHudDisplayedVitals.hp));
 
     hpSeparatorText.x = panel->contentOriginX.unsignedValue + 0x32 + valueX;
     hpSeparatorText.y = panel->contentOriginY.unsignedValue + firstRowY;
     ITEM_MENU_SET_STATS_TEXT_STYLE(hpSeparatorText, panel, textColorRgb, TEXT_GLYPH_TABLE_MEDIUM, TEXT_ALIGNMENT_CENTER, TEXT_DRAW_TRANSLUCENT_OUTLINED);
-    textDrawString(&hpSeparatorText, gItemMenuFractionSeparatorText);
+    textDrawHudVitalsString(&hpSeparatorText, gItemMenuFractionSeparatorText);
 
     hpMaximumText.x = panel->contentOriginX.unsignedValue + 0x37 + valueX;
     hpMaximumText.y = panel->contentOriginY.unsignedValue + firstRowY;
     ITEM_MENU_SET_STATS_TEXT_STYLE(hpMaximumText, panel, textColorRgb, TEXT_GLYPH_TABLE_MEDIUM, TEXT_ALIGNMENT_LEFT, TEXT_DRAW_TRANSLUCENT_OUTLINED);
-    textDrawString(&hpMaximumText, textItoaUnsigned(numberText, player->hpMax));
+    textDrawHudVitalsString(&hpMaximumText, textItoaUnsigned(numberText, player->hpMax));
 
     maximum    = player->hpMax;
     meterBaseX = contentLeft + 7;
@@ -712,17 +712,17 @@ void itemMenuDrawPlayerStats(const UiPanel* panel, s32 topOffset)
     mpValueText.x = panel->contentOriginX.unsignedValue + 0x17 + valueX;
     mpValueText.y = panel->contentOriginY.unsignedValue + rowY;
     ITEM_MENU_SET_STATS_TEXT_STYLE(mpValueText, panel, textColorRgb, TEXT_GLYPH_TABLE_MEDIUM, TEXT_ALIGNMENT_LEFT, TEXT_DRAW_TRANSLUCENT_OUTLINED);
-    textDrawString(&mpValueText, textItoaUnsigned(numberText, gHudDisplayedVitals.mp));
+    textDrawHudVitalsString(&mpValueText, textItoaUnsigned(numberText, gHudDisplayedVitals.mp));
 
     mpSeparatorText.x = panel->contentOriginX.unsignedValue + 0x32 + valueX;
     mpSeparatorText.y = panel->contentOriginY.unsignedValue + rowY;
     ITEM_MENU_SET_STATS_TEXT_STYLE(mpSeparatorText, panel, textColorRgb, TEXT_GLYPH_TABLE_MEDIUM, TEXT_ALIGNMENT_CENTER, TEXT_DRAW_TRANSLUCENT_OUTLINED);
-    textDrawString(&mpSeparatorText, gItemMenuFractionSeparatorText);
+    textDrawHudVitalsString(&mpSeparatorText, gItemMenuFractionSeparatorText);
 
     mpMaximumText.x = panel->contentOriginX.unsignedValue + 0x37 + valueX;
     mpMaximumText.y = panel->contentOriginY.unsignedValue + rowY;
     ITEM_MENU_SET_STATS_TEXT_STYLE(mpMaximumText, panel, textColorRgb, TEXT_GLYPH_TABLE_MEDIUM, TEXT_ALIGNMENT_LEFT, TEXT_DRAW_TRANSLUCENT_OUTLINED);
-    textDrawString(&mpMaximumText, textItoaUnsigned(numberText, player->mpMax));
+    textDrawHudVitalsString(&mpMaximumText, textItoaUnsigned(numberText, player->mpMax));
 
     maximum = player->mpMax;
     itemMenuDrawMeter(panel, valueX, meterBaseX + ((maximum - 1) * 0x25) / 64, firstRowY + 0x17, maximum, gHudDisplayedVitals.mp, ITEM_MENU_STAT_METER_COLOR);

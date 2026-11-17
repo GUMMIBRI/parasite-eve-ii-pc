@@ -1,6 +1,7 @@
 #ifndef MAIN_UI_H
 #define MAIN_UI_H
 
+
 #include <psyz.h>
 #include <libgte.h>
 #include <libgpu.h>
@@ -9,6 +10,10 @@
 
 #include "main/task_types.h"
 #include "main/ui_types.h"
+
+#ifdef PE2_PS5_HOST
+int uiTaskHasContentCallback(const Task* task, TaskFunc callback);
+#endif
 
 /// Borrowed task-owned object registered to receive the current UI prompt.
 ///

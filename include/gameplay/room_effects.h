@@ -100,6 +100,8 @@ s32 worldCollisionProjectGroundCoord(const GfxCoord* sourceCoord, GfxCoord* hitC
 /// initialized scratch stack and nested query storage. Changes GTE state;
 /// retains no pointers and does not read or write an SDK VECTOR pad word.
 s32 worldCollisionProjectGroundPoint(const VECTOR3* sourcePoint, VECTOR3* hitPoint);
+struct WorldCollisionReceiver;
+s32 worldCollisionProjectGroundPointReceiver(const VECTOR3* sourcePoint, VECTOR3* hitPoint, struct WorldCollisionReceiver* receiver);
 
 /// Attenuates a ground shadow's shade by the signed view-Y probe displacement.
 ///

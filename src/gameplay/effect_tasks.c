@@ -1,5 +1,14 @@
 #include "gameplay/effect_tasks.h"
 #include "port/asset_bind.h"
+#ifdef PE2_PS5_HOST
+#include "gameplay/particle_geometry.h"
+#endif
+#ifdef PE2_PS5_HOST
+#include "gameplay/particle_lights.h"
+#endif
+#ifdef PE2_PS5_HOST
+#include "gameplay/shadow_capture.h"
+#endif
 
 #include <psyz.h>
 #include <libgte.h>
@@ -2024,6 +2033,10 @@ void effectTileTaskA4(Task* task)
         addPrim(GPU_ORDERING_TABLE_ENTRY_AT_DEPTH(scratch->depth),
                 tile);
         gpuSetPrimitiveBlendMode(tile, GPU_BLEND_ADD, scratch->depth);
+#ifdef PE2_PS5_HOST
+        Pe2ParticleLightsEmitPixelSpark(task, coord, work, (unsigned)tile->r0 | ((unsigned)tile->g0 << 8) | ((unsigned)tile->b0 << 16));
+        Pe2ParticleGeometryPixelSpark(task, coord, work, tile, scratch->depth);
+#endif
     }
     SCRATCH_STACK_RELEASE_BLOCK(_EffectPixelSparkScratch);
     work->age++;
@@ -3466,6 +3479,9 @@ void effectSpriteTask53(Task* task)
     GfxCoord* playerCoords;
 
     playerTask = gameGetTaskSlot(GAME_TASK_SLOT_PLAYER);
+#ifdef PE2_PS5_HOST
+    Pe2ShadowReceiverBegin();
+#endif
     coord      = task->extra.coordBody->coord;
     // Wait for the player before borrowing its first model-part coordinate.
     if (playerTask != NULL) {
@@ -3478,8 +3494,20 @@ void effectSpriteTask53(Task* task)
         } else if (gRoomEffectState->groundShadowShade >= 0) {
             if (!(playerTask->extra.tmd->flags & TMD_OBJECT_SKIP_ACTIVE_DRAW)) {
                 actorRenderComposeCoord(coord);
+#ifdef PE2_PS5_HOST
+                WorldCollisionReceiver receiver = {0};
+                s32 shadowHit = Pe2ShadowGetMode() ? worldCollisionProjectGroundPointReceiver(GRAPHICS_MATRIX_TRANSLATION(&coord->workm), &groundPoint, &receiver) : worldCollisionProjectGroundPoint(GRAPHICS_MATRIX_TRANSLATION(&coord->workm), &groundPoint);
+                if ((s16)shadowHit != 0) {
+#else
                 if ((s16)worldCollisionProjectGroundPoint(GRAPHICS_MATRIX_TRANSLATION(&coord->workm), &groundPoint) != 0) {
+#endif
+#ifdef PE2_PS5_HOST
+                    const POLY_FT4* originalShadow = gGpuPrimCursor;
+#endif
                     effectDrawGroundShadow(&groundPoint, EFFECT_PLAYER_GROUND_SHADOW_HALF_SIZE, gRoomEffectState->groundShadowShade);
+#ifdef PE2_PS5_HOST
+                    Pe2ShadowReceiverBind(playerTask, coord, &groundPoint, &receiver, gRoomEffectState->groundShadowShade, originalShadow);
+#endif
                 }
             }
         }

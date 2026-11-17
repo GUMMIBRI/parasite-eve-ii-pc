@@ -1,3 +1,6 @@
+#ifdef PE2_PS5_HOST
+#include "port/playtest_assists.h"
+#endif
 #include "stages/akropolis/actors/shooting_gallery_targets.h"
 
 #include <psyz.h>
@@ -1595,6 +1598,9 @@ static void _shootingGalleryTargetsUpdateActiveTarget(Task* task)
                 soundPan = (s8)worldCoordGetOriginAudioPan(playerHitCoord);
                 sndEvtRequestScriptStart(SOUND_MIST_SHOOTING_GALLERY_TARGET_ATTACK, soundPan, (s8)worldCoordGetOriginAudioDepth(playerHitCoord));
                 if (playerActor->mode != GAME_ACTOR_MODE_DAMAGE) {
+#ifdef PE2_PS5_HOST
+                    PeAssistForgetEnemyContact((uintptr_t)player,(uintptr_t)playerActor);
+#endif
                     if (gPlayerStatus.hp <= PLAYER_DAMAGE) {
                         ((MistShootingGalleryWork*)gMistShootingGalleryControllerTask->work)->lethalHit = 1;
                         playerActor->pendingDamage                                                      = 0;

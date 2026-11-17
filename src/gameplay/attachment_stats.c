@@ -1,3 +1,9 @@
+#ifdef PE2_PS5_HOST
+#include "port/playtest_assists.h"
+#define PE_ASSIST_CAST_COST(value) PeAssistAbilityCost(value)
+#else
+#define PE_ASSIST_CAST_COST(value) (value)
+#endif
 #include "attachments.h"
 
 #include <psyz.h>
@@ -1534,7 +1540,7 @@ static void _attachmentUpdateAndDrawHud(HudState* hud)
                         player->hp = 1;
                     }
                 } else {
-                    player->mp -= attachmentGetActiveLevelValue(ATTACHMENT_LEVEL_CAST_COST);
+                    player->mp -= PE_ASSIST_CAST_COST(attachmentGetActiveLevelValue(ATTACHMENT_LEVEL_CAST_COST));
                     if (player->mp < 0) {
                         player->mp = 0;
                     }

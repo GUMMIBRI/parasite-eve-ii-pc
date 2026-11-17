@@ -1,3 +1,5 @@
+#include "gameplay/hd_player_textures.h"
+#include "port/interpolation_bind.h"
 #include <malloc.h>
 #include "main/mem.h"
 
@@ -243,11 +245,14 @@ void memFreeFromHeap(void* allocation, bool auxHeap)
 
 void memInitAuxHeap(void)
 {
+    pe2HdModelReset(0);
+    peInterpRetireAllBuffers();
     InitHeap3(gMemActiveAuxHeap, gMemActiveAuxHeapBytes);
 }
 
 void memInitHeaps(void)
 {
+    pe2HdModelReset(1);
     InitHeap3(gMemActiveAuxHeap, gMemActiveAuxHeapBytes);
     InitHeap3(gMemPrimaryHeapBase, MEMORY_PRIMARY_HEAP_BYTES);
 }

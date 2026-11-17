@@ -610,7 +610,7 @@ void hudDrawRadar(HudState* hud)
         scratch.value.request.glyphTable = TEXT_GLYPH_TABLE_MEDIUM;                                    \
         scratch.value.request.alignment  = TEXT_ALIGNMENT_RIGHT;                                       \
         scratch.value.request.drawMode   = TEXT_DRAW_TRANSLUCENT_OUTLINED;                             \
-        textDrawString(&scratch.value.request, textItoaUnsigned(scratch.value.digits, (amountValue))); \
+        textDrawHudVitalsString(&scratch.value.request, textItoaUnsigned(scratch.value.digits, (amountValue))); \
     }
 
 void hudDrawHpReadout(s32 x, s32 y, s32 hp, s32 hpMax, s32 layout)

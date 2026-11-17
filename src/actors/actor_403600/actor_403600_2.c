@@ -1,3 +1,6 @@
+#ifdef PE2_PS5_HOST
+#include "port/playtest_assists.h"
+#endif
 #include "actor_403600_private.h"
 
 #include <psyz.h>
@@ -1753,6 +1756,9 @@ static void _actor403600UpdateFightAction(Task* task)
                                 _gActor403600PlayerDamage.reaction = GAME_ACTOR_REACTION_ORDINARY;
                                 _gActor403600PlayerDamage.power    = _gActor403600PlayerDamage.power >> 2;
                                 playerActor->hitRegion             = 2;
+#ifdef PE2_PS5_HOST
+                                PeAssistForgetEnemyContact((uintptr_t)gameGetTaskSlot(GAME_TASK_SLOT_PLAYER),(uintptr_t)playerActor);
+#endif
                                 playerActor->pendingDamage         = _gActor403600PlayerDamage.power;
                                 playerActor->damageReaction        = GAME_ACTOR_REACTION_ORDINARY;
                             } else {

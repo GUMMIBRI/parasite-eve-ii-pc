@@ -10,6 +10,7 @@
 #include "main/display.h"
 #include "display.h"
 #include "main/text.h"
+#include "caption_plex.h"
 
 /// Ordering-table tags used by the caption and fade-tile page commands.
 enum {
@@ -17,7 +18,7 @@ enum {
     PRIMITIVE_FADE_OT_INDEX    = 5,
 };
 
-static void _primDrawCaptionSprite(const PrimDrawParams* draw, u32 clutX, s32 clutY);
+static void _primDrawCaptionSprite(const PrimDrawParams* draw, u32 clutX, s32 clutY, unsigned character);
 
 static void _primDrawTexturePage(s32 blendMode, s32 tpageX, s32 tpageY, s32 otIndex);
 
@@ -45,6 +46,7 @@ s32 textDrawStream(TextStream* stream, u8* phase, s16* framesLeft, s32 skipMarke
     s32            byteIndex;
     s32            glyphIndex;
     u8             scriptByte;
+    s32            plexRun = 0;
 
     /// Queues glyphs before the reveal cursor and their additive texture page.
     ///
@@ -77,7 +79,8 @@ s32 textDrawStream(TextStream* stream, u8* phase, s16* framesLeft, s32 skipMarke
                     draw.h = stream->glyphs[glyphIndex].height;                                          \
                     if (draw.h != 0) {                                                                   \
                         _primDrawCaptionSprite(&draw, stream->clutX,                                     \
-                                               stream->clutY);                                           \
+                                               stream->clutY,                                  \
+                                               plexRun ? captionPlexCharacter(scriptByte) : 0);                                           \
                     }                                                                                    \
                 }                                                                                        \
                 draw.x +=                                                                                \
@@ -108,6 +111,9 @@ s32 textDrawStream(TextStream* stream, u8* phase, s16* framesLeft, s32 skipMarke
             (*phase)++;
             break;
         case TEXT_STREAM_PHASE_REVEAL:
+#ifdef PE2_PS5_HOST
+            plexRun = captionPlexPrepare(stream);
+#endif
             // Draw the revealed prefix. Step the cursor once the countdown expires.
             draw.x         = stream->x;
             draw.y         = stream->y;
@@ -152,7 +158,7 @@ s32 textDrawStream(TextStream* stream, u8* phase, s16* framesLeft, s32 skipMarke
 /// are the supplied pixel width/height minus one, narrowed to halfwords.
 /// Opaque sprites use raw texture colour; semitransparent sprites are modulated.
 /// The caller must also queue the appropriate texture page at the caption tag.
-static void _primDrawCaptionSprite(const PrimDrawParams* draw, u32 clutX, s32 clutY)
+static void _primDrawCaptionSprite(const PrimDrawParams* draw, u32 clutX, s32 clutY, unsigned character)
 {
     SPRT* sprite;
     u8    textureV;
@@ -178,6 +184,12 @@ static void _primDrawCaptionSprite(const PrimDrawParams* draw, u32 clutX, s32 cl
     sprite->v0   = textureV;
     sprite->w    = draw->w - 1;
     sprite->h    = draw->h - 1;
+    /* Clear a reused packet address on original fallback as well. */
+#ifdef PE2_PS5_HOST
+    Psyz_GpuMarkPlexUi(&sprite->r0, character, 0);
+#else
+    (void)character;
+#endif
     AddPrim(gGpuCurrentOt + PRIMITIVE_CAPTION_OT_INDEX, sprite);
 }
 

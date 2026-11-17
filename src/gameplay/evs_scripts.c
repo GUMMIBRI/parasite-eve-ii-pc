@@ -1,3 +1,4 @@
+#include "port/qol_controls.h"
 #include <psyz.h>
 #include <libgte.h>
 #include <abs.h>
@@ -354,7 +355,8 @@ static void _evsExecuteInterpreterTask(Task* task)
     }
 
     // Skipping consumes the target but retains any pending script returns.
-    if (padIsStartPressed() != 0 && _gEvsSkipTarget != NULL && gDisplayState.pendingMode == DISPLAY_MODE_NONE && _gEvsSkipDelayUpdates == 0) {
+    // Host request enters this exact original callback, never synthesizes Start.
+    if ((peQolTakeSkip() || padIsStartPressed() != 0) && _gEvsSkipTarget != NULL && gDisplayState.pendingMode == DISPLAY_MODE_NONE && _gEvsSkipDelayUpdates == 0) {
         if (gEvsSelectedSceneKey != NULL) {
             cdCmdCancelScene();
         }
