@@ -59,11 +59,21 @@ static int sameBinary(const char *path){
 #endif
 int pePs5DiscoverApplication(char *out,size_t capacity){
  if(!out||!capacity)return -1;*out=0;
- snprintf(applicationReason,sizeof applicationReason,"No matching USB0 application copy.");
+ snprintf(applicationReason,sizeof applicationReason,"No matching application copy under a supported homebrew root.");
 #ifdef PE2_PS5_HOST
  /* Current PE2 package receipt selects PPSA77023. This is candidate location,
   * NEVER application identity; all bytes must match actual /app0/eboot.bin. */
- const char *roots[]={"/mnt/usb0/homebrew/PPSA77023"};
+ const char *roots[]={
+  "/mnt/usb0/homebrew/PPSA77023",
+  "/mnt/usb1/homebrew/PPSA77023",
+  "/mnt/usb2/homebrew/PPSA77023",
+  "/mnt/usb3/homebrew/PPSA77023",
+  "/mnt/usb4/homebrew/PPSA77023",
+  "/mnt/usb5/homebrew/PPSA77023",
+  "/mnt/usb6/homebrew/PPSA77023",
+  "/mnt/usb7/homebrew/PPSA77023",
+  "/data/homebrew/PPSA77023",
+ };
  unsigned matches=0;budget=256u*1024u*1024u;failed=0;
  for(unsigned i=0;i<sizeof roots/sizeof roots[0];i++){
   int directory=appDirectory(roots[i]);if(directory<0){*out=0;return -1;}if(!directory)continue;
